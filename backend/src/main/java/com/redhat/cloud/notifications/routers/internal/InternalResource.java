@@ -2,12 +2,14 @@ package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.db.repositories.StatusRepository;
+import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -28,7 +30,6 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -51,6 +52,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.net.URI;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -63,6 +65,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL)
@@ -96,6 +99,9 @@ public class InternalResource {
 
     @Inject
     StartupUtils startupUtils;
+
+    @Inject
+    AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
     @GET
@@ -434,6 +440,32 @@ public class InternalResource {
             return Response.ok().build();
         } else {
             return Response.status(BAD_REQUEST).build();
+        }
+    }
+
+    @PUT
+    @Path("/daily-digest/time-preference/{orgId}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public Response saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime, @PathParam("orgId") String orgId) {
+        Log.infof("Update daily digest time preference form internal API, for orgId %s at %s", orgId, expectedTime);
+        aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/daily-digest/time-preference/{orgId}")
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+    public Response getDailyDigestTimePreference(@PathParam("orgId") String orgId) {
+        Log.infof("Get daily digest time preference form internal API, for orgId %s", orgId);
+        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
+        if (null != storedParameters) {
+            return Response.ok(storedParameters.getScheduledExecutionTime()).build();
+        } else {
+            return Response.status(NOT_FOUND).build();
         }
     }
 }
