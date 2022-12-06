@@ -26,7 +26,7 @@ public class AggregationOrgConfigRepository {
 
         int createdEntries = entityManager.createNativeQuery(query)
             .setParameter("expectedRunningTime", defaultRunningTime)
-            .setParameter("lastRun", LocalDateTime.now(UTC).minusYears(1))
+            .setParameter("lastRun", LocalDateTime.now(UTC).minusDays(1))
             .executeUpdate();
 
         Log.infof("Default time preference must be created for %d OrgId", createdEntries);
