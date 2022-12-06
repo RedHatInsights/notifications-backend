@@ -61,12 +61,6 @@ public class InternalResourceTest extends DbIsolatedTest {
         assertEquals(localTime, storedLocalTime);
 
         // test insufficient privileges
-
-        String identityHeaderValueReadOnly = TestHelpers.encodeRHIdentityInfo("tenant", "empty", "username_readonly");
-        MockServerConfig.addMockRbacAccess(identityHeaderValueReadOnly, MockServerConfig.RbacAccess.READ_ACCESS);
-        String identityHeaderValueNoAccess = TestHelpers.encodeRHIdentityInfo("tenant", "empty", "username_no_access");
-        MockServerConfig.addMockRbacAccess(identityHeaderValueNoAccess, MockServerConfig.RbacAccess.NO_ACCESS);
-
         given()
             .basePath(API_INTERNAL)
             .header(createTurnpikeIdentityHeader("admin", "none"))
