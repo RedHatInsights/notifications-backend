@@ -6,7 +6,9 @@ import io.vertx.core.json.JsonObject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+
 
 public class AdvisorDailyDigestEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
@@ -38,12 +40,15 @@ public class AdvisorDailyDigestEmailPayloadAggregator extends AbstractEmailPaylo
     ));
 
     // Advisor final payload helpers
-    private final HashMap<String, HashSet<String>> newRecommendations = new HashMap<String, HashSet<>>();
-    private final HashMap<String, HashSet<String>> resolvedRecommendations = new HashSet<String, HashSet<>>();
-    private final HashSet<String> deactivatedRecommendations = new HashSet<>();
+    private final Map<String, Set<String>> newRecommendations = new HashMap<>();
+    private final Map<String, Set<String>> resolvedRecommendations = new HashMap<>();
+    private final Set<String> deactivatedRecommendations = new HashSet<>();
 
     public AdvisorDailyDigestEmailPayloadAggregator() {
         JsonObject advisor = new JsonObject();
+        advisor.put(NEW_RECOMMENDATIONS, newRecommendations);
+        advisor.put(RESOLVED_RECOMMENDATIONS, resolvedRecommendations);
+        advisor.put(DEACTIVATED_RECOMMENDATIONS, deactivatedRecommendations);
 
         context.put(ADVISOR_KEY, advisor);
     }
@@ -64,22 +69,18 @@ public class AdvisorDailyDigestEmailPayloadAggregator extends AbstractEmailPaylo
             JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
             String ruleId = payload.getString(PAYLOAD_RULE_ID);
 
-            if (eventType == NEW_RECOMMENDATION) {
-                if (! newRecommendations.contains(ruleId)) {
-                    newRecommendations.put(ruleId, new HashSet<String>());
-                }
-                newRecommendations.get(ruleId).add(inventoryId);
-            } else if (eventType == RESOLVED_RECOMMENDATION) {
+            if (eventType.equals(NEW_RECOMMENDATION)) {
+                newRecommendations.computeIfAbsent(
+                    ruleId, key -> new HashSet<String>()
+                ).add(inventoryId);
+            } else if (eventType.equals(RESOLVED_RECOMMENDATION)) {
                 if (! resolvedRecommendations.contains(ruleId)) {
                     resolvedRecommendations.put(ruleId, new HashSet<String>());
                 }
                 resolvedRecommendations.get(ruleId).add(inventoryId);
-            } else if (eventType == DEACTIVATED_RECOMMENDATION) {
+            } else if (eventType.equals(DEACTIVATED_RECOMMENDATION)) {
                 deactivatedRecommendations.add(ruleId);
             }
         });
-        advisor.put(NEW_RECOMMENDATIONS, newRecommendations);
-        advisor.put(RESOLVED_RECOMMENDATIONS, newRecommendations);
-        advisor.put(DEACTIVATED_RECOMMENDATIONS, newRecommendations);
     }
 }
