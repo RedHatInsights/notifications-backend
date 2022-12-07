@@ -74,10 +74,9 @@ public class AdvisorDailyDigestEmailPayloadAggregator extends AbstractEmailPaylo
                     ruleId, key -> new HashSet<String>()
                 ).add(inventoryId);
             } else if (eventType.equals(RESOLVED_RECOMMENDATION)) {
-                if (! resolvedRecommendations.contains(ruleId)) {
-                    resolvedRecommendations.put(ruleId, new HashSet<String>());
-                }
-                resolvedRecommendations.get(ruleId).add(inventoryId);
+                resolvedRecommendations.computeIfAbsent(
+                    ruleId, key -> new HashSet<String>()
+                ).add(inventoryId);
             } else if (eventType.equals(DEACTIVATED_RECOMMENDATION)) {
                 deactivatedRecommendations.add(ruleId);
             }
