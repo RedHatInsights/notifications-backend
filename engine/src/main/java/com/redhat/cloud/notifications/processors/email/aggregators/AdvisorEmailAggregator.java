@@ -4,8 +4,8 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
