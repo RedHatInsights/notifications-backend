@@ -14,10 +14,9 @@ import { Template } from '../types/Notifications';
 import { useGetTemplate } from '../services/EmailTemplates/GetTemplate';
 import { EmailTemplateForm } from '../components/EmailTemplates/EmailTemplateForm';
 import { useEffect } from 'react';
+import { RenderEmailTemplateForm } from '../components/EmailTemplates/RenderEmailTemplate';
 
 const defaultContentTemplate = `
-Important email to {user.firstName} from MyCoolApp!
-
 <div>Hello {user.firstName} {user.lastName},</div>
 <div>We have some important news for you, MyApp has a notification for you</div>
 <div>As a reminder, current user: {user.username}: is active? {user.isActive}; is admin? {user.isAdmin}</div>
@@ -61,7 +60,7 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
 
     const newTemplate = useCreateTemplate();
     const [ template, setTemplate ] = React.useState<Partial<Template>>({
-        data: defaultContentTemplate
+        data: defaultContentTemplate,
     });
 
     const updateTemplate = (updateTemplate: Partial<Template>) => {
@@ -104,14 +103,20 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                         <Title headingLevel="h1">{ templateId ? 'Update' : 'Create'} an Email Template</Title>
                     </SplitItem>
                 </Split>
-            </PageSection><PageSection>
-                <EmailTemplateForm
-                    isLoading={ originalTemplate.loading }
-                    template={template}
-                    updateTemplate={ updateTemplate }
-                />
             </PageSection>
             <PageSection>
+                {templateId ? 
+                    <EmailTemplateForm
+                        isLoading={ originalTemplate.loading }
+                        template={template}
+                        updateTemplate={ updateTemplate }
+                    /> 
+                    : 
+                    <RenderEmailTemplateForm
+                        isLoading={ originalTemplate.loading }
+                        template={template}
+                        updateTemplate={ updateTemplate } />
+                }
                 <ActionGroup>
                     <Split hasGutter>
                         <SplitItem>
