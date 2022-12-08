@@ -348,7 +348,7 @@ public class UserConfigResource {
         Bundle bundle = application.getBundle();
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
         applicationSettingsValue.displayName = application.getDisplayName();
-        for (EventType eventType : eventTypeRepository.findByApplicationId(application.getId())) {
+        for (EventType eventType : application.getEventTypes()) {
             SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
             eventTypeSettingsValue.displayName = eventType.getDisplayName();
             for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
@@ -393,7 +393,7 @@ public class UserConfigResource {
     private SettingsValuesByEventType getSettingsValueForUserByEventType(List<EventTypeEmailSubscription> emailSubscriptions) {
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
         for (Bundle bundle : bundleRepository.getBundles()) {
-            for (Application application : applicationRepository.getApplications(bundle.getName())) {
+            for (Application application : bundle.getApplications()) {
                 addApplicationStructureDetails(settingsValues, application);
             }
         }

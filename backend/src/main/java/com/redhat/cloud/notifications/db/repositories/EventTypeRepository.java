@@ -25,11 +25,4 @@ public class EventTypeRepository {
             return null;
         }
     }
-
-    public List<EventType> findByApplicationId(UUID applicationId) {
-        String query = "SELECT evt FROM EventType evt WHERE evt.application.id = :applicationId ";
-        return entityManager.createQuery(query, EventType.class)
-                .setParameter("applicationId", applicationId)
-                .getResultList();
-    }
 }
