@@ -125,7 +125,7 @@ public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregato
 
             switch (eventType) {
                 case NEW_RECOMMENDATION:
-                    systemCount = newRecommendations.computeIfAbsent(
+                    Map<String, Object> ruleData = newRecommendations.computeIfAbsent(
                         ruleId, key -> new HashMap<>(Map.of(
                             CONTENT_RULE_DESCRIPTION, ruleDescription,
                             CONTENT_RULE_HAS_INCIDENT, ruleIncident,
@@ -133,10 +133,13 @@ public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregato
                             CONTENT_RULE_URL, ruleURL,
                             CONTENT_SYSTEM_COUNT, 0
                         ))
-                    ).get(CONTENT_SYSTEM_COUNT);
-                    newRecommendations.set(CONTENT_SYSTEM_COUNT, systemCount + 1);
+                    );
+                    ruleData.put(
+                        CONTENT_SYSTEM_COUNT, (Integer) ruleDat.get(CONTENT_SYSTEM_COUNT) + 1
+                    );
+                    break;
                 case RESOLVED_RECOMMENDATION:
-                    systemCount = resolvedRecommendations.computeIfAbsent(
+                    Map<String, Object> ruleData = resolvedRecommendations.computeIfAbsent(
                         ruleId, key -> new HashMap<>(Map.of(
                             CONTENT_RULE_DESCRIPTION, ruleDescription,
                             CONTENT_RULE_HAS_INCIDENT, ruleIncident,
@@ -144,8 +147,9 @@ public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregato
                             CONTENT_RULE_URL, ruleURL,
                             CONTENT_SYSTEM_COUNT, 0
                         ))
-                    ).get(CONTENT_SYSTEM_COUNT);
+                    );
                     resolvedRecommendations.set(CONTENT_SYSTEM_COUNT, systemCount + 1);
+                    break;
                 case DEACTIVATED_RECOMMENDATION:
                     deactivatedRecommendations.computeIfAbsent(
                         ruleId, key -> new HashMap<>(Map.of(
@@ -155,6 +159,7 @@ public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregato
                             CONTENT_RULE_URL, ruleURL
                         ))
                     );
+                    break;
                 default:
                     break;
             }
