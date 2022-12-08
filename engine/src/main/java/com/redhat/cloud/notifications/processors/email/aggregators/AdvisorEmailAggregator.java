@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class AdvisorDailyDigestEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
+public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
     // Notification common
     private static final String EVENT_TYPE_KEY = "event_type";
@@ -44,7 +44,7 @@ public class AdvisorDailyDigestEmailPayloadAggregator extends AbstractEmailPaylo
     private final Map<String, Set<String>> resolvedRecommendations = new HashMap<>();
     private final Set<String> deactivatedRecommendations = new HashSet<>();
 
-    public AdvisorDailyDigestEmailPayloadAggregator() {
+    public AdvisorEmailPayloadAggregator() {
         JsonObject advisor = new JsonObject();
         advisor.put(NEW_RECOMMENDATIONS, newRecommendations);
         advisor.put(RESOLVED_RECOMMENDATIONS, resolvedRecommendations);
@@ -58,7 +58,7 @@ public class AdvisorDailyDigestEmailPayloadAggregator extends AbstractEmailPaylo
         JsonObject notifPayload = notification.getPayload();
         JsonObject advisor = context.getJsonObject(ADVISOR_KEY);
         String eventType = notifPayload.getString(EVENT_TYPE_KEY);
-        String inventoryId = notification.getContext().getString(INVENTORY_ID);
+        String inventoryId = notifPayload.getJsonObject("context").getString(INVENTORY_ID);
 
         if (!EVENT_TYPES.contains(eventType)) {
             return;
@@ -69,16 +69,19 @@ public class AdvisorDailyDigestEmailPayloadAggregator extends AbstractEmailPaylo
             JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
             String ruleId = payload.getString(PAYLOAD_RULE_ID);
 
-            if (eventType.equals(NEW_RECOMMENDATION)) {
-                newRecommendations.computeIfAbsent(
-                    ruleId, key -> new HashSet<String>()
-                ).add(inventoryId);
-            } else if (eventType.equals(RESOLVED_RECOMMENDATION)) {
-                resolvedRecommendations.computeIfAbsent(
-                    ruleId, key -> new HashSet<String>()
-                ).add(inventoryId);
-            } else if (eventType.equals(DEACTIVATED_RECOMMENDATION)) {
-                deactivatedRecommendations.add(ruleId);
+            switch (eventType) {
+                case COMPLIANCE:
+                    newRecommendations.computeIfAbsent(
+                        ruleId, key -> new HashSet<String>()
+                    ).add(inventoryId);
+                case RESOLVED_RECOMMENDATION:
+                    resolvedRecommendations.computeIfAbsent(
+                        ruleId, key -> new HashSet<String>()
+                    ).add(inventoryId);
+                case DEACTIVATED_RECOMMENDATION:
+                    deactivatedRecommendations.add(ruleId);
+                default:
+                    break;
             }
         });
     }
