@@ -5,7 +5,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
