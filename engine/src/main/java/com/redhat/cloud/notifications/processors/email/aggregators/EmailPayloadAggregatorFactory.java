@@ -6,6 +6,7 @@ public class EmailPayloadAggregatorFactory {
 
     private static final String RHEL = "rhel";
     private static final String APPLICATION_SERVICES = "application-services";
+    private static final String ADVISOR = "advisor";
     private static final String POLICIES = "policies";
     private static final String COMPLIANCE = "compliance";
     private static final String DRIFT = "drift";
@@ -38,6 +39,8 @@ public class EmailPayloadAggregatorFactory {
                 break;
             case RHEL:
                 switch (application) {
+                    case ADVISOR:
+                        return new AdvisorEmailPayloadAggregator();
                     case COMPLIANCE:
                         return new ComplianceEmailAggregator();
                     case DRIFT:
