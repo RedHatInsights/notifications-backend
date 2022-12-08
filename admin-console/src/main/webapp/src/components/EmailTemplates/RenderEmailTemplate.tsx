@@ -67,6 +67,8 @@ const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props =
                     <strong>Content:</strong>
                 </StackItem>
                 <StackItem>
+                    {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment*/}
+                    {/* @ts-ignore */}
                     <iframe width="100%" srcDoc={ props.template } />
                 </StackItem>
             </>
