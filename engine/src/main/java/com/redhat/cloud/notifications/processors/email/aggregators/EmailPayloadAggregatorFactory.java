@@ -40,7 +40,7 @@ public class EmailPayloadAggregatorFactory {
             case RHEL:
                 switch (application) {
                     case ADVISOR:
-                        return new AdvisorEmailPayloadAggregator();
+                        return new AdvisorEmailAggregator();
                     case COMPLIANCE:
                         return new ComplianceEmailAggregator();
                     case DRIFT:

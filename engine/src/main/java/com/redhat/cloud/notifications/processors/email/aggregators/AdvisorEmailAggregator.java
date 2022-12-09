@@ -122,10 +122,11 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
             String ruleRisk = payload.getString(PAYLOAD_RULE_TOTAL_RISK);
             String ruleIncident = payload.getString(PAYLOAD_RULE_HAS_INCIDENT);
             String ruleURL = payload.getString(PAYLOAD_RULE_URL);
+            Map<String, Object> ruleData;
 
             switch (eventType) {
                 case NEW_RECOMMENDATION:
-                    Map<String, Object> ruleData = newRecommendations.computeIfAbsent(
+                    ruleData = newRecommendations.computeIfAbsent(
                         ruleId, key -> new HashMap<>(Map.of(
                             CONTENT_RULE_DESCRIPTION, ruleDescription,
                             CONTENT_RULE_HAS_INCIDENT, ruleIncident,
@@ -139,7 +140,7 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                     );
                     break;
                 case RESOLVED_RECOMMENDATION:
-                    Map<String, Object> ruleData = resolvedRecommendations.computeIfAbsent(
+                    ruleData = resolvedRecommendations.computeIfAbsent(
                         ruleId, key -> new HashMap<>(Map.of(
                             CONTENT_RULE_DESCRIPTION, ruleDescription,
                             CONTENT_RULE_HAS_INCIDENT, ruleIncident,
