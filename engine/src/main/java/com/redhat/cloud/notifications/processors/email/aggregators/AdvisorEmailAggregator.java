@@ -45,7 +45,7 @@ import java.util.Set;
 }
  */
 
-public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
+public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
 
     // Notification common
     private static final String EVENT_TYPE_KEY = "event_type";
@@ -88,7 +88,7 @@ public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregato
     private final Map<String, Map<String, Object>> resolvedRecommendations = new HashMap<>();
     private final Map<String, Map<String, String>> deactivatedRecommendations = new HashMap<>();
 
-    public AdvisorEmailPayloadAggregator() {
+    public AdvisorEmailAggregator() {
         JsonObject advisor = new JsonObject();
         advisor.put(NEW_RECOMMENDATIONS, newRecommendations);
         advisor.put(RESOLVED_RECOMMENDATIONS, resolvedRecommendations);
@@ -135,7 +135,7 @@ public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregato
                         ))
                     );
                     ruleData.put(
-                        CONTENT_SYSTEM_COUNT, (Integer) ruleDat.get(CONTENT_SYSTEM_COUNT) + 1
+                        CONTENT_SYSTEM_COUNT, (Integer) ruleData.get(CONTENT_SYSTEM_COUNT) + 1
                     );
                     break;
                 case RESOLVED_RECOMMENDATION:
@@ -148,7 +148,9 @@ public class AdvisorEmailPayloadAggregator extends AbstractEmailPayloadAggregato
                             CONTENT_SYSTEM_COUNT, 0
                         ))
                     );
-                    resolvedRecommendations.set(CONTENT_SYSTEM_COUNT, systemCount + 1);
+                    ruleData.put(
+                        CONTENT_SYSTEM_COUNT, (Integer) ruleData.get(CONTENT_SYSTEM_COUNT) + 1
+                    );
                     break;
                 case DEACTIVATED_RECOMMENDATION:
                     deactivatedRecommendations.computeIfAbsent(
