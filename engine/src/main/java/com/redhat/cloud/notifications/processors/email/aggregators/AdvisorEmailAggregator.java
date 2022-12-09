@@ -61,7 +61,7 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
     // Advisor event payloads
     private static final String NEW_RECOMMENDATION = "new_recommendation";
     private static final String RESOLVED_RECOMMENDATION = "resolved_recommendation";
-    private static final String DEACTIVATED_RECOMMENDATION = "resolved_recommendation";
+    private static final String DEACTIVATED_RECOMMENDATION = "deactivated_recommendation";
 
     // Advisor events aggregator data contents
     private static final String ADVISOR_KEY = "advisor";
