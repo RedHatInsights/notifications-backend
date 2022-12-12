@@ -86,7 +86,7 @@ public class EndpointRepositoryTest {
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::getType).collect(Collectors.toList()),
                 Query.Sort.Order.ASC,
-                List.of(EndpointType.WEBHOOK, EndpointType.EMAIL_SUBSCRIPTION, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL)
+                List.of(EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.EMAIL_SUBSCRIPTION, EndpointType.WEBHOOK)
         );
 
         TestHelpers.testSorting(

@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
-import com.redhat.cloud.notifications.db.converters.EndpointTypeConverter;
 import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsConverter;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -25,7 +24,7 @@ public class NotificationHistoryRepository {
          * guarantee the endpoint will still exist in the DB at the time when the history is written. If it's gone, then
          * the subquery will return null.
          */
-        String hql = "INSERT INTO notification_history (id, invocation_time, invocation_result, status, details, event_id, endpoint_type, endpoint_sub_type, created, endpoint_id) " +
+        String hql = "INSERT INTO notification_history (id, invocation_time, invocation_result, status, details, event_id, endpoint_type_v2, endpoint_sub_type, created, endpoint_id) " +
                 "VALUES (:id, :invocationTime, :invocationResult, :status, :details, :eventId, :endpointType, :endpointSubType, :created, " +
                 "(SELECT id FROM endpoints WHERE id = :endpointId))";
         history.prePersist();
@@ -36,7 +35,7 @@ public class NotificationHistoryRepository {
                 .setParameter("status", history.getStatus().toString())
                 .setParameter("details", new NotificationHistoryDetailsConverter().convertToDatabaseColumn(history.getDetails()))
                 .setParameter("eventId", history.getEvent().getId())
-                .setParameter("endpointType", new EndpointTypeConverter().convertToDatabaseColumn(history.getEndpointType()))
+                .setParameter("endpointType", history.getEndpointType().name())
                 .setParameter("endpointSubType", history.getEndpointSubType())
                 .setParameter("created", history.getCreated())
                 .setParameter("endpointId", history.getEndpoint().getId())

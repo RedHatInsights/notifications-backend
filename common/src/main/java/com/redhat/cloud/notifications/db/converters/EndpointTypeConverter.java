@@ -6,23 +6,27 @@ import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
 @Converter
-public class EndpointTypeConverter implements AttributeConverter<EndpointType, Integer> {
+public class EndpointTypeConverter implements AttributeConverter<EndpointType, String> {
 
     @Override
-    public Integer convertToDatabaseColumn(EndpointType type) {
+    public String convertToDatabaseColumn(EndpointType type) {
         if (type == null) {
             return null;
         } else {
-            return type.ordinal();
+            return type.name();
         }
     }
 
     @Override
-    public EndpointType convertToEntityAttribute(Integer ordinal) {
-        if (ordinal == null) {
+    public EndpointType convertToEntityAttribute(String name) {
+        if (name == null) {
             return null;
         } else {
-            return EndpointType.values()[ordinal];
+            try {
+                return EndpointType.valueOf(name);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Unknown EndpointType " + name);
+            }
         }
     }
 }

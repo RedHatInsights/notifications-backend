@@ -230,7 +230,7 @@ objects:
           SELECT 
             DISTINCT "account_id" 
             FROM "endpoints"
-            WHERE "endpoint_type"=3 AND "endpoint_sub_type"='splunk';
+            WHERE "endpoint_type_v2"='CAMEL' AND "endpoint_sub_type"='splunk';
       - prefix: insights/notifications/accounts
         query: >-
           SELECT
@@ -243,7 +243,7 @@ objects:
           SELECT
           COUNT(distinct account_id) 
           FROM endpoints
-          WHERE endpoint_type = 3 AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
+          WHERE endpoint_type_v2 = 'CAMEL' AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
