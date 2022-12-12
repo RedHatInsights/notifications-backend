@@ -20,12 +20,16 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
 public class OrgConfigResource {
+
+    static final List<Integer> ALLOWED_MINUTE = Arrays.asList(0, 15, 30, 45);
 
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
@@ -41,6 +45,9 @@ public class OrgConfigResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Response saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
         String orgId = getOrgId(sec);
+        if (!ALLOWED_MINUTE.contains(expectedTime.getMinute())) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
         Log.infof("Update daily digest time preference for orgId %s at %s", orgId, expectedTime);
         aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
         return Response.ok().build();
