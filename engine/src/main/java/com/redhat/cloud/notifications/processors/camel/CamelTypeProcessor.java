@@ -10,46 +10,32 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
-import com.redhat.cloud.notifications.openbridge.Bridge;
-import com.redhat.cloud.notifications.openbridge.BridgeAuth;
-import com.redhat.cloud.notifications.openbridge.BridgeEventService;
-import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
-import com.redhat.cloud.notifications.templates.models.Environment;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.reactive.messaging.TracingMetadata;
+import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
-import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadataBuilder;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.vertx.core.json.JsonObject;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
-import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
-import static com.redhat.cloud.notifications.openbridge.BridgeHelper.ORG_ID_FILTER_NAME;
-import static io.quarkus.runtime.LaunchMode.TEST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
@@ -63,20 +49,12 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     public static final String CLOUD_EVENT_ORG_ID_EXTENSION_KEY = "rh-org-id";
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String CAMEL_SUBTYPE_HEADER = "CAMEL_SUBTYPE";
-    public static final String PROCESSORNAME = "processorname";
-    /**
-     * Constants for the {@link CamelTypeProcessor#callOpenBridge(JsonObject, UUID, String, CamelProperties, String, String)}.
-     * function.
-     */
-    public static final String SOURCE = "notifications";
-    public static final String SPEC_VERSION = "1.0";
-    public static final String TYPE = "myType";
 
     @Inject
     FeatureFlipper featureFlipper;
 
     @Inject
-    BaseTransformer transformer;
+    BaseTransformer baseTransformer;
 
     @Inject
     @Channel(TOCAMEL_CHANNEL)
@@ -86,44 +64,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     MeterRegistry registry;
 
     @Inject
-    BridgeAuth bridgeAuth;
-
-    // TODO There must be a simpler way to deal with this.
-    @Inject
-    Instance<Bridge> bridgeInstance;
-
-    @Inject
-    RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
-
-    @Inject
     SecretUtils secretUtils;
-
-    /**
-     * Used to send the environment's URL on RHOSE events.
-     */
-    @Inject
-    Environment environment;
-
-    private Bridge bridge;
-
-    @PostConstruct
-    void postConstruct() {
-        bridge = bridgeInstance.get();
-    }
-
-    /**
-     * Resets the bridge instance. Invoking this method is only allowed when
-     * the Quarkus launch mode is {@link io.quarkus.runtime.LaunchMode#TEST TEST}.
-     */
-    public void reset() {
-        if (ProfileManager.getLaunchMode() != TEST) {
-            throw new IllegalStateException("Illegal bridge reset detected");
-        }
-        if (bridge != null) {
-            bridgeInstance.destroy(bridge);
-        }
-        postConstruct();
-    }
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
@@ -139,161 +80,107 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
     }
 
     private void process(Event event, Endpoint endpoint) {
-        String subType = endpoint.getSubType();
+        registry.counter(PROCESSED_COUNTER_NAME, "subType", endpoint.getSubType()).increment();
 
-        Counter processedCount = registry.counter(PROCESSED_COUNTER_NAME, "subType", subType);
-        processedCount.increment();
+        String originalEventId = getOriginalEventId(event);
+        UUID historyId = UUID.randomUUID();
 
-        CamelProperties properties = (CamelProperties) endpoint.getProperties();
+        Log.infof("Sending CloudEvent [orgId=%s, integration=%s, historyId=%s, originalEventId=%s]",
+                endpoint.getOrgId(), endpoint.getName(), historyId, originalEventId);
 
-        Map<String, String> metaData = new HashMap<>();
+        long startTime = System.currentTimeMillis();
+        Message<String> message = buildMessage(event, endpoint, originalEventId, historyId);
+        emitter.send(message);
+        long invocationTime = System.currentTimeMillis() - startTime;
 
-        metaData.put("trustAll", String.valueOf(properties.getDisableSslVerification()));
+        createHistoryEntry(event, endpoint, historyId, invocationTime);
+    }
 
-        metaData.put("url", properties.getUrl());
-        metaData.put("type", subType);
-
-        /*
-         * Get the basic authentication and secret token secrets from Sources.
-         */
-        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            this.secretUtils.loadSecretsForEndpoint(endpoint);
-        }
-
-        if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
-            metaData.put(TOKEN_HEADER, properties.getSecretToken());
-        }
-
-        BasicAuthentication basicAuthentication = properties.getBasicAuthentication();
-        if (basicAuthentication != null && basicAuthentication.getUsername() != null && basicAuthentication.getPassword() != null) {
-            StringBuilder sb = new StringBuilder(basicAuthentication.getUsername());
-            sb.append(":");
-            sb.append(basicAuthentication.getPassword());
-            String b64 = Base64Utils.encode(sb.toString());
-            metaData.put("basicAuth", b64);
-        }
-
-        metaData.put("extras", new MapConverter().convertToDatabaseColumn(properties.getExtras()));
+    private static String getOriginalEventId(Event event) {
         String originalEventId = "-not provided-";
         if (event.getId() != null) {
             originalEventId = event.getId().toString();
         }
+        return originalEventId;
+    }
+
+    private Message<String> buildMessage(Event event, Endpoint endpoint, String originalEventId, UUID historyId) {
+        JsonObject payload = buildPayload(event, endpoint, originalEventId);
+
+        CloudEventMetadata<String> cloudEventMetadata = buildCloudEventMetadata(endpoint, historyId);
+        OutgoingKafkaRecordMetadata<String> kafkaRecordMetadata = buildKafkaRecordMetadata(endpoint, historyId);
+        TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
+
+        return Message.of(payload.encode())
+                .addMetadata(cloudEventMetadata)
+                .addMetadata(kafkaRecordMetadata)
+                .addMetadata(tracingMetadata);
+    }
+
+    private JsonObject buildPayload(Event event, Endpoint endpoint, String originalEventId) {
+        CamelProperties properties = endpoint.getProperties(CamelProperties.class);
+
+        JsonObject metaData = new JsonObject();
+        metaData.put("trustAll", String.valueOf(properties.getDisableSslVerification()));
+        metaData.put("url", properties.getUrl());
+        metaData.put("type", endpoint.getSubType());
+        metaData.put("extras", new MapConverter().convertToDatabaseColumn(properties.getExtras()));
         metaData.put("_originalId", originalEventId);
 
-        JsonObject payload = transformer.toJsonObject(event.getAction());
-        UUID historyId = UUID.randomUUID();
+        if (featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            // Get the basic authentication and secret token secrets from Sources.
+            secretUtils.loadSecretsForEndpoint(endpoint);
+        }
+        getSecretToken(properties).ifPresent(secretToken -> metaData.put(TOKEN_HEADER, secretToken));
+        getBasicAuth(properties).ifPresent(basicAuth -> metaData.put("basicAuth", basicAuth));
 
-        JsonObject metadataAsJson = new JsonObject();
-        payload.put(NOTIF_METADATA_KEY, metadataAsJson);
-        metaData.forEach(metadataAsJson::put);
+        JsonObject payload = baseTransformer.toJsonObject(event.getAction());
+        payload.put(NOTIF_METADATA_KEY, metaData);
 
-        callCamel(event, endpoint, historyId, payload, originalEventId);
+        return payload;
     }
 
-    public void callCamel(Event event, Endpoint endpoint, UUID historyId, JsonObject payload, String originalEventId) {
-
-        final long startTime = System.currentTimeMillis();
-
-        String accountId = endpoint.getAccountId();
-        String orgId = endpoint.getOrgId();
-        // the next could give a CCE, but we only come here when it is a camel endpoint anyway
-        String subType = endpoint.getSubType();
-        CamelProperties camelProperties = endpoint.getProperties(CamelProperties.class);
-        String integrationName = endpoint.getName();
-
-        if (subType.equals("slack")) { // OpenBridge
-            long endTime;
-            NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
-            try {
-                callOpenBridge(payload, historyId, orgId, camelProperties, endpoint.getSubType(), originalEventId);
-                history.setStatus(NotificationStatus.SENT);
-            } catch (Exception e) {
-                history.setStatus(NotificationStatus.FAILED_INTERNAL);
-                Map<String, Object> details = new HashMap<>();
-                details.put("failure", e.getMessage());
-                history.setDetails(details);
-                Log.infof("SE: Sending event with historyId=%s and originalId=%s failed: %s ",
-                        historyId, originalEventId, e.getMessage());
-            } finally {
-                endTime = System.currentTimeMillis();
-            }
-            history.setInvocationTime(endTime - startTime);
-            persistNotificationHistory(history);
-
+    private static Optional<String> getSecretToken(CamelProperties properties) {
+        if (properties.getSecretToken() == null || properties.getSecretToken().isBlank()) {
+            return Optional.empty();
         } else {
-            reallyCallCamel(payload, historyId, accountId, orgId, subType, integrationName, originalEventId);
-            final long endTime = System.currentTimeMillis();
-            // We only create a basic stub. The FromCamel filler will update it later
-            NotificationHistory history = getHistoryStub(endpoint, event, endTime - startTime, historyId);
-            history.setStatus(NotificationStatus.PROCESSING);
-            persistNotificationHistory(history);
+            return Optional.of(properties.getSecretToken());
         }
     }
 
-    public void reallyCallCamel(JsonObject body, UUID historyId, String accountId, String orgId, String subType, String integrationName, String originalEventId) {
+    private static Optional<String> getBasicAuth(CamelProperties properties) {
+        BasicAuthentication basicAuthentication = properties.getBasicAuthentication();
+        if (basicAuthentication == null || basicAuthentication.getUsername() == null || basicAuthentication.getPassword() == null) {
+            return Optional.empty();
+        } else {
+            String credentials = basicAuthentication.getUsername() + ":" + basicAuthentication.getPassword();
+            return Optional.of(Base64Utils.encode(credentials));
+        }
+    }
 
-        TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
-        Message<String> msg = Message.of(body.encode());
-        OutgoingCloudEventMetadataBuilder<?> ceMetadata = OutgoingCloudEventMetadata.builder()
+    private static OutgoingCloudEventMetadata<String> buildCloudEventMetadata(Endpoint endpoint, UUID historyId) {
+        return OutgoingCloudEventMetadata.<String>builder()
                 .withId(historyId.toString())
-                .withExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY, accountId)
-                .withType(CLOUD_EVENT_TYPE_PREFIX + subType)
-                .withExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY, orgId);
-        msg = msg.addMetadata(ceMetadata.build());
-        msg = msg.addMetadata(OutgoingKafkaRecordMetadata.builder()
-            .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))
-                    .add(CAMEL_SUBTYPE_HEADER, subType.getBytes(UTF_8)))
-                .build()
-        );
-        msg = msg.addMetadata(tracingMetadata);
-        Log.infof("CA Sending for account=%s, historyId=%s, integration=%s, origId=%s",
-                accountId, historyId, integrationName, originalEventId);
-        emitter.send(msg);
-
+                .withExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY, endpoint.getAccountId())
+                .withType(CLOUD_EVENT_TYPE_PREFIX + endpoint.getSubType())
+                .withExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY, endpoint.getOrgId())
+                .build();
     }
 
-    private void callOpenBridge(JsonObject body, UUID id, String orgId, CamelProperties camelProperties, String endpointSubType, String originalEventId) {
+    private static OutgoingKafkaRecordMetadata<String> buildKafkaRecordMetadata(Endpoint endpoint, UUID historyId) {
+        Headers headers = new RecordHeaders()
+                .add(MESSAGE_ID_HEADER, historyId.toString().getBytes(UTF_8))
+                .add(CAMEL_SUBTYPE_HEADER, endpoint.getSubType().getBytes(UTF_8));
 
-        if (!featureFlipper.isObEnabled()) {
-            Log.debug("Ob not enabled, doing nothing");
-            return;
-        }
-
-        Map<String, String> extras = camelProperties.getExtras();
-
-        Map<String, Object> ce = new HashMap<>();
-
-        ce.put("id", id);
-        ce.put("source", SOURCE); // Source of original event?
-        ce.put("specversion", SPEC_VERSION);
-        ce.put("type", TYPE); // Type of original event?
-        ce.put(ORG_ID_FILTER_NAME, orgId);
-        ce.put(PROCESSORNAME, extras.get(PROCESSORNAME));
-        ce.put("originaleventid", originalEventId);
-        // TODO add dataschema
-
-        Log.infof("SE: Sending Event with historyId=%s, orgId=%s, processorName=%s, processorId=%s, action=%s, origId=%s",
-                id.toString(), orgId, extras.get(PROCESSORNAME), extras.get("processorId"), endpointSubType, originalEventId);
-
-        body.remove(NOTIF_METADATA_KEY); // Not needed on OB
-        ce.put("data", body);
-
-        BridgeEventService evtSvc = RestClientBuilder.newBuilder()
-                .baseUri(URI.create(bridge.getEndpoint()))
-                .build(BridgeEventService.class);
-
-        // Include the environment's URL when sending the event.
-        body.put("environment_url", this.environment.url());
-
-        JsonObject payload = JsonObject.mapFrom(ce);
-        try {
-            evtSvc.sendEvent(payload, bridgeAuth.getToken());
-        } catch (WebApplicationException e) {
-            String path = "POST " + bridge.getEndpoint();
-            rhoseErrorMetricsRecorder.record(path, e);
-            throw e;
-        }
+        return OutgoingKafkaRecordMetadata.<String>builder()
+                .withHeaders(headers)
+                .build();
     }
 
-
+    private void createHistoryEntry(Event event, Endpoint endpoint, UUID historyId, long invocationTime) {
+        // We only create a basic stub. The FromCamel filler will update it later
+        NotificationHistory history = getHistoryStub(endpoint, event, invocationTime, historyId);
+        history.setStatus(NotificationStatus.PROCESSING);
+        persistNotificationHistory(history);
+    }
 }
