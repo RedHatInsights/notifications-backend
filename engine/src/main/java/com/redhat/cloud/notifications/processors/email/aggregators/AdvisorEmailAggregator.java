@@ -43,6 +43,43 @@ import java.util.Set;
       }
    ]
 }
+ *
+ * Output should be of the form:
+ * {
+    "new_recommendations": {
+        "product_eol_check|NGINX_EOL_ERROR": {
+            "description": "Red Hat has discontinued support services as well as software maintenance services for the End-Of-Life nginx",
+            "total_risk": 4,
+            "has_incident": false,
+            "url": "https://console.redhat.com/insights/advisor/recommendations/product_eol_check|NGINX_EOL_ERROR",
+            "affected_systems": 33
+        },
+        "container_rhel_version_privileged|CONTAINER_RHEL_VERSION_PRIVILEGED": {
+            "description": "A privileged container running on a different RHEL version host is not compatible",
+            "total_risk": 4,
+            "has_incident": true,
+            "url": "https://console.redhat.com/insights/advisor/recommendations/container_rhel_version_privileged|CONTAINER_RHEL_VERSION_PRIVILEGED",
+            "affected_systems": 3
+        }
+    },
+    "resolved_recommendations": {
+        "auditd_daemon_log_file_oversize|AUDIT_DAEMON_LOG_FILE_OVERSIZE": {
+            "description": "The auditd service gets suspended when the size of the log file is over \"max_log_file\"",
+            "total_risk": 2,
+            "has_incident": true,
+            "url": "https://console.redhat.com/insights/advisor/recommendations/audit_daemon_log_file_oversize|AUDIT_DAEMON_LOG_FILE_OVERSIZE",
+            "affected_systems": 1
+        }
+    },
+    "deactivated_recommendations": {
+        "el6_to_el7_upgrade|RHEL6_TO_RHEL7_UPGRADE_AVAILABLE_V4": {
+            "description": "RHEL 6 system is eligible for an in-place upgrade to RHEL 7 using the Leapp utility",
+            "has_incident": false,
+            "url": "https://console.redhat.com/insights/advisor/recommendations/el6_to_el7_upgrade|RHEL6_TO_RHEL7_UPGRADE_AVAILABLE_V4",
+            "total_risk": 3
+        }
+    }
+}
  */
 
 public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
