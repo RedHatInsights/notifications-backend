@@ -72,9 +72,9 @@ public class DuplicateNameMigrationResource {
 
         List<Object[]> repeatedIntegrationValues = entityManager.createNativeQuery(
                         // string_agg concatenates all the grouped values with the delimiter (, in this case)
-                        "SELECT string_agg(CAST(id as character varying), ','), name FROM endpoints WHERE endpoint_type != :endpoint_type_email GROUP BY name, org_id HAVING count(*) > 1"
+                        "SELECT string_agg(CAST(id as character varying), ','), name FROM endpoints WHERE endpoint_type_v2 != :endpoint_type_email GROUP BY name, org_id HAVING count(*) > 1"
                 )
-                .setParameter("endpoint_type_email", EndpointType.EMAIL_SUBSCRIPTION.ordinal())
+                .setParameter("endpoint_type_email", EndpointType.EMAIL_SUBSCRIPTION.name())
                 .getResultList();
         Log.infof(
                 "Found %d different integration names across the  organizations that needs updating - each name could be used by multiple integrations",

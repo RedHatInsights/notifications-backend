@@ -12,8 +12,9 @@ import java.util.Objects;
 
 @Embeddable
 public class CompositeEndpointType {
+
     @NotNull
-    @Column(name = "endpoint_type")
+    @Column(name = "endpoint_type_v2")
     @Convert(converter = EndpointTypeConverter.class)
     private EndpointType type;
 
@@ -32,7 +33,6 @@ public class CompositeEndpointType {
     }
 
     public CompositeEndpointType() {
-
     }
 
     public CompositeEndpointType(EndpointType type) {
@@ -59,7 +59,6 @@ public class CompositeEndpointType {
     public void setSubType(String subType) {
         this.subType = subType == null ? null : subType.toLowerCase();
     }
-
 
     @Override
     public boolean equals(Object o) {
