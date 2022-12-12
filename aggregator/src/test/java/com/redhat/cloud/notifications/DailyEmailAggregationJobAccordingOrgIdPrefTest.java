@@ -48,11 +48,11 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
     FeatureFlipper featureFlipper;
 
     final AggregationOrgConfig someOrgIdToProceed = new AggregationOrgConfig("someOrgId",
-            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0),
+            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), LocalTime.now(ZoneOffset.UTC).getMinute()),
             LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
 
     final AggregationOrgConfig anotherOrgIdToProceed = new AggregationOrgConfig("anotherOrgId",
-            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0),
+            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), LocalTime.now(ZoneOffset.UTC).getMinute()),
             LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
 
     @BeforeEach
@@ -71,7 +71,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
     void initAggregationParameters() {
         helpers.purgeAggregationOrgConfig();
-        testee.defaultDailyDigestHour = LocalTime.now(ZoneOffset.UTC).getHour();
+        testee.defaultDailyDigestHour = LocalTime.now(ZoneOffset.UTC).toString();
     }
 
     @Test
@@ -81,7 +81,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        testee.setDefaultDailyDigestHour(LocalTime.now(ZoneOffset.UTC).getHour());
+        testee.setDefaultDailyDigestHour(LocalTime.now(ZoneOffset.UTC).toString());
 
         testee.processDailyEmail();
 
@@ -116,11 +116,12 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
     @Test
     @TestTransaction
     void shouldSentTwoAggregationsToKafkaTopic() throws InterruptedException {
+        LocalTime now = LocalTime.now(ZoneOffset.UTC);
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        testee.setDefaultDailyDigestHour(LocalTime.now(ZoneOffset.UTC).getHour());
+        testee.setDefaultDailyDigestHour(now.toString());
         someOrgIdToProceed.setScheduledExecutionTime(LocalTime.of(LocalTime.now(ZoneOffset.UTC).minusHours(2).getHour(), 0));
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
@@ -144,7 +145,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
         // remove all preferences, and set default hour in the past, nothing should be processed
         helpers.purgeAggregationOrgConfig();
-        testee.setDefaultDailyDigestHour(LocalTime.now(ZoneOffset.UTC).getHour() - 2);
+        testee.setDefaultDailyDigestHour(LocalTime.of(now.getHour() - 2, now.getMinute()).toString());
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
 
         testee.processDailyEmail();
@@ -153,7 +154,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
         // Finally add preferences for org id someOrgId at the right Time
         helpers.purgeAggregationOrgConfig();
-        someOrgIdToProceed.setScheduledExecutionTime(LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), 0));
+        someOrgIdToProceed.setScheduledExecutionTime(LocalTime.now(ZoneOffset.UTC));
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
         LocalDateTime lastRun = someOrgIdToProceed.getLastRun();
         testee.processDailyEmail();
@@ -175,6 +176,63 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         assertEquals("rhel", thirdAggregation.getJsonObject("aggregationKey").getString("bundle"));
         assertEquals("unknown-application", thirdAggregation.getJsonObject("aggregationKey").getString("application"));
         assertEquals("DAILY", thirdAggregation.getString("subscriptionType"));
+    }
+
+    @Test
+    @TestTransaction
+    void shouldProcessOnePairRegardingExecutionTime() {
+        helpers.addEmailAggregation("tooLateOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("onTimeOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
+        helpers.addEmailAggregation("tooSoonOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId");
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).withMinute(32);
+
+        AggregationOrgConfig tooLateOrgIdToProceed = new AggregationOrgConfig("tooLateOrgId",
+            LocalTime.of(now.getHour(), 15),
+            LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
+        AggregationOrgConfig onTimeOrgIdToProceed = new AggregationOrgConfig("onTimeOrgId",
+            LocalTime.of(now.getHour(), 30),
+            LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
+        AggregationOrgConfig toSoonOrgIdToProceed = new AggregationOrgConfig("tooSoonOrgId",
+            LocalTime.of(now.getHour(), 45),
+            LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
+
+        helpers.addAggregationOrgConfig(tooLateOrgIdToProceed);
+        helpers.addAggregationOrgConfig(onTimeOrgIdToProceed);
+        helpers.addAggregationOrgConfig(toSoonOrgIdToProceed);
+
+        testee.processAggregateEmailsWithOrgPref(now, new CollectorRegistry());
+        final Gauge pairsProcessed = testee.getPairsProcessed();
+
+        assertEquals(1.0, pairsProcessed.get());
+    }
+
+    @Test
+    @TestTransaction
+    void shouldProcessOnePairAtMidnight() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).withHour(0).withMinute(0);
+
+        helpers.addEmailAggregation("tooLateOrgId", "rhel", "policies", "somePolicyId", "someHostId", now);
+        helpers.addEmailAggregation("onTimeOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId", now);
+        helpers.addEmailAggregation("tooSoonOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId", now);
+
+        AggregationOrgConfig tooLateOrgIdToProceed = new AggregationOrgConfig("tooLateOrgId",
+            LocalTime.of(23, 45),
+            now.minus(1, ChronoUnit.DAYS));
+        AggregationOrgConfig onTimeOrgIdToProceed = new AggregationOrgConfig("onTimeOrgId",
+            LocalTime.of(0, 0),
+            now.minus(1, ChronoUnit.DAYS));
+        AggregationOrgConfig toSoonOrgIdToProceed = new AggregationOrgConfig("tooSoonOrgId",
+            LocalTime.of(0, 15),
+            now.minus(1, ChronoUnit.DAYS));
+
+        helpers.addAggregationOrgConfig(tooLateOrgIdToProceed);
+        helpers.addAggregationOrgConfig(onTimeOrgIdToProceed);
+        helpers.addAggregationOrgConfig(toSoonOrgIdToProceed);
+
+        testee.processAggregateEmailsWithOrgPref(now, new CollectorRegistry());
+        final Gauge pairsProcessed = testee.getPairsProcessed();
+
+        assertEquals(1.0, pairsProcessed.get());
     }
 
     @Test

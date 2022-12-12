@@ -10,6 +10,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
@@ -23,13 +24,15 @@ public class EmailAggregationRepository {
     EntityManager entityManager;
 
     public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrgPref(LocalDateTime end) {
+        // Must takes every EmailAggregation supposed to be processed on last 15 min
+        // it covers cases when aggregation job may be run with few minutes late (ie: 05:01, 07,32)
         String query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName, acp.lastRun FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
             "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :end " +
-            "AND hour(acp.scheduledExecutionTime) = :runningHour";
-
+            "AND :endTime >= acp.scheduledExecutionTime AND (:endTime - acp.scheduledExecutionTime) < CAST(:cutoff as LocalTime)";
         Query hqlQuery = entityManager.createQuery(query)
-                .setParameter("runningHour", end.getHour())
-                .setParameter("end", end);
+                .setParameter("endTime", end.toLocalTime())
+                .setParameter("cutoff", LocalTime.of(0, 15))
+               .setParameter("end", end);
 
         List<Object[]> records = hqlQuery.getResultList();
         return records.stream()

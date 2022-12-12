@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -18,7 +19,11 @@ public class ResourceHelpers {
     EntityManager entityManager;
 
     public void addEmailAggregation(String orgId, String bundle, String application, String policyId, String insightsId) {
-        EmailAggregation aggregation = TestHelpers.createEmailAggregation(orgId, bundle, application, policyId, insightsId);
+        addEmailAggregation(orgId, bundle, application, policyId, insightsId, LocalDateTime.now(ZoneOffset.UTC));
+    }
+
+    public void addEmailAggregation(String orgId, String bundle, String application, String policyId, String insightsId, LocalDateTime localDateTime) {
+        EmailAggregation aggregation = TestHelpers.createEmailAggregation(orgId, bundle, application, policyId, insightsId, localDateTime);
         addEmailAggregation(aggregation);
     }
 

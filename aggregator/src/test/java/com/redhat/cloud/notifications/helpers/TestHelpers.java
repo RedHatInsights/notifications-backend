@@ -11,18 +11,17 @@ import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static java.time.ZoneOffset.UTC;
 
 public class TestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
 
-    static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventoryId) {
+    static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventoryId, LocalDateTime localDateTime) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
         aggregation.setOrgId(orgId);
-        aggregation.setCreated(LocalDateTime.now(UTC).minusHours(5L));
+        aggregation.setCreated(localDateTime.minusHours(5L));
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
