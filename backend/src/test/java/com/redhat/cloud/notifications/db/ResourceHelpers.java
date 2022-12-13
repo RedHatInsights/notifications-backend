@@ -119,7 +119,7 @@ public class ResourceHelpers {
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type) {
-        return createEndpoint(accountId, orgId, type, "null");
+        return createEndpoint(accountId, orgId, type, type.requiresSubType ? "null" : null);
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType) {
