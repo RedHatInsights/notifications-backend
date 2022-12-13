@@ -450,7 +450,7 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public Response saveDailyDigestTimePreference(@NotNull LocalTime expectedTime, @RestPath("orgId") String orgId) {
+    public Response saveDailyDigestTimePreference(@NotNull LocalTime expectedTime, @RestPath String orgId) {
         Log.infof("Update daily digest time preference form internal API, for orgId %s at %s", orgId, expectedTime);
         aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
         return Response.ok().build();
