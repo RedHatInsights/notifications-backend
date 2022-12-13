@@ -103,6 +103,7 @@ public class Endpoint extends CreationUpdateTimestamped {
     private boolean isSubTypePresentWhenRequired() {
         return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;
     }
+
     @JsonIgnore
     @AssertTrue(message = "This type does not support sub_type")
     private boolean isSubTypeNotPresentWhenNotRequired() {
