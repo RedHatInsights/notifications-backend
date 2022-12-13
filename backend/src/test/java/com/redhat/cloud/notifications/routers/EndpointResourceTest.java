@@ -1874,13 +1874,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setEnabled(enabled);
         endpoint.setName(name);
         endpoint.setServerErrors(serverErrors);
-        endpoint.setSubType(subType);
 
         for (final var url : ValidNonPrivateUrlValidatorTest.validUrls) {
             // Test with a camel endpoint.
             camelProperties.setUrl(url);
             endpoint.setType(EndpointType.CAMEL);
             endpoint.setProperties(camelProperties);
+            endpoint.setSubType(subType);
 
             given()
                 .header(identityHeader)
@@ -1894,6 +1894,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             // Test with a webhook endpoint.
             webhookProperties.setUrl(url);
             endpoint.setType(EndpointType.WEBHOOK);
+            endpoint.setSubType(null);
             endpoint.setProperties(webhookProperties);
 
             given()
