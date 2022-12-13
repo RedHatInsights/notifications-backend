@@ -67,7 +67,7 @@ public class AdvisorTestHelpers {
 
     public static Event createEvent(
         String rule_id, String description, String rule_url,
-        boolean has_incident, Integer total_risk,
+        boolean has_incident, Integer total_risk
     ) {
         /* Add events via emailActionMessage.setEvents */
         /* Fill in the important fields from the arguments, and make up
