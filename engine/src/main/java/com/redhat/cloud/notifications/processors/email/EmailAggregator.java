@@ -58,11 +58,9 @@ public class EmailAggregator {
         List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(aggregationKey, start, end);
         // For each aggregation...
         for (EmailAggregation aggregation : aggregations) {
-            // We need its event type to determine the target endpoints.
-            String eventType = getEventType(aggregation);
             // Let's retrieve these targets.
             Set<Endpoint> endpoints = Set.copyOf(endpointRepository
-                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType));
+                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), aggregationKey.getEventType()));
 
             // Now we want to determine who will actually receive the aggregation email.
             // All users who subscribed to the current application and subscription type combination are recipients candidates.

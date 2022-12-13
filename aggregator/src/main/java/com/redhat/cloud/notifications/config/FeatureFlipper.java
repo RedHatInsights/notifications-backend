@@ -42,9 +42,13 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.aggregator-org-pref-enabled", defaultValue = "false")
     boolean aggregatorOrgPrefEnabled;
 
+    @ConfigProperty(name = "notifications.use-event-type-for-aggregation.enabled", defaultValue = "false")
+    boolean useEventTypeForAggregationEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The aggregator use org id time preference is %s", aggregatorOrgPrefEnabled ? "enabled" : "disabled");
+        Log.infof("The event type level for email aggregation is %s", useEventTypeForAggregationEnabled ? "enabled" : "disabled");
     }
 
     public boolean isAggregatorOrgPrefEnabled() {
@@ -54,6 +58,14 @@ public class FeatureFlipper {
     public void setAggregatorOrgPrefEnabled(boolean aggregatorOrgPrefEnabled) {
         checkTestLaunchMode();
         this.aggregatorOrgPrefEnabled = aggregatorOrgPrefEnabled;
+    }
+
+    public boolean isUseEventTypeForAggregationEnabled() {
+        return useEventTypeForAggregationEnabled;
+    }
+
+    public void setUseEventTypeForAggregationEnabled(boolean useEventTypeForAggregationEnabled) {
+        this.useEventTypeForAggregationEnabled = useEventTypeForAggregationEnabled;
     }
 
     /**

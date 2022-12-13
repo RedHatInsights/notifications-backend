@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.logging.Log;
+import org.hibernate.query.Query;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -17,6 +19,9 @@ public class EmailAggregationRepository {
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     public boolean addEmailAggregation(EmailAggregation aggregation) {
         aggregation.prePersist(); // This method must be called manually while using a StatelessSession.
         try {
@@ -29,24 +34,38 @@ public class EmailAggregationRepository {
     }
 
     public List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
-        String query = "FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
-        return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
-                .setParameter("orgId", key.getOrgId())
-                .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .getResultList();
+        String query = "FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName " +
+            (featureFlipper.isUseEventTypeForAggregationEnabled() ? "AND ((:eventType is null and eventType is null) or eventType = :eventType) " : "") +
+            "AND created > :start AND created <= :end ORDER BY created";
+        Query queryProducer = statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
+            .setParameter("orgId", key.getOrgId())
+            .setParameter("bundleName", key.getBundle())
+            .setParameter("applicationName", key.getApplication())
+            .setParameter("start", start)
+            .setParameter("end", end);
+        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
+            queryProducer.setParameter("eventType", key.getEventType());
+        }
+
+        return queryProducer.getResultList();
     }
 
     @Transactional
     public int purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        return statelessSessionFactory.getCurrentSession().createQuery(query)
-                .setParameter("orgId", key.getOrgId())
-                .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
-                .setParameter("created", lastUsedTime)
-                .executeUpdate();
+        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName " +
+            (featureFlipper.isUseEventTypeForAggregationEnabled() ? "AND ((:eventType is null and eventType is null) or eventType = :eventType) " : "") +
+            "AND created <= :created";
+
+        Query queryProducer = statelessSessionFactory.getCurrentSession().createQuery(query)
+            .setParameter("orgId", key.getOrgId())
+            .setParameter("bundleName", key.getBundle())
+            .setParameter("applicationName", key.getApplication())
+            .setParameter("created", lastUsedTime);
+
+        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
+            queryProducer.setParameter("eventType", key.getEventType());
+        }
+
+        return queryProducer.executeUpdate();
     }
 }

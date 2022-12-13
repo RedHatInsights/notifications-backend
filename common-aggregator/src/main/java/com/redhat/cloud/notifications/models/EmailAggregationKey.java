@@ -14,10 +14,13 @@ public class EmailAggregationKey {
     @NotNull
     private String application;
 
-    public EmailAggregationKey(String orgId, String bundle, String application) {
+    private String eventType;
+
+    public EmailAggregationKey(String orgId, String bundle, String application, String eventType) {
         this.orgId = orgId;
         this.bundle = bundle;
         this.application = application;
+        this.eventType = eventType;
     }
 
     public String getOrgId() {
@@ -30,6 +33,10 @@ public class EmailAggregationKey {
 
     public String getApplication() {
         return application;
+    }
+
+    public String getEventType() {
+        return eventType;
     }
 
     @Override
@@ -46,12 +53,13 @@ public class EmailAggregationKey {
 
         return Objects.equals(orgId, that.orgId) &&
                 Objects.equals(bundle, that.bundle) &&
-                Objects.equals(application, that.application);
+                Objects.equals(application, that.application) &&
+                Objects.equals(eventType, this.eventType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgId, bundle, application);
+        return Objects.hash(orgId, bundle, application, eventType);
     }
 
     @Override
@@ -60,6 +68,7 @@ public class EmailAggregationKey {
                 "orgId='" + orgId + '\'' +
                 ", bundle='" + bundle + '\'' +
                 ", application='" + application + '\'' +
+                ", eventType='" + eventType + '\'' +
                 '}';
     }
 }

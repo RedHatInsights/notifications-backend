@@ -34,10 +34,15 @@ public class ResourceHelpers {
     EntityManager entityManager;
 
     public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
+        return addEmailAggregation(orgId, bundleName, applicationName, null, payload);
+    }
+
+    public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, String eventType, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setOrgId(orgId);
         aggregation.setBundleName(bundleName);
         aggregation.setApplicationName(applicationName);
+        aggregation.setEventType(eventType);
         aggregation.setPayload(payload);
         return emailAggregationRepository.addEmailAggregation(aggregation);
     }

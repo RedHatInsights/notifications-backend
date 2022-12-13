@@ -66,4 +66,17 @@ public class ResourceHelpers {
                 .setParameter("created", lastUsedTime)
                 .executeUpdate();
     }
+
+    @Transactional
+
+    public Integer purgeOldAggregationWithEventType(EmailAggregationKey key, LocalDateTime lastUsedTime) {
+        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND eventType = :eventType AND created <= :created";
+        return entityManager.createQuery(query)
+            .setParameter("orgId", key.getOrgId())
+            .setParameter("bundleName", key.getBundle())
+            .setParameter("applicationName", key.getApplication())
+            .setParameter("eventType", key.getEventType())
+            .setParameter("created", lastUsedTime)
+            .executeUpdate();
+    }
 }
