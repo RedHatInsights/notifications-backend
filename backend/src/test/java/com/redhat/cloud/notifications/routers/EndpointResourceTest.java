@@ -16,8 +16,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
-import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
@@ -41,8 +39,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,9 +87,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
-
-    @Inject
-    EntityManager entityManager;
 
     @Inject
     BridgeHelper bridgeHelper;
@@ -563,7 +556,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
-        setupTransformationTemplate();
+        resourceHelpers.setupTransformationTemplate();
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
@@ -675,22 +668,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
         featureFlipper.setObEnabled(false);
-    }
-
-    @Transactional
-    void setupTransformationTemplate() {
-        // Set up the transformationTemplate in the DB
-        Template template = new Template();
-        template.setName("aTemplate");
-        template.setDescription("what's this?");
-        template.setData("Li la lu");
-        entityManager.persist(template);
-
-        IntegrationTemplate gt = new IntegrationTemplate();
-        gt.setTemplateKind(IntegrationTemplate.TemplateKind.DEFAULT);
-        gt.setIntegrationType("slack");
-        gt.setTheTemplate(template);
-        entityManager.persist(gt);
     }
 
     @Test
