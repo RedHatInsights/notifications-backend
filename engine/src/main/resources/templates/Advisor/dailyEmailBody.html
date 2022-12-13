@@ -15,7 +15,7 @@
                     <td class="rh-card__header"><h2>New recommendations</h2></td>
                   </tr>
                   <tr>
-                    <td><span class="rh-metric__count">{action.context.new_recommendations.size()}</span></td>
+                    <td><span class="rh-metric__count">{action.context.new_recommendations.orEmpty.size}</span></td>
                   </tr>
                 </table>
               </td>
@@ -31,7 +31,7 @@
                     <td class="rh-card__header"><h2>Resolved recommendations</h2></td>
                   </tr>
                   <tr>
-                    <td><span class="rh-metric__count">{action.context.resolved_recommendations.size()}</span></td>
+                    <td><span class="rh-metric__count">{action.context.resolved_recommendations.orEmpty.size}</span></td>
                   </tr>
                 </table>
               </td>
@@ -49,7 +49,7 @@
                     <td class="rh-card__header"><h2>Deactivated recommendations</h2></td>
                   </tr>
                   <tr>
-                    <td><span class="rh-metric__count">{action.context.deactivated_recommendations.size()}</span></td>
+                    <td><span class="rh-metric__count">{action.context.deactivated_recommendations.orEmpty.size}</span></td>
                   </tr>
                 </table>
               </td>
@@ -90,7 +90,7 @@
 </tr>
 
 <!-- List of new recommendations section -->
-{#if action.context.new_recommendations.size() > 0}
+{#if action.context.new_recommendations.orEmpty.size > 0}
 <tr>
   <td class="rh-body">
     <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -136,7 +136,7 @@
 {/if}
 
 <!-- List of resolved recommendations section -->
-{#if action.context.resolved_recommendations.size() > 0}
+{#if action.context.resolved_recommendations.orEmpty.size > 0}
 <tr>
   <td class="rh-body">
     <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -182,7 +182,7 @@
 {/if}
 
 <!-- List of deactivated recommendations section -->
-{#if action.context.deactivated_recommendations.size() > 0}
+{#if action.context.deactivated_recommendations.orEmpty.size > 0}
 <tr>
   <td class="rh-body">
     <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
