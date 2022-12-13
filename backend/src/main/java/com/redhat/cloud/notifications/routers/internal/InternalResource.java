@@ -30,6 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.jboss.resteasy.reactive.RestPath;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -449,7 +450,7 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public Response saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime, @PathParam("orgId") String orgId) {
+    public Response saveDailyDigestTimePreference(@NotNull LocalTime expectedTime, @RestPath("orgId") String orgId) {
         Log.infof("Update daily digest time preference form internal API, for orgId %s at %s", orgId, expectedTime);
         aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
         return Response.ok().build();
