@@ -99,9 +99,14 @@ public class Endpoint extends CreationUpdateTimestamped {
     private Set<NotificationHistory> notificationHistories;
 
     @JsonIgnore
-    @AssertTrue(message = "This type requires a subtype")
-    private boolean isSubtypeOK() {
+    @AssertTrue(message = "This type requires a sub_type")
+    private boolean isSubTypePresentWhenRequired() {
         return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;
+    }
+    @JsonIgnore
+    @AssertTrue(message = "This type does not support sub_type")
+    private boolean isSubTypeNotPresentWhenNotRequired() {
+        return compositeType.getType().requiresSubType || compositeType.getSubType() == null;
     }
 
     @Override

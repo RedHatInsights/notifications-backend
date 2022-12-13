@@ -1907,6 +1907,69 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
     }
 
+    /**
+     * Test that endpoint.sub_type is only allowed when it's required.
+     * If it's not required, then it should be rejected.
+     */
+    @Test
+    public void testEndpointSubtypeIsOnlyAllowedWhenRequired() {
+        String EMPTY = "empty";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(EMPTY, EMPTY, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setDisableSslVerification(false);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl(getMockServerUrl());
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.WEBHOOK);
+        ep.setSubType("slack");
+        ep.setName("endpoint to find");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+        ep.setServerErrors(3);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
+
+        CamelProperties cAttr = new CamelProperties();
+        cAttr.setDisableSslVerification(false);
+        cAttr.setUrl(getMockServerUrl());
+        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        Map<String, String> extras = new HashMap<>();
+        extras.put("template", "11");
+        cAttr.setExtras(extras);
+
+        Endpoint camelEp = new Endpoint();
+        camelEp.setType(EndpointType.CAMEL);
+        camelEp.setSubType(null);
+        camelEp.setName("Push the camel through the needle's ear");
+        camelEp.setDescription("How many humps has a camel?");
+        camelEp.setEnabled(true);
+        camelEp.setProperties(cAttr);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(camelEp))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
+    }
+
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
         assertTrue(message.contains(String.format(
                 "Is not possible to create or alter endpoint with type %s, check API for alternatives",
