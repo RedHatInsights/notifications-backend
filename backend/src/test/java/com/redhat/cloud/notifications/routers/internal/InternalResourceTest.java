@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -11,6 +11,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,7 +39,9 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.updateApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateDefaultBehaviorGroup;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateEventType;
+import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -412,5 +416,54 @@ public class InternalResourceTest extends DbIsolatedTest {
         deleteEventType(otherAppIdentity, eventType2Id, null, FORBIDDEN);
         deleteEventType(appIdentity, newEventTypeId, true, OK);
         deleteEventType(appIdentity, eventType2Id, null, FORBIDDEN);
+    }
+
+    @Test
+    public void testDailyDigestTimePreference() {
+        // try to get time preference from an unknown org ID (1234)
+        given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .when()
+            .get("/daily-digest/time-preference/1234")
+            .then()
+            .statusCode(404)
+            .contentType(JSON);
+
+        // Set time preference to org ID 1234
+        LocalTime localTime = LocalTime.now(ZoneOffset.UTC).withNano(0);
+        given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .when()
+            .contentType(JSON)
+            .body(localTime)
+            .put("/daily-digest/time-preference/1234")
+            .then()
+            .statusCode(200);
+
+        // Get time preference from org ID 1234
+        LocalTime storedLocalTime = given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .when()
+            .get("/daily-digest/time-preference/1234")
+            .then()
+            .statusCode(200)
+            .contentType(JSON).extract().as(LocalTime.class);
+        assertEquals(localTime, storedLocalTime);
+    }
+
+    @Test
+    public void testDailyDigestTimePreferenceInsufficentPrivileges() {
+        given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", "none"))
+            .when()
+            .contentType(JSON)
+            .body(LocalTime.now(ZoneOffset.UTC).withNano(0))
+            .put("/daily-digest/time-preference/1234")
+            .then()
+            .statusCode(403);
     }
 }
