@@ -55,8 +55,7 @@ public class Advisor implements EmailTemplate {
                 eventType.equals("new-recommendation") ||
                 eventType.equals("resolved-recommendation") ||
                 eventType.equals("deactivated-recommendation")
-            )
-        );
+            ));
     }
 
     @Override
