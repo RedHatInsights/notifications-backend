@@ -16,6 +16,7 @@ public class Advisor implements EmailTemplate {
                 return Templates.resolvedRecommendationInstantEmailTitle();
             } else if (eventType.equals("deactivated-recommendation")) {
                 return Templates.deactivatedRecommendationInstantEmailTitle();
+            }
         } else if (type == EmailSubscriptionType.DAILY) {
             return Templates.dailyEmailTitle();
         }
