@@ -7,12 +7,17 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_DESCRIPTION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_HAS_INCIDENT;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_ID;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_TOTAL_RISK;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_URL;
 
 /*
  * Create a structure of the form:
@@ -53,84 +58,51 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class AdvisorTestHelpers {
 
-    public static BaseTransformer baseTransformer = new BaseTransformer();
-
-    public static final String EVENT_METADATA = "metadata";
-    public static final String EVENT_PAYLOAD = "payload";
-    public static final String EVENT_PAYLOAD_RULE_ID = "rule_id";
-    public static final String EVENT_PAYLOAD_DESCRIPTION = "rule_description";
-    public static final String EVENT_PAYLOAD_TOTAL_RISK = "total_risk";
-    public static final String EVENT_PAYLOAD_URL = "total_risk";
     public static final String EVENT_PAYLOAD_PUBLISH_DATE = "publish_date";
     public static final String EVENT_PAYLOAD_REBOOT_REQUIRED = "reboot_required";
     public static final String EVENT_PAYLOAD_REPORT_URL = "report_url";
 
-    public static Event createEvent(
-        String rule_id, String description, String rule_url,
-        boolean has_incident, Integer total_risk
-    ) {
-        /* Add events via emailActionMessage.setEvents */
-        /* Fill in the important fields from the arguments, and make up
-         * everything else. */
-        event = new Event.EventBuilder()
-            .withMetadata(new Metadata.MetadataBuilder().build())
-            .withPayload(new Payload.PayloadBuilder()
-                /* Supplied data */
-                .withAdditionalProperty(EVENT_PAYLOAD_RULE_ID, rule_id)
-                .withAdditionalProperty(EVENT_PAYLOAD_DESCRIPTION, description)
-                .withAdditionalProperty(EVENT_PAYLOAD_TOTAL_RISK, total_risk.toString())
-                .withAdditionalProperty(EVENT_PAYLOAD_HAS_INCIDENT, has_incident)
-                .withAdditionalProperty(EVENT_PAYLOAD_URL, rule_url)
-                /* Made up data */
-                .withAdditionalProperty(EVENT_PAYLOAD_PUBLISH_DATE, "2021-03-13T18:44:00+00:00")
-                .withAdditionalProperty(EVENT_PAYLOAD_REBOOT_REQUIRED, false)
-                .withAdditionalProperty(EVENT_PAYLOAD_REPORT_URL, rule_url)
-                .build()
-            ).build();
-        return event;
-    }
+    public static EmailAggregation createEmailAggregation(String eventType, Map<String, String> rule) {
 
-    public static Action createAction(
-        String bundle, String application, String eventType,
-        String inventoryId, String inventoryName
-    ) {
-        Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(bundle);
-        emailActionMessage.setApplication(application);
-        emailActionMessage.setTimestamp(LocalDateTime.now());
-        emailActionMessage.setEventType(eventType);
+        Action action = createAction(eventType, rule);
 
-        emailActionMessage.setContext(
-            new Context.ContextBuilder()
-            .withAdditionalProperty("inventory_id", inventoryId)
-            .withAdditionalProperty("system_check_in", LocalDateTime.now())
-            .withAdditionalProperty("display_name", inventoryName)
-            .withAdditionalProperty("tags", List.of())
-            .build()
-        );
-
-        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-        return emailActionMessage;
-    }
-
-    public static EmailAggregation createEmailAggregation(
-        Action emailActionMessage
-    ) {
-        /* General process:
-         * - Create an action with createAction
-         * - Add one or more events to the action with
-         *   setEvents(List.of(createEvent(...)))
-         * - Create the Aggregation with createEmailAggregation, based on the
-         *   action.
-         */
         EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setBundleName(emailActionMessage.bundle);
-        aggregation.setApplicationName(emailActionMessage.application);
+        aggregation.setBundleName(action.getBundle());
+        aggregation.setApplicationName(action.getApplication());
         aggregation.setOrgId(DEFAULT_ORG_ID);
-
-        JsonObject payload = baseTransformer.toJsonObject(emailActionMessage);
-        aggregation.setPayload(payload);
+        aggregation.setPayload(new BaseTransformer().toJsonObject(action));
 
         return aggregation;
+    }
+
+    private static Action createAction(String eventType, Map<String, String> rule) {
+        return new Action.ActionBuilder()
+                .withBundle("rhel")
+                .withApplication("advisor")
+                .withEventType(eventType)
+                .withOrgId(DEFAULT_ORG_ID)
+                .withTimestamp(LocalDateTime.now())
+                .withContext(new Context.ContextBuilder()
+                        .withAdditionalProperty("inventory_id", "6ad30f3e-0497-4e74-99f1-b3f9a6120a6f")
+                        .withAdditionalProperty("display_name", "my-computer")
+                        .withAdditionalProperty("tags", List.of())
+                        .build()
+                )
+                .withEvents(List.of(new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(new Payload.PayloadBuilder()
+                                /* Supplied data */
+                                .withAdditionalProperty(PAYLOAD_RULE_ID, rule.get(PAYLOAD_RULE_ID))
+                                .withAdditionalProperty(PAYLOAD_RULE_DESCRIPTION, rule.get(PAYLOAD_RULE_DESCRIPTION))
+                                .withAdditionalProperty(PAYLOAD_RULE_TOTAL_RISK, rule.get(PAYLOAD_RULE_TOTAL_RISK))
+                                .withAdditionalProperty(PAYLOAD_RULE_HAS_INCIDENT, rule.get(PAYLOAD_RULE_HAS_INCIDENT))
+                                .withAdditionalProperty(PAYLOAD_RULE_URL, rule.get(PAYLOAD_RULE_URL))
+                                /* Made up data */
+                                .withAdditionalProperty(EVENT_PAYLOAD_PUBLISH_DATE, "2021-03-13T18:44:00+00:00")
+                                .withAdditionalProperty(EVENT_PAYLOAD_REBOOT_REQUIRED, false)
+                                .withAdditionalProperty(EVENT_PAYLOAD_REPORT_URL, "https://console.redhat.com")
+                                .build()
+                        ).build()))
+                .build();
     }
 }

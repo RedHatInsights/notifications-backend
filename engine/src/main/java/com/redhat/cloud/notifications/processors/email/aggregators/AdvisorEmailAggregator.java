@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-
 /*
  * Events are of the form:
  * {
@@ -88,36 +87,31 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String EVENTS_KEY = "events";
     private static final String PAYLOAD_KEY = "payload";
-    private static final String INVENTORY_ID = "inventory_id";
-    private static final String PAYLOAD_RULE_ID = "rule_id";
-    private static final String PAYLOAD_RULE_DESCRIPTION = "rule_description";
-    private static final String PAYLOAD_RULE_TOTAL_RISK = "total_risk";
-    private static final String PAYLOAD_RULE_HAS_INCIDENT = "has_incident";
-    private static final String PAYLOAD_RULE_URL = "rule_url";
 
-    // Advisor event payloads
-    private static final String NEW_RECOMMENDATION = "new_recommendation";
-    private static final String RESOLVED_RECOMMENDATION = "resolved_recommendation";
-    private static final String DEACTIVATED_RECOMMENDATION = "deactivated_recommendation";
+    public static final String PAYLOAD_RULE_ID = "rule_id";
+    public static final String PAYLOAD_RULE_DESCRIPTION = "rule_description";
+    public static final String PAYLOAD_RULE_TOTAL_RISK = "total_risk";
+    public static final String PAYLOAD_RULE_HAS_INCIDENT = "has_incident";
+    public static final String PAYLOAD_RULE_URL = "rule_url";
 
     // Advisor events aggregator data contents
-    private static final String ADVISOR_KEY = "advisor";
-    private static final String NEW_RECOMMENDATIONS = "new_recommendations";
-    private static final String RESOLVED_RECOMMENDATIONS = "resolved_recommendations";
-    private static final String DEACTIVATED_RECOMMENDATIONS = "deactivated_recommendations";
-    private static final String CONTENT_RULE_DESCRIPTION = "description";
-    private static final String CONTENT_RULE_TOTAL_RISK = "total_risk";
-    private static final String CONTENT_RULE_HAS_INCIDENT = "has_incident";
-    private static final String CONTENT_RULE_URL = "url";
-    private static final String CONTENT_SYSTEM_COUNT = "systems";
+    public static final String ADVISOR_KEY = "advisor";
+    public static final String NEW_RECOMMENDATIONS = "new_recommendations";
+    public static final String RESOLVED_RECOMMENDATIONS = "resolved_recommendations";
+    public static final String DEACTIVATED_RECOMMENDATIONS = "deactivated_recommendations";
+    public static final String CONTENT_RULE_DESCRIPTION = "description";
+    public static final String CONTENT_RULE_TOTAL_RISK = "total_risk";
+    public static final String CONTENT_RULE_HAS_INCIDENT = "has_incident";
+    public static final String CONTENT_RULE_URL = "url";
+    public static final String CONTENT_SYSTEM_COUNT = "systems";
 
     // Advisor event types
-    private static final String NEW_RECOMMENDATION_EVENT = "new-recommendation";
-    private static final String RESOLVED_RECOMMENDATION_EVENT = "resolved-recommendation";
-    private static final String DEACTIVATED_RULE_EVENT = "deactivated-rule";
+    public static final String NEW_RECOMMENDATION = "new-recommendation";
+    public static final String RESOLVED_RECOMMENDATION = "resolved-recommendation";
+    public static final String DEACTIVATED_RECOMMENDATION = "deactivated-recommendation";
     private static final Set<String> EVENT_TYPES = new HashSet<>(Arrays.asList(
-        NEW_RECOMMENDATION_EVENT, RESOLVED_RECOMMENDATION_EVENT,
-        DEACTIVATED_RULE_EVENT
+            NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION,
+            DEACTIVATED_RECOMMENDATION
     ));
 
     // Advisor final payload helpers
@@ -137,7 +131,6 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
     @Override
     void processEmailAggregation(EmailAggregation notification) {
         JsonObject notifPayload = notification.getPayload();
-        JsonObject advisor = context.getJsonObject(ADVISOR_KEY);
         String eventType = notifPayload.getString(EVENT_TYPE_KEY);
         /* Major assumption: that there is at most one event per day from each
          * rule,system pair - i.e. that the tuple (day, rule, system) is

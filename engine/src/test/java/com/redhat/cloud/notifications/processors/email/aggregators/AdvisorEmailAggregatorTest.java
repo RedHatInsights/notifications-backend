@@ -1,17 +1,30 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
-import com.redhat.cloud.notifications.AdvisorTestHelpers;
-import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Event;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeClass;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.ADVISOR_KEY;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_RULE_DESCRIPTION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_RULE_HAS_INCIDENT;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_RULE_TOTAL_RISK;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_RULE_URL;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_SYSTEM_COUNT;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATIONS;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATIONS;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_DESCRIPTION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_HAS_INCIDENT;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_ID;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_TOTAL_RISK;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_URL;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATIONS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /*
  * Aggregated data should be of the form:
@@ -53,75 +66,117 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
  */
 class AdvisorEmailAggregatorTest {
 
-    public static final String BUNDLE_RHEL = "rhel";
-    public static final String BUNDLE_OPENSHIFT = "openshift";
-    public static final String APPLICATION_ADVISOR = "advisor";
-    public static final String TEST_INVENTORY_ID = "00112233-4455-6677-8899-AABBCCDDEE01";
-    public static final String TEST_INVENTORY_NAME = "system01.example.org";
-    public static final String TEST_RULE_1_ID = "test|Active_rule";
-    public static final String TEST_RULE_1_DESCRIPTION = "Active rule";
-    public static final String TEST_RULE_1_URL = "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule";
-    public static final boolean TEST_RULE_1_IMPACTING = false;
-    public static final Integer TEST_RULE_1_TOTAL_RISK = 1;
-    /* From Advisor test data - but here we don't care about whether this is
-     * actually acked in the ruleset.  If we got a notification for it, we
-     * aggregate it. */
-    public static final String TEST_RULE_3_ID = "test|Acked_rule";
-    public static final String TEST_RULE_3_DESCRIPTION = "Acked rule";
-    public static final String TEST_RULE_3_URL = "https://console.redhat.com/insights/advisor/recommendations/test|Acked_rule";
-    public static final boolean TEST_RULE_3_IMPACTING = false;
-    public static final Integer TEST_RULE_3_TOTAL_RISK = 1;
-
-    private AdvisorEmailAggregator aggregator;
-    private Action rhelAdvisorAction;
-    private Action openshiftAdvisorAction;
-    private Event eventActiveRule;
-
-    @BeforeClass
-    void setUpTestData() {
-        rhelAdvisorAction = AdvisorTestHelpers.createAction(
-            BUNDLE_RHEL, APPLICATION_ADVISOR, TEST_INVENTORY_ID, TEST_INVENTORY_NAME
-        );
-        openshiftAdvisorAction = AdvisorTestHelpers.createAction(
-            BUNDLE_OPENSHIFT, APPLICATION_ADVISOR, TEST_INVENTORY_ID, TEST_INVENTORY_NAME
-        );
-        eventActiveRule = AdvisorTestHelpers.createEvent(
-            TEST_RULE_ID, TEST_RULE_DESCRIPTION, TEST_RULE_URL,
-            TEST_RULE_IMPACTING, TEST_RULE_TOTAL_RISK
-        );
-    }
-
-    @BeforeEach
-    void setUp() {
-        aggregator = new AdvisorEmailAggregator();
-    }
-
-    @Test
-    void emptyAggregatorHasNoOrgId() {
-        Assertions.assertNull(aggregator.getOrgId(), "Empty aggregator has no orgId");
-    }
+    private static final Map<String, String> TEST_RULE_1 = Map.of(
+            PAYLOAD_RULE_ID, "test|Active_rule_1",
+            PAYLOAD_RULE_DESCRIPTION, "Active rule 1",
+            PAYLOAD_RULE_TOTAL_RISK, "3",
+            PAYLOAD_RULE_HAS_INCIDENT, "true",
+            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_1"
+    );
+    private static final Map<String, String> TEST_RULE_2 = Map.of(
+            PAYLOAD_RULE_ID, "test|Active_rule_2",
+            PAYLOAD_RULE_DESCRIPTION, "Active rule 2",
+            PAYLOAD_RULE_TOTAL_RISK, "0",
+            PAYLOAD_RULE_HAS_INCIDENT, "false",
+            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_2"
+    );
+    private static final Map<String, String> TEST_RULE_3 = Map.of(
+            PAYLOAD_RULE_ID, "test|Active_rule_3",
+            PAYLOAD_RULE_DESCRIPTION, "Active rule 3",
+            PAYLOAD_RULE_TOTAL_RISK, "0",
+            PAYLOAD_RULE_HAS_INCIDENT, "false",
+            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_3"
+    );
+    private static final Map<String, String> TEST_RULE_4 = Map.of(
+            PAYLOAD_RULE_ID, "test|Active_rule_4",
+            PAYLOAD_RULE_DESCRIPTION, "Active rule 4",
+            PAYLOAD_RULE_TOTAL_RISK, "10",
+            PAYLOAD_RULE_HAS_INCIDENT, "true",
+            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_4"
+    );
+    private static final Map<String, String> TEST_RULE_5 = Map.of(
+            PAYLOAD_RULE_ID, "test|Active_rule_5",
+            PAYLOAD_RULE_DESCRIPTION, "Active rule 5",
+            PAYLOAD_RULE_TOTAL_RISK, "4",
+            PAYLOAD_RULE_HAS_INCIDENT, "true",
+            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_5"
+    );
+    private static final Map<String, String> TEST_RULE_6 = Map.of(
+            PAYLOAD_RULE_ID, "test|Active_rule_6",
+            PAYLOAD_RULE_DESCRIPTION, "Active rule 6",
+            PAYLOAD_RULE_TOTAL_RISK, "2",
+            PAYLOAD_RULE_HAS_INCIDENT, "false",
+            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_6"
+    );
 
     @Test
-    void shouldSetOrgId() {
-        oneMessage = AdvisorTestHelpers.createEmailAggregation(emailActionMessage);
-        aggregator.aggregate(oneMessage);
-        Assertions.assertEquals(DEFAULT_ORG_ID, aggregator.getOrgId());
-    }
+    void testAggregate() {
 
-    @Test
-    void validatePayload() {
-        oneMessage = AdvisorTestHelpers.createEmailAggregation(emailActionMessage);
-        oneMessage.setEvents(List.of(eventActiveRule));
-        aggregator.aggregate(oneMessage);
+        AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
+        for (int i = 0; i < 4; i++) {
+            aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_1));
+        }
+        aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_2));
+        for (int i = 0; i < 11; i++) {
+            aggregator.aggregate(createEmailAggregation(RESOLVED_RECOMMENDATION, TEST_RULE_3));
+        }
+        aggregator.aggregate(createEmailAggregation(RESOLVED_RECOMMENDATION, TEST_RULE_4));
+        for (int i = 0; i < 7; i++) {
+            aggregator.aggregate(createEmailAggregation(DEACTIVATED_RECOMMENDATION, TEST_RULE_5));
+        }
+        aggregator.aggregate(createEmailAggregation(DEACTIVATED_RECOMMENDATION, TEST_RULE_6));
 
-        Map<String, Object> context = aggregator.getContext();
-        JsonObject Advisor = JsonObject.mapFrom(context).getJsonObject("Advisor");
-        System.out.println(Advisor.toString());
+        JsonObject advisor = JsonObject.mapFrom(aggregator.getContext()).getJsonObject(ADVISOR_KEY);
 
-        Assertions.assertFalse(Advisor.containsKey("foo"));
-        Assertions.assertEquals(Advisor.getJsonArray("report-upload-failed").size(), 2);
-        Assertions.assertEquals(Advisor.getJsonArray("Advisor-below-threshold").size(), 2);
-        Assertions.assertEquals(Advisor.getJsonArray("Advisor-below-threshold").size(), 2);
-        // Assertions.assertEquals(Advisor.getJsonArray("system-not-reporting").size(), 2);
+        Map<String, Map<String, Object>> newRecommendations = advisor.getJsonObject(NEW_RECOMMENDATIONS).mapTo(Map.class);
+        assertEquals(2, newRecommendations.entrySet().size());
+
+        Map<String, Object> rule1 = newRecommendations.get(TEST_RULE_1.get(PAYLOAD_RULE_ID));
+        assertEquals(TEST_RULE_1.get(PAYLOAD_RULE_DESCRIPTION), rule1.get(CONTENT_RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_1.get(PAYLOAD_RULE_HAS_INCIDENT), rule1.get(CONTENT_RULE_HAS_INCIDENT));
+        assertEquals(TEST_RULE_1.get(PAYLOAD_RULE_TOTAL_RISK), rule1.get(CONTENT_RULE_TOTAL_RISK));
+        assertEquals(TEST_RULE_1.get(PAYLOAD_RULE_URL), rule1.get(CONTENT_RULE_URL));
+        assertEquals(4, rule1.get(CONTENT_SYSTEM_COUNT));
+
+        Map<String, Object> rule2 = newRecommendations.get(TEST_RULE_2.get(PAYLOAD_RULE_ID));
+        assertEquals(TEST_RULE_2.get(PAYLOAD_RULE_DESCRIPTION), rule2.get(CONTENT_RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_2.get(PAYLOAD_RULE_HAS_INCIDENT), rule2.get(CONTENT_RULE_HAS_INCIDENT));
+        assertEquals(TEST_RULE_2.get(PAYLOAD_RULE_TOTAL_RISK), rule2.get(CONTENT_RULE_TOTAL_RISK));
+        assertEquals(TEST_RULE_2.get(PAYLOAD_RULE_URL), rule2.get(CONTENT_RULE_URL));
+        assertEquals(1, rule2.get(CONTENT_SYSTEM_COUNT));
+
+        Map<String, Map<String, Object>> resolvedRecommendations = advisor.getJsonObject(RESOLVED_RECOMMENDATIONS).mapTo(Map.class);
+        assertEquals(2, resolvedRecommendations.size());
+
+        Map<String, Object> rule3 = resolvedRecommendations.get(TEST_RULE_3.get(PAYLOAD_RULE_ID));
+        assertEquals(TEST_RULE_3.get(PAYLOAD_RULE_DESCRIPTION), rule3.get(CONTENT_RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_3.get(PAYLOAD_RULE_HAS_INCIDENT), rule3.get(CONTENT_RULE_HAS_INCIDENT));
+        assertEquals(TEST_RULE_3.get(PAYLOAD_RULE_TOTAL_RISK), rule3.get(CONTENT_RULE_TOTAL_RISK));
+        assertEquals(TEST_RULE_3.get(PAYLOAD_RULE_URL), rule3.get(CONTENT_RULE_URL));
+        assertEquals(11, rule3.get(CONTENT_SYSTEM_COUNT));
+
+        Map<String, Object> rule4 = resolvedRecommendations.get(TEST_RULE_4.get(PAYLOAD_RULE_ID));
+        assertEquals(TEST_RULE_4.get(PAYLOAD_RULE_DESCRIPTION), rule4.get(CONTENT_RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_4.get(PAYLOAD_RULE_HAS_INCIDENT), rule4.get(CONTENT_RULE_HAS_INCIDENT));
+        assertEquals(TEST_RULE_4.get(PAYLOAD_RULE_TOTAL_RISK), rule4.get(CONTENT_RULE_TOTAL_RISK));
+        assertEquals(TEST_RULE_4.get(PAYLOAD_RULE_URL), rule4.get(CONTENT_RULE_URL));
+        assertEquals(1, rule4.get(CONTENT_SYSTEM_COUNT));
+
+        Map<String, Map<String, Object>> deactivatedRecommendations = advisor.getJsonObject(DEACTIVATED_RECOMMENDATIONS).mapTo(Map.class);
+        assertEquals(2, deactivatedRecommendations.size());
+
+        Map<String, Object> rule5 = deactivatedRecommendations.get(TEST_RULE_5.get(PAYLOAD_RULE_ID));
+        assertEquals(TEST_RULE_5.get(PAYLOAD_RULE_DESCRIPTION), rule5.get(CONTENT_RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_5.get(PAYLOAD_RULE_HAS_INCIDENT), rule5.get(CONTENT_RULE_HAS_INCIDENT));
+        assertEquals(TEST_RULE_5.get(PAYLOAD_RULE_TOTAL_RISK), rule5.get(CONTENT_RULE_TOTAL_RISK));
+        assertEquals(TEST_RULE_5.get(PAYLOAD_RULE_URL), rule5.get(CONTENT_RULE_URL));
+        assertNull(rule5.get(CONTENT_SYSTEM_COUNT));
+
+        Map<String, Object> rule6 = deactivatedRecommendations.get(TEST_RULE_6.get(PAYLOAD_RULE_ID));
+        assertEquals(TEST_RULE_6.get(PAYLOAD_RULE_DESCRIPTION), rule6.get(CONTENT_RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_6.get(PAYLOAD_RULE_HAS_INCIDENT), rule6.get(CONTENT_RULE_HAS_INCIDENT));
+        assertEquals(TEST_RULE_6.get(PAYLOAD_RULE_TOTAL_RISK), rule6.get(CONTENT_RULE_TOTAL_RISK));
+        assertEquals(TEST_RULE_6.get(PAYLOAD_RULE_URL), rule6.get(CONTENT_RULE_URL));
+        assertNull(rule6.get(CONTENT_SYSTEM_COUNT));
     }
 }
