@@ -27,6 +27,9 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.INTEGRATION_FAILED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -63,17 +66,17 @@ public class EmailTemplateMigrationService {
          */
         getOrCreateTemplate(warnings, "Advisor/insightsEmailBody", "html", "Advisor Insights email body");
         createInstantEmailTemplate(
-                warnings, "rhel", "advisor", List.of("deactivated-recommendation"),
+                warnings, "rhel", "advisor", List.of(DEACTIVATED_RECOMMENDATION),
                 "Advisor/deactivatedRecommendationInstantEmailTitle", "txt", "Advisor deactivated recommendation email title",
                 "Advisor/deactivatedRecommendationInstantEmailBody", "html", "Advisor deactivated recommendation email body"
         );
         createInstantEmailTemplate(
-                warnings, "rhel", "advisor", List.of("new-recommendation"),
+                warnings, "rhel", "advisor", List.of(NEW_RECOMMENDATION),
                 "Advisor/newRecommendationInstantEmailTitle", "txt", "Advisor new recommendation email title",
                 "Advisor/newRecommendationInstantEmailBody", "html", "Advisor new recommendation email body"
         );
         createInstantEmailTemplate(
-                warnings, "rhel", "advisor", List.of("resolved-recommendation"),
+                warnings, "rhel", "advisor", List.of(RESOLVED_RECOMMENDATION),
                 "Advisor/resolvedRecommendationInstantEmailTitle", "txt", "Advisor resolved recommendation email title",
                 "Advisor/resolvedRecommendationInstantEmailBody", "html", "Advisor resolved recommendation email body"
         );
