@@ -307,7 +307,7 @@ parameters:
   value: "false"
 - name: RHEL_ADVISOR_DAILY_DIGEST_ENABLED
   description: Is the daily digest enabled for the rhel/advisor app?
-  value: false
+  value: "false"
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
