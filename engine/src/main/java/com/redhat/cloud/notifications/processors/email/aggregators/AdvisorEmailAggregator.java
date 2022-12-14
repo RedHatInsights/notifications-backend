@@ -83,6 +83,11 @@ import java.util.Set;
 
 public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
 
+    // Advisor event types
+    public static final String NEW_RECOMMENDATION = "new-recommendation";
+    public static final String RESOLVED_RECOMMENDATION = "resolved-recommendation";
+    public static final String DEACTIVATED_RECOMMENDATION = "deactivated-recommendation";
+
     // Notification common
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String EVENTS_KEY = "events";
@@ -105,10 +110,6 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
     public static final String CONTENT_RULE_URL = "url";
     public static final String CONTENT_SYSTEM_COUNT = "systems";
 
-    // Advisor event types
-    public static final String NEW_RECOMMENDATION = "new-recommendation";
-    public static final String RESOLVED_RECOMMENDATION = "resolved-recommendation";
-    public static final String DEACTIVATED_RECOMMENDATION = "deactivated-recommendation";
     private static final Set<String> EVENT_TYPES = new HashSet<>(Arrays.asList(
             NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION,
             DEACTIVATED_RECOMMENDATION

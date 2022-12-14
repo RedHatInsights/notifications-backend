@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -25,13 +28,13 @@ public class TestAdvisorTemplate {
 
     private final Advisor advisor = new Advisor();
 
-    @ValueSource(strings = {"new-recommendation", "resolved-recommendation", "deactivated-recommendation" })
+    @ValueSource(strings = { NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION, DEACTIVATED_RECOMMENDATION })
     @ParameterizedTest
     void shouldSupportDailyEmailSubscriptionType(String eventType) {
         assertTrue(advisor.isSupported(eventType, DAILY));
     }
 
-    @ValueSource(strings = {"new-recommendation", "resolved-recommendation", "deactivated-recommendation" })
+    @ValueSource(strings = { NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION, DEACTIVATED_RECOMMENDATION })
     @ParameterizedTest
     void shouldSupportNewResolvedAndDeactivatedRecommendations(String eventType) {
         assertTrue(advisor.isSupported(eventType, INSTANT));
