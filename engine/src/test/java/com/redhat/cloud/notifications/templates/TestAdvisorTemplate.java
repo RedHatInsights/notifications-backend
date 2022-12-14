@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -32,6 +33,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestAdvisorTemplate {
 
     private final Advisor advisor = new Advisor();
+
+    @BeforeAll
+    static void beforeAll() {
+        // TODO Remove this as soon as the daily digest is enabled on prod.
+        System.setProperty("rhel.advisor.daily-digest.enabled", "true");
+    }
 
     @ValueSource(strings = { NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION, DEACTIVATED_RECOMMENDATION })
     @ParameterizedTest

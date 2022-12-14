@@ -147,6 +147,8 @@ objects:
           value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
         - name: RECIPIENT_PROVIDER_USE_IT_IMPL
           value: ${RECIPIENT_PROVIDER_USE_IT_IMPL}
+        - name: RHEL_ADVISOR_DAILY_DIGEST_ENABLED
+          value: ${RHEL_ADVISOR_DAILY_DIGEST_ENABLED}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
@@ -303,6 +305,9 @@ parameters:
 - name: RECIPIENT_PROVIDER_USE_IT_IMPL
   description: Temporary recipients retrieval switch between RBAC and IT
   value: "false"
+- name: RHEL_ADVISOR_DAILY_DIGEST_ENABLED
+  description: Is the daily digest enabled for the rhel/advisor app?
+  value: false
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED

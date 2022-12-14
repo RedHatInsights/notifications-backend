@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
@@ -54,7 +55,7 @@ public class Advisor implements EmailTemplate {
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
         return (
-            type == EmailSubscriptionType.DAILY ||
+            type == EmailSubscriptionType.DAILY && isDailyDigestEnabled() ||
             type == EmailSubscriptionType.INSTANT && (
                 eventType.equals(NEW_RECOMMENDATION) ||
                 eventType.equals(RESOLVED_RECOMMENDATION) ||
@@ -64,7 +65,15 @@ public class Advisor implements EmailTemplate {
 
     @Override
     public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-        return type == EmailSubscriptionType.INSTANT || type == EmailSubscriptionType.DAILY;
+        return type == EmailSubscriptionType.INSTANT || type == EmailSubscriptionType.DAILY && isDailyDigestEnabled();
+    }
+
+    /*
+     * This is a feature flag meant to disable the daily digest on prod until it has been fully validated on stage.
+     * TODO Remove this as soon as the daily digest is enabled on prod.
+     */
+    private boolean isDailyDigestEnabled() {
+        return ConfigProvider.getConfig().getOptionalValue("rhel.advisor.daily-digest.enabled", boolean.class).orElse(false);
     }
 
     @CheckedTemplate(requireTypeSafeExpressions = false)
