@@ -25,9 +25,10 @@ public class TestAdvisorTemplate {
 
     private final Advisor advisor = new Advisor();
 
-    @Test
-    void shouldNotSupportDailyEmailSubscriptionType() {
-        assertFalse(advisor.isSupported("some-recommendation", DAILY));
+    @ValueSource(strings = {"new-recommendation", "resolved-recommendation", "deactivated-recommendation" })
+    @ParameterizedTest
+    void shouldSupportDailyEmailSubscriptionType(String eventType) {
+        assertTrue(advisor.isSupported(eventType, DAILY));
     }
 
     @ValueSource(strings = {"new-recommendation", "resolved-recommendation", "deactivated-recommendation" })
@@ -77,8 +78,8 @@ public class TestAdvisorTemplate {
     }
 
     @Test
-    void shouldNotSupportDailyubscriptionType() {
-        assertFalse(advisor.isEmailSubscriptionSupported(DAILY));
+    void shouldSupportDailySubscriptionType() {
+        assertTrue(advisor.isEmailSubscriptionSupported(DAILY));
     }
 
     @Test
