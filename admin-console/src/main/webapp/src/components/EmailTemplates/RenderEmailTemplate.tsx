@@ -69,7 +69,7 @@ const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props =
                 <StackItem>
                     {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment*/}
                     {/* @ts-ignore */}
-                    <iframe width="100%" style="resize: both;" srcDoc={ props.template } />
+                    <iframe width="100%" style={{ resize: 'both' }} srcDoc={ props.template } />
                 </StackItem>
             </>
         );
