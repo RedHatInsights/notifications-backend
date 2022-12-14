@@ -22,6 +22,8 @@ import static com.redhat.cloud.notifications.processors.email.aggregators.Adviso
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_1;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_2;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,6 +69,8 @@ public class TestAdvisorTemplate {
     public void testDailyEmailBody() {
         AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
         aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_1));
+        aggregator.aggregate(createEmailAggregation(RESOLVED_RECOMMENDATION, TEST_RULE_2));
+        aggregator.aggregate(createEmailAggregation(DEACTIVATED_RECOMMENDATION, TEST_RULE_3));
 
         Map<String, Object> context = aggregator.getContext();
         context.put("start_time", LocalDateTime.now().toString());
@@ -81,9 +85,9 @@ public class TestAdvisorTemplate {
                 .data("user", Map.of("firstName", "John", "lastName", "Doe"))
                 .render();
 
-        System.out.println(result);
-
-        assertTrue(result.contains("If you want to see more details"));
+        assertTrue(result.contains("New recommendations"));
+        assertTrue(result.contains("Resolved recommendations"));
+        assertTrue(result.contains("Deactivated recommendations"));
     }
 
     @Test
