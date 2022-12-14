@@ -16,7 +16,8 @@ public class Advisor implements EmailTemplate {
                 return Templates.resolvedRecommendationInstantEmailTitle();
             } else if (eventType.equals("deactivated-recommendation")) {
                 return Templates.deactivatedRecommendationInstantEmailTitle();
-            }
+        } else if (type == EmailSubscriptionType.DAILY) {
+            return Templates.dailyEmailTitle();
         }
 
         throw new UnsupportedOperationException(String.format(
@@ -35,6 +36,8 @@ public class Advisor implements EmailTemplate {
             } else if (eventType.equals("deactivated-recommendation")) {
                 return Templates.deactivatedRecommendationInstantEmailBody();
             }
+        } else if (type == EmailSubscriptionType.DAILY) {
+            return Templates.dailyEmailBody();
         }
 
         throw new UnsupportedOperationException(String.format(
@@ -45,12 +48,19 @@ public class Advisor implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals("new-recommendation") || eventType.equals("resolved-recommendation") || eventType.equals("deactivated-recommendation")) && type == EmailSubscriptionType.INSTANT;
+        return (
+            type == EmailSubscriptionType.DAILY ||
+            type == EmailSubscriptionType.INSTANT && (
+                eventType.equals("new-recommendation") ||
+                eventType.equals("resolved-recommendation") ||
+                eventType.equals("deactivated-recommendation")
+            )
+        );
     }
 
     @Override
     public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-        return type == EmailSubscriptionType.INSTANT;
+        return type == EmailSubscriptionType.INSTANT || type == EmailSubscriptionType.DAILY;
     }
 
     @CheckedTemplate(requireTypeSafeExpressions = false)
@@ -67,6 +77,10 @@ public class Advisor implements EmailTemplate {
         public static native TemplateInstance deactivatedRecommendationInstantEmailTitle();
 
         public static native TemplateInstance deactivatedRecommendationInstantEmailBody();
+
+        public static native TemplateInstance dailyEmailTitle();
+
+        public static native TemplateInstance dailyEmailBody();
     }
 
 }
