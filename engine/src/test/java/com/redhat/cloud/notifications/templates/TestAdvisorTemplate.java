@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
@@ -9,18 +10,20 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.inject.Inject;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -41,19 +44,46 @@ public class TestAdvisorTemplate {
     }
 
     @Test
-    void shouldThrowUnsupportedOperationExceptionWhenEmailSubscriptionTypeIsNotInstantWhenGettingTitle() {
-        Exception exception = assertThrows(UnsupportedOperationException.class, () -> {
-            advisor.getTitle("some-eventtype", DAILY);
-        });
-        assertEquals("No email title template for Advisor event_type: some-eventtype and EmailSubscription: DAILY found.", exception.getMessage());
+    public void testDailyEmailTitle() {
+        AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
+        aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_1));
+
+        Map<String, Object> context = aggregator.getContext();
+        context.put("start_time", LocalDateTime.now().toString());
+        context.put("end_time", LocalDateTime.now().toString());
+
+        String result = Advisor.Templates.dailyEmailTitle()
+                .data("action", Map.of(
+                        "context", context,
+                        "timestamp", LocalDateTime.now()
+                ))
+                .data("environment", environment)
+                .render();
+
+        assertTrue(result.startsWith("Insights Advisor daily summary report"));
     }
 
     @Test
-    void shouldThrowUnsupportedOperationExceptionWhenEmailSubscriptionTypeIsNotInstantWhenGettingBody() {
-        Exception exception = assertThrows(UnsupportedOperationException.class, () -> {
-            advisor.getBody("some-eventtype", DAILY);
-        });
-        assertEquals("No email body template for Advisor event_type: some-eventtype and EmailSubscription: DAILY found.", exception.getMessage());
+    public void testDailyEmailBody() {
+        AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
+        aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_1));
+
+        Map<String, Object> context = aggregator.getContext();
+        context.put("start_time", LocalDateTime.now().toString());
+        context.put("end_time", LocalDateTime.now().toString());
+
+        String result = Advisor.Templates.dailyEmailBody()
+                .data("action", Map.of(
+                        "context", context,
+                        "timestamp", LocalDateTime.now()
+                ))
+                .data("environment", environment)
+                .data("user", Map.of("firstName", "John", "lastName", "Doe"))
+                .render();
+
+        System.out.println(result);
+
+        assertTrue(result.contains("If you want to see more details"));
     }
 
     @Test
