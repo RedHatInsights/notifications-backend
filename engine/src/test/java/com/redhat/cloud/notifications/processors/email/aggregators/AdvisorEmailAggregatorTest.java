@@ -7,22 +7,18 @@ import java.util.Map;
 
 import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.ADVISOR_KEY;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_RULE_DESCRIPTION;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_RULE_HAS_INCIDENT;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_RULE_TOTAL_RISK;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_RULE_URL;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.CONTENT_SYSTEM_COUNT;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATIONS;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.HAS_INCIDENT;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATIONS;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_DESCRIPTION;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_HAS_INCIDENT;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_ID;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_TOTAL_RISK;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_URL;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATIONS;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RULE_DESCRIPTION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RULE_ID;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RULE_URL;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.TOTAL_RISK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -67,46 +63,46 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class AdvisorEmailAggregatorTest {
 
     private static final Map<String, String> TEST_RULE_1 = Map.of(
-            PAYLOAD_RULE_ID, "test|Active_rule_1",
-            PAYLOAD_RULE_DESCRIPTION, "Active rule 1",
-            PAYLOAD_RULE_TOTAL_RISK, "3",
-            PAYLOAD_RULE_HAS_INCIDENT, "true",
-            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_1"
+            RULE_ID, "test|Active_rule_1",
+            RULE_DESCRIPTION, "Active rule 1",
+            TOTAL_RISK, "3",
+            HAS_INCIDENT, "true",
+            RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_1"
     );
     private static final Map<String, String> TEST_RULE_2 = Map.of(
-            PAYLOAD_RULE_ID, "test|Active_rule_2",
-            PAYLOAD_RULE_DESCRIPTION, "Active rule 2",
-            PAYLOAD_RULE_TOTAL_RISK, "0",
-            PAYLOAD_RULE_HAS_INCIDENT, "false",
-            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_2"
+            RULE_ID, "test|Active_rule_2",
+            RULE_DESCRIPTION, "Active rule 2",
+            TOTAL_RISK, "0",
+            HAS_INCIDENT, "false",
+            RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_2"
     );
     private static final Map<String, String> TEST_RULE_3 = Map.of(
-            PAYLOAD_RULE_ID, "test|Active_rule_3",
-            PAYLOAD_RULE_DESCRIPTION, "Active rule 3",
-            PAYLOAD_RULE_TOTAL_RISK, "0",
-            PAYLOAD_RULE_HAS_INCIDENT, "false",
-            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_3"
+            RULE_ID, "test|Active_rule_3",
+            RULE_DESCRIPTION, "Active rule 3",
+            TOTAL_RISK, "0",
+            HAS_INCIDENT, "false",
+            RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_3"
     );
     private static final Map<String, String> TEST_RULE_4 = Map.of(
-            PAYLOAD_RULE_ID, "test|Active_rule_4",
-            PAYLOAD_RULE_DESCRIPTION, "Active rule 4",
-            PAYLOAD_RULE_TOTAL_RISK, "10",
-            PAYLOAD_RULE_HAS_INCIDENT, "true",
-            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_4"
+            RULE_ID, "test|Active_rule_4",
+            RULE_DESCRIPTION, "Active rule 4",
+            TOTAL_RISK, "10",
+            HAS_INCIDENT, "true",
+            RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_4"
     );
     private static final Map<String, String> TEST_RULE_5 = Map.of(
-            PAYLOAD_RULE_ID, "test|Active_rule_5",
-            PAYLOAD_RULE_DESCRIPTION, "Active rule 5",
-            PAYLOAD_RULE_TOTAL_RISK, "4",
-            PAYLOAD_RULE_HAS_INCIDENT, "true",
-            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_5"
+            RULE_ID, "test|Active_rule_5",
+            RULE_DESCRIPTION, "Active rule 5",
+            TOTAL_RISK, "4",
+            HAS_INCIDENT, "true",
+            RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_5"
     );
     private static final Map<String, String> TEST_RULE_6 = Map.of(
-            PAYLOAD_RULE_ID, "test|Active_rule_6",
-            PAYLOAD_RULE_DESCRIPTION, "Active rule 6",
-            PAYLOAD_RULE_TOTAL_RISK, "2",
-            PAYLOAD_RULE_HAS_INCIDENT, "false",
-            PAYLOAD_RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_6"
+            RULE_ID, "test|Active_rule_6",
+            RULE_DESCRIPTION, "Active rule 6",
+            TOTAL_RISK, "2",
+            HAS_INCIDENT, "false",
+            RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_6"
     );
 
     @Test
@@ -131,52 +127,52 @@ class AdvisorEmailAggregatorTest {
         Map<String, Map<String, Object>> newRecommendations = advisor.getJsonObject(NEW_RECOMMENDATIONS).mapTo(Map.class);
         assertEquals(2, newRecommendations.entrySet().size());
 
-        Map<String, Object> rule1 = newRecommendations.get(TEST_RULE_1.get(PAYLOAD_RULE_ID));
-        assertEquals(TEST_RULE_1.get(PAYLOAD_RULE_DESCRIPTION), rule1.get(CONTENT_RULE_DESCRIPTION));
-        assertEquals(TEST_RULE_1.get(PAYLOAD_RULE_HAS_INCIDENT), rule1.get(CONTENT_RULE_HAS_INCIDENT));
-        assertEquals(TEST_RULE_1.get(PAYLOAD_RULE_TOTAL_RISK), rule1.get(CONTENT_RULE_TOTAL_RISK));
-        assertEquals(TEST_RULE_1.get(PAYLOAD_RULE_URL), rule1.get(CONTENT_RULE_URL));
-        assertEquals(4, rule1.get(CONTENT_SYSTEM_COUNT));
+        Map<String, Object> aggregatedRule1 = newRecommendations.get(TEST_RULE_1.get(RULE_ID));
+        assertEquals(TEST_RULE_1.get(RULE_DESCRIPTION), aggregatedRule1.get(RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_1.get(HAS_INCIDENT), aggregatedRule1.get(HAS_INCIDENT));
+        assertEquals(TEST_RULE_1.get(TOTAL_RISK), aggregatedRule1.get(TOTAL_RISK));
+        assertEquals(TEST_RULE_1.get(RULE_URL), aggregatedRule1.get(RULE_URL));
+        assertEquals(4, aggregatedRule1.get(CONTENT_SYSTEM_COUNT));
 
-        Map<String, Object> rule2 = newRecommendations.get(TEST_RULE_2.get(PAYLOAD_RULE_ID));
-        assertEquals(TEST_RULE_2.get(PAYLOAD_RULE_DESCRIPTION), rule2.get(CONTENT_RULE_DESCRIPTION));
-        assertEquals(TEST_RULE_2.get(PAYLOAD_RULE_HAS_INCIDENT), rule2.get(CONTENT_RULE_HAS_INCIDENT));
-        assertEquals(TEST_RULE_2.get(PAYLOAD_RULE_TOTAL_RISK), rule2.get(CONTENT_RULE_TOTAL_RISK));
-        assertEquals(TEST_RULE_2.get(PAYLOAD_RULE_URL), rule2.get(CONTENT_RULE_URL));
-        assertEquals(1, rule2.get(CONTENT_SYSTEM_COUNT));
+        Map<String, Object> aggregatedRule2 = newRecommendations.get(TEST_RULE_2.get(RULE_ID));
+        assertEquals(TEST_RULE_2.get(RULE_DESCRIPTION), aggregatedRule2.get(RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_2.get(HAS_INCIDENT), aggregatedRule2.get(HAS_INCIDENT));
+        assertEquals(TEST_RULE_2.get(TOTAL_RISK), aggregatedRule2.get(TOTAL_RISK));
+        assertEquals(TEST_RULE_2.get(RULE_URL), aggregatedRule2.get(RULE_URL));
+        assertEquals(1, aggregatedRule2.get(CONTENT_SYSTEM_COUNT));
 
         Map<String, Map<String, Object>> resolvedRecommendations = advisor.getJsonObject(RESOLVED_RECOMMENDATIONS).mapTo(Map.class);
         assertEquals(2, resolvedRecommendations.size());
 
-        Map<String, Object> rule3 = resolvedRecommendations.get(TEST_RULE_3.get(PAYLOAD_RULE_ID));
-        assertEquals(TEST_RULE_3.get(PAYLOAD_RULE_DESCRIPTION), rule3.get(CONTENT_RULE_DESCRIPTION));
-        assertEquals(TEST_RULE_3.get(PAYLOAD_RULE_HAS_INCIDENT), rule3.get(CONTENT_RULE_HAS_INCIDENT));
-        assertEquals(TEST_RULE_3.get(PAYLOAD_RULE_TOTAL_RISK), rule3.get(CONTENT_RULE_TOTAL_RISK));
-        assertEquals(TEST_RULE_3.get(PAYLOAD_RULE_URL), rule3.get(CONTENT_RULE_URL));
-        assertEquals(11, rule3.get(CONTENT_SYSTEM_COUNT));
+        Map<String, Object> aggregatedRule3 = resolvedRecommendations.get(TEST_RULE_3.get(RULE_ID));
+        assertEquals(TEST_RULE_3.get(RULE_DESCRIPTION), aggregatedRule3.get(RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_3.get(HAS_INCIDENT), aggregatedRule3.get(HAS_INCIDENT));
+        assertEquals(TEST_RULE_3.get(TOTAL_RISK), aggregatedRule3.get(TOTAL_RISK));
+        assertEquals(TEST_RULE_3.get(RULE_URL), aggregatedRule3.get(RULE_URL));
+        assertEquals(11, aggregatedRule3.get(CONTENT_SYSTEM_COUNT));
 
-        Map<String, Object> rule4 = resolvedRecommendations.get(TEST_RULE_4.get(PAYLOAD_RULE_ID));
-        assertEquals(TEST_RULE_4.get(PAYLOAD_RULE_DESCRIPTION), rule4.get(CONTENT_RULE_DESCRIPTION));
-        assertEquals(TEST_RULE_4.get(PAYLOAD_RULE_HAS_INCIDENT), rule4.get(CONTENT_RULE_HAS_INCIDENT));
-        assertEquals(TEST_RULE_4.get(PAYLOAD_RULE_TOTAL_RISK), rule4.get(CONTENT_RULE_TOTAL_RISK));
-        assertEquals(TEST_RULE_4.get(PAYLOAD_RULE_URL), rule4.get(CONTENT_RULE_URL));
-        assertEquals(1, rule4.get(CONTENT_SYSTEM_COUNT));
+        Map<String, Object> aggregatedRule4 = resolvedRecommendations.get(TEST_RULE_4.get(RULE_ID));
+        assertEquals(TEST_RULE_4.get(RULE_DESCRIPTION), aggregatedRule4.get(RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_4.get(HAS_INCIDENT), aggregatedRule4.get(HAS_INCIDENT));
+        assertEquals(TEST_RULE_4.get(TOTAL_RISK), aggregatedRule4.get(TOTAL_RISK));
+        assertEquals(TEST_RULE_4.get(RULE_URL), aggregatedRule4.get(RULE_URL));
+        assertEquals(1, aggregatedRule4.get(CONTENT_SYSTEM_COUNT));
 
         Map<String, Map<String, Object>> deactivatedRecommendations = advisor.getJsonObject(DEACTIVATED_RECOMMENDATIONS).mapTo(Map.class);
         assertEquals(2, deactivatedRecommendations.size());
 
-        Map<String, Object> rule5 = deactivatedRecommendations.get(TEST_RULE_5.get(PAYLOAD_RULE_ID));
-        assertEquals(TEST_RULE_5.get(PAYLOAD_RULE_DESCRIPTION), rule5.get(CONTENT_RULE_DESCRIPTION));
-        assertEquals(TEST_RULE_5.get(PAYLOAD_RULE_HAS_INCIDENT), rule5.get(CONTENT_RULE_HAS_INCIDENT));
-        assertEquals(TEST_RULE_5.get(PAYLOAD_RULE_TOTAL_RISK), rule5.get(CONTENT_RULE_TOTAL_RISK));
-        assertEquals(TEST_RULE_5.get(PAYLOAD_RULE_URL), rule5.get(CONTENT_RULE_URL));
-        assertNull(rule5.get(CONTENT_SYSTEM_COUNT));
+        Map<String, Object> aggregatedRule5 = deactivatedRecommendations.get(TEST_RULE_5.get(RULE_ID));
+        assertEquals(TEST_RULE_5.get(RULE_DESCRIPTION), aggregatedRule5.get(RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_5.get(HAS_INCIDENT), aggregatedRule5.get(HAS_INCIDENT));
+        assertEquals(TEST_RULE_5.get(TOTAL_RISK), aggregatedRule5.get(TOTAL_RISK));
+        assertEquals(TEST_RULE_5.get(RULE_URL), aggregatedRule5.get(RULE_URL));
+        assertNull(aggregatedRule5.get(CONTENT_SYSTEM_COUNT));
 
-        Map<String, Object> rule6 = deactivatedRecommendations.get(TEST_RULE_6.get(PAYLOAD_RULE_ID));
-        assertEquals(TEST_RULE_6.get(PAYLOAD_RULE_DESCRIPTION), rule6.get(CONTENT_RULE_DESCRIPTION));
-        assertEquals(TEST_RULE_6.get(PAYLOAD_RULE_HAS_INCIDENT), rule6.get(CONTENT_RULE_HAS_INCIDENT));
-        assertEquals(TEST_RULE_6.get(PAYLOAD_RULE_TOTAL_RISK), rule6.get(CONTENT_RULE_TOTAL_RISK));
-        assertEquals(TEST_RULE_6.get(PAYLOAD_RULE_URL), rule6.get(CONTENT_RULE_URL));
-        assertNull(rule6.get(CONTENT_SYSTEM_COUNT));
+        Map<String, Object> aggregatedRule6 = deactivatedRecommendations.get(TEST_RULE_6.get(RULE_ID));
+        assertEquals(TEST_RULE_6.get(RULE_DESCRIPTION), aggregatedRule6.get(RULE_DESCRIPTION));
+        assertEquals(TEST_RULE_6.get(HAS_INCIDENT), aggregatedRule6.get(HAS_INCIDENT));
+        assertEquals(TEST_RULE_6.get(TOTAL_RISK), aggregatedRule6.get(TOTAL_RISK));
+        assertEquals(TEST_RULE_6.get(RULE_URL), aggregatedRule6.get(RULE_URL));
+        assertNull(aggregatedRule6.get(CONTENT_SYSTEM_COUNT));
     }
 }

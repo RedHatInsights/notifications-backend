@@ -111,7 +111,7 @@
             {#for recommendation in action.context.new_recommendations.keySet()}
               <tr style="border-bottom: thin lightgrey solid">
                 <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
-                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.new_recommendations.get(recommendation).description}</a>
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.new_recommendations.get(recommendation).rule_description}</a>
                   {#if action.context.new_recommendations.get(recommendation).has_incident}
                     <span style="border-radius: 1em; border: thin black solid; background-color: #fac8c8; padding: 0 0.5em;">Incident</span>
                   {/if}
@@ -157,7 +157,7 @@
             {#for recommendation in action.context.resolved_recommendations.keySet()}
               <tr style="border-bottom: thin lightgrey solid">
                 <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
-                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.resolved_recommendations.get(recommendation).description}</a>
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.resolved_recommendations.get(recommendation).rule_description}</a>
                   {#if action.context.resolved_recommendations.get(recommendation).has_incident}
                     <span style="border-radius: 1em; border: thin black solid; background-color: #fac8c8; padding: 0 0.5em;">Incident</span>
                   {/if}
@@ -202,7 +202,7 @@
             {#for recommendation in action.context.deactivated_recommendations.keySet()}
               <tr style="border-bottom: thin lightgrey solid">
                 <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
-                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.deactivated_recommendations.get(recommendation).description}</a>
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.deactivated_recommendations.get(recommendation).rule_description}</a>
                   {#if action.context.deactivated_recommendations.get(recommendation).has_incident}
                     <span style="border-radius: 1em; border: thin black solid; background-color: #fac8c8; padding: 0 0.5em;">Incident</span>
                   {/if}

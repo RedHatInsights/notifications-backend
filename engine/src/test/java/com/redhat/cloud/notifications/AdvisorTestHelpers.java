@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_DESCRIPTION;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_HAS_INCIDENT;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_ID;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_TOTAL_RISK;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.PAYLOAD_RULE_URL;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.HAS_INCIDENT;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RULE_DESCRIPTION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RULE_ID;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RULE_URL;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.TOTAL_RISK;
 
 /*
  * Create a structure of the form:
@@ -92,11 +92,11 @@ public class AdvisorTestHelpers {
                         .withMetadata(new Metadata.MetadataBuilder().build())
                         .withPayload(new Payload.PayloadBuilder()
                                 /* Supplied data */
-                                .withAdditionalProperty(PAYLOAD_RULE_ID, rule.get(PAYLOAD_RULE_ID))
-                                .withAdditionalProperty(PAYLOAD_RULE_DESCRIPTION, rule.get(PAYLOAD_RULE_DESCRIPTION))
-                                .withAdditionalProperty(PAYLOAD_RULE_TOTAL_RISK, rule.get(PAYLOAD_RULE_TOTAL_RISK))
-                                .withAdditionalProperty(PAYLOAD_RULE_HAS_INCIDENT, rule.get(PAYLOAD_RULE_HAS_INCIDENT))
-                                .withAdditionalProperty(PAYLOAD_RULE_URL, rule.get(PAYLOAD_RULE_URL))
+                                .withAdditionalProperty(RULE_ID, rule.get(RULE_ID))
+                                .withAdditionalProperty(RULE_DESCRIPTION, rule.get(RULE_DESCRIPTION))
+                                .withAdditionalProperty(TOTAL_RISK, rule.get(TOTAL_RISK))
+                                .withAdditionalProperty(HAS_INCIDENT, rule.get(HAS_INCIDENT))
+                                .withAdditionalProperty(RULE_URL, rule.get(RULE_URL))
                                 /* Made up data */
                                 .withAdditionalProperty(EVENT_PAYLOAD_PUBLISH_DATE, "2021-03-13T18:44:00+00:00")
                                 .withAdditionalProperty(EVENT_PAYLOAD_REBOOT_REQUIRED, false)

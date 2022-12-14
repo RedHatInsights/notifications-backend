@@ -88,27 +88,22 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
     public static final String RESOLVED_RECOMMENDATION = "resolved-recommendation";
     public static final String DEACTIVATED_RECOMMENDATION = "deactivated-recommendation";
 
-    // Notification common
-    private static final String EVENT_TYPE_KEY = "event_type";
-    private static final String EVENTS_KEY = "events";
-    private static final String PAYLOAD_KEY = "payload";
-
-    public static final String PAYLOAD_RULE_ID = "rule_id";
-    public static final String PAYLOAD_RULE_DESCRIPTION = "rule_description";
-    public static final String PAYLOAD_RULE_TOTAL_RISK = "total_risk";
-    public static final String PAYLOAD_RULE_HAS_INCIDENT = "has_incident";
-    public static final String PAYLOAD_RULE_URL = "rule_url";
-
     // Advisor events aggregator data contents
     public static final String ADVISOR_KEY = "advisor";
     public static final String NEW_RECOMMENDATIONS = "new_recommendations";
     public static final String RESOLVED_RECOMMENDATIONS = "resolved_recommendations";
     public static final String DEACTIVATED_RECOMMENDATIONS = "deactivated_recommendations";
-    public static final String CONTENT_RULE_DESCRIPTION = "description";
-    public static final String CONTENT_RULE_TOTAL_RISK = "total_risk";
-    public static final String CONTENT_RULE_HAS_INCIDENT = "has_incident";
-    public static final String CONTENT_RULE_URL = "url";
+    public static final String RULE_ID = "rule_id";
+    public static final String RULE_DESCRIPTION = "rule_description";
+    public static final String TOTAL_RISK = "total_risk";
+    public static final String HAS_INCIDENT = "has_incident";
+    public static final String RULE_URL = "rule_url";
     public static final String CONTENT_SYSTEM_COUNT = "systems";
+
+    // Notification common
+    private static final String EVENT_TYPE_KEY = "event_type";
+    private static final String EVENTS_KEY = "events";
+    private static final String PAYLOAD_KEY = "payload";
 
     private static final Set<String> EVENT_TYPES = new HashSet<>(Arrays.asList(
             NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION,
@@ -148,21 +143,21 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
         notifPayload.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
             JsonObject event = (JsonObject) eventObject;
             JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
-            String ruleId = payload.getString(PAYLOAD_RULE_ID);
-            String ruleDescription = payload.getString(PAYLOAD_RULE_DESCRIPTION);
-            String ruleRisk = payload.getString(PAYLOAD_RULE_TOTAL_RISK);
-            String ruleIncident = payload.getString(PAYLOAD_RULE_HAS_INCIDENT);
-            String ruleURL = payload.getString(PAYLOAD_RULE_URL);
+            String ruleId = payload.getString(RULE_ID);
+            String ruleDescription = payload.getString(RULE_DESCRIPTION);
+            String ruleRisk = payload.getString(TOTAL_RISK);
+            String ruleIncident = payload.getString(HAS_INCIDENT);
+            String ruleURL = payload.getString(RULE_URL);
             Map<String, Object> ruleData;
 
             switch (eventType) {
                 case NEW_RECOMMENDATION:
                     ruleData = newRecommendations.computeIfAbsent(
                         ruleId, key -> new HashMap<>(Map.of(
-                            CONTENT_RULE_DESCRIPTION, ruleDescription,
-                            CONTENT_RULE_HAS_INCIDENT, ruleIncident,
-                            CONTENT_RULE_TOTAL_RISK, ruleRisk,
-                            CONTENT_RULE_URL, ruleURL,
+                            RULE_DESCRIPTION, ruleDescription,
+                            HAS_INCIDENT, ruleIncident,
+                            TOTAL_RISK, ruleRisk,
+                            RULE_URL, ruleURL,
                             CONTENT_SYSTEM_COUNT, 0
                         ))
                     );
@@ -173,10 +168,10 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                 case RESOLVED_RECOMMENDATION:
                     ruleData = resolvedRecommendations.computeIfAbsent(
                         ruleId, key -> new HashMap<>(Map.of(
-                            CONTENT_RULE_DESCRIPTION, ruleDescription,
-                            CONTENT_RULE_HAS_INCIDENT, ruleIncident,
-                            CONTENT_RULE_TOTAL_RISK, ruleRisk,
-                            CONTENT_RULE_URL, ruleURL,
+                            RULE_DESCRIPTION, ruleDescription,
+                            HAS_INCIDENT, ruleIncident,
+                            TOTAL_RISK, ruleRisk,
+                            RULE_URL, ruleURL,
                             CONTENT_SYSTEM_COUNT, 0
                         ))
                     );
@@ -187,10 +182,10 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                 case DEACTIVATED_RECOMMENDATION:
                     deactivatedRecommendations.computeIfAbsent(
                         ruleId, key -> new HashMap<>(Map.of(
-                            CONTENT_RULE_DESCRIPTION, ruleDescription,
-                            CONTENT_RULE_HAS_INCIDENT, ruleIncident,
-                            CONTENT_RULE_TOTAL_RISK, ruleRisk,
-                            CONTENT_RULE_URL, ruleURL
+                            RULE_DESCRIPTION, ruleDescription,
+                            HAS_INCIDENT, ruleIncident,
+                            TOTAL_RISK, ruleRisk,
+                            RULE_URL, ruleURL
                         ))
                     );
                     break;
