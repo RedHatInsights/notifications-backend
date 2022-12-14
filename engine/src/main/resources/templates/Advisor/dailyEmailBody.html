@@ -90,7 +90,7 @@
 </tr>
 
 <!-- List of new recommendations section -->
-{#if action.context.new_recommendations.orEmpty.size > 0}
+{#if action.context.advisor.new_recommendations.orEmpty.size > 0}
 <tr>
   <td class="rh-body">
     <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -108,23 +108,23 @@
             </tr>
             </thead>
             <tbody style="background-color: white;">
-            {#for recommendation in action.context.new_recommendations.keySet()}
+            {#for recommendation in action.context.advisor.new_recommendations.keySet()}
               <tr style="border-bottom: thin lightgrey solid">
                 <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
-                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.new_recommendations.get(recommendation).description}</a>
-                  {#if action.context.new_recommendations.get(recommendation).has_incident}
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.advisor.new_recommendations.get(recommendation).rule_description}</a>
+                  {#if action.context.advisor.new_recommendations.get(recommendation).has_incident}
                     <span style="border-radius: 1em; border: thin black solid; background-color: #fac8c8; padding: 0 0.5em;">Incident</span>
                   {/if}
                 </td>
                 <td class="rh-severity" style="padding: 0.5em; width: 20%">
-                  {#switch action.context.new_recommendations.get(recommendation).total_risk}
+                  {#switch action.context.advisor.new_recommendations.get(recommendation).total_risk}
                     {#case 1}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
                     {#case 2}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
                     {#case 3}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
                     {#case 4}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
                   {/switch}
                 </td>
-                <td style="padding: 0.5em; width: 20%">{action.context.new_recommendations.get(recommendation).affected_systems}</td>
+                <td style="padding: 0.5em; width: 20%">{action.context.advisor.new_recommendations.get(recommendation).systems}</td>
               </tr>
             {/for}
             </tbody>
@@ -136,7 +136,7 @@
 {/if}
 
 <!-- List of resolved recommendations section -->
-{#if action.context.resolved_recommendations.orEmpty.size > 0}
+{#if action.context.advisor.resolved_recommendations.orEmpty.size > 0}
 <tr>
   <td class="rh-body">
     <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -154,23 +154,23 @@
             </tr>
             </thead>
             <tbody style="background-color: white;">
-            {#for recommendation in action.context.resolved_recommendations.keySet()}
+            {#for recommendation in action.context.advisor.resolved_recommendations.keySet()}
               <tr style="border-bottom: thin lightgrey solid">
                 <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
-                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.resolved_recommendations.get(recommendation).description}</a>
-                  {#if action.context.resolved_recommendations.get(recommendation).has_incident}
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.advisor.resolved_recommendations.get(recommendation).rule_description}</a>
+                  {#if action.context.advisor.resolved_recommendations.get(recommendation).has_incident}
                     <span style="border-radius: 1em; border: thin black solid; background-color: #fac8c8; padding: 0 0.5em;">Incident</span>
                   {/if}
                 </td>
                 <td class="rh-severity" style="padding: 0.5em; width: 20%">
-                  {#switch action.context.resolved_recommendations.get(recommendation).total_risk}
+                  {#switch action.context.advisor.resolved_recommendations.get(recommendation).total_risk}
                     {#case 1}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
                     {#case 2}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
                     {#case 3}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
                     {#case 4}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
                   {/switch}
                 </td>
-                <td style="padding: 0.5em; width: 20%">{action.context.resolved_recommendations.get(recommendation).affected_systems}</td>
+                <td style="padding: 0.5em; width: 20%">{action.context.advisor.resolved_recommendations.get(recommendation).systems}</td>
               </tr>
             {/for}
             </tbody>
@@ -182,7 +182,7 @@
 {/if}
 
 <!-- List of deactivated recommendations section -->
-{#if action.context.deactivated_recommendations.orEmpty.size > 0}
+{#if action.context.advisor.deactivated_recommendations.orEmpty.size > 0}
 <tr>
   <td class="rh-body">
     <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -199,16 +199,16 @@
             </tr>
             </thead>
             <tbody style="background-color: white;">
-            {#for recommendation in action.context.deactivated_recommendations.keySet()}
+            {#for recommendation in action.context.advisor.deactivated_recommendations.keySet()}
               <tr style="border-bottom: thin lightgrey solid">
                 <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
-                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.deactivated_recommendations.get(recommendation).description}</a>
-                  {#if action.context.deactivated_recommendations.get(recommendation).has_incident}
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{recommendation}">{action.context.advisor.deactivated_recommendations.get(recommendation).rule_description}</a>
+                  {#if action.context.advisor.deactivated_recommendations.get(recommendation).has_incident}
                     <span style="border-radius: 1em; border: thin black solid; background-color: #fac8c8; padding: 0 0.5em;">Incident</span>
                   {/if}
                 </td>
                 <td class="rh-severity" style="padding: 0.5em; width: 40%">
-                  {#switch action.context.deactivated_recommendations.get(recommendation).total_risk}
+                  {#switch action.context.advisor.deactivated_recommendations.get(recommendation).total_risk}
                     {#case 1}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
                     {#case 2}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
                     {#case 3}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
