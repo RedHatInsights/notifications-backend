@@ -91,7 +91,7 @@ public class AdvisorTestHelpers {
     }
 
     public static Action createAction(
-        String bundle, String application, String eventType
+        String bundle, String application, String eventType,
         String inventoryId, String inventoryName
     ) {
         Action emailActionMessage = new Action();
