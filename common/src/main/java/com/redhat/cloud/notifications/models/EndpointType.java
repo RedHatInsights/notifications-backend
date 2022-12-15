@@ -12,7 +12,7 @@ public enum EndpointType {
     @JsonProperty("camel")
     CAMEL(true);
 
-    final boolean requiresSubType;
+    public final boolean requiresSubType;
 
     EndpointType(boolean requiresSubType) {
         this.requiresSubType = requiresSubType;
