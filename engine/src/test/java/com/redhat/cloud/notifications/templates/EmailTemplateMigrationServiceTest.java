@@ -187,7 +187,7 @@ public class EmailTemplateMigrationServiceTest {
             findAndCompileInstantEmailTemplate(newRecommendation.getId());
             findAndCompileInstantEmailTemplate(resolvedRecommendation.getId());
             findAndCompileInstantEmailTemplate(deactivatedRecommendation.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(rhel.getName(), advisor.getName(), DAILY).isEmpty());
+            findAndCompileAggregationEmailTemplate(rhel.getName(), advisor.getName(), DAILY);
             // App: compliance
             findAndCompileInstantEmailTemplate(complianceBelowThreshold.getId());
             findAndCompileInstantEmailTemplate(reportUploadFailed.getId());
