@@ -29,7 +29,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
 public class OrgConfigResource {
 
-    static final List<Integer> ALLOWED_MINUTE = Arrays.asList(0, 15, 30, 45);
+    static final List<Integer> ALLOWED_MINUTES = Arrays.asList(0, 15, 30, 45);
 
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
@@ -45,7 +45,7 @@ public class OrgConfigResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public Response saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
         String orgId = getOrgId(sec);
-        if (!ALLOWED_MINUTE.contains(expectedTime.getMinute())) {
+        if (!ALLOWED_MINUTES.contains(expectedTime.getMinute())) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
         Log.infof("Update daily digest time preference for orgId %s at %s", orgId, expectedTime);
