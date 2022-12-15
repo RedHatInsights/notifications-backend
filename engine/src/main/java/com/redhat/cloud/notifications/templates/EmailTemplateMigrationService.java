@@ -80,6 +80,11 @@ public class EmailTemplateMigrationService {
                 "Advisor/resolvedRecommendationInstantEmailTitle", "txt", "Advisor resolved recommendation email title",
                 "Advisor/resolvedRecommendationInstantEmailBody", "html", "Advisor resolved recommendation email body"
         );
+        createDailyEmailTemplate(
+                warnings, "rhel", "advisor",
+                "Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
+                "Advisor/dailyEmailBody", "html", "Advisor daily email body"
+        );
 
         /*
          * Former src/main/resources/templates/AdvisorOpenshift folder.
