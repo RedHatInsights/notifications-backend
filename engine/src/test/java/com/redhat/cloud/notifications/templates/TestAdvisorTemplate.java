@@ -95,6 +95,7 @@ public class TestAdvisorTemplate {
         assertTrue(result.contains("New recommendations"));
         assertTrue(result.contains("Resolved recommendations"));
         assertTrue(result.contains("Deactivated recommendations"));
+        assertTrue(result.contains("frontend-assets/email-assets"));
     }
 
     @Test
