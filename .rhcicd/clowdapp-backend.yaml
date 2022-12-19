@@ -327,7 +327,7 @@ parameters:
 - name: QUARKUS_OPENTELEMETRY_ENABLED
   value: "false"
 - name: QUARKUS_OPENTELEMETRY_ENDPOINT
-  value: "localhost:4317"
+  value: "http://localhost:4317"
 - name: FLOORIST_SCHEDULE
   description: Cronjob schedule definition
   required: true
