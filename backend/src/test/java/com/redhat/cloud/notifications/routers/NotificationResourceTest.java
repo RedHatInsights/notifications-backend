@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -30,11 +31,13 @@ import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -79,6 +82,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
+
+    @Inject
+    BundleRepository bundleRepository;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -969,6 +975,55 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         } finally {
             featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
+        }
+    }
+
+    /**
+     * Tests that the "get all bundles" endpoint works as intended. A few bundles are created, then retrieved from the
+     * database, and the results are compared to the resopnse we get from the endpoint.
+     */
+    @Test
+    void testGetBundlesCollection() {
+        final int maxBundlesToCreate = 5;
+        for (int i = 0; i < maxBundlesToCreate; i++) {
+            this.helpers.createBundle(
+                String.format("test-get-bundles-collection-%s", i),
+                String.format("test-get-bundles-collection-display-name-%s", i)
+            );
+        }
+
+        final Map<UUID, Bundle> databaseBundles = this.bundleRepository
+            .getBundles()
+            .stream()
+            .collect(
+                Collectors.toMap(
+                    Bundle::getId,
+                    bundle -> bundle
+                )
+            );
+
+        final Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+
+        final String rawResponse = given()
+            .header(identityHeader)
+            .when()
+            .get("/notifications/bundles")
+            .then()
+            .statusCode(200)
+            .extract()
+            .body()
+            .asString();
+
+        final JsonObject response = new JsonObject(rawResponse);
+        final JsonArray responseBundles = response.getJsonArray("data");
+        Assertions.assertEquals(databaseBundles.size(), responseBundles.size(), "the number of bundles in the response doesn't match the number of bundles in the database");
+
+        for (final var respBundle : responseBundles) {
+            final JsonObject responseBundle = (JsonObject) respBundle;
+            final String bundleId = responseBundle.getString("id");
+            final UUID bundleUuid = UUID.fromString(bundleId);
+
+            Assertions.assertTrue(databaseBundles.containsKey(bundleUuid), "response bundle not found in the retrieved database bundles");
         }
     }
 

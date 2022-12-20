@@ -1,12 +1,15 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.NotFoundException;
 import java.util.List;
@@ -29,6 +32,44 @@ public class BundleRepository {
         String query = "FROM Bundle";
         return entityManager.createQuery(query, Bundle.class)
                 .getResultList();
+    }
+
+    /**
+     * Finds all the bundles in the database.
+     * @param limiter the collection filters and limits to be applied.
+     * @return the list of bundles.
+     */
+    public List<Bundle> getBundles(final Query limiter) {
+        String selectQuery = "FROM Bundle";
+
+        if (limiter != null) {
+            limiter.setSortFields(BehaviorGroup.SORT_FIELDS, BehaviorGroup.DEPRECATED_SORT_FIELDS);
+            selectQuery = limiter.getModifiedQuery(selectQuery);
+        }
+
+        TypedQuery<Bundle> query = this.entityManager.createQuery(selectQuery, Bundle.class);
+
+        if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
+            query = query
+                        .setMaxResults(limiter.getLimit().getLimit())
+                        .setFirstResult(limiter.getLimit().getOffset());
+        }
+
+        return query.getResultList();
+    }
+
+    /**
+     * Counts the bundles in the database.
+     * @return the number of bundles in the database.
+     */
+    public long getBundlesCount() {
+        final String query =
+            "SELECT " +
+                "count(b)" +
+            "FROM " +
+                "Bundle AS b";
+
+        return this.entityManager.createQuery(query, Long.class).getSingleResult();
     }
 
     public Bundle getBundle(UUID id) {

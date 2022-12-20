@@ -96,6 +96,23 @@ public class NotificationResource {
     }
 
     @GET
+    @Path("/bundles")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Retrieve the collection of bundles")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public Page<Bundle> getBundlesCollection(@Context final UriInfo uriInfo, @BeanParam @Valid final Query query) {
+
+        final List<Bundle> bundles = this.bundleRepository.getBundles(query);
+        final long bundlesCount = this.bundleRepository.getBundlesCount();
+
+        return new Page<>(
+            bundles,
+            PageLinksBuilder.build(uriInfo.getPath(), bundlesCount, query.getLimit().getLimit(), query.getLimit().getOffset()),
+            new Meta(bundlesCount)
+        );
+    }
+
+    @GET
     @Path("/bundles/{bundleName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the bundle by name")
