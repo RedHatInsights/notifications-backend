@@ -23,23 +23,23 @@ public class EmailAggregationRepository {
     @Inject
     EntityManager entityManager;
 
-    public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrgPref(LocalDateTime end) {
+    public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrgPref(LocalDateTime now) {
         // Must takes every EmailAggregation supposed to be processed on last 15 min
         // it covers cases when aggregation job may be run with few minutes late (ie: 05:01, 07,32)
         String query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName, acp.lastRun FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
-            "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :end " +
-            "AND :endTime >= acp.scheduledExecutionTime AND (:endTime - acp.scheduledExecutionTime) < CAST(:cutoff as LocalTime)";
+            "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :now " +
+            "AND :nowTime >= acp.scheduledExecutionTime AND (:nowTime - acp.scheduledExecutionTime) < CAST(:cutoff as LocalTime)";
         Query hqlQuery = entityManager.createQuery(query)
-                .setParameter("endTime", end.toLocalTime())
+                .setParameter("nowTime", now.toLocalTime())
                 .setParameter("cutoff", LocalTime.of(0, 15))
-               .setParameter("end", end);
+               .setParameter("now", now);
 
         List<Object[]> records = hqlQuery.getResultList();
         return records.stream()
                 .map(emailAggregationRecord -> new AggregationCommand(
                     new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]),
                     (LocalDateTime) emailAggregationRecord[3],
-                    end,
+                    now,
                     DAILY
                 ))
                 .collect(toList());

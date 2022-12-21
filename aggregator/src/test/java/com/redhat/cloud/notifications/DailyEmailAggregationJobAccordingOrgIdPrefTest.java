@@ -71,7 +71,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
     void initAggregationParameters() {
         helpers.purgeAggregationOrgConfig();
-        testee.defaultDailyDigestHour = LocalTime.now(ZoneOffset.UTC).toString();
+        testee.defaultDailyDigestTime = LocalTime.now(ZoneOffset.UTC);
     }
 
     @Test
@@ -81,7 +81,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        testee.setDefaultDailyDigestHour(LocalTime.now(ZoneOffset.UTC).toString());
+        testee.setDefaultDailyDigestTime(LocalTime.now(ZoneOffset.UTC));
 
         testee.processDailyEmail();
 
@@ -121,7 +121,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        testee.setDefaultDailyDigestHour(now.toString());
+        testee.setDefaultDailyDigestTime(now);
         someOrgIdToProceed.setScheduledExecutionTime(LocalTime.of(LocalTime.now(ZoneOffset.UTC).minusHours(2).getHour(), 0));
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
@@ -145,7 +145,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
         // remove all preferences, and set default hour in the past, nothing should be processed
         helpers.purgeAggregationOrgConfig();
-        testee.setDefaultDailyDigestHour(LocalTime.of(now.getHour() - 2, now.getMinute()).toString());
+        testee.setDefaultDailyDigestTime(LocalTime.of(now.getHour() - 2, now.getMinute()));
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
 
         testee.processDailyEmail();

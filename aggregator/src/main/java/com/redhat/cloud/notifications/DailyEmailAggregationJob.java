@@ -20,6 +20,7 @@ import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -47,8 +48,8 @@ public class DailyEmailAggregationJob {
     @ConfigProperty(name = "prometheus.pushgateway.url")
     String prometheusPushGatewayUrl;
 
-    @ConfigProperty(name = "notification.default.daily.digest.hour", defaultValue = "00:00")
-    String defaultDailyDigestHour;
+    @ConfigProperty(name = "notification.default.daily.digest.time", defaultValue = "00:00")
+    LocalTime defaultDailyDigestTime;
 
     @Inject
     @Channel(AGGREGATION_CHANNEL)
@@ -73,7 +74,7 @@ public class DailyEmailAggregationJob {
             LocalDateTime now = LocalDateTime.now(UTC);
             List<AggregationCommand> aggregationCommands = null;
             if (featureFlipper.isAggregatorOrgPrefEnabled()) {
-                aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestHour);
+                aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
                 aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             } else {
                 aggregationCommands = processAggregateEmails(now, registry);
@@ -174,7 +175,7 @@ public class DailyEmailAggregationJob {
     }
 
     // For automatic tests purpose
-    protected void setDefaultDailyDigestHour(String defaultDailyDigestHour) {
-        this.defaultDailyDigestHour = defaultDailyDigestHour;
+    protected void setDefaultDailyDigestTime(LocalTime defaultDailyDigestTime) {
+        this.defaultDailyDigestTime = defaultDailyDigestTime;
     }
 }
