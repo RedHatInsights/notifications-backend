@@ -82,4 +82,27 @@ public class BundleRepository {
                     .getResultList();
         }
     }
+
+    /**
+     * Finds the bundle by name.
+     * @param bundleName the name to find the bundle by.
+     * @return the found bundle from the database.
+     */
+    public Bundle findByName(final String bundleName) {
+        final String findByNameQuery =
+            "SELECT " +
+                    "b " +
+            "FROM " +
+                "Bundle AS b " +
+            "WHERE " +
+                "b.name = :name";
+
+        try {
+            return this.entityManager.createQuery(findByNameQuery, Bundle.class)
+                .setParameter("name", bundleName)
+                .getSingleResult();
+        } catch (final NoResultException e) {
+            throw new NotFoundException("the provided bundle name does not exist");
+        }
+    }
 }

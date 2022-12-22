@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -225,13 +226,26 @@ public class NotificationResource {
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public CreateBehaviorGroupResponse createBehaviorGroup(@Context SecurityContext sec,
-                              @RequestBody(required = true) @Valid @NotNull CreateBehaviorGroupRequest request) {
+    public CreateBehaviorGroupResponse createBehaviorGroup(
+        @Context final SecurityContext sec,
+        @RequestBody(required = true) @Valid @NotNull final CreateBehaviorGroupRequest request
+    ) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
+        // Set the bundle ID from the incoming request. If the user provided a
+        // bundle name instead, fetch the bundle ID from the database. This is
+        // to make the frontend's life easier, in the way that they won't need
+        // to fetch the bundles to get the exact bundle ID. More information in
+        // the request's class, or in RHCLOUD-22513.
+        UUID bundleId = request.bundleId;
+        if (bundleId == null && !StringUtils.isBlank(request.bundleName)) {
+            final Bundle bundle = this.bundleRepository.findByName(request.bundleName);
+            bundleId = bundle.getId();
+        }
+
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setBundleId(request.bundleId);
+        behaviorGroup.setBundleId(bundleId);
         behaviorGroup.setDisplayName(request.displayName);
 
         behaviorGroup = behaviorGroupRepository.createFull(

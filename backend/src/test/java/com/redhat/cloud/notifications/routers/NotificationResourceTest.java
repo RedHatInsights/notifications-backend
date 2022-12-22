@@ -972,6 +972,51 @@ public class NotificationResourceTest extends DbIsolatedTest {
         }
     }
 
+    /**
+     * Tests that a successful status code is returned when a behavior group is
+     * created by using the bundle's name instead of its UUID.
+     */
+    @Test
+    void testBehaviorGroupUsingBundleName() {
+        final Bundle bundle = helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+
+        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.displayName = "behavior-group-display-name";
+        createBehaviorGroupRequest.bundleName =  bundle.getName();
+
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(createBehaviorGroupRequest))
+            .post("/notifications/behaviorGroups")
+            .then()
+            .statusCode(200);
+    }
+
+    /**
+     * Tests that a bad request response is returned when attempting to create
+     * a behavior group without specifying a bundle ID or its name.
+     */
+    @Test
+    void testBadRequestBehaviorGroupInvalidBundle() {
+        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.displayName = "behavior-group-display-name";
+
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(createBehaviorGroupRequest))
+            .post("/notifications/behaviorGroups")
+            .then()
+            .statusCode(400);
+    }
+
     private Optional<CreateBehaviorGroupResponse> createBehaviorGroup(Header identityHeader, CreateBehaviorGroupRequest request, int expectedStatusCode) {
         ValidatableResponse response = given()
                 .header(identityHeader)
