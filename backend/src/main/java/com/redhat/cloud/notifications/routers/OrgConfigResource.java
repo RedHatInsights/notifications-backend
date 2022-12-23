@@ -35,7 +35,7 @@ public class OrgConfigResource {
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
-    @ConfigProperty(name = "notification.default.daily.digest.time", defaultValue = "00:00")
+    @ConfigProperty(name = "notifications.default.daily.digest.time", defaultValue = "00:00")
     LocalTime defaultDailyDigestTime;
 
     @PUT
