@@ -92,10 +92,49 @@ public class TestAdvisorTemplate {
                 .data("user", Map.of("firstName", "John", "lastName", "Doe"))
                 .render();
 
+        assertTrue(result.contains("Hi John,"));
         assertTrue(result.contains("New recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
+        assertTrue(result.contains("Active rule 1</a>"));
+        assertTrue(result.contains("<span class=\"rh-incident\">Incident</span>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
         assertTrue(result.contains("Resolved recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
+        assertTrue(result.contains("Active rule 2</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
         assertTrue(result.contains("Deactivated recommendations"));
-        assertTrue(result.contains("frontend-assets/email-assets"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
+        assertTrue(result.contains("Active rule 3</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_moderate.png"));
+    }
+
+    @Test
+    public void testDailyEmailBodyResolvedOnly() {
+        AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
+        aggregator.aggregate(createEmailAggregation(RESOLVED_RECOMMENDATION, TEST_RULE_2));
+
+        Map<String, Object> context = aggregator.getContext();
+        context.put("start_time", LocalDateTime.now().toString());
+        context.put("end_time", LocalDateTime.now().toString());
+
+        String result = Advisor.Templates.dailyEmailBody()
+                .data("action", Map.of(
+                        "context", context,
+                        "timestamp", LocalDateTime.now()
+                ))
+                .data("environment", environment)
+                .data("user", Map.of("firstName", "John", "lastName", "Doe"))
+                .render();
+
+        assertTrue(result.contains("Hi John,"));
+        assertTrue(result.contains("Resolved recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
+        assertTrue(result.contains("Active rule 2</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        assertFalse(result.contains("New recommendations"));
+        assertFalse(result.contains("Deactivated recommendations"));
+        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
     }
 
     @Test

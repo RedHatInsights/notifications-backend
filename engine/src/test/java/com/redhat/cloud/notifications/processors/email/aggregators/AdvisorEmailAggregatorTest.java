@@ -72,21 +72,21 @@ public class AdvisorEmailAggregatorTest {
     public static final Map<String, String> TEST_RULE_2 = Map.of(
             RULE_ID, "test|Active_rule_2",
             RULE_DESCRIPTION, "Active rule 2",
-            TOTAL_RISK, "0",
+            TOTAL_RISK, "1",
             HAS_INCIDENT, "false",
             RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_2"
     );
     public static final Map<String, String> TEST_RULE_3 = Map.of(
             RULE_ID, "test|Active_rule_3",
             RULE_DESCRIPTION, "Active rule 3",
-            TOTAL_RISK, "0",
+            TOTAL_RISK, "4",
             HAS_INCIDENT, "false",
             RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_3"
     );
     public static final Map<String, String> TEST_RULE_4 = Map.of(
             RULE_ID, "test|Active_rule_4",
             RULE_DESCRIPTION, "Active rule 4",
-            TOTAL_RISK, "10",
+            TOTAL_RISK, "4",
             HAS_INCIDENT, "true",
             RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_4"
     );

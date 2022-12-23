@@ -9,7 +9,7 @@
 <tr>
   <td>
     <table role="presentation" border="0" cellpadding="0" cellspacing="0"
-     style="width: {#if action.context.advisor.size == 1}50{#else}100{/if}%; table-layout: fixed;">
+     style="width: {#if (new_recs && resolved_recs) || (new_recs && deact_recs) || (resolved_recs && deact_recs)}100{#else}50{/if}%; table-layout: fixed;">
       <tr>
         {#if new_recs}
         <td class="rh-pad-sm rh-pad-left">
