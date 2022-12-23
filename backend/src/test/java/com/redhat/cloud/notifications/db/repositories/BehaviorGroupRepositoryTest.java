@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -425,6 +426,41 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
                 Query.Sort.Order.ASC,
                 IntStream.range(0, 10).boxed().map(Object::toString).collect(Collectors.toList())
         );
+    }
+
+    /**
+     * Tests that a bad request exception is raised when attempting to create more behavior groups than the allowed
+     * maximum number.
+     */
+    @Test
+    void testNotAllowedCreateMoreBehaviorGroups() {
+        final Bundle bundle = this.resourceHelpers.createBundle();
+
+        for (long i = 0; i < BehaviorGroupRepository.MAXIMUM_NUMBER_BEHAVIOR_GROUPS; i++) {
+            this.resourceHelpers.createBehaviorGroup(
+                DEFAULT_ACCOUNT_ID,
+                DEFAULT_ORG_ID,
+                String.format("display-name-%s", i),
+                bundle.getId()
+            );
+        }
+
+        final BehaviorGroup behaviorGroup = new BehaviorGroup();
+        behaviorGroup.setAccountId(DEFAULT_ACCOUNT_ID);
+        behaviorGroup.setBundleId(bundle.getId());
+        behaviorGroup.setDisplayName("behavior-group-should-not-be-created");
+        behaviorGroup.setOrgId(DEFAULT_ORG_ID);
+
+        final BadRequestException ex = Assertions.assertThrows(
+            BadRequestException.class,
+                () -> this.behaviorGroupRepository.create(
+                DEFAULT_ACCOUNT_ID,
+                DEFAULT_ORG_ID,
+                behaviorGroup
+            )
+        );
+
+        Assertions.assertEquals("behavior group creation limit reached. Please consider deleting unused behavior groups before creating more.", ex.getMessage());
     }
 
     @Transactional

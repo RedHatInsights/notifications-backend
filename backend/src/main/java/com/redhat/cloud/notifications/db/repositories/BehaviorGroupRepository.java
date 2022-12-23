@@ -29,6 +29,11 @@ import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
 @ApplicationScoped
 public class BehaviorGroupRepository {
 
+    /**
+     * Represents the maximum number of behavior groups that can be created for
+     * a tenant. Comes from ticket <a href="https://issues.redhat.com/browse/RHCLOUD-21842">RHCLOUD-21842</a>.
+     */
+    public static final long MAXIMUM_NUMBER_BEHAVIOR_GROUPS = 64;
     private static final ZoneId UTC = ZoneId.of("UTC");
 
     @Inject
@@ -76,6 +81,10 @@ public class BehaviorGroupRepository {
 
     @Transactional
     BehaviorGroup create(String accountId, String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
+        if (!this.isAllowedToCreateMoreBehaviorGroups(accountId, orgId)) {
+            throw new BadRequestException("behavior group creation limit reached. Please consider deleting unused behavior groups before creating more.");
+        }
+
         checkBehaviorGroupDisplayNameDuplicate(orgId, behaviorGroup, isDefaultBehaviorGroup);
 
         behaviorGroup.setAccountId(accountId);
@@ -554,5 +563,31 @@ public class BehaviorGroupRepository {
                 }
             }
         }
+    }
+
+    /**
+     * Checks if it is allowed to create more behavior groups for the given tenant.
+     * @param accountNumber the account number to filter the behavior groups by.
+     * @param orgId the account number to filter the behavior groups by.
+     * @return true if the number of behavior groups of the tenant is lower than the allowed
+     * {@link BehaviorGroupRepository#MAXIMUM_NUMBER_BEHAVIOR_GROUPS}.
+     */
+    private boolean isAllowedToCreateMoreBehaviorGroups(final String accountNumber, final String orgId) {
+        final String countQuery =
+            "SELECT " +
+                "COUNT(bg) " +
+            "FROM " +
+                "BehaviorGroup AS bg " +
+            "WHERE " +
+                "(bg.accountId = :account_number OR bg.accountId IS NULL) " +
+            "AND " +
+                "bg.orgId = :org_id";
+
+        final long count = this.entityManager.createQuery(countQuery, Long.class)
+            .setParameter("account_number", accountNumber)
+            .setParameter("org_id", orgId)
+            .getSingleResult();
+
+        return count < MAXIMUM_NUMBER_BEHAVIOR_GROUPS;
     }
 }
