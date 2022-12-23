@@ -44,7 +44,7 @@ public class OrgConfigResource {
     @Produces(APPLICATION_JSON)
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @Operation(summary = "Save daily digest time preference as UTC format. To cover all time zone conversions to UTC format, minute value have to be 00, 15, 30 or 45.")
+    @Operation(summary = "Save the daily digest UTC time preference. To cover all time zones conversion to UTC, the accepted minute values are 00, 15, 30 and 45.")
     public Response saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
         String orgId = getOrgId(sec);
         if (!ALLOWED_MINUTES.contains(expectedTime.getMinute())) {
