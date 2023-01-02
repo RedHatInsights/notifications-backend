@@ -29,7 +29,7 @@ public class TestInventoryTemplate {
                 .data("environment", environment)
                 .render();
 
-        assertTrue(result.contains("2022 "));
+        assertTrue(result.contains(LocalDateTime.now().getYear() + " "));
         assertTrue(result.contains("- Host Validation Error triggered on Inventory"));
     }
 
