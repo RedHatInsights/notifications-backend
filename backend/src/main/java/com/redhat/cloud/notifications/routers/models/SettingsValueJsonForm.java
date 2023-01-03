@@ -32,7 +32,7 @@ public class SettingsValueJsonForm {
         @JsonInclude(Include.NON_NULL)
         public String checkedWarning;
         @JsonInclude(Include.NON_NULL)
-        public String infoMessage;
+        public String isSubscribed;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
@@ -88,7 +88,7 @@ public class SettingsValueJsonForm {
                             field.label = "Instant notification";
                             field.description = "Immediate email for each triggered application event. See notification settings for configuration.";
                             field.checkedWarning = "Opting into this notification may result in a large number of emails";
-                            field.infoMessage = "You may still receive forced notifications for this service";
+                            field.isSubscribed = "You may still receive forced notifications for this service";
                             break;
                         default:
                             return;
