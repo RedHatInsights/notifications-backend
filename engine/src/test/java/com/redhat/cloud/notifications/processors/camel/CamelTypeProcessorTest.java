@@ -23,6 +23,7 @@ import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import com.redhat.cloud.notifications.openbridge.BridgeItemList;
+import com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor;
 import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.logging.Log;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -39,7 +40,6 @@ import org.apache.http.HttpStatus;
 import org.apache.kafka.common.header.Headers;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -65,15 +65,19 @@ import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CLOUD_EVENT_ORG_ID_EXTENSION_KEY;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.NOTIF_METADATA_KEY;
-import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.TOKEN_HEADER;
+import static com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor.PROCESSOR_NAME;
+import static com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor.SOURCE;
+import static com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor.SPEC_VERSION;
+import static com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor.TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -130,7 +134,10 @@ class CamelTypeProcessorTest {
     MicrometerAssertionHelper micrometerAssertionHelper;
 
     @Inject
-    CamelTypeProcessor processor;
+    CamelTypeProcessor camelProcessor;
+
+    @Inject
+    RhoseTypeProcessor rhoseProcessor;
 
     @Inject
     BridgeHelper bridgeHelper;
@@ -152,8 +159,9 @@ class CamelTypeProcessorTest {
 
     @BeforeEach
     void beforeEach() {
-        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
-        processor.reset();
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(CamelTypeProcessor.PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
+        rhoseProcessor.reset();
     }
 
     @AfterEach
@@ -171,7 +179,7 @@ class CamelTypeProcessorTest {
         Endpoint endpoint2 = buildCamelEndpoint(event.getAction().getAccountId());
 
         // Let's trigger the processing.
-        processor.process(event, List.of(endpoint1, endpoint2));
+        camelProcessor.process(event, List.of(endpoint1, endpoint2));
         ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
         verify(notificationHistoryRepository, times(2)).createNotificationHistory(historyArgumentCaptor.capture());
         List<NotificationHistory> result = historyArgumentCaptor.getAllValues();
@@ -179,9 +187,9 @@ class CamelTypeProcessorTest {
         // Two endpoints should have been processed.
         assertEquals(2, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, SUB_TYPE);
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, "other-type");
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
+        micrometerAssertionHelper.assertCounterIncrement(CamelTypeProcessor.PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, SUB_TYPE);
+        micrometerAssertionHelper.assertCounterIncrement(CamelTypeProcessor.PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, "other-type");
+        micrometerAssertionHelper.assertCounterIncrement(CamelTypeProcessor.PROCESSED_COUNTER_NAME, 0);
 
         // Let's have a look at the first result entry fields.
         assertEquals(event, result.get(0).getEvent());
@@ -241,7 +249,7 @@ class CamelTypeProcessorTest {
 
         // Let's trigger the processing.
         // First with 'random OB endpoints', so we expect this to fail
-        processor.process(event, List.of(endpoint));
+        rhoseProcessor.process(event, List.of(endpoint));
         ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
         List<NotificationHistory> result = historyArgumentCaptor.getAllValues();
@@ -249,10 +257,10 @@ class CamelTypeProcessorTest {
         // One endpoint should have been processed.
         assertEquals(1, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, SUB_TYPE);
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 1, SUB_TYPE_KEY, "slack");
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, "other-type");
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
+        micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, SUB_TYPE);
+        micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 1, SUB_TYPE_KEY, "slack");
+        micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 0, SUB_TYPE_KEY, "other-type");
+        micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 0);
 
         // Let's have a look at the first result entry fields.
         NotificationHistory historyItem = result.get(0);
@@ -304,7 +312,7 @@ class CamelTypeProcessorTest {
 
         // Process again
         reset(notificationHistoryRepository); // TODO Using reset is bad, split this test instead
-        processor.process(event, List.of(endpoint));
+        rhoseProcessor.process(event, List.of(endpoint));
         ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
         List<NotificationHistory> result = historyArgumentCaptor.getAllValues();
@@ -312,7 +320,7 @@ class CamelTypeProcessorTest {
         // One endpoint should have been processed.
         assertEquals(1, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 1, SUB_TYPE_KEY, "slack");
+        micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 1, SUB_TYPE_KEY, "slack");
 
         // Let's have a look at the first result entry fields.
         NotificationHistory historyItem = result.get(0);
@@ -326,13 +334,13 @@ class CamelTypeProcessorTest {
         event.getAction().setAccountId("something-random");
         event.getAction().setOrgId(DEFAULT_ORG_ID);
         reset(notificationHistoryRepository); // TODO Using reset is bad, split this test instead
-        processor.process(event, List.of(endpoint));
+        rhoseProcessor.process(event, List.of(endpoint));
         historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
         result = historyArgumentCaptor.getAllValues();
         assertEquals(1, result.size());
         // Metrics should report the same thing.
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, "slack");
+        micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 2, SUB_TYPE_KEY, "slack");
 
         // Let's have a look at the first result entry fields.
         historyItem = result.get(0);
@@ -405,7 +413,7 @@ class CamelTypeProcessorTest {
         Log.infof("Used bridge for the test: %s", this.bridgeHelper.getBridgeIfNeeded());
 
         // Call the function under test.
-        this.processor.process(event, List.of(endpoint));
+        rhoseProcessor.process(event, List.of(endpoint));
 
         // Get the recorded requests from the Mock Server.
         final HttpRequest[] recordedRequests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(expectedRequest);
@@ -413,7 +421,7 @@ class CamelTypeProcessorTest {
         // We are expecting one call to the Bridge Event Service, so anything different from that should be noted as an
         // error.
         if (recordedRequests.length != 1) {
-            Assertions.fail(String.format("the number of recorded requests doesn't match the expected one. Want %d, got %d", 1, recordedRequests.length));
+            fail(String.format("the number of recorded requests doesn't match the expected one. Want %d, got %d", 1, recordedRequests.length));
         }
 
         // Get the request's JSON body.
@@ -421,53 +429,53 @@ class CamelTypeProcessorTest {
         final JsonObject json = new JsonObject(req.getBodyAsString());
 
         // Assert the values for the top level fields.
-        Assertions.assertEquals(DEFAULT_ORG_ID, json.getString("rhorgid"), "the \"rhorgid\" values don't match");
-        Assertions.assertEquals(CamelTypeProcessor.SPEC_VERSION, json.getString("specversion"), "the \"specversion\" values don't match");
+        assertEquals(DEFAULT_ORG_ID, json.getString("rhorgid"), "the \"rhorgid\" values don't match");
+        assertEquals(SPEC_VERSION, json.getString("specversion"), "the \"specversion\" values don't match");
         // The UUID is randomly generated, so the only way to test that the ID is valid is to check if it is a valid
         // UUID.
         UUID.fromString(json.getString("id"));
-        Assertions.assertEquals(CamelTypeProcessor.SOURCE, json.getString("source"), "the \"source\" values don't match");
-        Assertions.assertEquals(FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME, json.getString("processorname"), "the \"processorname\" values don't match");
-        Assertions.assertEquals(CamelTypeProcessor.TYPE, json.getString("type"), "the \"type\" values don't match");
-        Assertions.assertEquals(FIXTURE_EVENT_ORIGINAL_UUID.toString(), json.getString("originaleventid"), "the \"originaleventid\" values don't match");
+        assertEquals(SOURCE, json.getString("source"), "the \"source\" values don't match");
+        assertEquals(FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME, json.getString("processorname"), "the \"processorname\" values don't match");
+        assertEquals(TYPE, json.getString("type"), "the \"type\" values don't match");
+        assertEquals(FIXTURE_EVENT_ORIGINAL_UUID.toString(), json.getString("originaleventid"), "the \"originaleventid\" values don't match");
 
         // Assert that the "data" object is present.
-        Assertions.assertTrue(json.containsKey("data"), "the expected \"data\" field is not present");
+        assertTrue(json.containsKey("data"), "the expected \"data\" field is not present");
 
         // Assert the results for the fields in the "data" object.
         final JsonObject data = json.getJsonObject("data");
 
         // Assert the values for the fields in the "data" object.
-        Assertions.assertEquals(this.environment.url(), data.getString("environment_url"), "the environment URL isn't the same");
-        Assertions.assertEquals(FIXTURE_ACTION_ACCOUNT_ID, data.getString("account_id"), "the \"account_id\" values don't match");
-        Assertions.assertEquals(FIXTURE_ACTION_APP, data.getString("application"), "the \"application\" values don't match");
-        Assertions.assertEquals(FIXTURE_ACTION_BUNDLE, data.getString("bundle"), "the \"bundle\" values don't match");
-        Assertions.assertEquals(FIXTURE_ACTION_EVENT_TYPE, data.getString("event_type"), "the \"event_type\" values don't match");
-        Assertions.assertEquals(FIXTURE_ACTION_ORG_ID, data.getString("org_id"), "the \"org_id\" values don't match");
-        Assertions.assertEquals(FIXTURE_ACTION_TIMESTAMP.toString(), data.getString("timestamp"), "the \"timestamp\" values don't match");
+        assertEquals(this.environment.url(), data.getString("environment_url"), "the environment URL isn't the same");
+        assertEquals(FIXTURE_ACTION_ACCOUNT_ID, data.getString("account_id"), "the \"account_id\" values don't match");
+        assertEquals(FIXTURE_ACTION_APP, data.getString("application"), "the \"application\" values don't match");
+        assertEquals(FIXTURE_ACTION_BUNDLE, data.getString("bundle"), "the \"bundle\" values don't match");
+        assertEquals(FIXTURE_ACTION_EVENT_TYPE, data.getString("event_type"), "the \"event_type\" values don't match");
+        assertEquals(FIXTURE_ACTION_ORG_ID, data.getString("org_id"), "the \"org_id\" values don't match");
+        assertEquals(FIXTURE_ACTION_TIMESTAMP.toString(), data.getString("timestamp"), "the \"timestamp\" values don't match");
 
         // Assert the fields and the values in the "context" object.
-        Assertions.assertTrue(data.containsKey("context"), "the \"context\" field is not present");
+        assertTrue(data.containsKey("context"), "the \"context\" field is not present");
         final JsonObject context = data.getJsonObject("context");
-        Assertions.assertEquals(FIXTURE_ACTION_CONTEXT_VALUE, context.getString(FIXTURE_ACTION_CONTEXT), String.format("the \"%s\" context values don't match", FIXTURE_ACTION_CONTEXT_VALUE));
+        assertEquals(FIXTURE_ACTION_CONTEXT_VALUE, context.getString(FIXTURE_ACTION_CONTEXT), String.format("the \"%s\" context values don't match", FIXTURE_ACTION_CONTEXT_VALUE));
 
         // Assert the "events" array.
-        Assertions.assertTrue(data.containsKey("events"), "the \"events\" field is not present");
+        assertTrue(data.containsKey("events"), "the \"events\" field is not present");
         final JsonArray events = data.getJsonArray("events");
         if (events.size() != 1) {
-            Assertions.fail(String.format("the events array has an unexpected number of elements. Want %s, got %s", 1, events.size()));
+            fail(String.format("the events array has an unexpected number of elements. Want %s, got %s", 1, events.size()));
         }
 
         final JsonObject eventResult = events.getJsonObject(0);
 
-        Assertions.assertTrue(eventResult.containsKey("metadata"), "the \"metadata\" field is not present");
-        Assertions.assertTrue(eventResult.containsKey("payload"), "the \"payload\" field is not present");
+        assertTrue(eventResult.containsKey("metadata"), "the \"metadata\" field is not present");
+        assertTrue(eventResult.containsKey("payload"), "the \"payload\" field is not present");
 
         // Assert the "payload" object in the event.
         final JsonObject payload = eventResult.getJsonObject("payload");
-        Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY), "the payload's additional property value doesn't match");
-        Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2), "the payload's additional property value doesn't match");
-        Assertions.assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3), "the payload's additional property value doesn't match");
+        assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY), "the payload's additional property value doesn't match");
+        assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_2), "the payload's additional property value doesn't match");
+        assertEquals(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3_VALUE, payload.getString(FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_3), "the payload's additional property value doesn't match");
 
         // Clear the path from the Mock Server since this won't be used by any other test.
         MockServerLifecycleManager.getClient().clear(request().withPath(testMockServerPath), ClearType.ALL);
@@ -523,7 +531,7 @@ class CamelTypeProcessorTest {
         properties.setDisableSslVerification(FIXTURE_CAMEL_SSL_VERIFICATION);
         properties.setSecretToken(FIXTURE_CAMEL_SECRET_TOKEN);
         properties.setBasicAuthentication(basicAuth);
-        properties.setExtras(Map.of(CamelTypeProcessor.PROCESSORNAME, FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME));
+        properties.setExtras(Map.of(PROCESSOR_NAME, FIXTURE_CAMEL_EXTRAS_PROCESSOR_NAME));
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
