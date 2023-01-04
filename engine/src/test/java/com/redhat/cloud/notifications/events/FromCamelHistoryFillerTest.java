@@ -19,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
@@ -82,14 +83,22 @@ public class FromCamelHistoryFillerTest {
     }
 
     @Test
-    void testPayloadWithDurationFitsInteger() {
+    void testPayloadWithDurationFitsInteger1() {
         testPayload(true, 15, null, NotificationStatus.SUCCESS);
+    }
+
+    @Test
+    void testPayloadWithDurationFitsInteger2() {
         testPayload(true, 2147483600, null, NotificationStatus.SUCCESS);
     }
 
     @Test
-    void testPayloadWithDurationFitsLong() {
+    void testPayloadWithDurationFitsLong1() {
         testPayload(true, 2415706709L, null, NotificationStatus.SUCCESS);
+    }
+
+    @Test
+    void testPayloadWithDurationFitsLong2() {
         testPayload(true, 2147483600000L, null, NotificationStatus.SUCCESS);
     }
 
@@ -98,6 +107,18 @@ public class FromCamelHistoryFillerTest {
         String expectedDetailsType = "com.redhat.console.notification.toCamel.tower";
         String expectedDetailsTarget = "1.2.3.4";
 
+        HashMap<String, Object> dataMap = new HashMap<>(Map.of(
+                "duration", expectedDuration,
+                "finishTime", 1639476503209L,
+                "details", Map.of(
+                        "type", expectedDetailsType,
+                        "target", expectedDetailsTarget
+                ),
+                "successful", isSuccessful
+        ));
+
+        dataMap.put("outcome", expectedOutcome);
+
         String payload = Json.encode(Map.of(
                 "specversion", "1.0",
                 "source", "demo-log",
@@ -105,15 +126,7 @@ public class FromCamelHistoryFillerTest {
                 "time", "2021-12-14T10:08:23.217Z",
                 "id", expectedHistoryId,
                 "content-type", "application/json",
-                "data", Json.encode(Map.of(
-                        "duration", expectedDuration,
-                        "finishTime", 1639476503209L,
-                        "details", Map.of(
-                                "type", expectedDetailsType,
-                                "target", expectedDetailsTarget
-                        ),
-                        "successful", isSuccessful
-                ))
+                "data", Json.encode(dataMap)
         ));
         inMemoryConnector.source(FROMCAMEL_CHANNEL).send(payload);
 
@@ -135,7 +148,7 @@ public class FromCamelHistoryFillerTest {
         assertEquals(expectedNotificationStatus, nhUpdate.getValue().getStatus());
 
         assertEquals(expectedHistoryId, decodedPayload.getValue().get("historyId"));
-        assertEquals(expectedDuration, decodedPayload.getValue().get("duration"));
+        assertEquals(expectedDuration, ((Number) decodedPayload.getValue().get("duration")).longValue());
         assertEquals(expectedOutcome, decodedPayload.getValue().get("outcome"));
         Map<String, Object> details = (Map<String, Object>) decodedPayload.getValue().get("details");
         assertEquals(expectedDetailsType, details.get("type"));
