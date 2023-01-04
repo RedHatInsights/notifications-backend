@@ -326,7 +326,7 @@ public class EventConsumerTest {
         assertEquals(DEFAULT_ORG_ID, argumentCaptor.getValue().getOrgId());
         assertEquals(eventType, argumentCaptor.getValue().getEventType());
         assertEquals(payload, argumentCaptor.getValue().getPayload());
-        assertEquals(action, argumentCaptor.getValue().getAction());
+        assertEquals(action, argumentCaptor.getValue().getEventData().getRawEvent());
     }
 
     private void assertNoCounterIncrement(String... counterNames) {

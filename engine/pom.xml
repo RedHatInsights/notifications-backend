@@ -123,6 +123,13 @@
             <artifactId>smallrye-mutiny-vertx-web-client</artifactId>
         </dependency>
 
+        <!-- events-schemas -->
+        <dependency>
+            <groupId>com.redhat.cloud.event</groupId>
+            <artifactId>event-schemas</artifactId>
+            <version>${redhat.events-schema.version}</version>
+        </dependency>
+
         <!-- Clowder -->
         <dependency>
             <groupId>com.redhat.cloud.common</groupId>

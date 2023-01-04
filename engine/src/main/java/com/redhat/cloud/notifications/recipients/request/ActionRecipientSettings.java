@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.recipients.request;
 
+import com.redhat.cloud.notifications.events.EventData;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -39,11 +41,15 @@ public class ActionRecipientSettings extends RecipientSettings {
         return users;
     }
 
-    public static List<ActionRecipientSettings> fromAction(Action action) {
-        return action
-                .getRecipients()
-                .stream()
-                .map(ActionRecipientSettings::new)
-                .collect(Collectors.toList());
+    public static List<ActionRecipientSettings> fromEventData(EventData<?> eventData) {
+        if (eventData.getRawEvent() instanceof Action) {
+            return ((Action) eventData.getRawEvent())
+                    .getRecipients()
+                    .stream()
+                    .map(ActionRecipientSettings::new)
+                    .collect(Collectors.toList());
+        }
+
+        return Collections.emptyList();
     }
 }

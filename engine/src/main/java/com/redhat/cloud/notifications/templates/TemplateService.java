@@ -39,9 +39,9 @@ public class TemplateService {
         return engine.parse(template, null, name).instance();
     }
 
-    public String renderTemplate(User user, Action action, TemplateInstance templateInstance) {
+    public String renderTemplate(User user, Object data, TemplateInstance templateInstance) {
         return templateInstance
-                .data("action", action)
+                .data("data", data)
                 .data("user", user)
                 .data("environment", environment)
                 .render();

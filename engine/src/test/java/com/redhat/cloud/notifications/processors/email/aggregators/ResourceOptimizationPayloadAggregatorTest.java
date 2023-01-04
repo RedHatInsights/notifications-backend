@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.events.EventDataAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -84,7 +85,7 @@ public class ResourceOptimizationPayloadAggregatorTest {
         aggregation.setBundleName("rhel");
         aggregation.setApplicationName("resource-optimization");
         aggregation.setOrgId(DEFAULT_ORG_ID);
-        aggregation.setPayload(new BaseTransformer().toJsonObject(action));
+        aggregation.setPayload(new BaseTransformer().toJsonObject(new EventDataAction(action)));
         return aggregation;
     }
 

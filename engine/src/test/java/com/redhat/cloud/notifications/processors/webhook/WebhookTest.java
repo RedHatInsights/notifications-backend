@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.events.EventDataAction;
 import com.redhat.cloud.notifications.events.IntegrationDisabledNotifier;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -118,7 +119,7 @@ public class WebhookTest {
 
         Action webhookActionMessage = buildWebhookAction();
         Event event = new Event();
-        event.setAction(webhookActionMessage);
+        event.setEventData(new EventDataAction(webhookActionMessage));
         Endpoint ep = buildWebhookEndpoint(url);
 
         try {
@@ -178,7 +179,7 @@ public class WebhookTest {
             String url = getMockServerUrl() + "/foobar";
             Action action = buildWebhookAction();
             Event event = new Event();
-            event.setAction(action);
+            event.setEventData(new EventDataAction(action));
             Endpoint ep = buildWebhookEndpoint(url);
             webhookTypeProcessor.process(event, List.of(ep));
 
@@ -207,7 +208,7 @@ public class WebhookTest {
         try {
             Action action = buildWebhookAction();
             Event event = new Event();
-            event.setAction(action);
+            event.setEventData(new EventDataAction(action));
             Endpoint ep = buildWebhookEndpoint(url);
             webhookTypeProcessor.process(event, List.of(ep));
             ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
@@ -231,7 +232,7 @@ public class WebhookTest {
         try {
             Action action = buildWebhookAction();
             Event event = new Event();
-            event.setAction(action);
+            event.setEventData(new EventDataAction(action));
             Endpoint ep = buildWebhookEndpoint(getMockServerUrl() + "/client-error");
             persistEndpoint(ep);
             assertTrue(ep.isEnabled());
@@ -257,7 +258,7 @@ public class WebhookTest {
         try {
             Action action = buildWebhookAction();
             Event event = new Event();
-            event.setAction(action);
+            event.setEventData(new EventDataAction(action));
             Endpoint ep = buildWebhookEndpoint(getMockServerUrl() + "/server-error");
             persistEndpoint(ep);
             assertTrue(ep.isEnabled());

@@ -150,7 +150,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
             req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
         }
 
-        JsonObject payload = transformer.toJsonObject(event.getAction());
+        JsonObject payload = transformer.toJsonObject(event.getEventData());
 
         doHttpRequest(event, endpoint, req, payload, properties.getMethod().name(), properties.getUrl(), true);
     }

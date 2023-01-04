@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.transformers;
 
+import com.redhat.cloud.notifications.events.EventDataAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -80,7 +81,7 @@ class BaseTransformerTest {
         action.setTimestamp(FIXTURE_TIMESTAMP);
 
         // Call the function under test.
-        JsonObject result = this.baseTransformer.toJsonObject(action);
+        JsonObject result = this.baseTransformer.toJsonObject(new EventDataAction(action));
 
         // Assert the values.
         assertEquals(action.getAccountId(), result.getString(BaseTransformer.ACCOUNT_ID), "the account id isn't the same");

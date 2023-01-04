@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.events.EventDataAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -217,7 +218,7 @@ class EmailSubscriptionTypeProcessorTest {
         eventType.setId(UUID.randomUUID());
         event.setEventType(eventType);
         event.setId(UUID.randomUUID());
-        event.setAction(
+        event.setEventData(new EventDataAction(
                 new Action.ActionBuilder()
                         .withOrgId("123456")
                         .withEventType("triggered")
@@ -237,7 +238,7 @@ class EmailSubscriptionTypeProcessorTest {
                                         .build()
                         ))
                         .build()
-        );
+        ));
 
         Endpoint endpoint = new Endpoint();
         endpoint.setProperties(new EmailSubscriptionProperties());
