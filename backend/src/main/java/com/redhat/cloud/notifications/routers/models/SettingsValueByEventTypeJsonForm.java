@@ -81,7 +81,6 @@ public class SettingsValueByEventTypeJsonForm {
             formEventType.name = eventTypeName;
             formEventType.label = eventTypeSettingsValue.displayName;
             eventTypeSettingsValue.emailSubscriptionTypes.forEach((emailSubscriptionType, isSubscribed) -> {
-                // Todo: Check if the bundle/application supports instant/daily emails and remove if they dont
 
                 Field field = new Field();
                 field.name = String.format("bundles[%s].applications[%s].eventTypes[%s].emailSubscriptionTypes[%s]", bundleName, applicationName, eventTypeName, emailSubscriptionType.toString());
