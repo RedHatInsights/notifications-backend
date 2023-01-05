@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigReposi
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -20,6 +20,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -27,11 +30,13 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
 public class OrgConfigResource {
 
+    static final List<Integer> ALLOWED_MINUTES = Arrays.asList(0, 15, 30, 45);
+
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
-    @ConfigProperty(name = "notification.default.daily.digest.hour", defaultValue = "0")
-    int defaultDailyDigestHour;
+    @ConfigProperty(name = "notifications.default.daily.digest.time", defaultValue = "00:00")
+    LocalTime defaultDailyDigestTime;
 
     @PUT
     @Path("/daily-digest/time-preference")
@@ -39,8 +44,13 @@ public class OrgConfigResource {
     @Produces(APPLICATION_JSON)
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @Operation(summary = "Save the daily digest UTC time preference. To cover all time zones conversion to UTC, the accepted minute values are 00, 15, 30 and 45.")
     public Response saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
         String orgId = getOrgId(sec);
+        if (!ALLOWED_MINUTES.contains(expectedTime.getMinute())) {
+            String errorMessage = "Accepted minute values are: " + ALLOWED_MINUTES.stream().map(min -> String.format("%02d", min)).collect(Collectors.joining(", ")) + ".";
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorMessage).build();
+        }
         Log.infof("Update daily digest time preference for orgId %s at %s", orgId, expectedTime);
         aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
         return Response.ok().build();
@@ -57,7 +67,7 @@ public class OrgConfigResource {
         if (null != storedParameters) {
             return Response.ok(storedParameters.getScheduledExecutionTime()).build();
         } else {
-            return Response.ok(LocalTime.of(defaultDailyDigestHour, 0)).build();
+            return Response.ok(defaultDailyDigestTime).build();
         }
     }
 }

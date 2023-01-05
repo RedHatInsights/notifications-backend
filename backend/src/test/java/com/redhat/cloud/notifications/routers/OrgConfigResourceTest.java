@@ -31,10 +31,14 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "empty", "user");
     Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
+    String testMinIdentityHeaderValue = TestHelpers.encodeRHIdentityInfo("empty", "oneOrgId", "user");
+
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        MockServerConfig.addMockRbacAccess(testMinIdentityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
     }
 
     @Test
@@ -50,6 +54,20 @@ class OrgConfigResourceTest extends DbIsolatedTest {
                 .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
                 .then()
                 .statusCode(Response.Status.BAD_REQUEST.getStatusCode());
+    }
+
+    @Test
+    void testMinuteFilter() {
+        final String ERROR_MESSAGE_WRONG_MINUTE_VALUE = "Accepted minute values are: 00, 15, 30, 45.";
+
+        Header testMinIdentityHeader = TestHelpers.createRHIdentityHeader(testMinIdentityHeaderValue);
+
+        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 00), Response.Status.OK.getStatusCode());
+        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 15), Response.Status.OK.getStatusCode());
+        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 30), Response.Status.OK.getStatusCode());
+        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 45), Response.Status.OK.getStatusCode());
+        assertEquals(ERROR_MESSAGE_WRONG_MINUTE_VALUE, recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 10), Response.Status.BAD_REQUEST.getStatusCode()));
+        assertEquals(ERROR_MESSAGE_WRONG_MINUTE_VALUE, recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 55), Response.Status.BAD_REQUEST.getStatusCode()));
     }
 
     @Test
@@ -79,18 +97,18 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     }
 
     private void recordDefaultDailyDigestTimePreference() {
-        recordDailyDigestTimePreference(TIME, Response.Status.OK.getStatusCode());
+        recordDailyDigestTimePreference(identityHeader, TIME, Response.Status.OK.getStatusCode());
     }
 
-    private void recordDailyDigestTimePreference(LocalTime time, int expectedReturnCode) {
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(time)
-                .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
-                .then()
-                .statusCode(expectedReturnCode);
+    private String recordDailyDigestTimePreference(Header header, LocalTime time, int expectedReturnCode) {
+        return given()
+                 .header(header)
+                 .when()
+                 .contentType(JSON)
+                 .body(time)
+                 .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
+                 .then()
+                 .statusCode(expectedReturnCode).extract().asString();
     }
 
     @Test
