@@ -36,6 +36,9 @@ public class EmailTemplateFactory {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @Inject
+    Policies policies;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -48,7 +51,7 @@ public class EmailTemplateFactory {
         if (bundle.equalsIgnoreCase(RHEL)) {
             switch (application.toLowerCase()) {
                 case POLICIES:
-                    return new Policies();
+                    return policies;
                 case ADVISOR:
                     return new Advisor();
                 case COMPLIANCE:

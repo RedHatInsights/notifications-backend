@@ -1,28 +1,63 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 // Name needs to be "Policies" to read templates from resources/templates/Policies
+@ApplicationScoped
 public class Policies implements EmailTemplate {
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            return Templates.instantEmailTitle();
+            return getInstantEmailTitle();
         }
 
-        return Templates.dailyEmailTitle();
+        return getDailyEmailTitle();
     }
 
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            return Templates.instantEmailBody();
+            return getInstantEmailBody();
         }
 
+        return getDailyEmailBody();
+    }
+
+    private TemplateInstance getDailyEmailTitle() {
+        if (featureFlipper.isPolicyEmailTemplatesV2Enabled()) {
+            return Templates.dailyEmailTitleV2();
+        }
+        return Templates.dailyEmailTitle();
+    }
+
+    private TemplateInstance getDailyEmailBody() {
+        if (featureFlipper.isPolicyEmailTemplatesV2Enabled()) {
+            return Templates.dailyEmailBodyV2();
+        }
         return Templates.dailyEmailBody();
+    }
+
+    private TemplateInstance getInstantEmailTitle() {
+        if (featureFlipper.isPolicyEmailTemplatesV2Enabled()) {
+            return Templates.instantEmailTitleV2();
+        }
+        return Templates.instantEmailTitle();
+    }
+
+    private TemplateInstance getInstantEmailBody() {
+        if (featureFlipper.isPolicyEmailTemplatesV2Enabled()) {
+            return Templates.instantEmailBodyV2();
+        }
+        return Templates.instantEmailBody();
     }
 
     @Override
