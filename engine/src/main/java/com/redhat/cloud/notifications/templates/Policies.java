@@ -45,6 +45,14 @@ public class Policies implements EmailTemplate {
         public static native TemplateInstance dailyEmailTitle();
 
         public static native TemplateInstance dailyEmailBody();
+
+        public static native TemplateInstance dailyEmailTitleV2();
+
+        public static native TemplateInstance dailyEmailBodyV2();
+
+        public static native TemplateInstance instantEmailTitleV2();
+
+        public static native TemplateInstance instantEmailBodyV2();
     }
 
 }
