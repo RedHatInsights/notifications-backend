@@ -15,6 +15,7 @@ import com.networknt.schema.ValidatorTypeCode;
 import com.redhat.cloud.event.core.v1.RHELSystem;
 import com.redhat.cloud.notifications.validator.LocalDateTimeValidator;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
@@ -28,7 +29,8 @@ public class CloudEventParser {
 
     JsonSchema jsonSchema;
 
-    CloudEventParser() {
+    @PostConstruct
+    void init() {
         jsonSchema = getJsonSchema();
     }
 

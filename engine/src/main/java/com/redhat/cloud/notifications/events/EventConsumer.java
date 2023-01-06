@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.utils.ActionParser;
@@ -22,6 +23,8 @@ import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -70,6 +73,10 @@ public class EventConsumer {
     private Counter duplicateCounter;
     private Counter processingExceptionCounter;
 
+    private final String BUNDLE_TAG_KEY = "bundle";
+    private final String APPLICATION_TAG_KEY = "application";
+    private final String EVENT_TYPE_FQN_TAG_KEY = "event-type-fqn";
+
     @PostConstruct
     public void init() {
         rejectedCounter = registry.counter(REJECTED_COUNTER_NAME);
@@ -86,33 +93,15 @@ public class EventConsumer {
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
         String payload = message.getPayload();
+        Map<String, String> tags = new HashMap<>();
         // The two following variables have to be final or effectively final. That why their type is String[] instead of String.
-        String[] bundleName = new String[1];
-        String[] appName = new String[1];
         /*
          * Step 1
          * The payload (JSON) is parsed into an Action.
          */
         try {
-            EventData<?> eventData;
-            try {
-                eventData = new EventDataAction(actionParser.fromJsonString(payload));
-            } catch (Exception actionParseException) {
-                // Try to load it as a CloudEvent
-                try {
-                    eventData = new EventDataCloudEvent(cloudEventParser.fromJsonString(payload));
-                } catch (Exception cloudEventParseException) {
-                    /*
-                     * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
-                     * is therefore considered rejected.
-                     */
-                    rejectedCounter.increment();
 
-                    actionParseException.addSuppressed(cloudEventParseException);
-                    throw actionParseException;
-                }
-            }
-
+            final EventData<?, ?> eventData = parsePayload(payload, tags);
             /*
              * The event data was successfully parsed (either as an action or a cloud event). Depending the situation
              * we now have a bundle/app/eventType triplet or a fully qualified name for the event type.
@@ -125,24 +114,19 @@ public class EventConsumer {
              * apps time to change their integration and start sending the new header. The message ID will become
              * mandatory with cloud events. We may want to throw an exception when it is null.
              */
-            UUID messageId = eventData.getId();
-            if (messageId == null) {
-                messageId = kafkaMessageDeduplicator.findMessageId(bundleName[0], appName[0], message);
-            }
+            final UUID messageId = getMessageId(eventData, message);
 
             String msgId = messageId == null ? "null" : messageId.toString();
             Log.infof("Processing received event [id=%s, %s=%s, orgId=%s, %s]",
                     eventData.getId(), MESSAGE_ID_HEADER, msgId, eventData.getOrgId(), eventData.getEventTypeKey());
 
-            final UUID finalMessageId = messageId;
-            final EventData<?> finalEventData = eventData;
             statelessSessionFactory.withSession(statelessSession -> {
                 /*
                  * Step 3
                  * It's time to check if the message ID is already known. For now, messages without an ID
                  * (messageId == null) are always considered new.
                  */
-                if (kafkaMessageDeduplicator.isDuplicate(finalMessageId)) {
+                if (kafkaMessageDeduplicator.isDuplicate(messageId)) {
                     /*
                      * The message ID is already known which means we already processed the current
                      * message and sent notifications. The message is therefore ignored.
@@ -154,7 +138,7 @@ public class EventConsumer {
                      * The message ID is new. Let's persist it. The current message will never be processed again as
                      * long as its ID stays in the DB.
                      */
-                    kafkaMessageDeduplicator.registerMessageId(finalMessageId);
+                    kafkaMessageDeduplicator.registerMessageId(messageId);
                     /*
                      * Step 5
                      * We need to retrieve an EventType from the DB using the bundle/app/eventType triplet from the
@@ -162,23 +146,25 @@ public class EventConsumer {
                      */
                     EventType eventType;
                     try {
-                        eventType = eventTypeRepository.getEventType(finalEventData.getEventTypeKey());
-                    } catch (NoResultException e) {
+                        eventType = eventTypeRepository.getEventType(eventData.getEventTypeKey());
+                        tags.computeIfAbsent(BUNDLE_TAG_KEY, key -> eventType.getApplication().getBundle().getName());
+                        tags.computeIfAbsent(APPLICATION_TAG_KEY, key -> eventType.getApplication().getName());
+                    } catch (NoResultException | IllegalArgumentException e) {
                         /*
                          * A NoResultException was thrown because no EventType was found. The message is therefore
                          * considered rejected.
                          */
                         rejectedCounter.increment();
-                        throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, finalEventData.getEventTypeKey()));
+                        throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventData.getEventTypeKey()));
                     }
                     /*
                      * Step 6
                      * The EventType was found. It's time to create an Event from the current message and persist it.
                      */
-                    Event event = new Event(eventType, payload, finalEventData);
+                    Event event = new Event(eventType, payload, eventData);
                     if (event.getId() == null) {
                         // NOTIF-499 If there is no ID provided whatsoever we create one.
-                        event.setId(Objects.requireNonNullElseGet(finalMessageId, UUID::randomUUID));
+                        event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
                     }
                     eventRepository.create(event);
                     /*
@@ -204,11 +190,47 @@ public class EventConsumer {
             processingExceptionCounter.increment();
             Log.infof(e, "Could not process the payload: %s", payload);
         } finally {
-            // bundleName[0] and appName[0] are null when the action parsing failed.
-            String bundle = bundleName[0] == null ? "" : bundleName[0];
-            String application = appName[0] == null ? "" : appName[0];
-            consumedTimer.stop(registry.timer(CONSUMED_TIMER_NAME, "bundle", bundle, "application", application));
+            consumedTimer.stop(registry.timer(
+                    CONSUMED_TIMER_NAME,
+                    BUNDLE_TAG_KEY, tags.getOrDefault(BUNDLE_TAG_KEY, ""),
+                    APPLICATION_TAG_KEY, tags.getOrDefault(APPLICATION_TAG_KEY, ""),
+                    EVENT_TYPE_FQN_TAG_KEY, tags.getOrDefault(EVENT_TYPE_FQN_TAG_KEY, "")
+            ));
         }
         return message.ack();
+    }
+
+    private EventData<?, ?> parsePayload(String payload, Map<String, String> tags) {
+        try {
+            Action action = actionParser.fromJsonString(payload);
+            tags.putIfAbsent(BUNDLE_TAG_KEY, action.getBundle());
+            tags.putIfAbsent(APPLICATION_TAG_KEY, action.getApplication());
+            return new EventDataAction(action);
+        } catch (Exception actionParseException) {
+            // Try to load it as a CloudEvent
+            try {
+                EventDataCloudEvent eventDataCloudEvent = new EventDataCloudEvent(cloudEventParser.fromJsonString(payload));
+                tags.putIfAbsent(EVENT_TYPE_FQN_TAG_KEY, eventDataCloudEvent.getEventTypeKey().getFullyQualifiedName());
+                return eventDataCloudEvent;
+            } catch (Exception cloudEventParseException) {
+                /*
+                 * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
+                 * is therefore considered rejected.
+                 */
+                rejectedCounter.increment();
+
+                actionParseException.addSuppressed(cloudEventParseException);
+                throw actionParseException;
+            }
+        }
+    }
+
+    private UUID getMessageId(EventData<?, ?> eventData, Message<String> message) {
+        UUID messageId = eventData.getId();
+        if (messageId == null) {
+            messageId = kafkaMessageDeduplicator.findMessageId(eventData.getEventTypeKey(), message);
+        }
+
+        return messageId;
     }
 }

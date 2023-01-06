@@ -2,11 +2,10 @@ package com.redhat.cloud.notifications.events;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.redhat.cloud.notifications.models.EventTypeFqnKey;
-import com.redhat.cloud.notifications.models.EventTypeKey;
 
 import java.util.UUID;
 
-public class EventDataCloudEvent implements EventData<JsonNode> {
+public class EventDataCloudEvent implements EventData<JsonNode, EventTypeFqnKey> {
 
     private final JsonNode cloudEvent;
     private final EventTypeFqnKey eventTypeFqnKey;
@@ -17,7 +16,7 @@ public class EventDataCloudEvent implements EventData<JsonNode> {
     }
 
     @Override
-    public EventTypeKey getEventTypeKey() {
+    public EventTypeFqnKey getEventTypeKey() {
         return eventTypeFqnKey;
     }
 

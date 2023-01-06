@@ -41,7 +41,7 @@ public class ActionRecipientSettings extends RecipientSettings {
         return users;
     }
 
-    public static List<ActionRecipientSettings> fromEventData(EventData<?> eventData) {
+    public static List<ActionRecipientSettings> fromEventData(EventData<?, ?> eventData) {
         if (eventData.getRawEvent() instanceof Action) {
             return ((Action) eventData.getRawEvent())
                     .getRecipients()

@@ -38,7 +38,7 @@ public class BaseTransformer {
      * @param eventData the {@link EventData} to transform.
      * @return a {@link JsonObject} containing the given event data.
      */
-    public JsonObject toJsonObject(final EventData<?> eventData) {
+    public JsonObject toJsonObject(final EventData<?, ?> eventData) {
         if (eventData instanceof EventDataAction) {
             JsonObject message = new JsonObject();
             Action action = ((EventDataAction) eventData).getRawEvent();

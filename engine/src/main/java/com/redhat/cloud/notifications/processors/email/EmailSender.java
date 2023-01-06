@@ -110,7 +110,7 @@ public class EmailSender {
         }
     }
 
-    private JsonObject getPayload(User user, EventData<?> eventData, TemplateInstance subject, TemplateInstance body) {
+    private JsonObject getPayload(User user, EventData<?, ?> eventData, TemplateInstance subject, TemplateInstance body) {
 
         String renderedSubject;
         String renderedBody;

@@ -23,7 +23,7 @@ public class EventTypeRepository {
             return getEventType(((EventTypeFqnKey) eventTypeKey).getFullyQualifiedName());
         }
 
-        throw new RuntimeException("Unsupported EventTypeKey found: " + eventTypeKey.getClass());
+        throw new IllegalArgumentException("Unsupported EventTypeKey found: " + eventTypeKey.getClass());
     }
 
     public EventType getEventType(String bundleName, String applicationName, String eventTypeName) {

@@ -1,12 +1,11 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EventTypeKey;
 import com.redhat.cloud.notifications.models.EventTypeTripletKey;
 
 import java.util.UUID;
 
-public class EventDataAction implements EventData<Action> {
+public class EventDataAction implements EventData<Action, EventTypeTripletKey> {
 
     private final Action action;
     private final EventTypeTripletKey eventTypeTripletKey;
@@ -21,7 +20,7 @@ public class EventDataAction implements EventData<Action> {
     }
 
     @Override
-    public EventTypeKey getEventTypeKey() {
+    public EventTypeTripletKey getEventTypeKey() {
         return eventTypeTripletKey;
     }
 

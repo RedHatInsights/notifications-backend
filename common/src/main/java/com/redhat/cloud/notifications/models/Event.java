@@ -72,11 +72,11 @@ public class Event {
     private String payload;
 
     @Transient
-    private EventData<?> eventData;
+    private EventData<?, ?> eventData;
 
     public Event() { }
 
-    public Event(EventType eventType, String payload, EventData<?> eventData) {
+    public Event(EventType eventType, String payload, EventData<?, ?> eventData) {
         this(eventData.getAccountId(), eventData.getOrgId(), eventType, eventData.getId());
         this.payload = payload;
         this.eventData = eventData;
@@ -198,11 +198,11 @@ public class Event {
         this.payload = payload;
     }
 
-    public EventData<?> getEventData() {
+    public EventData<?, ?> getEventData() {
         return eventData;
     }
 
-    public void setEventData(EventData<?> action) {
+    public void setEventData(EventData<?, ?> action) {
         this.eventData = action;
     }
 

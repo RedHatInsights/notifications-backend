@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.events.EventDataAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -70,7 +71,7 @@ public class AdvisorTestHelpers {
         aggregation.setBundleName(action.getBundle());
         aggregation.setApplicationName(action.getApplication());
         aggregation.setOrgId(DEFAULT_ORG_ID);
-        aggregation.setPayload(new BaseTransformer().toJsonObject(action));
+        aggregation.setPayload(new BaseTransformer().toJsonObject(new EventDataAction(action)));
 
         return aggregation;
     }

@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventTypeKey;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -299,6 +300,7 @@ public class EventConsumerTest {
         EventType eventType = new EventType();
         eventType.setDisplayName("Event type");
         eventType.setApplication(app);
+        when(eventTypeRepository.getEventType((EventTypeKey) any())).thenCallRealMethod();
         when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(eventType);
         when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
         return eventType;
