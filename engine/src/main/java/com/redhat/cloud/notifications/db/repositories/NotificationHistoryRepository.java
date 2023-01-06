@@ -45,28 +45,21 @@ public class NotificationHistoryRepository {
     /**
      * Update a stub history item with data we have received from the Camel sender
      *
-     * @param jo Map containing the returned data
-     * @return Nothing
      * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
      */
     @Transactional
     public boolean updateHistoryItem(NotificationHistory notificationHistory) {
-        String updateQuery = "UPDATE NotificationHistory SET details = :details, invocationResult = :result, status = :status, invocationTime = :invocationTime WHERE id = :id";
-        int count = statelessSessionFactory.getCurrentSession().createQuery(updateQuery)
+        String hql = "UPDATE NotificationHistory " +
+                "SET details = :details, invocationResult = :result, status = :status, invocationTime = :invocationTime " +
+                "WHERE id = :id";
+        int count = statelessSessionFactory.getCurrentSession().createQuery(hql)
                 .setParameter("details", notificationHistory.getDetails())
                 .setParameter("result", notificationHistory.isInvocationResult())
                 .setParameter("status", notificationHistory.getStatus())
                 .setParameter("id", notificationHistory.getId())
                 .setParameter("invocationTime", notificationHistory.getInvocationTime())
                 .executeUpdate();
-
-        if (count == 0) {
-            throw new NoResultException("Update returned no rows");
-        } else if (count > 1) {
-            throw new IllegalStateException("Update count was " + count);
-        }
-
-        return true;
+        return count > 0;
     }
 
     public Endpoint getEndpointForHistoryId(String historyId) {

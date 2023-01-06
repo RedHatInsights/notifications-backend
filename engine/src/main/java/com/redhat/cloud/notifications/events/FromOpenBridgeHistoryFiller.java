@@ -30,9 +30,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
 import static io.quarkus.scheduler.Scheduled.ConcurrentExecution.SKIP;
 
-/**
- *
- */
 @ApplicationScoped
 public class FromOpenBridgeHistoryFiller {
 
@@ -103,23 +100,27 @@ public class FromOpenBridgeHistoryFiller {
         }
 
         for (ProcessingError pe : items) {
+            try {
 
-            // We may have seen an item before, skip it
-            String historyId = pe.getHeaders().get(RHOSE_ORIGINAL_EVENT_ID_HEADER);
-            if (alreadyProcessed(historyId)) {
-                continue;
-            }
-
-            statelessSessionFactory.withSession(statelessSession -> {
-                Map<String, Object> decodedPayload = decodeItem(pe);
-                // TODO reinjectIf needed (?)
-                try {
-                    camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
-                    messagesWithError.increment();
-                } catch (Exception e) {
-                    Log.warn("|  History update failed", e);
+                // We may have seen an item before, skip it
+                String historyId = pe.getHeaders().get(RHOSE_ORIGINAL_EVENT_ID_HEADER);
+                if (alreadyProcessed(historyId)) {
+                    continue;
                 }
-            });
+
+                statelessSessionFactory.withSession(statelessSession -> {
+                    Map<String, Object> decodedPayload = decodeItem(pe);
+                    // TODO reinjectIf needed (?)
+                    boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
+                    if (updated) {
+                        messagesWithError.increment();
+                    } else {
+                        Log.infof("RHOSE notification history update failed because no record was found with [id=%s]", historyId);
+                    }
+                });
+            } catch (Exception e) {
+                Log.error("RHOSE error processing failed", e);
+            }
         }
     }
 

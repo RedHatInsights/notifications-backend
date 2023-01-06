@@ -22,7 +22,7 @@ public class CamelHistoryFillerHelper {
      * @return Nothing
      * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
      */
-    public void updateHistoryItem(Map<String, Object> jo) {
+    public boolean updateHistoryItem(Map<String, Object> jo) {
         String historyId = (String) jo.get("historyId");
 
         if (historyId == null || historyId.isBlank()) {
@@ -60,6 +60,6 @@ public class CamelHistoryFillerHelper {
         history.setDetails(details);
         history.setInvocationTime(duration);
 
-        notificationHistoryRepository.updateHistoryItem(history);
+        return notificationHistoryRepository.updateHistoryItem(history);
     }
 }
