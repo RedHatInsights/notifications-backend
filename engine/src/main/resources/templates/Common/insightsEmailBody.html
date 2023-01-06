@@ -136,7 +136,7 @@
         }
 
         .rh-body {
-            padding: 0 20px 24px 20px;
+            padding: 0 16px 24px 16px;
         }
 
         .rh-body,
@@ -160,7 +160,7 @@
 
         .rh-masthead__subhead {
             background-color: #212427 !important;
-            padding: 22px;
+            padding: 22px 0px 22px 0px;
             color: #ffffff !important;
             font-size: 16px;
             text-align: center;
@@ -170,14 +170,16 @@
             background-color: #212427 !important;
             padding: 16px 22px 16px 22px;
             color: #ffffff !important;
-            font-size: 18px;
+            font-size: 20px;
             text-align: left;
             font-family: 'Red Hat Display', sans-serif;
+            font-weight: 500;
         }
 
         .rh-masthead__section__head__subtitle {
-            font-size: 14px;
+            font-size: 16px;
             font-family: 'Red Hat Text', sans-serif;
+            font-weight: 400;
         }
 
         .rh-masthead__section__head__counter {
@@ -185,6 +187,7 @@
             font-size: 36px;
             font-family: 'Red Hat Text', sans-serif;
             color: #ffffff !important;
+            font-weight: 500;
         }
 
         .rh-masthead__section__head__counter a {
@@ -192,7 +195,7 @@
         }
 
         .rh-masthead__brand {
-            padding: 22px 20px 22px 20px;
+            padding: 22px 0px 22px 0px;
             background-color: #151515 !important;
             background-repeat: repeat;
             background-image: url(https://console.redhat.com/apps/frontend-assets/email-assets/bg_151515.jpg);
@@ -223,7 +226,7 @@
         /* Content block */
         .rh-content__block {
             max-width: 100%;
-            padding: 20px 20px 20px 20px;
+            padding: 0px 20px 0px 20px;
             overflow: hidden;
         }
 
@@ -361,6 +364,7 @@
 </style>
 </head>
 {@boolean renderSection1=false}
+{@boolean renderButtonSection1=false}
 {@boolean renderSection2=false}
 <body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0" class="rh-body">
 <center>
@@ -415,39 +419,81 @@
                                     <tr>
                                         <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
                                     </tr>
-                                    {#insert content-body-section1}{/}
+                                    <tr>
+                                        <td class="rh-content__block">
+                                            {#insert content-body-section1}{/}
+                                        </td>
+                                    </tr>
+                                    {#if renderButtonSection1}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 24px 0px;">
+                                                <table align="center">
+                                                    <tr>
+                                                        <td class="rh-cta-link" align="center">
+                                                            {#insert content-button-section1}{/}
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    {#else}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                        </tr>
+                                    {/if}
                                 </table>
                             </td>
                         </tr>
                     {/if}
 
                     {#if renderSection2}
-                        <tr>
-                            <td class="rh-body">
-                                <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
-                                    <tr>
-                                        <td>
-                                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                                                <tr>
-                                                    <td class="rh-masthead__section__head">
-                                                        <p>{#insert content-title-section2}{/}<br/>
-                                                            <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section2}{/}</span>
-                                                        </p>
-                                                    </td>
-                                                    <td class="rh-masthead__section__head">
-                                                        <p><span class="rh-masthead__section__head__counter">{#insert content-title-right-part-section2}{/}</span>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
-                                    </tr>
-                                    {#insert content-body-section2}{/}
-                                </table>
-                            </td>
-                        </tr>
+                    <tr>
+                        <td class="rh-body">
+                            <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td class="rh-masthead__section__head">
+                                                    <p>{#insert content-title-section2}{/}<br/>
+                                                        <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section2}{/}</span>
+                                                    </p>
+                                                </td>
+                                                <td class="rh-masthead__section__head">
+                                                    <p><span class="rh-masthead__section__head__counter">{#insert content-title-right-part-section2}{/}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                </tr>
+                                <tr>
+                                    <td class="rh-content__block">
+                                        {#insert content-body-section2}{/}
+                                    </td>
+                                </tr>
+                                {#if renderButtonSection1}
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 24px 0px;">
+                                        <table align="center">
+                                            <tr>
+                                                <td class="rh-cta-link" align="center">
+                                                    {#insert content-button-section1}{/}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {#else}
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                </tr>
+                                {/if}
+                            </table>
+                        </td>
+                    </tr>
                     {/if}
 
                     <!-- end body section -->
@@ -465,14 +511,6 @@
                         </td>
                     </tr>
                     <!-- end footer -->
-
-                    <!-- Ensure padding bottom - don't remove empty row -->
-                    <tr>
-                        <td>
-                        </td>
-                    </tr>
-                    <!-- leave - empty row -->
-
                 </table>
             </td>
         </tr>
