@@ -12,6 +12,8 @@ import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -193,61 +195,73 @@ class EmailSubscriptionTypeProcessorTest {
 
     @Test
     void shouldSendDefaultEmailTemplatesFromDatabase() {
-        featureFlipper.setUseTemplatesFromDb(true);
-        statelessSessionFactory.withSession(statelessSession -> {
-            shouldSendDefaultEmail();
-        });
-        featureFlipper.setUseTemplatesFromDb(false);
+        try {
+            featureFlipper.setUseTemplatesFromDb(true);
+            statelessSessionFactory.withSession(statelessSession -> {
+                shouldSendDefaultEmail();
+            });
+        } finally {
+            featureFlipper.setUseTemplatesFromDb(false);
+        }
     }
 
     void shouldSendDefaultEmail() {
-        featureFlipper.setUseDefaultTemplate(true);
+        try {
+            featureFlipper.setUseDefaultTemplate(true);
 
-        User user1 = new User();
-        user1.setUsername("foo");
-        User user2 = new User();
-        user2.setUsername("bar");
+            User user1 = new User();
+            user1.setUsername("foo");
+            User user2 = new User();
+            user2.setUsername("bar");
 
-        when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any(), any()))
-            .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
-        when(recipientResolver.recipientUsers(any(),  any(), any()))
-            .thenReturn(Set.of(user1, user2));
+            when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any(), any()))
+                    .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
+            when(recipientResolver.recipientUsers(any(),  any(), any()))
+                    .thenReturn(Set.of(user1, user2));
 
-        Event event = new Event();
-        EventType eventType = new EventType();
-        eventType.setId(UUID.randomUUID());
-        event.setEventType(eventType);
-        event.setId(UUID.randomUUID());
-        event.setEventData(new EventDataAction(
-                new Action.ActionBuilder()
-                        .withOrgId("123456")
-                        .withEventType("triggered")
-                        .withApplication("policies")
-                        .withBundle("rhel")
-                        .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
-                        .withContext(
-                                new Context.ContextBuilder()
-                                        .withAdditionalProperty("foo", "im foo")
-                                        .withAdditionalProperty("bar", Map.of("baz", "im baz"))
-                                        .build()
-                        )
-                        .withEvents(List.of(
-                                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
-                                        .withMetadata(new Metadata())
-                                        .withPayload(new Payload())
-                                        .build()
-                        ))
-                        .build()
-        ));
+            Bundle bundle = new Bundle();
+            bundle.setName("rhel");
+            Application application = new Application();
+            application.setName("policies");
+            application.setBundle(bundle);
+            EventType eventType = new EventType();
+            eventType.setId(UUID.randomUUID());
+            eventType.setApplication(application);
+            Event event = new Event();
+            event.setEventType(eventType);
+            event.setId(UUID.randomUUID());
+            event.setEventData(new EventDataAction(
+                    new Action.ActionBuilder()
+                            .withOrgId("123456")
+                            .withEventType("triggered")
+                            .withApplication("policies")
+                            .withBundle("rhel")
+                            .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
+                            .withContext(
+                                    new Context.ContextBuilder()
+                                            .withAdditionalProperty("foo", "im foo")
+                                            .withAdditionalProperty("bar", Map.of("baz", "im baz"))
+                                            .build()
+                            )
+                            .withEvents(List.of(
+                                    new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                            .withMetadata(new Metadata())
+                                            .withPayload(new Payload())
+                                            .build()
+                            ))
+                            .build()
+            ));
 
-        Endpoint endpoint = new Endpoint();
-        endpoint.setProperties(new EmailSubscriptionProperties());
-        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+            Endpoint endpoint = new Endpoint();
+            endpoint.setProperties(new EmailSubscriptionProperties());
+            endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
-        testee.process(event, List.of(endpoint));
-        verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
-        verify(sender, times(1)).sendEmail(eq(user2), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
-        featureFlipper.setUseDefaultTemplate(false);
+            testee.process(event, List.of(endpoint));
+            verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
+            verify(sender, times(1)).sendEmail(eq(user2), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
+        } finally {
+            featureFlipper.setUseDefaultTemplate(false);
+        }
     }
 
     @Test

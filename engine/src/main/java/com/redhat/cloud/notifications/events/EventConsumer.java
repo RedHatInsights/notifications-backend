@@ -42,6 +42,10 @@ public class EventConsumer {
     public static final String DUPLICATE_COUNTER_NAME = "input.duplicate";
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
 
+    static final String TAG_KEY_BUNDLE = "bundle";
+    static final String TAG_KEY_APPLICATION = "application";
+    static final String TAG_KEY_EVENT_TYPE_FQN = "event-type-fqn";
+
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for key: %s";
 
     @Inject
@@ -72,10 +76,6 @@ public class EventConsumer {
     private Counter processingErrorCounter;
     private Counter duplicateCounter;
     private Counter processingExceptionCounter;
-
-    private final String BUNDLE_TAG_KEY = "bundle";
-    private final String APPLICATION_TAG_KEY = "application";
-    private final String EVENT_TYPE_FQN_TAG_KEY = "event-type-fqn";
 
     @PostConstruct
     public void init() {
@@ -147,8 +147,8 @@ public class EventConsumer {
                     EventType eventType;
                     try {
                         eventType = eventTypeRepository.getEventType(eventData.getEventTypeKey());
-                        tags.computeIfAbsent(BUNDLE_TAG_KEY, key -> eventType.getApplication().getBundle().getName());
-                        tags.computeIfAbsent(APPLICATION_TAG_KEY, key -> eventType.getApplication().getName());
+                        tags.computeIfAbsent(TAG_KEY_BUNDLE, key -> eventType.getApplication().getBundle().getName());
+                        tags.computeIfAbsent(TAG_KEY_APPLICATION, key -> eventType.getApplication().getName());
                     } catch (NoResultException | IllegalArgumentException e) {
                         /*
                          * A NoResultException was thrown because no EventType was found. The message is therefore
@@ -192,9 +192,9 @@ public class EventConsumer {
         } finally {
             consumedTimer.stop(registry.timer(
                     CONSUMED_TIMER_NAME,
-                    BUNDLE_TAG_KEY, tags.getOrDefault(BUNDLE_TAG_KEY, ""),
-                    APPLICATION_TAG_KEY, tags.getOrDefault(APPLICATION_TAG_KEY, ""),
-                    EVENT_TYPE_FQN_TAG_KEY, tags.getOrDefault(EVENT_TYPE_FQN_TAG_KEY, "")
+                    TAG_KEY_BUNDLE, tags.getOrDefault(TAG_KEY_BUNDLE, ""),
+                    TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
+                    TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, "")
             ));
         }
         return message.ack();
@@ -203,16 +203,16 @@ public class EventConsumer {
     private EventData<?, ?> parsePayload(String payload, Map<String, String> tags) {
         try {
             Action action = actionParser.fromJsonString(payload);
-            tags.putIfAbsent(BUNDLE_TAG_KEY, action.getBundle());
-            tags.putIfAbsent(APPLICATION_TAG_KEY, action.getApplication());
+            tags.putIfAbsent(TAG_KEY_BUNDLE, action.getBundle());
+            tags.putIfAbsent(TAG_KEY_APPLICATION, action.getApplication());
             return new EventDataAction(action);
-        } catch (Exception actionParseException) {
+        } catch (RuntimeException actionParseException) {
             // Try to load it as a CloudEvent
             try {
                 EventDataCloudEvent eventDataCloudEvent = new EventDataCloudEvent(cloudEventParser.fromJsonString(payload));
-                tags.putIfAbsent(EVENT_TYPE_FQN_TAG_KEY, eventDataCloudEvent.getEventTypeKey().getFullyQualifiedName());
+                tags.putIfAbsent(TAG_KEY_EVENT_TYPE_FQN, eventDataCloudEvent.getEventTypeKey().getFullyQualifiedName());
                 return eventDataCloudEvent;
-            } catch (Exception cloudEventParseException) {
+            } catch (RuntimeException cloudEventParseException) {
                 /*
                  * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
                  * is therefore considered rejected.

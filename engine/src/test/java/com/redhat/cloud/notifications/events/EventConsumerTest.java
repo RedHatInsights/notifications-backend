@@ -43,6 +43,9 @@ import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNE
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_EXCEPTION_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.EventConsumer.TAG_KEY_APPLICATION;
+import static com.redhat.cloud.notifications.events.EventConsumer.TAG_KEY_BUNDLE;
+import static com.redhat.cloud.notifications.events.EventConsumer.TAG_KEY_EVENT_TYPE_FQN;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_INVALID_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_MISSING_COUNTER_NAME;
@@ -100,6 +103,9 @@ public class EventConsumerTest {
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
         micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
+
+        // Connect the real method for all tests - this test only does the wiring for the cloud-events and the regular notification
+        when(eventTypeRepository.getEventType((EventTypeKey) any())).thenCallRealMethod();
     }
 
     @AfterEach
@@ -118,7 +124,11 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, action.getBundle(),
+                TAG_KEY_APPLICATION, action.getApplication(),
+                TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -140,7 +150,11 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, action.getBundle(),
+                TAG_KEY_APPLICATION, action.getApplication(),
+                TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -160,7 +174,11 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", "", "application", "").count());
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, "",
+                TAG_KEY_APPLICATION, "",
+                TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 1);
         assertNoCounterIncrement(
@@ -182,7 +200,11 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, action.getBundle(),
+                TAG_KEY_APPLICATION, action.getApplication(),
+                TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 1);
@@ -205,7 +227,11 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, action.getBundle(),
+                TAG_KEY_APPLICATION, action.getApplication(),
+                TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
         assertNoCounterIncrement(
@@ -229,7 +255,11 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 2);
-        assertEquals(2L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(2L, registry.timer(CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, action.getBundle(),
+                TAG_KEY_APPLICATION, action.getApplication(),
+                TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
         micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
         assertNoCounterIncrement(
@@ -252,7 +282,11 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, action.getBundle(),
+                TAG_KEY_APPLICATION, action.getApplication(),
+                TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -275,7 +309,11 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME, "bundle", action.getBundle(), "application", action.getApplication()).count());
+        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, action.getBundle(),
+                TAG_KEY_APPLICATION, action.getApplication(),
+                TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -300,7 +338,6 @@ public class EventConsumerTest {
         EventType eventType = new EventType();
         eventType.setDisplayName("Event type");
         eventType.setApplication(app);
-        when(eventTypeRepository.getEventType((EventTypeKey) any())).thenCallRealMethod();
         when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(eventType);
         when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
         return eventType;

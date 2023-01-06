@@ -121,6 +121,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (endpoints != null && !endpoints.isEmpty()) {
+            // TODO: Check if we should be using the eventType or application's id instead of the name
             EventType eventType = event.getEventType();
             String bundleName = eventType.getApplication().getBundle().getName();
             String applicationName = eventType.getApplication().getName();
