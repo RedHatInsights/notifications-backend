@@ -69,7 +69,7 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-sources-secrets-backend", defaultValue = "false")
     boolean sourcesSecretsBackend;
 
-    @ConfigProperty(name = "notifications.use-policy-email-templates-v2.enabled", defaultValue = "true")
+    @ConfigProperty(name = "notifications.use-policy-email-templates-v2.enabled", defaultValue = "false")
     boolean policyEmailTemplatesV2Enabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
