@@ -81,10 +81,9 @@ public class FromCamelHistoryFiller {
             Map<String, Object> decodedPayload = decodeItem(payload);
             statelessSessionFactory.withSession(statelessSession -> {
                 reinjectIfNeeded(decodedPayload);
-                try {
-                    camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
-                } catch (Exception e) {
-                    Log.info("|  Update Fail", e);
+                boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
+                if (!updated) {
+                    Log.infof("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
                 }
             });
         } catch (Exception e) {
