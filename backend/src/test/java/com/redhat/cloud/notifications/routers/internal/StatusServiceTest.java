@@ -37,7 +37,7 @@ public class StatusServiceTest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
-    // @Test
+    @Test
     public void testValidCurrentStatus() {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("tenant", "empty", "username");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);

@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import javax.persistence.TypedQuery;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -40,7 +39,7 @@ public class EndpointRepositoryTest {
     @Inject
     EndpointRepository endpointRepository;
 
-    // @Test
+    @Test
     void shouldSortCorrectly() {
         String orgId = "endpoint-repository-test-sort";
 
@@ -99,10 +98,7 @@ public class EndpointRepositoryTest {
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::getCreated).collect(Collectors.toList()),
                 Query.Sort.Order.ASC,
-                createdEndpointList.stream().map(Endpoint::getCreated).sorted()
-                        // on my system - and when running from the command line - the database return this truncated to MICROS - but they get created up to the NANO seconds
-                        .map(c -> c.truncatedTo(ChronoUnit.MICROS))
-                        .collect(Collectors.toList())
+                createdEndpointList.stream().map(Endpoint::getCreated).sorted().collect(Collectors.toList())
         );
     }
 
