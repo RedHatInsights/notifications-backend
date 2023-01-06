@@ -101,7 +101,7 @@ public class EventConsumer {
          */
         try {
 
-            final EventData<?, ?> eventData = parsePayload(payload, tags);
+            final EventWrapper<?, ?> eventWrapper = parsePayload(payload, tags);
             /*
              * The event data was successfully parsed (either as an action or a cloud event). Depending the situation
              * we now have a bundle/app/eventType triplet or a fully qualified name for the event type.
@@ -114,11 +114,11 @@ public class EventConsumer {
              * apps time to change their integration and start sending the new header. The message ID will become
              * mandatory with cloud events. We may want to throw an exception when it is null.
              */
-            final UUID messageId = getMessageId(eventData, message);
+            final UUID messageId = getMessageId(eventWrapper, message);
 
             String msgId = messageId == null ? "null" : messageId.toString();
             Log.infof("Processing received event [id=%s, %s=%s, orgId=%s, %s]",
-                    eventData.getId(), MESSAGE_ID_HEADER, msgId, eventData.getOrgId(), eventData.getEventTypeKey());
+                    eventWrapper.getId(), MESSAGE_ID_HEADER, msgId, eventWrapper.getOrgId(), eventWrapper.getKey());
 
             statelessSessionFactory.withSession(statelessSession -> {
                 /*
@@ -146,7 +146,7 @@ public class EventConsumer {
                      */
                     EventType eventType;
                     try {
-                        eventType = eventTypeRepository.getEventType(eventData.getEventTypeKey());
+                        eventType = eventTypeRepository.getEventType(eventWrapper.getKey());
                         tags.computeIfAbsent(TAG_KEY_BUNDLE, key -> eventType.getApplication().getBundle().getName());
                         tags.computeIfAbsent(TAG_KEY_APPLICATION, key -> eventType.getApplication().getName());
                     } catch (NoResultException | IllegalArgumentException e) {
@@ -155,13 +155,13 @@ public class EventConsumer {
                          * considered rejected.
                          */
                         rejectedCounter.increment();
-                        throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventData.getEventTypeKey()));
+                        throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventWrapper.getKey()));
                     }
                     /*
                      * Step 6
                      * The EventType was found. It's time to create an Event from the current message and persist it.
                      */
-                    Event event = new Event(eventType, payload, eventData);
+                    Event event = new Event(eventType, payload, eventWrapper);
                     if (event.getId() == null) {
                         // NOTIF-499 If there is no ID provided whatsoever we create one.
                         event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
@@ -200,18 +200,18 @@ public class EventConsumer {
         return message.ack();
     }
 
-    private EventData<?, ?> parsePayload(String payload, Map<String, String> tags) {
+    private EventWrapper<?, ?> parsePayload(String payload, Map<String, String> tags) {
         try {
             Action action = actionParser.fromJsonString(payload);
             tags.putIfAbsent(TAG_KEY_BUNDLE, action.getBundle());
             tags.putIfAbsent(TAG_KEY_APPLICATION, action.getApplication());
-            return new EventDataAction(action);
+            return new EventWrapperAction(action);
         } catch (RuntimeException actionParseException) {
             // Try to load it as a CloudEvent
             try {
-                EventDataCloudEvent eventDataCloudEvent = new EventDataCloudEvent(cloudEventParser.fromJsonString(payload));
-                tags.putIfAbsent(TAG_KEY_EVENT_TYPE_FQN, eventDataCloudEvent.getEventTypeKey().getFullyQualifiedName());
-                return eventDataCloudEvent;
+                EventWrapperCloudEvent eventWrapperCloudEvent = new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload));
+                tags.putIfAbsent(TAG_KEY_EVENT_TYPE_FQN, eventWrapperCloudEvent.getKey().getFullyQualifiedName());
+                return eventWrapperCloudEvent;
             } catch (RuntimeException cloudEventParseException) {
                 /*
                  * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
@@ -225,10 +225,10 @@ public class EventConsumer {
         }
     }
 
-    private UUID getMessageId(EventData<?, ?> eventData, Message<String> message) {
-        UUID messageId = eventData.getId();
+    private UUID getMessageId(EventWrapper<?, ?> eventWrapper, Message<String> message) {
+        UUID messageId = eventWrapper.getId();
         if (messageId == null) {
-            messageId = kafkaMessageDeduplicator.findMessageId(eventData.getEventTypeKey(), message);
+            messageId = kafkaMessageDeduplicator.findMessageId(eventWrapper.getKey(), message);
         }
 
         return messageId;

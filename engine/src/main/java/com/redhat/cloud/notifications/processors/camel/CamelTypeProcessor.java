@@ -138,7 +138,7 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
         getSecretToken(properties).ifPresent(secretToken -> metaData.put(TOKEN_HEADER, secretToken));
         getBasicAuth(properties).ifPresent(basicAuth -> metaData.put("basicAuth", basicAuth));
 
-        JsonObject payload = baseTransformer.toJsonObject(event.getEventData());
+        JsonObject payload = baseTransformer.toJsonObject(event.getEventWrapper());
         payload.put(NOTIF_METADATA_KEY, metaData);
 
         return payload;

@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.cloudevent.transformers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.redhat.cloud.notifications.events.EventDataCloudEvent;
+import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -19,14 +19,14 @@ import java.util.stream.StreamSupport;
 public class PoliciesCloudEventTransformer implements CloudEventTransformer {
 
     @Override
-    public Action toAction(EventDataCloudEvent cloudEvent, String bundle, String application, String eventType) {
+    public Action toAction(EventWrapperCloudEvent cloudEvent, String bundle, String application, String eventType) {
 
         LocalDateTime timestamp = LocalDateTime.parse(
-                cloudEvent.getRawEvent().get("time").asText(),
+                cloudEvent.getEvent().get("time").asText(),
                 DateTimeFormatter.ISO_DATE_TIME
         );
 
-        JsonNode data = cloudEvent.getRawEvent().get("data");
+        JsonNode data = cloudEvent.getEvent().get("data");
 
         JsonNode system = data.get("system");
 

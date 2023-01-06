@@ -3,9 +3,9 @@ package com.redhat.cloud.notifications.transformers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.events.EventData;
-import com.redhat.cloud.notifications.events.EventDataAction;
-import com.redhat.cloud.notifications.events.EventDataCloudEvent;
+import com.redhat.cloud.notifications.events.EventWrapper;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
+import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -35,13 +35,13 @@ public class BaseTransformer {
 
     /**
      * Transforms the given event data into a {@link JsonObject}.
-     * @param eventData the {@link EventData} to transform.
+     * @param eventWrapper the {@link EventWrapper} to transform.
      * @return a {@link JsonObject} containing the given event data.
      */
-    public JsonObject toJsonObject(final EventData<?, ?> eventData) {
-        if (eventData instanceof EventDataAction) {
+    public JsonObject toJsonObject(final EventWrapper<?, ?> eventWrapper) {
+        if (eventWrapper instanceof EventWrapperAction) {
             JsonObject message = new JsonObject();
-            Action action = ((EventDataAction) eventData).getRawEvent();
+            Action action = ((EventWrapperAction) eventWrapper).getEvent();
             message.put(ACCOUNT_ID, action.getAccountId());
             message.put(APPLICATION, action.getApplication());
             message.put(BUNDLE, action.getBundle());
@@ -61,8 +61,8 @@ public class BaseTransformer {
             message.put(ORG_ID, action.getOrgId());
             message.put(TIMESTAMP, action.getTimestamp().toString());
             return message;
-        } else if (eventData instanceof EventDataCloudEvent) {
-            JsonNode cloudEvent = ((EventDataCloudEvent) eventData).getRawEvent();
+        } else if (eventWrapper instanceof EventWrapperCloudEvent) {
+            JsonNode cloudEvent = ((EventWrapperCloudEvent) eventWrapper).getEvent();
             try {
                 return JsonObject.mapFrom(objectMapper.treeToValue(cloudEvent, Map.class));
             } catch (JsonProcessingException e) {
@@ -70,7 +70,7 @@ public class BaseTransformer {
             }
         }
 
-        throw new RuntimeException("Unknown eventData received");
+        throw new RuntimeException("Unknown event wrapper sub-type received");
     }
 
 }

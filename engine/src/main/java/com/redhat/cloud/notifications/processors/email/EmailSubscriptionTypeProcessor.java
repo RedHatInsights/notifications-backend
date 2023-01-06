@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
-import com.redhat.cloud.notifications.events.EventDataAction;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.AggregationCommand;
@@ -141,7 +141,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 aggregation.setApplicationName(applicationName);
                 aggregation.setBundleName(bundleName);
 
-                JsonObject transformedAction = baseTransformer.toJsonObject(event.getEventData());
+                JsonObject transformedAction = baseTransformer.toJsonObject(event.getEventWrapper());
                 aggregation.setPayload(transformedAction);
                 emailAggregationRepository.addEmailAggregation(aggregation);
             }
@@ -200,7 +200,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
 
         Set<RecipientSettings> requests = Stream.concat(
                 endpoints.stream().map(EndpointRecipientSettings::new),
-                ActionRecipientSettings.fromEventData(event.getEventData()).stream()
+                ActionRecipientSettings.fromEventWrapper(event.getEventWrapper()).stream()
         ).collect(Collectors.toSet());
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
@@ -285,7 +285,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
 
                 Event event = new Event();
                 event.setId(UUID.randomUUID());
-                event.setEventData(new EventDataAction(action));
+                event.setEventWrapper(new EventWrapperAction(action));
 
                 emailSender.sendEmail(aggregation.getKey(), event, subject, body, false);
             }

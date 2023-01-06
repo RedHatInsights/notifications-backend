@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.events.EventDataAction;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -81,7 +81,7 @@ public class InventoryTestHelpers {
 
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
-        JsonObject payload = baseTransformer.toJsonObject(new EventDataAction(emailActionMessage));
+        JsonObject payload = baseTransformer.toJsonObject(new EventWrapperAction(emailActionMessage));
         aggregation.setPayload(payload);
 
         return aggregation;

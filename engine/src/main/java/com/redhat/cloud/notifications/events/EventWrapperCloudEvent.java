@@ -5,23 +5,23 @@ import com.redhat.cloud.notifications.models.EventTypeFqnKey;
 
 import java.util.UUID;
 
-public class EventDataCloudEvent implements EventData<JsonNode, EventTypeFqnKey> {
+public class EventWrapperCloudEvent implements EventWrapper<JsonNode, EventTypeFqnKey> {
 
     private final JsonNode cloudEvent;
     private final EventTypeFqnKey eventTypeFqnKey;
 
-    public EventDataCloudEvent(JsonNode cloudEvent) {
+    public EventWrapperCloudEvent(JsonNode cloudEvent) {
         this.cloudEvent = cloudEvent;
         this.eventTypeFqnKey = new EventTypeFqnKey(cloudEvent.get("type").asText());
     }
 
     @Override
-    public EventTypeFqnKey getEventTypeKey() {
+    public EventTypeFqnKey getKey() {
         return eventTypeFqnKey;
     }
 
     @Override
-    public JsonNode getRawEvent() {
+    public JsonNode getEvent() {
         return cloudEvent;
     }
 

@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.events.EventData;
+import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
@@ -100,7 +100,7 @@ public class EmailSender {
             webhookSender.doHttpRequest(
                     event, endpoint,
                     bopRequest,
-                    getPayload(user, event.getEventData(), subject, body), "POST", bopUrl, persistHistory);
+                    getPayload(user, event.getEventWrapper(), subject, body), "POST", bopUrl, persistHistory);
 
             processedTimer.stop(registry.timer("processor.email.processed", "bundle", bundleName, "application", applicationName));
 
@@ -110,17 +110,17 @@ public class EmailSender {
         }
     }
 
-    private JsonObject getPayload(User user, EventData<?, ?> eventData, TemplateInstance subject, TemplateInstance body) {
+    private JsonObject getPayload(User user, EventWrapper<?, ?> eventWrapper, TemplateInstance subject, TemplateInstance body) {
 
         String renderedSubject;
         String renderedBody;
         try {
-            renderedSubject = templateService.renderTemplate(user, eventData.getRawEvent(), subject);
-            renderedBody = templateService.renderTemplate(user, eventData.getRawEvent(), body);
+            renderedSubject = templateService.renderTemplate(user, eventWrapper.getEvent(), subject);
+            renderedBody = templateService.renderTemplate(user, eventWrapper.getEvent(), body);
         } catch (Exception e) {
             Log.warnf(e,
                     "Unable to render template for %s.",
-                    eventData.getEventTypeKey().toString()
+                    eventWrapper.getKey().toString()
             );
             throw e;
         }

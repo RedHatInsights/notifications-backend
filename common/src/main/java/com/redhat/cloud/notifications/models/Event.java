@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
-import com.redhat.cloud.notifications.events.EventData;
+import com.redhat.cloud.notifications.events.EventWrapper;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -72,14 +72,14 @@ public class Event {
     private String payload;
 
     @Transient
-    private EventData<?, ?> eventData;
+    private EventWrapper<?, ?> eventWrapper;
 
     public Event() { }
 
-    public Event(EventType eventType, String payload, EventData<?, ?> eventData) {
-        this(eventData.getAccountId(), eventData.getOrgId(), eventType, eventData.getId());
+    public Event(EventType eventType, String payload, EventWrapper<?, ?> eventWrapper) {
+        this(eventWrapper.getAccountId(), eventWrapper.getOrgId(), eventType, eventWrapper.getId());
         this.payload = payload;
-        this.eventData = eventData;
+        this.eventWrapper = eventWrapper;
     }
 
     public Event(String accountId, String orgId, EventType eventType, UUID eventId) {
@@ -198,12 +198,12 @@ public class Event {
         this.payload = payload;
     }
 
-    public EventData<?, ?> getEventData() {
-        return eventData;
+    public EventWrapper<?, ?> getEventWrapper() {
+        return eventWrapper;
     }
 
-    public void setEventData(EventData<?, ?> action) {
-        this.eventData = action;
+    public void setEventWrapper(EventWrapper<?, ?> action) {
+        this.eventWrapper = action;
     }
 
     @Override

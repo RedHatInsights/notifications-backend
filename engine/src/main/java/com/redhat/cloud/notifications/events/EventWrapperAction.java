@@ -5,12 +5,12 @@ import com.redhat.cloud.notifications.models.EventTypeTripletKey;
 
 import java.util.UUID;
 
-public class EventDataAction implements EventData<Action, EventTypeTripletKey> {
+public class EventWrapperAction implements EventWrapper<Action, EventTypeTripletKey> {
 
     private final Action action;
     private final EventTypeTripletKey eventTypeTripletKey;
 
-    public EventDataAction(Action action) {
+    public EventWrapperAction(Action action) {
         this.action = action;
         this.eventTypeTripletKey = new EventTypeTripletKey(
                 action.getBundle(),
@@ -20,11 +20,11 @@ public class EventDataAction implements EventData<Action, EventTypeTripletKey> {
     }
 
     @Override
-    public EventTypeTripletKey getEventTypeKey() {
+    public EventTypeTripletKey getKey() {
         return eventTypeTripletKey;
     }
 
-    public Action getRawEvent() {
+    public Action getEvent() {
         return action;
     }
 

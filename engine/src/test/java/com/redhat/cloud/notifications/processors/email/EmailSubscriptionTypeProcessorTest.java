@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
-import com.redhat.cloud.notifications.events.EventDataAction;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -230,7 +230,7 @@ class EmailSubscriptionTypeProcessorTest {
             Event event = new Event();
             event.setEventType(eventType);
             event.setId(UUID.randomUUID());
-            event.setEventData(new EventDataAction(
+            event.setEventWrapper(new EventWrapperAction(
                     new Action.ActionBuilder()
                             .withOrgId("123456")
                             .withEventType("triggered")

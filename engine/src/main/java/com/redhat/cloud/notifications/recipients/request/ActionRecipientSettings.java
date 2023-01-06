@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.recipients.request;
 
-import com.redhat.cloud.notifications.events.EventData;
+import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
@@ -41,9 +41,9 @@ public class ActionRecipientSettings extends RecipientSettings {
         return users;
     }
 
-    public static List<ActionRecipientSettings> fromEventData(EventData<?, ?> eventData) {
-        if (eventData.getRawEvent() instanceof Action) {
-            return ((Action) eventData.getRawEvent())
+    public static List<ActionRecipientSettings> fromEventWrapper(EventWrapper<?, ?> eventWrapper) {
+        if (eventWrapper.getEvent() instanceof Action) {
+            return ((Action) eventWrapper.getEvent())
                     .getRecipients()
                     .stream()
                     .map(ActionRecipientSettings::new)
