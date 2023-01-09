@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.models;
 
-public class EventTypeTripletKey implements EventTypeKey {
+public class EventTypeKeyBundleAppEventTriplet implements EventTypeKey {
 
     private final String bundle;
     private final String application;
     private final String eventType;
 
-    public EventTypeTripletKey(String bundle, String application, String eventType) {
+    public EventTypeKeyBundleAppEventTriplet(String bundle, String application, String eventType) {
         this.bundle = bundle;
         this.application = application;
         this.eventType = eventType;

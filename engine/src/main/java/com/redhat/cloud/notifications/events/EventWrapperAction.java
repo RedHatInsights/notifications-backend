@@ -1,18 +1,18 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EventTypeTripletKey;
+import com.redhat.cloud.notifications.models.EventTypeKeyBundleAppEventTriplet;
 
 import java.util.UUID;
 
-public class EventWrapperAction implements EventWrapper<Action, EventTypeTripletKey> {
+public class EventWrapperAction implements EventWrapper<Action, EventTypeKeyBundleAppEventTriplet> {
 
     private final Action action;
-    private final EventTypeTripletKey eventTypeTripletKey;
+    private final EventTypeKeyBundleAppEventTriplet eventTypeKeyBundleAppEventTriplet;
 
     public EventWrapperAction(Action action) {
         this.action = action;
-        this.eventTypeTripletKey = new EventTypeTripletKey(
+        this.eventTypeKeyBundleAppEventTriplet = new EventTypeKeyBundleAppEventTriplet(
                 action.getBundle(),
                 action.getApplication(),
                 action.getEventType()
@@ -20,8 +20,8 @@ public class EventWrapperAction implements EventWrapper<Action, EventTypeTriplet
     }
 
     @Override
-    public EventTypeTripletKey getKey() {
-        return eventTypeTripletKey;
+    public EventTypeKeyBundleAppEventTriplet getKey() {
+        return eventTypeKeyBundleAppEventTriplet;
     }
 
     public Action getEvent() {

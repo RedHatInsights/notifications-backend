@@ -1,11 +1,14 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformer;
+import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformerFactory;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import com.redhat.cloud.notifications.utils.CloudEventParser;
 import io.micrometer.core.instrument.Counter;
@@ -26,6 +29,7 @@ import javax.persistence.NoResultException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
@@ -71,6 +75,9 @@ public class EventConsumer {
 
     @Inject
     StatelessSessionFactory statelessSessionFactory;
+
+    @Inject
+    CloudEventTransformerFactory cloudEventTransformerFactory;
 
     private Counter rejectedCounter;
     private Counter processingErrorCounter;
@@ -145,8 +152,26 @@ public class EventConsumer {
                      * parsed Action.
                      */
                     EventType eventType;
+                    EventWrapper<?, ?> eventWrapperToProcess = eventWrapper;
                     try {
-                        eventType = eventTypeRepository.getEventType(eventWrapper.getKey());
+                        eventType = eventTypeRepository.getEventType(eventWrapperToProcess.getKey());
+
+                        if (eventWrapperToProcess instanceof EventWrapperCloudEvent) {
+                            // We loaded a cloud event and identified the event-type it belongs to
+                            // At this point, lets check if we have a transformation available for this event
+                            // If we do, transform the event - Later this will be done on a by-integration basis
+                            Optional<CloudEventTransformer> transformer = cloudEventTransformerFactory.getTransformerIfSupported((EventWrapperCloudEvent) eventWrapperToProcess);
+                            if (transformer.isPresent()) {
+                                eventWrapperToProcess = new EventWrapperAction(
+                                        transformer.get().toAction(
+                                                (EventWrapperCloudEvent) eventWrapperToProcess,
+                                                eventType.getApplication().getBundle().getName(),
+                                                eventType.getApplication().getName(),
+                                                eventType.getName()
+                                ));
+                            }
+                        }
+
                         tags.computeIfAbsent(TAG_KEY_BUNDLE, key -> eventType.getApplication().getBundle().getName());
                         tags.computeIfAbsent(TAG_KEY_APPLICATION, key -> eventType.getApplication().getName());
                     } catch (NoResultException | IllegalArgumentException e) {
@@ -155,13 +180,13 @@ public class EventConsumer {
                          * considered rejected.
                          */
                         rejectedCounter.increment();
-                        throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventWrapper.getKey()));
+                        throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventWrapperToProcess.getKey()));
                     }
                     /*
                      * Step 6
                      * The EventType was found. It's time to create an Event from the current message and persist it.
                      */
-                    Event event = new Event(eventType, payload, eventWrapper);
+                    Event event = new Event(eventType, payload, eventWrapperToProcess);
                     if (event.getId() == null) {
                         // NOTIF-499 If there is no ID provided whatsoever we create one.
                         event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));

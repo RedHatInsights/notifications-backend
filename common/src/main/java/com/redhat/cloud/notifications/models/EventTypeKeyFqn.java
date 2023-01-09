@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.models;
 
-public class EventTypeFqnKey implements EventTypeKey {
+public class EventTypeKeyFqn implements EventTypeKey {
 
     private final String fullyQualifiedName;
 
-    public EventTypeFqnKey(String fullyQualifiedName) {
+    public EventTypeKeyFqn(String fullyQualifiedName) {
         this.fullyQualifiedName = fullyQualifiedName;
     }
 

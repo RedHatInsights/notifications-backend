@@ -76,12 +76,6 @@ public class CloudEventParser {
         JsonMetaSchema overrideDateTimeValidator = new JsonMetaSchema.Builder(JsonMetaSchema.getV7().getUri())
                 .idKeyword(ID)
                 .addKeywords(ValidatorTypeCode.getNonFormatKeywords(SpecVersion.VersionFlag.V7))
-                /*.addKeywords(List.of(
-                        new NonValidationKeyword("title"),
-                        new NonValidationKeyword("$comment"),
-                        new NonValidationKeyword("description"),
-                        new NonValidationKeyword("default")
-                ))*/
                 .addFormats(JsonMetaSchema.COMMON_BUILTIN_FORMATS)
                 .addFormat(new LocalDateTimeValidator())
                 .build();

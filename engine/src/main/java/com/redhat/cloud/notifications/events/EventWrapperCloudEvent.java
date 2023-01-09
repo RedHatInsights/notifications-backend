@@ -1,23 +1,23 @@
 package com.redhat.cloud.notifications.events;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.redhat.cloud.notifications.models.EventTypeFqnKey;
+import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 
 import java.util.UUID;
 
-public class EventWrapperCloudEvent implements EventWrapper<JsonNode, EventTypeFqnKey> {
+public class EventWrapperCloudEvent implements EventWrapper<JsonNode, EventTypeKeyFqn> {
 
     private final JsonNode cloudEvent;
-    private final EventTypeFqnKey eventTypeFqnKey;
+    private final EventTypeKeyFqn eventTypeKeyFqn;
 
     public EventWrapperCloudEvent(JsonNode cloudEvent) {
         this.cloudEvent = cloudEvent;
-        this.eventTypeFqnKey = new EventTypeFqnKey(cloudEvent.get("type").asText());
+        this.eventTypeKeyFqn = new EventTypeKeyFqn(cloudEvent.get("type").asText());
     }
 
     @Override
-    public EventTypeFqnKey getKey() {
-        return eventTypeFqnKey;
+    public EventTypeKeyFqn getKey() {
+        return eventTypeKeyFqn;
     }
 
     @Override

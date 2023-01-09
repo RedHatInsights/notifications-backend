@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.EventTypeFqnKey;
+import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 import com.redhat.cloud.notifications.models.EventTypeKey;
-import com.redhat.cloud.notifications.models.EventTypeTripletKey;
+import com.redhat.cloud.notifications.models.EventTypeKeyBundleAppEventTriplet;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -16,11 +16,11 @@ public class EventTypeRepository {
     StatelessSessionFactory statelessSessionFactory;
 
     public EventType getEventType(EventTypeKey eventTypeKey) {
-        if (eventTypeKey instanceof EventTypeTripletKey) {
-            EventTypeTripletKey triplet = (EventTypeTripletKey) eventTypeKey;
+        if (eventTypeKey instanceof EventTypeKeyBundleAppEventTriplet) {
+            EventTypeKeyBundleAppEventTriplet triplet = (EventTypeKeyBundleAppEventTriplet) eventTypeKey;
             return getEventType(triplet.getBundle(), triplet.getApplication(), triplet.getEventType());
-        } else if (eventTypeKey instanceof EventTypeFqnKey) {
-            return getEventType(((EventTypeFqnKey) eventTypeKey).getFullyQualifiedName());
+        } else if (eventTypeKey instanceof EventTypeKeyFqn) {
+            return getEventType(((EventTypeKeyFqn) eventTypeKey).getFullyQualifiedName());
         }
 
         throw new IllegalArgumentException("Unsupported EventTypeKey found: " + eventTypeKey.getClass());
