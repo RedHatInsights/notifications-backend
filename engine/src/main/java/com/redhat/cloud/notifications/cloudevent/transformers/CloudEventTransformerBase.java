@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 
 public abstract class CloudEventTransformerBase implements CloudEventTransformer {
 
-    private final static String CE_KEY_TIME = "time";
+    private static final String CE_KEY_TIME = "time";
 
     @Override
     public Action toAction(EventWrapperCloudEvent cloudEvent, String bundle, String application, String eventType) {

@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import com.redhat.cloud.notifications.utils.CloudEventParser;
 import io.micrometer.core.instrument.Counter;

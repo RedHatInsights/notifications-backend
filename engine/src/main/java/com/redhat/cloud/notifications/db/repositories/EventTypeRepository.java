@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 import com.redhat.cloud.notifications.models.EventTypeKey;
 import com.redhat.cloud.notifications.models.EventTypeKeyBundleAppEventTriplet;
+import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;

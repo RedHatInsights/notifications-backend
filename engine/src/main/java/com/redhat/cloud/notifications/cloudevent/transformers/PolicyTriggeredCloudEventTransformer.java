@@ -1,6 +1,10 @@
 package com.redhat.cloud.notifications.cloudevent.transformers;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.event.apps.policies.v1.Policy;
+import com.redhat.cloud.event.apps.policies.v1.PolicyTriggered;
+import com.redhat.cloud.event.apps.policies.v1.RHELSystem;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -8,46 +12,60 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
+@ApplicationScoped
 public class PolicyTriggeredCloudEventTransformer extends CloudEventTransformerBase {
+
+    private static final String CE_KEY_DATA = "data";
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public Action.ActionBuilderBase<?> buildAction(Action.ActionBuilderBase<Action> actionBuilder, EventWrapperCloudEvent cloudEvent) {
-        JsonNode data = cloudEvent.getEvent().get("data");
-        JsonNode system = data.get("system");
+        try {
+            PolicyTriggered policyTriggered = objectMapper.treeToValue(
+                    cloudEvent.getEvent().get(CE_KEY_DATA),
+                    PolicyTriggered.class
+            );
+            RHELSystem rhelSystem = policyTriggered.getSystem();
+            Policy[] policies = policyTriggered.getPolicies();
 
-        Context context = new Context.ContextBuilder()
-                .withAdditionalProperty("inventory_id", system.get("inventory_id").asText())
-                .withAdditionalProperty("display_name", system.get("display_name").asText())
-                .withAdditionalProperty("tags", StreamSupport.stream(
-                                system.get("tags").spliterator(),
-                                false)
-                        .map(tag -> Map.of("key", tag.get("key").asText(), "value", tag.get("value").asText()))
-                        .collect(Collectors.toList())
-                )
-                .withAdditionalProperty("system_check_in", data.get("system_check_in").asText())
-                .build();
+            Context context = new Context.ContextBuilder()
+                    .withAdditionalProperty("inventory_id", rhelSystem.getInventoryID())
+                    .withAdditionalProperty("display_name", rhelSystem.getDisplayName())
+                    .withAdditionalProperty("tags", Arrays.stream(rhelSystem.getTags())
+                            .map(tag -> Map.of("key", tag.getKey(), "value", tag.getValue()))
+                            .collect(Collectors.toList())
+                    )
+                    .withAdditionalProperty("system_check_in", policyTriggered.getSystemCheckIn())
+                    .build();
 
-        List<Event> events = StreamSupport.stream(data.get("policies").spliterator(), false)
-                .map(policy -> new Event.EventBuilder()
-                        .withMetadata(new Metadata.MetadataBuilder().build())
-                        .withPayload(new Payload.PayloadBuilder()
-                                .withAdditionalProperty("policy_id", policy.get("policy_id").asText())
-                                .withAdditionalProperty("policy_name", policy.get("policy_name").asText())
-                                .withAdditionalProperty("policy_description", policy.get("policy_description").asText())
-                                .withAdditionalProperty("policy_condition", policy.get("policy_condition").asText())
-                                .build())
-                        .build())
-                .collect(Collectors.toList());
+            List<Event> events = Arrays.stream(policies)
+                    .map(policy -> new Event.EventBuilder()
+                            .withMetadata(new Metadata.MetadataBuilder().build())
+                            .withPayload(new Payload.PayloadBuilder()
+                                    .withAdditionalProperty("policy_id", policy.getPolicyID())
+                                    .withAdditionalProperty("policy_name", policy.getPolicyName())
+                                    .withAdditionalProperty("policy_description", policy.getPolicyDescription())
+                                    .withAdditionalProperty("policy_condition", policy.getPolicyCondition())
+                                    .build())
+                            .build())
+                    .collect(Collectors.toList());
 
-        return actionBuilder
-                .withRecipients(Collections.emptyList()) // Policies does not make use of recipients
-                .withContext(context)
-                .withEvents(events);
+            return actionBuilder
+                    .withRecipients(Collections.emptyList()) // Policies does not make use of recipients
+                    .withContext(context)
+                    .withEvents(events);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Unable to parse PolicyTriggered data", e);
+        }
     }
 }
