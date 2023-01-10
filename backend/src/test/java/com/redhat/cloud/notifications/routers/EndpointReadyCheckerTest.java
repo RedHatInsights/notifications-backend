@@ -21,7 +21,6 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -59,12 +58,6 @@ public class EndpointReadyCheckerTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        featureFlipper.setObEnabled(true);
-    }
-
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setObEnabled(false);
     }
 
     private final String UNUSED = "UNUSED";

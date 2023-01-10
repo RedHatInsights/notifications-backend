@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
@@ -41,9 +40,6 @@ public class FromOpenBridgeHistoryFiller {
     private static final Object DUMMY_CACHE_VALUE = new Object();
 
     @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
     @RestClient
     BridgeApiService bridgeApiService;
 
@@ -75,14 +71,9 @@ public class FromOpenBridgeHistoryFiller {
         messagesWithError = meterRegistry.counter(MESSAGES_WITH_ERROR_NAME);
     }
 
-    @Scheduled(concurrentExecution = SKIP, every = "${ob.error-check.period:10s}")
+    @Scheduled(concurrentExecution = SKIP, every = "${ob.error-check.period:off}")
     @Transactional
     public void execute() {
-
-        if (!featureFlipper.isObBackchannelFillerEnabled()) {
-            return;
-        }
-
         BridgeItemList<ProcessingError> errorList;
         try {
             errorList = bridgeApiService.getProcessingErrors(bridge.getId(), bridgeAuth.getToken());

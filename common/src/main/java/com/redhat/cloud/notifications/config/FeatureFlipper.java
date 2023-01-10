@@ -45,9 +45,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.enforce-integration-name-unicity", defaultValue = "false")
     boolean enforceIntegrationNameUnicity;
 
-    @ConfigProperty(name = "ob.enabled", defaultValue = "false")
-    boolean obEnabled;
-
     @ConfigProperty(name = "reinject.enabled", defaultValue = "false")
     boolean enableReInject;
 
@@ -63,9 +60,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.disable-webhook-endpoints-on-failure", defaultValue = "false")
     boolean disableWebhookEndpointsOnFailure;
 
-    @ConfigProperty(name = "ob.backchannel-filler.enabled", defaultValue = "false")
-    boolean obBackchannelFiller;
-
     @ConfigProperty(name = "notifications.use-sources-secrets-backend", defaultValue = "false")
     boolean sourcesSecretsBackend;
 
@@ -76,13 +70,11 @@ public class FeatureFlipper {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
         Log.infof("The integrations unique name constraint is %s", enforceIntegrationNameUnicity ? "enabled" : "disabled");
-        Log.infof("The RHOSE (OpenBridge) integration is %s", obEnabled ? "enabled" : "disabled");
         Log.infof("The actions reinjection in case of Camel integration error is %s", enableReInject ? "enabled" : "disabled");
         Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
         Log.infof("The use of default templates is %s", useDefaultTemplate ? "enabled" : "disabled");
         Log.infof("The use of templates from database is %s", useTemplatesFromDb ? "enabled" : "disabled");
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
-        Log.infof("The OB backchannel filler is %s", obBackchannelFiller ? "enabled" : "disabled");
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
         Log.infof("The Policies's email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
@@ -103,15 +95,6 @@ public class FeatureFlipper {
     public void setEnforceIntegrationNameUnicity(boolean enforceIntegrationNameUnicity) {
         checkTestLaunchMode();
         this.enforceIntegrationNameUnicity = enforceIntegrationNameUnicity;
-    }
-
-    public boolean isObEnabled() {
-        return obEnabled;
-    }
-
-    public void setObEnabled(boolean obEnabled) {
-        checkTestLaunchMode();
-        this.obEnabled = obEnabled;
     }
 
     public boolean isEnableReInject() {
@@ -152,10 +135,6 @@ public class FeatureFlipper {
     public void setDisableWebhookEndpointsOnFailure(boolean disableWebhookEndpointsOnFailure) {
         checkTestLaunchMode();
         this.disableWebhookEndpointsOnFailure = disableWebhookEndpointsOnFailure;
-    }
-
-    public boolean isObBackchannelFillerEnabled() {
-        return obBackchannelFiller;
     }
 
     /**

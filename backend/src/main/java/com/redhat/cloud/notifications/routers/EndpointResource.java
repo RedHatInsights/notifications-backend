@@ -759,8 +759,7 @@ public class EndpointResource {
     }
 
     private boolean isForOpenBridge(Endpoint endpoint) {
-        return featureFlipper.isObEnabled() &&
-                endpoint != null &&
+        return endpoint != null &&
                 endpoint.getType().equals(EndpointType.CAMEL) &&
                 endpoint.getSubType() != null &&
                 endpoint.getSubType().equals(SLACK);

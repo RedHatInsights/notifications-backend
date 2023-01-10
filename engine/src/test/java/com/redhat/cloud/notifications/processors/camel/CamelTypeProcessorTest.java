@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
@@ -143,9 +142,6 @@ class CamelTypeProcessorTest {
     BridgeHelper bridgeHelper;
 
     @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
     ResourceHelpers resourceHelpers;
 
     @InjectMock
@@ -161,7 +157,13 @@ class CamelTypeProcessorTest {
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(CamelTypeProcessor.PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
+        /*
+         * This is an ugly yet necessary change to keep the tests running after the removal of the OB feature flag.
+         * TODO Get rid of this workaround ASAP. This entire test class needs to be refactored anyway.
+         */
+        Bridge bridge = mockBridge();
         rhoseProcessor.reset();
+        MockServerConfig.clearOpenBridgeEndpoints(bridge);
     }
 
     @AfterEach
@@ -244,7 +246,6 @@ class CamelTypeProcessorTest {
         Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
         endpoint.setSubType("slack");
 
-        featureFlipper.setObEnabled(true);
         bridgeHelper.setOurBridgeName(null);
 
         // Let's trigger the processing.
@@ -273,14 +274,10 @@ class CamelTypeProcessorTest {
         assertEquals(1, historyItem.getDetails().size());
         Map<String, Object> details = historyItem.getDetails();
         assertTrue(details.containsKey("failure"));
-
-        featureFlipper.setObEnabled(false);
     }
 
     @Test
     void oBEndpointProcessingGoodBridge() {
-
-        featureFlipper.setObEnabled(true);
 
         // We need input data for the test.
         Event event = buildEvent();
@@ -289,23 +286,7 @@ class CamelTypeProcessorTest {
         Endpoint endpoint = buildCamelEndpoint(event.getAction().getAccountId());
         endpoint.setSubType("slack");
 
-        // Set up some mock OB endpoints (simulate valid bridge)
-        String eventsEndpoint = getMockServerUrl() + "/events";
-        System.out.println("==> Setting events endpoint to " + eventsEndpoint);
-        Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
-        List<Bridge> items = new ArrayList<>();
-        items.add(bridge);
-        BridgeItemList<Bridge> bridgeList = new BridgeItemList<>();
-        bridgeList.setItems(items);
-        bridgeList.setSize(1);
-        bridgeList.setTotal(1);
-        Map<String, String> auth = new HashMap<>();
-        auth.put("access_token", "li-la-lu-token");
-        Map<String, String> obProcessor = new HashMap<>();
-        obProcessor.put("id", "p-my-id");
-
-        MockServerConfig.addOpenBridgeEndpoints(auth, bridgeList);
-        bridgeHelper.setOurBridgeName("my bridge");
+        Bridge bridge = mockBridge();
 
         System.out.println("==> Auth token " + bridgeHelper.getAuthToken());
         System.out.println("==> The bridge " + bridgeHelper.getBridgeIfNeeded());
@@ -355,8 +336,28 @@ class CamelTypeProcessorTest {
         assertEquals(NotificationStatus.FAILED_INTERNAL, result.get(0).getStatus());
 
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
-        featureFlipper.setObEnabled(false);
+    }
 
+    private Bridge mockBridge() {
+        // Set up some mock OB endpoints (simulate valid bridge)
+        String eventsEndpoint = getMockServerUrl() + "/events";
+        System.out.println("==> Setting events endpoint to " + eventsEndpoint);
+        Bridge bridge = new Bridge("321", eventsEndpoint, "my bridge");
+        List<Bridge> items = new ArrayList<>();
+        items.add(bridge);
+        BridgeItemList<Bridge> bridgeList = new BridgeItemList<>();
+        bridgeList.setItems(items);
+        bridgeList.setSize(1);
+        bridgeList.setTotal(1);
+        Map<String, String> auth = new HashMap<>();
+        auth.put("access_token", "li-la-lu-token");
+        Map<String, String> obProcessor = new HashMap<>();
+        obProcessor.put("id", "p-my-id");
+
+        MockServerConfig.addOpenBridgeEndpoints(auth, bridgeList);
+        bridgeHelper.setOurBridgeName("my bridge");
+
+        return bridge;
     }
 
     /**
@@ -364,9 +365,6 @@ class CamelTypeProcessorTest {
      */
     @Test
     void callOpenBridgeExpectedJson() {
-        // Set "RHOSE" feature enabled to be able to test this.
-        this.featureFlipper.setObEnabled(true);
-
         // The path that will be set up in the Mock Server, and that will be used as the Bridge's endpoint.
         final String testMockServerPath = "/events/slack/json-output-check";
 
@@ -482,9 +480,6 @@ class CamelTypeProcessorTest {
 
         // Clear also the RHOSE endpoints for this test.
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
-
-        // Reset the feature flag to false in order to avoid affecting any other tests.
-        featureFlipper.setObEnabled(false);
     }
 
     private static Event buildEvent() {
