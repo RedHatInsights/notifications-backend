@@ -100,6 +100,7 @@ public class EndpointResource {
     public static final String SLACK_CHANNEL = "slack_channel";
     public static final String SLACK = "slack";
     public static final String SLACK_WEBHOOK_URL = "slack_webhook_url";
+    public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -229,6 +230,9 @@ public class EndpointResource {
         }
 
         if (isForOpenBridge(endpoint)) {
+            CamelProperties cp = endpoint.getProperties(CamelProperties.class);
+            checkSlackChannel(cp);
+
             /*
              * We need to include the endpoint id in the processor definition before the endpoint is persisted
              * on our side. That's why the id is generated here.
@@ -238,7 +242,6 @@ public class EndpointResource {
             try {
                 String bridgeId = bridge.getId();
                 String token = bridgeAuth.getToken();
-                CamelProperties cp = endpoint.getProperties(CamelProperties.class);
                 cp.getExtras().put(OB_PROCESSOR_NAME, endpoint.getId().toString());
 
                 UnaryOperator<Processor> execFun = in -> {
@@ -277,6 +280,13 @@ public class EndpointResource {
         }
 
         return endpointRepository.createEndpoint(endpoint);
+    }
+
+    private void checkSlackChannel(CamelProperties camelProperties) {
+        String channel = camelProperties.getExtras().get("channel");
+        if (channel == null || channel.isBlank()) {
+            throw new BadRequestException(EMPTY_SLACK_CHANNEL_ERROR);
+        }
     }
 
     @POST
@@ -440,6 +450,7 @@ public class EndpointResource {
             EndpointProperties properties = ep.getProperties();
             if (properties instanceof CamelProperties) {
                 CamelProperties cp = (CamelProperties) properties;
+                checkSlackChannel(cp);
 
                 ref.processorId = cp.getExtras().get(OB_PROCESSOR_ID);
                 ref.processorName = cp.getExtras().get(OB_PROCESSOR_NAME);
@@ -680,7 +691,7 @@ public class EndpointResource {
         // be changed accordingly for new types like Splunk or Tower or ...
         Processor.Action action = new Processor.Action(SLACK_ACTION);
         Map<String, Object> props = action.getParameters();
-        props.put(SLACK_CHANNEL, properties.getExtras().getOrDefault("channel", "#general"));
+        props.put(SLACK_CHANNEL, properties.getExtras().get("channel"));
         props.put(SLACK_WEBHOOK_URL, properties.getUrl());
 
         out.setAction(action);
