@@ -13,6 +13,7 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationResult;
 import com.networknt.schema.ValidatorTypeCode;
 import com.redhat.cloud.event.core.v1.RHELSystem;
+import com.redhat.cloud.notifications.models.ConsoleCloudEvent;
 import com.redhat.cloud.notifications.validator.LocalDateTimeValidator;
 
 import javax.annotation.PostConstruct;
@@ -34,7 +35,7 @@ public class CloudEventParser {
         jsonSchema = getJsonSchema();
     }
 
-    public JsonNode fromJsonString(String cloudEventJson) {
+    public ConsoleCloudEvent fromJsonString(String cloudEventJson) {
         try {
             // Verify it's a valid Json
             JsonNode cloudEvent = objectMapper.readTree(cloudEventJson);
@@ -44,7 +45,7 @@ public class CloudEventParser {
                 throw new RuntimeException("Cloud event validation failed for: " + cloudEventJson + ". Failures: " + result.getValidationMessages().toString());
             }
 
-            return cloudEvent;
+            return objectMapper.treeToValue(cloudEvent, ConsoleCloudEvent.class);
         } catch (JsonProcessingException jme) {
             throw new RuntimeException("Cloud event parsing failed for: " + cloudEventJson, jme);
         }

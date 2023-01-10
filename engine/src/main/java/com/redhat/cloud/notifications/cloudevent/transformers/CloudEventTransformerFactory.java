@@ -15,7 +15,7 @@ public class CloudEventTransformerFactory {
      * Returns a CloudEventTransformer if the transforming is supported
      */
     public Optional<CloudEventTransformer> getTransformerIfSupported(EventWrapperCloudEvent cloudEvent) {
-        switch (cloudEvent.getEvent().get("type").asText().toLowerCase(Locale.ROOT)) {
+        switch (cloudEvent.getEvent().getType().toLowerCase(Locale.ROOT)) {
             case POLICIES_POLICY_TRIGGERED_TYPE:
                 return Optional.of(new PolicyTriggeredCloudEventTransformer());
             default:

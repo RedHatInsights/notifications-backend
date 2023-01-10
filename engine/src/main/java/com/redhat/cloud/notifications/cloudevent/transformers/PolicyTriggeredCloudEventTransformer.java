@@ -23,8 +23,6 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class PolicyTriggeredCloudEventTransformer extends CloudEventTransformerBase {
 
-    private static final String CE_KEY_DATA = "data";
-
     @Inject
     ObjectMapper objectMapper;
 
@@ -32,7 +30,7 @@ public class PolicyTriggeredCloudEventTransformer extends CloudEventTransformerB
     public Action.ActionBuilderBase<?> buildAction(Action.ActionBuilderBase<Action> actionBuilder, EventWrapperCloudEvent cloudEvent) {
         try {
             PolicyTriggered policyTriggered = objectMapper.treeToValue(
-                    cloudEvent.getEvent().get(CE_KEY_DATA),
+                    cloudEvent.getEvent().getData(),
                     PolicyTriggered.class
             );
             RHELSystem rhelSystem = policyTriggered.getSystem();

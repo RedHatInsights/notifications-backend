@@ -1,12 +1,11 @@
 package com.redhat.cloud.notifications.transformers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.ConsoleCloudEvent;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -62,12 +61,8 @@ public class BaseTransformer {
             message.put(TIMESTAMP, action.getTimestamp().toString());
             return message;
         } else if (eventWrapper instanceof EventWrapperCloudEvent) {
-            JsonNode cloudEvent = ((EventWrapperCloudEvent) eventWrapper).getEvent();
-            try {
-                return JsonObject.mapFrom(objectMapper.treeToValue(cloudEvent, Map.class));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Error transforming cloud event to JsonObject for sending to integrations", e);
-            }
+            ConsoleCloudEvent cloudEvent = ((EventWrapperCloudEvent) eventWrapper).getEvent();
+            JsonObject.mapFrom(cloudEvent);
         }
 
         throw new RuntimeException("Unknown event wrapper sub-type received");

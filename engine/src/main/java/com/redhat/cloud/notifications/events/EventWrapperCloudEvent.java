@@ -1,18 +1,18 @@
 package com.redhat.cloud.notifications.events;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.redhat.cloud.notifications.models.ConsoleCloudEvent;
 import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 
 import java.util.UUID;
 
-public class EventWrapperCloudEvent implements EventWrapper<JsonNode, EventTypeKeyFqn> {
+public class EventWrapperCloudEvent implements EventWrapper<ConsoleCloudEvent, EventTypeKeyFqn> {
 
-    private final JsonNode cloudEvent;
+    private final ConsoleCloudEvent cloudEvent;
     private final EventTypeKeyFqn eventTypeKeyFqn;
 
-    public EventWrapperCloudEvent(JsonNode cloudEvent) {
+    public EventWrapperCloudEvent(ConsoleCloudEvent cloudEvent) {
         this.cloudEvent = cloudEvent;
-        this.eventTypeKeyFqn = new EventTypeKeyFqn(cloudEvent.get("type").asText());
+        this.eventTypeKeyFqn = new EventTypeKeyFqn(cloudEvent.getType());
     }
 
     @Override
@@ -21,22 +21,22 @@ public class EventWrapperCloudEvent implements EventWrapper<JsonNode, EventTypeK
     }
 
     @Override
-    public JsonNode getEvent() {
+    public ConsoleCloudEvent getEvent() {
         return cloudEvent;
     }
 
     @Override
     public UUID getId() {
-        return UUID.fromString(cloudEvent.get("id").asText());
+        return cloudEvent.getId();
     }
 
     @Override
     public String getOrgId() {
-        return cloudEvent.get("redhatorgid").asText();
+        return cloudEvent.getOrgId();
     }
 
     @Override
     public String getAccountId() {
-        return cloudEvent.get("redhataccount").asText();
+        return cloudEvent.getAccountId();
     }
 }
