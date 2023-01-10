@@ -54,6 +54,7 @@ import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.routers.EndpointResource.EMPTY_SLACK_CHANNEL_ERROR;
 import static com.redhat.cloud.notifications.routers.EndpointResource.OB_PROCESSOR_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -543,6 +544,69 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         featureFlipper.setObEnabled(false);
 
+    }
+
+    @Test
+    void testMissingSlackChannel() {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "user");
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        Map<String, String> extras = new HashMap<>(Map.of("channel", "")); // An empty channel value is invalid.
+        CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setUrl("https://foo.com");
+        camelProperties.setExtras(extras);
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(EndpointType.CAMEL);
+        endpoint.setSubType("slack");
+        endpoint.setName("name");
+        endpoint.setDescription("description");
+        endpoint.setProperties(camelProperties);
+
+        featureFlipper.setObEnabled(true);
+
+        String responseBody = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+
+        assertEquals(EMPTY_SLACK_CHANNEL_ERROR, responseBody);
+
+        extras.put("channel", "   "); // A blank channel value is invalid.
+
+        responseBody = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+
+        assertEquals(EMPTY_SLACK_CHANNEL_ERROR, responseBody);
+
+        extras.remove("channel"); // A missing channel value is invalid.
+
+        responseBody = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+
+        assertEquals(EMPTY_SLACK_CHANNEL_ERROR, responseBody);
+
+        featureFlipper.setObEnabled(false);
     }
 
     @Test

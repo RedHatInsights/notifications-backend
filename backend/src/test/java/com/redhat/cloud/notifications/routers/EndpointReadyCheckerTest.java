@@ -30,7 +30,6 @@ import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -326,7 +325,7 @@ public class EndpointReadyCheckerTest {
     private Map<String, Object> createEndpoint(Header identityHeader) {
         CamelProperties properties = new CamelProperties();
         properties.setUrl("http://200.133.110.13");
-        properties.setExtras(new HashMap<>());
+        properties.setExtras(Map.of("channel", "#notifications"));
         Endpoint endpoint = new Endpoint();
         endpoint.setName("Endpoint1");
         endpoint.setDescription(UNUSED);
