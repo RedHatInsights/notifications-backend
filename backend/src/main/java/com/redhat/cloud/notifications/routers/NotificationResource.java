@@ -53,6 +53,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -240,8 +241,12 @@ public class NotificationResource {
         // the request's class, or in RHCLOUD-22513.
         UUID bundleId = request.bundleId;
         if (bundleId == null && !StringUtils.isBlank(request.bundleName)) {
-            final Bundle bundle = this.bundleRepository.findByName(request.bundleName);
-            bundleId = bundle.getId();
+            final Optional<Bundle> bundle = this.bundleRepository.findByName(request.bundleName);
+            if (bundle.isEmpty()) {
+                throw new NotFoundException("the specified bundle was not found in the database");
+            }
+
+            bundleId = bundle.get().getId();
         }
 
         BehaviorGroup behaviorGroup = new BehaviorGroup();

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
+import java.util.Optional;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -30,9 +30,10 @@ public class BundleRepositoryTest {
         final Bundle bundle = this.resourceHelpers.createBundle(bundleName, "test-find-by-name-display-name-bundle");
 
         // Call the function under test.
-        final Bundle result = this.bundleRepository.findByName(bundleName);
+        final Optional<Bundle> result = this.bundleRepository.findByName(bundleName);
 
-        Assertions.assertEquals(bundle.getId(), result.getId(), "unexpected bundle fetched by name from the database");
+        Assertions.assertTrue(result.isPresent(), "no bundle was fetched from the database");
+        Assertions.assertEquals(bundle.getId(), result.get().getId(), "unexpected bundle fetched by name from the database");
     }
 
     /**
@@ -40,6 +41,6 @@ public class BundleRepositoryTest {
      */
     @Test
     void testFindByNameBadRequest() {
-        Assertions.assertThrows(NotFoundException.class, () -> this.bundleRepository.findByName("made-up-name"));
+        Assertions.assertTrue(this.bundleRepository.findByName("made-up-name").isEmpty(), "the bundle shouldn't have been found in the database");
     }
 }
