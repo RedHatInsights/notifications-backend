@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models.event;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
@@ -85,5 +86,25 @@ public class TestEventHelper {
         testAction.setVersion(TEST_ACTION_VERSION);
 
         return testAction;
+    }
+
+    /**
+     * Checks if the provided event is part of an integration test requested by
+     * the client to test their endpoint.
+     * @param event the event to check.
+     * @return true if the event is an integration test, false otherwise.
+     */
+    public static boolean isIntegrationTestEvent(final com.redhat.cloud.notifications.models.Event event) {
+        try {
+            final Context context = event.getAction().getContext();
+            final Boolean isTestEventContextFlag = (Boolean) context.getAdditionalProperties().get(TEST_ACTION_CONTEXT_TEST_EVENT);
+
+            return isTestEventContextFlag &&
+                    event.getAction().getBundle().equals(TestEventHelper.TEST_ACTION_BUNDLE) &&
+                    event.getAction().getApplication().equals(TestEventHelper.TEST_ACTION_APPLICATION) &&
+                    event.getAction().getEventType().equals(TestEventHelper.TEST_ACTION_EVENT_TYPE);
+        } catch (final NullPointerException e) {
+            return false;
+        }
     }
 }

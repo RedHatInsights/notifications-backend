@@ -76,4 +76,96 @@ public class TestEventHelperTest {
 
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_PAYLOAD_VALUE, payloadValue, "unexpected event payload value");
     }
+
+    /**
+     * Tests that a test integration event is properly identified as such by
+     * the function under test.
+     */
+    @Test
+    public void testIsIntegrationEvent() {
+        final Action testAction = TestEventHelper.createTestAction(UUID.randomUUID(), "random-org-id");
+
+        final var testEvent = new com.redhat.cloud.notifications.models.Event();
+        testEvent.setAction(testAction);
+
+        Assertions.assertTrue(TestEventHelper.isIntegrationTestEvent(testEvent), "the test event was not identified as such");
+    }
+
+    /**
+     * Tests that when an event has no context, the function under test
+     * correctly identifies it as a normal event.
+     */
+    @Test
+    public void testIsIntegrationEventNoContext() {
+        final Action nonTestAction = new Action();
+
+        final var nonTestEvent = new com.redhat.cloud.notifications.models.Event();
+        nonTestEvent.setAction(nonTestAction);
+
+        Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
+    }
+
+    /**
+     * Tests that when an event has no context which holds one of the flags to
+     * identify it as a test event, the function under test correctly identifies
+     * it as a normal event.
+     */
+    @Test
+    public void testIsIntegrationEventNoContextTestProperty() {
+        final Action nonTestAction = new Action();
+        final Context context = new Context();
+        context.setAdditionalProperty("test-property", "one-two-three");
+
+        nonTestAction.setContext(context);
+
+        final var nonTestEvent = new com.redhat.cloud.notifications.models.Event();
+        nonTestEvent.setAction(nonTestAction);
+
+        Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
+    }
+
+    /**
+     * Tests that when the action doesn't have a bundle specified, the function
+     * under test identifies the event as a normal event.
+     */
+    @Test
+    public void testIsIntegrationEventNoBundle() {
+        final Action nonTestAction = TestEventHelper.createTestAction(UUID.randomUUID(), "random-org-id");
+        nonTestAction.setBundle(null);
+
+        final var nonTestEvent = new com.redhat.cloud.notifications.models.Event();
+        nonTestEvent.setAction(nonTestAction);
+
+        Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
+    }
+
+    /**
+     * Tests that when the action doesn't have an application specified, the
+     * function under test identifies the event as a normal event.
+     */
+    @Test
+    public void testIsIntegrationEventNoApplication() {
+        final Action nonTestAction = TestEventHelper.createTestAction(UUID.randomUUID(), "random-org-id");
+        nonTestAction.setApplication(null);
+
+        final var nonTestEvent = new com.redhat.cloud.notifications.models.Event();
+        nonTestEvent.setAction(nonTestAction);
+
+        Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
+    }
+
+    /**
+     * Tests that when the action doesn't have an event type specified, the
+     * function under test identifies the event as a normal event.
+     */
+    @Test
+    public void testIsIntegrationEventNoEventType() {
+        final Action nonTestAction = TestEventHelper.createTestAction(UUID.randomUUID(), "random-org-id");
+        nonTestAction.setEventType(null);
+
+        final var nonTestEvent = new com.redhat.cloud.notifications.models.Event();
+        nonTestEvent.setAction(nonTestAction);
+
+        Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
+    }
 }
