@@ -98,10 +98,6 @@
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-jdbc</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-extension-annotations</artifactId>
-        </dependency>
 
         <!-- Flyway specific dependencies -->
         <dependency>
