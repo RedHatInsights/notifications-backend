@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -106,5 +107,18 @@ public class TestEventHelper {
         } catch (final NullPointerException e) {
             return false;
         }
+    }
+
+    /**
+     * Extracts the UUID from the given test event. Probably best used after
+     * {@link #isIntegrationTestEvent(com.redhat.cloud.notifications.models.Event)}.
+     * @param event the event to extract the endpoint's UUID from.
+     * @return the extracted UUID.
+     */
+    public static UUID extractEndpointUuidFromTestEvent(final com.redhat.cloud.notifications.models.Event event) {
+        final Context context = event.getAction().getContext();
+        final Map<String, Object> contextProperties = context.getAdditionalProperties();
+
+        return (UUID) contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID);
     }
 }

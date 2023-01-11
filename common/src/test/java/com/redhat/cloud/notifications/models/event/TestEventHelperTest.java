@@ -168,4 +168,22 @@ public class TestEventHelperTest {
 
         Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
     }
+
+    /**
+     * Tests that the function under test correctly extracts the UUID from the
+     * context property from a test event.
+     */
+    @Test
+    public void testExtractEndpointUuidFromTestEvent() {
+        final UUID endpointUuid = UUID.randomUUID();
+
+        final Action testAction = TestEventHelper.createTestAction(endpointUuid, "random-org-id");
+
+        final var testEvent = new com.redhat.cloud.notifications.models.Event();
+        testEvent.setAction(testAction);
+
+        final UUID extractedUuid = TestEventHelper.extractEndpointUuidFromTestEvent(testEvent);
+
+        Assertions.assertEquals(endpointUuid, extractedUuid, "the function under test did not properly extract the expected UUID");
+    }
 }
