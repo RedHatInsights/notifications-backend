@@ -134,7 +134,6 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 aggregation.setOrgId(action.getOrgId());
                 aggregation.setApplicationName(action.getApplication());
                 aggregation.setBundleName(action.getBundle());
-                aggregation.setEventType(action.getEventType());
 
                 JsonObject transformedAction = baseTransformer.toJsonObject(action);
                 aggregation.setPayload(transformedAction);
@@ -270,7 +269,6 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 action.setOrgId(aggregationKey.getOrgId());
                 action.setApplication(aggregationKey.getApplication());
                 action.setBundle(aggregationKey.getBundle());
-                action.setEventType(aggregationKey.getEventType());
                 action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
                 Event event = new Event();

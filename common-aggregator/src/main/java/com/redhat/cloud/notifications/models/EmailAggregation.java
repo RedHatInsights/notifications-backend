@@ -42,11 +42,6 @@ public class EmailAggregation extends CreationTimestamped {
     @JsonProperty("application")
     private String applicationName;
 
-    @Size(max = 255)
-    @Column(name = "event_type")
-    @JsonProperty("event_type")
-    private String eventType;
-
     @NotNull
     @Convert(converter = JsonObjectConverter.class)
     private JsonObject payload;
@@ -89,14 +84,6 @@ public class EmailAggregation extends CreationTimestamped {
 
     public void setPayload(JsonObject payload) {
         this.payload = payload;
-    }
-
-    public String getEventType() {
-        return eventType;
-    }
-
-    public void setEventType(String eventType) {
-        this.eventType = eventType;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -42,25 +43,50 @@ public class EmailAggregator {
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String RECIPIENTS_KEY = "recipients";
 
     private Set<String> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), aggregationKey.getEventType(), emailSubscriptionType));
+                .getEmailSubscribersUserId(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), null, emailSubscriptionType));
+    }
+
+    private Map<String, Set<String>> getEmailSubscribersGroupedByEventType(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
+        return emailSubscriptionRepository
+            .getEmailSubscribersUserIdGroupedByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType);
+    }
+
+    private Set<String> getSubscribers(String eventType, Set<String> subscribers, Map<String, Set<String>> subscribersByEventType) {
+        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
+            return subscribersByEventType.get(eventType);
+        }
+        return subscribers;
     }
 
     public Map<User, Map<String, Object>> getAggregated(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType, LocalDateTime start, LocalDateTime end) {
         Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
-        Set<String> subscribers = getEmailSubscribers(aggregationKey, emailSubscriptionType);
+        Set<String> subscribers = null;
+        Map<String, Set<String>> subscribersByEventType = null;
+
+        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
+            subscribersByEventType = getEmailSubscribersGroupedByEventType(aggregationKey, emailSubscriptionType);
+        } else {
+            subscribers = getEmailSubscribers(aggregationKey, emailSubscriptionType);
+        }
+
         // First, we retrieve all aggregations that match the given key.
         List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(aggregationKey, start, end);
         // For each aggregation...
         for (EmailAggregation aggregation : aggregations) {
+            // We need its event type to determine the target endpoints.
+            String eventType = getEventType(aggregation);
             // Let's retrieve these targets.
             Set<Endpoint> endpoints = Set.copyOf(endpointRepository
-                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), aggregationKey.getEventType()));
+                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventType));
 
             // Now we want to determine who will actually receive the aggregation email.
             // All users who subscribed to the current application and subscription type combination are recipients candidates.
@@ -76,7 +102,7 @@ public class EmailAggregator {
                                     .map(EndpointRecipientSettings::new),
                             getActionRecipient(aggregation).stream()
                     ).collect(Collectors.toSet()),
-                    subscribers
+                    getSubscribers(eventType, subscribers, subscribersByEventType)
             );
 
             /*

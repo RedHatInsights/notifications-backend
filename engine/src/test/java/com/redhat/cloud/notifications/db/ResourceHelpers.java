@@ -5,10 +5,13 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import io.vertx.core.json.JsonObject;
@@ -34,15 +37,10 @@ public class ResourceHelpers {
     EntityManager entityManager;
 
     public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
-        return addEmailAggregation(orgId, bundleName, applicationName, null, payload);
-    }
-
-    public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, String eventType, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setOrgId(orgId);
         aggregation.setBundleName(bundleName);
         aggregation.setApplicationName(applicationName);
-        aggregation.setEventType(eventType);
         aggregation.setPayload(payload);
         return emailAggregationRepository.addEmailAggregation(aggregation);
     }
@@ -149,6 +147,18 @@ public class ResourceHelpers {
         aggregationEmailTemplate.setSubscriptionType(DAILY);
         entityManager.persist(aggregationEmailTemplate);
         return aggregationEmailTemplate;
+    }
+
+    @Transactional
+    public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, Application application, EventType eventType, EmailSubscriptionType subscriptionType) {
+        EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
+        eventTypeEmailSubscription.setId(
+            new EventTypeEmailSubscriptionId(orgId, userId, application.getId(), eventType.getId(), subscriptionType)
+        );
+        eventTypeEmailSubscription.setApplication(entityManager.find(Application.class, application.getId()));
+        eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
+        entityManager.persist(eventTypeEmailSubscription);
+        return eventTypeEmailSubscription;
     }
 
     @Transactional

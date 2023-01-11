@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.CronJobRun;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -23,10 +22,6 @@ public class EmailAggregationRepository {
 
     @Inject
     EntityManager entityManager;
-
-    @Inject
-    FeatureFlipper featureFlipper;
-
 
     public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrgPref(LocalDateTime now) {
         // Must takes every EmailAggregation supposed to be processed on last 15 min
@@ -51,19 +46,15 @@ public class EmailAggregationRepository {
     }
 
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
-        String query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName FROM EmailAggregation ea where ea.created > :start AND ea.created <= :end";
-        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
-            query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName, ea.eventType FROM EmailAggregation ea where ea.created > :start AND ea.created <= :end";
-        }
-        List<Object[]> records = entityManager.createQuery(query)
-                .setParameter("start", start)
-                .setParameter("end", end)
-                .getResultList();
+        String query = "SELECT DISTINCT org_id, bundle, application FROM email_aggregation WHERE created > :start AND created <= :end";
+        List<Object[]> records = entityManager.createNativeQuery(query)
+            .setParameter("start", start)
+            .setParameter("end", end)
+            .getResultList();
 
         return records.stream()
-                .map(emailAggregationRecord -> new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2],
-                    emailAggregationRecord.length > 3 ? (String) emailAggregationRecord[3] : null))
-                .collect(toList());
+            .map(emailAggregationRecord -> new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]))
+            .collect(toList());
     }
 
     public CronJobRun getLastCronJobRun() {
@@ -75,8 +66,8 @@ public class EmailAggregationRepository {
     public void updateLastCronJobRun(LocalDateTime lastRun) {
         String query = "UPDATE CronJobRun SET lastRun = :lastRun";
         entityManager.createQuery(query)
-                .setParameter("lastRun", lastRun)
-                .executeUpdate();
+            .setParameter("lastRun", lastRun)
+            .executeUpdate();
     }
 
     @Transactional
