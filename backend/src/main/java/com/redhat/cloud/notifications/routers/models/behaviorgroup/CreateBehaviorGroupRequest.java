@@ -11,15 +11,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Expected payload for when a behavior group is to be created. In order to
- * specify which bundle it will be tied to, its UUID or internal name can be
- * specified. This is due to a request coming from the frontend team, which
- * was forced to fetch all bundles in order to grab their UUID, when apparently
- * they could simply send the bundle name instead. More information in the
- * related Jira ticket
- * <a href="https://issues.redhat.com/browse/RHCLOUD-22513">RHCLOUD-22513</a>.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class CreateBehaviorGroupRequest {

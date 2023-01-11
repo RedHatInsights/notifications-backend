@@ -216,6 +216,17 @@ public class NotificationResource {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Creates a new behavior group. The payload requires to either specify the
+     * related bundle ID, or its name. This is due to a feature request coming
+     * from the frontend team, which was forced to fetch all bundles in order
+     * to grab their UUID, when apparently they could simply send the bundle
+     * name instead. More information in the related Jira ticket
+     * <a href="https://issues.redhat.com/browse/RHCLOUD-22513">RHCLOUD-22513</a>.
+     * @param sec the security context needed to get the account ID and the Org ID.
+     * @param request the incoming valid {@link CreateBehaviorGroupRequest}.
+     * @return the created behavior group to the client.
+     */
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
@@ -233,11 +244,10 @@ public class NotificationResource {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
-        // Set the bundle ID from the incoming request. If the user provided a
-        // bundle name instead, fetch the bundle ID from the database. This is
-        // to make the frontend's life easier, in the way that they won't need
-        // to fetch the bundles to get the exact bundle ID. More information in
-        // the request's class, or in RHCLOUD-22513.
+        // We know that either the ID or the name are present because the
+        // request gets validated before reaching this point, and therefore it
+        // is safe to assume that either the bundle ID or the bundle name will
+        // be present.
         UUID bundleId = request.bundleId;
         if (bundleId == null) {
             final Optional<Bundle> bundle = this.bundleRepository.findByName(request.bundleName);
