@@ -23,7 +23,7 @@ import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.models.event.TestEventConstants;
+import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
 import com.redhat.cloud.notifications.openbridge.Bridge;
@@ -2083,16 +2083,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final var kafkaAction = actionsList.get(0).getPayload();
 
         // Check that the top level values coincide.
-        Assertions.assertEquals(TestEventConstants.TEST_ACTION_VERSION, kafkaAction.getVersion(), "unexpected version in the test action");
-        Assertions.assertEquals(TestEventConstants.TEST_ACTION_BUNDLE, kafkaAction.getBundle(), "unexpected bundle in the test action");
-        Assertions.assertEquals(TestEventConstants.TEST_ACTION_APPLICATION, kafkaAction.getApplication(), "unexpected application in the test action");
-        Assertions.assertEquals(TestEventConstants.TEST_ACTION_EVENT_TYPE, kafkaAction.getEventType(), "unexpected event type in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_VERSION, kafkaAction.getVersion(), "unexpected version in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_BUNDLE, kafkaAction.getBundle(), "unexpected bundle in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_APPLICATION, kafkaAction.getApplication(), "unexpected application in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_EVENT_TYPE, kafkaAction.getEventType(), "unexpected event type in the test action");
         Assertions.assertEquals(orgId, kafkaAction.getOrgId(), "unexpected org id in the test action");
 
         final Context context = kafkaAction.getContext();
         Map<String, Object> contextProperties = context.getAdditionalProperties();
-        Assertions.assertTrue((boolean) contextProperties.get(TestEventConstants.TEST_ACTION_CONTEXT_TEST_EVENT), "unexpected test action flag value received in the action's context");
-        Assertions.assertEquals(endpointUuid, contextProperties.get(TestEventConstants.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
+        Assertions.assertTrue((boolean) contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_TEST_EVENT), "unexpected test action flag value received in the action's context");
+        Assertions.assertEquals(endpointUuid, contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
 
         // Check the recipients and its users.
         final var expectedRecipientsCount = 1;
@@ -2107,7 +2107,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         final var user = users.get(0);
 
-        Assertions.assertEquals(TestEventConstants.TEST_ACTION_RECIPIENT, user, "unexpected user in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_RECIPIENT, user, "unexpected user in the test action");
 
         // Check the events, their metadata and their payload.
         final var events = kafkaAction.getEvents();
@@ -2122,8 +2122,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final var expectedMetadataAdditionalPropertiesCount = 1;
         Assertions.assertEquals(expectedMetadataAdditionalPropertiesCount, metaAdditionalProperties.size(), "unexpected number of metadata additional properties");
 
-        final String metadataValue = (String) metaAdditionalProperties.get(TestEventConstants.TEST_ACTION_METADATA_KEY);
-        Assertions.assertEquals(TestEventConstants.TEST_ACTION_METADATA_VALUE, metadataValue, "unexpected event metadata value");
+        final String metadataValue = (String) metaAdditionalProperties.get(TestEventHelper.TEST_ACTION_METADATA_KEY);
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_METADATA_VALUE, metadataValue, "unexpected event metadata value");
 
         final Payload payload = event.getPayload();
         final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();
@@ -2131,9 +2131,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final var expectedPayloadAdditionalPropertiesCount = 1;
         Assertions.assertEquals(expectedPayloadAdditionalPropertiesCount, payloadAdditionalProperties.size(), "unexpected number of payload additional properties");
 
-        final String payloadValue = (String) payload.getAdditionalProperties().get(TestEventConstants.TEST_ACTION_PAYLOAD_KEY);
+        final String payloadValue = (String) payload.getAdditionalProperties().get(TestEventHelper.TEST_ACTION_PAYLOAD_KEY);
 
-        Assertions.assertEquals(TestEventConstants.TEST_ACTION_PAYLOAD_VALUE, payloadValue, "unexpected event payload value");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_PAYLOAD_VALUE, payloadValue, "unexpected event payload value");
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {

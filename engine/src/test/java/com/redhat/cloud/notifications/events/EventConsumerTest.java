@@ -16,7 +16,6 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.event.TestEventConstants;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -372,7 +371,7 @@ public class EventConsumerTest {
 
         // Remove the test action flag that is used to identify a test action.
         final var properties = testAction.getContext().getAdditionalProperties();
-        properties.remove(TestEventConstants.TEST_ACTION_CONTEXT_TEST_EVENT);
+        properties.remove(TestEventHelper.TEST_ACTION_CONTEXT_TEST_EVENT);
 
         // Serialize the object as a JSON string.
         final var mapper = new ObjectMapper();

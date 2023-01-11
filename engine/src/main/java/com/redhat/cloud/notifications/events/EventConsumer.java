@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.event.TestEventConstants;
+import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -177,10 +177,10 @@ public class EventConsumer {
                         if (context != null) {
                             final var propertiesMap = context.getAdditionalProperties();
                             if (propertiesMap != null) {
-                                final var isTestEvent = (Boolean) propertiesMap.get(TestEventConstants.TEST_ACTION_CONTEXT_TEST_EVENT);
+                                final var isTestEvent = (Boolean) propertiesMap.get(TestEventHelper.TEST_ACTION_CONTEXT_TEST_EVENT);
 
                                 if (isTestEvent != null && isTestEvent) {
-                                    final UUID endpointUuid = UUID.fromString((String) propertiesMap.get(TestEventConstants.TEST_ACTION_CONTEXT_ENDPOINT_ID));
+                                    final UUID endpointUuid = UUID.fromString((String) propertiesMap.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID));
 
                                     this.endpointProcessor.processTestEvent(event, endpointUuid);
                                 }
