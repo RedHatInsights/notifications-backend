@@ -32,6 +32,7 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -671,7 +672,8 @@ public class EndpointResource {
      * Creates a template processor object from the provided
      * endpoint.
      */
-    private Processor createProcessor(Endpoint endpoint) {
+    @WithSpan
+    Processor createProcessor(Endpoint endpoint) {
 
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
         String processorName = properties.getExtras().get(OB_PROCESSOR_NAME);
