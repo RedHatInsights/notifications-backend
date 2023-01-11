@@ -1033,6 +1033,54 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Assertions.assertEquals("either the bundle name or the bundle UUID are required", errorMessage, "unexpected error message received");
     }
 
+    /**
+     * Tests that a "not found" response is returned from the handler when the
+     * bundle ID or its name don't correspond to any existing bundle in the
+     * database.
+     */
+    @Test
+    void testNotFoundBehaviorGroupNotExists() {
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        final var bgNoBundleId = new CreateBehaviorGroupRequest();
+        bgNoBundleId.bundleId = UUID.randomUUID();
+        bgNoBundleId.displayName = "test not found behavior group not exists";
+
+        final var bgNoBundleName = new CreateBehaviorGroupRequest();
+        bgNoBundleName.bundleName = "test not found bundle name";
+        bgNoBundleName.displayName = "test not found behavior group not exists";
+
+        final CreateBehaviorGroupRequest[] bgs = {bgNoBundleId, bgNoBundleName};
+        for (final var bg : bgs) {
+            final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(bg))
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(404)
+                .extract()
+                .body()
+                .asString();
+
+            // The handler returns an error when fetching the bundle by its
+            // name...
+            final String handlerError = "the specified bundle was not found in the database";
+            // ... but when the user provides the bundle ID, then the
+            // persistence layer returns another error.
+            final String persistenceLayerError = "bundle_id not found";
+            final boolean responseIsWhatWeExpected = response.equals(handlerError) || response.equals(persistenceLayerError);
+
+            Assertions.assertTrue(responseIsWhatWeExpected, String.format(
+                "unexpected response. Expecting \"%s\" or \"%s\", got \"%s\"",
+                handlerError,
+                persistenceLayerError,
+                response
+            ));
+        }
+    }
+
     private Optional<CreateBehaviorGroupResponse> createBehaviorGroup(Header identityHeader, CreateBehaviorGroupRequest request, int expectedStatusCode) {
         ValidatableResponse response = given()
                 .header(identityHeader)
