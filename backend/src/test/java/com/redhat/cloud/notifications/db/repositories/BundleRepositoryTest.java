@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Bundle;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -13,7 +14,7 @@ import java.util.Optional;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class BundleRepositoryTest {
+public class BundleRepositoryTest extends DbIsolatedTest {
 
     @Inject
     BundleRepository bundleRepository;
