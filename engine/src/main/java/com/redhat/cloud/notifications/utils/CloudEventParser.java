@@ -12,6 +12,8 @@ import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationResult;
 import com.networknt.schema.ValidatorTypeCode;
+import com.networknt.schema.uri.URIFactory;
+import com.networknt.schema.uri.URLFactory;
 import com.redhat.cloud.event.core.v1.RHELSystem;
 import com.redhat.cloud.notifications.models.ConsoleCloudEvent;
 import com.redhat.cloud.notifications.validator.LocalDateTimeValidator;
@@ -21,9 +23,42 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 
 @ApplicationScoped
 public class CloudEventParser {
+
+    private final static String schemaPath = "/schemas/events/v1/events.json";
+
+    static class CloudEventURIFactory implements URIFactory {
+
+        private final URLFactory urlFactory = new URLFactory();
+        private final static String baseUrl = "https://console.redhat.com/api";
+        private final String base;
+
+        public CloudEventURIFactory() {
+            String fullPath = RHELSystem.class.getResource(schemaPath).toString();
+            base = fullPath.substring(0, fullPath.length()-schemaPath.length());
+        }
+
+        @Override
+        public URI create(String uri) {
+            return urlFactory.create(replaceBase(uri));
+        }
+
+        @Override
+        public URI create(URI baseURI, String segment) {
+            return urlFactory.create(URI.create(replaceBase(baseURI.toString())), segment);
+        }
+
+        private String replaceBase(String uri) {
+            if (uri.startsWith(baseUrl)) {
+                uri = base + uri.substring(baseUrl.length(), uri.length() - 1);
+            }
+
+            return uri;
+        }
+    }
 
     @Inject
     ObjectMapper objectMapper;
@@ -59,7 +94,7 @@ public class CloudEventParser {
                 true
         ));
 
-        try (InputStream jsonSchemaStream = RHELSystem.class.getResourceAsStream("/schemas/events/v1/events.json")) {
+        try (InputStream jsonSchemaStream = RHELSystem.class.getResourceAsStream(schemaPath)) {
             JsonNode schema = objectMapper.readTree(jsonSchemaStream);
 
             return jsonSchemaFactory().getSchema(
@@ -83,6 +118,7 @@ public class CloudEventParser {
 
         return new JsonSchemaFactory.Builder().defaultMetaSchemaURI(overrideDateTimeValidator.getUri())
                 .addMetaSchema(overrideDateTimeValidator)
+                .uriFactory(new CloudEventURIFactory(), "https")
                 .build();
 
     }

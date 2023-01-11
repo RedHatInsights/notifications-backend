@@ -1,0 +1,109 @@
+{
+  "$schema": "https://console.redhat.com/api/schemas/events/v1/events.json",
+  "id": "not-a-uuid",
+  "source": "urn:redhat:source:console:app:advisor",
+  "specversion": "1.0",
+  "type": "com.redhat.console.advisor.new-recommendations",
+  "subject": "urn:redhat:subject:console:rhel:08e8ec2b-6a79-4f1d-bea4-a438da139493",
+  "time": "2018-04-05T17:31:00Z",
+  "redhatorgid": "org123",
+  "redhatconsolebundle": "rhel",
+  "dataschema": "https://console.redhat.com/api/schemas/apps/advisor/v1/advisor-recommendations.json",
+  "data": {
+    "system": {
+      "inventory_id": "08e8ec2b-6a79-4f1d-bea4-a438da139493",
+      "hostname": "rhel8desktop",
+      "display_name": "rhel8desktop",
+      "rhel_version": "8.3",
+      "host_url": "https://console.redhat.com/insights/inventory/08e8ec2b-6a79-4f1d-bea4-a438da139493",
+      "tags": [
+        {
+          "key": "Team",
+          "value": "PMs",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Owner",
+          "value": "John Doe",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Slack",
+          "value": "username",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Contact",
+          "value": "user@redhat.com",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Location",
+          "value": "Universe",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Location",
+          "value": "Earth",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Location",
+          "value": "United States",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Application",
+          "value": "RHEL Desktop",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Cost Center",
+          "value": "MBU",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Environment",
+          "value": "Production",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Business Unit",
+          "value": "Management",
+          "namespace": "insights-client"
+        },
+        {
+          "key": "Distribution List",
+          "value": "empty",
+          "namespace": "insights-client"
+        }
+      ]
+    },
+    "advisor_recommendations": [
+      {
+        "rule_id": "insights_core_egg_not_up2date|INSIGHTS_CORE_EGG_NOT_UP2DATE",
+        "rule_description": "System is not able to get the latest recommendations and may miss bug fixes when the Insights Client Core egg file is outdated",
+        "total_risk": "2",
+        "publish_date": "2021-03-13T18:44:00+00:00",
+        "rule_url": "https://console.redhat.com/insights/advisor/recommendations/insights_core_egg_not_up2date|INSIGHTS_CORE_EGG_NOT_UP2DATE/",
+        "reboot_required": false
+      },
+      {
+        "rule_id": "empty_grubenv|EMPTY_GRUBENV_KERNELOPTS",
+        "rule_description": "Reboot fails when there is no \"kernelopts\" option in the grubenv",
+        "total_risk": "4",
+        "publish_date": "2021-11-28T03:16:00+00:00",
+        "rule_url": "https://console.redhat.com/insights/advisor/recommendations/empty_grubenv|EMPTY_GRUBENV_KERNELOPTS/",
+        "reboot_required": false
+      },
+      {
+        "rule_id": "hardening_unencrypted_avahi|HARDENING_UNENC_AVAHI",
+        "rule_description": "Decreased security when Avahi is externally accessible",
+        "total_risk": "3",
+        "publish_date": "2021-08-31T12:00:00+00:00",
+        "rule_url": "https://console.redhat.com/insights/advisor/recommendations/hardening_unencrypted_avahi|HARDENING_UNENC_AVAHI/",
+        "reboot_required": false
+      }
+    ]
+  }
+}
