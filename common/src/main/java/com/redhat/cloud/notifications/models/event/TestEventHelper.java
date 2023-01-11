@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -80,7 +81,7 @@ public class TestEventHelper {
         testAction.setId(UUID.randomUUID());
         testAction.setRecipients(List.of(recipient));
         testAction.setOrgId(orgId);
-        testAction.setTimestamp(LocalDateTime.now());
+        testAction.setTimestamp(LocalDateTime.now(Clock.systemUTC()));
         testAction.setVersion(TEST_ACTION_VERSION);
 
         return testAction;
