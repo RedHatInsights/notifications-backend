@@ -43,10 +43,11 @@ public class CreateBehaviorGroupRequest {
 
     /**
      * Validates that the bundle is identifiable.
-     * @return true if the bundle ID is null and the bundle name is blank. False otherwise.
+     * @return true if the bundle UUID is not null, or if the bundle name is
+     * not blank.
      */
     @AssertTrue(message = "either the bundle name or the bundle UUID are required")
-    private boolean isBundleUuidNullOrBundleNameBlank() {
+    private boolean isBundleUuidOrBundleNameValid() {
         return this.bundleId != null || (
             this.bundleName != null && !this.bundleName.isBlank()
             );

@@ -38,10 +38,10 @@ public class BundleRepositoryTest extends DbIsolatedTest {
     }
 
     /**
-     * Tests that a not found exception is thrown when the bundle cannot be found by its name.
+     * Tests that an empty Optional is returned when the bundle cannot be found by its name.
      */
     @Test
-    void testFindByNameBadRequest() {
+    void testFindByNameEmptyOptional() {
         Assertions.assertTrue(this.bundleRepository.findByName("made-up-name").isEmpty(), "the bundle shouldn't have been found in the database");
     }
 }

@@ -84,7 +84,7 @@ public class CreateBehaviorGroupRequestTest {
         Assertions.assertEquals(1, constraintViolations.size(), "unexpected number of constraint violations received. CVs: " + constraintViolations);
 
         for (final var cv : constraintViolations) {
-            Assertions.assertEquals("bundleUuidNullOrBundleNameBlank", cv.getPropertyPath().toString(), "unexpected field raised the constraint violation");
+            Assertions.assertEquals("bundleUuidOrBundleNameValid", cv.getPropertyPath().toString(), "unexpected field raised the constraint violation");
             Assertions.assertEquals("either the bundle name or the bundle UUID are required", cv.getMessage(), "unexpected constraint violation returned");
         }
     }
@@ -107,7 +107,7 @@ public class CreateBehaviorGroupRequestTest {
             Assertions.assertEquals(1, constraintViolations.size(), "unexpected number of constraint violations received. CVs: " + constraintViolations);
 
             for (final var cv : constraintViolations) {
-                Assertions.assertEquals("bundleUuidNullOrBundleNameBlank", cv.getPropertyPath().toString(), "unexpected field raised the constraint violation");
+                Assertions.assertEquals("bundleUuidOrBundleNameValid", cv.getPropertyPath().toString(), "unexpected field raised the constraint violation");
                 Assertions.assertEquals("either the bundle name or the bundle UUID are required", cv.getMessage(), "unexpected constraint violation returned");
             }
         }
