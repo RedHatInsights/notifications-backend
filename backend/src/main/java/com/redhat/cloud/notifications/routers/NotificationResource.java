@@ -19,7 +19,6 @@ import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -240,7 +239,7 @@ public class NotificationResource {
         // to fetch the bundles to get the exact bundle ID. More information in
         // the request's class, or in RHCLOUD-22513.
         UUID bundleId = request.bundleId;
-        if (bundleId == null && !StringUtils.isBlank(request.bundleName)) {
+        if (bundleId == null) {
             final Optional<Bundle> bundle = this.bundleRepository.findByName(request.bundleName);
             if (bundle.isEmpty()) {
                 throw new NotFoundException("the specified bundle was not found in the database");
