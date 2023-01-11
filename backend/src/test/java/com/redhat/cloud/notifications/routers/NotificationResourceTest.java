@@ -30,6 +30,7 @@ import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -1007,14 +1008,29 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
 
-        given()
+        final String response = given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
             .body(Json.encode(createBehaviorGroupRequest))
             .post("/notifications/behaviorGroups")
             .then()
-            .statusCode(400);
+            .statusCode(400)
+            .extract()
+            .body()
+            .asString();
+
+        final JsonObject responseJson = new JsonObject(response);
+        final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+        Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+        Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+        final JsonObject error = constraintViolations.getJsonObject(0);
+        final String errorMessage = error.getString("message");
+
+        Assertions.assertNotNull(errorMessage, "the error message is null");
+        Assertions.assertEquals("either the bundle name or the bundle UUID are required", errorMessage, "unexpected error message received");
     }
 
     private Optional<CreateBehaviorGroupResponse> createBehaviorGroup(Header identityHeader, CreateBehaviorGroupRequest request, int expectedStatusCode) {
