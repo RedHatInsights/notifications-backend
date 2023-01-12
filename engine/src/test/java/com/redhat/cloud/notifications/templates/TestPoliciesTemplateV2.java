@@ -27,7 +27,7 @@ public class TestPoliciesTemplateV2 {
                 .data("environment", environment)
                 .render();
 
-        assertEquals("Instant notification - Policy - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class TestPoliciesTemplateV2 {
                 .data("environment", environment)
                 .render();
 
-        assertEquals("Daily digest - Policy - Red Hat Enterprise Linux", result);
+        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -110,7 +110,7 @@ public class TestPoliciesTemplateV2 {
                 .data("environment", environment)
                 .render();
 
-        assertEquals("Daily digest - Policy - Red Hat Enterprise Linux", result);
+        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
