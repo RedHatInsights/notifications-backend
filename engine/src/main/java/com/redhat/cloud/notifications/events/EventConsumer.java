@@ -4,10 +4,8 @@ import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -173,20 +171,6 @@ public class EventConsumer {
                      * The Event and the Action it contains are processed by all relevant endpoint processors.
                      */
                     try {
-                        final Context context = action.getContext();
-                        if (context != null) {
-                            final var propertiesMap = context.getAdditionalProperties();
-                            if (propertiesMap != null) {
-                                final var isTestEvent = (Boolean) propertiesMap.get(TestEventHelper.TEST_ACTION_CONTEXT_TEST_EVENT);
-
-                                if (isTestEvent != null && isTestEvent) {
-                                    final UUID endpointUuid = UUID.fromString((String) propertiesMap.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID));
-
-                                    this.endpointProcessor.processTestEvent(event, endpointUuid);
-                                }
-                            }
-                        }
-
                         endpointProcessor.process(event);
                     } catch (Exception e) {
                         /*

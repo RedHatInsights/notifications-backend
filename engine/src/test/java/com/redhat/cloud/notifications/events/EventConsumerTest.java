@@ -1,9 +1,5 @@
 package com.redhat.cloud.notifications.events;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -16,7 +12,6 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -30,13 +25,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -297,109 +290,6 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
-    }
-
-    /**
-     * Tests that when a test event action is received on the processor, the {@link EndpointProcessor#processTestEvent(Event, UUID)}
-     * function is called.
-     * @throws JsonProcessingException if the test action cannot be serialized as a JSON string.
-     */
-    @Test
-    void testEventGetsProcessedTest() throws JsonProcessingException {
-        // Create a test action for the event processor.
-        final UUID endpointUuid = UUID.randomUUID();
-        final String orgId = UUID.randomUUID().toString();
-
-        final Action testAction = TestEventHelper.createTestAction(endpointUuid, orgId);
-
-        // Serialize the object as a JSON string.
-        final var mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        final String json = mapper.writeValueAsString(testAction);
-        final Message<String> message = Message.of(json);
-
-        // Create a mocked event type in order to avoid null pointer exceptions when running the processor.
-        final var bundle = new Bundle();
-        bundle.setId(UUID.randomUUID());
-
-        final var application = new Application();
-        application.setId(UUID.randomUUID());
-        application.setDisplayName("test application");
-        application.setBundle(bundle);
-
-        final var testEventType = new EventType();
-        testEventType.setApplication(application);
-        testEventType.setDisplayName("test event type");
-
-        Mockito.when(this.eventTypeRepository.getEventType(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(testEventType);
-
-        // Call the function under test.
-        this.eventConsumer.process(message);
-
-        Mockito.verify(this.endpointProcessor, Mockito.times(1)).processTestEvent(Mockito.any(), Mockito.any());
-    }
-
-    /**
-     * Tests that when a regular, non-test, action is received on the processor, the
-     * {@link EndpointProcessor#process(Event)} function is called.
-     * @throws JsonProcessingException if the test action cannot be serialized as a JSON string.
-     */
-    @Test
-    void normalEventGetsProcessed() throws JsonProcessingException {
-        // Create a mocked event type in order to avoid null pointer exceptions when running the processor.
-        final var bundle = new Bundle();
-        bundle.setId(UUID.randomUUID());
-
-        final var application = new Application();
-        application.setId(UUID.randomUUID());
-        application.setDisplayName("test application");
-        application.setBundle(bundle);
-
-        final var testEventType = new EventType();
-        testEventType.setApplication(application);
-        testEventType.setDisplayName("test event type");
-
-        Mockito.when(this.eventTypeRepository.getEventType(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(testEventType);
-
-        // Create an action that should not be identified as a test action.
-        final UUID endpointUuid = UUID.randomUUID();
-        final String orgId = UUID.randomUUID().toString();
-
-        final Action testAction = TestEventHelper.createTestAction(endpointUuid, orgId);
-
-        // Remove the test action flag that is used to identify a test action.
-        final var properties = testAction.getContext().getAdditionalProperties();
-        properties.remove(TestEventHelper.TEST_ACTION_CONTEXT_TEST_EVENT);
-
-        // Serialize the object as a JSON string.
-        final var mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        final String noTestPropertyAction = mapper.writeValueAsString(testAction);
-
-        // Remove the context from the action and serialize it again to create a new message.
-        testAction.setContext(null);
-        final String noContextAction = mapper.writeValueAsString(testAction);
-
-        // Create the messages to test the beavior.
-        final var normalMessagesList = new ArrayList<Message<String>>();
-        normalMessagesList.add(Message.of(noTestPropertyAction));
-        normalMessagesList.add(Message.of(noContextAction));
-
-        for (final var message : normalMessagesList) {
-            // Call the function under test.
-            this.eventConsumer.process(message);
-        }
-
-        // The regular "process" function should be called twice, since the two actions we have prepared should be
-        // considered as regular actions, and not test actions.
-        Mockito.verify(this.endpointProcessor, Mockito.times(2)).process(Mockito.any());
-        // None of the actions should be identified as test actions, so the "processTestEvent" function should not
-        // be called.
-        Mockito.verify(this.endpointProcessor, Mockito.times(0)).processTestEvent(Mockito.any(), Mockito.any());
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
