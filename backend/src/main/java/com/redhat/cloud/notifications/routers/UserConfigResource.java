@@ -42,6 +42,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -240,28 +241,26 @@ public class UserConfigResource {
             // for each application
             bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) -> {
                 Application app = applicationRepository.getApplication(bundleName, applicationName);
-                // foreach event Type
-                applicationSettingsValue.eventTypes.forEach((eventTypeName, eventTypeValue) -> {
-                    EventType eventType;
-                    if (app != null) {
-                        eventType = eventTypeRepository.find(app.getId(), eventTypeName);
-
-                        // for each email subscription
-                        eventTypeValue.emailSubscriptionTypes.forEach((emailSubscriptionType, subscribed) -> {
-                            if (subscribed) {
-                                if (eventType != null) {
+                if (app != null) {
+                    // foreach event Type
+                    applicationSettingsValue.eventTypes.forEach((eventTypeName, eventTypeValue) -> {
+                        Optional<EventType> eventType = eventTypeRepository.find(app.getId(), eventTypeName);
+                        if (eventType.isPresent()) {
+                            // for each email subscription
+                            eventTypeValue.emailSubscriptionTypes.forEach((emailSubscriptionType, subscribed) -> {
+                                if (subscribed) {
                                     emailSubscriptionRepository.subscribeEventType(
-                                        orgId, userName, app.getId(), eventType.getId(), emailSubscriptionType
+                                        orgId, userName, app.getId(), eventType.get().getId(), emailSubscriptionType
+                                    );
+                                } else {
+                                    emailSubscriptionRepository.unsubscribeEventType(
+                                        orgId, userName, app.getId(), eventType.get().getId(), emailSubscriptionType
                                     );
                                 }
-                            } else {
-                                emailSubscriptionRepository.unsubscribeEventType(
-                                    orgId, userName, app.getId(), eventType.getId(), emailSubscriptionType
-                                );
-                            }
-                        });
-                    }
-                });
+                            });
+                        }
+                    });
+                }
             }));
 
         return Response.ok().build();

@@ -62,7 +62,11 @@ public class EmailAggregator {
 
     private Set<String> getSubscribers(String eventType, Set<String> subscribers, Map<String, Set<String>> subscribersByEventType) {
         if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
-            return subscribersByEventType.get(eventType);
+            if (subscribersByEventType.containsKey(eventType)) {
+                return subscribersByEventType.get(eventType);
+            } else {
+                return Set.of();
+            }
         }
         return subscribers;
     }

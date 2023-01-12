@@ -5,6 +5,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -13,15 +14,15 @@ public class EventTypeRepository {
     @Inject
     EntityManager entityManager;
 
-    public EventType find(UUID applicationId, String eventTypeName) {
+    public Optional<EventType> find(UUID applicationId, String eventTypeName) {
         String query = "SELECT evt FROM EventType evt WHERE evt.application.id = :applicationId AND evt.name = :eventTypeName";
         try {
-            return entityManager.createQuery(query, EventType.class)
+            return Optional.of(entityManager.createQuery(query, EventType.class)
                 .setParameter("applicationId", applicationId)
                 .setParameter("eventTypeName", eventTypeName)
-                .getSingleResult();
+                .getSingleResult());
         } catch (NoResultException e) {
-            return null;
+            return Optional.empty();
         }
     }
 }
