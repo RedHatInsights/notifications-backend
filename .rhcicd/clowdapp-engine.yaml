@@ -197,6 +197,8 @@ objects:
           value: ${QUARKUS_REST_CLIENT_KC_URL}
         - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
+        - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
+          value: ${SOURCES_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -314,4 +316,7 @@ parameters:
   description: Enable Sentry (or not)
   value: "false"
 - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
+  value: "false"
+- name: SOURCES_ENABLED
+  description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
   value: "false"
