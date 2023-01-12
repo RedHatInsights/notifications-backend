@@ -43,7 +43,6 @@ public class EmailAggregation extends CreationTimestamped {
     private String applicationName;
 
     @Size(max = 255)
-    @Column(name = "event_type")
     @JsonProperty("event_type")
     private String eventType;
 

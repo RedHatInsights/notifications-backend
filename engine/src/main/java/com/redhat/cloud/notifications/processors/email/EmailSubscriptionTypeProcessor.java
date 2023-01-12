@@ -270,6 +270,9 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 action.setOrgId(aggregationKey.getOrgId());
                 action.setApplication(aggregationKey.getApplication());
                 action.setBundle(aggregationKey.getBundle());
+
+                // We don't have an event type as this aggregates over multiple event types
+                action.setEventType(null);
                 action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
 
                 Event event = new Event();
