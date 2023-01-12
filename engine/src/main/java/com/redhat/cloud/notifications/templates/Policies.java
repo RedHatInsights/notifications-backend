@@ -33,28 +33,28 @@ public class Policies implements EmailTemplate {
     }
 
     private TemplateInstance getDailyEmailTitle() {
-        if (featureFlipper.isPolicyEmailTemplatesV2Enabled()) {
+        if (featureFlipper.isPoliciesEmailTemplatesV2Enabled()) {
             return Templates.dailyEmailTitleV2();
         }
         return Templates.dailyEmailTitle();
     }
 
     private TemplateInstance getDailyEmailBody() {
-        if (featureFlipper.isPolicyEmailTemplatesV2Enabled()) {
+        if (featureFlipper.isPoliciesEmailTemplatesV2Enabled()) {
             return Templates.dailyEmailBodyV2();
         }
         return Templates.dailyEmailBody();
     }
 
     private TemplateInstance getInstantEmailTitle() {
-        if (featureFlipper.isPolicyEmailTemplatesV2Enabled()) {
+        if (featureFlipper.isPoliciesEmailTemplatesV2Enabled()) {
             return Templates.instantEmailTitleV2();
         }
         return Templates.instantEmailTitle();
     }
 
     private TemplateInstance getInstantEmailBody() {
-        if (featureFlipper.isPolicyEmailTemplatesV2Enabled()) {
+        if (featureFlipper.isPoliciesEmailTemplatesV2Enabled()) {
             return Templates.instantEmailBodyV2();
         }
         return Templates.instantEmailBody();

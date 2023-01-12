@@ -69,8 +69,8 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-sources-secrets-backend", defaultValue = "false")
     boolean sourcesSecretsBackend;
 
-    @ConfigProperty(name = "notifications.use-policy-email-templates-v2.enabled", defaultValue = "false")
-    boolean policyEmailTemplatesV2Enabled;
+    @ConfigProperty(name = "notifications.use-policies-email-templates-v2.enabled", defaultValue = "false")
+    boolean policiesEmailTemplatesV2Enabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
@@ -84,7 +84,7 @@ public class FeatureFlipper {
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
         Log.infof("The OB backchannel filler is %s", obBackchannelFiller ? "enabled" : "disabled");
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
-        Log.infof("The Policy's email templates V2 are %s", policyEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Policies's email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -167,8 +167,8 @@ public class FeatureFlipper {
         return this.sourcesSecretsBackend;
     }
 
-    public boolean isPolicyEmailTemplatesV2Enabled() {
-        return this.policyEmailTemplatesV2Enabled;
+    public boolean isPoliciesEmailTemplatesV2Enabled() {
+        return this.policiesEmailTemplatesV2Enabled;
     }
 
     /**
