@@ -66,8 +66,12 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-policies-email-templates-v2.enabled", defaultValue = "false")
     boolean policiesEmailTemplatesV2Enabled;
 
+
     @ConfigProperty(name = "notifications.use-compliance-email-templates-v2.enabled", defaultValue = "false")
     boolean complianceEmailTemplatesV2Enabled;
+
+    @ConfigProperty(name = "notifications.use-ansible-email-templates-v2.enabled", defaultValue = "false")
+    boolean ansibleEmailTemplatesV2Enabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
@@ -81,6 +85,7 @@ public class FeatureFlipper {
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
         Log.infof("The Policies's email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Compliance's email templates V2 are %s", complianceEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Ansible's email templates V2 are %s", ansibleEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -154,12 +159,17 @@ public class FeatureFlipper {
         return this.policiesEmailTemplatesV2Enabled;
     }
 
+
     public boolean isComplianceEmailTemplatesV2Enabled() {
         return complianceEmailTemplatesV2Enabled;
     }
 
     public void setComplianceEmailTemplatesV2Enabled(boolean complianceEmailTemplatesV2Enabled) {
         this.complianceEmailTemplatesV2Enabled = complianceEmailTemplatesV2Enabled;
+    }
+
+    public boolean isAnsibleEmailTemplatesV2Enabled() {
+        return ansibleEmailTemplatesV2Enabled;
     }
 
     /**

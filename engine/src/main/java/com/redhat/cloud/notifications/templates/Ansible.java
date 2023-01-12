@@ -1,17 +1,24 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 // Name needs to be "Ansible" to read templates from resources/templates/Ansible
+@ApplicationScoped
 public class Ansible implements EmailTemplate {
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
             if (eventType.equals("report-available")) {
-                return Templates.instantEmailTitle();
+                return getInstantEmailTitle();
             }
         }
 
@@ -21,11 +28,18 @@ public class Ansible implements EmailTemplate {
         ));
     }
 
+    private TemplateInstance getInstantEmailTitle() {
+        if (featureFlipper.isAnsibleEmailTemplatesV2Enabled()) {
+            return Ansible.Templates.instantEmailTitleV2();
+        }
+        return Ansible.Templates.instantEmailTitle();
+    }
+
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
             if (eventType.equals("report-available")) {
-                return Templates.instantEmailBody();
+                return getInstantEmailBody();
             }
         }
 
@@ -33,6 +47,13 @@ public class Ansible implements EmailTemplate {
                 "No email body template for Ansible event_type: %s and EmailSubscription: %s found.",
                 eventType, type
         ));
+    }
+
+    private TemplateInstance getInstantEmailBody() {
+        if (featureFlipper.isAnsibleEmailTemplatesV2Enabled()) {
+            return Ansible.Templates.instantEmailBodyV2();
+        }
+        return Ansible.Templates.instantEmailBody();
     }
 
     @Override
@@ -51,6 +72,10 @@ public class Ansible implements EmailTemplate {
         public static native TemplateInstance instantEmailTitle();
 
         public static native TemplateInstance instantEmailBody();
+
+        public static native TemplateInstance instantEmailTitleV2();
+
+        public static native TemplateInstance instantEmailBodyV2();
 
     }
 
