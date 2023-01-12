@@ -34,7 +34,7 @@ public class CreateBehaviorGroupRequestTest {
         requestBundleId.displayName = "valid display name";
 
         final var requestBundleName = new CreateBehaviorGroupRequest();
-        requestBundleName.bundleId = UUID.randomUUID();
+        requestBundleName.bundleName = "specified bundle name";
         requestBundleName.displayName = "valid display name";
 
         final CreateBehaviorGroupRequest[] validRequests = {requestBundleId, requestBundleName};
