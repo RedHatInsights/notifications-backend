@@ -327,4 +327,25 @@ public class TestHelpers {
 
         return emailActionMessage;
     }
+
+    public static Action createAnsibleAction(String accountId, String bundle, String application, String slug) {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(bundle);
+        emailActionMessage.setApplication(application);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                .withAdditionalProperty("slug", slug)
+                .build()
+        );
+
+        emailActionMessage.setAccountId(accountId);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        return emailActionMessage;
+    }
 }
