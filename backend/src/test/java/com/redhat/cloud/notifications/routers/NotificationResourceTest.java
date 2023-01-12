@@ -30,6 +30,7 @@ import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -969,6 +970,114 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         } finally {
             featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
+        }
+    }
+
+    /**
+     * Tests that a successful status code is returned when a behavior group is
+     * created by using the bundle's name instead of its UUID.
+     */
+    @Test
+    void testBehaviorGroupUsingBundleName() {
+        final Bundle bundle = helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+
+        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.displayName = "behavior-group-display-name";
+        createBehaviorGroupRequest.bundleName =  bundle.getName();
+
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(createBehaviorGroupRequest))
+            .post("/notifications/behaviorGroups")
+            .then()
+            .statusCode(200);
+    }
+
+    /**
+     * Tests that a bad request response is returned when attempting to create
+     * a behavior group without specifying a bundle ID or its name.
+     */
+    @Test
+    void testBadRequestBehaviorGroupInvalidBundle() {
+        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.displayName = "behavior-group-display-name";
+
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        final String response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(createBehaviorGroupRequest))
+            .post("/notifications/behaviorGroups")
+            .then()
+            .statusCode(400)
+            .extract()
+            .body()
+            .asString();
+
+        final JsonObject responseJson = new JsonObject(response);
+        final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+        Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+        Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+        final JsonObject error = constraintViolations.getJsonObject(0);
+        final String errorMessage = error.getString("message");
+
+        Assertions.assertNotNull(errorMessage, "the error message is null");
+        Assertions.assertEquals("either the bundle name or the bundle UUID are required", errorMessage, "unexpected error message received");
+    }
+
+    /**
+     * Tests that a "not found" response is returned from the handler when the
+     * bundle ID or its name don't correspond to any existing bundle in the
+     * database.
+     */
+    @Test
+    void testNotFoundBehaviorGroupNotExists() {
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        final var bgNoBundleId = new CreateBehaviorGroupRequest();
+        bgNoBundleId.bundleId = UUID.randomUUID();
+        bgNoBundleId.displayName = "test not found behavior group not exists";
+
+        final var bgNoBundleName = new CreateBehaviorGroupRequest();
+        bgNoBundleName.bundleName = "test not found bundle name";
+        bgNoBundleName.displayName = "test not found behavior group not exists";
+
+        final CreateBehaviorGroupRequest[] bgs = {bgNoBundleId, bgNoBundleName};
+        for (final var bg : bgs) {
+            final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(bg))
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(404)
+                .extract()
+                .body()
+                .asString();
+
+            // The handler returns an error when fetching the bundle by its
+            // name...
+            final String handlerError = "the specified bundle was not found in the database";
+            // ... but when the user provides the bundle ID, then the
+            // persistence layer returns another error.
+            final String persistenceLayerError = "bundle_id not found";
+            final boolean responseIsWhatWeExpected = response.equals(handlerError) || response.equals(persistenceLayerError);
+
+            Assertions.assertTrue(responseIsWhatWeExpected, String.format(
+                "unexpected response. Expecting \"%s\" or \"%s\", got \"%s\"",
+                handlerError,
+                persistenceLayerError,
+                response
+            ));
         }
     }
 

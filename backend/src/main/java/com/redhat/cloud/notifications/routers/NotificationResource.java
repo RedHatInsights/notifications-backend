@@ -52,6 +52,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -215,6 +216,17 @@ public class NotificationResource {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Creates a new behavior group. The payload requires to either specify the
+     * related bundle ID, or its name. This is due to a feature request coming
+     * from the frontend team, which was forced to fetch all bundles in order
+     * to grab their UUID, when apparently they could simply send the bundle
+     * name instead. More information in the related Jira ticket
+     * <a href="https://issues.redhat.com/browse/RHCLOUD-22513">RHCLOUD-22513</a>.
+     * @param sec the security context needed to get the account ID and the Org ID.
+     * @param request the incoming valid {@link CreateBehaviorGroupRequest}.
+     * @return the created behavior group to the client.
+     */
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
@@ -225,13 +237,29 @@ public class NotificationResource {
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public CreateBehaviorGroupResponse createBehaviorGroup(@Context SecurityContext sec,
-                              @RequestBody(required = true) @Valid @NotNull CreateBehaviorGroupRequest request) {
+    public CreateBehaviorGroupResponse createBehaviorGroup(
+        @Context final SecurityContext sec,
+        @RequestBody(required = true) @Valid @NotNull final CreateBehaviorGroupRequest request
+    ) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
+        // We know that either the ID or the name are present because the
+        // request gets validated before reaching this point, and therefore it
+        // is safe to assume that either the bundle ID or the bundle name will
+        // be present.
+        UUID bundleId = request.bundleId;
+        if (bundleId == null) {
+            final Optional<Bundle> bundle = this.bundleRepository.findByName(request.bundleName);
+            if (bundle.isEmpty()) {
+                throw new NotFoundException("the specified bundle was not found in the database");
+            }
+
+            bundleId = bundle.get().getId();
+        }
+
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setBundleId(request.bundleId);
+        behaviorGroup.setBundleId(bundleId);
         behaviorGroup.setDisplayName(request.displayName);
 
         behaviorGroup = behaviorGroupRepository.createFull(

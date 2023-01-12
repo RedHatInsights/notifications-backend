@@ -10,6 +10,7 @@ import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import javax.ws.rs.NotFoundException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -80,6 +81,31 @@ public class BundleRepository {
             return entityManager.createQuery(query, Application.class)
                     .setParameter("id", id)
                     .getResultList();
+        }
+    }
+
+    /**
+     * Finds the bundle by name.
+     * @param bundleName the name to find the bundle by.
+     * @return the found bundle from the database.
+     */
+    public Optional<Bundle> findByName(final String bundleName) {
+        final String findByNameQuery =
+            "SELECT " +
+                    "b " +
+            "FROM " +
+                "Bundle AS b " +
+            "WHERE " +
+                "b.name = :name";
+
+        try {
+            return Optional.of(
+                this.entityManager.createQuery(findByNameQuery, Bundle.class)
+                    .setParameter("name", bundleName)
+                    .getSingleResult()
+            );
+        } catch (final NoResultException e) {
+            return Optional.empty();
         }
     }
 }
