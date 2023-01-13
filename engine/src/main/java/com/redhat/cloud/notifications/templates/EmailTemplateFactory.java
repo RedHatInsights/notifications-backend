@@ -42,6 +42,9 @@ public class EmailTemplateFactory {
     @Inject
     Compliance compliance;
 
+    @Inject
+    Ansible ansible;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -88,7 +91,7 @@ public class EmailTemplateFactory {
             }
         } else if (bundle.equalsIgnoreCase(BUNDLE_ANSIBLE)) {
             if (application.equalsIgnoreCase(APP_ANSIBLE_REPORTS)) {
-                return new Ansible();
+                return ansible;
             }
         } else if (bundle.equalsIgnoreCase(CONSOLE)) {
             if (application.equalsIgnoreCase(INTEGRATIONS)) {
