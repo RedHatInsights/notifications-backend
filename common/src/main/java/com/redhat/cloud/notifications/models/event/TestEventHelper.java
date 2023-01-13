@@ -33,13 +33,12 @@ public class TestEventHelper {
     public static final String TEST_ACTION_RECIPIENT = "test-recipient-1";
     public static final String TEST_ACTION_VERSION = "0.0.0";
     /**
-     * The test action or event will be sent with a defined bundle, application and event types, that have been
-     * specifically inserted via a migration into the database. Please check the migration "V1.70.0" to see more
-     * details about this.
+     * The test action or event will be sent with a defined "console" bundle, the "notifications" application and
+     * a new event type that has been inserted in the V1.71.0 migration.
      */
-    public static final String TEST_ACTION_BUNDLE = "test-actions-events-bundle";
-    public static final String TEST_ACTION_APPLICATION = "test-actions-events-application";
-    public static final String TEST_ACTION_EVENT_TYPE = "test-event-type";
+    public static final String TEST_ACTION_BUNDLE = "console";
+    public static final String TEST_ACTION_APPLICATION = "notifications";
+    public static final String TEST_ACTION_EVENT_TYPE = "integration-test";
 
     /**
      * Creates a test action ready to be sent to the engine. It sets the endpoint's UUID and a flag in the context, so
