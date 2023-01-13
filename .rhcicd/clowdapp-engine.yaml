@@ -199,6 +199,8 @@ objects:
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
         - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
           value: ${SOURCES_ENABLED}
+        - name: NOTIFICATIONS_USE_POLICIES_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_POLICIES_EMAIL_TEMPLATES_V2_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -319,4 +321,6 @@ parameters:
   value: "false"
 - name: SOURCES_ENABLED
   description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
+  value: "false"
+- name: NOTIFICATIONS_USE_POLICIES_EMAIL_TEMPLATES_V2_ENABLED
   value: "false"
