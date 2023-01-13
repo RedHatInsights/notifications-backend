@@ -10,11 +10,6 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
-import com.redhat.cloud.notifications.ingress.Event;
-import com.redhat.cloud.notifications.ingress.Metadata;
-import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -23,33 +18,34 @@ import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import com.redhat.cloud.notifications.openbridge.BridgeItemList;
+import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
-import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
-import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
-import javax.enterprise.inject.Any;
 import javax.inject.Inject;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -109,12 +105,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Inject
     FeatureFlipper featureFlipper;
 
-    @Any
-    @Inject
-    InMemoryConnector connector;
-
     @Inject
     EndpointRepository endpointRepository;
+
+    /**
+     * Used to verify that the "test this endpoint" payloads are sent with the
+     * expected data.
+     */
+    @InjectMock
+    @RestClient
+    EndpointTestService endpointTestService;
 
     @Test
     void testEndpointAdding() {
@@ -2036,35 +2036,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @Test
     void testEndpointTest() {
-        // These test values will be used later, so we define them in variables.
-        final UUID endpointUuid = UUID.randomUUID();
-        final String orgId = "empty";
+        final String accountId = "test-endpoint-test-account-number";
+        final String orgId = "test-endpoint-test-org-id";
 
-        // Create an endpoint fixture to be able to call the "/test" path on it.
-        Endpoint endpoint = new Endpoint();
-        endpoint.setId(endpointUuid);
-        endpoint.setType(EndpointType.CAMEL);
-        endpoint.setSubType("slack");
-        endpoint.setEnabled(true);
-        endpoint.setName("fixture test");
-        endpoint.setDescription("fixture test description");
-        endpoint.setEnabled(true);
-        endpoint.setCreated(LocalDateTime.now());
-        endpoint.setServerErrors(0);
-        endpoint.setOrgId(orgId);
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
 
-        this.endpointRepository.createEndpoint(endpoint);
-
-        // Create the mocked RBAC identity.
-        final String accountId = "empty";
-        final String userName = "user";
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         // Call the endpoint under test.
-        final String path = String.format("/endpoints/%s/test", endpointUuid);
+        final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
         given()
             .header(identityHeader)
             .when()
@@ -2072,68 +2055,38 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(204);
 
-        // We should receive the action triggered by the REST call.
-        InMemorySink<Action> actionsOut = this.connector.sink("ingress");
-        final var actionsList = actionsOut.received();
+        // Capture the sent payload to verify it.
+        final ArgumentCaptor<EndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(EndpointTestRequest.class);
+        Mockito.verify(this.endpointTestService).testEndpoint(capturedPayload.capture());
 
-        // Only one test action should have been sent to Kafka.
-        final var expectedActionsCount = 1;
-        Assertions.assertEquals(expectedActionsCount, actionsList.size(), "unexpected number of actions sent to Kafka");
+        final EndpointTestRequest sentPayload = capturedPayload.getValue();
 
-        final var kafkaAction = actionsList.get(0).getPayload();
+        Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
+        Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
+    }
 
-        // Check that the top level values coincide.
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_VERSION, kafkaAction.getVersion(), "unexpected version in the test action");
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_BUNDLE, kafkaAction.getBundle(), "unexpected bundle in the test action");
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_APPLICATION, kafkaAction.getApplication(), "unexpected application in the test action");
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_EVENT_TYPE, kafkaAction.getEventType(), "unexpected event type in the test action");
-        Assertions.assertEquals(orgId, kafkaAction.getOrgId(), "unexpected org id in the test action");
+    /**
+     * Tests that when the "test endpoint" handler is called with an endpoint
+     * UUID that doesn't exist, a not found response is returned.
+     */
+    @Test
+    void testEndpointTestNotFound() {
+        final String accountId = "test-endpoint-test-account-number";
+        final String orgId = "test-endpoint-test-org-id";
 
-        final Context context = kafkaAction.getContext();
-        Map<String, Object> contextProperties = context.getAdditionalProperties();
-        Assertions.assertTrue((boolean) contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_TEST_EVENT), "unexpected test action flag value received in the action's context");
-        Assertions.assertEquals(endpointUuid, contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
-        // Check the recipients and its users.
-        final var expectedRecipientsCount = 1;
-        final var recipients = kafkaAction.getRecipients();
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
-        Assertions.assertEquals(expectedRecipientsCount, recipients.size(), "unexpected number of recipients in the test action");
-
-        final var recipient = recipients.get(0);
-        final var users = recipient.getUsers();
-
-        Assertions.assertEquals(expectedRecipientsCount, users.size(), "unexpected number of test action users");
-
-        final var user = users.get(0);
-
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_RECIPIENT, user, "unexpected user in the test action");
-
-        // Check the events, their metadata and their payload.
-        final var events = kafkaAction.getEvents();
-
-        final var expectedEventsCount = 1;
-        Assertions.assertEquals(expectedEventsCount, events.size(), "unexpected number of test action events");
-
-        final Event event = events.get(0);
-        final Metadata metadata = event.getMetadata();
-        final Map<String, Object> metaAdditionalProperties = metadata.getAdditionalProperties();
-
-        final var expectedMetadataAdditionalPropertiesCount = 1;
-        Assertions.assertEquals(expectedMetadataAdditionalPropertiesCount, metaAdditionalProperties.size(), "unexpected number of metadata additional properties");
-
-        final String metadataValue = (String) metaAdditionalProperties.get(TestEventHelper.TEST_ACTION_METADATA_KEY);
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_METADATA_VALUE, metadataValue, "unexpected event metadata value");
-
-        final Payload payload = event.getPayload();
-        final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();
-
-        final var expectedPayloadAdditionalPropertiesCount = 1;
-        Assertions.assertEquals(expectedPayloadAdditionalPropertiesCount, payloadAdditionalProperties.size(), "unexpected number of payload additional properties");
-
-        final String payloadValue = (String) payload.getAdditionalProperties().get(TestEventHelper.TEST_ACTION_PAYLOAD_KEY);
-
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_PAYLOAD_VALUE, payloadValue, "unexpected event payload value");
+        // Call the endpoint under test.
+        final String path = String.format("/endpoints/%s/test", UUID.randomUUID());
+        given()
+                .header(identityHeader)
+                .when()
+                .post(path)
+                .then()
+                .statusCode(404);
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {

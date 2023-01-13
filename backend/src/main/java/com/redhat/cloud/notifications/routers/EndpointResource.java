@@ -11,7 +11,6 @@ import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepositor
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
@@ -24,12 +23,13 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
-import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.Processor;
 import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
+import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
@@ -47,8 +47,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
@@ -115,6 +113,10 @@ public class EndpointResource {
     EndpointRepository endpointRepository;
 
     @Inject
+    @RestClient
+    EndpointTestService endpointTestService;
+
+    @Inject
     NotificationRepository notificationRepository;
 
     @Inject
@@ -150,13 +152,6 @@ public class EndpointResource {
      */
     @Inject
     SecretUtils secretUtils;
-
-    /**
-     * Used to send test events to Kafka.
-     */
-    @Inject
-    @Channel("ingress")
-    Emitter<Action> emitter;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -674,7 +669,7 @@ public class EndpointResource {
     }
 
     /**
-     * Sends a test event via the specified endpoint.
+     * Sends an integration test event via the specified endpoint.
      * @param uuid the {@link UUID} of the endpoint to test.
      * @return a "no content" response on success.
      */
@@ -693,12 +688,13 @@ public class EndpointResource {
     public Response testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid) {
         final String orgId = SecurityContextUtil.getOrgId(sec);
 
-        final Endpoint endpoint = this.endpointRepository.getEndpoint(orgId, uuid);
-        if (endpoint == null) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
             throw new NotFoundException();
         }
 
-        this.sendTestEvent(uuid, orgId);
+        final var endpointTestRequest = new EndpointTestRequest(uuid, orgId);
+
+        this.endpointTestService.testEndpoint(endpointTestRequest);
 
         return Response.noContent().build();
     }
@@ -773,16 +769,5 @@ public class EndpointResource {
                 endpoint.getType().equals(EndpointType.CAMEL) &&
                 endpoint.getSubType() != null &&
                 endpoint.getSubType().equals(SLACK);
-    }
-
-    /**
-     * Sends a test action to the "ingress" queue on Kafka.
-     * @param endpointId the ID of the endpoint to set in the action's context.
-     * @param orgId the org id to be set in the action.
-     */
-    protected void sendTestEvent(final UUID endpointId, final String orgId) {
-        final Action testAction = TestEventHelper.createTestAction(endpointId, orgId);
-
-        this.emitter.send(testAction);
     }
 }

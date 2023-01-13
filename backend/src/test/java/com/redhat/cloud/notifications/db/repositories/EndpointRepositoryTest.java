@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -155,4 +156,36 @@ public class EndpointRepositoryTest {
         clearInvocations(query);
     }
 
+    /**
+     * Tests that an endpoint is successfully found in the database with the
+     * function under test.
+     */
+    @Test
+    void endpointExistsByUuidAndOrgId() {
+        final String orgId = "endpoint-exists-by-uuid-and-org-id";
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint("account-id", orgId, EndpointType.CAMEL);
+
+        Assertions.assertTrue(this.endpointRepository.existsByUuidAndOrgId(createdEndpoint.getId(), orgId), "the just created endpoint wasn't found by the exists by UUID and OrgId query");
+    }
+
+    /**
+     * Tests that the function under test will return "false" if an endpoint
+     * is not found by its UUID and OrgId.
+     */
+    @Test
+    void endpointDoesntExistByUuidAndOrgId() {
+        Assertions.assertFalse(this.endpointRepository.existsByUuidAndOrgId(UUID.randomUUID(), "random-org-id"), "an endpoint was found by its UUID in the database, though it wasn't expected");
+    }
+
+    /**
+     * Tests that the function under test will return "false" if an existing
+     * UUID is provided but with a different org id.
+     */
+    @Test
+    void endpointDoesntExistByUuidAndIncorrectOrgId() {
+        final String orgId = "endpoint-exists-by-uuid-and-incorrect-org-id";
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint("account-id", orgId, EndpointType.CAMEL);
+
+        Assertions.assertFalse(this.endpointRepository.existsByUuidAndOrgId(createdEndpoint.getId(), "incorrect-org-id"));
+    }
 }

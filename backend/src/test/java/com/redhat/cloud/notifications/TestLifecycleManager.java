@@ -1,8 +1,6 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.routers.EndpointResource;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -31,21 +29,12 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
         properties.put("ob.backchannel.user", "ob-user");
 
-        /*
-         * We'll use an in-memory Reactive Messaging connector to send payloads.
-         * See https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
-         */
-        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EndpointResource.INGRESS_CHANNEL));
-
         System.out.println(" -- Running with properties: " + properties);
         return properties;
     }
 
     @Override
     public void stop() {
-        // Clear the Kafka messages from memory.
-        InMemoryConnector.clear();
-
         postgreSQLContainer.stop();
         MockServerLifecycleManager.stop();
     }
