@@ -287,4 +287,43 @@ public class TestHelpers {
         }
         return emailActionMessage;
     }
+
+    public static Action createComplianceAction(String accountId, String bundle, String application, String slug) {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(bundle);
+        emailActionMessage.setApplication(application);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                .withAdditionalProperty("slug", slug)
+                .build()
+        );
+
+        emailActionMessage.setEvents(List.of(
+            new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                        .withAdditionalProperty("host_id", "host-01")
+                        .withAdditionalProperty("host_name", "My test machine")
+                        .withAdditionalProperty("policy_id", "Policy id 1")
+                        .withAdditionalProperty("policy_name", "Tested name")
+                        .withAdditionalProperty("compliance_score", "20")
+                        .withAdditionalProperty("policy_threshold", "25")
+                        .withAdditionalProperty("request_id", "12345")
+                        .withAdditionalProperty("error", "Kernel panic (test)")
+                        .build()
+                )
+                .build()
+        ));
+
+        emailActionMessage.setAccountId(accountId);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        return emailActionMessage;
+    }
 }

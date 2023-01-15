@@ -39,6 +39,9 @@ public class EmailTemplateFactory {
     @Inject
     Policies policies;
 
+    @Inject
+    Policies compliance;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -55,7 +58,7 @@ public class EmailTemplateFactory {
                 case ADVISOR:
                     return new Advisor();
                 case COMPLIANCE:
-                    return new Compliance();
+                    return compliance;
                 case DRIFT:
                     return new Drift();
                 case VULNERABILITY:
