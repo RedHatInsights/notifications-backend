@@ -9,7 +9,7 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonObject;
-
+import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -288,10 +288,10 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
-    public static Action createComplianceAction(String accountId, String bundle, String application, String slug) {
+    public static Action createComplianceAction() {
         Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(bundle);
-        emailActionMessage.setApplication(application);
+        emailActionMessage.setBundle(StringUtils.EMPTY);
+        emailActionMessage.setApplication(StringUtils.EMPTY);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setRecipients(List.of());
@@ -299,7 +299,6 @@ public class TestHelpers {
         emailActionMessage.setContext(
             new Context.ContextBuilder()
                 .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
-                .withAdditionalProperty("slug", slug)
                 .build()
         );
 
@@ -321,7 +320,7 @@ public class TestHelpers {
                 .build()
         ));
 
-        emailActionMessage.setAccountId(accountId);
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;
