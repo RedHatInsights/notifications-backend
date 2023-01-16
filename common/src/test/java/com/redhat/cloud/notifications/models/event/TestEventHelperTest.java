@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models.event;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -179,8 +180,16 @@ public class TestEventHelperTest {
 
         final Action testAction = TestEventHelper.createTestAction(endpointUuid, "random-org-id");
 
+        // Convert the action to JSON and back to simulate the event going
+        // through Kafka. If not, some additional properties of the context are
+        // not serialized as String, and won't match all the types and the way
+        // they get serialized when sent via Kafka and received via Kafka as
+        // well.
+        final String jsonAction = Json.encode(testAction);
+        final Action rawAction = Json.decodeValue(jsonAction, Action.class);
+
         final var testEvent = new com.redhat.cloud.notifications.models.Event();
-        testEvent.setAction(testAction);
+        testEvent.setAction(rawAction);
 
         final UUID extractedUuid = TestEventHelper.extractEndpointUuidFromTestEvent(testEvent);
 

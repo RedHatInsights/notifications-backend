@@ -59,14 +59,15 @@ public class EndpointTestResourceTest {
             .statusCode(204);
 
         // We should receive the action triggered by the REST call.
-        InMemorySink<Action> actionsOut = this.inMemoryConnector.sink(FromCamelHistoryFiller.EGRESS_CHANNEL);
+        InMemorySink<String> actionsOut = this.inMemoryConnector.sink(FromCamelHistoryFiller.EGRESS_CHANNEL);
         final var actionsList = actionsOut.received();
 
         // Only one test action should have been sent to Kafka.
         final var expectedActionsCount = 1;
         Assertions.assertEquals(expectedActionsCount, actionsList.size(), "unexpected number of actions sent to Kafka");
 
-        final var kafkaAction = actionsList.get(0).getPayload();
+        final String kafkaActionRaw = actionsList.get(0).getPayload();
+        final Action kafkaAction = Json.decodeValue(kafkaActionRaw, Action.class);
 
         // Check that the top level values coincide.
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_VERSION, kafkaAction.getVersion(), "unexpected version in the test action");
@@ -78,7 +79,7 @@ public class EndpointTestResourceTest {
         final Context context = kafkaAction.getContext();
         Map<String, Object> contextProperties = context.getAdditionalProperties();
         Assertions.assertTrue((boolean) contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_TEST_EVENT), "unexpected test action flag value received in the action's context");
-        Assertions.assertEquals(createdEndpoint.getId(), contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
+        Assertions.assertEquals(createdEndpoint.getId().toString(), contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
 
         // Check the recipients and its users.
         final var expectedRecipientsCount = 1;

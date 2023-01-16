@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.events.FromCamelHistoryFiller;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import io.vertx.core.json.Json;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 
@@ -22,7 +23,7 @@ public class EndpointTestResource {
 
     @Channel(FromCamelHistoryFiller.EGRESS_CHANNEL)
     @Inject
-    Emitter<Action> eventEmitter;
+    Emitter<String> eventEmitter;
 
     /**
      * Creates a "endpoint integration test" action and sends it to the ingress
@@ -38,7 +39,7 @@ public class EndpointTestResource {
             endpointTestRequest.orgId
         );
 
-        this.eventEmitter.send(testAction);
+        this.eventEmitter.send(Json.encode(testAction));
 
         return Response.noContent().build();
     }

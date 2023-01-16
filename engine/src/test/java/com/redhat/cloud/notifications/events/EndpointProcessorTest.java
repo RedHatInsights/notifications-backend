@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -54,9 +55,18 @@ public class EndpointProcessorTest {
 
         // Create the action with the endpoint reference and then a corresponding event for the processor.
         final Action testAction = TestEventHelper.createTestAction(endpointUuid, orgId);
+
+        // Convert the action to JSON and back to simulate the event going
+        // through Kafka. If not, some additional properties of the context are
+        // not serialized as String, and won't match all the types and the way
+        // they get serialized when sent via Kafka and received via Kafka as
+        // well.
+        final String jsonAction = Json.encode(testAction);
+        final Action rawAction = Json.decodeValue(jsonAction, Action.class);
+
         final Event event = new Event();
-        event.setAction(testAction);
-        event.setId(testAction.getId());
+        event.setAction(rawAction);
+        event.setId(rawAction.getId());
 
         this.endpointProcessor.process(event);
 
