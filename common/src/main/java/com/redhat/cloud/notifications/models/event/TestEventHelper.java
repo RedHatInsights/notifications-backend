@@ -37,7 +37,7 @@ public class TestEventHelper {
      * a new event type that has been inserted in the V1.71.0 migration.
      */
     public static final String TEST_ACTION_BUNDLE = "console";
-    public static final String TEST_ACTION_APPLICATION = "notifications";
+    public static final String TEST_ACTION_APPLICATION = "integrations";
     public static final String TEST_ACTION_EVENT_TYPE = "integration-test";
 
     /**
@@ -118,6 +118,6 @@ public class TestEventHelper {
         final Context context = event.getAction().getContext();
         final Map<String, Object> contextProperties = context.getAdditionalProperties();
 
-        return (UUID) contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID);
+        return UUID.fromString((String) contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID));
     }
 }
