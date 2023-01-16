@@ -161,7 +161,7 @@ public class EndpointRepository {
     }
 
     /**
-     * Gets the endpoint by its UUID.
+     * Gets the endpoint by its UUID along with its associated properties.
      * @param endpointUuid the UUID of the endpoint.
      * @return the endpoint found.
      */
@@ -174,11 +174,15 @@ public class EndpointRepository {
                 "WHERE " +
                     "id = :uuid";
 
-        return this.statelessSessionFactory
+        final Endpoint endpoint = this.statelessSessionFactory
             .getCurrentSession()
             .createQuery(query, Endpoint.class)
             .setParameter("uuid", endpointUuid)
             .uniqueResult();
+
+        this.loadProperties(List.of(endpoint));
+
+        return endpoint;
     }
 
     private Optional<Endpoint> lockEndpoint(UUID endpointId) {
