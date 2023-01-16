@@ -19,7 +19,7 @@ public interface EndpointTestService {
      * event.
      * @param endpointTestRequest the payload of the request.
      */
-    @Path("/endpoints/test")
+    @Path("/internal/endpoints/test")
     @POST
     @Retry(maxRetries = 3)
     void testEndpoint(EndpointTestRequest endpointTestRequest);
