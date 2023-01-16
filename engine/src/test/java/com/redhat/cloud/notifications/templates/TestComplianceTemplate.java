@@ -99,7 +99,7 @@ public class TestComplianceTemplate {
         assertEquals("Daily digest - Compliance - Red Hat Enterprise Linux", result);
     }
 
-    private String generateEmail(TemplateInstance template){
+    private String generateEmail(TemplateInstance template) {
         return template
             .data("action", ACTION)
             .data("environment", environment)
