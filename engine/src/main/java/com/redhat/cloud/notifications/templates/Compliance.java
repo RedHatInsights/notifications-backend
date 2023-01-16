@@ -11,8 +11,8 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class Compliance implements EmailTemplate {
 
-    private static final String COMPLIANCE_BELOW_THRESHOLD = "compliance-below-threshold";
-    private static final String REPORT_UPLOAD_FAILED = "report-upload-failed";
+    protected static final String COMPLIANCE_BELOW_THRESHOLD = "compliance-below-threshold";
+    protected static final String REPORT_UPLOAD_FAILED = "report-upload-failed";
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -71,7 +71,7 @@ public class Compliance implements EmailTemplate {
         if (featureFlipper.isComplianceEmailTemplatesV2Enabled()) {
             return Compliance.Templates.dailyEmailTitleV2();
         }
-        return Compliance.Templates.dailyEmailBody();
+        return Compliance.Templates.dailyEmailTitle();
     }
 
     private TemplateInstance getComplianceBelowThresholdEmailBody() {
