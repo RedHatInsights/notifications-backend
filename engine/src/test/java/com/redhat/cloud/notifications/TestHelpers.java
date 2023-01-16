@@ -328,10 +328,10 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
-    public static Action createAnsibleAction(String accountId, String bundle, String application, String slug) {
+    public static Action createAnsibleAction(String slug) {
         Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(bundle);
-        emailActionMessage.setApplication(application);
+        emailActionMessage.setBundle(StringUtils.EMPTY);
+        emailActionMessage.setApplication(StringUtils.EMPTY);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setRecipients(List.of());
@@ -343,7 +343,7 @@ public class TestHelpers {
                 .build()
         );
 
-        emailActionMessage.setAccountId(accountId);
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;

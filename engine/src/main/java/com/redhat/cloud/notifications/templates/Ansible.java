@@ -11,13 +11,15 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class Ansible implements EmailTemplate {
 
+    protected static final String REPORT_AVAILABLE_EVENT = "report-available";
+
     @Inject
     FeatureFlipper featureFlipper;
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals("report-available")) {
+            if (eventType.equals(REPORT_AVAILABLE_EVENT)) {
                 return getInstantEmailTitle();
             }
         }
@@ -38,7 +40,7 @@ public class Ansible implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals("report-available")) {
+            if (eventType.equals(REPORT_AVAILABLE_EVENT)) {
                 return getInstantEmailBody();
             }
         }
@@ -58,7 +60,7 @@ public class Ansible implements EmailTemplate {
 
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return eventType.equals("report-available") && type == EmailSubscriptionType.INSTANT;
+        return eventType.equals(REPORT_AVAILABLE_EVENT) && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override

@@ -172,6 +172,10 @@ public class FeatureFlipper {
         return ansibleEmailTemplatesV2Enabled;
     }
 
+    public void setAnsibleEmailTemplatesV2Enabled(boolean ansibleEmailTemplatesV2Enabled) {
+        this.ansibleEmailTemplatesV2Enabled = ansibleEmailTemplatesV2Enabled;
+    }
+
     /**
      * This method throws an {@link IllegalStateException} if it is invoked with a launch mode different from
      * {@link io.quarkus.runtime.LaunchMode#TEST TEST}. It should be added to methods that allow overriding a
