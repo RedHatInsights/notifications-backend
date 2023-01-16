@@ -40,7 +40,7 @@ public class EmailTemplateFactory {
     Policies policies;
 
     @Inject
-    Policies compliance;
+    Compliance compliance;
 
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
