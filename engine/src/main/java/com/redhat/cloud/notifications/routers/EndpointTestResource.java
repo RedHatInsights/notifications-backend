@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import io.vertx.core.json.Json;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 
@@ -13,7 +14,6 @@ import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Response;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -30,17 +30,16 @@ public class EndpointTestResource {
      * Kafka channel, based on the received payload.
      * @param endpointTestRequest the payload to create the test event from.
      */
+    @APIResponse(responseCode = "204")
     @Consumes(APPLICATION_JSON)
     @Path("/test")
     @POST
-    public Response testEndpoint(@Valid final EndpointTestRequest endpointTestRequest) {
+    public void testEndpoint(@Valid final EndpointTestRequest endpointTestRequest) {
         final Action testAction = TestEventHelper.createTestAction(
             endpointTestRequest.endpointUuid,
             endpointTestRequest.orgId
         );
 
         this.eventEmitter.send(Json.encode(testAction));
-
-        return Response.noContent().build();
     }
 }

@@ -670,6 +670,7 @@ public class EndpointResource {
      * @param uuid the {@link UUID} of the endpoint to test.
      * @return a "no content" response on success.
      */
+    @APIResponse(responseCode = "204")
     @POST
     @Path("/{uuid}/test")
     @Parameters({
@@ -680,9 +681,8 @@ public class EndpointResource {
                 schema = @Schema(type = SchemaType.STRING)
             )
     })
-    @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public Response testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid) {
+    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid) {
         final String orgId = SecurityContextUtil.getOrgId(sec);
 
         if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
@@ -692,8 +692,6 @@ public class EndpointResource {
         final var endpointTestRequest = new EndpointTestRequest(uuid, orgId);
 
         this.endpointTestService.testEndpoint(endpointTestRequest);
-
-        return Response.noContent().build();
     }
 
     private static void checkSystemEndpoint(EndpointType endpointType) {
