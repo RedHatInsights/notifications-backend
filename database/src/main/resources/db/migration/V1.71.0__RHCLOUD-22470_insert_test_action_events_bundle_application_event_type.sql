@@ -1,6 +1,5 @@
--- Insert a bundle, an application and an event type that will be specifically
--- used for test actions and events. A very specific value is given in the UUID
--- field so that it makes it easier to debug the event type.
+-- Insert an event type that will specifically be used for test actions and
+-- events.
 
 INSERT INTO event_type(
     application_id,
