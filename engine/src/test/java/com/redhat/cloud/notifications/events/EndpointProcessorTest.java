@@ -51,7 +51,7 @@ public class EndpointProcessorTest {
         endpointFixture.setType(EndpointType.CAMEL);
 
         // Avoids the "NulLPointerException" in the "List.of" statement.
-        Mockito.when(this.endpointRepository.findByUuid(endpointUuid)).thenReturn(endpointFixture);
+        Mockito.when(this.endpointRepository.findByUuidAndOrgId(endpointUuid, orgId)).thenReturn(endpointFixture);
 
         // Create the action with the endpoint reference and then a corresponding event for the processor.
         final Action testAction = TestEventHelper.createTestAction(endpointUuid, orgId);
@@ -67,10 +67,11 @@ public class EndpointProcessorTest {
         final Event event = new Event();
         event.setAction(rawAction);
         event.setId(rawAction.getId());
+        event.setOrgId(orgId);
 
         this.endpointProcessor.process(event);
 
-        Mockito.verify(this.endpointRepository, Mockito.times(1)).findByUuid(endpointUuid);
+        Mockito.verify(this.endpointRepository, Mockito.times(1)).findByUuidAndOrgId(endpointUuid, orgId);
         Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
     }
 
@@ -101,7 +102,7 @@ public class EndpointProcessorTest {
 
         this.endpointProcessor.process(event);
 
-        Mockito.verify(this.endpointRepository, Mockito.times(0)).findByUuid(Mockito.any());
+        Mockito.verify(this.endpointRepository, Mockito.times(0)).findByUuidAndOrgId(Mockito.any(), Mockito.anyString());
         Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpoints(orgId, eventType);
     }
 }

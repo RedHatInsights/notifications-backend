@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -146,13 +147,16 @@ public class EndpointRepositoryTest {
      * it to ensure that the function works.
      */
     @Test
-    void findByUuidTest() {
+    void findByUuidAndOrgIdTest() {
+        final String orgId = "find-by-uuid-org-id-test";
+
         final Endpoint endpoint = new Endpoint();
         endpoint.setCreated(LocalDateTime.now());
         endpoint.setDescription("Endpoint description");
         endpoint.setEnabled(true);
         endpoint.setId(UUID.randomUUID());
         endpoint.setName("endpoint-" + new SecureRandom().nextInt());
+        endpoint.setOrgId(orgId);
         endpoint.setServerErrors(123);
         endpoint.setType(WEBHOOK);
 
@@ -177,7 +181,7 @@ public class EndpointRepositoryTest {
 
         // Call the function under test.
         this.statelessSessionFactory.withSession(statelessSession -> {
-            dbEndpoints[0] = this.endpointRepository.findByUuid(endpoint.getId());
+            dbEndpoints[0] = this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), orgId);
         });
 
         Assertions.assertEquals(1, dbEndpoints.length, "only one endpoint should have been fetched");
@@ -198,5 +202,47 @@ public class EndpointRepositoryTest {
         Assertions.assertEquals(webhookProperties.getMethod(), dbProperties.getMethod(), "unexpected http method value");
         Assertions.assertEquals(webhookProperties.getSecretTokenSourcesId(), dbProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");
         Assertions.assertEquals(webhookProperties.getUrl(), dbProperties.getUrl(), "unexpected url value");
+    }
+
+    /**
+     * Tests that the function under test throws a "NoResultException" whenever
+     * the endpoint cannot be found.
+     */
+    @Test
+    void findByUuidAndOrgIdNotFound() {
+        // Call the function under test.
+        this.statelessSessionFactory.withSession(statelessSession -> {
+            Assertions.assertThrows(NoResultException.class, () ->
+                this.endpointRepository.findByUuidAndOrgId(UUID.randomUUID(), "random-org-id")
+            );
+        });
+    }
+
+    /**
+     * Tests that the function under test throws a "NoResultException" when the
+     * endpoint ID is correct, but the Org ID doesn't match.
+     */
+    @Test
+    void findByUuidAndOrgIdWrongOrgId() {
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setCreated(LocalDateTime.now());
+        endpoint.setDescription("Endpoint description");
+        endpoint.setEnabled(true);
+        endpoint.setId(UUID.randomUUID());
+        endpoint.setName("endpoint-" + new SecureRandom().nextInt());
+        endpoint.setOrgId("find-by-uuid-org-id-wrong-org-id-test");
+        endpoint.setServerErrors(123);
+        endpoint.setType(WEBHOOK);
+
+        this.statelessSessionFactory.withSession(statelessSession -> {
+            statelessSession.insert(endpoint);
+        });
+
+        // Call the function under test.
+        this.statelessSessionFactory.withSession(statelessSession -> {
+            Assertions.assertThrows(NoResultException.class, () ->
+                this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), "random-org-id")
+            );
+        });
     }
 }

@@ -62,7 +62,7 @@ public class EndpointProcessor {
         if (TestEventHelper.isIntegrationTestEvent(event)) {
             final UUID endpointUuid = TestEventHelper.extractEndpointUuidFromTestEvent(event);
 
-            final Endpoint endpoint = this.endpointRepository.findByUuid(endpointUuid);
+            final Endpoint endpoint = this.endpointRepository.findByUuidAndOrgId(endpointUuid, event.getOrgId());
 
             endpoints = List.of(endpoint);
         } else {
