@@ -18,6 +18,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -60,6 +61,12 @@ public class EndpointTestResourceTest {
 
         // We should receive the action triggered by the REST call.
         InMemorySink<String> actionsOut = this.inMemoryConnector.sink(FromCamelHistoryFiller.EGRESS_CHANNEL);
+
+        // Make sure that the message was received before continuing.
+        Awaitility.await().until(
+            () -> actionsOut.received().size() == 1
+        );
+
         final var actionsList = actionsOut.received();
 
         // Only one test action should have been sent to Kafka.
