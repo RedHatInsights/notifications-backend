@@ -87,10 +87,6 @@ public class EventConsumerTest {
     @Inject
     MeterRegistry registry;
 
-    @Inject
-    EventConsumer eventConsumer;
-
-
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(

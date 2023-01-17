@@ -106,9 +106,6 @@ public class EndpointResource {
     public static final String SLACK_WEBHOOK_URL = "slack_webhook_url";
     public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
 
-    // The channel name we will send Kafka messages to for the "/test" endpoint.
-    public static final String INGRESS_CHANNEL = "ingress";
-
     @Inject
     EndpointRepository endpointRepository;
 

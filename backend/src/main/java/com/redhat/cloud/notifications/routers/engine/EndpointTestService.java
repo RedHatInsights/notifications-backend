@@ -1,15 +1,12 @@
 package com.redhat.cloud.notifications.routers.engine;
 
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
-import com.redhat.cloud.notifications.routers.sources.SourcesXRHIDHeaderFactory;
 import org.eclipse.microprofile.faulttolerance.Retry;
-import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 
-@RegisterClientHeaders(SourcesXRHIDHeaderFactory.class)
 @RegisterRestClient(configKey = "internal-endpoint-test")
 public interface EndpointTestService {
 
