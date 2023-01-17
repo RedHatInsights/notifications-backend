@@ -33,7 +33,6 @@ public class TestEventHelperTest {
 
         final Context context = testAction.getContext();
         Map<String, Object> contextProperties = context.getAdditionalProperties();
-        Assertions.assertTrue((boolean) contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_TEST_EVENT), "unexpected test action flag value received in the action's context");
         Assertions.assertEquals(endpointUuid, contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
 
         // Check the recipients and its users.

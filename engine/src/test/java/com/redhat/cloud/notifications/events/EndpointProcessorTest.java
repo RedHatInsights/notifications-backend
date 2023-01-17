@@ -85,7 +85,9 @@ public class EndpointProcessorTest {
 
         // Create an action.
         final Action testAction = TestEventHelper.createTestAction(UUID.randomUUID(), orgId);
-        testAction.setContext(null);
+        testAction.setApplication("non test application");
+        testAction.setBundle("non test bundle");
+        testAction.setEventType("non test event type");
 
         final UUID eventTypeId = UUID.randomUUID();
         final EventType eventType = new EventType();

@@ -23,8 +23,6 @@ public class TestEventHelper {
     /**
      * Regular action test data.
      */
-    public static final String TEST_ACTION_CONTEXT_TEST_EVENT = "test-action-context-test-event";
-    public static final boolean TEST_ACTION_CONTEXT_TEST_EVENT_VALUE = true;
     public static final String TEST_ACTION_CONTEXT_ENDPOINT_ID = "test-action-context-endpoint-id";
     public static final String TEST_ACTION_METADATA_KEY = "test-metadata-key";
     public static final String TEST_ACTION_METADATA_VALUE = "test-metadata-value";
@@ -51,7 +49,6 @@ public class TestEventHelper {
         Action testAction = new Action();
 
         final var context = new com.redhat.cloud.notifications.ingress.Context();
-        context.setAdditionalProperty(TEST_ACTION_CONTEXT_TEST_EVENT, TEST_ACTION_CONTEXT_TEST_EVENT_VALUE);
         context.setAdditionalProperty(TEST_ACTION_CONTEXT_ENDPOINT_ID, endpointUuid);
         testAction.setContext(context);
 
@@ -96,11 +93,7 @@ public class TestEventHelper {
      */
     public static boolean isIntegrationTestEvent(final com.redhat.cloud.notifications.models.Event event) {
         try {
-            final Context context = event.getAction().getContext();
-            final Boolean isTestEventContextFlag = (Boolean) context.getAdditionalProperties().get(TEST_ACTION_CONTEXT_TEST_EVENT);
-
-            return isTestEventContextFlag &&
-                    event.getAction().getBundle().equals(TestEventHelper.TEST_ACTION_BUNDLE) &&
+            return event.getAction().getBundle().equals(TestEventHelper.TEST_ACTION_BUNDLE) &&
                     event.getAction().getApplication().equals(TestEventHelper.TEST_ACTION_APPLICATION) &&
                     event.getAction().getEventType().equals(TestEventHelper.TEST_ACTION_EVENT_TYPE);
         } catch (final NullPointerException e) {
