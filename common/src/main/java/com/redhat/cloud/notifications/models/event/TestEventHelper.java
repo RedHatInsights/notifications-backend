@@ -26,8 +26,8 @@ public class TestEventHelper {
     public static final String TEST_ACTION_CONTEXT_ENDPOINT_ID = "test-action-context-endpoint-id";
     public static final String TEST_ACTION_METADATA_KEY = "test-metadata-key";
     public static final String TEST_ACTION_METADATA_VALUE = "test-metadata-value";
-    public static final String TEST_ACTION_PAYLOAD_KEY = "test-payload-key";
-    public static final String TEST_ACTION_PAYLOAD_VALUE = "test-payload-value";
+    public static final String TEST_ACTION_PAYLOAD_KEY = "message";
+    public static final String TEST_ACTION_PAYLOAD_VALUE = "Congratulations! The integration you created on https://console.redhat.com was successfully tested!";
     public static final String TEST_ACTION_RECIPIENT = "test-recipient-1";
     public static final String TEST_ACTION_VERSION = "0.0.0";
     /**
