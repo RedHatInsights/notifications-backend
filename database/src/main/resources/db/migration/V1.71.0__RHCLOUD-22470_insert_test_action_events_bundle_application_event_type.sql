@@ -9,7 +9,7 @@ INSERT INTO event_type(
     display_name,
     "name"
 ) VALUES (
-    (SELECT id FROM applications WHERE "name"='integrations'),
+    (SELECT a.id FROM applications AS a INNER JOIN bundles AS b ON b.id = a.bundle_id WHERE a."name"='integrations' AND b."name"='console'),
     'd18f54ea-589c-4d6d-8744-837f357b5f5d',
     'A test event type whose only purpose is to be used when sending test actions and events to clients',
     'Integration Test',
