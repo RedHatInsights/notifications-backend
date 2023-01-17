@@ -10,7 +10,7 @@ INSERT INTO event_type(
     "name"
 ) VALUES (
     (SELECT a.id FROM applications AS a INNER JOIN bundles AS b ON b.id = a.bundle_id WHERE a."name"='integrations' AND b."name"='console'),
-    'd18f54ea-589c-4d6d-8744-837f357b5f5d',
+    gen_random_uuid(),
     'A test event type whose only purpose is to be used when sending test actions and events to clients',
     'Integration Test',
     'integration-test'
