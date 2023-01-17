@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.engine;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
@@ -16,7 +17,7 @@ public interface EndpointTestService {
      * event.
      * @param endpointTestRequest the payload of the request.
      */
-    @Path("/internal/endpoints/test")
+    @Path(Constants.API_INTERNAL + "/endpoints/test")
     @POST
     @Retry(maxRetries = 3)
     void testEndpoint(EndpointTestRequest endpointTestRequest);
