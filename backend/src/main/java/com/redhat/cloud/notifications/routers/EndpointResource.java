@@ -686,7 +686,7 @@ public class EndpointResource {
         final String orgId = SecurityContextUtil.getOrgId(sec);
 
         if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
-            throw new NotFoundException();
+            throw new NotFoundException("integration not found");
         }
 
         final var endpointTestRequest = new EndpointTestRequest(uuid, orgId);

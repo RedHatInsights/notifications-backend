@@ -2081,12 +2081,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Call the endpoint under test.
         final String path = String.format("/endpoints/%s/test", UUID.randomUUID());
-        given()
-                .header(identityHeader)
-                .when()
-                .post(path)
-                .then()
-                .statusCode(404);
+
+        final String responseBody = given()
+            .header(identityHeader)
+            .when()
+            .post(path)
+            .then()
+            .statusCode(404)
+            .extract()
+            .body()
+            .asString();
+
+        Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
