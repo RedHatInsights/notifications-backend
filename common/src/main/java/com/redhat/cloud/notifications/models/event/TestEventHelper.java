@@ -26,7 +26,6 @@ public class TestEventHelper {
     public static final String TEST_ACTION_PAYLOAD_KEY = "message";
     public static final String TEST_ACTION_PAYLOAD_VALUE = "Congratulations! The integration you created on https://console.redhat.com was successfully tested!";
     public static final String TEST_ACTION_RECIPIENT = "test-recipient-1";
-    public static final String TEST_ACTION_VERSION = "0.0.0";
     /**
      * The test action or event will be sent with a defined "console" bundle, the "notifications" application and
      * a new event type that has been inserted in the V1.71.0 migration.
@@ -73,7 +72,6 @@ public class TestEventHelper {
         testAction.setRecipients(List.of(recipient));
         testAction.setOrgId(orgId);
         testAction.setTimestamp(LocalDateTime.now(Clock.systemUTC()));
-        testAction.setVersion(TEST_ACTION_VERSION);
 
         return testAction;
     }

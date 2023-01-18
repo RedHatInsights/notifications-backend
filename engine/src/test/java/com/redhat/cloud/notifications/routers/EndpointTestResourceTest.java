@@ -78,7 +78,6 @@ public class EndpointTestResourceTest {
         final Action kafkaAction = Parser.decode(kafkaActionRaw);
 
         // Check that the top level values coincide.
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_VERSION, kafkaAction.getVersion(), "unexpected version in the test action");
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_BUNDLE, kafkaAction.getBundle(), "unexpected bundle in the test action");
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_APPLICATION, kafkaAction.getApplication(), "unexpected application in the test action");
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_EVENT_TYPE, kafkaAction.getEventType(), "unexpected event type in the test action");

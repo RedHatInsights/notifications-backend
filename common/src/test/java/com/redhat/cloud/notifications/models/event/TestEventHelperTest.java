@@ -24,7 +24,6 @@ public class TestEventHelperTest {
         final Action testAction = TestEventHelper.createTestAction(endpointUuid, orgId);
 
         // Check that the top level values coincide.
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_VERSION, testAction.getVersion(), "unexpected version in the test action");
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_BUNDLE, testAction.getBundle(), "unexpected bundle in the test action");
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_APPLICATION, testAction.getApplication(), "unexpected application in the test action");
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_EVENT_TYPE, testAction.getEventType(), "unexpected event type in the test action");
