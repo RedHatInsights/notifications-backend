@@ -210,11 +210,18 @@ public class EndpointRepositoryTest {
      */
     @Test
     void findByUuidAndOrgIdNotFound() {
+        final UUID randomEndpointUuid = UUID.randomUUID();
+        final String randomOrgId = "random-org-id";
+
         // Call the function under test.
         this.statelessSessionFactory.withSession(statelessSession -> {
-            Assertions.assertThrows(NoResultException.class, () ->
-                this.endpointRepository.findByUuidAndOrgId(UUID.randomUUID(), "random-org-id")
+            final NoResultException exception = Assertions.assertThrows(NoResultException.class, () ->
+                this.endpointRepository.findByUuidAndOrgId(randomEndpointUuid, randomOrgId)
             );
+
+            final String expectedErrorMessage = String.format("Endpoint with id=%s and orgId=%s not found", randomEndpointUuid, randomOrgId);
+
+            Assertions.assertEquals(expectedErrorMessage, exception.getMessage(), "unexpected error message received");
         });
     }
 
@@ -224,11 +231,13 @@ public class EndpointRepositoryTest {
      */
     @Test
     void findByUuidAndOrgIdWrongOrgId() {
+        final UUID endpointUuid = UUID.randomUUID();
+
         final Endpoint endpoint = new Endpoint();
         endpoint.setCreated(LocalDateTime.now());
         endpoint.setDescription("Endpoint description");
         endpoint.setEnabled(true);
-        endpoint.setId(UUID.randomUUID());
+        endpoint.setId(endpointUuid);
         endpoint.setName("endpoint-" + new SecureRandom().nextInt());
         endpoint.setOrgId("find-by-uuid-org-id-wrong-org-id-test");
         endpoint.setServerErrors(123);
@@ -240,9 +249,15 @@ public class EndpointRepositoryTest {
 
         // Call the function under test.
         this.statelessSessionFactory.withSession(statelessSession -> {
-            Assertions.assertThrows(NoResultException.class, () ->
-                this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), "random-org-id")
+            final String randomOrgId = "random-org-id";
+
+            final NoResultException exception = Assertions.assertThrows(NoResultException.class, () ->
+                    this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), randomOrgId)
             );
+
+            final String expectedErrorMessage = String.format("Endpoint with id=%s and orgId=%s not found", endpointUuid, randomOrgId);
+
+            Assertions.assertEquals(expectedErrorMessage, exception.getMessage(), "unexpected error message received");
         });
     }
 }

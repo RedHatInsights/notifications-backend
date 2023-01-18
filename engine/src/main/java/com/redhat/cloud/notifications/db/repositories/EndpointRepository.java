@@ -187,7 +187,13 @@ public class EndpointRepository {
         // Throw a no result exception to avoid a null pointer exception from
         // the "List.of".
         if (endpoint == null) {
-            throw new NoResultException();
+            throw new NoResultException(
+                String.format(
+                    "Endpoint with id=%s and orgId=%s not found",
+                    endpointUuid,
+                    orgId
+                )
+            );
         }
 
         this.loadProperties(List.of(endpoint));
