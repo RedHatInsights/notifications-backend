@@ -681,7 +681,7 @@ public class EndpointResource {
                 schema = @Schema(type = SchemaType.STRING)
             )
     })
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid) {
         final String orgId = SecurityContextUtil.getOrgId(sec);
 
