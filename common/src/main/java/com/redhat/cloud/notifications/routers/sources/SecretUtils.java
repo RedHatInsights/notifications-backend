@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.sources;
 
+import com.redhat.cloud.notifications.XRhIdentityUtils;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -32,7 +33,10 @@ public class SecretUtils {
 
             final Long basicAuthSourcesId = props.getBasicAuthenticationSourcesId();
             if (basicAuthSourcesId != null) {
-                final Secret secret = this.sourcesService.getById(basicAuthSourcesId);
+                final Secret secret = this.sourcesService.getById(
+                    XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getAccountId(), endpoint.getOrgId()),
+                    basicAuthSourcesId
+                );
 
                 props.setBasicAuthentication(
                     new BasicAuthentication(
@@ -44,7 +48,10 @@ public class SecretUtils {
 
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
             if (secretTokenSourcesId != null) {
-                final Secret secret = this.sourcesService.getById(secretTokenSourcesId);
+                final Secret secret = this.sourcesService.getById(
+                    XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getAccountId(), endpoint.getOrgId()),
+                    secretTokenSourcesId
+                );
 
                 props.setSecretToken(secret.password);
             }
@@ -63,7 +70,7 @@ public class SecretUtils {
 
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
             if (!this.isBasicAuthNullOrBlank(basicAuth)) {
-                final long id = this.createBasicAuthentication(basicAuth);
+                final long id = this.createBasicAuthentication(endpoint.getAccountId(), endpoint.getOrgId(), basicAuth);
 
                 Log.infof("[secret_id: %s] Basic authentication secret created in Sources", id);
 
@@ -72,7 +79,7 @@ public class SecretUtils {
 
             final String secretToken = props.getSecretToken();
             if (secretToken != null && !secretToken.isBlank()) {
-                final long id = this.createSecretTokenSecret(secretToken);
+                final long id = this.createSecretTokenSecret(endpoint.getAccountId(), endpoint.getOrgId(), secretToken);
 
                 Log.infof("[secret_id: %s] Secret token secret created in Sources", id);
 
@@ -105,7 +112,10 @@ public class SecretUtils {
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
-                    this.sourcesService.delete(basicAuthId);
+                    this.sourcesService.delete(
+                        XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getAccountId(), endpoint.getOrgId()),
+                        basicAuthId
+                    );
                     Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
 
                     props.setBasicAuthenticationSourcesId(null);
@@ -115,14 +125,18 @@ public class SecretUtils {
                     secret.password = basicAuth.getPassword();
                     secret.username = basicAuth.getUsername();
 
-                    this.sourcesService.update(basicAuthId, secret);
+                    this.sourcesService.update(
+                        XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getAccountId(), endpoint.getOrgId()),
+                        basicAuthId,
+                        secret
+                    );
                     Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
                 }
             } else {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
                     Log.debugf("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
                 } else {
-                    final long id = this.createBasicAuthentication(basicAuth);
+                    final long id = this.createBasicAuthentication(endpoint.getAccountId(), endpoint.getOrgId(), basicAuth);
                     Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
 
                     props.setBasicAuthenticationSourcesId(id);
@@ -133,7 +147,10 @@ public class SecretUtils {
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
                 if (secretToken == null || secretToken.isBlank()) {
-                    this.sourcesService.delete(secretTokenId);
+                    this.sourcesService.delete(
+                        XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getAccountId(), endpoint.getOrgId()),
+                        secretTokenId
+                    );
 
                     props.setSecretTokenSourcesId(null);
 
@@ -143,14 +160,18 @@ public class SecretUtils {
 
                     secret.password = secretToken;
 
-                    this.sourcesService.update(secretTokenId, secret);
+                    this.sourcesService.update(
+                        XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getAccountId(), endpoint.getOrgId()),
+                        secretTokenId,
+                        secret
+                    );
                     Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
                 }
             } else {
                 if (secretToken == null || secretToken.isBlank()) {
                     Log.debugf("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null or blank", endpoint.getId());
                 } else {
-                    final long id = this.createSecretTokenSecret(secretToken);
+                    final long id = this.createSecretTokenSecret(endpoint.getAccountId(), endpoint.getOrgId(), secretToken);
 
                     Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources during an endpoint update operation", endpoint.getId(), id);
 
@@ -173,13 +194,19 @@ public class SecretUtils {
 
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
-                this.sourcesService.delete(basicAuthId);
+                this.sourcesService.delete(
+                    XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getAccountId(), endpoint.getOrgId()),
+                    basicAuthId
+                );
                 Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
             }
 
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
-                this.sourcesService.delete(secretTokenId);
+                this.sourcesService.delete(
+                    XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getAccountId(), endpoint.getOrgId()),
+                    secretTokenId
+                );
                 Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
             }
         }
@@ -187,33 +214,43 @@ public class SecretUtils {
 
     /**
      * Creates a "basic authentication" secret in Sources.
+     * @param accountId the account ID for the x-rh-identity header's contents.
+     * @param orgId the organization ID for the x-rh-identity header's contents.
      * @param basicAuthentication the contents of the "basic authentication" secret.
      * @return the id of the created secret.
      */
-    private long createBasicAuthentication(final BasicAuthentication basicAuthentication) {
+    private long createBasicAuthentication(final String accountId, final String orgId, final BasicAuthentication basicAuthentication) {
         Secret secret = new Secret();
 
         secret.authenticationType = Secret.TYPE_BASIC_AUTH;
         secret.password = basicAuthentication.getPassword();
         secret.username = basicAuthentication.getUsername();
 
-        final Secret createdSecret = this.sourcesService.create(secret);
+        final Secret createdSecret = this.sourcesService.create(
+            XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId),
+            secret
+        );
 
         return createdSecret.id;
     }
 
     /**
      * Creates a "secret token" secret in Sources.
+     * @param accountId the account ID for the x-rh-identity header's contents.
+     * @param orgId the organization ID for the x-rh-identity header's contents.
      * @param secretToken the "secret token"'s contents.
      * @return the id of the created secret.
      */
-    private long createSecretTokenSecret(final String secretToken) {
+    private long createSecretTokenSecret(final String accountId, final String orgId, final String secretToken) {
         Secret secret = new Secret();
 
         secret.authenticationType = Secret.TYPE_SECRET_TOKEN;
         secret.password = secretToken;
 
-        final Secret createdSecret = this.sourcesService.create(secret);
+        final Secret createdSecret = this.sourcesService.create(
+            XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId),
+            secret
+        );
 
         return createdSecret.id;
     }
