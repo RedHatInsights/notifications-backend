@@ -348,4 +348,27 @@ public class TestHelpers {
 
         return emailActionMessage;
     }
+
+    public static Action createCostManagementAction() {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(StringUtils.EMPTY);
+        emailActionMessage.setApplication(StringUtils.EMPTY);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                .withAdditionalProperty("source_name", "Dummy source name")
+                .withAdditionalProperty("cost_model_name", "Sample model")
+                .withAdditionalProperty("cost_model_id", "4540543DGE")
+                .build()
+        );
+
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        return emailActionMessage;
+    }
 }
