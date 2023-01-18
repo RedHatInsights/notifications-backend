@@ -53,7 +53,6 @@ public class TestCostManagementTemplate {
         result = generateEmail(costManagement.getBody(CostManagement.MISSING_COST_MODEL, null));
         assertTrue(result.contains("OpenShift source Dummy source name has no assigned cost model"));
         assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
-        System.out.println(result);
     }
 
     @Test
@@ -77,7 +76,6 @@ public class TestCostManagementTemplate {
         result = generateEmail(costManagement.getBody(CostManagement.COST_MODEL_CREATE, null));
         assertTrue(result.contains("Cost model Sample model has been created"));
         assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
-        System.out.println(result);
     }
 
     @Test
@@ -101,7 +99,6 @@ public class TestCostManagementTemplate {
         result = generateEmail(costManagement.getBody(CostManagement.COST_MODEL_UPDATE, null));
         assertTrue(result.contains("Cost model Sample model has been updated"));
         assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
-        System.out.println(result);
     }
 
     @Test
@@ -125,7 +122,6 @@ public class TestCostManagementTemplate {
         result = generateEmail(costManagement.getBody(CostManagement.COST_MODEL_REMOVE, null));
         assertTrue(result.contains("Cost model Sample model has been removed"));
         assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
-        System.out.println(result);
     }
 
     @Test
@@ -149,7 +145,6 @@ public class TestCostManagementTemplate {
         result = generateEmail(costManagement.getBody(CostManagement.CM_OPERATOR_STALE, null));
         assertTrue(result.contains("OpenShift source Dummy source name has not received any payloads in the last 3 or more days"));
         assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
-        System.out.println(result);
     }
 
     @Test
@@ -173,8 +168,6 @@ public class TestCostManagementTemplate {
         result = generateEmail(costManagement.getBody(CostManagement.CM_OPERATOR_DATA_PROCESSED, null));
         assertTrue(result.contains("Cost Management has completed processing for OpenShift source"));
         assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
-        System.out.println(result);
-
     }
 
     @Test
@@ -198,8 +191,6 @@ public class TestCostManagementTemplate {
         result = generateEmail(costManagement.getBody(CostManagement.CM_OPERATOR_DATA_RECEIVED, null));
         assertTrue(result.contains("OpenShift source Dummy source name has received a new payload and processing should begin shortly"));
         assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
-        System.out.println(result);
-
     }
 
     private String generateEmail(TemplateInstance template) {
