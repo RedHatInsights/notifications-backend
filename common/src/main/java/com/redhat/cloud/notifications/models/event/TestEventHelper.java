@@ -25,7 +25,7 @@ public class TestEventHelper {
     public static final String TEST_ACTION_PAYLOAD_KEY = "message";
     public static final String TEST_ACTION_PAYLOAD_VALUE = "Congratulations! The integration you created on https://console.redhat.com was successfully tested!";
     /**
-     * The test action or event will be sent with a defined "console" bundle, the "notifications" application and
+     * The test action or event will be sent with a defined "console" bundle, the "integrations" application and
      * a new event type that has been inserted in the V1.71.0 migration.
      */
     public static final String TEST_ACTION_BUNDLE = "console";
@@ -33,8 +33,7 @@ public class TestEventHelper {
     public static final String TEST_ACTION_EVENT_TYPE = "integration-test";
 
     /**
-     * Creates a test action ready to be sent to the engine. It sets the endpoint's UUID and a flag in the context, so
-     * that it can be easily identified.
+     * Creates a test action ready to be sent to the engine. It sets the endpoint's UUID in the context.
      * @param endpointUuid the endpoint UUID that will be set in the context.
      * @param orgId the org ID for the action.
      * @return the created action.
