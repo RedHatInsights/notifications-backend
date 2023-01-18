@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -74,7 +75,7 @@ public class EndpointTestResourceTest {
         Assertions.assertEquals(expectedActionsCount, actionsList.size(), "unexpected number of actions sent to Kafka");
 
         final String kafkaActionRaw = actionsList.get(0).getPayload();
-        final Action kafkaAction = Json.decodeValue(kafkaActionRaw, Action.class);
+        final Action kafkaAction = Parser.decode(kafkaActionRaw);
 
         // Check that the top level values coincide.
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_VERSION, kafkaAction.getVersion(), "unexpected version in the test action");

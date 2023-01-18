@@ -1,13 +1,15 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.events.FromCamelHistoryFiller;
+import com.redhat.cloud.notifications.events.KafkaMessageWithIdBuilder;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
-import io.vertx.core.json.Json;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.eclipse.microprofile.reactive.messaging.Message;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
@@ -40,6 +42,9 @@ public class EndpointTestResource {
             endpointTestRequest.orgId
         );
 
-        this.eventEmitter.send(Json.encode(testAction));
+        final String encodedAction = Parser.encode(testAction);
+        final Message<String> message = KafkaMessageWithIdBuilder.build(encodedAction);
+
+        this.eventEmitter.send(message);
     }
 }

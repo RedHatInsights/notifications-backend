@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.models.event;
 
-import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -151,8 +151,8 @@ public class TestEventHelperTest {
         // not serialized as String, and won't match all the types and the way
         // they get serialized when sent via Kafka and received via Kafka as
         // well.
-        final String jsonAction = Json.encode(testAction);
-        final Action rawAction = Json.decodeValue(jsonAction, Action.class);
+        final String jsonAction = Parser.encode(testAction);
+        final Action rawAction = Parser.decode(jsonAction);
 
         final var testEvent = new com.redhat.cloud.notifications.models.Event();
         testEvent.setAction(rawAction);
