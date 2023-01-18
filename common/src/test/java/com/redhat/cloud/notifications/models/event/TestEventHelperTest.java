@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.models.event;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
-import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import org.junit.jupiter.api.Assertions;
@@ -57,14 +56,6 @@ public class TestEventHelperTest {
         Assertions.assertEquals(expectedEventsCount, events.size(), "unexpected number of test action events");
 
         final Event event = events.get(0);
-        final Metadata metadata = event.getMetadata();
-        final Map<String, Object> metaAdditionalProperties = metadata.getAdditionalProperties();
-
-        final var expectedMetadataAdditionalPropertiesCount = 1;
-        Assertions.assertEquals(expectedMetadataAdditionalPropertiesCount, metaAdditionalProperties.size(), "unexpected number of metadata additional properties");
-
-        final String metadataValue = (String) metaAdditionalProperties.get(TestEventHelper.TEST_ACTION_METADATA_KEY);
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_METADATA_VALUE, metadataValue, "unexpected event metadata value");
 
         final Payload payload = event.getPayload();
         final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();

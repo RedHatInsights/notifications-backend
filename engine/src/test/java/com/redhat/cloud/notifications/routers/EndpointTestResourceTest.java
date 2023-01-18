@@ -111,13 +111,6 @@ public class EndpointTestResourceTest {
 
         final Event event = events.get(0);
         final Metadata metadata = event.getMetadata();
-        final Map<String, Object> metaAdditionalProperties = metadata.getAdditionalProperties();
-
-        final var expectedMetadataAdditionalPropertiesCount = 1;
-        Assertions.assertEquals(expectedMetadataAdditionalPropertiesCount, metaAdditionalProperties.size(), "unexpected number of metadata additional properties");
-
-        final String metadataValue = (String) metaAdditionalProperties.get(TestEventHelper.TEST_ACTION_METADATA_KEY);
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_METADATA_VALUE, metadataValue, "unexpected event metadata value");
 
         final Payload payload = event.getPayload();
         final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();

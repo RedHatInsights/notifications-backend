@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.models.event;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
-import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
 
@@ -24,8 +23,6 @@ public class TestEventHelper {
      * Regular action test data.
      */
     public static final String TEST_ACTION_CONTEXT_ENDPOINT_ID = "test-action-context-endpoint-id";
-    public static final String TEST_ACTION_METADATA_KEY = "test-metadata-key";
-    public static final String TEST_ACTION_METADATA_VALUE = "test-metadata-value";
     public static final String TEST_ACTION_PAYLOAD_KEY = "message";
     public static final String TEST_ACTION_PAYLOAD_VALUE = "Congratulations! The integration you created on https://console.redhat.com was successfully tested!";
     public static final String TEST_ACTION_RECIPIENT = "test-recipient-1";
@@ -57,13 +54,9 @@ public class TestEventHelper {
          */
         Event testEvent = new Event();
 
-        Metadata metadata = new Metadata();
-        metadata.setAdditionalProperty(TEST_ACTION_METADATA_KEY, TEST_ACTION_METADATA_VALUE);
-
         Payload payload = new Payload();
         payload.setAdditionalProperty(TEST_ACTION_PAYLOAD_KEY, TEST_ACTION_PAYLOAD_VALUE);
 
-        testEvent.setMetadata(metadata);
         testEvent.setPayload(payload);
 
         Recipient recipient = new Recipient();
