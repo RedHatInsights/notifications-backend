@@ -45,6 +45,9 @@ public class EmailTemplateFactory {
     @Inject
     Ansible ansible;
 
+    @Inject
+    CostManagement costManagement;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -83,7 +86,7 @@ public class EmailTemplateFactory {
             if (application.equalsIgnoreCase(ADVISOR)) {
                 return new AdvisorOpenshift();
             } else if (application.equalsIgnoreCase(COST_MANAGEMENT)) {
-                return new CostManagement();
+                return costManagement;
             }
         } else if (bundle.equalsIgnoreCase(APPLICATION_SERVICES)) {
             if (application.equalsIgnoreCase(RHOSAK)) {
