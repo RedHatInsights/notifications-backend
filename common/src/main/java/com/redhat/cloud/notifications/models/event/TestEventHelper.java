@@ -92,13 +92,9 @@ public class TestEventHelper {
      * @return true if the event is an integration test, false otherwise.
      */
     public static boolean isIntegrationTestEvent(final com.redhat.cloud.notifications.models.Event event) {
-        try {
-            return event.getAction().getBundle().equals(TestEventHelper.TEST_ACTION_BUNDLE) &&
-                    event.getAction().getApplication().equals(TestEventHelper.TEST_ACTION_APPLICATION) &&
-                    event.getAction().getEventType().equals(TestEventHelper.TEST_ACTION_EVENT_TYPE);
-        } catch (final NullPointerException e) {
-            return false;
-        }
+        return TestEventHelper.TEST_ACTION_BUNDLE.equals(event.getAction().getBundle()) &&
+                TestEventHelper.TEST_ACTION_APPLICATION.equals(event.getAction().getApplication()) &&
+                TestEventHelper.TEST_ACTION_EVENT_TYPE.equals(event.getAction().getEventType());
     }
 
     /**
