@@ -22,7 +22,7 @@ public class TestEventHelper {
     /**
      * Regular action test data.
      */
-    public static final String TEST_ACTION_CONTEXT_ENDPOINT_ID = "test-action-context-endpoint-id";
+    public static final String TEST_ACTION_CONTEXT_ENDPOINT_ID = "integration-uuid";
     public static final String TEST_ACTION_PAYLOAD_KEY = "message";
     public static final String TEST_ACTION_PAYLOAD_VALUE = "Congratulations! The integration you created on https://console.redhat.com was successfully tested!";
     public static final String TEST_ACTION_RECIPIENT = "test-recipient-1";
