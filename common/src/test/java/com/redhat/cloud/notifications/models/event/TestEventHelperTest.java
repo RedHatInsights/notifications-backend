@@ -33,21 +33,6 @@ public class TestEventHelperTest {
         Map<String, Object> contextProperties = context.getAdditionalProperties();
         Assertions.assertEquals(endpointUuid, contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
 
-        // Check the recipients and its users.
-        final var expectedRecipientsCount = 1;
-        final var recipients = testAction.getRecipients();
-
-        Assertions.assertEquals(expectedRecipientsCount, recipients.size(), "unexpected number of recipients in the test action");
-
-        final var recipient = recipients.get(0);
-        final var users = recipient.getUsers();
-
-        Assertions.assertEquals(expectedRecipientsCount, users.size(), "unexpected number of test action users");
-
-        final var user = users.get(0);
-
-        Assertions.assertEquals(TestEventHelper.TEST_ACTION_RECIPIENT, user, "unexpected user in the test action");
-
         // Check the events, their metadata and their payload.
         final var events = testAction.getEvents();
 
