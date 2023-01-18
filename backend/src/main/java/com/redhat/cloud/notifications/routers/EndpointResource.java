@@ -28,6 +28,8 @@ import com.redhat.cloud.notifications.openbridge.BridgeApiService;
 import com.redhat.cloud.notifications.openbridge.BridgeAuth;
 import com.redhat.cloud.notifications.openbridge.Processor;
 import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
+import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
@@ -46,6 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.resteasy.reactive.RestPath;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -105,6 +108,10 @@ public class EndpointResource {
 
     @Inject
     EndpointRepository endpointRepository;
+
+    @Inject
+    @RestClient
+    EndpointTestService endpointTestService;
 
     @Inject
     NotificationRepository notificationRepository;
@@ -656,6 +663,35 @@ public class EndpointResource {
                     type
             );
         }
+    }
+
+    /**
+     * Sends an integration test event via the specified endpoint.
+     * @param uuid the {@link UUID} of the endpoint to test.
+     * @return a "no content" response on success.
+     */
+    @APIResponse(responseCode = "204")
+    @POST
+    @Path("/{uuid}/test")
+    @Parameters({
+        @Parameter(
+                name = "uuid",
+                in = ParameterIn.PATH,
+                description = "The UUID of the endpoint to test",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid) {
+        final String orgId = SecurityContextUtil.getOrgId(sec);
+
+        if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
+            throw new NotFoundException("integration not found");
+        }
+
+        final var endpointTestRequest = new EndpointTestRequest(uuid, orgId);
+
+        this.endpointTestService.testEndpoint(endpointTestRequest);
     }
 
     private static void checkSystemEndpoint(EndpointType endpointType) {

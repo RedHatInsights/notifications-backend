@@ -323,4 +323,33 @@ public class EndpointRepository {
         loadProperties(Collections.singletonList(endpoint));
         return endpoint;
     }
+
+    /**
+     * Checks if an endpoint exists in the database.
+     * @param endpointUuid the UUID to look by.
+     * @param orgId the OrgID to filter the endpoints with.
+     * @return true if it exists, false otherwise.
+     */
+    public boolean existsByUuidAndOrgId(final UUID endpointUuid, final String orgId) {
+        final String existsEndpointByUuid =
+            "SELECT " +
+                "1 " +
+            "FROM " +
+                "Endpoint AS e " +
+            "WHERE " +
+                "e.id = :endpointUuid " +
+            "AND " +
+                "e.orgId = :orgId";
+
+        try {
+            this.entityManager.createQuery(existsEndpointByUuid)
+                .setParameter("endpointUuid", endpointUuid)
+                .setParameter("orgId", orgId)
+                .getSingleResult();
+
+            return true;
+        } catch (final NoResultException e) {
+            return false;
+        }
+    }
 }

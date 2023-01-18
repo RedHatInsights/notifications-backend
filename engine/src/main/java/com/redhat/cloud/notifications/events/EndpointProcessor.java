@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor;
@@ -17,6 +18,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -55,7 +57,17 @@ public class EndpointProcessor {
 
     public void process(Event event) {
         processedItems.increment();
-        List<Endpoint> endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
+
+        final List<Endpoint> endpoints;
+        if (TestEventHelper.isIntegrationTestEvent(event)) {
+            final UUID endpointUuid = TestEventHelper.extractEndpointUuidFromTestEvent(event);
+
+            final Endpoint endpoint = this.endpointRepository.findByUuidAndOrgId(endpointUuid, event.getOrgId());
+
+            endpoints = List.of(endpoint);
+        } else {
+            endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
+        }
 
         // Target endpoints are grouped by endpoint type.
         endpointTargeted.increment(endpoints.size());

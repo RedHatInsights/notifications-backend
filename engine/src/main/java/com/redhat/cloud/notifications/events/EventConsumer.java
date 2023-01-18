@@ -21,7 +21,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
-
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 

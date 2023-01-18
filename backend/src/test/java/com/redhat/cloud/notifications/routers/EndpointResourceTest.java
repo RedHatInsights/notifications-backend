@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
@@ -22,21 +23,27 @@ import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValida
 import com.redhat.cloud.notifications.openbridge.Bridge;
 import com.redhat.cloud.notifications.openbridge.BridgeHelper;
 import com.redhat.cloud.notifications.openbridge.BridgeItemList;
+import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -97,6 +104,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EndpointRepository endpointRepository;
+
+    /**
+     * Used to verify that the "test this endpoint" payloads are sent with the
+     * expected data.
+     */
+    @InjectMock
+    @RestClient
+    EndpointTestService endpointTestService;
 
     @Test
     void testEndpointAdding() {
@@ -2010,6 +2028,71 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .post("/endpoints")
                 .then()
                 .statusCode(400);
+    }
+
+    /**
+     * Tests that when sending a payload to the "/test" REST endpoint, a Kafka message is sent with a test event for
+     * that endpoint.
+     */
+    @Test
+    void testEndpointTest() {
+        final String accountId = "test-endpoint-test-account-number";
+        final String orgId = "test-endpoint-test-org-id";
+
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        // Call the endpoint under test.
+        final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
+        given()
+            .header(identityHeader)
+            .when()
+            .post(path)
+            .then()
+            .statusCode(204);
+
+        // Capture the sent payload to verify it.
+        final ArgumentCaptor<EndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(EndpointTestRequest.class);
+        Mockito.verify(this.endpointTestService).testEndpoint(capturedPayload.capture());
+
+        final EndpointTestRequest sentPayload = capturedPayload.getValue();
+
+        Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
+        Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
+    }
+
+    /**
+     * Tests that when the "test endpoint" handler is called with an endpoint
+     * UUID that doesn't exist, a not found response is returned.
+     */
+    @Test
+    void testEndpointTestNotFound() {
+        final String accountId = "test-endpoint-test-account-number";
+        final String orgId = "test-endpoint-test-org-id";
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        // Call the endpoint under test.
+        final String path = String.format("/endpoints/%s/test", UUID.randomUUID());
+
+        final String responseBody = given()
+            .header(identityHeader)
+            .when()
+            .post(path)
+            .then()
+            .statusCode(404)
+            .extract()
+            .body()
+            .asString();
+
+        Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {

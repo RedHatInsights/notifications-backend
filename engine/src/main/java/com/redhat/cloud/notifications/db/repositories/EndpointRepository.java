@@ -160,6 +160,47 @@ public class EndpointRepository {
         }
     }
 
+    /**
+     * Gets the endpoint by its UUID and OrgId along with its associated properties.
+     * @param endpointUuid the UUID of the endpoint.
+     * @param orgId the OrgId of the tenant.
+     * @return the endpoint found.
+     */
+    public Endpoint findByUuidAndOrgId(final UUID endpointUuid, final String orgId) {
+        final String query =
+                "SELECT " +
+                    "e " +
+                "FROM " +
+                    "Endpoint AS e " +
+                "WHERE " +
+                    "e.id = :uuid " +
+                "AND " +
+                    "e.orgId = :orgId";
+
+        final Endpoint endpoint = this.statelessSessionFactory
+            .getCurrentSession()
+            .createQuery(query, Endpoint.class)
+            .setParameter("uuid", endpointUuid)
+            .setParameter("orgId", orgId)
+            .uniqueResult();
+
+        // Throw a no result exception to avoid a null pointer exception from
+        // the "List.of".
+        if (endpoint == null) {
+            throw new NoResultException(
+                String.format(
+                    "Endpoint with id=%s and orgId=%s not found",
+                    endpointUuid,
+                    orgId
+                )
+            );
+        }
+
+        this.loadProperties(List.of(endpoint));
+
+        return endpoint;
+    }
+
     private Optional<Endpoint> lockEndpoint(UUID endpointId) {
         String hql = "FROM Endpoint WHERE id = :id";
         try {
