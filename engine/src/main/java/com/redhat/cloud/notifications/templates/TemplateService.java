@@ -25,8 +25,6 @@ import java.util.function.Function;
 @ApplicationScoped
 public class TemplateService {
 
-    public static final String HCC_LOGO_TARGET = "Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB";
-
     @Inject
     Engine engine;
 

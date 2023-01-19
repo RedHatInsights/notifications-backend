@@ -72,7 +72,7 @@ public class TestAnsibleTemplate {
             .data("environment", environment)
             .render();
         assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
-        assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
 
         assertThrows(UnsupportedOperationException.class, () -> {
             ansible.getBody("unknown-event-type", EmailSubscriptionType.INSTANT)
