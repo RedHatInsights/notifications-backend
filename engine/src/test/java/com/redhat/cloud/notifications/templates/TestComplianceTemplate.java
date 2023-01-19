@@ -42,7 +42,7 @@ public class TestComplianceTemplate {
         featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
         result = generateEmail(compliance.getBody(Compliance.COMPLIANCE_BELOW_THRESHOLD, EmailSubscriptionType.INSTANT));
         assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("policy_id").toString()));
-        assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -65,7 +65,7 @@ public class TestComplianceTemplate {
         featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
         result = generateEmail(compliance.getBody(Compliance.REPORT_UPLOAD_FAILED, EmailSubscriptionType.INSTANT));
         assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("error").toString()));
-        assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class TestComplianceTemplate {
         featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
         result = generateEmail(compliance.getBody(null, EmailSubscriptionType.DAILY));
         assertTrue(result.contains("Red Hat Insights has identified one or more systems"));
-        assertTrue(result.contains(TemplateService.HCC_LOGO_TARGET));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test

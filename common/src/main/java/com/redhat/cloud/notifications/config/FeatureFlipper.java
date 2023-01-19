@@ -72,7 +72,7 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-policies-email-templates-v2.enabled", defaultValue = "false")
     boolean policiesEmailTemplatesV2Enabled;
 
-    @ConfigProperty(name = "compliance.use-policies-email-templates-v2.enabled", defaultValue = "false")
+    @ConfigProperty(name = "notifications.use-compliance-email-templates-v2.enabled", defaultValue = "false")
     boolean complianceEmailTemplatesV2Enabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
