@@ -10,19 +10,14 @@ public class Environment {
     @ConfigProperty(name = "env.name", defaultValue = "local-dev")
     String environment;
 
+    @ConfigProperty(name = "env.base.url", defaultValue = "/")
+    String url;
+
     public String name() {
         return this.environment;
     }
 
     public String url() {
-
-        switch (environment) {
-            case "prod":
-                return "https://console.redhat.com";
-            case "stage":
-                return "https://console.stage.redhat.com";
-            default:
-                return "/";
-        }
+        return this.url;
     }
 }
