@@ -75,6 +75,9 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
+    @ConfigProperty(name = "recipient-provider.use-it-impl", defaultValue = "true")
+    public boolean retrieveUsersFromIt;
+
     @Inject
     MeterRegistry meterRegistry;
 
@@ -121,20 +124,25 @@ public class RbacRecipientUsersProvider {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
-        List<ITUserResponse> usersPaging;
-        List<ITUserResponse> usersTotal = new ArrayList<>();
+        if (retrieveUsersFromIt) {
+            List<ITUserResponse> usersPaging;
+            List<ITUserResponse> usersTotal = new ArrayList<>();
 
-        int firstResult = 0;
+            int firstResult = 0;
 
-        do {
-            ITUserRequest request = new ITUserRequest(orgId, adminsOnly, firstResult, maxResultsPerPage);
-            usersPaging = retryOnItError(() -> itUserService.getUsers(request));
-            usersTotal.addAll(usersPaging);
+            do {
+                ITUserRequest request = new ITUserRequest(orgId, adminsOnly, firstResult, maxResultsPerPage);
+                usersPaging = retryOnItError(() -> itUserService.getUsers(request));
+                usersTotal.addAll(usersPaging);
 
-            firstResult += maxResultsPerPage;
-        } while (usersPaging.size() == maxResultsPerPage);
+                firstResult += maxResultsPerPage;
+            } while (usersPaging.size() == maxResultsPerPage);
 
-        users = transformToUser(usersTotal);
+            users = transformToUser(usersTotal);
+        } else {
+            users = getWithPagination(
+                    page -> retryOnRbacError(() -> rbacServiceToService.getUsers(orgId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)));
+        }
 
         // Micrometer doesn't like when tags are null and throws a NPE.
         String orgIdTag = orgId == null ? "" : orgId;

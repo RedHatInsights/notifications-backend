@@ -19,6 +19,16 @@ import java.util.UUID;
 public interface RbacServiceToService {
 
     @GET
+    @Path("/principals/") // trailing slash is required by api
+    @Produces(MediaType.APPLICATION_JSON)
+    Page<RbacUser> getUsers(
+            @HeaderParam("x-rh-rbac-org-id") String orgId,
+            @QueryParam("admin_only") Boolean adminOnly,
+            @QueryParam("offset") Integer offset,
+            @QueryParam("limit") Integer limit
+    );
+
+    @GET
     @Path("/groups/{groupId}/") // trailing slash is required by api
     @Produces(MediaType.APPLICATION_JSON)
     RbacGroup getGroup(
