@@ -1,39 +1,46 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 // Name needs to be "Compliance" to read templates from resources/templates/Compliance
+@ApplicationScoped
 public class Compliance implements EmailTemplate {
 
-    private static final String COMPLIANCE_BELOW_THRESHOLD = "compliance-below-threshold";
-    private static final String REPORT_UPLOAD_FAILED = "report-upload-failed";
+    protected static final String COMPLIANCE_BELOW_THRESHOLD = "compliance-below-threshold";
+    protected static final String REPORT_UPLOAD_FAILED = "report-upload-failed";
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
             if (eventType.equals(COMPLIANCE_BELOW_THRESHOLD)) {
-                return Templates.complianceBelowThresholdEmailTitle();
+                return getComplianceBelowThresholdEmailTitle();
             } else if (eventType.equals(REPORT_UPLOAD_FAILED)) {
-                return Templates.reportUploadFailedEmailTitle();
+                return getReportUploadFailedEmailTitle();
             }
         }
 
-        return Templates.dailyEmailTitle();
+        return getDailyEmailTitle();
     }
 
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
             if (eventType.equals(COMPLIANCE_BELOW_THRESHOLD)) {
-                return Templates.complianceBelowThresholdEmailBody();
+                return getComplianceBelowThresholdEmailBody();
             } else if (eventType.equals(REPORT_UPLOAD_FAILED)) {
-                return Templates.reportUploadFailedEmailBody();
+                return getReportUploadFailedEmailBody();
             }
         }
 
-        return Templates.dailyEmailBody();
+        return getDailyEmailBody();
     }
 
     @Override
@@ -44,6 +51,48 @@ public class Compliance implements EmailTemplate {
     @Override
     public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
         return true;
+    }
+
+    private TemplateInstance getComplianceBelowThresholdEmailTitle() {
+        if (featureFlipper.isComplianceEmailTemplatesV2Enabled()) {
+            return Compliance.Templates.complianceBelowThresholdEmailTitleV2();
+        }
+        return Compliance.Templates.complianceBelowThresholdEmailTitle();
+    }
+
+    private TemplateInstance getReportUploadFailedEmailTitle() {
+        if (featureFlipper.isComplianceEmailTemplatesV2Enabled()) {
+            return Compliance.Templates.reportUploadFailedEmailTitleV2();
+        }
+        return Compliance.Templates.reportUploadFailedEmailTitle();
+    }
+
+    private TemplateInstance getDailyEmailTitle() {
+        if (featureFlipper.isComplianceEmailTemplatesV2Enabled()) {
+            return Compliance.Templates.dailyEmailTitleV2();
+        }
+        return Compliance.Templates.dailyEmailTitle();
+    }
+
+    private TemplateInstance getComplianceBelowThresholdEmailBody() {
+        if (featureFlipper.isComplianceEmailTemplatesV2Enabled()) {
+            return Compliance.Templates.complianceBelowThresholdEmailBodyV2();
+        }
+        return Compliance.Templates.complianceBelowThresholdEmailBody();
+    }
+
+    private TemplateInstance getDailyEmailBody() {
+        if (featureFlipper.isComplianceEmailTemplatesV2Enabled()) {
+            return Compliance.Templates.dailyEmailBodyV2();
+        }
+        return Compliance.Templates.dailyEmailBody();
+    }
+
+    private TemplateInstance getReportUploadFailedEmailBody() {
+        if (featureFlipper.isComplianceEmailTemplatesV2Enabled()) {
+            return Compliance.Templates.reportUploadFailedEmailBodyV2();
+        }
+        return Compliance.Templates.reportUploadFailedEmailBody();
     }
 
     @CheckedTemplate(requireTypeSafeExpressions = false)
@@ -60,6 +109,19 @@ public class Compliance implements EmailTemplate {
         public static native TemplateInstance dailyEmailTitle();
 
         public static native TemplateInstance dailyEmailBody();
+
+        public static native TemplateInstance complianceBelowThresholdEmailTitleV2();
+
+        public static native TemplateInstance reportUploadFailedEmailTitleV2();
+
+        public static native TemplateInstance dailyEmailTitleV2();
+
+        public static native TemplateInstance complianceBelowThresholdEmailBodyV2();
+
+        public static native TemplateInstance reportUploadFailedEmailBodyV2();
+
+        public static native TemplateInstance dailyEmailBodyV2();
+
     }
 
 }

@@ -72,6 +72,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-policies-email-templates-v2.enabled", defaultValue = "false")
     boolean policiesEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-compliance-email-templates-v2.enabled", defaultValue = "false")
+    boolean complianceEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -85,6 +88,7 @@ public class FeatureFlipper {
         Log.infof("The OB backchannel filler is %s", obBackchannelFiller ? "enabled" : "disabled");
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
         Log.infof("The Policies's email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Compliance's email templates V2 are %s", complianceEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -169,6 +173,14 @@ public class FeatureFlipper {
 
     public boolean isPoliciesEmailTemplatesV2Enabled() {
         return this.policiesEmailTemplatesV2Enabled;
+    }
+
+    public boolean isComplianceEmailTemplatesV2Enabled() {
+        return complianceEmailTemplatesV2Enabled;
+    }
+
+    public void setComplianceEmailTemplatesV2Enabled(boolean complianceEmailTemplatesV2Enabled) {
+        this.complianceEmailTemplatesV2Enabled = complianceEmailTemplatesV2Enabled;
     }
 
     /**

@@ -9,13 +9,15 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonObject;
-
+import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class TestHelpers {
+
+    public static final String HCC_LOGO_TARGET = "Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB";
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
     public static final String policyId1 = "abcd-efghi-jkl-lmn";
@@ -285,6 +287,44 @@ public class TestHelpers {
                         .build()
             ));
         }
+        return emailActionMessage;
+    }
+
+    public static Action createComplianceAction() {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(StringUtils.EMPTY);
+        emailActionMessage.setApplication(StringUtils.EMPTY);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                .build()
+        );
+
+        emailActionMessage.setEvents(List.of(
+            new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                        .withAdditionalProperty("host_id", "host-01")
+                        .withAdditionalProperty("host_name", "My test machine")
+                        .withAdditionalProperty("policy_id", "Policy id 1")
+                        .withAdditionalProperty("policy_name", "Tested name")
+                        .withAdditionalProperty("compliance_score", "20")
+                        .withAdditionalProperty("policy_threshold", "25")
+                        .withAdditionalProperty("request_id", "12345")
+                        .withAdditionalProperty("error", "Kernel panic (test)")
+                        .build()
+                )
+                .build()
+        ));
+
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
         return emailActionMessage;
     }
 }
