@@ -88,7 +88,9 @@ public class SettingsValueJsonForm {
                             field.label = "Instant notification";
                             field.description = "Immediate email for each triggered application event. See notification settings for configuration.";
                             field.checkedWarning = "Opting into this notification may result in a large number of emails";
-                            field.infoMessage = "You may still receive forced notifications for this service";
+                            if (applicationSettingsValue.hasForcedEmail) {
+                                field.infoMessage = "You may still receive forced notifications for this service";
+                            }
                             break;
                         default:
                             return;
