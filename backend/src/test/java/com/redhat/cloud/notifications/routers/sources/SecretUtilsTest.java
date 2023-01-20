@@ -49,7 +49,6 @@ public class SecretUtilsTest {
 
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "get-secrets-for-endpoint-test-organization-id";
-        final String accountId = "get-secrets-for-endpoint-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -57,14 +56,13 @@ public class SecretUtilsTest {
         webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Set up the mock calls for the "get by id" calls from the REST Client.
         Mockito.when(this.sourcesServiceMock.getById(expectedXRhIdentity, BASIC_AUTH_SOURCES_ID)).thenReturn(basicAuthenticationMock);
@@ -128,7 +126,6 @@ public class SecretUtilsTest {
 
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "create-secrets-for-endpoint-test-organization-id";
-        final String accountId = "create-secrets-for-endpoint-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -137,14 +134,13 @@ public class SecretUtilsTest {
         webhookProperties.setBasicAuthentication(basicAuth);
         webhookProperties.setSecretToken(SECRET_TOKEN);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
         // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
@@ -185,20 +181,18 @@ public class SecretUtilsTest {
 
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "create-secrets-for-endpoint-basic-auth-null-test-organization-id";
-        final String accountId = "create-secrets-for-endpoint-basic-auth-null-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         webhookProperties.setSecretToken(SECRET_TOKEN);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
         // authentication is null, only the secret token should be created.
@@ -237,13 +231,11 @@ public class SecretUtilsTest {
 
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "create-secrets-for-endpoint-basic-auth-blank-fields-test-organization-id";
-        final String accountId = "create-secrets-for-endpoint-basic-auth-blank-fields-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         webhookProperties.setSecretToken(SECRET_TOKEN);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
@@ -254,7 +246,7 @@ public class SecretUtilsTest {
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
         // authentication is null, only the secret token should be created.
@@ -293,7 +285,6 @@ public class SecretUtilsTest {
 
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "create-secrets-for-endpoint-secret-token-null-test-organization-id";
-        final String accountId = "create-secrets-for-endpoint-secret-token-null-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -301,14 +292,13 @@ public class SecretUtilsTest {
 
         webhookProperties.setBasicAuthentication(basicAuth);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Set up the mock call for the "create" call from the REST Client. Since only the "basic authentication"
         // secret is supposed to be created, that's the one we are expecting to get from the mocked service.
@@ -347,7 +337,6 @@ public class SecretUtilsTest {
 
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "create-secrets-for-endpoint-secret-token-blank-test-organization-id";
-        final String accountId = "create-secrets-for-endpoint-secret-token-blank-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -355,7 +344,6 @@ public class SecretUtilsTest {
 
         webhookProperties.setBasicAuthentication(basicAuth);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
@@ -365,7 +353,7 @@ public class SecretUtilsTest {
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Set up the mock call for the "create" call from the REST Client. Since only the "basic authentication"
         // secret is supposed to be created, that's the one we are expecting to get from the mocked service.
@@ -409,7 +397,6 @@ public class SecretUtilsTest {
 
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "update-secrets-for-endpoint-test-organization-id";
-        final String accountId = "update-secrets-for-endpoint-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -426,14 +413,13 @@ public class SecretUtilsTest {
         webhookProperties.setSecretToken(updatedSecretToken);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Set up the mock calls to return the "basic authentication" and the "secret token" secrets which are supposed
         // to be updated.
@@ -474,7 +460,6 @@ public class SecretUtilsTest {
     void updateSecretsForEndpointDeleteTest() {
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "update-secrets-for-endpoint-delete-test-organization-id";
-        final String accountId = "update-secrets-for-endpoint-delete-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -484,14 +469,13 @@ public class SecretUtilsTest {
         webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Call the function under test.
         this.secretUtils.updateSecretsForEndpoint(endpoint);
@@ -548,7 +532,6 @@ public class SecretUtilsTest {
 
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "update-secrets-for-endpoint-create-test-organization-id";
-        final String accountId = "update-secrets-for-endpoint-create-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -557,14 +540,13 @@ public class SecretUtilsTest {
         webhookProperties.setBasicAuthentication(basicAuth);
         webhookProperties.setSecretToken(SECRET_TOKEN);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
         // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
@@ -600,7 +582,6 @@ public class SecretUtilsTest {
     void deleteSecretsForEndpointTest() {
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "delete-secrets-for-endpoint-test-organization-id";
-        final String accountId = "delete-secrets-for-endpoint-test-account-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -608,14 +589,13 @@ public class SecretUtilsTest {
         webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
-        endpoint.setAccountId(accountId);
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Generate the expected x-rh-identity header's contents the function
         // under test should be called with. This way we verify that the Secret
         // Utils service always calls the function with the content.
-        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(accountId, orgId);
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Call the function under test.
         this.secretUtils.deleteSecretsForEndpoint(endpoint);
