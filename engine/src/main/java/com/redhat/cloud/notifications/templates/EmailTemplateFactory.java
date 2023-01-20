@@ -54,6 +54,9 @@ public class EmailTemplateFactory {
     @Inject
     Integrations integrations;
 
+    @Inject
+    Drift drift;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -72,7 +75,7 @@ public class EmailTemplateFactory {
                 case COMPLIANCE:
                     return compliance;
                 case DRIFT:
-                    return new Drift();
+                    return drift;
                 case VULNERABILITY:
                     return new Vulnerability();
                 case EDGE_MANAGEMENT:

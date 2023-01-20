@@ -69,7 +69,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-policies-email-templates-v2.enabled", defaultValue = "false")
     boolean policiesEmailTemplatesV2Enabled;
 
-
     @ConfigProperty(name = "notifications.use-compliance-email-templates-v2.enabled", defaultValue = "false")
     boolean complianceEmailTemplatesV2Enabled;
 
@@ -87,6 +86,9 @@ public class FeatureFlipper {
 
     @ConfigProperty(name = "notifications.use-integrations-email-templates-v2.enabled", defaultValue = "false")
     boolean integrationsEmailTemplatesV2Enabled;
+
+    @ConfigProperty(name = "notifications.use-drift-email-templates-v2.enabled", defaultValue = "false")
+    boolean driftEmailTemplatesV2Enabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
@@ -106,6 +108,7 @@ public class FeatureFlipper {
         Log.infof("Emails only mode is %s", emailsOnlyMode ? "enabled" : "disabled");
         Log.infof("The Patch's email templates V2 are %s", patchEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Integrations' email templates V2 are %s", integrationsEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Drift's email templates V2 are %s", driftEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -237,6 +240,14 @@ public class FeatureFlipper {
     public void setIntegrationsEmailTemplatesV2Enabled(boolean integrationsEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.integrationsEmailTemplatesV2Enabled = integrationsEmailTemplatesV2Enabled;
+    }
+
+    public boolean isDriftEmailTemplatesV2Enabled() {
+        return driftEmailTemplatesV2Enabled;
+    }
+
+    public void setDriftEmailTemplatesV2Enabled(boolean driftEmailTemplatesV2Enabled) {
+        this.driftEmailTemplatesV2Enabled = driftEmailTemplatesV2Enabled;
     }
 
     /**
