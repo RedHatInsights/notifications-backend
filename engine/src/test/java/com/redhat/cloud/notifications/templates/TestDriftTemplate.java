@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestDriftTemplate {
 
-    private final static boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
+    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
 
     @Inject
     Environment environment;
@@ -226,7 +226,7 @@ public class TestDriftTemplate {
     }
 
     public void writeEmailTemplate(String result, String fileName) {
-        if(SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
+        if (SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
             try {
                 FileWriter writerObj = new FileWriter(fileName);
                 writerObj.write(result);
