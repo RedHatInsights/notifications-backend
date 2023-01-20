@@ -175,12 +175,10 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
-        - name: OB_ENABLED
-          value: ${OB_ENABLED}
-        - name: OB_BACKCHANNEL_FILLER_ENABLED
-          value: ${OB_BACKCHANNEL_FILLER_ENABLED}
         - name: OB_BRIDGE_NAME
           value: ${OB_BRIDGE_NAME}
+        - name: OB_ERROR_CHECK_PERIOD
+          value: ${OB_ERROR_CHECK_PERIOD}
         - name: OB_TOKEN_CLIENT_ID
           valueFrom:
             secretKeyRef:
@@ -263,15 +261,12 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
-- name: OB_ENABLED
-  description: Is the OpenBridge integration enabled
-  value: "false"
-- name: OB_BACKCHANNEL_FILLER_ENABLED
-  description: Is the OpenBridge backchannel filler enabled?
-  value: "false"
 - name: OB_BRIDGE_NAME
   description: The name of the bridge to use.
   value: "notifications-bridge"
+- name: OB_ERROR_CHECK_PERIOD
+  description: Period between two executions of the FromOpenBridgeHistoryFiller scheduled job
+  value: 10s
 - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
   description: Period between two batch executions. Defaults to 5s.
   value: 5s

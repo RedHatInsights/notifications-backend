@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.rhose;
 
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
@@ -43,9 +42,6 @@ public class RhoseTypeProcessor extends EndpointTypeProcessor {
     public static final String SOURCE = "notifications";
     public static final String SPEC_VERSION = "1.0";
     public static final String TYPE = "myType";
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @Inject
     BaseTransformer baseTransformer;
@@ -92,11 +88,6 @@ public class RhoseTypeProcessor extends EndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (!featureFlipper.isObEnabled()) {
-            Log.debug("Ob not enabled, doing nothing");
-            return;
-        }
-
         DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
             for (Endpoint endpoint : endpoints) {
                 try {

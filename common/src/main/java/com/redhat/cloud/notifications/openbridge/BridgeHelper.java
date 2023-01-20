@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.openbridge;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -26,9 +25,6 @@ public class BridgeHelper {
     public static final String ORG_ID_FILTER_NAME = "rhorgid";
     public static final String CLOUD_PROVIDER = "aws";
     public static final String CLOUD_REGION = "us-east-1";
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @ConfigProperty(name = "ob.bridge.name")
     String ourBridgeName;
@@ -56,10 +52,6 @@ public class BridgeHelper {
     @Produces
     @ApplicationScoped
     public Bridge getBridgeIfNeeded() {
-
-        if (!featureFlipper.isObEnabled()) {
-            return new Bridge("- OB not enabled -", "http://does.not.exist", "no name");
-        }
 
         if (bridgeInstance != null) {
             return bridgeInstance;
@@ -113,10 +105,6 @@ public class BridgeHelper {
     @Produces
     @RequestScoped
     public BridgeAuth getAuthToken() {
-        if (!featureFlipper.isObEnabled()) {
-            return new BridgeAuth("- OB not enabled token -");
-        }
-
         BridgeAuth ba;
         try {
             ba = new BridgeAuth(getAuthTokenInternal());

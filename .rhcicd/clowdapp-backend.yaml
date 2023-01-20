@@ -187,8 +187,6 @@ objects:
           value: ${QUARKUS_OPENTELEMETRY_ENABLED}
         - name: QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT
           value: ${QUARKUS_OPENTELEMETRY_ENDPOINT}
-        - name: OB_ENABLED
-          value: ${OB_ENABLED}
         - name: OB_BRIDGE_NAME
           value: ${OB_BRIDGE_NAME}
         - name: OB_READY_CHECK_PERIOD
@@ -295,9 +293,6 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
-- name: OB_ENABLED
-  description: Is the OpenBridge integration enabled
-  value: "false"
 - name: OB_BRIDGE_NAME
   description: The name of the bridge to use.
   value: "notifications-bridge"
