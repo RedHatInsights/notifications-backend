@@ -1,9 +1,13 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.templates.models.Environment;
+import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -18,6 +22,7 @@ import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.buildIntegrationDisabledAction;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,7 +33,16 @@ public class IntegrationsTemplatesTest {
     @Inject
     Environment environment;
 
-    private final Integrations integrations = new Integrations();
+    @Inject
+    FeatureFlipper featureFlipper;
+
+    @Inject
+    Integrations integrations;
+
+    @BeforeEach
+    void beforeEach() {
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(false);
+    }
 
     @Test
     void shouldSupportAllEventTypesWithInstantSubscriptionType() {
@@ -72,33 +86,67 @@ public class IntegrationsTemplatesTest {
     void testIntegrationDisabledTitle() {
         Endpoint endpoint = buildEndpoint();
         Action action = buildIntegrationDisabledAction(endpoint, CLIENT_ERROR_TYPE, 401, 1);
-        String rendered = Integrations.Templates.integrationDisabledTitle()
-                .data("action", action)
-                .data("environment", environment)
-                .render();
+        String rendered = generateEmail(integrations.getTitle(INTEGRATION_DISABLED_EVENT_TYPE, INSTANT), action);
         assertTrue(rendered.endsWith("Integration '" + endpoint.getName() + "' was disabled"));
+
+        // test template V2
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        rendered = generateEmail(integrations.getTitle(INTEGRATION_DISABLED_EVENT_TYPE, INSTANT), action);
+        assertEquals("Instant notification - Integrations - Console", rendered);
+    }
+
+    @Test
+    void testIntegrationFailedTitle() {
+        Action action = TestHelpers.createIntegrationsFailedAction();
+        String rendered = generateEmail(integrations.getTitle(INTEGRATION_FAILED_EVENT_TYPE, INSTANT), action);
+        assertEquals("Integration 'Failed integration' failed", rendered);
+
+        // test template V2
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        rendered = generateEmail(integrations.getTitle(INTEGRATION_FAILED_EVENT_TYPE, INSTANT), action);
+        assertEquals("Instant notification - Integrations - Console", rendered);
+    }
+
+    @Test
+    void testIntegrationBodyTitle() {
+        Action action = TestHelpers.createIntegrationsFailedAction();
+        String rendered = generateEmail(integrations.getBody(INTEGRATION_FAILED_EVENT_TYPE, INSTANT), action);
+        assertTrue(rendered.contains("Integration 'Failed integration' failed with outcome"));
+
+        // test template V2
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        rendered = generateEmail(integrations.getBody(INTEGRATION_FAILED_EVENT_TYPE, INSTANT), action);
+        assertTrue(rendered.contains("Integration 'Failed integration' failed with outcome"));
+        assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     void testIntegrationDisabledBodyWithClientError() {
         Endpoint endpoint = buildEndpoint();
         Action action = buildIntegrationDisabledAction(endpoint, CLIENT_ERROR_TYPE, 401, 1);
-        String rendered = Integrations.Templates.integrationDisabledBody()
-                .data("action", action)
-                .data("environment", environment)
-                .render();
+        String rendered = generateEmail(integrations.getBody(INTEGRATION_DISABLED_EVENT_TYPE, INSTANT), action);
         assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
+
+        // test template V2
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        rendered = generateEmail(integrations.getBody(INTEGRATION_DISABLED_EVENT_TYPE, INSTANT), action);
+        assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
+        assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     void testIntegrationDisabledBodyWithServerError() {
         Endpoint endpoint = buildEndpoint();
         Action action = buildIntegrationDisabledAction(endpoint, SERVER_ERROR_TYPE, -1, 2048);
-        String rendered = Integrations.Templates.integrationDisabledBody()
-                .data("action", action)
-                .data("environment", environment)
-                .render();
+        String rendered = generateEmail(integrations.getBody(INTEGRATION_DISABLED_EVENT_TYPE, INSTANT), action);
         assertTrue(rendered.contains("disabled because the remote endpoint responded 2048 times with a server error"));
+
+        // test template V2
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        rendered = generateEmail(integrations.getBody(INTEGRATION_DISABLED_EVENT_TYPE, INSTANT), action);
+        System.out.println(rendered);
+        assertTrue(rendered.contains("disabled because the remote endpoint responded 2048 times with a server error"));
+        assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     private static Endpoint buildEndpoint() {
@@ -107,5 +155,12 @@ public class IntegrationsTemplatesTest {
         endpoint.setName("Unreliable integration");
         endpoint.setOrgId(DEFAULT_ORG_ID);
         return endpoint;
+    }
+
+    private String generateEmail(TemplateInstance template, Action action) {
+        return template
+            .data("action", action)
+            .data("environment", environment)
+            .render();
     }
 }
