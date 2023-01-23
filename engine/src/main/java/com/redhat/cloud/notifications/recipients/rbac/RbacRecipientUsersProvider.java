@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
@@ -51,6 +52,9 @@ public class RbacRecipientUsersProvider {
     @RestClient
     ITUserService itUserService;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
 
@@ -74,9 +78,6 @@ public class RbacRecipientUsersProvider {
 
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
-
-    @ConfigProperty(name = "recipient-provider.use-it-impl", defaultValue = "true")
-    public boolean retrieveUsersFromIt;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -124,7 +125,10 @@ public class RbacRecipientUsersProvider {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
-        if (retrieveUsersFromIt) {
+        if (featureFlipper.isUseRbacForFetchingUsers()) {
+            users = getWithPagination(
+                    page -> retryOnRbacError(() -> rbacServiceToService.getUsers(orgId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)));
+        } else {
             List<ITUserResponse> usersPaging;
             List<ITUserResponse> usersTotal = new ArrayList<>();
 
@@ -139,9 +143,6 @@ public class RbacRecipientUsersProvider {
             } while (usersPaging.size() == maxResultsPerPage);
 
             users = transformToUser(usersTotal);
-        } else {
-            users = getWithPagination(
-                    page -> retryOnRbacError(() -> rbacServiceToService.getUsers(orgId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)));
         }
 
         // Micrometer doesn't like when tags are null and throws a NPE.
