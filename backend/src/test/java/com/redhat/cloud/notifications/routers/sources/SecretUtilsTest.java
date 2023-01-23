@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.sources;
 
+import com.redhat.cloud.notifications.XRhIdentityUtils;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
@@ -46,11 +47,9 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.password = SECRET_TOKEN;
 
-        // Set up the mock calls for the "get by id" calls from the REST Client.
-        Mockito.when(this.sourcesServiceMock.getById(BASIC_AUTH_SOURCES_ID)).thenReturn(basicAuthenticationMock);
-        Mockito.when(this.sourcesServiceMock.getById(SECRET_TOKEN_SOURCES_ID)).thenReturn(secretTokenMock);
-
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "get-secrets-for-endpoint-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
 
@@ -58,6 +57,16 @@ public class SecretUtilsTest {
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Set up the mock calls for the "get by id" calls from the REST Client.
+        Mockito.when(this.sourcesServiceMock.getById(expectedXRhIdentity, BASIC_AUTH_SOURCES_ID)).thenReturn(basicAuthenticationMock);
+        Mockito.when(this.sourcesServiceMock.getById(expectedXRhIdentity, SECRET_TOKEN_SOURCES_ID)).thenReturn(secretTokenMock);
 
         // Call the function under test.
         this.secretUtils.loadSecretsForEndpoint(endpoint);
@@ -81,8 +90,8 @@ public class SecretUtilsTest {
         // Assert that the underlying function was called exactly two times, since we are expecting that both the
         // "basic authentication" and the "secret token" secrets were fetched.
         final int wantedNumberOfInvocations = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(BASIC_AUTH_SOURCES_ID);
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(SECRET_TOKEN_SOURCES_ID);
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(expectedXRhIdentity, BASIC_AUTH_SOURCES_ID);
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(expectedXRhIdentity, SECRET_TOKEN_SOURCES_ID);
     }
 
     /**
@@ -115,12 +124,9 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
 
-        // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
-        // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
-        // operation.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock);
-
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "create-secrets-for-endpoint-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
@@ -129,6 +135,17 @@ public class SecretUtilsTest {
         webhookProperties.setSecretToken(SECRET_TOKEN);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
+        // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
+        // operation.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(expectedXRhIdentity), Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock);
 
         // Call the function under test.
         this.secretUtils.createSecretsForEndpoint(endpoint);
@@ -148,7 +165,7 @@ public class SecretUtilsTest {
         // Assert that the underlying function was called exactly two times, since we are expecting that both the
         // "basic authentication" and the "secret token" secrets were created.
         final int wantedNumberOfInvocations = 2;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(expectedXRhIdentity), Mockito.any());
     }
 
     /**
@@ -162,16 +179,24 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
 
-        // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
-        // authentication is null, only the secret token should be created.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(secretTokenMock);
-
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "create-secrets-for-endpoint-basic-auth-null-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         webhookProperties.setSecretToken(SECRET_TOKEN);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
+        // authentication is null, only the secret token should be created.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(expectedXRhIdentity), Mockito.any())).thenReturn(secretTokenMock);
 
         // Call the function under test.
         this.secretUtils.createSecretsForEndpoint(endpoint);
@@ -190,7 +215,7 @@ public class SecretUtilsTest {
         // Assert that the underlying function was called exactly one time: just for the "secret token"'s secret
         // creation.
         final int wantedNumberOfInvocations = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(expectedXRhIdentity), Mockito.any());
     }
 
     /**
@@ -204,20 +229,28 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
 
-        // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
-        // authentication is null, only the secret token should be created.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(secretTokenMock);
-
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "create-secrets-for-endpoint-basic-auth-blank-fields-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         webhookProperties.setSecretToken(SECRET_TOKEN);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
 
         // Create a basic authentication with blank fields.
         BasicAuthentication basicAuthentication = new BasicAuthentication("     ", "     ");
         webhookProperties.setBasicAuthentication(basicAuthentication);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
+        // authentication is null, only the secret token should be created.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(expectedXRhIdentity), Mockito.any())).thenReturn(secretTokenMock);
 
         // Call the function under test.
         this.secretUtils.createSecretsForEndpoint(endpoint);
@@ -236,7 +269,7 @@ public class SecretUtilsTest {
         // Assert that the underlying function was called exactly one time: just for the "secret token"'s secret
         // creation.
         final int wantedNumberOfInvocations = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(expectedXRhIdentity), Mockito.any());
     }
 
     /**
@@ -250,11 +283,9 @@ public class SecretUtilsTest {
         final Secret basicAuthenticationMock = new Secret();
         basicAuthenticationMock.id = BASIC_AUTH_SOURCES_ID;
 
-        // Set up the mock call for the "create" call from the REST Client. Since only the "basic authentication"
-        // secret is supposed to be created, that's the one we are expecting to get from the mocked service.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(basicAuthenticationMock);
-
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "create-secrets-for-endpoint-secret-token-null-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
@@ -262,6 +293,16 @@ public class SecretUtilsTest {
         webhookProperties.setBasicAuthentication(basicAuth);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Set up the mock call for the "create" call from the REST Client. Since only the "basic authentication"
+        // secret is supposed to be created, that's the one we are expecting to get from the mocked service.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(expectedXRhIdentity), Mockito.any())).thenReturn(basicAuthenticationMock);
 
         // Call the function under test.
         this.secretUtils.createSecretsForEndpoint(endpoint);
@@ -280,7 +321,7 @@ public class SecretUtilsTest {
         // Assert that the underlying function was called exactly one time: just for the "basic authentication"'s
         // secret creation.
         final int wantedNumberOfInvocations = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(expectedXRhIdentity), Mockito.any());
     }
 
     /**
@@ -294,11 +335,9 @@ public class SecretUtilsTest {
         final Secret basicAuthenticationMock = new Secret();
         basicAuthenticationMock.id = BASIC_AUTH_SOURCES_ID;
 
-        // Set up the mock call for the "create" call from the REST Client. Since only the "basic authentication"
-        // secret is supposed to be created, that's the one we are expecting to get from the mocked service.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(basicAuthenticationMock);
-
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "create-secrets-for-endpoint-secret-token-blank-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
@@ -306,9 +345,19 @@ public class SecretUtilsTest {
         webhookProperties.setBasicAuthentication(basicAuth);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
 
         // Set the secret token to blank.
         webhookProperties.setSecretToken("     ");
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Set up the mock call for the "create" call from the REST Client. Since only the "basic authentication"
+        // secret is supposed to be created, that's the one we are expecting to get from the mocked service.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(expectedXRhIdentity), Mockito.any())).thenReturn(basicAuthenticationMock);
 
         // Call the function under test.
         this.secretUtils.createSecretsForEndpoint(endpoint);
@@ -327,7 +376,7 @@ public class SecretUtilsTest {
         // Assert that the underlying function was called exactly one time: just for the "basic authentication"'s
         // secret creation.
         final int wantedNumberOfInvocations = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(expectedXRhIdentity), Mockito.any());
     }
 
     /**
@@ -346,12 +395,9 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.password = SECRET_TOKEN;
 
-        // Set up the mock calls to return the "basic authentication" and the "secret token" secrets which are supposed
-        // to be updated.
-        Mockito.when(this.sourcesServiceMock.getById(BASIC_AUTH_SOURCES_ID)).thenReturn(basicAuthenticationMock);
-        Mockito.when(this.sourcesServiceMock.getById(SECRET_TOKEN_SOURCES_ID)).thenReturn(secretTokenMock);
-
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "update-secrets-for-endpoint-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
 
@@ -368,6 +414,17 @@ public class SecretUtilsTest {
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Set up the mock calls to return the "basic authentication" and the "secret token" secrets which are supposed
+        // to be updated.
+        Mockito.when(this.sourcesServiceMock.getById(expectedXRhIdentity, BASIC_AUTH_SOURCES_ID)).thenReturn(basicAuthenticationMock);
+        Mockito.when(this.sourcesServiceMock.getById(expectedXRhIdentity, SECRET_TOKEN_SOURCES_ID)).thenReturn(secretTokenMock);
 
         // Call the function under test.
         this.secretUtils.updateSecretsForEndpoint(endpoint);
@@ -391,8 +448,8 @@ public class SecretUtilsTest {
         // Assert that the underlying "update" function was called exactly two times, since we are expecting that both
         // the "basic authentication" and the "secret token" secrets were successfully updated.
         final int wantedNumberOfInvocationsUpdate = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(BASIC_AUTH_SOURCES_ID), Mockito.any());
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(SECRET_TOKEN_SOURCES_ID), Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(expectedXRhIdentity), Mockito.eq(BASIC_AUTH_SOURCES_ID), Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(expectedXRhIdentity), Mockito.eq(SECRET_TOKEN_SOURCES_ID), Mockito.any());
     }
 
     /**
@@ -402,6 +459,8 @@ public class SecretUtilsTest {
     @Test
     void updateSecretsForEndpointDeleteTest() {
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "update-secrets-for-endpoint-delete-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
 
@@ -411,6 +470,12 @@ public class SecretUtilsTest {
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Call the function under test.
         this.secretUtils.updateSecretsForEndpoint(endpoint);
@@ -421,8 +486,8 @@ public class SecretUtilsTest {
 
         // It should have triggered two "delete" calls to Sources to delete both of the secrets.
         final int wantedNumberOfInvocations = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.eq(BASIC_AUTH_SOURCES_ID));
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.eq(SECRET_TOKEN_SOURCES_ID));
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.eq(expectedXRhIdentity), Mockito.eq(BASIC_AUTH_SOURCES_ID));
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(Mockito.eq(expectedXRhIdentity), Mockito.eq(SECRET_TOKEN_SOURCES_ID));
     }
 
     /**
@@ -465,12 +530,9 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
 
-        // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
-        // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
-        // operation.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock);
-
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "update-secrets-for-endpoint-create-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
@@ -479,6 +541,17 @@ public class SecretUtilsTest {
         webhookProperties.setSecretToken(SECRET_TOKEN);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
+        // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
+        // operation.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(expectedXRhIdentity), Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock);
 
         // Call the function under test.
         this.secretUtils.updateSecretsForEndpoint(endpoint);
@@ -498,7 +571,7 @@ public class SecretUtilsTest {
         // Assert that the underlying function was called exactly two times, since we are expecting that both the
         // "basic authentication" and the "secret token" secrets were created.
         final int wantedNumberOfInvocations = 2;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(expectedXRhIdentity), Mockito.any());
     }
 
     /**
@@ -508,6 +581,8 @@ public class SecretUtilsTest {
     @Test
     void deleteSecretsForEndpointTest() {
         // Create an endpoint that contains the expected data by the function under test.
+        final String orgId = "delete-secrets-for-endpoint-test-organization-id";
+
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
 
@@ -515,6 +590,12 @@ public class SecretUtilsTest {
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
         endpoint.setProperties(webhookProperties);
+        endpoint.setOrgId(orgId);
+
+        // Generate the expected x-rh-identity header's contents the function
+        // under test should be called with. This way we verify that the Secret
+        // Utils service always calls the function with the content.
+        final String expectedXRhIdentity = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
 
         // Call the function under test.
         this.secretUtils.deleteSecretsForEndpoint(endpoint);
@@ -522,8 +603,8 @@ public class SecretUtilsTest {
         // Assert that the underlying "delete" function was called exactly one time, since we are expecting a successful
         // deletion for both secrets.
         final int wantedNumberOfInvocations = 1;
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(BASIC_AUTH_SOURCES_ID);
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(SECRET_TOKEN_SOURCES_ID);
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(expectedXRhIdentity, BASIC_AUTH_SOURCES_ID);
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(expectedXRhIdentity, SECRET_TOKEN_SOURCES_ID);
     }
 
     /**

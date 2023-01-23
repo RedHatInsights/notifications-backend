@@ -1,13 +1,14 @@
 package com.redhat.cloud.notifications.routers.sources;
 
+import com.redhat.cloud.notifications.Constants;
 import io.quarkus.rest.client.reactive.ClientExceptionMapper;
 import org.eclipse.microprofile.faulttolerance.Retry;
-import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -30,49 +31,52 @@ import javax.ws.rs.core.Response;
  *     <li>On the other hand, if sources is using the AWS Secrets Manager, then the whole secret will get encrypted.</li>
  * </ul>
  */
-@RegisterClientHeaders(SourcesXRHIDHeaderFactory.class)
 @RegisterRestClient(configKey = "sources")
 public interface SourcesService {
 
     /**
      * Get a single secret from Sources. In this case we need to hit the internal endpoint —which is only available for
      * requests coming from inside the cluster— to be able to get the password of these secrets.
+     * @param xRhIdentity the base64 encoded x-rh-identity header contents.
      * @param id the secret id.
      * @return a {@link Secret} instance.
      */
     @GET
     @Path("/internal/v2.0/secrets/{id}")
     @Retry(maxRetries = 3)
-    Secret getById(@RestPath long id);
+    Secret getById(@HeaderParam(Constants.X_RH_IDENTITY_HEADER) String xRhIdentity, @RestPath long id);
 
     /**
      * Create a secret on the Sources backend.
+     * @param xRhIdentity the base64 encoded x-rh-identity header contents.
      * @param secret the {@link Secret} to be created.
      * @return the created secret.
      */
     @Path("/api/sources/v3.1/secrets")
     @POST
     @Retry(maxRetries = 3)
-    Secret create(Secret secret);
+    Secret create(@HeaderParam(Constants.X_RH_IDENTITY_HEADER) String xRhIdentity, Secret secret);
 
     /**
      * Update a secret on the Sources backend.
+     * @param xRhIdentity the base64 encoded x-rh-identity header contents.
      * @param secret the {@link Secret} to be updated.
      * @return the updated secret.
      */
     @Path("/api/sources/v3.1/secrets/{id}")
     @PATCH
     @Retry(maxRetries = 3)
-    Secret update(@RestPath long id, Secret secret);
+    Secret update(@HeaderParam(Constants.X_RH_IDENTITY_HEADER) String xRhIdentity, @RestPath long id, Secret secret);
 
     /**
      * Delete a secret on the Sources backend.
+     * @param xRhIdentity the base64 encoded x-rh-identity header contents.
      * @param id the id of the {@link Secret} to be deleted.
      */
     @DELETE
     @Path("/api/sources/v3.1/secrets/{id}")
     @Retry(maxRetries = 3)
-    void delete(@RestPath long id);
+    void delete(@HeaderParam(Constants.X_RH_IDENTITY_HEADER) String xRhIdentity, @RestPath long id);
 
     /**
      * Throws a runtime exception with the client's response for an easier debugging.
