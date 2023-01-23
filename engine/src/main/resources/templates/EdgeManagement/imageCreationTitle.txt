@@ -1,1 +1,1 @@
-Image Creation Started
+Edge Management - Image Creation Started - {action.timestamp.toTimeAgo()}

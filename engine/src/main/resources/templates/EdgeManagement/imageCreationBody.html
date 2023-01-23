@@ -1,5 +1,5 @@
 {#include EdgeManagement/insightsEmailBody}
-{#content-title}Egde Management Image Notification - {action.timestamp.toStringFormat()}{/content-title}
+{#content-title}Edge Management - Image Notification - {action.timestamp.toStringFormat()}{/content-title}
 {#content-body}
 <tr>
     <td class="rh-body rh-multi-column">
@@ -35,7 +35,7 @@
                         Hi,
                         <br>
                         <br>
-                        A New Image it's being created {action.events[0].payload.ID}.
+                        A new image was created {action.timestamp.toTimeAgo()}. Follow this <a href="{environment.url}/edge/manage-images/{action.events[0].payload.ImageSetID}/versions/{action.events[0].payload.ImageId}/details" target="_blank">link</a> to image named {action.context.ImageName}.
                     </p>
                 </td>
             </tr>
@@ -45,6 +45,5 @@
     </td>
 </tr>
 <!-- end body section -->
-
 {/content-body}
 {/include}
