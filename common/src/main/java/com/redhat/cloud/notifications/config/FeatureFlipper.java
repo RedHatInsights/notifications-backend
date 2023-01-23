@@ -73,6 +73,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-ansible-email-templates-v2.enabled", defaultValue = "false")
     boolean ansibleEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-cost-management-email-templates-v2.enabled", defaultValue = "false")
+    boolean costManagementEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -86,6 +89,7 @@ public class FeatureFlipper {
         Log.infof("The Policies's email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Compliance's email templates V2 are %s", complianceEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Ansible's email templates V2 are %s", ansibleEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Cost management's email templates V2 are %s", costManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -174,6 +178,14 @@ public class FeatureFlipper {
 
     public void setAnsibleEmailTemplatesV2Enabled(boolean ansibleEmailTemplatesV2Enabled) {
         this.ansibleEmailTemplatesV2Enabled = ansibleEmailTemplatesV2Enabled;
+    }
+
+    public boolean isCostManagementEmailTemplatesV2Enabled() {
+        return costManagementEmailTemplatesV2Enabled;
+    }
+
+    public void setCostManagementEmailTemplatesV2Enabled(boolean costManagementEmailTemplatesV2Enabled) {
+        this.costManagementEmailTemplatesV2Enabled = costManagementEmailTemplatesV2Enabled;
     }
 
     /**

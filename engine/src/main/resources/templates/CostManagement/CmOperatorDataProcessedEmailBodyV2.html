@@ -1,0 +1,17 @@
+{@boolean renderSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Cost Management - OpenShift
+{/content-title}
+{#content-title-section1}
+    Cost Management has processed data
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Cost Management has completed processing for OpenShift source {action.context.source_name}.
+    </p>
+    <p>
+        Please visit <a href="{environment.url}/openshift/cost-management/ocp/"> to see your processed data in the available dashboards. </a>
+    </p>
+{/content-body-section1}
+{/include}

@@ -1,0 +1,17 @@
+{@boolean renderSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Cost Management - OpenShift
+{/content-title}
+{#content-title-section1}
+    Missing Cost Model
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        OpenShift source {action.context.source_name} has no assigned cost model.
+    </p>
+    <p>
+        Please go to the <a href="{environment.url}/openshift/cost-management/cost-models/">Cost Models page</a> and assign your source to a cost model.
+    </p>
+{/content-body-section1}
+{/include}
