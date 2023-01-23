@@ -6,8 +6,8 @@ package com.redhat.cloud.notifications.openbridge;
 public class BridgeAuth {
     private final String token;
 
-    public BridgeAuth(String tmp) {
-        token = tmp;
+    public BridgeAuth(String token) {
+        this.token = token;
     }
 
     /**
