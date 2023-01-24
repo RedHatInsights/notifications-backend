@@ -15,6 +15,7 @@ import javax.inject.Inject;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -47,13 +48,15 @@ public class BehaviorGroupCleanupResourceTest extends DbIsolatedTest {
 
         Header header = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
 
-        given()
+        String responseBody = given()
                 .header(header)
                 .pathParam("orgId", "org-1")
                 .when()
                 .put("/internal/behavior-group-cleanup/{orgId}/initiate")
                 .then()
-                .statusCode(204);
+                .statusCode(200)
+                .extract().asString();
+        assertTrue(responseBody.startsWith("If you are not sure of what you are doing, STOP NOW!"));
 
         String count = given()
                 .header(header)
@@ -71,7 +74,7 @@ public class BehaviorGroupCleanupResourceTest extends DbIsolatedTest {
                 .when()
                 .put("/internal/behavior-group-cleanup/{orgId}/initiate")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         count = given()
                 .header(header)
@@ -94,7 +97,7 @@ public class BehaviorGroupCleanupResourceTest extends DbIsolatedTest {
                 .when()
                 .put("/internal/behavior-group-cleanup/{orgId}/initiate")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
 
         Thread.sleep(61000);
 

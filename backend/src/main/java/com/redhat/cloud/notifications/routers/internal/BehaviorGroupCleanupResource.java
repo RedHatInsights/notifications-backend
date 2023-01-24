@@ -39,12 +39,14 @@ public class BehaviorGroupCleanupResource {
 
     @PUT
     @Path("/{orgId}/initiate")
-    public void initiate(@RestPath String orgId) {
-        Log.warnf("If you are not sure of what you are doing, STOP NOW! " +
+    public String initiate(@RestPath String orgId) {
+        String msg = String.format("If you are not sure of what you are doing, STOP NOW! " +
                 "Behavior groups cleanup is enabled for 1 minute for orgId=%s. " +
                 "Nothing has been deleted yet from the DB. " +
                 "Call the confirmation endpoint to delete all behavior groups from orgId=%s.", orgId, orgId);
+        Log.warn(msg);
         cache.put(orgId, DUMMY_CACHE_VALUE);
+        return msg;
     }
 
     @PUT
