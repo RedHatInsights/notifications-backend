@@ -63,6 +63,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-sources-secrets-backend", defaultValue = "false")
     boolean sourcesSecretsBackend;
 
+    @ConfigProperty(name = "notifications.use-rbac-for-fetching-users", defaultValue = "false")
+    boolean useRbacForFetchingUsers;
+
     @ConfigProperty(name = "notifications.use-policies-email-templates-v2.enabled", defaultValue = "false")
     boolean policiesEmailTemplatesV2Enabled;
 
@@ -86,6 +89,7 @@ public class FeatureFlipper {
         Log.infof("The use of templates from database is %s", useTemplatesFromDb ? "enabled" : "disabled");
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
+        Log.infof("The use of rbac for fetching users is %s", useRbacForFetchingUsers ? "enabled" : "disabled");
         Log.infof("The Policies's email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Compliance's email templates V2 are %s", complianceEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Ansible's email templates V2 are %s", ansibleEmailTemplatesV2Enabled ? "enabled" : "disabled");
@@ -157,6 +161,15 @@ public class FeatureFlipper {
      */
     public boolean isSourcesUsedAsSecretsBackend() {
         return this.sourcesSecretsBackend;
+    }
+
+    public boolean isUseRbacForFetchingUsers() {
+        return this.useRbacForFetchingUsers;
+    }
+
+    public void setUseRbacForFetchingUsers(boolean useRbacForFetchingUsers) {
+        checkTestLaunchMode();
+        this.useRbacForFetchingUsers = useRbacForFetchingUsers;
     }
 
     public boolean isPoliciesEmailTemplatesV2Enabled() {

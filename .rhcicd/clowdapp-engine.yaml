@@ -104,6 +104,8 @@ objects:
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
+        - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
+          value: ${NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS}
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
           valueFrom:
             secretKeyRef:
@@ -330,4 +332,7 @@ parameters:
 - name: NOTIFICATIONS_USE_ANSIBLE_EMAIL_TEMPLATES_V2_ENABLED
   value: "false"
 - name: NOTIFICATIONS_USE_COST_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
+  description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
   value: "false"

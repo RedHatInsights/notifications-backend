@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
@@ -50,6 +51,9 @@ public class RbacRecipientUsersProvider {
     @Inject
     @RestClient
     ITUserService itUserService;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
@@ -121,20 +125,25 @@ public class RbacRecipientUsersProvider {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
-        List<ITUserResponse> usersPaging;
-        List<ITUserResponse> usersTotal = new ArrayList<>();
+        if (featureFlipper.isUseRbacForFetchingUsers()) {
+            users = getWithPagination(
+                    page -> retryOnRbacError(() -> rbacServiceToService.getUsers(orgId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)));
+        } else {
+            List<ITUserResponse> usersPaging;
+            List<ITUserResponse> usersTotal = new ArrayList<>();
 
-        int firstResult = 0;
+            int firstResult = 0;
 
-        do {
-            ITUserRequest request = new ITUserRequest(orgId, adminsOnly, firstResult, maxResultsPerPage);
-            usersPaging = retryOnItError(() -> itUserService.getUsers(request));
-            usersTotal.addAll(usersPaging);
+            do {
+                ITUserRequest request = new ITUserRequest(orgId, adminsOnly, firstResult, maxResultsPerPage);
+                usersPaging = retryOnItError(() -> itUserService.getUsers(request));
+                usersTotal.addAll(usersPaging);
 
-            firstResult += maxResultsPerPage;
-        } while (usersPaging.size() == maxResultsPerPage);
+                firstResult += maxResultsPerPage;
+            } while (usersPaging.size() == maxResultsPerPage);
 
-        users = transformToUser(usersTotal);
+            users = transformToUser(usersTotal);
+        }
 
         // Micrometer doesn't like when tags are null and throws a NPE.
         String orgIdTag = orgId == null ? "" : orgId;
