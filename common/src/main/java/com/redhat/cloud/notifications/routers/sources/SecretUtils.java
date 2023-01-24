@@ -10,6 +10,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.UUID;
 
 @ApplicationScoped
 public class SecretUtils {
@@ -33,8 +34,13 @@ public class SecretUtils {
 
             final Long basicAuthSourcesId = props.getBasicAuthenticationSourcesId();
             if (basicAuthSourcesId != null) {
+                final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId());
+
+                // Log the org ID and the contents of the x-rh-identity header we are about to send.
+                Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpoint.getId(), endpoint.getOrgId(), xRhIdentityContents);
+
                 final Secret secret = this.sourcesService.getById(
-                    XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId()),
+                    xRhIdentityContents,
                     basicAuthSourcesId
                 );
 
@@ -48,8 +54,13 @@ public class SecretUtils {
 
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
             if (secretTokenSourcesId != null) {
+                final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId());
+
+                // Log the org ID and the contents of the x-rh-identity header we are about to send.
+                Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpoint.getId(), endpoint.getOrgId(), xRhIdentityContents);
+
                 final Secret secret = this.sourcesService.getById(
-                    XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId()),
+                    xRhIdentityContents,
                     secretTokenSourcesId
                 );
 
@@ -70,7 +81,7 @@ public class SecretUtils {
 
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
             if (!this.isBasicAuthNullOrBlank(basicAuth)) {
-                final long id = this.createBasicAuthentication(endpoint.getOrgId(), basicAuth);
+                final long id = this.createBasicAuthentication(endpoint.getId(), endpoint.getOrgId(), basicAuth);
 
                 Log.infof("[secret_id: %s] Basic authentication secret created in Sources", id);
 
@@ -79,7 +90,7 @@ public class SecretUtils {
 
             final String secretToken = props.getSecretToken();
             if (secretToken != null && !secretToken.isBlank()) {
-                final long id = this.createSecretTokenSecret(endpoint.getOrgId(), secretToken);
+                final long id = this.createSecretTokenSecret(endpoint.getId(), endpoint.getOrgId(), secretToken);
 
                 Log.infof("[secret_id: %s] Secret token secret created in Sources", id);
 
@@ -112,8 +123,13 @@ public class SecretUtils {
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
+                    final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId());
+
+                    // Log the org ID and the contents of the x-rh-identity header we are about to send.
+                    Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpoint.getId(), endpoint.getOrgId(), xRhIdentityContents);
+
                     this.sourcesService.delete(
-                        XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId()),
+                        xRhIdentityContents,
                         basicAuthId
                     );
                     Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
@@ -125,8 +141,13 @@ public class SecretUtils {
                     secret.password = basicAuth.getPassword();
                     secret.username = basicAuth.getUsername();
 
+                    final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId());
+
+                    // Log the org ID and the contents of the x-rh-identity header we are about to send.
+                    Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpoint.getId(), endpoint.getOrgId(), xRhIdentityContents);
+
                     this.sourcesService.update(
-                        XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId()),
+                        xRhIdentityContents,
                         basicAuthId,
                         secret
                     );
@@ -136,7 +157,7 @@ public class SecretUtils {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
                     Log.debugf("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
                 } else {
-                    final long id = this.createBasicAuthentication(endpoint.getOrgId(), basicAuth);
+                    final long id = this.createBasicAuthentication(endpoint.getId(), endpoint.getOrgId(), basicAuth);
                     Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
 
                     props.setBasicAuthenticationSourcesId(id);
@@ -147,8 +168,13 @@ public class SecretUtils {
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
                 if (secretToken == null || secretToken.isBlank()) {
+                    final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId());
+
+                    // Log the org ID and the contents of the x-rh-identity header we are about to send.
+                    Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpoint.getId(), endpoint.getOrgId(), xRhIdentityContents);
+
                     this.sourcesService.delete(
-                        XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId()),
+                        xRhIdentityContents,
                         secretTokenId
                     );
 
@@ -160,8 +186,13 @@ public class SecretUtils {
 
                     secret.password = secretToken;
 
+                    final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId());
+
+                    // Log the org ID and the contents of the x-rh-identity header we are about to send.
+                    Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpoint.getId(), endpoint.getOrgId(), xRhIdentityContents);
+
                     this.sourcesService.update(
-                        XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId()),
+                        xRhIdentityContents,
                         secretTokenId,
                         secret
                     );
@@ -171,7 +202,7 @@ public class SecretUtils {
                 if (secretToken == null || secretToken.isBlank()) {
                     Log.debugf("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null or blank", endpoint.getId());
                 } else {
-                    final long id = this.createSecretTokenSecret(endpoint.getOrgId(), secretToken);
+                    final long id = this.createSecretTokenSecret(endpoint.getId(), endpoint.getOrgId(), secretToken);
 
                     Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources during an endpoint update operation", endpoint.getId(), id);
 
@@ -194,8 +225,13 @@ public class SecretUtils {
 
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
+                final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId());
+
+                // Log the org ID and the contents of the x-rh-identity header we are about to send.
+                Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpoint.getId(), endpoint.getOrgId(), xRhIdentityContents);
+
                 this.sourcesService.delete(
-                    XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId()),
+                    xRhIdentityContents,
                     basicAuthId
                 );
                 Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
@@ -203,8 +239,13 @@ public class SecretUtils {
 
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
+                final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId());
+
+                // Log the org ID and the contents of the x-rh-identity header we are about to send.
+                Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpoint.getId(), endpoint.getOrgId(), xRhIdentityContents);
+
                 this.sourcesService.delete(
-                    XRhIdentityUtils.generateEncodedXRhIdentity(endpoint.getOrgId()),
+                    xRhIdentityContents,
                     secretTokenId
                 );
                 Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
@@ -214,19 +255,25 @@ public class SecretUtils {
 
     /**
      * Creates a "basic authentication" secret in Sources.
+     * @param endpointId the endpoint's ID that will be simply logged.
      * @param orgId the organization ID for the x-rh-identity header's contents.
      * @param basicAuthentication the contents of the "basic authentication" secret.
      * @return the id of the created secret.
      */
-    private long createBasicAuthentication(final String orgId, final BasicAuthentication basicAuthentication) {
+    private long createBasicAuthentication(final UUID endpointId, final String orgId, final BasicAuthentication basicAuthentication) {
         Secret secret = new Secret();
 
         secret.authenticationType = Secret.TYPE_BASIC_AUTH;
         secret.password = basicAuthentication.getPassword();
         secret.username = basicAuthentication.getUsername();
 
+        final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Log the org ID and the contents of the x-rh-identity header we are about to send.
+        Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpointId, orgId, xRhIdentityContents);
+
         final Secret createdSecret = this.sourcesService.create(
-            XRhIdentityUtils.generateEncodedXRhIdentity(orgId),
+            xRhIdentityContents,
             secret
         );
 
@@ -235,18 +282,24 @@ public class SecretUtils {
 
     /**
      * Creates a "secret token" secret in Sources.
+     * @param endpointId the endpoint's ID that will be simply logged.
      * @param orgId the organization ID for the x-rh-identity header's contents.
      * @param secretToken the "secret token"'s contents.
      * @return the id of the created secret.
      */
-    private long createSecretTokenSecret(final String orgId, final String secretToken) {
+    private long createSecretTokenSecret(final UUID endpointId, final String orgId, final String secretToken) {
         Secret secret = new Secret();
 
         secret.authenticationType = Secret.TYPE_SECRET_TOKEN;
         secret.password = secretToken;
 
+        final String xRhIdentityContents = XRhIdentityUtils.generateEncodedXRhIdentity(orgId);
+
+        // Log the org ID and the contents of the x-rh-identity header we are about to send.
+        Log.debugf("[endpoint_id: %s][org_id: %s] the encoded x-rh-identity contents are '%s'", endpointId, orgId, xRhIdentityContents);
+
         final Secret createdSecret = this.sourcesService.create(
-            XRhIdentityUtils.generateEncodedXRhIdentity(orgId),
+            xRhIdentityContents,
             secret
         );
 
