@@ -1,0 +1,1 @@
+Instant notification - Red Hat removed a role from platform default access group - Rbac - Console

@@ -1,0 +1,21 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Rbac - Console
+{/content-title}
+{#content-title-section1}
+    Rbac role change
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Red Hat has updated the role <b>{action.events[0].payload.name}</b>.
+    </p>
+    <p>
+        The role does not belong to the platform default access group.
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/settings/rbac/roles/detail/{action.events[0].payload.uuid}">Check the updated role in Insights</a>
+{/content-button-section1}
+{/include}

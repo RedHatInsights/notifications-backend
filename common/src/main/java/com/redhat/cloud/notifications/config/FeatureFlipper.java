@@ -78,6 +78,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-cost-management-email-templates-v2.enabled", defaultValue = "false")
     boolean costManagementEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-rbac-email-templates-v2.enabled", defaultValue = "false")
+    boolean rbacEmailTemplatesV2Enabled;
+
     @ConfigProperty(name = "notifications.emails-only-mode.enabled", defaultValue = "false")
     boolean emailsOnlyMode;
 
@@ -137,6 +140,7 @@ public class FeatureFlipper {
         Log.infof("The Resource optimization's email templates V2 are %s", resourceOptimizationManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Vulnerability's email templates V2 are %s", vulnerabilityEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Rhosak's email templates V2 are %s", rhosakEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Cost management's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -343,6 +347,15 @@ public class FeatureFlipper {
     public void setRhosakEmailTemplatesV2Enabled(boolean rhosakEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.rhosakEmailTemplatesV2Enabled = rhosakEmailTemplatesV2Enabled;
+    }
+
+    public boolean isRbacEmailTemplatesV2Enabled() {
+        return rbacEmailTemplatesV2Enabled;
+    }
+
+    public void setRbacEmailTemplatesV2Enabled(boolean rbacEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
+        this.rbacEmailTemplatesV2Enabled = rbacEmailTemplatesV2Enabled;
     }
 
     /**

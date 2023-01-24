@@ -1,0 +1,18 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Rbac - Console
+{/content-title}
+{#content-title-section1}
+    Rbac platform group Notification
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Platform default group is modified by {action.events[0].payload.username} and the Red Hat will not be responsible for managing it from now on.
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/settings/rbac/groups/detail/{action.events[0].payload.uuid}">Check custom platform default group in Insights</a>
+{/content-button-section1}
+{/include}
