@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestRbacTemplate {
 
-    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = true;
+    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
 
     @Inject
     Environment environment;
