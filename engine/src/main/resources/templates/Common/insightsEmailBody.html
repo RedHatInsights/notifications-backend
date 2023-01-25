@@ -176,6 +176,16 @@
             font-weight: 500;
         }
 
+        .rh-masthead__incident_section__head {
+            background-color: #C9190B !important;
+            padding: 16px 22px 16px 22px;
+            color: #ffffff !important;
+            font-size: 20px;
+            text-align: left;
+            font-family: 'Red Hat Display', sans-serif;
+            font-weight: 500;
+        }
+
         .rh-masthead__section__head__subtitle {
             font-size: 16px;
             font-family: 'Red Hat Text', sans-serif;
@@ -404,12 +414,18 @@
                                         <td>
                                             <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                                 <tr>
-                                                    <td class="rh-masthead__section__head">
+                                                    {#if renderSection1AsIncident.or(false)}
+                                                        <td class="rh-masthead__incident_section__head" style="width: 10%;">
+                                                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/lightning-bolt-light.png" alt="" width="30">
+                                                        </td>
+                                                    {/if}
+
+                                                    <td {#if renderSection1AsIncident.or(false)} class="rh-masthead__incident_section__head" style="padding: 0px;"{#else} class="rh-masthead__section__head"{/if}>
                                                         <p>{#insert content-title-section1}{/}<br/>
                                                             <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section1}{/}</span>
                                                         </p>
                                                     </td>
-                                                    <td class="rh-masthead__section__head">
+                                                    <td {#if renderSection1AsIncident.or(false)} class="rh-masthead__incident_section__head" {#else} class="rh-masthead__section__head" {/if}>
                                                         <p><span class="rh-masthead__section__head__counter">{#insert content-title-right-part-section1}{/}</span>
                                                     </td>
                                                 </tr>

@@ -96,6 +96,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-inventory-email-templates-v2.enabled", defaultValue = "false")
     boolean inventoryEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-malware-email-templates-v2.enabled", defaultValue = "false")
+    boolean malwareEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -117,6 +120,7 @@ public class FeatureFlipper {
         Log.infof("The Drift's email templates V2 are %s", driftEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Sources' email templates V2 are %s", sourcesEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Inventory's email templates V2 are %s", inventoryEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Malware's email templates V2 are %s", malwareEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -275,6 +279,14 @@ public class FeatureFlipper {
     public void setInventoryEmailTemplatesV2Enabled(boolean inventoryEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.inventoryEmailTemplatesV2Enabled = inventoryEmailTemplatesV2Enabled;
+    }
+
+    public boolean isMalwareEmailTemplatesV2Enabled() {
+        return malwareEmailTemplatesV2Enabled;
+    }
+
+    public void setMalwareEmailTemplatesV2Enabled(boolean malwareEmailTemplatesV2Enabled) {
+        this.malwareEmailTemplatesV2Enabled = malwareEmailTemplatesV2Enabled;
     }
 
     /**
