@@ -41,7 +41,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @ApplicationScoped
 public class CamelTypeProcessor extends EndpointTypeProcessor {
 
-    public static final String TOCAMEL_CHANNEL = "toCamel";
+    public static final String TOCAMEL_CHANNEL = "tocamel";
     public static final String PROCESSED_COUNTER_NAME = "processor.camel.processed";
     public static final String TOKEN_HEADER = "X-Insight-Token";
     public static final String NOTIF_METADATA_KEY = "notif-metadata";

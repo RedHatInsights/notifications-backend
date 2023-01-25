@@ -38,7 +38,7 @@ import java.util.UUID;
 @ApplicationScoped
 public class FromCamelHistoryFiller {
 
-    public static final String FROMCAMEL_CHANNEL = "fromCamel";
+    public static final String FROMCAMEL_CHANNEL = "fromcamel";
     public static final String MESSAGES_ERROR_COUNTER_NAME = "camel.messages.error";
     public static final String MESSAGES_PROCESSED_COUNTER_NAME = "camel.messages.processed";
     public static final String EGRESS_CHANNEL = "egress";
