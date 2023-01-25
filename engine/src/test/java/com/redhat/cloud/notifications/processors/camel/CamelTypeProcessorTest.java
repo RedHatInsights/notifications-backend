@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
@@ -152,6 +153,9 @@ class CamelTypeProcessorTest {
      */
     @Inject
     Environment environment;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @BeforeEach
     void beforeEach() {
@@ -480,6 +484,32 @@ class CamelTypeProcessorTest {
 
         // Clear also the RHOSE endpoints for this test.
         MockServerConfig.clearOpenBridgeEndpoints(bridge);
+    }
+
+    @Test
+    void testEmailsOnlyModeCamelProcessor() {
+        featureFlipper.setEmailsOnlyMode(true);
+        try {
+
+            camelProcessor.process(buildEvent(), List.of(new Endpoint()));
+            micrometerAssertionHelper.assertCounterIncrement(CamelTypeProcessor.PROCESSED_COUNTER_NAME, 0);
+
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
+    }
+
+    @Test
+    void testEmailsOnlyModeRhoseProcessor() {
+        featureFlipper.setEmailsOnlyMode(true);
+        try {
+
+            rhoseProcessor.process(buildEvent(), List.of(new Endpoint()));
+            micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 0);
+
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 
     private static Event buildEvent() {
