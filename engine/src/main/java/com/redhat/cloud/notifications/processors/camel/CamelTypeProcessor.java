@@ -68,6 +68,10 @@ public class CamelTypeProcessor extends EndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
+        if (featureFlipper.isEmailsOnlyMode()) {
+            Log.warn("Skipping event processing because Notifications is running in emails only mode");
+            return;
+        }
         DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
             for (Endpoint endpoint : endpoints) {
                 try {

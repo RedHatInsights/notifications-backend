@@ -157,6 +157,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
+          value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
         - name: NOTIFICATIONS_EPHEMERAL_DATA
           valueFrom:
             configMapKeyRef:
@@ -293,6 +295,9 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
+- name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
+  description: When this is true, all integration types except emails are disabled
+  value: "false"
 - name: OB_BRIDGE_NAME
   description: The name of the bridge to use.
   value: "notifications-bridge"

@@ -45,6 +45,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.CLIENT_TAG_VALUE;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.DISABLED_WEBHOOKS_COUNTER;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.ERROR_TYPE_TAG_KEY;
+import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.SERVER_TAG_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -83,6 +84,7 @@ public class WebhookTest {
 
     @BeforeEach
     void beforeEach() {
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_COUNTER_NAME);
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY);
     }
 
@@ -277,6 +279,19 @@ public class WebhookTest {
         }
 
         featureFlipper.setDisableWebhookEndpointsOnFailure(false);
+    }
+
+    @Test
+    void testEmailsOnlyMode() {
+        featureFlipper.setEmailsOnlyMode(true);
+
+        Event event = new Event();
+        event.setAction(buildWebhookAction());
+
+        webhookTypeProcessor.process(event, List.of(new Endpoint()));
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
+
+        featureFlipper.setEmailsOnlyMode(false);
     }
 
     void persistEndpoint(Endpoint endpoint) {

@@ -98,6 +98,8 @@ objects:
           value: ${MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS}
         - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
           value: ${NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE}
+        - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
+          value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
@@ -266,6 +268,9 @@ parameters:
   description: Max age in milliseconds that an unprocessed message can be before the connector is marked as unhealthy
   value: "60000"
 - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
+  value: "false"
+- name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
+  description: When this is true, all integration types except emails are disabled
   value: "false"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications

@@ -44,6 +44,7 @@ import static com.redhat.cloud.notifications.models.NotificationHistory.getHisto
 @ApplicationScoped
 public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
+    public static final String PROCESSED_COUNTER_NAME = "processor.webhook.processed";
     public static final String DISABLED_WEBHOOKS_COUNTER = "processor.webhook.disabled.endpoints";
     public static final String ERROR_TYPE_TAG_KEY = "error_type";
     public static final String CLIENT_TAG_VALUE = "client";
@@ -100,7 +101,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     @PostConstruct
     void postConstruct() {
-        processedCount = registry.counter("processor.webhook.processed");
+        processedCount = registry.counter(PROCESSED_COUNTER_NAME);
         disabledWebhooksClientErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
         disabledWebhooksServerErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
         retryPolicy = RetryPolicy.builder()
@@ -112,6 +113,10 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
+        if (featureFlipper.isEmailsOnlyMode()) {
+            Log.warn("Skipping event processing because Notifications is running in emails only mode");
+            return;
+        }
         DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
             for (Endpoint endpoint : endpoints) {
                 try {

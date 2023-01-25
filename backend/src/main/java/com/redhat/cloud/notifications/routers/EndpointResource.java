@@ -102,6 +102,7 @@ public class EndpointResource {
     public static final String SLACK = "slack";
     public static final String SLACK_WEBHOOK_URL = "slack_webhook_url";
     public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
+    public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -223,6 +224,9 @@ public class EndpointResource {
     @Transactional
     public Endpoint createEndpoint(@Context SecurityContext sec,
                                    @RequestBody(required = true) @NotNull @Valid Endpoint endpoint) {
+        if (!isEndpointTypeAllowed(endpoint.getType())) {
+            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
+        }
         checkSystemEndpoint(endpoint.getType());
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
@@ -357,6 +361,9 @@ public class EndpointResource {
     public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
+        if (!isEndpointTypeAllowed(endpointType)) {
+            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
+        }
         checkSystemEndpoint(endpointType);
 
         Endpoint ep = endpointRepository.getEndpoint(orgId, id);
@@ -397,6 +404,9 @@ public class EndpointResource {
     public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
+        if (!isEndpointTypeAllowed(endpointType)) {
+            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
+        }
         checkSystemEndpoint(endpointType);
         endpointRepository.enableEndpoint(orgId, id);
         return Response.ok().build();
@@ -410,6 +420,9 @@ public class EndpointResource {
     public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
+        if (!isEndpointTypeAllowed(endpointType)) {
+            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
+        }
         checkSystemEndpoint(endpointType);
         endpointRepository.disableEndpoint(orgId, id);
         return Response.noContent().build();
@@ -425,6 +438,9 @@ public class EndpointResource {
     public Response updateEndpoint(@Context SecurityContext sec,
                                    @PathParam("id") UUID id,
                                    @RequestBody(required = true) @NotNull @Valid Endpoint endpoint) {
+        if (!isEndpointTypeAllowed(endpoint.getType())) {
+            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
+        }
         // This prevents from updating an endpoint from whatever EndpointType to a system EndpointType
         checkSystemEndpoint(endpoint.getType());
         String accountId = getAccountId(sec);
@@ -667,5 +683,9 @@ public class EndpointResource {
                 endpoint.getType().equals(EndpointType.CAMEL) &&
                 endpoint.getSubType() != null &&
                 endpoint.getSubType().equals(SLACK);
+    }
+
+    private boolean isEndpointTypeAllowed(EndpointType endpointType) {
+        return !featureFlipper.isEmailsOnlyMode() || endpointType == EndpointType.EMAIL_SUBSCRIPTION;
     }
 }
