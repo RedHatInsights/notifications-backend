@@ -130,9 +130,9 @@ public class ApplicationRepository {
                 "JOIN et.behaviors etb " +
                 "JOIN etb.behaviorGroup.actions action " +
                 "WHERE a.bundle.id = :bundleId AND (etb.behaviorGroup.orgId is NULL OR etb.behaviorGroup.orgId = :orgId) " +
-                "AND action.id.endpointId IN (" +
-                    "SELECT e.id FROM Endpoint e JOIN EmailSubscriptionProperties props ON e.id = props.id  " +
-                    "WHERE (e.orgId is NULL OR e.orgId = :orgId) AND props.ignorePreferences = true" +
+                "AND EXISTS (" +
+                    "SELECT 1 FROM EmailSubscriptionProperties props " +
+                    "WHERE action.id.endpointId = props.id AND props.ignorePreferences = true" +
                 ")";
         return entityManager.createQuery(query, Application.class)
                 .setParameter("bundleId", bundleId)
