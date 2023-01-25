@@ -489,21 +489,27 @@ class CamelTypeProcessorTest {
     @Test
     void testEmailsOnlyModeCamelProcessor() {
         featureFlipper.setEmailsOnlyMode(true);
+        try {
 
-        camelProcessor.process(buildEvent(), List.of(new Endpoint()));
-        micrometerAssertionHelper.assertCounterIncrement(CamelTypeProcessor.PROCESSED_COUNTER_NAME, 0);
+            camelProcessor.process(buildEvent(), List.of(new Endpoint()));
+            micrometerAssertionHelper.assertCounterIncrement(CamelTypeProcessor.PROCESSED_COUNTER_NAME, 0);
 
-        featureFlipper.setEmailsOnlyMode(false);
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 
     @Test
     void testEmailsOnlyModeRhoseProcessor() {
         featureFlipper.setEmailsOnlyMode(true);
+        try {
 
-        rhoseProcessor.process(buildEvent(), List.of(new Endpoint()));
-        micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 0);
+            rhoseProcessor.process(buildEvent(), List.of(new Endpoint()));
+            micrometerAssertionHelper.assertCounterIncrement(RhoseTypeProcessor.PROCESSED_COUNTER_NAME, 0);
 
-        featureFlipper.setEmailsOnlyMode(false);
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 
     private static Event buildEvent() {

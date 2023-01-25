@@ -42,129 +42,144 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
     @Test
     void testCreateUnsupportedEndpointType() {
         featureFlipper.setEmailsOnlyMode(true);
+        try {
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
+            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        Endpoint endpoint = new Endpoint();
-        endpoint.setType(WEBHOOK);
-        endpoint.setName("name");
-        endpoint.setDescription("description");
+            Endpoint endpoint = new Endpoint();
+            endpoint.setType(WEBHOOK);
+            endpoint.setName("name");
+            endpoint.setDescription("description");
 
-        String responseBody = given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(endpoint))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .extract().asString();
-        assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
+            String responseBody = given()
+                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(endpoint))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(400)
+                    .extract().asString();
+            assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
 
-        featureFlipper.setEmailsOnlyMode(false);
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 
     @Test
     void testUpdateUnsupportedEndpointType() {
         featureFlipper.setEmailsOnlyMode(true);
+        try {
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
+            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        Endpoint endpoint = new Endpoint();
-        endpoint.setType(WEBHOOK);
-        endpoint.setName("name");
-        endpoint.setDescription("description");
+            Endpoint endpoint = new Endpoint();
+            endpoint.setType(WEBHOOK);
+            endpoint.setName("name");
+            endpoint.setDescription("description");
 
-        String responseBody = given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("id", UUID.randomUUID().toString())
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(endpoint))
-                .put("/endpoints/{id}")
-                .then()
-                .statusCode(400)
-                .extract().asString();
-        assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
+            String responseBody = given()
+                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .header(identityHeader)
+                    .pathParam("id", UUID.randomUUID().toString())
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(endpoint))
+                    .put("/endpoints/{id}")
+                    .then()
+                    .statusCode(400)
+                    .extract().asString();
+            assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
 
-        featureFlipper.setEmailsOnlyMode(false);
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 
     @Test
     void testDeleteUnsupportedEndpointType() {
         featureFlipper.setEmailsOnlyMode(true);
+        try {
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
+            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
+            when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
 
-        String responseBody = given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("id", UUID.randomUUID().toString())
-                .when()
-                .delete("/endpoints/{id}")
-                .then()
-                .statusCode(400)
-                .extract().asString();
-        assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
+            String responseBody = given()
+                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .header(identityHeader)
+                    .pathParam("id", UUID.randomUUID().toString())
+                    .when()
+                    .delete("/endpoints/{id}")
+                    .then()
+                    .statusCode(400)
+                    .extract().asString();
+            assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
 
-        featureFlipper.setEmailsOnlyMode(false);
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 
     @Test
     void testEnableUnsupportedEndpointType() {
         featureFlipper.setEmailsOnlyMode(true);
+        try {
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
+            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
+            when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
 
-        String responseBody = given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("id", UUID.randomUUID().toString())
-                .when()
-                .put("/endpoints/{id}/enable")
-                .then()
-                .statusCode(400)
-                .extract().asString();
-        assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
+            String responseBody = given()
+                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .header(identityHeader)
+                    .pathParam("id", UUID.randomUUID().toString())
+                    .when()
+                    .put("/endpoints/{id}/enable")
+                    .then()
+                    .statusCode(400)
+                    .extract().asString();
+            assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
 
-        featureFlipper.setEmailsOnlyMode(false);
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 
     @Test
     void testDisableUnsupportedEndpointType() {
         featureFlipper.setEmailsOnlyMode(true);
+        try {
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "username");
+            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
+            when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
 
-        String responseBody = given()
-                .basePath(API_INTEGRATIONS_V_1_0)
-                .header(identityHeader)
-                .pathParam("id", UUID.randomUUID().toString())
-                .when()
-                .delete("/endpoints/{id}/enable")
-                .then()
-                .statusCode(400)
-                .extract().asString();
-        assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
+            String responseBody = given()
+                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .header(identityHeader)
+                    .pathParam("id", UUID.randomUUID().toString())
+                    .when()
+                    .delete("/endpoints/{id}/enable")
+                    .then()
+                    .statusCode(400)
+                    .extract().asString();
+            assertEquals(UNSUPPORTED_ENDPOINT_TYPE, responseBody);
 
-        featureFlipper.setEmailsOnlyMode(false);
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 }

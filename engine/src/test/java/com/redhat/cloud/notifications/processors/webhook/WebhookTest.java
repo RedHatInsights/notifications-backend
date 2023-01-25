@@ -284,14 +284,17 @@ public class WebhookTest {
     @Test
     void testEmailsOnlyMode() {
         featureFlipper.setEmailsOnlyMode(true);
+        try {
 
-        Event event = new Event();
-        event.setAction(buildWebhookAction());
+            Event event = new Event();
+            event.setAction(buildWebhookAction());
 
-        webhookTypeProcessor.process(event, List.of(new Endpoint()));
-        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
+            webhookTypeProcessor.process(event, List.of(new Endpoint()));
+            micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
 
-        featureFlipper.setEmailsOnlyMode(false);
+        } finally {
+            featureFlipper.setEmailsOnlyMode(false);
+        }
     }
 
     void persistEndpoint(Endpoint endpoint) {
