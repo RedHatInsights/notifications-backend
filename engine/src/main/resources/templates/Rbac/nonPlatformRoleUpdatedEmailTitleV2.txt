@@ -1,1 +1,1 @@
-Instant notification - Role updated by Red Hat - Rbac - Console
+Instant notification - Role updated by Red Hat - User Access - Console

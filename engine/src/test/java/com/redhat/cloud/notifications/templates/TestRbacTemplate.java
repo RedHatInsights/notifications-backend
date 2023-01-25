@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestRbacTemplate {
 
-    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
+    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = true;
 
     @Inject
     Environment environment;
@@ -81,91 +81,91 @@ public class TestRbacTemplate {
         switch (eventType) {
             case RH_NEW_ROLE_AVAILABLE:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Red Hat now provides a new role - Rbac - Console", result);
+                    assertEquals("Instant notification - Red Hat now provides a new role - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Red Hat now provides a new role"));
                 }
                 break;
             case RH_PLATFORM_DEFAULT_ROLE_UPDATED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Platform default role updated by Red Hat - Rbac - Console", result);
+                    assertEquals("Instant notification - Platform default role updated by Red Hat - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Red Hat has updated the platform default role"));
                 }
                 break;
             case RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Role updated by Red Hat - Rbac - Console", result);
+                    assertEquals("Instant notification - Role updated by Red Hat - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Red Hat has updated the role"));
                 }
                 break;
             case CUSTOM_ROLE_CREATED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Custom role created - Rbac - Console", result);
+                    assertEquals("Instant notification - Custom role created - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("A new custom role testRoleName has been created"));
                 }
                 break;
             case CUSTOM_ROLE_UPDATED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Custom role updated - Rbac - Console", result);
+                    assertEquals("Instant notification - Custom role updated - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Custom role testRoleName has been updated"));
                 }
                 break;
             case CUSTOM_ROLE_DELETED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Custom role deleted - Rbac - Console", result);
+                    assertEquals("Instant notification - Custom role deleted - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Custom role testRoleName has been deleted"));
                 }
                 break;
             case RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Red Hat added a role to platform default access group - Rbac - Console", result);
+                    assertEquals("Instant notification - Red Hat added a role to platform default access group - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Red Hat added a role myRole to platform default access group"));
                 }
                 break;
             case RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Red Hat removed a role from platform default access group - Rbac - Console", result);
+                    assertEquals("Instant notification - Red Hat removed a role from platform default access group - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Red Hat removed a role myRole from platform default access group"));
                 }
                 break;
             case CUSTOM_DEFAULT_ACCESS_UPDATED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Custom platform access group updated - Rbac - Console", result);
+                    assertEquals("Instant notification - Custom platform access group updated - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Custom platform access group testRoleName has been updated."));
                 }
                 break;
             case GROUP_CREATED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Custom group created - Rbac - Console", result);
+                    assertEquals("Instant notification - Custom group created - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Custom group testRoleName has been created"));
                 }
                 break;
             case GROUP_UPDATED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Custom group updated - Rbac - Console", result);
+                    assertEquals("Instant notification - Custom group updated - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Custom group testRoleName has been updated"));
                 }
                 break;
             case GROUP_DELETED:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Custom group deleted - Rbac - Console", result);
+                    assertEquals("Instant notification - Custom group deleted - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Custom group testRoleName has been deleted"));
                 }
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
-                    assertEquals("Instant notification - Platform default group is turned into custom - Rbac - Console", result);
+                    assertEquals("Instant notification - Platform default group is turned into custom - User Access - Console", result);
                 } else {
                     assertTrue(result.contains("Platform default group is turned into custom"));
                 }
