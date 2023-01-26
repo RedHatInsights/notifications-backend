@@ -273,6 +273,7 @@ public class FeatureFlipper {
     }
 
     public void setInventoryEmailTemplatesV2Enabled(boolean inventoryEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.inventoryEmailTemplatesV2Enabled = inventoryEmailTemplatesV2Enabled;
     }
 
