@@ -82,7 +82,7 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.emails-only-mode.enabled", defaultValue = "false")
     boolean emailsOnlyMode;
 
-    @ConfigProperty(name = "notifications.use-parch-email-templates-v2.enabled", defaultValue = "false")
+    @ConfigProperty(name = "notifications.use-patch-email-templates-v2.enabled", defaultValue = "false")
     boolean patchEmailTemplatesV2Enabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
