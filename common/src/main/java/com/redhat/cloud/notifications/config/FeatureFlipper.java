@@ -223,6 +223,7 @@ public class FeatureFlipper {
     }
 
     public void setPatchEmailTemplatesV2Enabled(boolean patchEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.patchEmailTemplatesV2Enabled = patchEmailTemplatesV2Enabled;
     }
 
