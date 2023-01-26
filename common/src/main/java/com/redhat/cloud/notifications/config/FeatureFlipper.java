@@ -286,6 +286,7 @@ public class FeatureFlipper {
     }
 
     public void setMalwareEmailTemplatesV2Enabled(boolean malwareEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.malwareEmailTemplatesV2Enabled = malwareEmailTemplatesV2Enabled;
     }
 
