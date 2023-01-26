@@ -7,16 +7,21 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.processors.email.aggregators.ResourceOptimizationPayloadAggregator;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
@@ -500,6 +505,48 @@ public class TestHelpers {
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;
+    }
+
+    public static Action createResourceOptimizationAction() {
+        Map<String, Object> aggregatedData = new HashMap<>();
+        aggregatedData.put(ResourceOptimizationPayloadAggregator.SYSTEMS_WITH_SUGGESTIONS, 134);
+        aggregatedData.put(ResourceOptimizationPayloadAggregator.SYSTEMS_TRIGGERED, 2);
+
+        List<Map<String, Object>> states = new ArrayList();
+        for (Map.Entry<String, Long> stateSystemCount : Map.of("IDLING", Long.valueOf(7), "UNDER_PRESSURE", Long.valueOf(4), "UNKNOWN", Long.valueOf(1)).entrySet()) {
+            Map<String, Object> state = new HashMap<>();
+            state.put(ResourceOptimizationPayloadAggregator.STATE, stateSystemCount.getKey());
+            state.put(ResourceOptimizationPayloadAggregator.SYSTEM_COUNT, stateSystemCount.getValue());
+            states.add(state);
+        }
+        aggregatedData.put(ResourceOptimizationPayloadAggregator.STATES, states);
+
+        return new Action.ActionBuilder()
+            .withBundle("rhel")
+            .withApplication("resource-optimization")
+            .withEventType("new-suggestion")
+            .withOrgId(DEFAULT_ORG_ID)
+            .withTimestamp(LocalDateTime.now())
+            .withContext(new Context.ContextBuilder()
+                .withAdditionalProperty("event_name", "New suggestion")
+                .withAdditionalProperty("systems_with_suggestions", 134)
+                .withAdditionalProperty("start_time", "2020-08-03T15:22:42.199046")
+                .withAdditionalProperty(ResourceOptimizationPayloadAggregator.AGGREGATED_DATA, aggregatedData)
+                .build()
+            )
+            .withEvents(List.of(new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(new Payload.PayloadBuilder()
+                    .withAdditionalProperty("display_name", "ros-stage-sytem")
+                    .withAdditionalProperty("inventory_id", UUID.randomUUID().toString())
+                    .withAdditionalProperty("message", "80f7e57d-a16a-4189-82af-1d68a747c8b3 has a new suggestion.")
+                    .withAdditionalProperty("previous_state", "IDLING")
+                    .withAdditionalProperty("current_state", "UNDER_PRESSURE")
+                    .build()
+                )
+                .build()
+            ))
+            .build();
     }
 
     public static void writeEmailTemplate(String result, String fileName) {

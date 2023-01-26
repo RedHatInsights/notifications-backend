@@ -102,6 +102,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-edge-management-email-templates-v2.enabled", defaultValue = "false")
     boolean edgeManagementEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-resource-optimization-email-templates-v2.enabled", defaultValue = "false")
+    boolean resourceOptimizationManagementEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -113,7 +116,7 @@ public class FeatureFlipper {
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
         Log.infof("The use of rbac for fetching users is %s", useRbacForFetchingUsers ? "enabled" : "disabled");
-        Log.infof("The Policies's email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Policies' email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Compliance's email templates V2 are %s", complianceEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Ansible's email templates V2 are %s", ansibleEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Cost management's email templates V2 are %s", costManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
@@ -125,6 +128,7 @@ public class FeatureFlipper {
         Log.infof("The Inventory's email templates V2 are %s", inventoryEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Malware's email templates V2 are %s", malwareEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Edge management's email templates V2 are %s", edgeManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Resource optimization's email templates V2 are %s", resourceOptimizationManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -212,6 +216,7 @@ public class FeatureFlipper {
     }
 
     public void setComplianceEmailTemplatesV2Enabled(boolean complianceEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.complianceEmailTemplatesV2Enabled = complianceEmailTemplatesV2Enabled;
     }
 
@@ -220,6 +225,7 @@ public class FeatureFlipper {
     }
 
     public void setAnsibleEmailTemplatesV2Enabled(boolean ansibleEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.ansibleEmailTemplatesV2Enabled = ansibleEmailTemplatesV2Enabled;
     }
 
@@ -228,6 +234,7 @@ public class FeatureFlipper {
     }
 
     public void setCostManagementEmailTemplatesV2Enabled(boolean costManagementEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.costManagementEmailTemplatesV2Enabled = costManagementEmailTemplatesV2Enabled;
     }
 
@@ -301,6 +308,15 @@ public class FeatureFlipper {
     public void setEdgeManagementEmailTemplatesV2Enabled(boolean edgeManagementEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.edgeManagementEmailTemplatesV2Enabled = edgeManagementEmailTemplatesV2Enabled;
+    }
+
+    public boolean isResourceOptimizationManagementEmailTemplatesV2Enabled() {
+        return resourceOptimizationManagementEmailTemplatesV2Enabled;
+    }
+
+    public void setResourceOptimizationManagementEmailTemplatesV2Enabled(boolean resourceOptimizationManagementEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
+        this.resourceOptimizationManagementEmailTemplatesV2Enabled = resourceOptimizationManagementEmailTemplatesV2Enabled;
     }
 
     /**

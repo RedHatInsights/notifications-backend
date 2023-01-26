@@ -69,6 +69,9 @@ public class EmailTemplateFactory {
     @Inject
     EdgeManagement edgeManagement;
 
+    @Inject
+    ResourceOptimization resourceOptimization;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -99,7 +102,7 @@ public class EmailTemplateFactory {
                 case INVENTORY:
                     return inventory;
                 case RESOURCE_OPTIMIZATION:
-                    return new ResourceOptimization();
+                    return resourceOptimization;
                 default:
                     break;
             }
