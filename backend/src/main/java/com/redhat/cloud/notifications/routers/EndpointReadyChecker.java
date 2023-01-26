@@ -74,10 +74,11 @@ public class EndpointReadyChecker {
                 .setHint("javax.persistence.lock.timeout", SKIP_LOCKED)
                 .getResultList();
 
+        String processorId = null;
         for (Endpoint ep : endpoints) {
             try {
                 CamelProperties cp = em.find(CamelProperties.class, ep.getId()); // TODO Fetch in one go
-                String processorId = cp.getExtras().get("processorId");
+                processorId = cp.getExtras().get("processorId");
                 try {
                     Processor processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
                     String status = processor.getStatus();
@@ -105,7 +106,7 @@ public class EndpointReadyChecker {
                     }
                 }
             } catch (Exception e) {
-                Log.error("Could not retrieve the status of a RHOSE processor", e);
+                Log.errorf(e, "Could not retrieve the status of a RHOSE processor with id=%s", processorId);
             }
         }
     }
