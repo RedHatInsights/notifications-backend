@@ -247,6 +247,7 @@ public class FeatureFlipper {
     }
 
     public void setDriftEmailTemplatesV2Enabled(boolean driftEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.driftEmailTemplatesV2Enabled = driftEmailTemplatesV2Enabled;
     }
 
