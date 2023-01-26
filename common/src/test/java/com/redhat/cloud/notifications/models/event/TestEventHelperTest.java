@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models.event;
 
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -61,7 +62,7 @@ public class TestEventHelperTest {
         final Action testAction = TestEventHelper.createTestAction(UUID.randomUUID(), "random-org-id");
 
         final var testEvent = new com.redhat.cloud.notifications.models.Event();
-        testEvent.setAction(testAction);
+        testEvent.setEventWrapper(new EventWrapperAction(testAction));
 
         Assertions.assertTrue(TestEventHelper.isIntegrationTestEvent(testEvent), "the test event was not identified as such");
     }
@@ -76,7 +77,7 @@ public class TestEventHelperTest {
         nonTestAction.setBundle(null);
 
         final var nonTestEvent = new com.redhat.cloud.notifications.models.Event();
-        nonTestEvent.setAction(nonTestAction);
+        nonTestEvent.setEventWrapper(new EventWrapperAction(nonTestAction));
 
         Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
     }
@@ -91,7 +92,7 @@ public class TestEventHelperTest {
         nonTestAction.setApplication(null);
 
         final var nonTestEvent = new com.redhat.cloud.notifications.models.Event();
-        nonTestEvent.setAction(nonTestAction);
+        nonTestEvent.setEventWrapper(new EventWrapperAction(nonTestAction));
 
         Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
     }
@@ -106,7 +107,7 @@ public class TestEventHelperTest {
         nonTestAction.setEventType(null);
 
         final var nonTestEvent = new com.redhat.cloud.notifications.models.Event();
-        nonTestEvent.setAction(nonTestAction);
+        nonTestEvent.setEventWrapper(new EventWrapperAction(nonTestAction));
 
         Assertions.assertFalse(TestEventHelper.isIntegrationTestEvent(nonTestEvent), "the event should not have been identified as a test event");
     }
@@ -130,7 +131,7 @@ public class TestEventHelperTest {
         final Action rawAction = Parser.decode(jsonAction);
 
         final var testEvent = new com.redhat.cloud.notifications.models.Event();
-        testEvent.setAction(rawAction);
+        testEvent.setEventWrapper(new EventWrapperAction(rawAction));
 
         final UUID extractedUuid = TestEventHelper.extractEndpointUuidFromTestEvent(testEvent);
 

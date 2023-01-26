@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models.event;
 
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -76,9 +77,11 @@ public class TestEventHelper {
      * @return true if the event is an integration test, false otherwise.
      */
     public static boolean isIntegrationTestEvent(final com.redhat.cloud.notifications.models.Event event) {
-        return TestEventHelper.TEST_ACTION_BUNDLE.equals(event.getAction().getBundle()) &&
-                TestEventHelper.TEST_ACTION_APPLICATION.equals(event.getAction().getApplication()) &&
-                TestEventHelper.TEST_ACTION_EVENT_TYPE.equals(event.getAction().getEventType());
+        Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
+
+        return TestEventHelper.TEST_ACTION_BUNDLE.equals(action.getBundle()) &&
+                TestEventHelper.TEST_ACTION_APPLICATION.equals(action.getApplication()) &&
+                TestEventHelper.TEST_ACTION_EVENT_TYPE.equals(action.getEventType());
     }
 
     /**
@@ -88,7 +91,7 @@ public class TestEventHelper {
      * @return the extracted UUID.
      */
     public static UUID extractEndpointUuidFromTestEvent(final com.redhat.cloud.notifications.models.Event event) {
-        final Context context = event.getAction().getContext();
+        final Context context = ((EventWrapperAction) event.getEventWrapper()).getEvent().getContext();
         final Map<String, Object> contextProperties = context.getAdditionalProperties();
 
         return UUID.fromString((String) contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID));
