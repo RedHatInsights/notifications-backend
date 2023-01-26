@@ -17,7 +17,6 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationS
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
 import com.redhat.cloud.notifications.templates.TemplateEngineClient;
-import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.inject.Inject;
@@ -66,7 +65,6 @@ public class UserConfigResource {
     @Path("/notification-preference")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @Operation(hidden = true)
     @Transactional
     public Response saveSettings(@Context SecurityContext sec, @NotNull @Valid SettingsValues values) {
 
@@ -110,7 +108,6 @@ public class UserConfigResource {
     @GET
     @Path("/notification-preference/{bundleName}/{applicationName}")
     @Produces(APPLICATION_JSON)
-    @Operation(hidden = true)
     public UserConfigPreferences getPreferences(
             @Context SecurityContext sec,
             @PathParam("bundleName") String bundleName,
@@ -131,7 +128,6 @@ public class UserConfigResource {
     @GET
     @Path("/notification-preference")
     @Produces(APPLICATION_JSON)
-    @Operation(hidden = true)
     public Response getSettingsSchema(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
 
         final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
