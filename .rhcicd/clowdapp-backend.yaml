@@ -214,6 +214,11 @@ objects:
           value: ${SOURCES_ENABLED}
         - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
           value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
+        - name: SOURCES_PSK
+          valueFrom:
+            secretKeyRef:
+              name: sources-api-psk
+              key: psk
 - apiVersion: v1
   kind: ConfigMap
   metadata:

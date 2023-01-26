@@ -6,6 +6,7 @@ import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
+import javax.validation.constraints.NotBlank;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -30,6 +31,10 @@ import javax.ws.rs.core.Response;
  *     <li>If sources is using a database backend, only the {@link Secret#password} field will get encrypted.</li>
  *     <li>On the other hand, if sources is using the AWS Secrets Manager, then the whole secret will get encrypted.</li>
  * </ul>
+ *
+ * <p>The authentication to Sources works by using a service-to-service PSK that will be sent in the header that
+ * Sources expects. At the same time, the organization id will be sent so that Sources knows to which tenants belongs
+ * the operation that is going to be performed.</p>
  */
 @RegisterRestClient(configKey = "sources")
 public interface SourcesService {
@@ -37,46 +42,67 @@ public interface SourcesService {
     /**
      * Get a single secret from Sources. In this case we need to hit the internal endpoint —which is only available for
      * requests coming from inside the cluster— to be able to get the password of these secrets.
-     * @param xRhIdentity the base64 encoded x-rh-identity header contents.
+     * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
+     * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param id the secret id.
      * @return a {@link Secret} instance.
      */
     @GET
     @Path("/internal/v2.0/secrets/{id}")
     @Retry(maxRetries = 3)
-    Secret getById(@HeaderParam(Constants.X_RH_IDENTITY_HEADER) String xRhIdentity, @RestPath long id);
+    Secret getById(
+        @HeaderParam(Constants.X_RH_SOURCES_ORG_ID) @NotBlank String xRhSourcesOrgId,
+        @HeaderParam(Constants.X_RH_SOURCES_PSK) @NotBlank String xRhSourcesPsk,
+        @RestPath long id
+    );
 
     /**
      * Create a secret on the Sources backend.
-     * @param xRhIdentity the base64 encoded x-rh-identity header contents.
+     * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
+     * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param secret the {@link Secret} to be created.
      * @return the created secret.
      */
     @Path("/api/sources/v3.1/secrets")
     @POST
     @Retry(maxRetries = 3)
-    Secret create(@HeaderParam(Constants.X_RH_IDENTITY_HEADER) String xRhIdentity, Secret secret);
+    Secret create(
+        @HeaderParam(Constants.X_RH_SOURCES_ORG_ID) @NotBlank String xRhSourcesOrgId,
+        @HeaderParam(Constants.X_RH_SOURCES_PSK) @NotBlank String xRhSourcesPsk,
+        Secret secret
+    );
 
     /**
      * Update a secret on the Sources backend.
-     * @param xRhIdentity the base64 encoded x-rh-identity header contents.
+     * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
+     * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param secret the {@link Secret} to be updated.
      * @return the updated secret.
      */
     @Path("/api/sources/v3.1/secrets/{id}")
     @PATCH
     @Retry(maxRetries = 3)
-    Secret update(@HeaderParam(Constants.X_RH_IDENTITY_HEADER) String xRhIdentity, @RestPath long id, Secret secret);
+    Secret update(
+        @HeaderParam(Constants.X_RH_SOURCES_ORG_ID) @NotBlank String xRhSourcesOrgId,
+        @HeaderParam(Constants.X_RH_SOURCES_PSK) String xRhSourcesPsk,
+        @RestPath long id,
+        Secret secret
+    );
 
     /**
      * Delete a secret on the Sources backend.
-     * @param xRhIdentity the base64 encoded x-rh-identity header contents.
+     * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
+     * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param id the id of the {@link Secret} to be deleted.
      */
     @DELETE
     @Path("/api/sources/v3.1/secrets/{id}")
     @Retry(maxRetries = 3)
-    void delete(@HeaderParam(Constants.X_RH_IDENTITY_HEADER) String xRhIdentity, @RestPath long id);
+    void delete(
+        @HeaderParam(Constants.X_RH_SOURCES_ORG_ID) @NotBlank String xRhSourcesOrgId,
+        @HeaderParam(Constants.X_RH_SOURCES_PSK) String xRhSourcesPsk,
+        @RestPath long id
+    );
 
     /**
      * Throws a runtime exception with the client's response for an easier debugging.

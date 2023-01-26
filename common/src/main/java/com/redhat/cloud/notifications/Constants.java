@@ -8,4 +8,6 @@ public interface Constants {
     String API_NOTIFICATIONS_V_1_0 = "/api/notifications/v1.0";
     String API_INTERNAL = "/internal";
     String X_RH_IDENTITY_HEADER = "x-rh-identity";
+    String X_RH_SOURCES_ORG_ID = "x-rh-sources-org-id";
+    String X_RH_SOURCES_PSK = "x-rh-sources-psk";
 }
