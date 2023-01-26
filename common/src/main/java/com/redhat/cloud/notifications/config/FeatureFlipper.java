@@ -299,6 +299,7 @@ public class FeatureFlipper {
     }
 
     public void setEdgeManagementEmailTemplatesV2Enabled(boolean edgeManagementEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.edgeManagementEmailTemplatesV2Enabled = edgeManagementEmailTemplatesV2Enabled;
     }
 
