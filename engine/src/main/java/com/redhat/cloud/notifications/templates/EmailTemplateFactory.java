@@ -48,6 +48,9 @@ public class EmailTemplateFactory {
     @Inject
     CostManagement costManagement;
 
+    @Inject
+    Patch patch;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -72,7 +75,7 @@ public class EmailTemplateFactory {
                 case EDGE_MANAGEMENT:
                     return new EdgeManagement();
                 case PATCH:
-                    return new Patch();
+                    return patch;
                 case MALWARE_DETECTION:
                     return new MalwareDetection();
                 case INVENTORY:

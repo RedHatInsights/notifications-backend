@@ -82,6 +82,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.emails-only-mode.enabled", defaultValue = "false")
     boolean emailsOnlyMode;
 
+    @ConfigProperty(name = "notifications.use-parch-email-templates-v2.enabled", defaultValue = "false")
+    boolean patchEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -98,6 +101,7 @@ public class FeatureFlipper {
         Log.infof("The Ansible's email templates V2 are %s", ansibleEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Cost management's email templates V2 are %s", costManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("Emails only mode is %s", emailsOnlyMode ? "enabled" : "disabled");
+        Log.infof("The Patch's email templates V2 are %s", patchEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -212,6 +216,14 @@ public class FeatureFlipper {
     public void setEmailsOnlyMode(boolean emailsOnlyMode) {
         checkTestLaunchMode();
         this.emailsOnlyMode = emailsOnlyMode;
+    }
+
+    public boolean isPatchEmailTemplatesV2Enabled() {
+        return patchEmailTemplatesV2Enabled;
+    }
+
+    public void setPatchEmailTemplatesV2Enabled(boolean patchEmailTemplatesV2Enabled) {
+        this.patchEmailTemplatesV2Enabled = patchEmailTemplatesV2Enabled;
     }
 
     /**
