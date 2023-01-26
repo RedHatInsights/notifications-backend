@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import com.redhat.cloud.notifications.utils.CloudEventParser;
+import com.redhat.cloud.notifications.utils.ParsingException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -230,13 +231,13 @@ public class EventConsumer {
             tags.putIfAbsent(TAG_KEY_BUNDLE, action.getBundle());
             tags.putIfAbsent(TAG_KEY_APPLICATION, action.getApplication());
             return new EventWrapperAction(action);
-        } catch (RuntimeException actionParseException) {
+        } catch (ParsingException actionParseException) {
             // Try to load it as a CloudEvent
             try {
                 EventWrapperCloudEvent eventWrapperCloudEvent = new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload));
                 tags.putIfAbsent(TAG_KEY_EVENT_TYPE_FQN, eventWrapperCloudEvent.getKey().getFullyQualifiedName());
                 return eventWrapperCloudEvent;
-            } catch (RuntimeException cloudEventParseException) {
+            } catch (ParsingException cloudEventParseException) {
                 /*
                  * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
                  * is therefore considered rejected.

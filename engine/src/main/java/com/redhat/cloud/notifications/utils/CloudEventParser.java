@@ -77,12 +77,12 @@ public class CloudEventParser {
             ValidationResult result = jsonSchema.walk(cloudEvent, true);
 
             if (result.getValidationMessages().size() > 0) {
-                throw new RuntimeException("Cloud event validation failed for: " + cloudEventJson + ". Failures: " + result.getValidationMessages().toString());
+                throw new ParsingException("Cloud event validation failed for: " + cloudEventJson + ". Failures: " + result.getValidationMessages().toString());
             }
 
             return objectMapper.treeToValue(cloudEvent, ConsoleCloudEvent.class);
         } catch (JsonProcessingException jme) {
-            throw new RuntimeException("Cloud event parsing failed for: " + cloudEventJson, jme);
+            throw new ParsingException("Cloud event parsing failed for: " + cloudEventJson, jme);
         }
     }
 
