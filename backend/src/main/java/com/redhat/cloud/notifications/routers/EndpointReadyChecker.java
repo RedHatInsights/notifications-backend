@@ -74,34 +74,39 @@ public class EndpointReadyChecker {
                 .setHint("javax.persistence.lock.timeout", SKIP_LOCKED)
                 .getResultList();
 
+        String processorId = null;
         for (Endpoint ep : endpoints) {
-            CamelProperties cp = em.find(CamelProperties.class, ep.getId()); // TODO Fetch in one go
-            String processorId = cp.getExtras().get("processorId");
             try {
-                Processor processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
-                String status = processor.getStatus();
-                String statusMessage = processor.getStatus_message();
-                Log.debugf("Processor[id=%s, status=%s, status_message=%s]", processorId, status, statusMessage);
-                if ("ready".equals(status)) {
-                    ep.setStatus(EndpointStatus.READY);
+                CamelProperties cp = em.find(CamelProperties.class, ep.getId()); // TODO Fetch in one go
+                processorId = cp.getExtras().get("processorId");
+                try {
+                    Processor processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
+                    String status = processor.getStatus();
+                    String statusMessage = processor.getStatus_message();
+                    Log.debugf("Processor[id=%s, status=%s, status_message=%s]", processorId, status, statusMessage);
+                    if ("ready".equals(status)) {
+                        ep.setStatus(EndpointStatus.READY);
+                    }
+                    if ("failed".equals(status)) {
+                        ep.setStatus(EndpointStatus.FAILED);
+                    }
+                    if ("deleted".equals(status)) {
+                        em.remove(ep);
+                    }
+                } catch (WebApplicationException wae) {
+                    // 404 means that the processor could not be found - but we were deleting an endpoint.
+                    // This means is no longer there and we can finish with the delete process
+                    if (wae.getResponse().getStatus() == 404 && ep.getStatus().equals(EndpointStatus.DELETING)) {
+                        em.remove(ep);
+                    } else {
+                        String path = "GET " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
+                        rhoseErrorMetricsRecorder.record(path, wae);
+                        Log.warn("Getting data from OB failed", wae);
+                        ep.setStatus(EndpointStatus.FAILED);
+                    }
                 }
-                if ("failed".equals(status)) {
-                    ep.setStatus(EndpointStatus.FAILED);
-                }
-                if ("deleted".equals(status)) {
-                    em.remove(ep);
-                }
-            } catch (WebApplicationException wae) {
-                // 404 means that the processor could not be found - but we were deleting an endpoint.
-                // This means is no longer there and we can finish with the delete process
-                if (wae.getResponse().getStatus() == 404 && ep.getStatus().equals(EndpointStatus.DELETING)) {
-                    em.remove(ep);
-                } else {
-                    String path = "GET " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
-                    rhoseErrorMetricsRecorder.record(path, wae);
-                    Log.warn("Getting data from OB failed", wae);
-                    ep.setStatus(EndpointStatus.FAILED);
-                }
+            } catch (Exception e) {
+                Log.errorf(e, "Could not retrieve the status of a RHOSE processor with id=%s", processorId);
             }
         }
     }
