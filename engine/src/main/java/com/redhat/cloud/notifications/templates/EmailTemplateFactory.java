@@ -75,6 +75,9 @@ public class EmailTemplateFactory {
     @Inject
     Vulnerability vulnerability;
 
+    @Inject
+    Rhosak rhosak;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -117,7 +120,7 @@ public class EmailTemplateFactory {
             }
         } else if (bundle.equalsIgnoreCase(APPLICATION_SERVICES)) {
             if (application.equalsIgnoreCase(RHOSAK)) {
-                return new Rhosak();
+                return rhosak;
             }
         } else if (bundle.equalsIgnoreCase(BUNDLE_ANSIBLE)) {
             if (application.equalsIgnoreCase(APP_ANSIBLE_REPORTS)) {

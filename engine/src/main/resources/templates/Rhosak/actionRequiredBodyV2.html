@@ -1,0 +1,46 @@
+{@boolean renderSection1=true}
+{@boolean renderSection2=true}
+{@boolean renderButtonSection2=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Red Hat OpenShift Streams for Apache Kafka - Application and Data Services
+{/content-title}
+{#content-title-section1}
+    Action Required
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        This notification is for your OpenShift Streams instance{#if action.events.size() > 1}s{/if} listed below:
+    </p>
+    <p>
+        <ul>
+            {#each action.events}
+            <li style="font-size: 14px;">
+                {it.payload.name}
+            </li>
+            {/each}
+        </ul>
+    </p>
+    <p>
+        {action.context.issue_description}
+    </p>
+    <p>
+        {action.context.action_required}
+    </p>
+{/content-body-section1}
+{#content-title-section2}
+    More info
+{/content-title-section2}
+{#content-body-section2}
+    <p>
+        If you have any questions, please <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank">contact us</a>.
+        For guidance on working with Red Hat Technical Support, see our <a href="https://access.redhat.com/support/policy/support_process" target="_blank">frequently asked questions</a>.
+    </p>
+    <p>
+        Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+    </p>
+{/content-body-section2}
+{#content-button-section2}
+    <a target="_blank" href="{environment.url}/beta/application-services/streams/kafkas"> Go to Kafka Instances page</a>
+{/content-button-section2}
+{/include}
