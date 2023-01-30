@@ -57,6 +57,9 @@ public class EmailTemplateFactory {
     @Inject
     Drift drift;
 
+    @Inject
+    Sources sources;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -109,7 +112,7 @@ public class EmailTemplateFactory {
             if (application.equalsIgnoreCase(INTEGRATIONS)) {
                 return integrations;
             } else if (application.equalsIgnoreCase(SOURCES)) {
-                return new Sources();
+                return sources;
             }
             if (application.equalsIgnoreCase(RBAC)) {
                 return new Rbac();
