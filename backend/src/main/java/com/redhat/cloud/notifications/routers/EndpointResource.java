@@ -484,9 +484,11 @@ public class EndpointResource {
                 Log.error("RHOSE processor update failed", e);
                 return Response.serverError().build();
             }
-        }
 
-        endpointRepository.updateEndpoint(endpoint);
+            endpointRepository.updateEndpoint(dbEndpoint);
+        } else {
+            endpointRepository.updateEndpoint(endpoint);
+        }
 
         // Update the secrets in Sources.
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {

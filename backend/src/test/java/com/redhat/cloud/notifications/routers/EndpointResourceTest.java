@@ -46,6 +46,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,6 +63,7 @@ import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.EndpointResource.EMPTY_SLACK_CHANNEL_ERROR;
+import static com.redhat.cloud.notifications.routers.EndpointResource.OB_PROCESSOR_ID;
 import static com.redhat.cloud.notifications.routers.EndpointResource.OB_PROCESSOR_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -107,6 +109,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     EndpointRepository endpointRepository;
+
+    @Inject
+    EntityManager entityManager;
 
     /**
      * Used to verify that the "test this endpoint" payloads are sent with the
@@ -691,6 +696,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertEquals(responsePoint.getString("id"), extrasObject.getString(OB_PROCESSOR_NAME));
 
             ep.getProperties(CamelProperties.class).getExtras().put("channel", "#updated");
+            ep.getProperties(CamelProperties.class).setUrl("https://updated.com");
             // Now update
             responseBody = given()
                     .header(identityHeader)
@@ -703,6 +709,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .extract().asString();
 
             assertNotNull(responseBody);
+
+            CamelProperties updatedProperties = entityManager.createQuery("FROM CamelProperties WHERE id = :id", CamelProperties.class)
+                    .setParameter("id", UUID.fromString(id))
+                    .getSingleResult();
+            assertNotNull(updatedProperties.getExtras().get(OB_PROCESSOR_NAME));
+            assertEquals("p-my-id", updatedProperties.getExtras().get(OB_PROCESSOR_ID));
+            assertEquals("#updated", updatedProperties.getExtras().get("channel"));
+            assertEquals(ep.getProperties(CamelProperties.class).getUrl(), updatedProperties.getUrl());
 
         } finally {
 
