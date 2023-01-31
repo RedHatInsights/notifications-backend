@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.openbridge.Processor;
 import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -51,6 +52,9 @@ public class EndpointReadyChecker {
     @Inject
     RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
+    @ConfigProperty(name = "env.name", defaultValue = "local-dev")
+    String environment;
+
     String endpointQueryString = "SELECT e FROM Endpoint e " +
             "WHERE e.compositeType.type = :type AND e.compositeType.subType IN (:subTypes) " +
             "AND e.status NOT IN (:ready, :failed) ";
@@ -79,6 +83,13 @@ public class EndpointReadyChecker {
             try {
                 CamelProperties cp = em.find(CamelProperties.class, ep.getId()); // TODO Fetch in one go
                 processorId = cp.getExtras().get("processorId");
+
+                // TODO Temporary code meant to clean the DB from stage only. Remove it as soon as it's been executed once.
+                if ("stage".equals(environment) && processorId == null) {
+                    em.remove(ep);
+                    continue;
+                }
+
                 try {
                     Processor processor = bridgeApiService.getProcessorById(bridge.getId(), processorId, bridgeAuth.getToken());
                     String status = processor.getStatus();
