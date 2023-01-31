@@ -84,6 +84,8 @@ objects:
           successThreshold: 1
           failureThreshold: 3
         env:
+        - name: ENV_BASE_URL
+          value: ${ENV_BASE_URL}
         - name: ENV_NAME
           value: ${ENV_NAME}
         - name: MP_MESSAGING_INCOMING_AGGREGATION_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
