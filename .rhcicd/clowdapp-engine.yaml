@@ -215,6 +215,8 @@ objects:
           value: ${NOTIFICATIONS_USE_ANSIBLE_EMAIL_TEMPLATES_V2_ENABLED}
         - name: NOTIFICATIONS_USE_COST_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED
           value: ${NOTIFICATIONS_USE_COST_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_PATCH_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_PATCH_EMAIL_TEMPLATES_V2_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -353,4 +355,6 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
   description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
+  value: "false"
+- name: NOTIFICATIONS_USE_PATCH_EMAIL_TEMPLATES_V2_ENABLED
   value: "false"

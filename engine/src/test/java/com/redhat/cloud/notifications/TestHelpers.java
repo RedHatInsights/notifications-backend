@@ -10,6 +10,10 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -370,5 +374,16 @@ public class TestHelpers {
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;
+    }
+
+    public static void writeEmailTemplate(String result, String fileName) {
+        final String TARGET_DIR = "target/";
+        try {
+            Files.createDirectories(Paths.get(TARGET_DIR + fileName.split("/")[0]));
+            Files.write(Paths.get(TARGET_DIR + fileName), result.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            System.out.println("An error occurred");
+            e.printStackTrace();
+        }
     }
 }
