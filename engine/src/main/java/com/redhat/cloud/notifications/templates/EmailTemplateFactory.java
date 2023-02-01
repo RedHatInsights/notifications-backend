@@ -51,6 +51,9 @@ public class EmailTemplateFactory {
     @Inject
     Patch patch;
 
+    @Inject
+    Integrations integrations;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -101,7 +104,7 @@ public class EmailTemplateFactory {
             }
         } else if (bundle.equalsIgnoreCase(CONSOLE)) {
             if (application.equalsIgnoreCase(INTEGRATIONS)) {
-                return new Integrations();
+                return integrations;
             } else if (application.equalsIgnoreCase(SOURCES)) {
                 return new Sources();
             }

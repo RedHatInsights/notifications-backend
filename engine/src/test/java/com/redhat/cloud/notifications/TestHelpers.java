@@ -376,6 +376,38 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
+    public static Action createIntegrationsFailedAction() {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(StringUtils.EMPTY);
+        emailActionMessage.setApplication(StringUtils.EMPTY);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                .withAdditionalProperty("failed-integration", "Failed integration")
+                .build()
+        );
+
+        emailActionMessage.setEvents(List.of(
+            new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                        .withAdditionalProperty("outcome", "test outcome data")
+                        .build()
+                )
+                .build()
+        ));
+
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        return emailActionMessage;
+    }
+
     public static void writeEmailTemplate(String result, String fileName) {
         final String TARGET_DIR = "target/";
         try {

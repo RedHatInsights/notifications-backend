@@ -85,6 +85,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-patch-email-templates-v2.enabled", defaultValue = "false")
     boolean patchEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-integrations-email-templates-v2.enabled", defaultValue = "false")
+    boolean integrationsEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -102,6 +105,7 @@ public class FeatureFlipper {
         Log.infof("The Cost management's email templates V2 are %s", costManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("Emails only mode is %s", emailsOnlyMode ? "enabled" : "disabled");
         Log.infof("The Patch's email templates V2 are %s", patchEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Integrations' email templates V2 are %s", integrationsEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -184,7 +188,6 @@ public class FeatureFlipper {
         return this.policiesEmailTemplatesV2Enabled;
     }
 
-
     public boolean isComplianceEmailTemplatesV2Enabled() {
         return complianceEmailTemplatesV2Enabled;
     }
@@ -225,6 +228,15 @@ public class FeatureFlipper {
     public void setPatchEmailTemplatesV2Enabled(boolean patchEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.patchEmailTemplatesV2Enabled = patchEmailTemplatesV2Enabled;
+    }
+
+    public boolean isIntegrationsEmailTemplatesV2Enabled() {
+        return integrationsEmailTemplatesV2Enabled;
+    }
+
+    public void setIntegrationsEmailTemplatesV2Enabled(boolean integrationsEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
+        this.integrationsEmailTemplatesV2Enabled = integrationsEmailTemplatesV2Enabled;
     }
 
     /**
