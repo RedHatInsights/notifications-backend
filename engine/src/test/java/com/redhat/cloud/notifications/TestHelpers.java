@@ -408,6 +408,31 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
+
+    public static Action createSourcesAction() {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(StringUtils.EMPTY);
+        emailActionMessage.setApplication(StringUtils.EMPTY);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("source_id", 5)
+                .withAdditionalProperty("resource_display_name", "test name 1")
+                .withAdditionalProperty("previous_availability_status", "old status")
+                .withAdditionalProperty("current_availability_status", "current status")
+                .withAdditionalProperty("source_name", "test source name 1")
+                .build()
+        );
+
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        return emailActionMessage;
+    }
+
     public static void writeEmailTemplate(String result, String fileName) {
         final String TARGET_DIR = "target/";
         try {

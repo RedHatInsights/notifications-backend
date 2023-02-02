@@ -1,0 +1,19 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=action.context.source_id}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Sources - Console
+{/content-title}
+{#content-title-section1}
+    Availability Status Change
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        {action.context.resource_display_name}'s availability status was changed from <b>{action.context.previous_availability_status}</b> to
+        <b>{action.context.current_availability_status}</b>.
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/settings/sources/detail/{action.context.source_id}">Check summary page</a>
+{/content-button-section1}
+{/include}
