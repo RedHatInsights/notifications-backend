@@ -81,7 +81,9 @@ public class BehaviorGroupRepository {
 
     @Transactional
     BehaviorGroup create(String accountId, String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
-        if (!this.isAllowedToCreateMoreBehaviorGroups(orgId)) {
+        // The organization ID might be null if a system behavior group is being
+        // created, that is why the check is only forced for actual tenants.
+        if (orgId != null && !orgId.isBlank() && !this.isAllowedToCreateMoreBehaviorGroups(orgId)) {
             throw new BadRequestException("behavior group creation limit reached. Please consider deleting unused behavior groups before creating more.");
         }
 
