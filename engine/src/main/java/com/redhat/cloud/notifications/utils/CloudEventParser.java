@@ -28,17 +28,17 @@ import java.net.URI;
 @ApplicationScoped
 public class CloudEventParser {
 
-    private final static String schemaPath = "/schemas/events/v1/events.json";
+    private static final String schemaPath = "/schemas/events/v1/events.json";
 
     static class CloudEventURIFactory implements URIFactory {
 
+        private static final String baseUrl = "https://console.redhat.com/api";
         private final URLFactory urlFactory = new URLFactory();
-        private final static String baseUrl = "https://console.redhat.com/api";
         private final String base;
 
-        public CloudEventURIFactory() {
+        CloudEventURIFactory() {
             String fullPath = RHELSystem.class.getResource(schemaPath).toString();
-            base = fullPath.substring(0, fullPath.length()-schemaPath.length());
+            base = fullPath.substring(0, fullPath.length() - schemaPath.length());
         }
 
         @Override
