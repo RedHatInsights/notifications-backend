@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.event.apps.policies.v1.Policy;
 import com.redhat.cloud.event.apps.policies.v1.PolicyTriggered;
-import com.redhat.cloud.event.apps.policies.v1.RHELSystem;
+import com.redhat.cloud.event.apps.policies.v1.SystemClass;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -33,7 +33,7 @@ public class PolicyTriggeredCloudEventTransformer extends CloudEventTransformerB
                     cloudEvent.getEvent().getData(),
                     PolicyTriggered.class
             );
-            RHELSystem rhelSystem = policyTriggered.getSystem();
+            SystemClass rhelSystem = policyTriggered.getSystem();
             Policy[] policies = policyTriggered.getPolicies();
 
             Context context = new Context.ContextBuilder()
@@ -43,17 +43,17 @@ public class PolicyTriggeredCloudEventTransformer extends CloudEventTransformerB
                             .map(tag -> Map.of("key", tag.getKey(), "value", tag.getValue()))
                             .collect(Collectors.toList())
                     )
-                    .withAdditionalProperty("system_check_in", policyTriggered.getSystemCheckIn())
+                    .withAdditionalProperty("system_check_in", rhelSystem.getCheckIn())
                     .build();
 
             List<Event> events = Arrays.stream(policies)
                     .map(policy -> new Event.EventBuilder()
                             .withMetadata(new Metadata.MetadataBuilder().build())
                             .withPayload(new Payload.PayloadBuilder()
-                                    .withAdditionalProperty("policy_id", policy.getPolicyID())
-                                    .withAdditionalProperty("policy_name", policy.getPolicyName())
-                                    .withAdditionalProperty("policy_description", policy.getPolicyDescription())
-                                    .withAdditionalProperty("policy_condition", policy.getPolicyCondition())
+                                    .withAdditionalProperty("policy_id", policy.getID())
+                                    .withAdditionalProperty("policy_name", policy.getName())
+                                    .withAdditionalProperty("policy_description", policy.getDescription())
+                                    .withAdditionalProperty("policy_condition", policy.getCondition())
                                     .build())
                             .build())
                     .collect(Collectors.toList());
