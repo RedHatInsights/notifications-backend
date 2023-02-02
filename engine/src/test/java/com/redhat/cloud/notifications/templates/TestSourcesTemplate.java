@@ -65,7 +65,7 @@ public class TestSourcesTemplate {
         template = sources.getTitle(AVAILABILITY_STATUS, EmailSubscriptionType.INSTANT);
         result = generateEmail(template);
         writeEmailTemplate(result, template.getTemplate().getId());
-        assertEquals("Instant notification - Availability Status Change- Sources - Console", result);
+        assertEquals("Instant notification - Availability Status Change - Sources - Console", result);
     }
 
     private String generateEmail(TemplateInstance template) {
