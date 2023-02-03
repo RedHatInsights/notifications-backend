@@ -299,7 +299,7 @@ public class NotificationResource {
     @Transactional
     public Response updateBehaviorGroup(@Context SecurityContext sec,
                                         @Parameter(description = "The UUID of the behavior group to update") @PathParam("id") UUID id,
-                                        @RequestBody(description = "New parameters", required = true) @NotNull UpdateBehaviorGroupRequest request) {
+                                        @RequestBody(description = "New parameters", required = true) @NotNull @Valid UpdateBehaviorGroupRequest request) {
         String orgId = getOrgId(sec);
 
         if (request.displayName != null) {
