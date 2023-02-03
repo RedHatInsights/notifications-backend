@@ -1150,8 +1150,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         final Field classField = UpdateBehaviorGroupRequest.class.getDeclaredField("displayName");
         final Size sizeClassAnnotation = classField.getAnnotation(Size.class);
 
-        final UpdateBehaviorGroupRequest createBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
-        createBehaviorGroupRequest.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
+        final UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
+        updateBehaviorGroupRequest.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
 
         final Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
         final String url = String.format("/notifications/behaviorGroups/%s", behaviorGroup.getId());
@@ -1160,7 +1160,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(createBehaviorGroupRequest))
+                .body(Json.encode(updateBehaviorGroupRequest))
                 .put(url)
                 .then()
                 .statusCode(400)
