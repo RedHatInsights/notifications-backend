@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -27,6 +28,7 @@ public class CreateBehaviorGroupRequest {
      * Display name the behavior group will have.
      */
     @NotBlank
+    @Size(max = 150, message = "the display name cannot exceed {max} characters")
     public String displayName;
 
     /**

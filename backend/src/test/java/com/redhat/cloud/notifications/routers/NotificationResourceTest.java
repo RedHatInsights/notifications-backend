@@ -35,6 +35,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.validation.constraints.Size;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -1079,6 +1081,106 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 response
             ));
         }
+    }
+
+    /**
+     * Tests that when creating a behavior group, if the display name exceeds
+     * the limit set, then a corresponding error message is returned.
+     * @throws NoSuchFieldException if the field in the request class to grab
+     * the maximum value for the display name does not exist.
+     */
+    @Test
+    void testBehaviorGroupDisplayNameTooLong() throws NoSuchFieldException {
+        final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+
+        // Get the value of the "max" property for the "Size" annotation.
+        final Field classField = CreateBehaviorGroupRequest.class.getDeclaredField("displayName");
+        final Size sizeClassAnnotation = classField.getAnnotation(Size.class);
+
+        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.bundleId = bundle.getId();
+        createBehaviorGroupRequest.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
+
+        final Header identityHeader = initRbacMock("behavior-group-display-name-too-long-account-number", "behavior-group-display-name-too-long-org-id", "user", FULL_ACCESS);
+
+        final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(createBehaviorGroupRequest))
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(400)
+                .extract()
+                .body()
+                .asString();
+
+        final JsonObject responseJson = new JsonObject(response);
+        final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+        Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+        Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+        final JsonObject error = constraintViolations.getJsonObject(0);
+        final String errorMessage = error.getString("message");
+
+        Assertions.assertNotNull(errorMessage, "the error message is null");
+
+        final String expectedError = String.format("the display name cannot exceed %s characters", sizeClassAnnotation.max());
+        Assertions.assertEquals(expectedError, errorMessage, "unexpected error message received");
+    }
+
+    /**
+     * Tests that when updating a behavior group, if the display name exceeds
+     * the limit set, then a corresponding error message is returned.
+     * @throws NoSuchFieldException if the field in the request class to grab
+     * the maximum value for the display name does not exist.
+     */
+    @Test
+    void testUpdateBehaviorGroupDisplayNameTooLong() throws NoSuchFieldException {
+        // The tenant's identification elements will be reused below.
+        final String accountId = "update-bg-display-name-too-long-account-id";
+        final String orgId = "update-bg-display-name-too-long-org-id";
+
+        // Create the fixtures in the database.
+        final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(accountId, orgId, "valid display name", bundle.getId());
+
+        // Get the value of the "max" property for the "Size" annotation.
+        final Field classField = UpdateBehaviorGroupRequest.class.getDeclaredField("displayName");
+        final Size sizeClassAnnotation = classField.getAnnotation(Size.class);
+
+        final UpdateBehaviorGroupRequest createBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
+        createBehaviorGroupRequest.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
+
+        final Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+        final String url = String.format("/notifications/behaviorGroups/%s", behaviorGroup.getId());
+
+        final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(createBehaviorGroupRequest))
+                .put(url)
+                .then()
+                .statusCode(400)
+                .extract()
+                .body()
+                .asString();
+
+        final JsonObject responseJson = new JsonObject(response);
+        final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+        Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+        Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+        final JsonObject error = constraintViolations.getJsonObject(0);
+        final String errorMessage = error.getString("message");
+
+        Assertions.assertNotNull(errorMessage, "the error message is null");
+
+        final String expectedError = String.format("the display name cannot exceed %s characters", sizeClassAnnotation.max());
+        Assertions.assertEquals(expectedError, errorMessage, "unexpected error message received");
     }
 
     private Optional<CreateBehaviorGroupResponse> createBehaviorGroup(Header identityHeader, CreateBehaviorGroupRequest request, int expectedStatusCode) {

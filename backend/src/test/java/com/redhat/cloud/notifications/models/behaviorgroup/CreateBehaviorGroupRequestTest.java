@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import javax.validation.constraints.Size;
+import java.lang.reflect.Field;
 import java.util.UUID;
 
 public class CreateBehaviorGroupRequestTest {
@@ -67,6 +69,33 @@ public class CreateBehaviorGroupRequestTest {
                 Assertions.assertEquals("displayName", cv.getPropertyPath().toString(), "unexpected field raised the constraint violation");
                 Assertions.assertEquals("must not be blank", cv.getMessage(), "unexpected constraint violation returned");
             }
+        }
+    }
+
+    /**
+     * Tests that a "display name too long" constraint violation is triggered
+     * if the display name exceeds the maximum length specified in the class's
+     * annotation.
+     * @throws NoSuchFieldException if the {@link CreateBehaviorGroupRequest#displayName} field cannot be found.
+     */
+    @Test
+    void testDisplayNameTooLong() throws NoSuchFieldException {
+        final Field classField = CreateBehaviorGroupRequest.class.getDeclaredField("displayName");
+        final Size sizeClassAnnotation = classField.getAnnotation(Size.class);
+
+        final var request = new CreateBehaviorGroupRequest();
+        request.bundleId = UUID.randomUUID();
+        request.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
+
+        final var constraintViolations = validator.validate(request);
+
+        Assertions.assertEquals(1, constraintViolations.size(), "unexpected number of constraint violations received. CVs: " + constraintViolations);
+
+        for (final var cv : constraintViolations) {
+            Assertions.assertEquals("displayName", cv.getPropertyPath().toString(), "unexpected field raised the constraint violation");
+
+            final String expectedErrorMessage = String.format("the display name cannot exceed %s characters", sizeClassAnnotation.max());
+            Assertions.assertEquals(expectedErrorMessage, cv.getMessage(), "unexpected constraint violation returned");
         }
     }
 
