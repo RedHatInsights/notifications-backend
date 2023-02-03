@@ -66,6 +66,9 @@ public class EmailTemplateFactory {
     @Inject
     MalwareDetection malwareDetection;
 
+    @Inject
+    EdgeManagement edgeManagement;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -88,7 +91,7 @@ public class EmailTemplateFactory {
                 case VULNERABILITY:
                     return new Vulnerability();
                 case EDGE_MANAGEMENT:
-                    return new EdgeManagement();
+                    return edgeManagement;
                 case PATCH:
                     return patch;
                 case MALWARE_DETECTION:

@@ -99,6 +99,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-malware-email-templates-v2.enabled", defaultValue = "false")
     boolean malwareEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-edge-management-email-templates-v2.enabled", defaultValue = "false")
+    boolean edgeManagementEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -121,6 +124,7 @@ public class FeatureFlipper {
         Log.infof("The Sources' email templates V2 are %s", sourcesEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Inventory's email templates V2 are %s", inventoryEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Malware's email templates V2 are %s", malwareEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Edge management's email templates V2 are %s", edgeManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -288,6 +292,15 @@ public class FeatureFlipper {
     public void setMalwareEmailTemplatesV2Enabled(boolean malwareEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.malwareEmailTemplatesV2Enabled = malwareEmailTemplatesV2Enabled;
+    }
+
+    public boolean isEdgeManagementEmailTemplatesV2Enabled() {
+        return edgeManagementEmailTemplatesV2Enabled;
+    }
+
+    public void setEdgeManagementEmailTemplatesV2Enabled(boolean edgeManagementEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
+        this.edgeManagementEmailTemplatesV2Enabled = edgeManagementEmailTemplatesV2Enabled;
     }
 
     /**
