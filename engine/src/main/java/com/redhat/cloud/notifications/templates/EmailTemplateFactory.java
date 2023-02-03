@@ -63,6 +63,9 @@ public class EmailTemplateFactory {
     @Inject
     Inventory inventory;
 
+    @Inject
+    MalwareDetection malwareDetection;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -89,7 +92,7 @@ public class EmailTemplateFactory {
                 case PATCH:
                     return patch;
                 case MALWARE_DETECTION:
-                    return new MalwareDetection();
+                    return malwareDetection;
                 case INVENTORY:
                     return inventory;
                 case RESOURCE_OPTIMIZATION:

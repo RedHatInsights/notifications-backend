@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -426,6 +427,40 @@ public class TestHelpers {
                 .withAdditionalProperty("source_name", "test source name 1")
                 .build()
         );
+
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        return emailActionMessage;
+    }
+
+    public static Action createMalwareDetectionAction() {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(StringUtils.EMPTY);
+        emailActionMessage.setApplication(StringUtils.EMPTY);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
+                .build()
+        );
+
+        emailActionMessage.setEvents(List.of(
+            new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                        .withAdditionalProperty("host_id", "host-01")
+                        .withAdditionalProperty("host_name", "My test machine")
+                        .withAdditionalProperty("matched_rules", Arrays.asList("rule 1", "rule 2"))
+                        .withAdditionalProperty("matched_at", "2020-08-03T15:22:42.199046")
+                        .build()
+                )
+                .build()
+        ));
 
         emailActionMessage.setAccountId(StringUtils.EMPTY);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
