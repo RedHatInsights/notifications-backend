@@ -105,6 +105,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-resource-optimization-email-templates-v2.enabled", defaultValue = "false")
     boolean resourceOptimizationManagementEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-vulnerability-email-templates-v2.enabled", defaultValue = "false")
+    boolean vulnerabilityEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -129,6 +132,7 @@ public class FeatureFlipper {
         Log.infof("The Malware's email templates V2 are %s", malwareEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Edge management's email templates V2 are %s", edgeManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Resource optimization's email templates V2 are %s", resourceOptimizationManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Vulnerability's email templates V2 are %s", vulnerabilityEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -317,6 +321,15 @@ public class FeatureFlipper {
     public void setResourceOptimizationManagementEmailTemplatesV2Enabled(boolean resourceOptimizationManagementEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.resourceOptimizationManagementEmailTemplatesV2Enabled = resourceOptimizationManagementEmailTemplatesV2Enabled;
+    }
+
+    public boolean isVulnerabilityEmailTemplatesV2Enabled() {
+        return vulnerabilityEmailTemplatesV2Enabled;
+    }
+
+    public void setVulnerabilityEmailTemplatesV2Enabled(boolean vulnerabilityEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
+        this.vulnerabilityEmailTemplatesV2Enabled = vulnerabilityEmailTemplatesV2Enabled;
     }
 
     /**

@@ -72,6 +72,9 @@ public class EmailTemplateFactory {
     @Inject
     ResourceOptimization resourceOptimization;
 
+    @Inject
+    Vulnerability vulnerability;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -92,7 +95,7 @@ public class EmailTemplateFactory {
                 case DRIFT:
                     return drift;
                 case VULNERABILITY:
-                    return new Vulnerability();
+                    return vulnerability;
                 case EDGE_MANAGEMENT:
                     return edgeManagement;
                 case PATCH:
