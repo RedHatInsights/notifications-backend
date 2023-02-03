@@ -1165,7 +1165,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(400)
                 .extract()
-                .body()
                 .asString();
 
         final JsonObject responseJson = new JsonObject(response);
