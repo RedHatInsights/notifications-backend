@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
+import javax.validation.constraints.AssertFalse;
 import javax.validation.constraints.Size;
 import java.util.List;
 import java.util.Set;
@@ -31,4 +32,16 @@ public class UpdateBehaviorGroupRequest {
      * This will effectively set the linked event types..
      */
     public Set<UUID> eventTypeIds;
+
+    /**
+     * Validates that the display name is not blank when it is provided. Since
+     * this is a potential payload for the "update" operation, clients might
+     * not even send the display name if they don't want to update it. That is
+     * why we let "null" display names go through.
+     * @return true if the display name is not null, but it is blank.
+     */
+    @AssertFalse(message = "the display name cannot be empty")
+    private boolean isDisplayNameNotNullAndBlank() {
+        return this.displayName != null && this.displayName.isBlank();
+    }
 }

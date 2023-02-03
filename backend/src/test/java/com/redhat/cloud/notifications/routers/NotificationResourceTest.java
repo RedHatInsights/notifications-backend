@@ -1183,6 +1183,54 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Assertions.assertEquals(expectedError, errorMessage, "unexpected error message received");
     }
 
+    /**
+     * Tests that when updating a behavior group, if the specified display name
+     * is blank, a bad request response is returned.
+     */
+    @Test
+    void testUpdateBehaviorGroupDisplayNameBlank() {
+        // The tenant's identification elements will be reused below.
+        final String accountId = "update-bg-blank-display-name-account-id";
+        final String orgId = "update-bg-blank-display-name-org-id";
+
+        // Create the fixtures in the database.
+        final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(accountId, orgId, "valid display name", bundle.getId());
+
+        final String[] blankDisplayNames = {"", "     "};
+        for (final String blankDisplayName : blankDisplayNames) {
+
+            final UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
+            updateBehaviorGroupRequest.displayName = blankDisplayName;
+
+            final Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+            final String url = String.format("/notifications/behaviorGroups/%s", behaviorGroup.getId());
+
+            final String response = given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(updateBehaviorGroupRequest))
+                    .put(url)
+                    .then()
+                    .statusCode(400)
+                    .extract()
+                    .asString();
+
+            final JsonObject responseJson = new JsonObject(response);
+            final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+            Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+            Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+            final JsonObject error = constraintViolations.getJsonObject(0);
+            final String errorMessage = error.getString("message");
+
+            Assertions.assertNotNull(errorMessage, "the error message is null");
+            Assertions.assertEquals("the display name cannot be empty", errorMessage, "unexpected error message received");
+        }
+    }
+
     private Optional<CreateBehaviorGroupResponse> createBehaviorGroup(Header identityHeader, CreateBehaviorGroupRequest request, int expectedStatusCode) {
         ValidatableResponse response = given()
                 .header(identityHeader)

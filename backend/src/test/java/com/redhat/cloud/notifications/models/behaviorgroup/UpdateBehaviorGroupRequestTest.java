@@ -51,4 +51,42 @@ public class UpdateBehaviorGroupRequestTest {
             Assertions.assertEquals(expectedErrorMessage, cv.getMessage(), "unexpected constraint violation returned");
         }
     }
+
+    /**
+     * Tests that when blank display names are provided to an update behavior
+     * group request, a constraint violation is raised.
+     */
+    @Test
+    void testDisplayNameBlank() {
+        final String[] invalidDisplayNames = {"", "     "};
+
+        for (final var invalidName : invalidDisplayNames) {
+            final UpdateBehaviorGroupRequest request = new UpdateBehaviorGroupRequest();
+            request.displayName = invalidName;
+
+            final var constraintViolations = validator.validate(request);
+
+            Assertions.assertEquals(1, constraintViolations.size(), "unexpected number of constraint violations received. CVs: " + constraintViolations);
+
+            for (final var cv : constraintViolations) {
+                Assertions.assertEquals("displayNameNotNullAndBlank", cv.getPropertyPath().toString(), "unexpected field raised the constraint violation");
+                Assertions.assertEquals("the display name cannot be empty", cv.getMessage(), "unexpected constraint violation returned");
+            }
+        }
+    }
+
+    /**
+     * Tests that when null display name is provided, simulating an update
+     * operation that wants to leave the display name untouched, no constraint
+     * violation is raised.
+     */
+    @Test
+    void testDisplayNameNull() {
+        final UpdateBehaviorGroupRequest request = new UpdateBehaviorGroupRequest();
+        request.displayName = null;
+
+        final var constraintViolations = validator.validate(request);
+
+        Assertions.assertEquals(0, constraintViolations.size(), "unexpected number of constraint violations received. CVs: " + constraintViolations);
+    }
 }
