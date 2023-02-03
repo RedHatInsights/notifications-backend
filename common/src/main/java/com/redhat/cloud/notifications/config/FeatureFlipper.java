@@ -328,6 +328,7 @@ public class FeatureFlipper {
     }
 
     public void setVulnerabilityEmailTemplatesV2Enabled(boolean vulnerabilityEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.vulnerabilityEmailTemplatesV2Enabled = vulnerabilityEmailTemplatesV2Enabled;
     }
 
