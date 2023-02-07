@@ -140,7 +140,7 @@ public class FeatureFlipper {
         Log.infof("The Resource optimization's email templates V2 are %s", resourceOptimizationManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Vulnerability's email templates V2 are %s", vulnerabilityEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Rhosak's email templates V2 are %s", rhosakEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Cost management's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The RBAC's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
