@@ -372,10 +372,7 @@
     {#insert extra-css}{/}
 </style>
 </head>
-{@boolean renderSection1=false}
-{@boolean renderButtonSection1=false}
-{@boolean renderSection2=false}
-{@boolean renderButtonSection2=false}
+
 <body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0" class="rh-body">
 <center>
     <table align="center" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" class="rh-body-table">
@@ -406,7 +403,7 @@
                     <!-- end head -->
 
                     <!-- Body section -->
-                    {#if renderSection1}
+                    {#if renderSection1.or(false)}
                         <tr>
                             <td class="rh-body">
                                 <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -440,7 +437,7 @@
                                             {#insert content-body-section1}{/}
                                         </td>
                                     </tr>
-                                    {#if renderButtonSection1}
+                                    {#if renderButtonSection1.or(false)}
                                         <tr>
                                             <td class="rh-content__block" style="padding: 24px 0px;">
                                                 <table align="center">
@@ -462,7 +459,7 @@
                         </tr>
                     {/if}
 
-                    {#if renderSection2}
+                    {#if renderSection2.or(false)}
                     <tr>
                         <td class="rh-body">
                             <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -471,7 +468,8 @@
                                         <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                             <tr>
                                                 <td class="rh-masthead__section__head">
-                                                    <p>{#insert content-title-section2}{/}<br/>
+                                                    <p>{#insert content-title-section2}{/}
+                                                        {#if !hideSubtitleSection2.or(false)}<br/>{/if}
                                                         <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section2}{/}</span>
                                                     </p>
                                                 </td>
@@ -490,7 +488,7 @@
                                         {#insert content-body-section2}{/}
                                     </td>
                                 </tr>
-                                {#if renderButtonSection2}
+                                {#if renderButtonSection2.or(false)}
                                 <tr>
                                     <td class="rh-content__block" style="padding: 24px 0px;">
                                         <table align="center">
