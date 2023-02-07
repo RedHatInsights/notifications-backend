@@ -86,6 +86,9 @@ public class EmailTemplateMigrationServiceTest {
         Application edgeManagement = resourceHelpers.createApp(rhel.getId(), "edge-management");
         EventType imageCreation = resourceHelpers.createEventType(edgeManagement.getId(), "image-creation");
         EventType updateDevices = resourceHelpers.createEventType(edgeManagement.getId(), "update-devices");
+        // App: inventory
+        Application inventoryManagement = resourceHelpers.createApp(rhel.getId(), "inventory");
+        EventType inventoryValidationError = resourceHelpers.createEventType(inventoryManagement.getId(), "validation-error");
         // App: malware-detection
         Application malwareDetection = resourceHelpers.createApp(rhel.getId(), "malware-detection");
         EventType detectedMalware = resourceHelpers.createEventType(malwareDetection.getId(), "detected-malware");
@@ -198,6 +201,8 @@ public class EmailTemplateMigrationServiceTest {
             // App: edge-management
             findAndCompileInstantEmailTemplate(imageCreation.getId());
             findAndCompileInstantEmailTemplate(updateDevices.getId());
+            // App: Inventory
+            findAndCompileInstantEmailTemplate(inventoryValidationError.getId());
             // App: malware-detection
             findAndCompileInstantEmailTemplate(detectedMalware.getId());
             assertTrue(templateRepository.findAggregationEmailTemplate(rhel.getName(), malwareDetection.getName(), DAILY).isEmpty());
