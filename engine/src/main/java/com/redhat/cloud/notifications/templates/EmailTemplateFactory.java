@@ -81,6 +81,9 @@ public class EmailTemplateFactory {
     @Inject
     Rbac rbac;
 
+    @Inject
+    AdvisorOpenshift advisorOpenshift;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -117,7 +120,7 @@ public class EmailTemplateFactory {
             }
         } else if (bundle.equalsIgnoreCase(OPENSHIFT)) {
             if (application.equalsIgnoreCase(ADVISOR)) {
-                return new AdvisorOpenshift();
+                return advisorOpenshift;
             } else if (application.equalsIgnoreCase(COST_MANAGEMENT)) {
                 return costManagement;
             }

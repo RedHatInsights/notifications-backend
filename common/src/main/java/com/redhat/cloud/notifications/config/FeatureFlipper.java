@@ -114,6 +114,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-rhosak-email-templates-v2.enabled", defaultValue = "false")
     boolean rhosakEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-advisor-openshift-email-templates-v2.enabled", defaultValue = "false")
+    boolean advisorOpenShiftEmailTemplatesV2Enabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -141,6 +144,7 @@ public class FeatureFlipper {
         Log.infof("The Vulnerability's email templates V2 are %s", vulnerabilityEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Rhosak's email templates V2 are %s", rhosakEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The RBAC's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -356,6 +360,14 @@ public class FeatureFlipper {
     public void setRbacEmailTemplatesV2Enabled(boolean rbacEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.rbacEmailTemplatesV2Enabled = rbacEmailTemplatesV2Enabled;
+    }
+
+    public boolean isAdvisorOpenShiftEmailTemplatesV2Enabled() {
+        return advisorOpenShiftEmailTemplatesV2Enabled;
+    }
+
+    public void setAdvisorOpenShiftEmailTemplatesV2Enabled(boolean advisorOpenShiftEmailTemplatesV2Enabled) {
+        this.advisorOpenShiftEmailTemplatesV2Enabled = advisorOpenShiftEmailTemplatesV2Enabled;
     }
 
     /**
