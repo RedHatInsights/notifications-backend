@@ -263,7 +263,7 @@ public class TestRbacTemplate {
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
                 assertTrue(result.contains("Platform default group is modified by"));
-                assertTrue(result.contains("and the Red Hat will not be responsible for managing it from now on."));
+                assertTrue(result.contains("Red Hat will not be responsible for managing it from now on."));
                 if (featureFlipper.isRbacEmailTemplatesV2Enabled()) {
                     assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 }
