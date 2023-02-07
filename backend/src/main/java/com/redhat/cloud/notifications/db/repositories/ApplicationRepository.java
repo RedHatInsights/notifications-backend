@@ -121,6 +121,25 @@ public class ApplicationRepository {
         }
     }
 
+    /**
+     * Returns applications that have at least 1 forced email notification in a given bundle
+     */
+    public List<Application> getApplicationsWithForcedEmail(UUID bundleId, String orgId) {
+        String query = "SELECT a FROM Application a " +
+                "JOIN a.eventTypes et " +
+                "JOIN et.behaviors etb " +
+                "JOIN etb.behaviorGroup.actions action " +
+                "WHERE a.bundle.id = :bundleId AND (etb.behaviorGroup.orgId is NULL OR etb.behaviorGroup.orgId = :orgId) " +
+                "AND EXISTS (" +
+                    "SELECT 1 FROM EmailSubscriptionProperties props " +
+                    "WHERE action.id.endpointId = props.id AND props.ignorePreferences = true" +
+                ")";
+        return entityManager.createQuery(query, Application.class)
+                .setParameter("bundleId", bundleId)
+                .setParameter("orgId", orgId)
+                .getResultList();
+    }
+
     public UUID getApplicationIdOfEventType(UUID eventTypeId) {
         String query = "SELECT application.id FROM EventType WHERE id = :id";
         return entityManager.createQuery(query, UUID.class)
