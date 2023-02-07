@@ -160,9 +160,13 @@ public class UserConfigResource {
             BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
             bundleSettingsValue.displayName = bundle.getDisplayName();
             settingsValues.bundles.put(bundle.getName(), bundleSettingsValue);
+
+            List<Application> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundle.getId(), orgId);
+
             for (Application application : applicationRepository.getApplications(bundle.getName())) {
                 ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
                 applicationSettingsValue.displayName = application.getDisplayName();
+                applicationSettingsValue.hasForcedEmail = applicationsWithForcedEmails.contains(application);
                 for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
                     // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
                     boolean supported = templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType);

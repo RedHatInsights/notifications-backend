@@ -25,6 +25,7 @@ public class SettingsValues {
         @JsonIgnore
         public String displayName;
         public Map<EmailSubscriptionType, Boolean> notifications = new HashMap<>();
+        public boolean hasForcedEmail;
     }
 
 
