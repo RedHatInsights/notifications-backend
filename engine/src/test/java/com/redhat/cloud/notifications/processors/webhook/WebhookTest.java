@@ -288,7 +288,7 @@ public class WebhookTest {
         try {
 
             Event event = new Event();
-            event.setAction(buildWebhookAction());
+            event.setEventWrapper(new EventWrapperAction(buildWebhookAction()));
 
             webhookTypeProcessor.process(event, List.of(new Endpoint()));
             micrometerAssertionHelper.assertCounterIncrement(PROCESSED_COUNTER_NAME, 0);
