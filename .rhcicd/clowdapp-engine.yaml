@@ -168,6 +168,8 @@ objects:
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+          value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
         - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
           value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD}
         - name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
@@ -310,6 +312,9 @@ parameters:
 - name: OB_ERROR_CHECK_PERIOD
   description: Period between two executions of the FromOpenBridgeHistoryFiller scheduled job
   value: 10s
+- name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+  description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT30S
 - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
   description: Period between two batch executions. Defaults to 5s.
   value: 5s
