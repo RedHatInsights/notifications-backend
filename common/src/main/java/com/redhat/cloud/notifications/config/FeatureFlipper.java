@@ -371,6 +371,7 @@ public class FeatureFlipper {
     }
 
     public void setAdvisorEmailTemplatesV2Enabled(boolean advisorEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.advisorEmailTemplatesV2Enabled = advisorEmailTemplatesV2Enabled;
     }
 
