@@ -1,0 +1,21 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Red Hat OpenShift Streams for Apache Kafka - Application and Data Services
+{/content-title}
+{#content-title-section1}
+    Instance Deleted
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Your OpenShift Streams instance, with the name {action.context.name}, has been successfully deleted.
+    </p>
+    <p>
+        Thank you for choosing Red Hat OpenShift Streams for Apache Kafka.
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/beta/application-services/streams/kafkas">Go to Kafka Instances page</a>
+{/content-button-section1}
+{/include}
