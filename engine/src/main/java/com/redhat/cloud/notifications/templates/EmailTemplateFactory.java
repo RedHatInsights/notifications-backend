@@ -78,6 +78,9 @@ public class EmailTemplateFactory {
     @Inject
     Rhosak rhosak;
 
+    @Inject
+    Rbac rbac;
+
     public EmailTemplate get(String bundle, String application) {
         if (featureFlipper.isUseDefaultTemplate()) {
             return new Default(this.getInternal(bundle, application));
@@ -133,7 +136,7 @@ public class EmailTemplateFactory {
                 return sources;
             }
             if (application.equalsIgnoreCase(RBAC)) {
-                return new Rbac();
+                return rbac;
             }
         }
 
