@@ -12,12 +12,13 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -142,6 +143,60 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
         assertEquals(2, applications.size());
         assertTrue(applications.contains(application1));
         assertTrue(applications.contains(application2));
+    }
+
+    /**
+     * Tests that the function under test does find the relation between an
+     * application and its bundle by their names.
+     */
+    @Test
+    void testApplicationBundleExists() {
+        final String applicationName = "application-application-bundle-exists-test";
+        final String bundleName = "bundle-application-bundle-exists-test";
+
+        final Bundle createdBundle = this.resourceHelpers.createBundle(bundleName, bundleName + "-display");
+        this.resourceHelpers.createApplication(createdBundle.getId(), applicationName, applicationName + "-display");
+
+        Assertions.assertTrue(
+            this.applicationRepository.applicationBundleExists(applicationName, bundleName),
+            "the bundle and application combination does exist in the database"
+        );
+    }
+
+    /**
+     * Tests that the function under test is unable to find the "application —
+     * bundle" relation if a non-existent application's name is given to the
+     * function.
+     */
+    @Test
+    void testApplicationBundleExistsApplicationNotFound() {
+        final String bundleName = "bundle-application-bundle-exists-application-not-found-test";
+
+        final Bundle createdBundle = this.resourceHelpers.createBundle(bundleName, bundleName + "-display");
+        this.resourceHelpers.createApplication(createdBundle.getId());
+
+        Assertions.assertFalse(
+            this.applicationRepository.applicationBundleExists(UUID.randomUUID().toString(), bundleName),
+            "the bundle exists, but the specified application name doesn't belong to any application"
+        );
+    }
+
+    /**
+     * Tests that the function under test is unable to find the "application —
+     * bundle" relation if a non-existent bundle's name is given to the
+     * function.
+     */
+    @Test
+    void testApplicationBundleExistsBundleNotFound() {
+        final String applicationName = "application-application-bundle-exists-bundle-not-found-test";
+
+        final Bundle createdBundle = this.resourceHelpers.createBundle();
+        this.resourceHelpers.createApplication(createdBundle.getId(), applicationName, applicationName + "-display");
+
+        Assertions.assertFalse(
+            this.applicationRepository.applicationBundleExists(applicationName, UUID.randomUUID().toString()),
+            "the application exists, but the specified bundle name doesn't belong to any bundle"
+        );
     }
 
     private Endpoint createEmailSubscription(String orgId, boolean isForced) {

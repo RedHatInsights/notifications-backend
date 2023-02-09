@@ -1,18 +1,36 @@
 package com.redhat.cloud.notifications.routers.internal;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequestDto;
+import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
+import com.redhat.cloud.notifications.routers.environment.Environment;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.Header;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
+import javax.inject.Inject;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -66,6 +84,19 @@ public class InternalResourceTest extends DbIsolatedTest {
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
+
+    @Inject
+    ResourceHelpers resourceHelpers;
+
+    /**
+     * Mock the REST Service to avoid receiving errors from it.
+     */
+    @InjectMock
+    @RestClient
+    DailyDigestService dailyDigestService;
+
+    @InjectMock
+    Environment environment;
 
     @Test
     void testCreateNullBundle() {
@@ -465,5 +496,265 @@ public class InternalResourceTest extends DbIsolatedTest {
             .put("/daily-digest/time-preference/1234")
             .then()
             .statusCode(403);
+    }
+
+    /**
+     * Tests that the daily digest cannot be triggered in an environment that
+     * isn't "local" or "stage".
+     */
+    @Test
+    public void testTriggerDailyDigestNonStage() {
+        // Simulate that we are in the prod environment.
+        Mockito.when(this.environment.isEnvironmentLocal()).thenReturn(false);
+        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(false);
+
+        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+            "application-name",
+            "bundle-name",
+            "organization-id",
+            null,
+            null
+        );
+
+        final String response = given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(triggerDailyDigestRequestDto))
+            .post("/daily-digest")
+            .then()
+            .statusCode(400)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("the daily digests can only be triggered in the stage environment", response, "unexpected error message received");
+    }
+
+    /**
+     * Tests that a bad request is returned when a daily digest is triggered
+     * with a blank application and bundle names.
+     */
+    @Test
+    public void testTriggerDailyDigest() {
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+
+        final LocalDateTime end = LocalDateTime.now();
+        final LocalDateTime start = end.minusDays(5);
+
+        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+            application.getName(),
+            bundle.getName(),
+            "org-id",
+            start,
+            end
+        );
+
+        // Simulate that we are in the stage environment.
+        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+
+        given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(triggerDailyDigestRequestDto))
+            .post("/daily-digest")
+            .then()
+            .statusCode(204);
+
+        // Ensure that the sent payload to the engine matches the one that was
+        // sent to the handler under test.
+        final ArgumentCaptor<TriggerDailyDigestRequestDto> capturedPayload = ArgumentCaptor.forClass(TriggerDailyDigestRequestDto.class);
+        Mockito.verify(this.dailyDigestService).triggerDailyDigest(capturedPayload.capture());
+
+        final TriggerDailyDigestRequestDto capturedDto = capturedPayload.getValue();
+        Assertions.assertEquals(triggerDailyDigestRequestDto.getApplicationName(), capturedDto.getApplicationName());
+        Assertions.assertEquals(triggerDailyDigestRequestDto.getBundleName(), capturedDto.getBundleName());
+        Assertions.assertEquals(triggerDailyDigestRequestDto.getOrgId(), capturedDto.getOrgId());
+        Assertions.assertEquals(triggerDailyDigestRequestDto.getEnd(), capturedDto.getEnd());
+        Assertions.assertEquals(triggerDailyDigestRequestDto.getStart(), capturedDto.getStart());
+    }
+
+    /**
+     * Tests that a bad request is returned when a daily digest is triggered
+     * with an invalid application name.
+     */
+    @Test
+    public void testTriggerDailyDigestInvalidApplication() {
+        final String bundleName = "test-trigger-daily-digest-invalid-application";
+        this.resourceHelpers.createBundle(bundleName, bundleName + "-display-name");
+
+        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+            UUID.randomUUID().toString(),
+            bundleName,
+            "trigger-daily-digest-invalid-application-name-org-id",
+            null,
+            null
+        );
+
+        // Simulate that we are in the stage environment.
+        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+
+        final String response = given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(triggerDailyDigestRequestDto))
+            .post("/daily-digest")
+            .then()
+            .statusCode(400)
+            .extract()
+            .asString();
+
+        Assertions.assertNotNull(response, "unexpected null response received from the handler");
+        Assertions.assertFalse(response.isBlank(), "unexpected blank response received from the handler");
+
+        Assertions.assertEquals("unable to find the specified application — bundle combination", response, "unexpected error message received");
+    }
+
+    /**
+     * Tests that a bad request is returned when a daily digest is triggered
+     * with an invalid bundle name.
+     */
+    @Test
+    public void testTriggerDailyDigestInvalidBundle() {
+        final String applicationName = "test-trigger-daily-digest-invalid-bundle";
+
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final Application application = this.resourceHelpers.createApplication(bundle.getId(), applicationName, applicationName + "-display");
+
+        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+                application.getName(),
+                UUID.randomUUID().toString(),
+                "trigger-daily-digest-invalid-bundle-name-org-id",
+                null,
+                null
+        );
+
+        // Simulate that we are in the stage environment.
+        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+
+        final String response = given()
+                .basePath(API_INTERNAL)
+                .header(createTurnpikeIdentityHeader("admin", adminRole))
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(triggerDailyDigestRequestDto))
+                .post("/daily-digest")
+                .then()
+                .statusCode(400)
+                .extract()
+                .asString();
+
+        Assertions.assertNotNull(response, "unexpected null response received from the handler");
+        Assertions.assertFalse(response.isBlank(), "unexpected blank response received from the handler");
+
+        Assertions.assertEquals("unable to find the specified application — bundle combination", response, "unexpected error message received");
+    }
+
+    /**
+     * Tests that a bad request is returned when a daily digest is triggered
+     * with an invalid payload.
+     */
+    @Test
+    public void testTriggerDailyDigestInvalidPayload() {
+        /*
+         * Create a simple class to store test cases and
+         */
+        class TestCase {
+            /**
+             * The DTO under test.
+             */
+            public final TriggerDailyDigestRequestDto testDto;
+            /**
+             * The expected field that should be reported as having an error.
+             */
+            public final String expectedErrorField;
+
+            TestCase(final TriggerDailyDigestRequestDto testDto, final String expectedErrorField) {
+                this.testDto = testDto;
+                this.expectedErrorField = expectedErrorField;
+            }
+        }
+
+        final List<TestCase> testCaseList = new ArrayList<>();
+
+        testCaseList.add(
+            new TestCase(
+                new TriggerDailyDigestRequestDto(
+                    "     ",
+                    "bundle-name-blank-application-name",
+                    "org-id-blank-application-name",
+                    null,
+                    null
+                ),
+                "applicationName"
+            )
+        );
+
+        testCaseList.add(
+            new TestCase(
+                new TriggerDailyDigestRequestDto(
+                    "application-name-blank-bundle-name",
+                    "     ",
+                    "org-id-blank-bundle-name",
+                    null,
+                    null
+                ),
+                "bundleName"
+            )
+        );
+
+        testCaseList.add(
+            new TestCase(
+                new TriggerDailyDigestRequestDto(
+                    "application-name-blank-org-id",
+                    "bundle-name-blank-org-id",
+                    "     ",
+                    null,
+                    null
+                ),
+                "orgId"
+            )
+        );
+
+        // Simulate that we are in the stage environment.
+        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+
+        for (final TestCase testCase : testCaseList) {
+
+            final String response = given()
+                .basePath(API_INTERNAL)
+                .header(createTurnpikeIdentityHeader("admin", adminRole))
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(testCase.testDto))
+                .post("/daily-digest")
+                .then()
+                .statusCode(400)
+                .extract()
+                .asString();
+
+            final JsonObject responseJson = new JsonObject(response);
+            final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+            Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+            Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+            final JsonObject error = constraintViolations.getJsonObject(0);
+
+            // Test that the "errored field" is the correct one.
+            final String errorField = error.getString("field");
+            Assertions.assertNotNull(errorField, "the error field is null");
+            Assertions.assertTrue(errorField.contains(testCase.expectedErrorField));
+
+            // Test that the error message is "must not be blank".
+            final String errorMessage = error.getString("message");
+            Assertions.assertNotNull(errorMessage, "the error message is null");
+            Assertions.assertEquals("must not be blank", errorMessage, "unexpected error message received");
+        }
     }
 }

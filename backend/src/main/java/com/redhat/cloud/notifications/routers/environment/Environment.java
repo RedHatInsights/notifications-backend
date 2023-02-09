@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.templates.models;
+package com.redhat.cloud.notifications.routers.environment;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -9,17 +9,6 @@ public class Environment {
 
     @ConfigProperty(name = "env.name", defaultValue = "local-dev")
     String environment;
-
-    @ConfigProperty(name = "env.base.url", defaultValue = "/")
-    String url;
-
-    public String name() {
-        return this.environment;
-    }
-
-    public String url() {
-        return this.url;
-    }
 
     /**
      * Checks if the "ENV_NAME" environment variable is set to "local-dev".

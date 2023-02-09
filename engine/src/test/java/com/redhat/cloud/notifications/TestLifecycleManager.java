@@ -17,6 +17,7 @@ import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.EGRES
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
+import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
@@ -39,6 +40,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
          */
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(INGRESS_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(AGGREGATION_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(AGGREGATION_OUT_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(TOCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
