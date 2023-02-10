@@ -367,6 +367,7 @@ public class FeatureFlipper {
     }
 
     public void setAdvisorOpenShiftEmailTemplatesV2Enabled(boolean advisorOpenShiftEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
         this.advisorOpenShiftEmailTemplatesV2Enabled = advisorOpenShiftEmailTemplatesV2Enabled;
     }
 

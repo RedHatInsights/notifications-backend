@@ -42,7 +42,7 @@ public class TestAdvisorOpenShiftTemplate {
     }
 
     @Test
-    void shouldSupportDailyEmailSubscriptionType() {
+    void shouldNotSupportDailyEmailSubscriptionType() {
         assertFalse(advisorOpenshift.isSupported(NEW_RECOMMENDATION, DAILY));
     }
 
@@ -57,7 +57,7 @@ public class TestAdvisorOpenShiftTemplate {
     }
 
     @Test
-    void shouldSupportDailySubscriptionType() {
+    void shouldNotSupportDailySubscriptionType() {
         assertFalse(advisorOpenshift.isEmailSubscriptionSupported(DAILY));
     }
 
