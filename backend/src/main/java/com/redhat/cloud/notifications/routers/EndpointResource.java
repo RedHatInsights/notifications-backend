@@ -618,7 +618,7 @@ public class EndpointResource {
      * @param uuid the {@link UUID} of the endpoint to test.
      * @return a "no content" response on success.
      */
-    @APIResponse(responseCode = "204")
+    @APIResponse(responseCode = "204", description = "No Content")
     @POST
     @Path("/{uuid}/test")
     @Parameters({
