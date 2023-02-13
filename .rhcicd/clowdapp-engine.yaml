@@ -315,7 +315,7 @@ parameters:
   value: "notifications-bridge"
 - name: OB_ERROR_CHECK_PERIOD
   description: Period between two executions of the FromOpenBridgeHistoryFiller scheduled job
-  value: 10s
+  value: "off"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
   description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT30S
