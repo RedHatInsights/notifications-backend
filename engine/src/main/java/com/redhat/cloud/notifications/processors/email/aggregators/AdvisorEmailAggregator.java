@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*
  * Events are of the form:
@@ -100,6 +101,10 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
     public static final String RULE_URL = "rule_url";
     public static final String CONTENT_SYSTEM_COUNT = "systems";
 
+    public static final String TOTAL_INCIDENT = "total_incident";
+
+    public static final String TOTAL_RECOMMENDATION = "total_recommendation";
+
     // Notification common
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String EVENTS_KEY = "events";
@@ -115,12 +120,17 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
     private final Map<String, Map<String, Object>> resolvedRecommendations = new HashMap<>();
     private final Map<String, Map<String, String>> deactivatedRecommendations = new HashMap<>();
 
+    private final AtomicInteger incidentCounter = new AtomicInteger(0);
+
+    private final AtomicInteger recommendationCounter = new AtomicInteger(0);
+
     public AdvisorEmailAggregator() {
         JsonObject advisor = new JsonObject();
         advisor.put(NEW_RECOMMENDATIONS, newRecommendations);
         advisor.put(RESOLVED_RECOMMENDATIONS, resolvedRecommendations);
         advisor.put(DEACTIVATED_RECOMMENDATIONS, deactivatedRecommendations);
-
+        advisor.put(TOTAL_INCIDENT, incidentCounter);
+        advisor.put(TOTAL_RECOMMENDATION, recommendationCounter);
         context.put(ADVISOR_KEY, advisor);
     }
 
@@ -153,13 +163,16 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
             switch (eventType) {
                 case NEW_RECOMMENDATION:
                     ruleData = newRecommendations.computeIfAbsent(
-                        ruleId, key -> new HashMap<>(Map.of(
+                        ruleId, key -> {
+                            countRecommendationsAndIncidents(ruleIncident);
+                            return new HashMap<>(Map.of(
                             RULE_DESCRIPTION, ruleDescription,
                             HAS_INCIDENT, ruleIncident,
                             TOTAL_RISK, ruleRisk,
                             RULE_URL, ruleURL,
                             CONTENT_SYSTEM_COUNT, 0
-                        ))
+                            ));
+                        }
                     );
                     ruleData.put(
                         CONTENT_SYSTEM_COUNT, (Integer) ruleData.get(CONTENT_SYSTEM_COUNT) + 1
@@ -167,13 +180,16 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                     break;
                 case RESOLVED_RECOMMENDATION:
                     ruleData = resolvedRecommendations.computeIfAbsent(
-                        ruleId, key -> new HashMap<>(Map.of(
+                        ruleId, key -> {
+                            countRecommendationsAndIncidents(ruleIncident);
+                            return new HashMap<>(Map.of(
                             RULE_DESCRIPTION, ruleDescription,
                             HAS_INCIDENT, ruleIncident,
                             TOTAL_RISK, ruleRisk,
                             RULE_URL, ruleURL,
                             CONTENT_SYSTEM_COUNT, 0
-                        ))
+                        ));
+                        }
                     );
                     ruleData.put(
                         CONTENT_SYSTEM_COUNT, (Integer) ruleData.get(CONTENT_SYSTEM_COUNT) + 1
@@ -181,17 +197,27 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                     break;
                 case DEACTIVATED_RECOMMENDATION:
                     deactivatedRecommendations.computeIfAbsent(
-                        ruleId, key -> new HashMap<>(Map.of(
+                        ruleId, key -> {
+                            countRecommendationsAndIncidents(ruleIncident);
+                            return new HashMap<>(Map.of(
                             RULE_DESCRIPTION, ruleDescription,
                             HAS_INCIDENT, ruleIncident,
                             TOTAL_RISK, ruleRisk,
                             RULE_URL, ruleURL
-                        ))
+                        ));
+                        }
                     );
                     break;
                 default:
                     break;
             }
         });
+    }
+
+    private void countRecommendationsAndIncidents(String ruleIncident) {
+        recommendationCounter.incrementAndGet();
+        if (Boolean.valueOf(ruleIncident)) {
+            incidentCounter.incrementAndGet();
+        }
     }
 }

@@ -82,6 +82,9 @@ public class EmailTemplateFactory {
     Rbac rbac;
 
     @Inject
+    Advisor advisor;
+
+    @Inject
     AdvisorOpenshift advisorOpenshift;
 
     public EmailTemplate get(String bundle, String application) {
@@ -98,7 +101,7 @@ public class EmailTemplateFactory {
                 case POLICIES:
                     return policies;
                 case ADVISOR:
-                    return new Advisor();
+                    return advisor;
                 case COMPLIANCE:
                     return compliance;
                 case DRIFT:

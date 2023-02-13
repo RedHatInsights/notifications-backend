@@ -114,6 +114,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-rhosak-email-templates-v2.enabled", defaultValue = "false")
     boolean rhosakEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-advisor-email-templates-v2.enabled", defaultValue = "false")
+    boolean advisorEmailTemplatesV2Enabled;
+
     @ConfigProperty(name = "notifications.use-advisor-openshift-email-templates-v2.enabled", defaultValue = "false")
     boolean advisorOpenShiftEmailTemplatesV2Enabled;
 
@@ -144,6 +147,7 @@ public class FeatureFlipper {
         Log.infof("The Vulnerability's email templates V2 are %s", vulnerabilityEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Rhosak's email templates V2 are %s", rhosakEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The RBAC's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The Advisor's email templates V2 are %s", advisorEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
     }
 
@@ -360,6 +364,15 @@ public class FeatureFlipper {
     public void setRbacEmailTemplatesV2Enabled(boolean rbacEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.rbacEmailTemplatesV2Enabled = rbacEmailTemplatesV2Enabled;
+    }
+
+    public boolean isAdvisorEmailTemplatesV2Enabled() {
+        return advisorEmailTemplatesV2Enabled;
+    }
+
+    public void setAdvisorEmailTemplatesV2Enabled(boolean advisorEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
+        this.advisorEmailTemplatesV2Enabled = advisorEmailTemplatesV2Enabled;
     }
 
     public boolean isAdvisorOpenShiftEmailTemplatesV2Enabled() {
