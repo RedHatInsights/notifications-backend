@@ -30,31 +30,31 @@ public class EmailAggregationRepository {
             "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :now " +
             "AND :nowTime >= acp.scheduledExecutionTime AND (:nowTime - acp.scheduledExecutionTime) < CAST(:cutoff as LocalTime)";
         Query hqlQuery = entityManager.createQuery(query)
-            .setParameter("nowTime", now.toLocalTime())
-            .setParameter("cutoff", LocalTime.of(0, 15))
-            .setParameter("now", now);
+                .setParameter("nowTime", now.toLocalTime())
+                .setParameter("cutoff", LocalTime.of(0, 15))
+               .setParameter("now", now);
 
         List<Object[]> records = hqlQuery.getResultList();
         return records.stream()
-            .map(emailAggregationRecord -> new AggregationCommand(
-                new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]),
-                (LocalDateTime) emailAggregationRecord[3],
-                now,
-                DAILY
-            ))
-            .collect(toList());
+                .map(emailAggregationRecord -> new AggregationCommand(
+                    new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]),
+                    (LocalDateTime) emailAggregationRecord[3],
+                    now,
+                    DAILY
+                ))
+                .collect(toList());
     }
 
     public List<EmailAggregationKey> getApplicationsWithPendingAggregation(LocalDateTime start, LocalDateTime end) {
         String query = "SELECT DISTINCT org_id, bundle, application FROM email_aggregation WHERE created > :start AND created <= :end";
         List<Object[]> records = entityManager.createNativeQuery(query)
-            .setParameter("start", start)
-            .setParameter("end", end)
-            .getResultList();
+                .setParameter("start", start)
+                .setParameter("end", end)
+                .getResultList();
 
         return records.stream()
-            .map(emailAggregationRecord -> new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]))
-            .collect(toList());
+                .map(emailAggregationRecord -> new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]))
+                .collect(toList());
     }
 
     public CronJobRun getLastCronJobRun() {
@@ -66,8 +66,8 @@ public class EmailAggregationRepository {
     public void updateLastCronJobRun(LocalDateTime lastRun) {
         String query = "UPDATE CronJobRun SET lastRun = :lastRun";
         entityManager.createQuery(query)
-            .setParameter("lastRun", lastRun)
-            .executeUpdate();
+                .setParameter("lastRun", lastRun)
+                .executeUpdate();
     }
 
     @Transactional

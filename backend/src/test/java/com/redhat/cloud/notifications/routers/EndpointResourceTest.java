@@ -96,7 +96,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        featureFlipper.setUseEventTypeForAggregationEnabled(false);
+        featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
     }
 
     @Inject
@@ -1562,12 +1562,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Test
     void testEmailSubscriptionWithEventType() {
-        featureFlipper.setUseEventTypeForAggregationEnabled(true);
+        featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
         testEmailSubscription();
     }
 
     private Object getEmailSubscription(String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType type) {
-        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
+        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
             Optional<EventTypeEmailSubscription> emailSubscription = emailSubscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName)
                 .stream().filter(sub -> type == sub.getType()).findFirst();
             if (emailSubscription.isPresent()) {

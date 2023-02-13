@@ -54,7 +54,7 @@ public class EmailAggregationRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        featureFlipper.setUseEventTypeForAggregationEnabled(false);
+        featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
     }
 
     @Test
@@ -133,7 +133,7 @@ public class EmailAggregationRepositoryTest {
 
     @Test
     void testAllMethodsFilteredByEventType() {
-        featureFlipper.setUseEventTypeForAggregationEnabled(true);
+        featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);

@@ -212,8 +212,8 @@ objects:
           value: ${QUARKUS_REST_CLIENT_KC_URL}
         - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
           value: ${SOURCES_ENABLED}
-        - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_AGGREGATION_ENABLE
-          value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_AGGREGATION_ENABLE}
+        - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
+          value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -360,5 +360,5 @@ parameters:
 - name: SOURCES_ENABLED
   description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
   value: "false"
-- name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_AGGREGATION_ENABLE
+- name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
   value: "false"

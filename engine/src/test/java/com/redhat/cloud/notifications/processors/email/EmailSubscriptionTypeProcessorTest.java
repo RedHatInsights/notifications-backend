@@ -93,7 +93,7 @@ class EmailSubscriptionTypeProcessorTest {
     void beforeEach() {
         featureFlipper.setUseTemplatesFromDb(false);
         featureFlipper.setUseDefaultTemplate(false);
-        featureFlipper.setUseEventTypeForAggregationEnabled(true);
+        featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
     }
 
     @Test

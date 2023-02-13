@@ -32,6 +32,7 @@ public class SettingsValuesByEventType {
         @JsonIgnore
         public String displayName;
         public Map<EmailSubscriptionType, Boolean> emailSubscriptionTypes = new HashMap<>();
+        public boolean hasForcedEmail;
     }
 
     public Map<String, BundleSettingsValue> bundles = new HashMap<>();

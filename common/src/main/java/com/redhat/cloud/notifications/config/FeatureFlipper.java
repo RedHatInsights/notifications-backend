@@ -120,8 +120,8 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-advisor-openshift-email-templates-v2.enabled", defaultValue = "false")
     boolean advisorOpenShiftEmailTemplatesV2Enabled;
 
-    @ConfigProperty(name = "notifications.use-event-type-for-aggregation.enabled", defaultValue = "false")
-    boolean useEventTypeForAggregationEnabled;
+    @ConfigProperty(name = "notifications.use-event-type-for-subscription.enabled", defaultValue = "false")
+    boolean useEventTypeForSubscriptionEnabled;
 
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
@@ -153,7 +153,7 @@ public class FeatureFlipper {
         Log.infof("The RBAC's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor's email templates V2 are %s", advisorEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The event type level for email aggregation is %s", useEventTypeForAggregationEnabled ? "enabled" : "disabled");
+        Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -389,12 +389,12 @@ public class FeatureFlipper {
         this.advisorOpenShiftEmailTemplatesV2Enabled = advisorOpenShiftEmailTemplatesV2Enabled;
     }
 
-    public boolean isUseEventTypeForAggregationEnabled() {
-        return useEventTypeForAggregationEnabled;
+    public boolean isUseEventTypeForSubscriptionEnabled() {
+        return useEventTypeForSubscriptionEnabled;
     }
 
-    public void setUseEventTypeForAggregationEnabled(boolean useEventTypeForAggregationEnabled) {
-        this.useEventTypeForAggregationEnabled = useEventTypeForAggregationEnabled;
+    public void setUseEventTypeForSubscriptionEnabled(boolean useEventTypeForSubscriptionEnabled) {
+        this.useEventTypeForSubscriptionEnabled = useEventTypeForSubscriptionEnabled;
     }
 
     /**

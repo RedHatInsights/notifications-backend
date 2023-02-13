@@ -21,7 +21,7 @@ public class EmailSubscriptionRepository {
     FeatureFlipper featureFlipper;
 
     public List<String> getEmailSubscribersUserId(String orgId, String bundleName, String applicationName, String eventTypeName, EmailSubscriptionType subscriptionType) {
-        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
+        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
             return getEmailSubscribersUserIdByEventType(orgId, bundleName, applicationName, eventTypeName, subscriptionType);
         }
         String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
@@ -34,7 +34,7 @@ public class EmailSubscriptionRepository {
                 .getResultList();
     }
 
-    public List<String> getEmailSubscribersUserIdByEventType(String orgId, String bundleName, String applicationName, String eventTypeName, EmailSubscriptionType subscriptionType) {
+    private List<String> getEmailSubscribersUserIdByEventType(String orgId, String bundleName, String applicationName, String eventTypeName, EmailSubscriptionType subscriptionType) {
 
         String query = "SELECT es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
             "AND application.name = :applicationName AND eventType.name = : eventTypeName AND id.subscriptionType = :subscriptionType";

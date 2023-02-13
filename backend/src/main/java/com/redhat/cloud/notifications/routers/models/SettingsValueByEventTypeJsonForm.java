@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,8 +11,6 @@ import java.util.Map;
 
 @JsonAutoDetect(fieldVisibility = Visibility.ANY)
 public class SettingsValueByEventTypeJsonForm {
-
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     // These component names depends on the values used by UserPreferences UI
     private static String COMPONENT_SUBSCRIPTION = "descriptiveCheckbox";
@@ -33,6 +30,7 @@ public class SettingsValueByEventTypeJsonForm {
         public List<Field> fields;
         @JsonInclude(Include.NON_NULL)
         public String checkedWarning;
+        public String infoMessage;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
@@ -99,6 +97,9 @@ public class SettingsValueByEventTypeJsonForm {
                         break;
                     default:
                         return;
+                }
+                if (eventTypeSettingsValue.hasForcedEmail) {
+                    field.infoMessage = "You may still receive forced notifications for this service";
                 }
                 formEventType.fields.add(field);
             });

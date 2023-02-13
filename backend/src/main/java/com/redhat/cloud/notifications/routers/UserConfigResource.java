@@ -42,8 +42,11 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -272,13 +275,11 @@ public class UserConfigResource {
     @Produces(APPLICATION_JSON)
     @Operation(hidden = true)
     public Response getSettingsSchemaByEventType(@Context SecurityContext sec) {
-
-        final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        final String name = principal.getName();
+        final String name = getUserName(sec);
         String orgId = getOrgId(sec);
 
         List<EventTypeEmailSubscription> emailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, name);
-        SettingsValuesByEventType settingsValues = getSettingsValueForUserByEventType(emailSubscriptions);
+        SettingsValuesByEventType settingsValues = getSettingsValueForUserByEventType(emailSubscriptions, orgId);
         String jsonFormString = settingsValuesToJsonForm(settingsValues);
         Response.ResponseBuilder builder;
         builder = Response.ok(jsonFormString);
@@ -295,8 +296,7 @@ public class UserConfigResource {
         @Context SecurityContext sec,
         @PathParam("bundleName") String bundleName,
         @PathParam("applicationName") String applicationName) {
-        final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        final String name = principal.getName();
+        final String name = getUserName(sec);
         String orgId = getOrgId(sec);
 
         SettingsValuesByEventType settingsValues = getSettingsValueForUserByEventType(orgId, name, bundleName, applicationName);
@@ -337,10 +337,13 @@ public class UserConfigResource {
     private SettingsValuesByEventType getSettingsValueForUserByEventType(String orgId, String username, String bundleName, String applicationName) {
         List<EventTypeEmailSubscription> eventTypeEmailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName);
 
+        List<Application> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundleRepository.getBundle(bundleName).getId(), orgId);
+
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
         Application application = applicationRepository.getApplication(bundleName, applicationName);
         addApplicationStructureDetails(settingsValues, application);
-        patchWithUserPreferencesIfExists(settingsValues, eventTypeEmailSubscriptions);
+        Map<String, List<String>> mapApplicationsWithForcedEmail = Map.of(bundleName, applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList()));
+        patchWithUserPreferencesIfExists(settingsValues, eventTypeEmailSubscriptions, mapApplicationsWithForcedEmail);
         return settingsValues;
     }
 
@@ -373,7 +376,7 @@ public class UserConfigResource {
         }
     }
 
-    private void patchWithUserPreferencesIfExists(final SettingsValuesByEventType settingsValues, List<EventTypeEmailSubscription> emailSubscriptions) {
+    private void patchWithUserPreferencesIfExists(final SettingsValuesByEventType settingsValues, List<EventTypeEmailSubscription> emailSubscriptions, Map<String, List<String>> applicationsWithForcedEmail) {
         for (EventTypeEmailSubscription emailSubscription : emailSubscriptions) {
             if (settingsValues.bundles.containsKey(emailSubscription.getApplication().getBundle().getName())) {
                 SettingsValuesByEventType.BundleSettingsValue bundleSettings = settingsValues.bundles.get(emailSubscription.getApplication().getBundle().getName());
@@ -381,6 +384,7 @@ public class UserConfigResource {
                     SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = bundleSettings.applications.get(emailSubscription.getApplication().getName());
                     if (applicationSettingsValue.eventTypes.containsKey(emailSubscription.getEventType().getName())) {
                         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = applicationSettingsValue.eventTypes.get(emailSubscription.getEventType().getName());
+                        eventTypeSettingsValue.hasForcedEmail = checkIfAppWithForcedEmail(emailSubscription.getApplication().getBundle().getName(), emailSubscription.getApplication().getName(), applicationsWithForcedEmail);
                         if (eventTypeSettingsValue.emailSubscriptionTypes.containsKey(emailSubscription.getType())) {
                             eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscription.getType(), true);
                         }
@@ -390,15 +394,27 @@ public class UserConfigResource {
         }
     }
 
-    private SettingsValuesByEventType getSettingsValueForUserByEventType(List<EventTypeEmailSubscription> emailSubscriptions) {
+    private boolean checkIfAppWithForcedEmail(String bundleName, String appName, Map<String, List<String>> applicationsWithForcedEmail) {
+        boolean isForcedEmail = false;
+        if (applicationsWithForcedEmail.containsKey(bundleName)) {
+            isForcedEmail = applicationsWithForcedEmail.get(bundleName).contains(applicationsWithForcedEmail);
+        }
+        return isForcedEmail;
+    }
+
+    private SettingsValuesByEventType getSettingsValueForUserByEventType(List<EventTypeEmailSubscription> emailSubscriptions, String orgId) {
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
+
+        Map<String, List<String>> mapApplicationsWithForcedEmails = new HashMap<>();
         for (Bundle bundle : bundleRepository.getBundles()) {
+            List<Application> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundle.getId(), orgId);
+            mapApplicationsWithForcedEmails.put(bundle.getName(), applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList()));
             for (Application application : bundle.getApplications()) {
                 addApplicationStructureDetails(settingsValues, application);
             }
         }
 
-        patchWithUserPreferencesIfExists(settingsValues, emailSubscriptions);
+        patchWithUserPreferencesIfExists(settingsValues, emailSubscriptions, mapApplicationsWithForcedEmails);
         return settingsValues;
     }
 }

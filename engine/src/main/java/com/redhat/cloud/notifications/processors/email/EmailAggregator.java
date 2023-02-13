@@ -61,7 +61,7 @@ public class EmailAggregator {
     }
 
     private Set<String> getSubscribers(String eventType, Set<String> subscribers, Map<String, Set<String>> subscribersByEventType) {
-        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
+        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
             if (subscribersByEventType.containsKey(eventType)) {
                 return subscribersByEventType.get(eventType);
             } else {
@@ -76,7 +76,7 @@ public class EmailAggregator {
         Set<String> subscribers = null;
         Map<String, Set<String>> subscribersByEventType = null;
 
-        if (featureFlipper.isUseEventTypeForAggregationEnabled()) {
+        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
             subscribersByEventType = getEmailSubscribersGroupedByEventType(aggregationKey, emailSubscriptionType);
         } else {
             subscribers = getEmailSubscribers(aggregationKey, emailSubscriptionType);
