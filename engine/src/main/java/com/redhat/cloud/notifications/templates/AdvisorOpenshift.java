@@ -1,17 +1,26 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 // Name needs to be "AdvisorOpenshift" to read templates from resources/templates/AdvisorOpenshift
+@ApplicationScoped
 public class AdvisorOpenshift implements EmailTemplate {
+
+    public static final String NEW_RECOMMENDATION = "new-recommendation";
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Override
     public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals("new-recommendation")) {
-                return Templates.newRecommendationInstantEmailTitle();
+            if (eventType.equals(NEW_RECOMMENDATION)) {
+                return getNewRecommendationInstantEmailTitle();
             }
         }
 
@@ -24,8 +33,8 @@ public class AdvisorOpenshift implements EmailTemplate {
     @Override
     public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
         if (type == EmailSubscriptionType.INSTANT) {
-            if (eventType.equals("new-recommendation")) {
-                return Templates.newRecommendationInstantEmailBody();
+            if (eventType.equals(NEW_RECOMMENDATION)) {
+                return getNewRecommendationInstantEmailBody();
             }
         }
 
@@ -35,9 +44,23 @@ public class AdvisorOpenshift implements EmailTemplate {
         ));
     }
 
+    private TemplateInstance getNewRecommendationInstantEmailTitle() {
+        if (featureFlipper.isAdvisorOpenShiftEmailTemplatesV2Enabled()) {
+            return Templates.newRecommendationInstantEmailTitleV2();
+        }
+        return Templates.newRecommendationInstantEmailTitle();
+    }
+
+    private TemplateInstance getNewRecommendationInstantEmailBody() {
+        if (featureFlipper.isAdvisorOpenShiftEmailTemplatesV2Enabled()) {
+            return Templates.newRecommendationInstantEmailBodyV2();
+        }
+        return Templates.newRecommendationInstantEmailBody();
+    }
+
     @Override
     public boolean isSupported(String eventType, EmailSubscriptionType type) {
-        return (eventType.equals("new-recommendation")) && type == EmailSubscriptionType.INSTANT;
+        return (eventType.equals(NEW_RECOMMENDATION)) && type == EmailSubscriptionType.INSTANT;
     }
 
     @Override
@@ -52,6 +75,9 @@ public class AdvisorOpenshift implements EmailTemplate {
 
         public static native TemplateInstance newRecommendationInstantEmailBody();
 
+        public static native TemplateInstance newRecommendationInstantEmailTitleV2();
+
+        public static native TemplateInstance newRecommendationInstantEmailBodyV2();
     }
 
 }
