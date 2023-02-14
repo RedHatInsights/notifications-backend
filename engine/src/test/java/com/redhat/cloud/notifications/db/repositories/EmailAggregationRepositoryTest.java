@@ -152,8 +152,6 @@ public class EmailAggregationRepositoryTest {
             assertTrue(aggregations.stream().map(EmailAggregation::getOrgId).allMatch(ORG_ID::equals));
             assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
             assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
-            assertEquals(2, aggregations.stream().map(EmailAggregation::getEventType).filter(EVENT_TYPE::equals).count());
-            assertEquals(1, aggregations.stream().map(EmailAggregation::getEventType).filter("other-event-type"::equals).count());
             assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
             assertEquals(2, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
 

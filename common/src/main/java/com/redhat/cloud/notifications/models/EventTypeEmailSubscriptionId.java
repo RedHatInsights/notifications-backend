@@ -22,9 +22,6 @@ public class EventTypeEmailSubscriptionId implements Serializable {
     public String userId;
 
     @NotNull
-    public UUID applicationId;
-
-    @NotNull
     public UUID eventTypeId;
 
     @NotNull
@@ -41,17 +38,15 @@ public class EventTypeEmailSubscriptionId implements Serializable {
             EventTypeEmailSubscriptionId other = (EventTypeEmailSubscriptionId) o;
             return Objects.equals(userId, other.userId) &&
                 Objects.equals(orgId, other.orgId) &&
-                Objects.equals(applicationId, other.applicationId) &&
                 Objects.equals(eventTypeId, other.eventTypeId) &&
                 Objects.equals(subscriptionType, other.subscriptionType);
         }
         return false;
     }
 
-    public EventTypeEmailSubscriptionId(String orgId, String userId, UUID applicationId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
+    public EventTypeEmailSubscriptionId(String orgId, String userId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
         this.orgId = orgId;
         this.userId = userId;
-        this.applicationId = applicationId;
         this.eventTypeId = eventTypeId;
         this.subscriptionType = subscriptionType;
     }
@@ -61,7 +56,7 @@ public class EventTypeEmailSubscriptionId implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgId, userId, applicationId, eventTypeId, subscriptionType);
+        return Objects.hash(orgId, userId, eventTypeId, subscriptionType);
     }
 
 

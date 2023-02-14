@@ -602,7 +602,7 @@ public class EndpointResource {
             if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
                 // subscribe for each event Type of this application
                 for (EventType event : app.getEventTypes()) {
-                    emailSubscriptionRepository.subscribeEventType(orgId, principal.getName(), app.getId(), event.getId(), type);
+                    emailSubscriptionRepository.subscribeEventType(orgId, principal.getName(), event.getId(), type);
                 }
                 return true;
             } else {
@@ -637,7 +637,7 @@ public class EndpointResource {
             if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
                 // unsubscribe for each event Type of this application
                 for (EventType event : app.getEventTypes()) {
-                    emailSubscriptionRepository.unsubscribeEventType(orgId, principal.getName(), app.getId(), event.getId(), type);
+                    emailSubscriptionRepository.unsubscribeEventType(orgId, principal.getName(), event.getId(), type);
                 }
                 return true;
             } else {

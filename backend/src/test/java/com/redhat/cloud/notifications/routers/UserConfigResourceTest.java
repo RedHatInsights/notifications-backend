@@ -6,7 +6,9 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
@@ -20,6 +22,7 @@ import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -45,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -62,6 +67,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     @InjectMock
     @RestClient
     TemplateEngineClient templateEngineClient;
+
+    @InjectSpy
+    ApplicationRepository applicationRepository;
 
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
@@ -397,16 +405,21 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         SettingsValueByEventTypeJsonForm.EventTypes rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
+        assertNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
-        String str = given()
+        Application applicationPolicies = new Application();
+        applicationPolicies.setName("policies");
+        when(applicationRepository.getApplicationsWithForcedEmail(any(), anyString())).thenReturn(List.of(applicationPolicies));
+
+        settingsValuesByEventType = given()
             .header(identityHeader)
-            .queryParam("bundleName", bundle)
             .when().get(path)
             .then()
             .statusCode(200)
             .contentType(JSON)
-            .extract().body().asString();
-        System.out.println(str);
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+        rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        assertNotNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
         // Daily and Instant to false
         updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false);
@@ -422,11 +435,11 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // Fail if we have unknown apps in our bundle's settings
         assertThrows(PersistenceException.class, () -> {
-            emailSubscriptionRepository.subscribeEventType(orgId, username, UUID.randomUUID(), UUID.randomUUID(), DAILY);
+            emailSubscriptionRepository.subscribeEventType(orgId, username, UUID.randomUUID(), DAILY);
         });
 
         // not fail if we have unknown apps in our bundle's settings on unsubscibe, but nb affected rows must be 0
-        assertEquals(0, emailSubscriptionRepository.unsubscribeEventType(orgId, username, UUID.randomUUID(), UUID.randomUUID(), DAILY));
+        assertEquals(0, emailSubscriptionRepository.unsubscribeEventType(orgId, username, UUID.randomUUID(), DAILY));
 
         // does not add if we try to create unknown bundle/apps
         SettingsValuesByEventType settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", eventType, true, true);

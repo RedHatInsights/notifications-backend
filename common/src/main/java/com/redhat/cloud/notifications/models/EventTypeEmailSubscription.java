@@ -16,11 +16,6 @@ public class EventTypeEmailSubscription {
     private EventTypeEmailSubscriptionId id;
 
     @ManyToOne
-    @MapsId("applicationId")
-    @JoinColumn(name = "application_id")
-    private Application application;
-
-    @ManyToOne
     @MapsId("eventTypeId")
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
@@ -51,14 +46,6 @@ public class EventTypeEmailSubscription {
 
     public void setType(EmailSubscriptionType type) {
         id.subscriptionType = type;
-    }
-
-    public Application getApplication() {
-        return application;
-    }
-
-    public void setApplication(Application application) {
-        this.application = application;
     }
 
     public EventType getEventType() {

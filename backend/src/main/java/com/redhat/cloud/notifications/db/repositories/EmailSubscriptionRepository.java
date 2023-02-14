@@ -52,31 +52,30 @@ public class EmailSubscriptionRepository {
     }
 
     @Transactional
-    public int subscribeEventType(String orgId, String username, UUID applicationId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
-        String query = "INSERT INTO email_subscriptions(org_id, user_id, application_id, event_type_id, subscription_type) " +
-            "VALUES (:orgId, :userId, :applicationId, :eventTypeId, :subscriptionType ) " +
-            "ON CONFLICT (org_id, user_id, application_id, event_type_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
+    public int subscribeEventType(String orgId, String username, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
+        String query = "INSERT INTO email_subscriptions(org_id, user_id, event_type_id, subscription_type) " +
+            "VALUES (:orgId, :userId, :eventTypeId, :subscriptionType ) " +
+            "ON CONFLICT (org_id, user_id, event_type_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
 
         // HQL does not support the ON CONFLICT clause so we need a native query here
         return entityManager.createNativeQuery(query)
             .setParameter("orgId", orgId)
             .setParameter("userId", username)
-            .setParameter("applicationId", applicationId)
             .setParameter("eventTypeId", eventTypeId)
             .setParameter("subscriptionType", subscriptionType.name())
             .executeUpdate();
     }
 
     @Transactional
-    public int unsubscribeEventType(String orgId, String userId, UUID applicationId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
+    public int unsubscribeEventType(String orgId, String userId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
         String query = "DELETE FROM EventTypeEmailSubscription WHERE id = :Id";
         return entityManager.createQuery(query)
-            .setParameter("Id", new EventTypeEmailSubscriptionId(orgId, userId, applicationId, eventTypeId, subscriptionType))
+            .setParameter("Id", new EventTypeEmailSubscriptionId(orgId, userId, eventTypeId, subscriptionType))
             .executeUpdate();
     }
 
     public List<EventTypeEmailSubscription> getEmailSubscriptionByEventType(String orgId, String username, String bundleName, String applicationName) {
-        String query = "SELECT es FROM EventTypeEmailSubscription es LEFT JOIN FETCH es.application a LEFT JOIN FETCH a.bundle b " +
+        String query = "SELECT es FROM EventTypeEmailSubscription es LEFT JOIN FETCH es.eventType ev LEFT JOIN FETCH ev.application a LEFT JOIN FETCH a.bundle b " +
             "WHERE es.id.orgId = :orgId AND es.id.userId = :userId " +
             "AND b.name = :bundleName AND a.name = :applicationName";
 
@@ -115,7 +114,7 @@ public class EmailSubscriptionRepository {
     }
 
     public List<EventTypeEmailSubscription> getEmailSubscriptionsPerEventTypeForUser(String orgId, String username) {
-        String query = "SELECT es FROM EventTypeEmailSubscription es LEFT JOIN FETCH es.eventType ev LEFT JOIN FETCH es.application a LEFT JOIN FETCH a.bundle b " +
+        String query = "SELECT es FROM EventTypeEmailSubscription es LEFT JOIN FETCH es.eventType ev LEFT JOIN FETCH ev.application a LEFT JOIN FETCH a.bundle b " +
             "WHERE es.id.orgId = :orgId AND es.id.userId = :userId";
         return entityManager.createQuery(query, EventTypeEmailSubscription.class)
             .setParameter("orgId", orgId)

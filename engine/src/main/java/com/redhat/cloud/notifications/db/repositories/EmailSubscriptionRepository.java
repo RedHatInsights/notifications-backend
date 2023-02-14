@@ -36,8 +36,8 @@ public class EmailSubscriptionRepository {
 
     private List<String> getEmailSubscribersUserIdByEventType(String orgId, String bundleName, String applicationName, String eventTypeName, EmailSubscriptionType subscriptionType) {
 
-        String query = "SELECT es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
-            "AND application.name = :applicationName AND eventType.name = : eventTypeName AND id.subscriptionType = :subscriptionType";
+        String query = "SELECT es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
+            "AND eventType.application.name = :applicationName AND eventType.name = : eventTypeName AND id.subscriptionType = :subscriptionType";
 
         return statelessSessionFactory.getCurrentSession().createQuery(query, String.class)
             .setParameter("orgId", orgId)
@@ -49,8 +49,8 @@ public class EmailSubscriptionRepository {
     }
 
     public Map<String, Set<String>> getEmailSubscribersUserIdGroupedByEventType(String orgId, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
-        String query = "SELECT eventType.name, es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
-            "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
+        String query = "SELECT eventType.name, es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
+            "AND eventType.application.name = :applicationName AND id.subscriptionType = :subscriptionType";
 
         List<Object[]> records =  statelessSessionFactory.getCurrentSession().createQuery(query)
             .setParameter("orgId", orgId)

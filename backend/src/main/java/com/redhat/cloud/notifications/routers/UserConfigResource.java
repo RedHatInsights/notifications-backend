@@ -42,7 +42,6 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -254,11 +253,11 @@ public class UserConfigResource {
                             eventTypeValue.emailSubscriptionTypes.forEach((emailSubscriptionType, subscribed) -> {
                                 if (subscribed) {
                                     emailSubscriptionRepository.subscribeEventType(
-                                        orgId, userName, app.getId(), eventType.get().getId(), emailSubscriptionType
+                                        orgId, userName, eventType.get().getId(), emailSubscriptionType
                                     );
                                 } else {
                                     emailSubscriptionRepository.unsubscribeEventType(
-                                        orgId, userName, app.getId(), eventType.get().getId(), emailSubscriptionType
+                                        orgId, userName, eventType.get().getId(), emailSubscriptionType
                                     );
                                 }
                             });
@@ -341,19 +340,21 @@ public class UserConfigResource {
 
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
         Application application = applicationRepository.getApplication(bundleName, applicationName);
-        addApplicationStructureDetails(settingsValues, application);
-        Map<String, List<String>> mapApplicationsWithForcedEmail = Map.of(bundleName, applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList()));
-        patchWithUserPreferencesIfExists(settingsValues, eventTypeEmailSubscriptions, mapApplicationsWithForcedEmail);
+        List<String> mapApplicationsWithForcedEmail = applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList());
+        addApplicationStructureDetails(settingsValues, application, mapApplicationsWithForcedEmail.contains(applicationName));
+
+        patchWithUserPreferencesIfExists(settingsValues, eventTypeEmailSubscriptions);
         return settingsValues;
     }
 
-    private void addApplicationStructureDetails(final SettingsValuesByEventType settingsValues, Application application) {
+    private void addApplicationStructureDetails(final SettingsValuesByEventType settingsValues, Application application, boolean withForcedEmails) {
         Bundle bundle = application.getBundle();
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
         applicationSettingsValue.displayName = application.getDisplayName();
         for (EventType eventType : application.getEventTypes()) {
             SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
             eventTypeSettingsValue.displayName = eventType.getDisplayName();
+            eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
             for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
                 // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
                 boolean supported = templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType);
@@ -376,15 +377,14 @@ public class UserConfigResource {
         }
     }
 
-    private void patchWithUserPreferencesIfExists(final SettingsValuesByEventType settingsValues, List<EventTypeEmailSubscription> emailSubscriptions, Map<String, List<String>> applicationsWithForcedEmail) {
+    private void patchWithUserPreferencesIfExists(final SettingsValuesByEventType settingsValues, List<EventTypeEmailSubscription> emailSubscriptions) {
         for (EventTypeEmailSubscription emailSubscription : emailSubscriptions) {
-            if (settingsValues.bundles.containsKey(emailSubscription.getApplication().getBundle().getName())) {
-                SettingsValuesByEventType.BundleSettingsValue bundleSettings = settingsValues.bundles.get(emailSubscription.getApplication().getBundle().getName());
-                if (bundleSettings.applications.containsKey(emailSubscription.getApplication().getName())) {
-                    SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = bundleSettings.applications.get(emailSubscription.getApplication().getName());
+            if (settingsValues.bundles.containsKey(emailSubscription.getEventType().getApplication().getBundle().getName())) {
+                SettingsValuesByEventType.BundleSettingsValue bundleSettings = settingsValues.bundles.get(emailSubscription.getEventType().getApplication().getBundle().getName());
+                if (bundleSettings.applications.containsKey(emailSubscription.getEventType().getApplication().getName())) {
+                    SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = bundleSettings.applications.get(emailSubscription.getEventType().getApplication().getName());
                     if (applicationSettingsValue.eventTypes.containsKey(emailSubscription.getEventType().getName())) {
                         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = applicationSettingsValue.eventTypes.get(emailSubscription.getEventType().getName());
-                        eventTypeSettingsValue.hasForcedEmail = checkIfAppWithForcedEmail(emailSubscription.getApplication().getBundle().getName(), emailSubscription.getApplication().getName(), applicationsWithForcedEmail);
                         if (eventTypeSettingsValue.emailSubscriptionTypes.containsKey(emailSubscription.getType())) {
                             eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscription.getType(), true);
                         }
@@ -394,27 +394,18 @@ public class UserConfigResource {
         }
     }
 
-    private boolean checkIfAppWithForcedEmail(String bundleName, String appName, Map<String, List<String>> applicationsWithForcedEmail) {
-        boolean isForcedEmail = false;
-        if (applicationsWithForcedEmail.containsKey(bundleName)) {
-            isForcedEmail = applicationsWithForcedEmail.get(bundleName).contains(applicationsWithForcedEmail);
-        }
-        return isForcedEmail;
-    }
-
     private SettingsValuesByEventType getSettingsValueForUserByEventType(List<EventTypeEmailSubscription> emailSubscriptions, String orgId) {
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
 
-        Map<String, List<String>> mapApplicationsWithForcedEmails = new HashMap<>();
         for (Bundle bundle : bundleRepository.getBundles()) {
             List<Application> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundle.getId(), orgId);
-            mapApplicationsWithForcedEmails.put(bundle.getName(), applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList()));
+            List<String> listApplicationsWithForcedEmails = applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList());
             for (Application application : bundle.getApplications()) {
-                addApplicationStructureDetails(settingsValues, application);
+                addApplicationStructureDetails(settingsValues, application, listApplicationsWithForcedEmails.contains(application.getName()));
             }
         }
 
-        patchWithUserPreferencesIfExists(settingsValues, emailSubscriptions, mapApplicationsWithForcedEmails);
+        patchWithUserPreferencesIfExists(settingsValues, emailSubscriptions);
         return settingsValues;
     }
 }

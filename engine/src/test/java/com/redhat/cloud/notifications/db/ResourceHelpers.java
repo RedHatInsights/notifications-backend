@@ -41,7 +41,6 @@ public class ResourceHelpers {
         aggregation.setOrgId(orgId);
         aggregation.setBundleName(bundleName);
         aggregation.setApplicationName(applicationName);
-        aggregation.setEventType(eventTypeName);
         aggregation.setPayload(payload);
         return emailAggregationRepository.addEmailAggregation(aggregation);
     }
@@ -154,9 +153,8 @@ public class ResourceHelpers {
     public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, Application application, EventType eventType, EmailSubscriptionType subscriptionType) {
         EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
         eventTypeEmailSubscription.setId(
-            new EventTypeEmailSubscriptionId(orgId, userId, application.getId(), eventType.getId(), subscriptionType)
+            new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)
         );
-        eventTypeEmailSubscription.setApplication(entityManager.find(Application.class, application.getId()));
         eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
         entityManager.persist(eventTypeEmailSubscription);
         return eventTypeEmailSubscription;
