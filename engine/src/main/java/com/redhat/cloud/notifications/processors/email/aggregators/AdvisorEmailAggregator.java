@@ -3,9 +3,12 @@ package com.redhat.cloud.notifications.processors.email.aggregators;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -115,23 +118,28 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
             DEACTIVATED_RECOMMENDATION
     ));
 
+    // Advisor asked for a limit on the number of returned events. Please check
+    // https://issues.redhat.com/browse/RHCLOUD-23848 for more information.
+    public static final int MAXIMUM_NUMBER_RETURNED_EVENTS = 5;
+
     // Advisor final payload helpers
-    private final Map<String, Map<String, Object>> newRecommendations = new HashMap<>();
-    private final Map<String, Map<String, Object>> resolvedRecommendations = new HashMap<>();
-    private final Map<String, Map<String, String>> deactivatedRecommendations = new HashMap<>();
+    private Map<String, Map<String, Object>> newRecommendations = new LinkedHashMap<>();
+    private Map<String, Map<String, Object>> resolvedRecommendations = new LinkedHashMap<>();
+    private Map<String, Map<String, Object>> deactivatedRecommendations = new LinkedHashMap<>();
+
+    // The updatable JSON object that is set in the context.
+    private final JsonObject advisorJson;
 
     private final AtomicInteger incidentCounter = new AtomicInteger(0);
 
     private final AtomicInteger recommendationCounter = new AtomicInteger(0);
 
     public AdvisorEmailAggregator() {
-        JsonObject advisor = new JsonObject();
-        advisor.put(NEW_RECOMMENDATIONS, newRecommendations);
-        advisor.put(RESOLVED_RECOMMENDATIONS, resolvedRecommendations);
-        advisor.put(DEACTIVATED_RECOMMENDATIONS, deactivatedRecommendations);
-        advisor.put(TOTAL_INCIDENT, incidentCounter);
-        advisor.put(TOTAL_RECOMMENDATION, recommendationCounter);
-        context.put(ADVISOR_KEY, advisor);
+        this.advisorJson = new JsonObject();
+        this.advisorJson.put(TOTAL_INCIDENT, incidentCounter);
+        this.advisorJson.put(TOTAL_RECOMMENDATION, recommendationCounter);
+
+        context.put(ADVISOR_KEY, this.advisorJson);
     }
 
     @Override
@@ -177,6 +185,11 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                     ruleData.put(
                         CONTENT_SYSTEM_COUNT, (Integer) ruleData.get(CONTENT_SYSTEM_COUNT) + 1
                     );
+
+                    // Sort the map and then update it in the JSON object.
+                    this.newRecommendations = this.sortAndLimitMapByRisk(this.newRecommendations);
+                    this.advisorJson.put(NEW_RECOMMENDATIONS, newRecommendations);
+
                     break;
                 case RESOLVED_RECOMMENDATION:
                     ruleData = resolvedRecommendations.computeIfAbsent(
@@ -194,6 +207,11 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                     ruleData.put(
                         CONTENT_SYSTEM_COUNT, (Integer) ruleData.get(CONTENT_SYSTEM_COUNT) + 1
                     );
+
+                    // Sort the map and then update it in the JSON object.
+                    this.resolvedRecommendations = this.sortAndLimitMapByRisk(this.resolvedRecommendations);
+                    this.advisorJson.put(RESOLVED_RECOMMENDATIONS, this.resolvedRecommendations);
+
                     break;
                 case DEACTIVATED_RECOMMENDATION:
                     deactivatedRecommendations.computeIfAbsent(
@@ -207,6 +225,11 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                         ));
                         }
                     );
+
+                    // Sort the map and then update it in the JSON object.
+                    this.deactivatedRecommendations = this.sortAndLimitMapByRisk(this.deactivatedRecommendations);
+                    this.advisorJson.put(DEACTIVATED_RECOMMENDATIONS, this.deactivatedRecommendations);
+
                     break;
                 default:
                     break;
@@ -219,5 +242,48 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
         if (Boolean.valueOf(ruleIncident)) {
             incidentCounter.incrementAndGet();
         }
+    }
+
+    /**
+     * Sorts the provided map by the "total_risk" element and limits it to the
+     * maximum number of allowed elements specified in
+     * {@link AdvisorEmailAggregator#MAXIMUM_NUMBER_RETURNED_EVENTS}.
+     * @param unsortedMap the map to be sorted and limited.
+     * @return a new map instance that
+     */
+    public LinkedHashMap<String, Map<String, Object>> sortAndLimitMapByRisk(final Map<String, Map<String, Object>> unsortedMap) {
+        // Get all the entries from the map to be able to sort them.
+        final List<Map.Entry<String, Map<String, Object>>> sortedEntries = new ArrayList<>(unsortedMap.entrySet());
+        sortedEntries.sort((o1, o2) -> {
+            final Integer o1TotalRisk = Integer.parseInt((String) o1.getValue().get(TOTAL_RISK));
+            final Integer o2TotalRisk = Integer.parseInt((String) o2.getValue().get(TOTAL_RISK));
+
+            // The order is reversed because we want the list to be in
+            // descending order, since we want the elements sorted from the
+            // highest risk to the lowest one.
+            return o2TotalRisk.compareTo(o1TotalRisk);
+        });
+
+        // Create the resulting map we are about to return. Make it a linked
+        // hash map to preserve the insertion order. We set the initial
+        // capacity to a MAX + 1 and a load factor of "1.0" so that the
+        // hashmap doesn't get rearranged when it is close to be fully loaded.
+        final LinkedHashMap<String, Map<String, Object>> resultMap = new LinkedHashMap<>(
+            MAXIMUM_NUMBER_RETURNED_EVENTS + 1,
+            1.0F
+        );
+
+        // Populate the new map.
+        for (final Map.Entry<String, Map<String, Object>> entry : sortedEntries) {
+            if (resultMap.size() > MAXIMUM_NUMBER_RETURNED_EVENTS - 1) {
+                break;
+            }
+
+            // Use the "ruleId" from the ordered list, but get the nested map
+            // from the original map.
+            resultMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return resultMap;
     }
 }
