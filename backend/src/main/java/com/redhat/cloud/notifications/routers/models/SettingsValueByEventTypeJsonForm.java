@@ -30,6 +30,7 @@ public class SettingsValueByEventTypeJsonForm {
         public List<Field> fields;
         @JsonInclude(Include.NON_NULL)
         public String checkedWarning;
+        @JsonInclude(Include.NON_NULL)
         public String infoMessage;
     }
 
