@@ -394,6 +394,7 @@ public class FeatureFlipper {
     }
 
     public void setUseEventTypeForSubscriptionEnabled(boolean useEventTypeForSubscriptionEnabled) {
+        checkTestLaunchMode();
         this.useEventTypeForSubscriptionEnabled = useEventTypeForSubscriptionEnabled;
     }
 
