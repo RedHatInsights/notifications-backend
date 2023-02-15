@@ -36,6 +36,7 @@ import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.hibernate.Session;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,9 @@ import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -120,6 +123,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @InjectMock
     @RestClient
     EndpointTestService endpointTestService;
+
+    @Inject
+    Session databaseSession;
 
     @Test
     void testEndpointAdding() {
@@ -697,6 +703,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             ep.getProperties(CamelProperties.class).getExtras().put("channel", "#updated");
             ep.getProperties(CamelProperties.class).setUrl("https://updated.com");
+
+            /*
+             * Update the endpoint's status to make it seem as it its processor
+             * was ready to be updated. The transaction is required for
+             * Hibernate to run the update query.
+             */
+            this.updateEndpointStatusTo(UUID.fromString(id), EndpointStatus.READY);
+
             // Now update
             responseBody = given()
                     .header(identityHeader)
@@ -2110,6 +2124,95 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
     }
 
+    /**
+     * Tests that when a user updates an endpoint, and its associated RHOSE
+     * processor is not in an actionable state, a bad request error is returned
+     * to the user.
+     */
+    @Test
+    public void testNonActionableRhoseProcessorRaisesBadRequest() {
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-number", "org-id", "user");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        // Create the endpoint that we will attempt to modify.
+        final CamelProperties properties = new CamelProperties();
+        properties.setDisableSslVerification(false);
+        properties.setExtras(Map.of(
+                "channel", "test-channel",
+                EndpointResource.OB_PROCESSOR_ID, "processor-id",
+                EndpointResource.OB_PROCESSOR_NAME, "processor-name",
+                "template", "11"
+        ));
+        properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl(getMockServerUrl());
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setDescription("needle in the haystack");
+        endpoint.setEnabled(true);
+        endpoint.setName("endpoint to find");
+        endpoint.setProperties(properties);
+        endpoint.setServerErrors(0);
+        endpoint.setStatus(EndpointStatus.PROVISIONING);
+        endpoint.setSubType("slack");
+        endpoint.setType(EndpointType.CAMEL);
+
+        // Set up a default transformation template for the test to work.
+        this.resourceHelpers.setupTransformationTemplate();
+        // Set up a Bridge since otherwise we cannot create a Slack endpoint.
+        final Bridge bridge = this.mockBridge();
+
+        try {
+            final String response = given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(endpoint))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract()
+                    .response()
+                    .asString();
+
+            final JsonObject jsonResponse = new JsonObject(response);
+            final String id = jsonResponse.getString("id");
+
+            Assertions.assertNotNull(id, "the endpoint should have been correctly created, but the response payload didn't have the ID");
+            Assertions.assertFalse(id.isBlank(), "the endpoint should have been correctly created, but the response payload didn't have the ID");
+
+            final List<EndpointStatus> nonActionableStatuses = new ArrayList<>(EnumSet.allOf(EndpointStatus.class));
+            nonActionableStatuses.remove(EndpointStatus.READY);
+            nonActionableStatuses.remove(EndpointStatus.FAILED);
+
+            for (final var nonActionableStatus : nonActionableStatuses) {
+                /*
+                 * Update the endpoint's status to make it seem as it its processor
+                 * was being deleted. The transaction is required for Hibernate to
+                 * run the update query.
+                 */
+                this.updateEndpointStatusTo(UUID.fromString(id), nonActionableStatus);
+
+                final String badRequestResponse = given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(Json.encode(endpoint))
+                        .put(String.format("/endpoints/%s", id))
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .asString();
+
+                Assertions.assertEquals("the processor associated with the endpoint is not ready to be modified", badRequestResponse, "unexpected error message returned to the user");
+            }
+        } finally {
+            MockServerConfig.clearOpenBridgeEndpoints(bridge);
+        }
+    }
+
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
         assertTrue(message.contains(String.format(
                 "Is not possible to create or alter endpoint with type %s, check API for alternatives",
@@ -2148,5 +2251,19 @@ public class EndpointResourceTest extends DbIsolatedTest {
             responsePoint.mapTo(Endpoint.class);
             assertNotNull(responsePoint.getString("id"));
         }
+    }
+
+    /**
+     * Set the provided endpoint's status to the provided status.
+     * @param endpointUuid the UUID of the endpoint to update.
+     * @param status the status to set the endpoint to.
+     */
+    @Transactional
+    protected void updateEndpointStatusTo(final UUID endpointUuid, final EndpointStatus status) {
+        this.entityManager
+            .createQuery("UPDATE Endpoint SET status = :status WHERE id = :id")
+            .setParameter("status", status)
+            .setParameter("id", endpointUuid)
+            .executeUpdate();
     }
 }

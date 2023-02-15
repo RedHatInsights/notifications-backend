@@ -459,6 +459,26 @@ public class EndpointResource {
             CamelProperties requestProperties = endpoint.getProperties(CamelProperties.class);
             String slackChannel = checkSlackChannel(requestProperties);
 
+            /*
+             * Before the endpoint and its processor get updated, we need to
+             * check that the processor was in an actionable state before
+             * updating it in RHOSE.
+             *
+             * This will achieve two goals:
+             *
+             * 1. Avoid returning the RHOSE error directly to the
+             * user.
+             * 2. Avoid unnecessarily calling RHOSE.
+             *
+             * Check https://issues.redhat.com/browse/RHCLOUD-22281
+             * for more information.
+             */
+            if (dbEndpoint.getStatus() != EndpointStatus.READY && dbEndpoint.getStatus() != EndpointStatus.FAILED) {
+                throw new BadRequestException(
+                    "the processor associated with the endpoint is not ready to be modified"
+                );
+            }
+
             dbEndpoint.setStatus(EndpointStatus.PROVISIONING);
 
             CamelProperties dbProperties = dbEndpoint.getProperties(CamelProperties.class);
