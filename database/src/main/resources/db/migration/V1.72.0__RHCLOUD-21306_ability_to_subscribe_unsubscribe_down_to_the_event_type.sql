@@ -1,5 +1,4 @@
 CREATE TABLE public.email_subscriptions (
-    account_id varchar(50) NULL,
     user_id varchar(50) NOT NULL,
     org_id text NOT NULL,
     event_type_id uuid NOT NULL,
