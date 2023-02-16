@@ -396,10 +396,10 @@ public class UserConfigResource {
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
 
         for (Bundle bundle : bundleRepository.getBundles()) {
-            List<Application> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundle.getId(), orgId);
-            List<String> listApplicationsWithForcedEmails = applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList());
+            List<String> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundle.getId(), orgId)
+                    .stream().map(Application::getName).collect(Collectors.toList());
             for (Application application : bundle.getApplications()) {
-                addApplicationStructureDetails(settingsValues, application, listApplicationsWithForcedEmails.contains(application.getName()));
+                addApplicationStructureDetails(settingsValues, application, applicationsWithForcedEmails.contains(application.getName()));
             }
         }
 
