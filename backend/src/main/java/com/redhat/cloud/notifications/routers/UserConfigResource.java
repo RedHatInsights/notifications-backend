@@ -377,14 +377,14 @@ public class UserConfigResource {
 
     private void patchWithUserPreferencesIfExists(final SettingsValuesByEventType settingsValues, List<EventTypeEmailSubscription> emailSubscriptions) {
         for (EventTypeEmailSubscription emailSubscription : emailSubscriptions) {
-            if (settingsValues.bundles.containsKey(emailSubscription.getEventType().getApplication().getBundle().getName())) {
-                SettingsValuesByEventType.BundleSettingsValue bundleSettings = settingsValues.bundles.get(emailSubscription.getEventType().getApplication().getBundle().getName());
-                if (bundleSettings.applications.containsKey(emailSubscription.getEventType().getApplication().getName())) {
-                    SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = bundleSettings.applications.get(emailSubscription.getEventType().getApplication().getName());
-                    if (applicationSettingsValue.eventTypes.containsKey(emailSubscription.getEventType().getName())) {
-                        SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = applicationSettingsValue.eventTypes.get(emailSubscription.getEventType().getName());
-                        if (eventTypeSettingsValue.emailSubscriptionTypes.containsKey(emailSubscription.getType())) {
-                            eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscription.getType(), true);
+            SettingsValuesByEventType.BundleSettingsValue bundleSettings = settingsValues.bundles.get(emailSubscription.getEventType().getApplication().getBundle().getName());
+            if (bundleSettings != null) {
+                SettingsValuesByEventType.ApplicationSettingsValue appSettings = bundleSettings.applications.get(emailSubscription.getEventType().getApplication().getName());
+                if (appSettings != null) {
+                    SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettings = appSettings.eventTypes.get(emailSubscription.getEventType().getName());
+                    if (eventTypeSettings != null) {
+                        if (eventTypeSettings.emailSubscriptionTypes.containsKey(emailSubscription.getType())) {
+                            eventTypeSettings.emailSubscriptionTypes.put(emailSubscription.getType(), true);
                         }
                     }
                 }
