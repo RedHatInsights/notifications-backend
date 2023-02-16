@@ -367,12 +367,11 @@ public class UserConfigResource {
         }
 
         if (applicationSettingsValue.eventTypes.size() > 0) {
-            if (!settingsValues.bundles.containsKey(bundle.getName())) {
+            settingsValues.bundles.computeIfAbsent(bundle.getName(), unused -> {
                 SettingsValuesByEventType.BundleSettingsValue bundleSettingsValue = new SettingsValuesByEventType.BundleSettingsValue();
                 bundleSettingsValue.displayName = bundle.getDisplayName();
-                settingsValues.bundles.put(bundle.getName(), bundleSettingsValue);
-            }
-            settingsValues.bundles.get(bundle.getName()).applications.put(application.getName(), applicationSettingsValue);
+                return bundleSettingsValue;
+            }).applications.put(application.getName(), applicationSettingsValue);
         }
     }
 
