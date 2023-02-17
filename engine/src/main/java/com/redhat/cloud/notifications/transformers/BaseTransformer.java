@@ -62,7 +62,7 @@ public class BaseTransformer {
             return message;
         } else if (eventWrapper instanceof EventWrapperCloudEvent) {
             ConsoleCloudEvent cloudEvent = ((EventWrapperCloudEvent) eventWrapper).getEvent();
-            JsonObject.mapFrom(cloudEvent);
+            return JsonObject.mapFrom(cloudEvent);
         }
 
         throw new RuntimeException("Unknown event wrapper sub-type received");

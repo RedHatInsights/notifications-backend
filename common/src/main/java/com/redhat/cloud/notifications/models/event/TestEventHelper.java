@@ -77,11 +77,16 @@ public class TestEventHelper {
      * @return true if the event is an integration test, false otherwise.
      */
     public static boolean isIntegrationTestEvent(final com.redhat.cloud.notifications.models.Event event) {
-        Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
+        // Todo: Add support for cloud events
+        if (event.getEventWrapper() instanceof EventWrapperAction) {
+            Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
 
-        return TestEventHelper.TEST_ACTION_BUNDLE.equals(action.getBundle()) &&
-                TestEventHelper.TEST_ACTION_APPLICATION.equals(action.getApplication()) &&
-                TestEventHelper.TEST_ACTION_EVENT_TYPE.equals(action.getEventType());
+            return TestEventHelper.TEST_ACTION_BUNDLE.equals(action.getBundle()) &&
+                    TestEventHelper.TEST_ACTION_APPLICATION.equals(action.getApplication()) &&
+                    TestEventHelper.TEST_ACTION_EVENT_TYPE.equals(action.getEventType());
+        }
+
+        return false;
     }
 
     /**

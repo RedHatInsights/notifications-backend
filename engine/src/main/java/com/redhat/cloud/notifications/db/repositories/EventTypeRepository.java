@@ -37,7 +37,7 @@ public class EventTypeRepository {
     }
 
     public EventType getEventType(String fullyQualifiedName) {
-        String query = "FROM EventType e " +
+        String query = "FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle b " +
                 "WHERE e.fullyQualifiedName = :fullyQualifiedName";
         return statelessSessionFactory.getCurrentSession().createQuery(query, EventType.class)
                 .setParameter("fullyQualifiedName", fullyQualifiedName)
