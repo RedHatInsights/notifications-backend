@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -26,6 +27,7 @@ import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -60,6 +62,14 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
     }
+
+    @AfterEach
+    void afterEach() {
+        featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
+    }
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
@@ -312,7 +322,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals(true, preferences.getDailyEmail());
         assertEquals(true, preferences.getInstantEmail());
 
-        // Fail if we have unknown apps in our bundle's settings
+        // does not fail if we have unknown apps in our bundle's settings
         emailSubscriptionRepository.subscribe(accountId, orgId, username, bundle, "not-found-app", DAILY);
 
         given()
@@ -394,6 +404,16 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, INSTANT)).thenReturn(TRUE);
         when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(TRUE);
 
+        // should return code 400 because the subscription by event type feature is not available yet
+        given()
+            .header(identityHeader)
+            .queryParam("bundleName", bundle)
+            .when().get(path)
+            .then()
+            .statusCode(400);
+
+        featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
+
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
             .header(identityHeader)
             .queryParam("bundleName", bundle)
@@ -433,12 +453,12 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         // Both to true
         updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true);
 
-        // Fail if we have unknown apps in our bundle's settings
+        // Fail if we have unknown event type on subscribe, but nothing will be added on database
         assertThrows(PersistenceException.class, () -> {
             emailSubscriptionRepository.subscribeEventType(orgId, username, UUID.randomUUID(), DAILY);
         });
 
-        // not fail if we have unknown apps in our bundle's settings on unsubscibe, but nb affected rows must be 0
+        // not fail if we have unknown event type on unsubscibe, but nb affected rows must be 0
         assertEquals(0, emailSubscriptionRepository.unsubscribeEventType(orgId, username, UUID.randomUUID(), DAILY));
 
         // does not add if we try to create unknown bundle/apps

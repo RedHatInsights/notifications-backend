@@ -39,6 +39,7 @@ import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hibernate.Session;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,6 +97,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
+    }
+
+    @AfterEach
+    void afterEach() {
         featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
     }
 

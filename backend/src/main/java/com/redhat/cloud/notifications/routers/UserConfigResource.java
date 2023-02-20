@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -71,6 +72,9 @@ public class UserConfigResource {
 
     @Inject
     EventTypeRepository eventTypeRepository;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @POST
     @Path("/notification-preference")
@@ -234,6 +238,7 @@ public class UserConfigResource {
     @Operation(hidden = true)
     @Transactional
     public Response saveSettingsByEventType(@Context SecurityContext sec, @NotNull @Valid SettingsValuesByEventType userSettings) {
+        checkIfSubscriptionByEventTypeServiceIsAvailable();
 
         final String userName = getUserName(sec);
         final String orgId = getOrgId(sec);
@@ -273,6 +278,8 @@ public class UserConfigResource {
     @Produces(APPLICATION_JSON)
     @Operation(hidden = true)
     public Response getSettingsSchemaByEventType(@Context SecurityContext sec) {
+        checkIfSubscriptionByEventTypeServiceIsAvailable();
+
         final String name = getUserName(sec);
         String orgId = getOrgId(sec);
 
@@ -291,9 +298,9 @@ public class UserConfigResource {
     @Produces(APPLICATION_JSON)
     @Operation(hidden = true)
     public Response getPreferencesByEventType(
-        @Context SecurityContext sec,
-        @PathParam("bundleName") String bundleName,
-        @PathParam("applicationName") String applicationName) {
+        @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName) {
+        checkIfSubscriptionByEventTypeServiceIsAvailable();
+
         final String name = getUserName(sec);
         String orgId = getOrgId(sec);
 
@@ -405,5 +412,11 @@ public class UserConfigResource {
 
         patchWithUserPreferencesIfExists(settingsValues, emailSubscriptions);
         return settingsValues;
+    }
+
+    private void checkIfSubscriptionByEventTypeServiceIsAvailable() {
+        if (!featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
+            throw new BadRequestException();
+        }
     }
 }

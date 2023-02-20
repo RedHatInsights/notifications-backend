@@ -43,11 +43,11 @@ public class EmailSubscriptionRepositoryTest {
             EventType eventTypeA = resourceHelpers.createEventType(application.getId(), "event-type-a");
             EventType eventTypeB = resourceHelpers.createEventType(application.getId(), "event-type-b");
             EventType eventTypeC = resourceHelpers.createEventType(application.getId(), "event-type-c");
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-01", application, eventTypeA, EmailSubscriptionType.DAILY);
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-01", application, eventTypeB, EmailSubscriptionType.DAILY);
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", application, eventTypeC, EmailSubscriptionType.DAILY);
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", application, eventTypeA, EmailSubscriptionType.DAILY);
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-03", application, eventTypeC, EmailSubscriptionType.DAILY);
+            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-01", eventTypeA, EmailSubscriptionType.DAILY);
+            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-01", eventTypeB, EmailSubscriptionType.DAILY);
+            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", eventTypeC, EmailSubscriptionType.DAILY);
+            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", eventTypeA, EmailSubscriptionType.DAILY);
+            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-03", eventTypeC, EmailSubscriptionType.DAILY);
 
             Map<String, Set<String>> mapUsersByEventType = emailSubscriptionRepository.getEmailSubscribersUserIdGroupedByEventType(ORG_ID, BUNDLE_NAME, APP_NAME, EmailSubscriptionType.DAILY);
             assertEquals(3, mapUsersByEventType.size());

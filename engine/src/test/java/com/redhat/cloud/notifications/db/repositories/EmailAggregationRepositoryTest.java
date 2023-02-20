@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
@@ -9,7 +8,6 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -31,9 +29,6 @@ public class EmailAggregationRepositoryTest {
     private static final String ORG_ID = "someOrgId";
     private static final String BUNDLE_NAME = "best-bundle";
     private static final String APP_NAME = "awesome-app";
-
-    private static final String EVENT_TYPE = "amazing-event-type";
-
     private static final JsonObject PAYLOAD1 = new JsonObject("{\"foo\":\"bar\"}");
     private static final JsonObject PAYLOAD2 = new JsonObject("{\"hello\":\"world\"}");
 
@@ -49,14 +44,6 @@ public class EmailAggregationRepositoryTest {
     @Inject
     EmailAggregationRepository emailAggregationRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    @BeforeEach
-    void setUp() {
-        featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
-    }
-
     @Test
     void testAllMethods() {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
@@ -65,11 +52,11 @@ public class EmailAggregationRepositoryTest {
 
         statelessSessionFactory.withSession(statelessSession -> {
             clearEmailAggregations();
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD1);
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", EVENT_TYPE, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
+            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
             List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
             assertEquals(2, aggregations.size());
@@ -87,82 +74,6 @@ public class EmailAggregationRepositoryTest {
             assertEquals(APP_NAME, keys.get(0).getApplication());
 
             assertEquals(2, emailAggregationRepository.purgeOldAggregation(key, end));
-            assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
-            assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
-
-            clearEmailAggregations();
-        });
-    }
-
-    @Test
-    void testAllMethodsWithEventTypeAndFeatureFlipDisabled() {
-        LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
-        LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
-        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
-
-        statelessSessionFactory.withSession(statelessSession -> {
-            clearEmailAggregations();
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD1);
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", EVENT_TYPE, PAYLOAD2);
-
-            List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
-            assertEquals(2, aggregations.size());
-            assertTrue(aggregations.stream().map(EmailAggregation::getOrgId).allMatch(ORG_ID::equals));
-            assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
-            assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
-            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
-            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
-
-            List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
-            assertEquals(4, keys.size());
-            assertEquals(ORG_ID, aggregations.get(0).getOrgId());
-            assertEquals("other-org-id", keys.get(0).getOrgId());
-            assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
-            assertEquals(APP_NAME, keys.get(0).getApplication());
-
-            assertEquals(2, emailAggregationRepository.purgeOldAggregation(key, end));
-            assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
-            assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
-
-            clearEmailAggregations();
-        });
-    }
-
-    @Test
-    void testAllMethodsFilteredByEventType() {
-        featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
-        LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
-        LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
-        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
-
-        statelessSessionFactory.withSession(statelessSession -> {
-            clearEmailAggregations();
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD1);
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", EVENT_TYPE, PAYLOAD2);
-            resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, "other-event-type", PAYLOAD2);
-
-            List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
-            assertEquals(3, aggregations.size());
-            assertTrue(aggregations.stream().map(EmailAggregation::getOrgId).allMatch(ORG_ID::equals));
-            assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
-            assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
-            assertEquals(1, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD1::equals).count());
-            assertEquals(2, aggregations.stream().map(EmailAggregation::getPayload).filter(PAYLOAD2::equals).count());
-
-            List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
-            assertEquals(4, keys.size());
-            assertEquals(ORG_ID, aggregations.get(0).getOrgId());
-            assertEquals("other-org-id", keys.get(0).getOrgId());
-            assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
-            assertEquals(APP_NAME, keys.get(0).getApplication());
-
-            assertEquals(3, emailAggregationRepository.purgeOldAggregation(key, end));
             assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
             assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
 
@@ -173,11 +84,10 @@ public class EmailAggregationRepositoryTest {
     @Test
     void addEmailAggregationWithConstraintViolations() {
         statelessSessionFactory.withSession(statelessSession -> {
-            assertFalse(resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, EVENT_TYPE, null));
-            assertTrue(resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, null, PAYLOAD1));
-            assertFalse(resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, null, EVENT_TYPE, PAYLOAD1));
-            assertFalse(resourceHelpers.addEmailAggregation(ORG_ID, null, APP_NAME, EVENT_TYPE, PAYLOAD1));
-            assertFalse(resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, EVENT_TYPE, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, null));
+            assertFalse(resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, null, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(ORG_ID, null, APP_NAME, PAYLOAD1));
+            assertFalse(resourceHelpers.addEmailAggregation(null, BUNDLE_NAME, APP_NAME, PAYLOAD1));
         });
     }
 
