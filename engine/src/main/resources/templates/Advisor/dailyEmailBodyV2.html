@@ -4,18 +4,19 @@
 {@boolean hideSubtitleSection2=true}
 {#include Common/insightsEmailBody}
 {#extra-css}
-    .rh-incident {
-      border-radius: 1em;
-      border: thin black solid;
-      background-color: #fac8c8;
-      padding: 0 0.5em;
-    }
-    .fa-exclamation-circle {
+    .fa-exclamation-circle{
+        background: url('data:image/png;base64,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') no-repeat center center;
+        background-size: 16px;
+        width: 16px;
+        height: 16px;
         vertical-align: -2px;
+        display: inline-block;
     }
-    .fa-exclamation-circle path {
-      d: path("M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z");
-      fill: rgb(201,25,11);
+    .empty-div-16{
+        width: 16px;
+        height: 16px;
+        vertical-align: -2px;
+        display: inline-block;
     }
 {/extra-css}
 {#content-title}
@@ -45,9 +46,11 @@
         <tr>
             <td style="width: 60%; word-wrap: anywhere;">
                 {#let isIncident = action.context.advisor.new_recommendations.get(rec).has_incident.or("false")}
-                    <svg class="fa-exclamation-circle" height="16" width="16" viewBox="0 0 512 512" aria-hidden="true" role="img" {#if !isIncident || (true != isIncident && "true" != isIncident)} style='visibility: hidden'{/if}>
-                        <path><title>Incident</title></path>
-                    </svg>
+                    {#if isIncident && (true == isIncident || "true" == isIncident)}
+                        <div class="fa-exclamation-circle" title="Incident"></div>
+                    {#else}
+                        <div class="empty-div-16"></div>
+                    {/if}
                 {/let}
                 <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.new_recommendations.get(rec).rule_description}</a>
             </td>
@@ -82,14 +85,13 @@
           <tr>
             <td style="width: 60%; word-wrap: anywhere; ">
                 {#let isIncident = action.context.advisor.resolved_recommendations.get(rec).has_incident.or("false")}
-                    <svg class="fa-exclamation-circle" height="16" width="16" viewBox="0 0 512 512" aria-hidden="true" role="img" {#if !isIncident || (true != isIncident && "true" != isIncident)} style='visibility: hidden'{/if}>
-                        <path><title>Incident</title></path>
-                    </svg>
+                    {#if isIncident && (true == isIncident || "true" == isIncident)}
+                        <div class="fa-exclamation-circle" title="Incident"></div>
+                    {#else}
+                        <div class="empty-div-16"></div>
+                    {/if}
                 {/let}
               <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.resolved_recommendations.get(rec).rule_description}</a>
-              {#if action.context.advisor.resolved_recommendations.get(rec).has_incident && true == action.context.advisor.resolved_recommendations.get(rec).has_incident}
-                <span class="rh-incident">Incident</span>
-              {/if}
             </td>
             <td style="width: 20%">
               {#switch action.context.advisor.resolved_recommendations.get(rec).total_risk}
@@ -121,14 +123,13 @@
           <tr>
             <td style="width: 60%; word-wrap: anywhere;">
                 {#let isIncident = action.context.advisor.deactivated_recommendations.get(rec).has_incident.or("false")}
-                    <svg class="fa-exclamation-circle" height="16" width="16" viewBox="0 0 512 512" aria-hidden="true" role="img" {#if !isIncident || (true != isIncident && "true" != isIncident)} style='visibility: hidden'{/if}>
-                        <path><title>Incident</title></path>
-                    </svg>
+                    {#if isIncident && (true == isIncident || "true" == isIncident)}
+                        <div class="fa-exclamation-circle" title="Incident"></div>
+                    {#else}
+                        <div class="empty-div-16"></div>
+                    {/if}
                 {/let}
                 <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.deactivated_recommendations.get(rec).rule_description}</a>
-                {#if action.context.advisor.deactivated_recommendations.get(rec).has_incident && true == action.context.advisor.deactivated_recommendations.get(rec).has_incident}
-                    <span class="rh-incident">Incident</span>
-                {/if}
             </td>
             <td style="width: 40%">
               {#switch action.context.advisor.deactivated_recommendations.get(rec).total_risk}
