@@ -8,7 +8,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 
-@RegisterRestClient(configKey = "internal-daily-digest")
+@RegisterRestClient(configKey = "internal-engine")
 public interface DailyDigestService {
 
     /**
