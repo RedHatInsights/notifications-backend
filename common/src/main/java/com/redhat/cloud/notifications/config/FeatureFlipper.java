@@ -120,6 +120,10 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-advisor-openshift-email-templates-v2.enabled", defaultValue = "false")
     boolean advisorOpenShiftEmailTemplatesV2Enabled;
 
+    @ConfigProperty(name = "notifications.use-event-type-for-subscription.enabled", defaultValue = "false")
+    boolean useEventTypeForSubscriptionEnabled;
+
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -149,6 +153,7 @@ public class FeatureFlipper {
         Log.infof("The RBAC's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor's email templates V2 are %s", advisorEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -382,6 +387,15 @@ public class FeatureFlipper {
     public void setAdvisorOpenShiftEmailTemplatesV2Enabled(boolean advisorOpenShiftEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.advisorOpenShiftEmailTemplatesV2Enabled = advisorOpenShiftEmailTemplatesV2Enabled;
+    }
+
+    public boolean isUseEventTypeForSubscriptionEnabled() {
+        return useEventTypeForSubscriptionEnabled;
+    }
+
+    public void setUseEventTypeForSubscriptionEnabled(boolean useEventTypeForSubscriptionEnabled) {
+        checkTestLaunchMode();
+        this.useEventTypeForSubscriptionEnabled = useEventTypeForSubscriptionEnabled;
     }
 
     /**

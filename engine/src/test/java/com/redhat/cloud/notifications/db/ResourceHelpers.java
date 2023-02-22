@@ -5,10 +5,15 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailSubscription;
+import com.redhat.cloud.notifications.models.EmailSubscriptionId;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import io.vertx.core.json.JsonObject;
@@ -32,6 +37,19 @@ public class ResourceHelpers {
 
     @Inject
     EntityManager entityManager;
+
+    public Bundle findBundle(String name) {
+        return entityManager.createQuery("FROM Bundle WHERE name = :name", Bundle.class)
+            .setParameter("name", name)
+            .getSingleResult();
+    }
+
+    public Application findApp(String bundleName, String appName) {
+        return entityManager.createQuery("FROM Application WHERE name = :appName AND bundle.name = :bundleName", Application.class)
+            .setParameter("appName", appName)
+            .setParameter("bundleName", bundleName)
+            .getSingleResult();
+    }
 
     public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
@@ -144,6 +162,32 @@ public class ResourceHelpers {
         aggregationEmailTemplate.setSubscriptionType(DAILY);
         entityManager.persist(aggregationEmailTemplate);
         return aggregationEmailTemplate;
+    }
+
+    @Transactional
+    public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, EmailSubscriptionType subscriptionType) {
+        EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
+        eventTypeEmailSubscription.setId(
+            new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)
+        );
+        eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
+        entityManager.persist(eventTypeEmailSubscription);
+        return eventTypeEmailSubscription;
+    }
+
+    @Transactional
+    public EmailSubscription createEmailSubscription(String orgId, String userId, Application application, EmailSubscriptionType subscriptionType) {
+        EmailSubscription emailSubscription = new EmailSubscription();
+        EmailSubscriptionId emailSubscriptionId = new EmailSubscriptionId();
+        emailSubscriptionId.orgId = orgId;
+        emailSubscriptionId.applicationId = application.getId();
+        emailSubscriptionId.userId = userId;
+        emailSubscriptionId.subscriptionType = subscriptionType;
+        emailSubscription.setId(emailSubscriptionId);
+
+        emailSubscription.setApplication(entityManager.find(Application.class, application.getId()));
+        entityManager.persist(emailSubscription);
+        return emailSubscription;
     }
 
     @Transactional

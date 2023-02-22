@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
@@ -581,6 +582,7 @@ public class EndpointResource {
         }
     }
 
+    @Deprecated
     @PUT
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @Produces(APPLICATION_JSON)
@@ -597,17 +599,26 @@ public class EndpointResource {
         if (app == null) {
             throw new NotFoundException();
         } else {
-            return emailSubscriptionRepository.subscribe(
+            if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
+                // subscribe for each event Type of this application
+                for (EventType event : app.getEventTypes()) {
+                    emailSubscriptionRepository.subscribeEventType(orgId, principal.getName(), event.getId(), type);
+                }
+                return true;
+            } else {
+                return emailSubscriptionRepository.subscribe(
                     accountId,
                     orgId,
                     principal.getName(),
                     bundleName,
                     applicationName,
                     type
-            );
+                );
+            }
         }
     }
 
+    @Deprecated
     @DELETE
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @Produces(APPLICATION_JSON)
@@ -623,13 +634,21 @@ public class EndpointResource {
         if (app == null) {
             throw new NotFoundException();
         } else {
-            return emailSubscriptionRepository.unsubscribe(
+            if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
+                // unsubscribe for each event Type of this application
+                for (EventType event : app.getEventTypes()) {
+                    emailSubscriptionRepository.unsubscribeEventType(orgId, principal.getName(), event.getId(), type);
+                }
+                return true;
+            } else {
+                return emailSubscriptionRepository.unsubscribe(
                     orgId,
                     principal.getName(),
                     bundleName,
                     applicationName,
                     type
-            );
+                );
+            }
         }
     }
 
