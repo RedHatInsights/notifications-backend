@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.templates.models.Environment;
+import com.redhat.cloud.notifications.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 

@@ -3,12 +3,13 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.templates.models.Environment;
+import com.redhat.cloud.notifications.models.Environment;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import javax.inject.Inject;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -16,8 +17,10 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestAdvisorOpenShiftTemplate {
