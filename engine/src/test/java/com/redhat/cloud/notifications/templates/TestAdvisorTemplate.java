@@ -134,7 +134,7 @@ public class TestAdvisorTemplate {
         assertTrue(result.contains("New Recommendations"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
         assertTrue(result.contains("Active rule 1</a>"));
-        assertTrue(result.contains("<div class=\"fa-exclamation-circle\""));
+        assertTrue(result.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
         assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));

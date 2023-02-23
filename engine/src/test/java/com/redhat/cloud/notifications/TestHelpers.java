@@ -27,7 +27,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class TestHelpers {
 
-    public static final String HCC_LOGO_TARGET = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABG4AAACoCAYAAACxM6jQAAAABmJLR0QA";
+    public static final String HCC_LOGO_TARGET = "Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png";
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
     public static final String policyId1 = "abcd-efghi-jkl-lmn";
