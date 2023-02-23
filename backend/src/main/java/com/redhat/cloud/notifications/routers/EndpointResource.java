@@ -379,7 +379,7 @@ public class EndpointResource {
              * user.
              * 2. Avoid unnecessarily calling RHOSE.
              *
-             * Check https://issues.redhat.com/browse/RHCLOUD-22281
+             * Check https://issues.redhat.com/browse/RHCLOUD-22355
              * for more information.
              */
             if (ep.getStatus() != EndpointStatus.READY && ep.getStatus() != EndpointStatus.FAILED) {
