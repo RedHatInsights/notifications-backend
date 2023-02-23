@@ -206,6 +206,11 @@ objects:
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
           value: ${QUARKUS_REST_CLIENT_KC_URL}
+        - name: SOURCES_PSK
+          valueFrom:
+            secretKeyRef:
+              name: sources-api-psk
+              key: psk
         - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
         - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
