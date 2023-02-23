@@ -369,6 +369,25 @@ public class EndpointResource {
 
         Endpoint ep = endpointRepository.getEndpoint(orgId, id);
         if (isForOpenBridge(ep)) {
+            /*
+             * Before the endpoint and its processor get deleted, we need to
+             * check that the processor was in an actionable state before
+             * updating it in RHOSE.
+             *
+             * This will achieve two goals:
+             *
+             * 1. Avoid returning the RHOSE error directly to the
+             * user.
+             * 2. Avoid unnecessarily calling RHOSE.
+             *
+             * Check https://issues.redhat.com/browse/RHCLOUD-22355
+             * for more information.
+             */
+            if (ep.getStatus() != EndpointStatus.READY && ep.getStatus() != EndpointStatus.FAILED) {
+                throw new BadRequestException(
+                    "the processor associated with the endpoint is not ready to be deleted"
+                );
+            }
 
             try {
                 ep.setStatus(EndpointStatus.DELETING);
