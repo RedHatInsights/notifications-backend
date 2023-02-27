@@ -29,6 +29,8 @@ import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.sources.Secret;
+import com.redhat.cloud.notifications.routers.sources.SourcesService;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -37,6 +39,7 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hibernate.Session;
 import org.junit.jupiter.api.AfterEach;
@@ -135,6 +138,21 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     Session databaseSession;
+
+    /**
+     * We mock the sources service's REST client because there are a few tests
+     * that enable the integration, but we don't want to attempt to hit the
+     * real service.
+     */
+    @InjectMock
+    @RestClient
+    SourcesService sourcesServiceMock;
+
+    /**
+     * Required to set up the mock calls to the sources service mock.
+     */
+    @ConfigProperty(name = "sources.psk")
+    String sourcesPsk;
 
     @Test
     void testEndpointAdding() {
@@ -2331,6 +2349,357 @@ public class EndpointResourceTest extends DbIsolatedTest {
             }
         } finally {
             MockServerConfig.clearOpenBridgeEndpoints(bridge);
+        }
+    }
+
+    /**
+     * Tests that when an endpoint gets updated, if it didn't have any secrets
+     * and the user provides new ones, then Sources gets called and the
+     * references to those secrets are stored in the database.
+    */
+    @Test
+    public void testUpdateEndpointCreateSecrets() {
+        // Store the original value of this feature to reset it to what it was
+        // after the test.
+        final boolean wasSourcesEnabled = this.featureFlipper.isSourcesUsedAsSecretsBackend();
+
+        try {
+            this.featureFlipper.setSourcesSecretsBackend(true);
+
+            final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, TestConstants.DEFAULT_ORG_ID, "user");
+            final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+            // Create the endpoint that we will attempt to modify.
+            final WebhookProperties properties = new WebhookProperties();
+            properties.setDisableSslVerification(false);
+            properties.setMethod(HttpType.GET);
+            properties.setUrl(getMockServerUrl());
+
+            final Endpoint endpoint = new Endpoint();
+            endpoint.setDescription("test update endpoint delete basic authentication");
+            endpoint.setEnabled(true);
+            endpoint.setName("test update endpoint delete basic authentication");
+            endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+            endpoint.setProperties(properties);
+            endpoint.setServerErrors(0);
+            endpoint.setStatus(EndpointStatus.PROVISIONING);
+            endpoint.setType(EndpointType.WEBHOOK);
+
+            final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+
+            // Extract the endpoint's UUID from the response.
+            final JsonObject jsonResponse = new JsonObject(response);
+            final String endpointUuidRaw = jsonResponse.getString("id");
+            Assertions.assertTrue(endpointUuidRaw != null && !endpointUuidRaw.isBlank(), "the endpoint's UUID is not present after creating it");
+            final UUID endpointUuid = UUID.fromString(endpointUuidRaw);
+
+            // Now update the endpoint by setting the "basic authentication"
+            // and the "secret token".
+            properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
+            properties.setSecretToken("my-super-secret-token");
+
+            // The below two secrets will be returned when we simulate that
+            // we have called sources to create these secrets.
+            final Secret mockedBasicAuthenticationSecret = new Secret();
+            mockedBasicAuthenticationSecret.id = 25L;
+
+            final Secret mockedSecretTokenSecret = new Secret();
+            mockedSecretTokenSecret.id = 50L;
+
+            Mockito.when(
+                this.sourcesServiceMock.create(
+                    Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                    Mockito.eq(this.sourcesPsk),
+                    Mockito.any()
+                )
+            ).thenReturn(
+                mockedBasicAuthenticationSecret,
+                mockedSecretTokenSecret
+            );
+
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .put(String.format("/endpoints/%s", endpointUuid))
+                .then()
+                .statusCode(200);
+
+            // Verify that both secrets were created in Sources.
+            Mockito.verify(this.sourcesServiceMock, Mockito.times(2)).create(
+                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                Mockito.eq(this.sourcesPsk),
+                Mockito.any()
+            );
+
+            // Make sure that the properties got updated in the database too.
+            final Endpoint databaseEndpoint = this.endpointRepository.getEndpoint(TestConstants.DEFAULT_ORG_ID, endpointUuid);
+            final WebhookProperties webhookProperties = databaseEndpoint.getProperties(WebhookProperties.class);
+
+            Assertions.assertEquals(25L, webhookProperties.getBasicAuthenticationSourcesId(), "Sources was called to create the basic authentication secret, but the secret's ID wasn't present in the database");
+            Assertions.assertEquals(50L, webhookProperties.getSecretTokenSourcesId(), "Sources was called to create the secret token secret, but the secret's ID wasn't present in the database");
+        } finally {
+            this.featureFlipper.setSourcesSecretsBackend(wasSourcesEnabled);
+        }
+    }
+
+    /**
+     * Tests that when an endpoint gets updated, if the user removes the "basic
+     * authentication" and "secret token" secrets, then the secrets are deleted
+     * from Sources and their references deleted from our database.
+     */
+    @Test
+    public void testUpdateEndpointDeleteSecrets() {
+        // Store the original value of this feature to reset it to what it was
+        // after the test.
+        final boolean wasSourcesEnabled = this.featureFlipper.isSourcesUsedAsSecretsBackend();
+
+        try {
+            this.featureFlipper.setSourcesSecretsBackend(true);
+
+            final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, TestConstants.DEFAULT_ORG_ID, "user");
+            final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+            // Create the endpoint that we will attempt to modify.
+            final WebhookProperties properties = new WebhookProperties();
+            properties.setDisableSslVerification(false);
+            properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
+            properties.setMethod(HttpType.GET);
+            properties.setSecretToken("my-super-secret-token");
+            properties.setUrl(getMockServerUrl());
+
+            final Endpoint endpoint = new Endpoint();
+            endpoint.setDescription("test update endpoint delete basic authentication");
+            endpoint.setEnabled(true);
+            endpoint.setName("test update endpoint delete basic authentication");
+            endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+            endpoint.setProperties(properties);
+            endpoint.setServerErrors(0);
+            endpoint.setStatus(EndpointStatus.PROVISIONING);
+            endpoint.setType(EndpointType.WEBHOOK);
+
+            // The below two secrets will be returned when we simulate that
+            // we have called sources to create these secrets.
+            final Secret mockedBasicAuthenticationSecret = new Secret();
+            mockedBasicAuthenticationSecret.id = 25L;
+
+            final Secret mockedSecretTokenSecret = new Secret();
+            mockedSecretTokenSecret.id = 50L;
+
+            Mockito.when(
+                this.sourcesServiceMock.create(
+                    Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                    Mockito.eq(this.sourcesPsk),
+                    Mockito.any()
+                )
+            ).thenReturn(
+                mockedBasicAuthenticationSecret,
+                mockedSecretTokenSecret
+            );
+
+            final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+
+            // Extract the endpoint's UUID from the response.
+            final JsonObject jsonResponse = new JsonObject(response);
+            final String endpointUuidRaw = jsonResponse.getString("id");
+            Assertions.assertTrue(endpointUuidRaw != null && !endpointUuidRaw.isBlank(), "the endpoint's UUID is not present after creating it");
+            final UUID endpointUuid = UUID.fromString(endpointUuidRaw);
+
+            // Now update the endpoint by setting its "basic authentication" to
+            // null, which triggers the secret deletion in Sources.
+            properties.setBasicAuthentication(null);
+            properties.setSecretToken(null);
+
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .put(String.format("/endpoints/%s", endpointUuid))
+                .then()
+                .statusCode(200);
+
+            // Verify that the basic authentication secret was deleted from
+            // Sources.
+            Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).delete(
+                TestConstants.DEFAULT_ORG_ID,
+                this.sourcesPsk,
+                25L
+            );
+
+            // Verify that the secret token secret was deleted from Sources.
+            Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).delete(
+                TestConstants.DEFAULT_ORG_ID,
+                this.sourcesPsk,
+                50L
+            );
+
+            // Make sure that the properties got updated in the database too.
+            final Endpoint databaseEndpoint = this.endpointRepository.getEndpoint(TestConstants.DEFAULT_ORG_ID, endpointUuid);
+            final WebhookProperties webhookProperties = databaseEndpoint.getProperties(WebhookProperties.class);
+
+            Assertions.assertNull(webhookProperties.getBasicAuthenticationSourcesId(), "Sources was called to delete the basic authentication secret, but the secret's ID wasn't deleted from the database");
+            Assertions.assertNull(webhookProperties.getSecretTokenSourcesId(), "Sources was called to delete the secret token secret, but the secret's ID wasn't deleted from the database");
+        } finally {
+            this.featureFlipper.setSourcesSecretsBackend(wasSourcesEnabled);
+        }
+    }
+
+    /**
+     * Tests that when an endpoint gets updated, if the user updates both
+     * secrets, then Sources gets called twice, and that the database
+     * references for the secrets don't change.
+     */
+    @Test
+    public void testUpdateEndpointUpdateSecrets() {
+        // Store the original value of this feature to reset it to what it was
+        // after the test.
+        final boolean wasSourcesEnabled = this.featureFlipper.isSourcesUsedAsSecretsBackend();
+
+        try {
+            this.featureFlipper.setSourcesSecretsBackend(true);
+
+            final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, TestConstants.DEFAULT_ORG_ID, "user");
+            final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+            // Create the endpoint that we will attempt to modify.
+            final WebhookProperties properties = new WebhookProperties();
+            properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
+            properties.setDisableSslVerification(false);
+            properties.setMethod(HttpType.GET);
+            properties.setSecretToken("my-super-secret-token ");
+            properties.setUrl(getMockServerUrl());
+
+            final Endpoint endpoint = new Endpoint();
+            endpoint.setDescription("test update endpoint delete basic authentication");
+            endpoint.setEnabled(true);
+            endpoint.setName("test update endpoint delete basic authentication");
+            endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+            endpoint.setProperties(properties);
+            endpoint.setServerErrors(0);
+            endpoint.setStatus(EndpointStatus.PROVISIONING);
+            endpoint.setType(EndpointType.WEBHOOK);
+
+            // The below two secrets will be returned when we simulate that
+            // we have called sources to create these secrets.
+            final Secret mockedBasicAuthenticationSecret = new Secret();
+            mockedBasicAuthenticationSecret.id = 25L;
+
+            final Secret mockedSecretTokenSecret = new Secret();
+            mockedSecretTokenSecret.id = 50L;
+
+            Mockito.when(
+                this.sourcesServiceMock.create(
+                    Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                    Mockito.eq(this.sourcesPsk),
+                    Mockito.any()
+                )
+            ).thenReturn(
+                mockedBasicAuthenticationSecret,
+                mockedSecretTokenSecret
+            );
+
+            final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+
+            // Extract the endpoint's UUID from the response.
+            final JsonObject jsonResponse = new JsonObject(response);
+            final String endpointUuidRaw = jsonResponse.getString("id");
+            Assertions.assertTrue(endpointUuidRaw != null && !endpointUuidRaw.isBlank(), "the endpoint's UUID is not present after creating it");
+            final UUID endpointUuid = UUID.fromString(endpointUuidRaw);
+
+            // Before updating the endpoint, grab the created secrets'
+            // references from the database.
+            final Endpoint databaseEndpointPreUpdate = this.endpointRepository.getEndpoint(TestConstants.DEFAULT_ORG_ID, endpointUuid);
+            final WebhookProperties databasePropertiesPreUpdate = databaseEndpointPreUpdate.getProperties(WebhookProperties.class);
+            final long basicAuthReferencePreUpdate = databasePropertiesPreUpdate.getBasicAuthenticationSourcesId();
+            final long secretTokenReferencePreUpdate = databasePropertiesPreUpdate.getSecretTokenSourcesId();
+
+            // Now update the endpoint by updating its "basic authentication"
+            // and "secret token".
+            properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
+            properties.setSecretToken("my-super-secret-token");
+
+            // The below two secrets will be returned when we simulate that
+            // we have called sources to update these secrets. This should
+            // never ever happen in real life, but I want to make sure that our
+            // logic doesn't, by mistake, update the references.
+            final Secret mockedBasicAuthenticationUpdatedSecret = new Secret();
+            mockedBasicAuthenticationSecret.id = 75L;
+
+            final Secret mockedSecretTokenUpdatedSecret = new Secret();
+            mockedSecretTokenSecret.id = 100L;
+
+            Mockito.when(
+                this.sourcesServiceMock.update(
+                    Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                    Mockito.eq(this.sourcesPsk),
+                    Mockito.anyLong(),
+                    Mockito.any()
+                )
+            ).thenReturn(
+                mockedBasicAuthenticationUpdatedSecret,
+                mockedSecretTokenUpdatedSecret
+            );
+
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .put(String.format("/endpoints/%s", endpointUuid))
+                .then()
+                .statusCode(200);
+
+            // Verify that both secrets were updated in Sources.
+            Mockito.verify(this.sourcesServiceMock, Mockito.times(2)).update(
+                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                Mockito.eq(this.sourcesPsk),
+                Mockito.anyLong(),
+                Mockito.any()
+            );
+
+            // Make sure that the references to the secrets didn't get updated
+            // in the database.
+            final Endpoint databaseEndpoint = this.endpointRepository.getEndpoint(TestConstants.DEFAULT_ORG_ID, endpointUuid);
+            final WebhookProperties webhookProperties = databaseEndpoint.getProperties(WebhookProperties.class);
+            final long basicAuthReferenceAfterUpdate = webhookProperties.getBasicAuthenticationSourcesId();
+            final long secretTokenReferenceAfterUpdate = webhookProperties.getSecretTokenSourcesId();
+
+            Assertions.assertEquals(basicAuthReferencePreUpdate, basicAuthReferenceAfterUpdate, "the ID of the basic authentication's secret got updated after updating the secret in Sources, which should never happen");
+            Assertions.assertEquals(secretTokenReferencePreUpdate, secretTokenReferenceAfterUpdate, "the ID of the secret token's secret got updated after updating the secret in Sources, which should never happen");
+        } finally {
+            this.featureFlipper.setSourcesSecretsBackend(wasSourcesEnabled);
         }
     }
 
