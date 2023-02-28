@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
@@ -35,6 +36,9 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     private static final String UNSPECIFIED_TYPE = "unspecified";
     private static final List<String> ADVISORY_TYPES = Arrays.asList(ENHANCEMENT_TYPE, BUGFIX_TYPE, SECURITY_TYPE, UNSPECIFIED_TYPE);
 
+    private static final String TOTAL_ADVISORIES = "total_advisories";
+    private final AtomicInteger totalAdvisories = new AtomicInteger(0);
+
     public PatchEmailPayloadAggregator() {
         JsonObject patch = new JsonObject();
 
@@ -44,6 +48,7 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
         patch.put(UNSPECIFIED_TYPE, new JsonArray());
 
         context.put(PATCH_KEY, patch);
+        context.put(TOTAL_ADVISORIES, totalAdvisories);
     }
 
     @Override
@@ -71,6 +76,7 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
 
             String advisoryName = payload.getString(ADVISORY_NAME);
             patch.getJsonArray(advisoryType).add(advisoryName);
+            totalAdvisories.incrementAndGet();
         });
     }
 }
