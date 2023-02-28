@@ -83,11 +83,11 @@ public class TestPatchTemplate {
     @Test
     public void testDailyDigestEmailBody() {
         PatchEmailPayloadAggregator aggregator = new PatchEmailPayloadAggregator();
-        final String bundle = "rhel";
-        final String application = "patch";
-        final String enhancement = "enhancement";
-        final String bugfix = "bugfix";
-        final String security = "security";
+        String bundle = "rhel";
+        String application = "patch";
+        String enhancement = "enhancement";
+        String bugfix = "bugfix";
+        String security = "security";
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_1", security, "host-01"));
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_2", enhancement, "host-01"));
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_3", enhancement, "host-02"));
