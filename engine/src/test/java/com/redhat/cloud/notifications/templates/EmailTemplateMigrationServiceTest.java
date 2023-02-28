@@ -203,6 +203,7 @@ public class EmailTemplateMigrationServiceTest {
             findAndCompileInstantEmailTemplate(updateDevices.getId());
             // App: Inventory
             findAndCompileInstantEmailTemplate(inventoryValidationError.getId());
+            findAndCompileAggregationEmailTemplate(rhel.getName(), inventory.getName(), DAILY);
             // App: malware-detection
             findAndCompileInstantEmailTemplate(detectedMalware.getId());
             assertTrue(templateRepository.findAggregationEmailTemplate(rhel.getName(), malwareDetection.getName(), DAILY).isEmpty());
