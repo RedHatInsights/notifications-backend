@@ -87,8 +87,8 @@ public class EmailTemplateMigrationServiceTest {
         EventType imageCreation = resourceHelpers.createEventType(edgeManagement.getId(), "image-creation");
         EventType updateDevices = resourceHelpers.createEventType(edgeManagement.getId(), "update-devices");
         // App: inventory
-        Application inventoryManagement = resourceHelpers.createApp(rhel.getId(), "inventory");
-        EventType inventoryValidationError = resourceHelpers.createEventType(inventoryManagement.getId(), "validation-error");
+        Application inventory = resourceHelpers.createApp(rhel.getId(), "inventory");
+        EventType inventoryValidationError = resourceHelpers.createEventType(inventory.getId(), "validation-error");
         // App: malware-detection
         Application malwareDetection = resourceHelpers.createApp(rhel.getId(), "malware-detection");
         EventType detectedMalware = resourceHelpers.createEventType(malwareDetection.getId(), "detected-malware");
