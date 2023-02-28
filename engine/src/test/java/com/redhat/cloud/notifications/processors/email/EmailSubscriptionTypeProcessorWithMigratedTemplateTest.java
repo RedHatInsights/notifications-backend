@@ -76,16 +76,14 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
     FeatureFlipper featureFlipper;
 
     String commonTest() {
-        mockGetUsers(8);
+        mockGetUsers(1);
 
         final String tenant = "instant-email-tenant";
-        final String[] usernames = {"username-1"};
+        final String username = "username-0";
         String bundle = "rhel";
         String application = "policies";
 
-        for (String username : usernames) {
-            subscribe(DEFAULT_ORG_ID, username, bundle, application);
-        }
+        subscribe(DEFAULT_ORG_ID, username, bundle, application);
 
         final List<String> bodyRequests = new ArrayList<>();
 
@@ -111,32 +109,27 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);
         ep.setProperties(properties);
-        try {
-            statelessSessionFactory.withSession(statelessSession -> {
-                emailProcessor.process(event, List.of(ep));
-            });
 
-            assertEquals(1, bodyRequests.size());
-            JsonObject email = new JsonObject(bodyRequests.get(0));
-            String bodyRequest = email.getJsonArray("emails").getJsonObject(0).getString("body");
+        statelessSessionFactory.withSession(statelessSession -> {
+            emailProcessor.process(event, List.of(ep));
+        });
 
-            assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
-            assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
+        assertEquals(1, bodyRequests.size());
+        JsonObject email = new JsonObject(bodyRequests.get(0));
+        String bodyRequest = email.getJsonArray("emails").getJsonObject(0).getString("body");
 
-            assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
-            assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
+        assertTrue(bodyRequest.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
+        assertTrue(bodyRequest.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
 
-            // Display name
-            assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
+        assertTrue(bodyRequest.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
+        assertTrue(bodyRequest.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
 
-            assertTrue(bodyRequest.contains(TestHelpers.HCC_LOGO_TARGET));
+        // Display name
+        assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
 
-            return bodyRequest;
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail(e);
-        }
-        return null;
+        assertTrue(bodyRequest.contains(TestHelpers.HCC_LOGO_TARGET));
+
+        return bodyRequest;
     }
 
     @Test
@@ -225,6 +218,7 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
         @Override
         public Map<String, String> getConfigOverrides() {
             return Map.of("notifications.use-templates-from-db", "true",
+                "notifications.inject-email-templates-to-db-on-startup.enabled", "true",
                 "notifications.use-policies-email-templates-v2.enabled", "true"
                 );
         }
