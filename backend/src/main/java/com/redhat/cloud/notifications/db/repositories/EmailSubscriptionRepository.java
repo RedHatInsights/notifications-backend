@@ -18,9 +18,6 @@ public class EmailSubscriptionRepository {
     @Inject
     EntityManager entityManager;
 
-    @Inject
-    EventTypeRepository eventTypeRepository;
-
     @Transactional
     public boolean subscribe(String accountId, String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "INSERT INTO endpoint_email_subscriptions(account_id, org_id, user_id, application_id, subscription_type) " +
