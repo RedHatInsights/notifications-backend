@@ -21,21 +21,17 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Persona
 import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.QuarkusTestProfile;
-import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -45,9 +41,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @QuarkusTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @QuarkusTestResource(TestLifecycleManager.class)
-@TestProfile(EmailSubscriptionTypeProcessorWithMigratedTemplateTest.EnvVarTestSetup.class)
 public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
 
     @Inject
@@ -126,8 +120,6 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
 
         // Display name
         assertTrue(bodyRequest.contains("My test machine"), "Body should contain the display_name");
-
-        assertTrue(bodyRequest.contains(TestHelpers.HCC_LOGO_TARGET));
 
         return bodyRequest;
     }
@@ -209,18 +201,9 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
     }
 
     List<EventType> getEventTypes() {
-        String query = "From EventType";
+        String query = "From EventType where name= :name";
         return entityManager.createQuery(query, EventType.class)
+            .setParameter("name", "policy-triggered")
             .getResultList();
-    }
-
-    public static class EnvVarTestSetup implements QuarkusTestProfile {
-        @Override
-        public Map<String, String> getConfigOverrides() {
-            return Map.of("notifications.use-templates-from-db", "true",
-                "notifications.inject-email-templates-to-db-on-startup.enabled", "true",
-                "notifications.use-policies-email-templates-v2.enabled", "true"
-                );
-        }
     }
 }

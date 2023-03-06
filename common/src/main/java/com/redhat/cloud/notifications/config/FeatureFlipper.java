@@ -123,8 +123,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-event-type-for-subscription.enabled", defaultValue = "false")
     boolean useEventTypeForSubscriptionEnabled;
 
-    @ConfigProperty(name = "notifications.inject-email-templates-to-db-on-startup.enabled", defaultValue = "false")
-    boolean injectEmailTemplateToDbOnStartupEnabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
@@ -156,7 +154,6 @@ public class FeatureFlipper {
         Log.infof("The Advisor's email templates V2 are %s", advisorEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
-        Log.infof("The email template injection on startup is %s", injectEmailTemplateToDbOnStartupEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -399,10 +396,6 @@ public class FeatureFlipper {
     public void setUseEventTypeForSubscriptionEnabled(boolean useEventTypeForSubscriptionEnabled) {
         checkTestLaunchMode();
         this.useEventTypeForSubscriptionEnabled = useEventTypeForSubscriptionEnabled;
-    }
-
-    public boolean isInjectEmailTemplateToDbOnStartupEnabled() {
-        return injectEmailTemplateToDbOnStartupEnabled;
     }
 
     /**
