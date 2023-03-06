@@ -215,12 +215,22 @@ public class FeatureFlipper {
     }
 
     /**
-     * Returns true if Sources is being used as the secrets backend to store the camel endpoints' and webhooks' basic
-     * authentication and/or token's data.
+     * Returns true if Sources is being used as the secrets backend to store
+     * the camel endpoints' and webhooks' basic authentication and/or token's
+     * data.
      * @return true if the integration is enabled.
      */
     public boolean isSourcesUsedAsSecretsBackend() {
         return this.sourcesSecretsBackend;
+    }
+
+    /**
+     * Enables or disables using Sources as the secrets' backend.
+     * @param sourcesSecretsBackend the on / off value for the feature.
+     */
+    public void setSourcesSecretsBackend(final boolean sourcesSecretsBackend) {
+        checkTestLaunchMode();
+        this.sourcesSecretsBackend = sourcesSecretsBackend;
     }
 
     public boolean isUseRbacForFetchingUsers() {
