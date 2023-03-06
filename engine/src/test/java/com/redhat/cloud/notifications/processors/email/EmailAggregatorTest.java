@@ -36,7 +36,12 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -45,7 +50,7 @@ class EmailAggregatorTest {
     @InjectMock
     EmailTemplateFactory emailTemplateFactory;
 
-    @Inject
+    @InjectSpy
     EmailAggregationRepository emailAggregationRepository;
 
     @InjectMock
@@ -111,19 +116,29 @@ class EmailAggregatorTest {
         assertTrue(result.keySet().stream().filter(usr -> usr.getEmail().equals("user-1")).count() == 1);
         User user = result.keySet().stream().findFirst().get();
         assertEquals(4, ((LinkedHashMap) result.get(user).get("policies")).size());
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
         statelessSessionFactory.withSession(statelessSession -> {
             emailAggregationRepository.purgeOldAggregation(aggregationKey, LocalDateTime.now());
         });
+        reset(emailAggregationRepository); // just reset mockito counter
 
         // Test user subscription based on event type
         featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
         result = aggregate();
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
+        reset(emailAggregationRepository); // just reset mockito counter
 
         // nobody subscribed to the right event type yet
-        assertTrue(result.size() == 0);
+        assertEquals(0, result.size());
 
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
+        // because on previous step, nobody subscribed to the rignt event type, we already have 4 records on database
         result = aggregate();
+        verify(emailAggregationRepository, times(2)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.aggregationMaxPageSize));
         assertEquals(1, result.size());
         user = result.keySet().stream().findFirst().get();
         assertTrue(user.getEmail().equals("user-2"));
