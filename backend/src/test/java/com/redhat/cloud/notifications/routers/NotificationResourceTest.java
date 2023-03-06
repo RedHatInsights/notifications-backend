@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import javax.validation.constraints.Size;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -47,6 +48,8 @@ import java.util.stream.Stream;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME_2;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_2_NAME;
@@ -1227,6 +1230,224 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
             Assertions.assertNotNull(errorMessage, "the error message is null");
             Assertions.assertEquals("the display name cannot be empty", errorMessage, "unexpected error message received");
+        }
+    }
+
+    /**
+     * Tests that a behavior group can be successfully appended to an event type.
+     */
+    @Test
+    void testAppendBehaviorEventType() {
+        final Bundle bundle = this.helpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        final Header identityHeader = initRbacMock("tenant", DEFAULT_ORG_ID, "user", FULL_ACCESS);
+        RestAssured.given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("behaviorGroupUuid", behaviorGroup.getId())
+            .when()
+            .put("/notifications/eventTypes/{eventTypeUuid}/behaviorGroups/{behaviorGroupUuid}")
+            .then()
+            .statusCode(204);
+    }
+
+    /**
+     * Tests that a not found response is returned when the behavior group does
+     * not exist.
+     */
+    @Test
+    void testAppendBehaviorEventBehaviorGroupNotFound() {
+        final Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+
+        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", UUID.randomUUID(), UUID.randomUUID());
+
+        final String response = RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .put(url)
+            .then()
+            .statusCode(404)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", response, "unexpected error message received when specifying a non-existent behavior group");
+    }
+
+    /**
+     * Tests that a not found response is returned when the behavior group
+     * exists, but the tenant that is performing the operation is a different
+     * one.
+     */
+    @Test
+    void testAppendBehaviorEventBehaviorGroupWrongTenantNotFound() {
+        final Bundle bundle = this.helpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, "different-tenant-org-id", "user", FULL_ACCESS);
+
+        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+
+        final String response = RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .put(url)
+            .then()
+            .statusCode(404)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", response, "unexpected error message received when specifying a valid behavior group but from a different tenant");
+    }
+
+    /**
+     * Tests that a "not found" response is returned when the event type and
+     * the behavior group are of incompatible types.
+     */
+    @Test
+    void testAppendBehaviorEventBehaviorGroupIncompatibleEventTypeBehaviorGroup() {
+        // Create a bundle and a set of fixtures...
+        final Bundle bundle = this.helpers.createBundle();
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // ... and create a second bundle for the behavior group.
+        final Bundle differentBundle = this.helpers.createBundle("bundle-name-different", "bundle-display-name-different");
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", differentBundle.getId());
+
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+
+        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+
+        final String response = RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .put(url)
+            .then()
+            .statusCode(404)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", response, "unexpected error message received when specifying an incompatible event type with a behavior group");
+    }
+
+    /**
+     * Test that deleting an existing behavior group from an event type works as expected.
+     */
+    @Test
+    void testDeleteBehaviorEventType() {
+        // Create the fixtures.
+        final Bundle bundle = this.helpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // Generate the identity header.
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+
+        // Construct the URL we are going to send the request to.
+        final String createUrl = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+
+        // First add the behavior group to the event type.
+        RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .put(createUrl)
+            .then()
+            .statusCode(204);
+
+        final String deleteUrl = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+
+        // Call the "delete" endpoint and expect a proper deletion.
+        RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .delete(deleteUrl)
+            .then()
+            .statusCode(204);
+    }
+
+    /**
+     * Test that when a non-existent event type or a non-existent behavior group is specified, a bad request is
+     * returned. The same thing when the user tries to delete the behavior group - event type relation that doesn't
+     * exist.
+     */
+    @Test
+    void testDeleteBehaviorEventTypeError() {
+        // Create the fixtures.
+        final Bundle bundle = this.helpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // Generate the identity header.
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+
+        // Create a small test class to help structure the inputs and outputs.
+        class TestCase {
+            public final String expectedErrorMessage;
+            public final int expectedStatusCode;
+            public final String url;
+
+            TestCase(final String expectedErrorMessage, final int expectedStatusCode, final String url) {
+                this.expectedErrorMessage = expectedErrorMessage;
+                this.expectedStatusCode = expectedStatusCode;
+                this.url = url;
+            }
+        }
+
+        // Use a base URL to construct the final URLs we will be sending requests to.
+        final String baseUrlFormat = "/notifications/eventTypes/%s/behaviorGroups/%s";
+
+        final var testCases = new ArrayList<TestCase>(3);
+
+        // Test a bad request response when the event type does not exist.
+        testCases.add(
+            new TestCase(
+                "the specified behavior group was not found for the given event type",
+                404,
+                String.format(baseUrlFormat, UUID.randomUUID(), behaviorGroup.getId())
+            )
+        );
+
+        // Test a bad request response when the behavior group does not exist.
+        testCases.add(
+            new TestCase(
+                "the specified behavior group was not found for the given event type",
+                404,
+                String.format(baseUrlFormat, eventType.getId(), UUID.randomUUID())
+            )
+        );
+
+        //  Test a not found response when the behavior group - event type relation does not exist.
+        testCases.add(
+            new TestCase(
+                "the specified behavior group was not found for the given event type",
+                404,
+                String.format(baseUrlFormat, eventType.getId(), behaviorGroup.getId())
+            )
+        );
+
+        for (final var testCase : testCases) {
+            final String response = RestAssured.given()
+                .header(identityHeader)
+                .when()
+                .delete(testCase.url)
+                .then()
+                .statusCode(testCase.expectedStatusCode)
+                .extract()
+                .body()
+                .asString();
+
+            Assertions.assertEquals(testCase.expectedErrorMessage, response, "unexpected error message received");
         }
     }
 

@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.jboss.resteasy.reactive.RestPath;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -76,7 +77,6 @@ public class NotificationResource {
 
     @Inject
     EndpointRepository endpointRepository;
-
 
     @GET
     @Path("/eventTypes")
@@ -382,6 +382,42 @@ public class NotificationResource {
         String orgId = getOrgId(sec);
         behaviorGroupRepository.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
         return Response.ok().build();
+    }
+
+    /**
+     * Appends the given behavior group to the specified event type.
+     * @param securityContext the security context to get the org id from.
+     * @param behaviorGroupUuid the UUID of the behavior group that, supposedly, they just created.
+     * @param eventTypeUuid the UUID of the event type.
+     */
+    @PUT
+    @Path("/eventTypes/{eventTypeUuid}/behaviorGroups/{behaviorGroupUuid}")
+    @Operation(summary = "Add a behavior group to the given event type.")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponse(responseCode = "204")
+    public void appendBehaviorGroupToEventType(
+            @Context final SecurityContext securityContext,
+            @RestPath final UUID behaviorGroupUuid,
+            @RestPath final UUID eventTypeUuid
+    ) {
+        final String orgId = getOrgId(securityContext);
+
+        this.behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, behaviorGroupUuid, eventTypeUuid);
+    }
+
+    @DELETE
+    @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+    @Operation(summary = "Delete a behavior group from the given event type.")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponse(responseCode = "204")
+    public void deleteBehaviorGroupFromEventType(
+            @Context final SecurityContext securityContext,
+            @RestPath final UUID eventTypeId,
+            @RestPath final UUID behaviorGroupId
+    ) {
+        final String orgId = getOrgId(securityContext);
+
+        this.behaviorGroupRepository.deleteBehaviorGroupFromEventType(eventTypeId, behaviorGroupId, orgId);
     }
 
     @GET

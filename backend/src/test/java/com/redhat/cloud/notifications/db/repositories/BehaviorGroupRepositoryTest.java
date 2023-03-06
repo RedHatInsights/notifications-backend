@@ -463,6 +463,208 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         Assertions.assertEquals("behavior group creation limit reached. Please consider deleting unused behavior groups before creating more.", ex.getMessage());
     }
 
+    /**
+     * Tests that when a non-existent {@link EventType} UUID is provided, a
+     * "Not Found" exception is thrown.
+     */
+    @Test
+    void testDeleteBehaviorGroupFromEventTypeEventTypeNotFound() {
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        // Call the function under test.
+        final NotFoundException ex = Assertions.assertThrows(
+            NotFoundException.class,
+            () -> this.behaviorGroupRepository.deleteBehaviorGroupFromEventType(UUID.randomUUID(), behaviorGroup.getId(), DEFAULT_ORG_ID)
+        );
+
+        Assertions.assertEquals("the specified behavior group was not found for the given event type", ex.getMessage(), "unexpected exception message");
+    }
+
+    /**
+     * Tests that when a non-existent {@link BehaviorGroup} UUID is provided, a
+     * "Not Found" exception is thrown.
+     */
+    @Test
+    void testDeleteBehaviorGroupFromEventTypeBehaviorGroupNotFound() {
+        final Bundle bundle = this.resourceHelpers.createBundle();
+
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+        final EventType eventType = this.resourceHelpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // Call the function under test.
+        final NotFoundException ex = Assertions.assertThrows(
+            NotFoundException.class,
+            () -> this.behaviorGroupRepository.deleteBehaviorGroupFromEventType(eventType.getId(), UUID.randomUUID(), DEFAULT_ORG_ID)
+        );
+
+        Assertions.assertEquals("the specified behavior group was not found for the given event type", ex.getMessage(), "unexpected exception message");
+    }
+
+    /**
+     * Tests that when both the {@link EventType} and the {@link BehaviorGroup}
+     * exist, but when they are not linked together, a not found exception is
+     * thrown.
+     */
+    @Test
+    void testDeleteBehaviorGroupFromEventTypeNotFound() {
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+        final EventType eventType = this.resourceHelpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // Call the function under test.
+        final NotFoundException ex = Assertions.assertThrows(
+            NotFoundException.class,
+            () -> this.behaviorGroupRepository.deleteBehaviorGroupFromEventType(eventType.getId(), behaviorGroup.getId(), DEFAULT_ORG_ID)
+        );
+
+        Assertions.assertEquals("the specified behavior group was not found for the given event type", ex.getMessage(), "unexpected exception message");
+    }
+
+    /**
+     * Tests that when a {@link BehaviorGroup} is removed from the behavior
+     * groups collection of an @{@link EventType}, no error is raised.
+     */
+    @Test
+    void testDeleteBehaviorGroupFromEventType() {
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+        final EventType eventType = this.resourceHelpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // First insert the behavior group as part of the even type's behavior groups.
+        this.behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventType.getId(), Set.of(behaviorGroup.getId()));
+
+        // Then call the function under test.
+        this.behaviorGroupRepository.deleteBehaviorGroupFromEventType(eventType.getId(), behaviorGroup.getId(), DEFAULT_ORG_ID);
+    }
+
+    /**
+     * Tests that when a non-existing UUID is given for an event type, a
+     * {@link NotFoundException} is raised with the proper error message.
+     */
+    @Test
+    void testAppendBehaviorGroupEventTypeNotExists() {
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-display-name", bundle.getId());
+
+        final NotFoundException exception = Assertions.assertThrows(
+            NotFoundException.class,
+            () -> this.behaviorGroupRepository.appendBehaviorGroupToEventType(
+                DEFAULT_ORG_ID,
+                behaviorGroup.getId(),
+                UUID.randomUUID()
+            )
+        );
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", exception.getMessage(), "unexpected exception received for a non existing behavior group");
+    }
+
+    /**
+     * Tests that when an existing UUID is given for a behavior group, but with
+     * a different organization ID with the one expected, which simulates a
+     * different tenant, a {@link NotFoundException} is raised with the proper
+     * error message.
+     */
+    @Test
+    void testAppendBehaviorGroupEventTypeNotExistsOrgId() {
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup("account-id", "org-id", "display-name", bundle.getId());
+
+        final NotFoundException exception = Assertions.assertThrows(
+            NotFoundException.class,
+            () -> this.behaviorGroupRepository.appendBehaviorGroupToEventType(
+                UUID.randomUUID().toString(),
+                behaviorGroup.getId(),
+                UUID.randomUUID()
+            )
+        );
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", exception.getMessage(), "unexpected exception received for a non existing behavior group");
+    }
+
+    /**
+     * Tests that a {@link NotFoundException} is returned when a behavior group
+     * that doesn't share a bundle with an event type is tried to be appended
+     * to the latter.
+     */
+    @Test
+    void testAppendBehaviorGroupEventTypeNotCompatible() {
+        final String orgId = "append-behavior-group-event-type-not-compatible";
+
+        // Create the application and event types belonging to one bundle...
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+        final EventType eventType = this.resourceHelpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // ... and a behavior group for a completely different bundle!
+        final Bundle differentBundle = this.resourceHelpers.createBundle("different-name", "different-display-name");
+        final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup("account-id", orgId, "display-name", differentBundle.getId());
+
+        final NotFoundException exception = Assertions.assertThrows(
+            NotFoundException.class,
+            () -> this.behaviorGroupRepository.appendBehaviorGroupToEventType(
+                orgId,
+                behaviorGroup.getId(),
+                eventType.getId()
+            )
+        );
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", exception.getMessage(), "unexpected exception received for a non existing behavior group");
+    }
+
+    /**
+     * Tests that appending a behavior group to an event type inserts the join
+     * row in the join table.
+     */
+    @Test
+    void testAppendBehaviorGroupToEventType() {
+        final String orgId = "append-behavior-group-event-type";
+        final String name = String.format("%s-name", orgId);
+        final String displayName = String.format("%s-display-name", orgId);
+        final String description = String.format("%s-description", orgId);
+
+        final Bundle bundle = this.resourceHelpers.createBundle();
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+        final EventType eventType = this.resourceHelpers.createEventType(application.getId(), name, displayName, description);
+        final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup("account-id", orgId, displayName, bundle.getId());
+
+        // Call the function under test.
+        this.behaviorGroupRepository.appendBehaviorGroupToEventType(
+            orgId,
+            behaviorGroup.getId(),
+            eventType.getId()
+        );
+
+        final String checkInsertionQuery =
+            "SELECT " +
+                "1 " +
+            "FROM " +
+                "EventTypeBehavior AS etb " +
+            "WHERE " +
+                "etb.behaviorGroup.id = :behaviorGroupUuid " +
+            "AND " +
+                "etb.eventType.id = :eventTypeUuid";
+
+        try {
+            this.entityManager.createQuery(checkInsertionQuery)
+                .setParameter("behaviorGroupUuid", behaviorGroup.getId())
+                .setParameter("eventTypeUuid", eventType.getId())
+                .getSingleResult();
+        } catch (final NotFoundException e) {
+            Assertions.fail(
+                String.format(
+                    "the relation between the behavior group '%s' and the event type '%s' was not found in the 'event_type_behavior' table",
+                    behaviorGroup.getId(),
+                    eventType.getId()
+                )
+            );
+        }
+    }
+
     @Transactional
     EventType createEventType(Application app) {
         EventType eventType = new EventType();
