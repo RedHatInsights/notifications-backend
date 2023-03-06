@@ -133,7 +133,7 @@ public class EmailAggregator {
             }
             totalAggregatedElements += aggregations.size();
         } while (aggregationMaxPageSize == aggregations.size());
-        Log.infof("%d elements were aggregated for key " + aggregationKey, totalAggregatedElements);
+        Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
 
         return aggregated
                 .entrySet()
