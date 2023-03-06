@@ -27,8 +27,10 @@ public class RunOnEngineStartup {
         startupUtils.logExternalServiceUrl("quarkus.rest-client.rbac-s2s.url");
         if (featureFlipper.isInjectEmailTemplateToDbOnStartupEnabled()) {
             List<String> warnings = emailTemplateMigrationService.migrate();
-            Log.warn("Email template migration ended with warnings, please check the logs for more details");
-            warnings.stream().forEach(t -> Log.info(t));
+            if (!warnings.isEmpty()) {
+                Log.warn("Email template migration ended with warnings, please check the logs for more details");
+                warnings.stream().forEach(t -> Log.info(t));
+            }
         }
     }
 }
