@@ -229,6 +229,7 @@ public class FeatureFlipper {
      * @param sourcesSecretsBackend the on / off value for the feature.
      */
     public void setSourcesSecretsBackend(final boolean sourcesSecretsBackend) {
+        checkTestLaunchMode();
         this.sourcesSecretsBackend = sourcesSecretsBackend;
     }
 
