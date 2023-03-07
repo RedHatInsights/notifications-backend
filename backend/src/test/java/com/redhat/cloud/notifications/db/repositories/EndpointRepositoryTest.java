@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,14 +43,16 @@ public class EndpointRepositoryTest {
     void shouldSortCorrectly() {
         String orgId = "endpoint-repository-test-sort";
 
-        List<Endpoint> createdEndpointList = List.of(
+        List<Endpoint> createdEndpointList = Stream.of(
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.CAMEL, NOT_USED, "1", NOT_USED, null, true),
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.WEBHOOK, null, "2", NOT_USED, null, true),
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.EMAIL_SUBSCRIPTION, null, "3", NOT_USED, null, true),
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.CAMEL, NOT_USED, "4", NOT_USED, null, false),
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.CAMEL, NOT_USED, "5", NOT_USED, null, false),
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.CAMEL, NOT_USED, "6", NOT_USED, null, false)
-        );
+        )
+                // In java 17 - my system retrieves a created field (LocalDateTime) with higher precision of what's really stored - load the data for the sake of the test.
+                .map(endpoint -> endpointRepository.getEndpoint(endpoint.getOrgId(), endpoint.getId())).toList();
 
         Set<CompositeEndpointType> compositeEndpointTypes = Set.of(
                 CompositeEndpointType.fromString("camel"),
