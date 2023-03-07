@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.Startup;
@@ -16,9 +15,6 @@ public class RunOnEngineStartup {
 
     @Inject
     EmailTemplateMigrationService emailTemplateMigrationService;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @PostConstruct
     void postConstruct() {
