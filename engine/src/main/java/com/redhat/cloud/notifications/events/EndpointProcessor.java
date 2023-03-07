@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.DelayedThrower;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -9,6 +10,7 @@ import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor;
+import com.redhat.cloud.notifications.processors.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -44,7 +46,13 @@ public class EndpointProcessor {
     RhoseTypeProcessor rhoseProcessor;
 
     @Inject
+    SlackProcessor slackProcessor;
+
+    @Inject
     MeterRegistry registry;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     private Counter processedItems;
     private Counter endpointTargeted;
@@ -84,7 +92,11 @@ public class EndpointProcessor {
                             for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
                                 try {
                                     if ("slack".equals(endpointsBySubTypeEntry.getKey())) {
-                                        rhoseProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                                        if (featureFlipper.isSendToSlackThroughCamelEnabled()) {
+                                            slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                                        } else {
+                                            rhoseProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                                        }
                                     } else {
                                         camelProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     }

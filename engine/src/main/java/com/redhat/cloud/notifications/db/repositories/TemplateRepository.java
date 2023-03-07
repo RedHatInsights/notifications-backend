@@ -5,12 +5,14 @@ import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.logging.Log;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -133,5 +135,48 @@ public class TemplateRepository {
         instantEmailTemplate.setBodyTemplate(templateBody);
 
         return instantEmailTemplate;
+    }
+
+    // TODO Copied from notifications-backend. Let's try to stop duplicating that code ASAP.
+    /**
+     * Integration templates are more generic templates directly targeted at Integrations
+     * other than email, like Splunk or Slack via Camel and OpenBridge. See {@link IntegrationTemplate}
+     * for more details.
+     * @param appName Application name the template applies to. Can be null.
+     * @param orgId The organization id for templates that are organization specific. Need to be of Kind ORG
+     * @param templateKind Kind of template requested. If it does not exist, Kind DEFAULT is returned or Optional.empty()
+     * @param integrationType Type of integration requested. E.g. 'slack' or 'splunk'
+     * @return IntegrationTemplate with potential fallback or Optional.empty() if there is not even a default template.
+     */
+    public Optional<IntegrationTemplate> findIntegrationTemplate(String appName,
+                                                                 String orgId,
+                                                                 IntegrationTemplate.TemplateKind templateKind,
+                                                                 String integrationType) {
+        String hql = "FROM IntegrationTemplate it JOIN FETCH it.theTemplate " +
+                "WHERE it.templateKind <= :templateKind " +
+                "AND it.integrationType = :iType " +
+                "AND (it.orgId IS NULL" + (orgId != null ? " OR it.orgId = :orgId " : "") + ") " +
+                (appName != null ? "AND it.application.name = :appName " : " ") +
+                "ORDER BY it.templateKind DESC, it.orgId ASC "; // nulls in orgId go last. See https://www.postgresql.org/docs/current/queries-order.html
+        TypedQuery<IntegrationTemplate> query = statelessSessionFactory.getCurrentSession().createQuery(hql, IntegrationTemplate.class)
+                .setParameter("templateKind", templateKind)
+                .setParameter("iType", integrationType)
+                .setMaxResults(1);
+
+        if (appName != null) {
+            query.setParameter("appName", appName);
+        }
+        if (orgId != null) {
+            query.setParameter("orgId", orgId);
+        }
+
+        List<IntegrationTemplate> templates = query.getResultList();
+
+        if (templates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(templates.get(0));
+
     }
 }
