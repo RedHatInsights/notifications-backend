@@ -47,6 +47,7 @@ import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionT
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_REJECTED_COUNTER_NAME;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -137,7 +138,9 @@ class EmailSubscriptionTypeProcessorTest {
         verify(emailAggregationRepository, times(1)).getEmailAggregation(
                 eq(aggregationCommand1.getAggregationKey()),
                 eq(aggregationCommand1.getStart()),
-                eq(aggregationCommand1.getEnd())
+                eq(aggregationCommand1.getEnd()),
+                eq(0),
+                anyInt()
         );
 
         verify(emailAggregationRepository, times(1)).purgeOldAggregation(
@@ -147,7 +150,9 @@ class EmailSubscriptionTypeProcessorTest {
         verify(emailAggregationRepository, times(1)).getEmailAggregation(
                 eq(aggregationCommand2.getAggregationKey()),
                 eq(aggregationCommand2.getStart()),
-                eq(aggregationCommand2.getEnd())
+                eq(aggregationCommand2.getEnd()),
+                eq(0),
+                anyInt()
         );
         verify(emailAggregationRepository, times(1)).purgeOldAggregation(
                 eq(aggregationCommand2.getAggregationKey()),

@@ -58,7 +58,7 @@ public class EmailAggregationRepositoryTest {
             resourceHelpers.addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
             resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
-            List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end);
+            List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end, 0, 10);
             assertEquals(2, aggregations.size());
             assertTrue(aggregations.stream().map(EmailAggregation::getOrgId).allMatch(ORG_ID::equals));
             assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
@@ -74,7 +74,7 @@ public class EmailAggregationRepositoryTest {
             assertEquals(APP_NAME, keys.get(0).getApplication());
 
             assertEquals(2, emailAggregationRepository.purgeOldAggregation(key, end));
-            assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end).size());
+            assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end, 0, 10).size());
             assertEquals(3, getApplicationsWithPendingAggregation(start, end).size());
 
             clearEmailAggregations();

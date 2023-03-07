@@ -28,7 +28,7 @@ public class EmailAggregationRepository {
         }
     }
 
-    public List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end) {
+    public List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end, int firstResultIndex, int maxResults) {
         String query = "FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
         return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
                 .setParameter("orgId", key.getOrgId())
@@ -36,6 +36,8 @@ public class EmailAggregationRepository {
                 .setParameter("applicationName", key.getApplication())
                 .setParameter("start", start)
                 .setParameter("end", end)
+                .setFirstResult(firstResultIndex)
+                .setMaxResults(maxResults)
                 .getResultList();
     }
 
