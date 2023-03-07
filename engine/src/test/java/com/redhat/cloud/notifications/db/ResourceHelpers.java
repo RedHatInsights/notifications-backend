@@ -191,9 +191,9 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public void deleteAllEmailTemplates() {
-        entityManager.createQuery("DELETE FROM InstantEmailTemplate").executeUpdate();
-        entityManager.createQuery("DELETE FROM AggregationEmailTemplate").executeUpdate();
+    public void deleteEmailTemplatesById(UUID templateId) {
+        entityManager.createQuery("DELETE FROM InstantEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregationEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
     }
 
     @Transactional
