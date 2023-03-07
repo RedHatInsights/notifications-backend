@@ -134,7 +134,7 @@ class EmailAggregatorTest {
         assertEquals(0, result.size());
 
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
-        // because on previous step, nobody subscribed to the rignt event type, we already have 4 records on database
+        // because after the previous aggregate() call the email_aggregation DB table was not purged, we already have 4 records on database
         result = aggregate();
         verify(emailAggregationRepository, times(2)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
