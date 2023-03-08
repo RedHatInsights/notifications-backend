@@ -6,10 +6,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+
 @ApplicationScoped
 public class SlackRouteBuilder extends RouteBuilder {
 
-    public static final String REST_PATH = "/internal/slack";
+    public static final String REST_PATH = API_INTERNAL + "/slack";
 
     private static final String DIRECT_ENDPOINT_NAME = "direct:slack";
 

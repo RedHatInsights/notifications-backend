@@ -12,11 +12,11 @@ import static com.redhat.cloud.notifications.processors.slack.SlackRouteBuilder.
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @RegisterRestClient(configKey = "internal-slack")
+@Path(REST_PATH)
 public interface InternalTemporarySlackService {
 
     @POST
-    @Path(REST_PATH)
     @Consumes(APPLICATION_JSON)
     @Retry
-    void send(@NotNull SlackNotification slackNotification);
+    void send(@NotNull SlackNotification notification);
 }
