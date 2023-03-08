@@ -201,11 +201,13 @@ objects:
             secretKeyRef:
               name: rhose
               key: token_client_id
+              optional: true
         - name: OB_TOKEN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: rhose
               key: token_client_secret
+              optional: true
         - name: QUARKUS_REST_CLIENT_OB_URL
           value: ${QUARKUS_REST_CLIENT_OB_URL}
         - name: QUARKUS_REST_CLIENT_KC_URL
@@ -219,6 +221,7 @@ objects:
             secretKeyRef:
               name: sources-api-psk
               key: psk
+              optional: true
 - apiVersion: v1
   kind: ConfigMap
   metadata:
