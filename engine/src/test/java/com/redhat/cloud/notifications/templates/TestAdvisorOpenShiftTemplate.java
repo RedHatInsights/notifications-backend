@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -66,7 +67,9 @@ public class TestAdvisorOpenShiftTemplate {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = generateFromTemplate(advisorOpenshift.getTitle(NEW_RECOMMENDATION, INSTANT), action);
 
-        assertEquals("OpenShift - Advisor Instant Notification - 3 Oct 2020", result);
+        // The date formatting is sensitive to the locale
+        String date = DateTimeFormatter.ofPattern("d MMM uuuu").format(action.getTimestamp());
+        assertEquals("OpenShift - Advisor Instant Notification - " + date, result);
 
         featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
         result = generateFromTemplate(advisorOpenshift.getTitle(NEW_RECOMMENDATION, INSTANT), action);

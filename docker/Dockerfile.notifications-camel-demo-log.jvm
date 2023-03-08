@@ -3,7 +3,7 @@
 ###
 
 # Build the project
-FROM registry.access.redhat.com/ubi8/openjdk-11:latest AS build
+FROM registry.access.redhat.com/ubi8/openjdk-17:latest AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
@@ -12,7 +12,7 @@ RUN ./mvnw clean package -DskipTests --projects :checkstyle,:notifications-camel
 # Build the container
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-ARG JAVA_PACKAGE=java-11-openjdk-headless
+ARG JAVA_PACKAGE=java-17-openjdk-headless
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
 
 # Install java
