@@ -211,6 +211,8 @@ objects:
             secretKeyRef:
               name: sources-api-psk
               key: psk
+        - name: NOTIFICATIONS_SLACK_CAMEL_ENABLED
+          value: ${NOTIFICATIONS_SLACK_CAMEL_ENABLED}
         - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
         - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
@@ -381,6 +383,8 @@ parameters:
   value: "false"
 - name: SOURCES_ENABLED
   description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
+  value: "false"
+- name: NOTIFICATIONS_SLACK_CAMEL_ENABLED
   value: "false"
 - name: NOTIFICATIONS_USE_POLICIES_EMAIL_TEMPLATES_V2_ENABLED
   value: "false"

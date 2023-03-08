@@ -94,6 +94,24 @@
             <artifactId>opentelemetry-jdbc</artifactId>
         </dependency>
 
+        <!-- Slack through Camel -->
+        <dependency>
+            <groupId>org.apache.camel.quarkus</groupId>
+            <artifactId>camel-quarkus-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.quarkus</groupId>
+            <artifactId>camel-quarkus-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.quarkus</groupId>
+            <artifactId>camel-quarkus-direct</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.quarkus</groupId>
+            <artifactId>camel-quarkus-slack</artifactId>
+        </dependency>
+
         <!-- Quarkus BOM -->
         <dependency>
             <groupId>io.smallrye.reactive</groupId>
@@ -165,6 +183,13 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Slack through Camel -->
+        <dependency>
+            <groupId>org.apache.camel.quarkus</groupId>
+            <artifactId>camel-quarkus-junit5</artifactId>
             <scope>test</scope>
         </dependency>
 
