@@ -245,7 +245,7 @@ public class EmailTemplateMigrationService {
         createInstantEmailTemplate(
             warnings, "console", "integrations", List.of(INTEGRATION_FAILED_EVENT_TYPE),
             "Integrations/failedIntegrationTitle", "txt", "Integrations failed integration email title",
-            "Integrations/failedIntegrationBody", "txt", "Integrations failed integration email body",
+            "Integrations/failedIntegrationBody", "html", "Integrations failed integration email body",
             featureFlipper.isIntegrationsEmailTemplatesV2Enabled()
         );
         createInstantEmailTemplate(

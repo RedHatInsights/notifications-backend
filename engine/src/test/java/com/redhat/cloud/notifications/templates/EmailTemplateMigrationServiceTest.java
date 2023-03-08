@@ -201,7 +201,7 @@ public class EmailTemplateMigrationServiceTest {
             // App: edge-management
             findAndCompileInstantEmailTemplate(imageCreation.getId());
             findAndCompileInstantEmailTemplate(updateDevices.getId());
-            // App: Inventory
+            // App: inventory
             findAndCompileInstantEmailTemplate(inventoryValidationError.getId());
             findAndCompileAggregationEmailTemplate(rhel.getName(), inventory.getName(), DAILY);
             // App: malware-detection
