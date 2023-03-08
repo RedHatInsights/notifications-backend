@@ -129,6 +129,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "env.name", defaultValue = "local-dev")
     String environment;
 
+    @ConfigProperty(name = "notifications.use-secured-email-templates.enabled", defaultValue = "false")
+    boolean useSecuredEmailTemplates;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -154,6 +157,7 @@ public class FeatureFlipper {
         Log.infof("The Edge management's email templates V2 are %s", edgeManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Resource optimization's email templates V2 are %s", resourceOptimizationManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Vulnerability's email templates V2 are %s", vulnerabilityEmailTemplatesV2Enabled ? "enabled" : "disabled");
+        Log.infof("The use of secured email templates is %s", useSecuredEmailTemplates ? "enabled" : "disabled");
         Log.infof("The Rhosak's email templates V2 are %s", rhosakEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The RBAC's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor's email templates V2 are %s", advisorEmailTemplatesV2Enabled ? "enabled" : "disabled");
@@ -421,6 +425,15 @@ public class FeatureFlipper {
     public void setSendToSlackThroughCamelEnabled(boolean sendToSlackThroughCamelEnabled) {
         checkTestLaunchMode();
         this.sendToSlackThroughCamelEnabled = sendToSlackThroughCamelEnabled;
+    }
+
+    public boolean isUseSecuredEmailTemplates() {
+        return useSecuredEmailTemplates;
+    }
+
+    public void setUseSecuredEmailTemplates(boolean useSecuredEmailTemplates) {
+        checkTestLaunchMode();
+        this.useSecuredEmailTemplates = useSecuredEmailTemplates;
     }
 
     /**

@@ -637,10 +637,15 @@ public class TestHelpers {
     }
 
     public static void writeEmailTemplate(String result, String fileName) {
-        final String TARGET_DIR = "target/";
+        final String TARGET_DIR = "target";
         try {
-            Files.createDirectories(Paths.get(TARGET_DIR + fileName.split("/")[0]));
-            Files.write(Paths.get(TARGET_DIR + fileName), result.getBytes(StandardCharsets.UTF_8));
+            String[] splitPath = fileName.split("/");
+            String actualPath = TARGET_DIR;
+            for (int part = 0; part < splitPath.length - 1; part++) {
+                actualPath += "/" + splitPath[part];
+            }
+            Files.createDirectories(Paths.get(actualPath));
+            Files.write(Paths.get(TARGET_DIR + "/" + fileName), result.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             System.out.println("An error occurred");
             e.printStackTrace();
