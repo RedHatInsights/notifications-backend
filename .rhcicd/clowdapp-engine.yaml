@@ -121,9 +121,9 @@ objects:
             secretKeyRef:
               name: backoffice
               key: token
-        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
-          value: /mnt/secrets/clientkeystore.jks
-        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_PASSWORD
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: it-services
@@ -431,3 +431,6 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
   value: "false"
+- name: IT_SERVICE_TO_SERVICE_KEY_STORE
+  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
+  value: ""
