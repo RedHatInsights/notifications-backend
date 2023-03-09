@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
-import com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor;
 import com.redhat.cloud.notifications.processors.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
@@ -41,9 +40,6 @@ public class EndpointProcessor {
 
     @Inject
     EmailSubscriptionTypeProcessor emailProcessor;
-
-    @Inject
-    RhoseTypeProcessor rhoseProcessor;
 
     @Inject
     SlackProcessor slackProcessor;
@@ -92,11 +88,7 @@ public class EndpointProcessor {
                             for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
                                 try {
                                     if ("slack".equals(endpointsBySubTypeEntry.getKey())) {
-                                        if (featureFlipper.isSendToSlackThroughCamelEnabled()) {
-                                            slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                        } else {
-                                            rhoseProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                        }
+                                        slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else {
                                         camelProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     }

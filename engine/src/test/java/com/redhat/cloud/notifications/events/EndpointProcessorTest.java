@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
-import com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor;
+import com.redhat.cloud.notifications.processors.slack.SlackProcessor;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.Test;
@@ -25,10 +25,10 @@ public class EndpointProcessorTest {
 
     /**
      * The processor is mocked to avoid {@link #testTestEndpointFetchedById()}
-     * throwing exceptions due to passing fixture data to the RHOSE processor.
+     * throwing exceptions due to passing fixture data to the Slack processor.
      */
     @InjectMock
-    RhoseTypeProcessor rhoseTypeProcessor;
+    SlackProcessor slackProcessor;
 
     @InjectMock
     EndpointRepository endpointRepository;

@@ -10,7 +10,6 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
@@ -20,22 +19,14 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
-import com.redhat.cloud.notifications.openbridge.Bridge;
-import com.redhat.cloud.notifications.openbridge.BridgeApiService;
-import com.redhat.cloud.notifications.openbridge.BridgeAuth;
-import com.redhat.cloud.notifications.openbridge.Processor;
-import com.redhat.cloud.notifications.openbridge.RhoseErrorMetricsRecorder;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -60,7 +51,6 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -68,7 +58,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -79,9 +68,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
-import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ORG;
-import static com.redhat.cloud.notifications.openbridge.BridgeApiService.BASE_PATH;
-import static com.redhat.cloud.notifications.openbridge.BridgeHelper.ORG_ID_FILTER_NAME;
+import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -92,16 +79,9 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 // TODO Needs documentation annotations
 public class EndpointResource {
 
-    public static final String OB_PROCESSOR_ID = "processorId";
-    public static final String OB_PROCESSOR_NAME = "processorname"; // Must be all lower for the filter.
-    public static final String SLACK_ACTION = "slack_sink_0.1";
-
     private static final List<EndpointType> systemEndpointType = List.of(
             EndpointType.EMAIL_SUBSCRIPTION
     );
-    public static final String SLACK_CHANNEL = "slack_channel";
-    public static final String SLACK = "slack";
-    public static final String SLACK_WEBHOOK_URL = "slack_webhook_url";
     public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
 
@@ -125,23 +105,7 @@ public class EndpointResource {
     RbacGroupValidator rbacGroupValidator;
 
     @Inject
-    TemplateRepository templateRepository;
-
-    @Inject
     FeatureFlipper featureFlipper;
-
-    @Inject
-    @RestClient
-    BridgeApiService bridgeApiService;
-
-    @Inject
-    Bridge bridge;
-
-    @Inject
-    BridgeAuth bridgeAuth;
-
-    @Inject
-    RhoseErrorMetricsRecorder rhoseErrorMetricsRecorder;
 
     /**
      * Used to create the secrets in Sources and update the endpoint's properties' IDs.
@@ -197,13 +161,6 @@ public class EndpointResource {
         count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly);
 
         for (Endpoint endpoint: endpoints) {
-            if (isForOpenBridge(endpoint)) {
-                // Don't return the processor info, it is internal only
-                CamelProperties cp = endpoint.getProperties(CamelProperties.class);
-                cp.getExtras().remove(OB_PROCESSOR_ID);
-                cp.getExtras().remove(OB_PROCESSOR_NAME);
-            }
-
             // Fetch the secrets from Sources.
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
                 this.secretUtils.loadSecretsForEndpoint(endpoint);
@@ -239,39 +196,11 @@ public class EndpointResource {
             throw new BadRequestException("Properties is required");
         }
 
-        if (isForOpenBridge(endpoint)) {
-            CamelProperties cp = endpoint.getProperties(CamelProperties.class);
-            String slackChannel = checkSlackChannel(cp);
-
-            /*
-             * We need to include the endpoint id in the processor definition before the endpoint is persisted
-             * on our side. That's why the id is generated here.
-             */
-            endpoint.setId(UUID.randomUUID());
-            endpoint.setStatus(EndpointStatus.PROVISIONING);
-
-            String processorName = endpoint.getId().toString();
-            cp.getExtras().put(OB_PROCESSOR_NAME, processorName);
-
-            try {
-                Processor processor = buildProcessor(orgId, processorName, slackChannel, cp.getUrl());
-
-                try {
-                    Processor createdProcessor = bridgeApiService.addProcessor(bridge.getId(), bridgeAuth.getToken(), processor);
-                    // We need to record the id of that processor, as we need it later
-                    cp.getExtras().put(OB_PROCESSOR_ID, createdProcessor.getId());
-                } catch (WebApplicationException e) {
-                    String path = "POST " + BASE_PATH + "/{bridgeId}/processors";
-                    rhoseErrorMetricsRecorder.record(path, e);
-                    throw e;
-                }
-            } catch (Exception e) {
-                Log.error("RHOSE processor creation failed", e);
-                throw new InternalServerErrorException();
-            }
-        } else {
-            endpoint.setStatus(EndpointStatus.READY);
+        if (endpoint.getType() == CAMEL && "slack".equals(endpoint.getSubType())) {
+            checkSlackChannel(endpoint.getProperties(CamelProperties.class));
         }
+
+        endpoint.setStatus(EndpointStatus.READY);
 
         /*
          * Create the secrets in Sources.
@@ -338,13 +267,6 @@ public class EndpointResource {
         if (endpoint == null) {
             throw new NotFoundException();
         } else {
-            if (isForOpenBridge(endpoint)) {
-                // Don't return the processor info, it is internal only
-                CamelProperties cp = endpoint.getProperties(CamelProperties.class);
-                cp.getExtras().remove(OB_PROCESSOR_ID);
-                cp.getExtras().remove(OB_PROCESSOR_NAME);
-            }
-
             // Fetch the secrets from Sources.
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
                 this.secretUtils.loadSecretsForEndpoint(endpoint);
@@ -367,48 +289,11 @@ public class EndpointResource {
         }
         checkSystemEndpoint(endpointType);
 
-        Endpoint ep = endpointRepository.getEndpoint(orgId, id);
-        if (isForOpenBridge(ep)) {
-            /*
-             * Before the endpoint and its processor get deleted, we need to
-             * check that the processor was in an actionable state before
-             * updating it in RHOSE.
-             *
-             * This will achieve two goals:
-             *
-             * 1. Avoid returning the RHOSE error directly to the
-             * user.
-             * 2. Avoid unnecessarily calling RHOSE.
-             *
-             * Check https://issues.redhat.com/browse/RHCLOUD-22355
-             * for more information.
-             */
-            if (ep.getStatus() != EndpointStatus.READY && ep.getStatus() != EndpointStatus.FAILED) {
-                throw new BadRequestException(
-                    "the processor associated with the endpoint is not ready to be deleted"
-                );
-            }
-
-            try {
-                ep.setStatus(EndpointStatus.DELETING);
-                CamelProperties properties = ep.getProperties(CamelProperties.class);
-                String processorId = properties.getExtras().get(OB_PROCESSOR_ID);
-                try {
-                    bridgeApiService.deleteProcessor(bridge.getId(), processorId, bridgeAuth.getToken());
-                } catch (WebApplicationException e) {
-                    String path = "DELETE " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
-                    rhoseErrorMetricsRecorder.record(path, e);
-                    throw e;
-                }
-            } catch (Exception e) {
-                Log.warn("RHOSE processor deletion failed", e);
-            }
-        } else {
-            endpointRepository.deleteEndpoint(orgId, id);
-        }
+        endpointRepository.deleteEndpoint(orgId, id);
 
         // Clean up the secrets in Sources.
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            Endpoint ep = endpointRepository.getEndpoint(orgId, id);
             this.secretUtils.deleteSecretsForEndpoint(ep);
         }
 
@@ -473,65 +358,15 @@ public class EndpointResource {
         // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
         checkSystemEndpoint(endpointType);
 
-        Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
-        if (isForOpenBridge(dbEndpoint)) {
-
-            CamelProperties requestProperties = endpoint.getProperties(CamelProperties.class);
-            String slackChannel = checkSlackChannel(requestProperties);
-
-            /*
-             * Before the endpoint and its processor get updated, we need to
-             * check that the processor was in an actionable state before
-             * updating it in RHOSE.
-             *
-             * This will achieve two goals:
-             *
-             * 1. Avoid returning the RHOSE error directly to the
-             * user.
-             * 2. Avoid unnecessarily calling RHOSE.
-             *
-             * Check https://issues.redhat.com/browse/RHCLOUD-22281
-             * for more information.
-             */
-            if (dbEndpoint.getStatus() != EndpointStatus.READY && dbEndpoint.getStatus() != EndpointStatus.FAILED) {
-                throw new BadRequestException(
-                    "the processor associated with the endpoint is not ready to be modified"
-                );
-            }
-
-            dbEndpoint.setStatus(EndpointStatus.PROVISIONING);
-
-            CamelProperties dbProperties = dbEndpoint.getProperties(CamelProperties.class);
-            dbProperties.getExtras().put("channel", slackChannel);
-            dbProperties.setUrl(requestProperties.getUrl());
-
-            String processorId = dbProperties.getExtras().get(OB_PROCESSOR_ID);
-            String processorName = dbProperties.getExtras().get(OB_PROCESSOR_NAME);
-
-            try {
-                Processor processor = buildProcessor(orgId, processorName, slackChannel, requestProperties.getUrl());
-                processor.setId(processorId);
-
-                try {
-                    Processor updatedProcessor = bridgeApiService.updateProcessor(bridge.getId(), processorId, bridgeAuth.getToken(), processor);
-                    Log.infof("Endpoint updated to processor %s ", updatedProcessor.toString());
-                } catch (WebApplicationException e) {
-                    String path = "PUT " + BASE_PATH + "/{bridgeId}/processors/{processorId}";
-                    rhoseErrorMetricsRecorder.record(path, e);
-                    throw e;
-                }
-            } catch (Exception e) {
-                Log.error("RHOSE processor update failed", e);
-                return Response.serverError().build();
-            }
-
-            endpointRepository.updateEndpoint(dbEndpoint);
-        } else {
-            endpointRepository.updateEndpoint(endpoint);
+        if (endpoint.getType() == CAMEL && "slack".equals(endpoint.getSubType())) {
+            checkSlackChannel(endpoint.getProperties(CamelProperties.class));
         }
+
+        endpointRepository.updateEndpoint(endpoint);
 
         // Update the secrets in Sources.
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
             var endpointProperties = endpoint.getProperties();
             var databaseEndpointProperties = dbEndpoint.getProperties();
 
@@ -707,42 +542,6 @@ public class EndpointResource {
                     endpointType
             ));
         }
-    }
-
-    @WithSpan
-    Processor buildProcessor(String orgId, String name, String slackChannel, String slackWebhookUrl) {
-
-        Processor.Action action = new Processor.Action(SLACK_ACTION);
-        action.getParameters().put(SLACK_CHANNEL, slackChannel);
-        action.getParameters().put(SLACK_WEBHOOK_URL, slackWebhookUrl);
-
-        // Get a qute template. First ask for an account specific one. This will fall back to the default if needed.
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, orgId, ORG, SLACK)
-                .orElseThrow(() -> new IllegalStateException("No default template defined for integration"));
-        String template = integrationTemplate.getTheTemplate().getData();
-
-        Processor processor = new Processor(name);
-        processor.getFilters().add(mkFilter("StringEquals", ORG_ID_FILTER_NAME, orgId));
-        processor.getFilters().add(mkFilter("StringEquals", OB_PROCESSOR_NAME, name));
-        processor.setAction(action);
-        processor.setTransformationTemplate(template);
-
-        return processor;
-    }
-
-    private Processor.Filter mkFilter(String type, String key, String value) {
-        Processor.Filter out = new Processor.Filter();
-        out.setType(type);
-        out.setKey(key);
-        out.setValue(value);
-        return out;
-    }
-
-    private boolean isForOpenBridge(Endpoint endpoint) {
-        return endpoint != null &&
-                endpoint.getType().equals(EndpointType.CAMEL) &&
-                endpoint.getSubType() != null &&
-                endpoint.getSubType().equals(SLACK);
     }
 
     private boolean isEndpointTypeAllowed(EndpointType endpointType) {

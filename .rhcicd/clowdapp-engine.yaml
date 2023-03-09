@@ -197,26 +197,6 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
-        - name: OB_BRIDGE_NAME
-          value: ${OB_BRIDGE_NAME}
-        - name: OB_ERROR_CHECK_PERIOD
-          value: ${OB_ERROR_CHECK_PERIOD}
-        - name: OB_TOKEN_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: rhose
-              key: token_client_id
-              optional: true
-        - name: OB_TOKEN_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: rhose
-              key: token_client_secret
-              optional: true
-        - name: QUARKUS_REST_CLIENT_OB_URL
-          value: ${QUARKUS_REST_CLIENT_OB_URL}
-        - name: QUARKUS_REST_CLIENT_KC_URL
-          value: ${QUARKUS_REST_CLIENT_KC_URL}
         - name: SOURCES_PSK
           valueFrom:
             secretKeyRef:
@@ -345,12 +325,6 @@ parameters:
   value: "true"
 - name: NOTIFICATIONS_SLACK_CAMEL_REDELIVERY_DELAY
   value: "1"
-- name: OB_BRIDGE_NAME
-  description: The name of the bridge to use.
-  value: "notifications-bridge"
-- name: OB_ERROR_CHECK_PERIOD
-  description: Period between two executions of the FromOpenBridgeHistoryFiller scheduled job
-  value: "off"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
   description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT30S
@@ -363,12 +337,6 @@ parameters:
 - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
-- name: QUARKUS_REST_CLIENT_OB_URL
-  description: URL of the OpenBridge fleet manager
-  value: "http://addMe"
-- name: QUARKUS_REST_CLIENT_KC_URL
-  description: URL of the SSO server
-  value: "https://addMe"
 - name: PROCESSOR_EMAIL_NO_REPLY
   description: Email address
   value: no-reply@redhat.com
