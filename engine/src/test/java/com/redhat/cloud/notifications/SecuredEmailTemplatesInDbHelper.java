@@ -41,7 +41,7 @@ public abstract class SecuredEmailTemplatesInDbHelper {
     protected TemplateService templateService;
 
     @Inject
-    private FeatureFlipper featureFlipper;
+    FeatureFlipper featureFlipper;
 
     @Inject
     EmailTemplateMigrationService emailTemplateMigrationService;
