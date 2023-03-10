@@ -65,424 +65,472 @@ public class EmailTemplateMigrationService {
         List<String> warnings = new ArrayList<>();
 
         Log.debug("Migration starting");
+        if (featureFlipper.isUseSecuredEmailTemplates()) {
+            getOrCreateTemplate("Secure/Common/insightsEmailBody", "html", "Common Insights email body");
+            createDailyEmailTemplate(
+                warnings, "rhel", "advisor",
+                "Secure/Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
+                "Secure/Advisor/dailyEmailBody", "html", "Advisor daily email body"
+            );
+            createDailyEmailTemplate(
+                warnings, "rhel", "compliance",
+                "Secure/Compliance/dailyEmailTitle", "txt", "Compliance daily email title",
+                "Secure/Compliance/dailyEmailBody", "html", "Compliance daily email body"
+            );
+            createDailyEmailTemplate(
+                warnings, "rhel", "drift",
+                "Secure/Drift/dailyEmailTitle", "txt", "Drift daily email title",
+                "Secure/Drift/dailyEmailBody", "html", "Drift daily email body"
+            );
+            createDailyEmailTemplate(
+                warnings, "rhel", "inventory",
+                "Secure/Inventory/dailyEmailTitle", "txt", "Inventory daily email title",
+                "Secure/Inventory/dailyEmailBody", "html", "Inventory daily email body"
+            );
+            createDailyEmailTemplate(
+                warnings, "rhel", "patch",
+                "Secure/Patch/dailyEmailTitle", "txt", "Patch daily email title",
+                "Secure/Patch/dailyEmailBody", "html", "Patch daily email body"
+            );
+            createDailyEmailTemplate(
+                warnings, "rhel", "policies",
+                "Secure/Policies/dailyEmailTitle", "txt", "Policies daily email title",
+                "Secure/Policies/dailyEmailBody", "html", "Policies daily email body"
+            );
+            createDailyEmailTemplate(
+                warnings, "rhel", "resource-optimization",
+                "Secure/ResourceOptimization/dailyEmailTitle", "txt", "Resource Optimization daily email title",
+                "Secure/ResourceOptimization/dailyEmailBody", "html", "Resource Optimization daily email body"
+            );
+            createDailyEmailTemplate(
+                warnings, "rhel", "vulnerability",
+                "Secure/Vulnerability/dailyEmailTitle", "txt", "Vulnerability daily email title",
+                "Secure/Vulnerability/dailyEmailBody", "html", "Vulnerability daily email body"
+            );
+            createDailyEmailTemplate(
+                warnings, "application-services", "rhosak",
+                "Secure/Rhosak/dailyRhosakEmailsTitle", "txt", "Rhosak daily email title",
+                "Secure/Rhosak/dailyRhosakEmailsBody", "html", "Rhosak daily email body"
+            );
+        } else {
 
-        /*
-         * Former src/main/resources/templates/Advisor folder.
-         */
-        getOrCreateTemplate("Advisor/insightsEmailBody", "html", "Advisor Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Advisor folder.
+             */
+            getOrCreateTemplate("Advisor/insightsEmailBody", "html", "Advisor Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "advisor", List.of(DEACTIVATED_RECOMMENDATION),
                 "Advisor/deactivatedRecommendationInstantEmailTitle", "txt", "Advisor deactivated recommendation email title",
                 "Advisor/deactivatedRecommendationInstantEmailBody", "html", "Advisor deactivated recommendation email body",
                 featureFlipper.isAdvisorEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "advisor", List.of(NEW_RECOMMENDATION),
                 "Advisor/newRecommendationInstantEmailTitle", "txt", "Advisor new recommendation email title",
                 "Advisor/newRecommendationInstantEmailBody", "html", "Advisor new recommendation email body",
                 featureFlipper.isAdvisorEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "advisor", List.of(RESOLVED_RECOMMENDATION),
                 "Advisor/resolvedRecommendationInstantEmailTitle", "txt", "Advisor resolved recommendation email title",
                 "Advisor/resolvedRecommendationInstantEmailBody", "html", "Advisor resolved recommendation email body",
                 featureFlipper.isAdvisorEmailTemplatesV2Enabled()
-        );
-        createDailyEmailTemplate(
+            );
+            createDailyEmailTemplate(
                 warnings, "rhel", "advisor",
                 "Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
                 "Advisor/dailyEmailBody", "html", "Advisor daily email body",
                 featureFlipper.isAdvisorEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/AdvisorOpenshift folder.
-         */
-        getOrCreateTemplate("AdvisorOpenshift/insightsEmailBody", "html", "AdvisorOpenshift Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/AdvisorOpenshift folder.
+             */
+            getOrCreateTemplate("AdvisorOpenshift/insightsEmailBody", "html", "AdvisorOpenshift Insights email body");
+            createInstantEmailTemplate(
                 warnings, "openshift", "advisor", List.of("new-recommendation"),
                 "AdvisorOpenshift/newRecommendationInstantEmailTitle", "txt", "AdvisorOpenshift new recommendation email title",
                 "AdvisorOpenshift/newRecommendationInstantEmailBody", "html", "AdvisorOpenshift new recommendation email body",
                 featureFlipper.isAdvisorOpenShiftEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Ansible folder.
-         */
-        getOrCreateTemplate("Ansible/insightsEmailBody", "html", "Ansible Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Ansible folder.
+             */
+            getOrCreateTemplate("Ansible/insightsEmailBody", "html", "Ansible Insights email body");
+            createInstantEmailTemplate(
                 warnings, "ansible", "reports", List.of("report-available"),
                 "Ansible/instantEmailTitle", "txt", "Ansible instant email title",
                 "Ansible/instantEmailBody", "html", "Ansible instant email body",
                 featureFlipper.isAnsibleEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Compliance folder.
-         */
-        getOrCreateTemplate("Compliance/insightsEmailBody", "html", "Compliance Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Compliance folder.
+             */
+            getOrCreateTemplate("Compliance/insightsEmailBody", "html", "Compliance Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "compliance", List.of("compliance-below-threshold"),
                 "Compliance/complianceBelowThresholdEmailTitle", "txt", "Compliance below threshold email title",
                 "Compliance/complianceBelowThresholdEmailBody", "html", "Compliance below threshold email body",
                 featureFlipper.isComplianceEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "compliance", List.of("report-upload-failed"),
                 "Compliance/reportUploadFailedEmailTitle", "txt", "Compliance report upload failed email title",
                 "Compliance/reportUploadFailedEmailBody", "html", "Compliance report upload failed email body",
                 featureFlipper.isComplianceEmailTemplatesV2Enabled()
-        );
-        createDailyEmailTemplate(
+            );
+            createDailyEmailTemplate(
                 warnings, "rhel", "compliance",
                 "Compliance/dailyEmailTitle", "txt", "Compliance daily email title",
                 "Compliance/dailyEmailBody", "html", "Compliance daily email body",
                 featureFlipper.isComplianceEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/CostManagement folder.
-         */
-        getOrCreateTemplate("CostManagement/insightsEmailBody", "html", "Cost Management Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/CostManagement folder.
+             */
+            getOrCreateTemplate("CostManagement/insightsEmailBody", "html", "Cost Management Insights email body");
+            createInstantEmailTemplate(
                 warnings, "openshift", "cost-management", List.of("missing-cost-model"),
                 "CostManagement/MissingCostModelEmailTitle", "txt", "Cost Management missing cost model email title",
                 "CostManagement/MissingCostModelEmailBody", "html", "Cost Management missing cost model email body",
                 featureFlipper.isCostManagementEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "openshift", "cost-management", List.of("cost-model-create"),
                 "CostManagement/CostModelCreateEmailTitle", "txt", "Cost Management cost model create email title",
                 "CostManagement/CostModelCreateEmailBody", "html", "Cost Management cost model create email body",
                 featureFlipper.isCostManagementEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "openshift", "cost-management", List.of("cost-model-update"),
                 "CostManagement/CostModelUpdateEmailTitle", "txt", "Cost Management cost model update email title",
                 "CostManagement/CostModelUpdateEmailBody", "html", "Cost Management cost model update email body",
                 featureFlipper.isCostManagementEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "openshift", "cost-management", List.of("cost-model-remove"),
                 "CostManagement/CostModelRemoveEmailTitle", "txt", "Cost Management cost model remove email title",
                 "CostManagement/CostModelRemoveEmailBody", "html", "Cost Management cost model remove email body",
                 featureFlipper.isCostManagementEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "openshift", "cost-management", List.of("cm-operator-stale"),
                 "CostManagement/CmOperatorStaleEmailTitle", "txt", "Cost Management operator stale email title",
                 "CostManagement/CmOperatorStaleEmailBody", "html", "Cost Management operator stale email body",
                 featureFlipper.isCostManagementEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "openshift", "cost-management", List.of("cm-operator-data-processed"),
                 "CostManagement/CmOperatorDataProcessedEmailTitle", "txt", "Cost Management operator data processed email title",
                 "CostManagement/CmOperatorDataProcessedEmailBody", "html", "Cost Management operator data processed email body",
                 featureFlipper.isCostManagementEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "openshift", "cost-management", List.of("cm-operator-data-received"),
                 "CostManagement/CmOperatorDataReceivedEmailTitle", "txt", "Cost Management operator data received email title",
                 "CostManagement/CmOperatorDataReceivedEmailBody", "html", "Cost Management operator data received email body",
                 featureFlipper.isCostManagementEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Drift folder.
-         */
-        getOrCreateTemplate("Drift/insightsEmailBody", "html", "Drift Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Drift folder.
+             */
+            getOrCreateTemplate("Drift/insightsEmailBody", "html", "Drift Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "drift", List.of("drift-baseline-detected"),
                 "Drift/newBaselineDriftInstantEmailTitle", "txt", "Drift new baseline drift email title",
                 "Drift/newBaselineDriftInstantEmailBody", "html", "Drift new baseline drift email body",
                 featureFlipper.isDriftEmailTemplatesV2Enabled()
-        );
-        createDailyEmailTemplate(
+            );
+            createDailyEmailTemplate(
                 warnings, "rhel", "drift",
                 "Drift/dailyEmailTitle", "txt", "Drift daily email title",
                 "Drift/dailyEmailBody", "html", "Drift daily email body",
                 featureFlipper.isDriftEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/EdgeManagement folder.
-         */
-        getOrCreateTemplate("EdgeManagement/insightsEmailBody", "html", "EdgeManagement Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/EdgeManagement folder.
+             */
+            getOrCreateTemplate("EdgeManagement/insightsEmailBody", "html", "EdgeManagement Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "edge-management", List.of("image-creation"),
                 "EdgeManagement/imageCreationTitle", "txt", "EdgeManagement image creation email title",
                 "EdgeManagement/imageCreationBody", "html", "EdgeManagement image creation email body",
                 featureFlipper.isEdgeManagementEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "edge-management", List.of("update-devices"),
                 "EdgeManagement/updateDeviceTitle", "txt", "EdgeManagement update devices email title",
                 "EdgeManagement/updateDeviceBody", "html", "EdgeManagement update devices email body",
                 featureFlipper.isEdgeManagementEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Inventory folder.
-         */
-        getOrCreateTemplate("Inventory/insightsEmailBody", "html", "Inventory Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Inventory folder.
+             */
+            getOrCreateTemplate("Inventory/insightsEmailBody", "html", "Inventory Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "inventory", List.of("validation-error"),
                 "Inventory/validationErrorEmailTitle", "txt", "Inventory instant email title",
                 "Inventory/validationErrorEmailBody", "html", "Inventory instant email body",
                 featureFlipper.isInventoryEmailTemplatesV2Enabled()
-        );
-        createDailyEmailTemplate(
+            );
+            createDailyEmailTemplate(
                 warnings, "rhel", "inventory",
                 "Inventory/dailyEmailTitle", "txt", "Inventory daily email title",
                 "Inventory/dailyEmailBody", "html", "Inventory daily email body",
                 featureFlipper.isInventoryEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Integrations folder.
-         */
-        getOrCreateTemplate("Integrations/insightsEmailBody", "html", "Integrations Insights email body");
-        createInstantEmailTemplate(
-            warnings, "console", "integrations", List.of(INTEGRATION_FAILED_EVENT_TYPE),
-            "Integrations/failedIntegrationTitle", "txt", "Integrations failed integration email title",
-            "Integrations/failedIntegrationBody", "html", "Integrations failed integration email body",
-            featureFlipper.isIntegrationsEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
-            warnings, "console", "integrations", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
-            "Integrations/integrationDisabledTitle", "txt", "Integrations disabled integration email title",
-            "Integrations/integrationDisabledBody", "html", "Integrations disabled integration email body",
-            featureFlipper.isIntegrationsEmailTemplatesV2Enabled()
-        );
+            /*
+             * Former src/main/resources/templates/Integrations folder.
+             */
+            getOrCreateTemplate("Integrations/insightsEmailBody", "html", "Integrations Insights email body");
+            createInstantEmailTemplate(
+                warnings, "console", "integrations", List.of(INTEGRATION_FAILED_EVENT_TYPE),
+                "Integrations/failedIntegrationTitle", "txt", "Integrations failed integration email title",
+                "Integrations/failedIntegrationBody", "html", "Integrations failed integration email body",
+                featureFlipper.isIntegrationsEmailTemplatesV2Enabled()
+            );
+            createInstantEmailTemplate(
+                warnings, "console", "integrations", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
+                "Integrations/integrationDisabledTitle", "txt", "Integrations disabled integration email title",
+                "Integrations/integrationDisabledBody", "html", "Integrations disabled integration email body",
+                featureFlipper.isIntegrationsEmailTemplatesV2Enabled()
+            );
 
-        /*
-         * Former src/main/resources/templates/MalwareDetection folder.
-         */
-        getOrCreateTemplate("MalwareDetection/insightsEmailBody", "html", "Malware Detection Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/MalwareDetection folder.
+             */
+            getOrCreateTemplate("MalwareDetection/insightsEmailBody", "html", "Malware Detection Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "malware-detection", List.of("detected-malware"),
                 "MalwareDetection/detectedMalwareInstantEmailTitle", "txt", "Malware Detection detected malware email title",
                 "MalwareDetection/detectedMalwareInstantEmailBody", "html", "Malware Detection detected malware email body",
                 featureFlipper.isMalwareEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-        * Former src/main/resources/templates/Patch folder.
-         */
-        getOrCreateTemplate("Patch/insightsEmailBody", "html", "Patch Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Patch folder.
+             */
+            getOrCreateTemplate("Patch/insightsEmailBody", "html", "Patch Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "patch", List.of("new-advisory"),
                 "Patch/newAdvisoriesInstantEmailTitle", "txt", "Patch instant advisories email title",
                 "Patch/newAdvisoriesInstantEmailBody", "html", "Patch instant advisories email body",
                 featureFlipper.isPatchEmailTemplatesV2Enabled()
-        );
-        createDailyEmailTemplate(
+            );
+            createDailyEmailTemplate(
                 warnings, "rhel", "patch",
                 "Patch/dailyEmailTitle", "txt", "Patch daily email title",
                 "Patch/dailyEmailBody", "html", "Patch daily email body",
                 featureFlipper.isPatchEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Policies folder.
-         */
-        getOrCreateTemplate("Policies/insightsEmailBody", "html", "Policies Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Policies folder.
+             */
+            getOrCreateTemplate("Policies/insightsEmailBody", "html", "Policies Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "policies", List.of("policy-triggered"),
                 "Policies/instantEmailTitle", "txt", "Policies instant email title",
                 "Policies/instantEmailBody", "html", "Policies instant email body",
                 featureFlipper.isPoliciesEmailTemplatesV2Enabled()
-        );
-        createDailyEmailTemplate(
+            );
+            createDailyEmailTemplate(
                 warnings, "rhel", "policies",
                 "Policies/dailyEmailTitle", "txt", "Policies daily email title",
                 "Policies/dailyEmailBody", "html", "Policies daily email body",
                 featureFlipper.isPoliciesEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Rbac folder.
-         */
-        getOrCreateTemplate("Rbac/insightsEmailBody", "html", "Rbac Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Rbac folder.
+             */
+            getOrCreateTemplate("Rbac/insightsEmailBody", "html", "Rbac Insights email body");
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("rh-new-role-available"),
                 "Rbac/systemRoleAvailableEmailTitle", "txt", "Rbac system role available email title",
                 "Rbac/systemRoleAvailableEmailBody", "html", "Rbac system role available email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("rh-platform-default-role-updated"),
                 "Rbac/platformRoleUpdatedEmailTitle", "txt", "Rbac platform role updated email title",
                 "Rbac/platformRoleUpdatedEmailBody", "html", "Rbac platform role updated email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("rh-non-platform-default-role-updated"),
                 "Rbac/nonPlatformRoleUpdatedEmailTitle", "txt", "Rbac non platform role updated email title",
                 "Rbac/nonPlatformRoleUpdatedEmailBody", "html", "Rbac non platform role updated email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("custom-role-created"),
                 "Rbac/customRoleCreatedEmailTitle", "txt", "Rbac custom role created email title",
                 "Rbac/customRoleCreatedEmailBody", "html", "Rbac custom role created email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("custom-role-updated"),
                 "Rbac/customRoleUpdatedEmailTitle", "txt", "Rbac custom role updated email title",
                 "Rbac/customRoleUpdatedEmailBody", "html", "Rbac custom role updated email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("custom-role-deleted"),
                 "Rbac/customRoleDeletedEmailTitle", "txt", "Rbac custom role deleted email title",
                 "Rbac/customRoleDeletedEmailBody", "html", "Rbac custom role deleted email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("rh-new-role-added-to-default-access"),
                 "Rbac/roleAddedToPlatformGroupEmailTitle", "txt", "Rbac role added to platform group email title",
                 "Rbac/roleAddedToPlatformGroupEmailBody", "html", "Rbac role added to platform group email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("rh-role-removed-from-default-access"),
                 "Rbac/roleRemovedFromPlatformGroupEmailTitle", "txt", "Rbac role removed from platform group email title",
                 "Rbac/roleRemovedFromPlatformGroupEmailBody", "html", "Rbac role removed from platform group email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("custom-default-access-updated"),
                 "Rbac/customPlatformGroupUpdatedEmailTitle", "txt", "Rbac custom platform group updated email title",
                 "Rbac/customPlatformGroupUpdatedEmailBody", "html", "Rbac custom platform group updated email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("group-created"),
                 "Rbac/customGroupCreatedEmailTitle", "txt", "Rbac custom group created email title",
                 "Rbac/customGroupCreatedEmailBody", "html", "Rbac custom group created email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("group-updated"),
                 "Rbac/customGroupUpdatedEmailTitle", "txt", "Rbac custom group updated email title",
                 "Rbac/customGroupUpdatedEmailBody", "html", "Rbac custom group updated email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("group-deleted"),
                 "Rbac/customGroupDeletedEmailTitle", "txt", "Rbac custom group deleted email title",
                 "Rbac/customGroupDeletedEmailBody", "html", "Rbac custom group deleted email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("platform-default-group-turned-into-custom"),
                 "Rbac/platformGroupToCustomEmailTitle", "txt", "Rbac platform group to custom email title",
                 "Rbac/platformGroupToCustomEmailBody", "html", "Rbac platform group to custom email body",
                 featureFlipper.isRbacEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/ResourceOptimization folder.
-         */
-        getOrCreateTemplate("ResourceOptimization/insightsEmailBody", "html", "Resource Optimization Insights email body");
-        createDailyEmailTemplate(
+            /*
+             * Former src/main/resources/templates/ResourceOptimization folder.
+             */
+            getOrCreateTemplate("ResourceOptimization/insightsEmailBody", "html", "Resource Optimization Insights email body");
+            createDailyEmailTemplate(
                 warnings, "rhel", "resource-optimization",
                 "ResourceOptimization/dailyEmailTitle", "txt", "Resource Optimization daily email title",
                 "ResourceOptimization/dailyEmailBody", "html", "Resource Optimization daily email body",
                 featureFlipper.isResourceOptimizationManagementEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Rhosak folder.
-         */
-        getOrCreateTemplate("Rhosak/rhosakEmailBody", "html", "Rhosak email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Rhosak folder.
+             */
+            getOrCreateTemplate("Rhosak/rhosakEmailBody", "html", "Rhosak email body");
+            createInstantEmailTemplate(
                 warnings, "application-services", "rhosak", List.of("disruption"),
                 "Rhosak/serviceDisruptionTitle", "txt", "Rhosak service disruption email title",
                 "Rhosak/serviceDisruptionBody", "html", "Rhosak service disruption email body",
                 featureFlipper.isRhosakEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "application-services", "rhosak", List.of("instance-created"),
                 "Rhosak/instanceCreatedTitle", "txt", "Rhosak instance created email title",
                 "Rhosak/instanceCreatedBody", "html", "Rhosak instance created email body",
                 featureFlipper.isRhosakEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "application-services", "rhosak", List.of("instance-deleted"),
                 "Rhosak/instanceDeletedTitle", "txt", "Rhosak instance deleted email title",
                 "Rhosak/instanceDeletedBody", "html", "Rhosak instance deleted email body",
                 featureFlipper.isRhosakEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "application-services", "rhosak", List.of("action-required"),
                 "Rhosak/actionRequiredTitle", "txt", "Rhosak action required email title",
                 "Rhosak/actionRequiredBody", "html", "Rhosak action required email body",
                 featureFlipper.isRhosakEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "application-services", "rhosak", List.of("scheduled-upgrade"),
                 "Rhosak/scheduledUpgradeTitle", "txt", "Rhosak scheduled upgrade email title",
                 "Rhosak/scheduledUpgradeBody", "html", "Rhosak scheduled upgrade email body",
                 featureFlipper.isRhosakEmailTemplatesV2Enabled()
-        );
-        createDailyEmailTemplate(
+            );
+            createDailyEmailTemplate(
                 warnings, "application-services", "rhosak",
                 "Rhosak/dailyRhosakEmailsTitle", "txt", "Rhosak daily email title",
                 "Rhosak/dailyRhosakEmailsBody", "html", "Rhosak daily email body",
                 featureFlipper.isRhosakEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Sources folder.
-         */
-        getOrCreateTemplate("Sources/insightsEmailBody", "html", "Sources Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Sources folder.
+             */
+            getOrCreateTemplate("Sources/insightsEmailBody", "html", "Sources Insights email body");
+            createInstantEmailTemplate(
                 warnings, "console", "sources", List.of("availability-status"),
                 "Sources/availabilityStatusEmailTitle", "txt", "Sources availability status email title",
                 "Sources/availabilityStatusEmailBody", "html", "Sources availability status email body",
                 featureFlipper.isSourcesEmailTemplatesV2Enabled()
-        );
+            );
 
-        /*
-         * Former src/main/resources/templates/Vulnerability folder.
-         */
-        getOrCreateTemplate("Vulnerability/insightsEmailBody", "html", "Vulnerability Insights email body");
-        createInstantEmailTemplate(
+            /*
+             * Former src/main/resources/templates/Vulnerability folder.
+             */
+            getOrCreateTemplate("Vulnerability/insightsEmailBody", "html", "Vulnerability Insights email body");
+            createInstantEmailTemplate(
                 warnings, "rhel", "vulnerability", List.of("any-cve-known-exploit"),
                 "Vulnerability/anyCveKnownExploitTitle", "txt", "Vulnerability any CVE known exploit email title",
                 "Vulnerability/anyCveKnownExploitBody", "html", "Vulnerability any CVE known exploit email body",
                 featureFlipper.isVulnerabilityEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "vulnerability", List.of("new-cve-severity"),
                 "Vulnerability/newCveCritSeverityEmailTitle", "txt", "Vulnerability new CVE crit severity email title",
                 "Vulnerability/newCveCritSeverityEmailBody", "html", "Vulnerability new CVE crit severity email body",
                 featureFlipper.isVulnerabilityEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "vulnerability", List.of("new-cve-cvss"),
                 "Vulnerability/newCveHighCvssEmailTitle", "txt", "Vulnerability new CVE high cvss email title",
                 "Vulnerability/newCveHighCvssEmailBody", "html", "Vulnerability new CVE high cvss email body",
                 featureFlipper.isVulnerabilityEmailTemplatesV2Enabled()
-        );
-        createInstantEmailTemplate(
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "vulnerability", List.of("new-cve-security-rule"),
                 "Vulnerability/newCveSecurityRuleTitle", "txt", "Vulnerability new CVE security rule email title",
                 "Vulnerability/newCveSecurityRuleBody", "html", "Vulnerability new CVE security rule email body",
                 featureFlipper.isVulnerabilityEmailTemplatesV2Enabled()
-        );
-        createDailyEmailTemplate(
+            );
+            createDailyEmailTemplate(
                 warnings, "rhel", "vulnerability",
                 "Vulnerability/dailyEmailTitle", "txt", "Vulnerability daily email title",
                 "Vulnerability/dailyEmailBody", "html", "Vulnerability daily email body",
                 featureFlipper.isVulnerabilityEmailTemplatesV2Enabled()
-        );
+            );
 
-        getOrCreateTemplate("Common/insightsEmailBody", "html", "Common Insights email body");
-
+            getOrCreateTemplate("Common/insightsEmailBody", "html", "Common Insights email body");
+        }
         Log.debug("Migration ended");
 
         return warnings;
@@ -595,6 +643,14 @@ public class EmailTemplateMigrationService {
      * - the aggregation email template does not already exist in the DB
      * Existing aggregation email templates are never updated by this migration service.
      */
+    private void createDailyEmailTemplate(List<String> warnings, String bundleName, String appName,
+                                          String subjectTemplateName, String subjectTemplateExtension, String subjectTemplateDescription,
+                                          String bodyTemplateName, String bodyTemplateExtension, String bodyTemplateDescription) {
+        createDailyEmailTemplate(warnings, bundleName, appName,
+            subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription,
+            bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription, false);
+    }
+
     private void createDailyEmailTemplate(List<String> warnings, String bundleName, String appName,
                                           String subjectTemplateName, String subjectTemplateExtension, String subjectTemplateDescription,
                                           String bodyTemplateName, String bodyTemplateExtension, String bodyTemplateDescription, boolean useTemplateV2) {
