@@ -434,4 +434,4 @@ parameters:
 - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
   value: "false"
 - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
-  value: "false"
+  value: "true"
