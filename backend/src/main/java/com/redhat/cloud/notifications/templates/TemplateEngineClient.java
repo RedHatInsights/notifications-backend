@@ -21,7 +21,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(API_INTERNAL + "/template-engine")
-@RegisterRestClient(configKey = "template-engine")
+@RegisterRestClient(configKey = "internal-engine")
 @RegisterProvider(BadRequestExceptionMapper.class)
 public interface TemplateEngineClient {
 

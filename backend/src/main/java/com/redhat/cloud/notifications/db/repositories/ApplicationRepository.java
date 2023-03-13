@@ -222,6 +222,39 @@ public class ApplicationRepository {
                 .getSingleResult();
     }
 
+    /**
+     * Checks whether the "application" — "bundle" combination specified exists.
+     * @param applicationName the name of the application.
+     * @param bundleName the name of the bundle.
+     * @return true if the combination exists, false otherwise.
+     */
+    public boolean applicationBundleExists(final String applicationName, final String bundleName) {
+        final String applicationBundleExistsQuery =
+            "SELECT " +
+                "1 " +
+            "FROM " +
+                "Application AS a " +
+            "INNER JOIN " +
+                "Bundle AS b" +
+                    " ON b = a.bundle " +
+            "WHERE " +
+                "a.name = :application_name " +
+            "AND " +
+                "b.name = :bundle_name";
+
+        try {
+            this.entityManager
+                    .createQuery(applicationBundleExistsQuery)
+                    .setParameter("application_name", applicationName)
+                    .setParameter("bundle_name", bundleName)
+                    .getSingleResult();
+
+            return true;
+        } catch (final NoResultException e) {
+            return false;
+        }
+    }
+
     private QueryBuilder<EventType> getEventTypesQueryBuilder(Set<UUID> appIds, UUID bundleId, String eventTypeName) {
         return QueryBuilder
                 .builder(EventType.class)

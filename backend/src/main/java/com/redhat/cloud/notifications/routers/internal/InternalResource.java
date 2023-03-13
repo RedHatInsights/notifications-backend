@@ -17,10 +17,13 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CurrentStatus;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
+import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
+import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
@@ -30,7 +33,9 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
+
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -84,7 +89,14 @@ public class InternalResource {
     BehaviorGroupRepository behaviorGroupRepository;
 
     @Inject
+    @RestClient
+    DailyDigestService dailyDigestService;
+
+    @Inject
     EndpointRepository endpointRepository;
+
+    @Inject
+    Environment environment;
 
     @Inject
     StatusRepository statusRepository;
@@ -468,5 +480,30 @@ public class InternalResource {
         } else {
             return Response.status(NOT_FOUND).build();
         }
+    }
+
+    /**
+     * Sends a daily digest command to the engine via a REST request.
+     * @param triggerDailyDigestRequest the settings of the digest.
+     */
+    @Consumes(APPLICATION_JSON)
+    @POST
+    @Path("/daily-digest/trigger")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+    public void triggerDailyDigest(@NotNull @Valid final TriggerDailyDigestRequest triggerDailyDigestRequest) {
+        if (!this.environment.isLocal() && !this.environment.isStage()) {
+            throw new BadRequestException("the daily digests can only be triggered in the stage environment");
+        }
+
+        if (
+            !this.applicationRepository.applicationBundleExists(
+                triggerDailyDigestRequest.getApplicationName(),
+                triggerDailyDigestRequest.getBundleName()
+            )
+        ) {
+            throw new BadRequestException("unable to find the specified application — bundle combination");
+        }
+
+        this.dailyDigestService.triggerDailyDigest(triggerDailyDigestRequest);
     }
 }
