@@ -636,7 +636,7 @@ public abstract class CrudTestHelpers {
         return new JsonArray(responseBody);
     }
 
-    public static void updateTemplate(Header header, String templateId, Template updatedTemplate) {
+    public static void updateTemplate(Header header, String templateId, Template updatedTemplate, int expectedStatusCode) {
         given()
                 .basePath(API_INTERNAL)
                 .header(header)
@@ -645,7 +645,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(updatedTemplate))
                 .when().put("/templates/{templateId}")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedStatusCode)
                 .contentType(TEXT);
 
         // Let's check that the template fields have been correctly updated.
@@ -676,7 +676,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(emailTemplate))
                 .when().post("/templates/email/instant")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedStatusCode)
                 .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
                 .extract().asString();
 
@@ -745,18 +745,20 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void deleteInstantEmailTemplate(Header header, String templateId) {
+    public static void deleteInstantEmailTemplate(Header header, String templateId, int expectedStatusCode) {
         given()
                 .basePath(API_INTERNAL)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .when().delete("/templates/email/instant/{templateId}")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedStatusCode)
                 .contentType(TEXT);
 
-        // Let's check that the template no longer exists.
-        getInstantEmailTemplate(header, templateId, /* Not used */ null, 404);
+        if (familyOf(expectedStatusCode) == SUCCESSFUL) {
+            // Let's check that the template no longer exists.
+            getInstantEmailTemplate(header, templateId, /* Not used */ null, 404);
+        }
     }
 
     public static JsonArray getAllInstantEmailTemplates(Header header) {
@@ -815,7 +817,7 @@ public abstract class CrudTestHelpers {
         return null;
     }
 
-    public static void updateInstantEmailTemplate(Header header, String templateId, InstantEmailTemplate updatedEmailTemplate) {
+    public static void updateInstantEmailTemplate(Header header, String templateId, InstantEmailTemplate updatedEmailTemplate, int expectedStatusCode) {
         given()
                 .basePath(API_INTERNAL)
                 .header(header)
@@ -824,11 +826,13 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(updatedEmailTemplate))
                 .when().put("/templates/email/instant/{templateId}")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedStatusCode)
                 .contentType(TEXT);
 
-        // Let's check that the instant email template fields have been correctly updated.
-        getInstantEmailTemplate(header, templateId, updatedEmailTemplate, 200);
+        if (familyOf(expectedStatusCode) == SUCCESSFUL) {
+            // Let's check that the instant email template fields have been correctly updated.
+            getInstantEmailTemplate(header, templateId, updatedEmailTemplate, 200);
+        }
     }
 
     public static Optional<JsonObject> createAggregationEmailTemplate(Header header, AggregationEmailTemplate emailTemplate, int expectedStatusCode) {
@@ -839,7 +843,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(emailTemplate))
                 .when().post("/templates/email/aggregation")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedStatusCode)
                 .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
                 .extract().asString();
 
@@ -908,18 +912,20 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void deleteAggregationEmailTemplate(Header header, String templateId) {
+    public static void deleteAggregationEmailTemplate(Header header, String templateId, int expectedStatusCode) {
         given()
                 .basePath(API_INTERNAL)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .when().delete("/templates/email/aggregation/{templateId}")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedStatusCode)
                 .contentType(TEXT);
 
-        // Let's check that the template no longer exists.
-        getAggregationEmailTemplate(header, templateId, /* Not used */ null, 404);
+        if (familyOf(expectedStatusCode) == SUCCESSFUL) {
+            // Let's check that the template no longer exists.
+            getAggregationEmailTemplate(header, templateId, /* Not used */ null, 404);
+        }
     }
 
     public static JsonArray getAllAggregationEmailTemplates(Header header) {
@@ -964,7 +970,7 @@ public abstract class CrudTestHelpers {
         return jsonEmailTemplates;
     }
 
-    public static void updateAggregationEmailTemplate(Header header, String templateId, AggregationEmailTemplate updatedEmailTemplate) {
+    public static void updateAggregationEmailTemplate(Header header, String templateId, AggregationEmailTemplate updatedEmailTemplate, int expectedStatusCode) {
         given()
                 .basePath(API_INTERNAL)
                 .header(header)
@@ -973,10 +979,12 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(updatedEmailTemplate))
                 .when().put("/templates/email/aggregation/{templateId}")
                 .then()
-                .statusCode(200)
+                .statusCode(expectedStatusCode)
                 .contentType(TEXT);
 
-        // Let's check that the aggregation email template fields have been correctly updated.
-        getAggregationEmailTemplate(header, templateId, updatedEmailTemplate, 200);
+        if (familyOf(expectedStatusCode) == SUCCESSFUL) {
+            // Let's check that the aggregation email template fields have been correctly updated.
+            getAggregationEmailTemplate(header, templateId, updatedEmailTemplate, 200);
+        }
     }
 }

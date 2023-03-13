@@ -31,6 +31,10 @@ public class TemplateRepository {
 
     @Transactional
     public Template createTemplate(Template template) {
+        if (template.getApplicationId() != null) {
+            Application app = findApplication(template.getApplicationId());
+            template.setApplication(app);
+        }
         entityManager.persist(template);
         return template;
     }
@@ -288,7 +292,7 @@ public class TemplateRepository {
         return rowCount > 0;
     }
 
-    private EventType findEventType(UUID id) {
+    public EventType findEventType(UUID id) {
         EventType eventType = entityManager.find(EventType.class, id);
         if (eventType == null) {
             throw new NotFoundException("Event type not found");
