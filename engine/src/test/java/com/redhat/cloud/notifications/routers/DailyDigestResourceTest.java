@@ -72,7 +72,7 @@ public class DailyDigestResourceTest {
             .extract()
             .asString();
 
-        Assertions.assertEquals("the daily digests can only be triggered in the stage environment", response, "unexpected error message received");
+        Assertions.assertEquals("the daily digests can only be triggered in the local or stage environment", response, "unexpected error message received");
     }
 
     /**
