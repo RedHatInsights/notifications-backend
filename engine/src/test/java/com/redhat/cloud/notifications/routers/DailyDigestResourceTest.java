@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Environment;
-import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequestDto;
+import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -52,7 +52,7 @@ public class DailyDigestResourceTest {
         Mockito.when(this.environment.isEnvironmentLocal()).thenReturn(false);
         Mockito.when(this.environment.isEnvironmentStage()).thenReturn(false);
 
-        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+        final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             "application-name",
             "bundle-name",
             "organization-id",
@@ -65,7 +65,7 @@ public class DailyDigestResourceTest {
             .basePath(API_INTERNAL)
             .when()
             .contentType(JSON)
-            .body(Json.encode(triggerDailyDigestRequestDto))
+            .body(Json.encode(triggerDailyDigestRequest))
             .post("/daily-digest")
             .then()
             .statusCode(400)
@@ -89,7 +89,7 @@ public class DailyDigestResourceTest {
         final LocalDateTime end = LocalDateTime.now();
         final LocalDateTime start = end.minusDays(5);
 
-        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+        final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             applicationName,
             bundleName,
             orgId,
@@ -105,7 +105,7 @@ public class DailyDigestResourceTest {
             .basePath(API_INTERNAL)
             .when()
             .contentType(ContentType.JSON)
-            .body(Json.encode(triggerDailyDigestRequestDto))
+            .body(Json.encode(triggerDailyDigestRequest))
             .post("/daily-digest")
             .then()
             .statusCode(204);

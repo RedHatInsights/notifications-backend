@@ -9,7 +9,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Environment;
-import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequestDto;
+import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -508,7 +508,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         Mockito.when(this.environment.isEnvironmentLocal()).thenReturn(false);
         Mockito.when(this.environment.isEnvironmentStage()).thenReturn(false);
 
-        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+        final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             "application-name",
             "bundle-name",
             "organization-id",
@@ -521,7 +521,7 @@ public class InternalResourceTest extends DbIsolatedTest {
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
             .contentType(JSON)
-            .body(Json.encode(triggerDailyDigestRequestDto))
+            .body(Json.encode(triggerDailyDigestRequest))
             .post("/daily-digest")
             .then()
             .statusCode(400)
@@ -543,7 +543,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         final LocalDateTime end = LocalDateTime.now();
         final LocalDateTime start = end.minusDays(5);
 
-        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+        final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             application.getName(),
             bundle.getName(),
             "org-id",
@@ -559,22 +559,22 @@ public class InternalResourceTest extends DbIsolatedTest {
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
             .contentType(JSON)
-            .body(Json.encode(triggerDailyDigestRequestDto))
+            .body(Json.encode(triggerDailyDigestRequest))
             .post("/daily-digest")
             .then()
             .statusCode(204);
 
         // Ensure that the sent payload to the engine matches the one that was
         // sent to the handler under test.
-        final ArgumentCaptor<TriggerDailyDigestRequestDto> capturedPayload = ArgumentCaptor.forClass(TriggerDailyDigestRequestDto.class);
+        final ArgumentCaptor<TriggerDailyDigestRequest> capturedPayload = ArgumentCaptor.forClass(TriggerDailyDigestRequest.class);
         Mockito.verify(this.dailyDigestService).triggerDailyDigest(capturedPayload.capture());
 
-        final TriggerDailyDigestRequestDto capturedDto = capturedPayload.getValue();
-        Assertions.assertEquals(triggerDailyDigestRequestDto.getApplicationName(), capturedDto.getApplicationName());
-        Assertions.assertEquals(triggerDailyDigestRequestDto.getBundleName(), capturedDto.getBundleName());
-        Assertions.assertEquals(triggerDailyDigestRequestDto.getOrgId(), capturedDto.getOrgId());
-        Assertions.assertEquals(triggerDailyDigestRequestDto.getEnd(), capturedDto.getEnd());
-        Assertions.assertEquals(triggerDailyDigestRequestDto.getStart(), capturedDto.getStart());
+        final TriggerDailyDigestRequest capturedDto = capturedPayload.getValue();
+        Assertions.assertEquals(triggerDailyDigestRequest.getApplicationName(), capturedDto.getApplicationName());
+        Assertions.assertEquals(triggerDailyDigestRequest.getBundleName(), capturedDto.getBundleName());
+        Assertions.assertEquals(triggerDailyDigestRequest.getOrgId(), capturedDto.getOrgId());
+        Assertions.assertEquals(triggerDailyDigestRequest.getEnd(), capturedDto.getEnd());
+        Assertions.assertEquals(triggerDailyDigestRequest.getStart(), capturedDto.getStart());
     }
 
     /**
@@ -586,7 +586,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         final String bundleName = "test-trigger-daily-digest-invalid-application";
         this.resourceHelpers.createBundle(bundleName, bundleName + "-display-name");
 
-        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+        final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             UUID.randomUUID().toString(),
             bundleName,
             "trigger-daily-digest-invalid-application-name-org-id",
@@ -602,7 +602,7 @@ public class InternalResourceTest extends DbIsolatedTest {
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
             .contentType(JSON)
-            .body(Json.encode(triggerDailyDigestRequestDto))
+            .body(Json.encode(triggerDailyDigestRequest))
             .post("/daily-digest")
             .then()
             .statusCode(400)
@@ -626,7 +626,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         final Bundle bundle = this.resourceHelpers.createBundle();
         final Application application = this.resourceHelpers.createApplication(bundle.getId(), applicationName, applicationName + "-display");
 
-        final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto = new TriggerDailyDigestRequestDto(
+        final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
                 application.getName(),
                 UUID.randomUUID().toString(),
                 "trigger-daily-digest-invalid-bundle-name-org-id",
@@ -642,7 +642,7 @@ public class InternalResourceTest extends DbIsolatedTest {
                 .header(createTurnpikeIdentityHeader("admin", adminRole))
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(triggerDailyDigestRequestDto))
+                .body(Json.encode(triggerDailyDigestRequest))
                 .post("/daily-digest")
                 .then()
                 .statusCode(400)
@@ -668,13 +668,13 @@ public class InternalResourceTest extends DbIsolatedTest {
             /**
              * The DTO under test.
              */
-            public final TriggerDailyDigestRequestDto testDto;
+            public final TriggerDailyDigestRequest testDto;
             /**
              * The expected field that should be reported as having an error.
              */
             public final String expectedErrorField;
 
-            TestCase(final TriggerDailyDigestRequestDto testDto, final String expectedErrorField) {
+            TestCase(final TriggerDailyDigestRequest testDto, final String expectedErrorField) {
                 this.testDto = testDto;
                 this.expectedErrorField = expectedErrorField;
             }
@@ -684,7 +684,7 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         testCaseList.add(
             new TestCase(
-                new TriggerDailyDigestRequestDto(
+                new TriggerDailyDigestRequest(
                     "     ",
                     "bundle-name-blank-application-name",
                     "org-id-blank-application-name",
@@ -697,7 +697,7 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         testCaseList.add(
             new TestCase(
-                new TriggerDailyDigestRequestDto(
+                new TriggerDailyDigestRequest(
                     "application-name-blank-bundle-name",
                     "     ",
                     "org-id-blank-bundle-name",
@@ -710,7 +710,7 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         testCaseList.add(
             new TestCase(
-                new TriggerDailyDigestRequestDto(
+                new TriggerDailyDigestRequest(
                     "application-name-blank-org-id",
                     "bundle-name-blank-org-id",
                     "     ",

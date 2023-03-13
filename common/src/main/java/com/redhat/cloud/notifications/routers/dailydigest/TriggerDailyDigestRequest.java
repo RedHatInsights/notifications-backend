@@ -13,7 +13,7 @@ import java.time.ZoneOffset;
 import java.util.Objects;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class TriggerDailyDigestRequestDto {
+public class TriggerDailyDigestRequest {
 
     @JsonProperty("application_name")
     @NotBlank
@@ -45,7 +45,7 @@ public class TriggerDailyDigestRequestDto {
      *            value is given, then the date and time get set to UTC "now".
      */
     @ConstructorProperties({"application_name", "bundle_name", "org_id", "start", "end"})
-    public TriggerDailyDigestRequestDto(
+    public TriggerDailyDigestRequest(
             final String applicationName,
             final String bundleName,
             final String orgId,

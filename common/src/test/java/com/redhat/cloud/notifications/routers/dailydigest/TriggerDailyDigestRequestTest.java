@@ -13,7 +13,7 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
-public class TriggerDailyDigestRequestDtoTest {
+public class TriggerDailyDigestRequestTest {
 
     private static Validator validator;
 
@@ -28,7 +28,7 @@ public class TriggerDailyDigestRequestDtoTest {
     }
 
     /**
-     * Tests that when a {@link TriggerDailyDigestRequestDto} object which
+     * Tests that when a {@link TriggerDailyDigestRequest} object which
      * has a blank application name gets validated, a constraint violation is
      * raised.
      */
@@ -37,7 +37,7 @@ public class TriggerDailyDigestRequestDtoTest {
         final String[] blankAppNames = {null, "", "     "};
 
         for (final String blankAppName : blankAppNames) {
-            final TriggerDailyDigestRequestDto blankApplicationName = new TriggerDailyDigestRequestDto(
+            final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
                 blankAppName,
                 "bundle-name",
                 "test-blank-application-name-org-id",
@@ -56,7 +56,7 @@ public class TriggerDailyDigestRequestDtoTest {
     }
 
     /**
-     * Tests that when a {@link TriggerDailyDigestRequestDto} object which
+     * Tests that when a {@link TriggerDailyDigestRequest} object which
      * has a blank bundle name gets validated, a constraint violation is raised.
      */
     @Test
@@ -64,7 +64,7 @@ public class TriggerDailyDigestRequestDtoTest {
         final String[] blankBundleNames = {null, "", "     "};
 
         for (final String blankBundleName : blankBundleNames) {
-            final TriggerDailyDigestRequestDto blankApplicationName = new TriggerDailyDigestRequestDto(
+            final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
                 "application-name",
                 blankBundleName,
                 "test-blank-bundle-name-org-id",
@@ -83,7 +83,7 @@ public class TriggerDailyDigestRequestDtoTest {
     }
 
     /**
-     * Tests that when a {@link TriggerDailyDigestRequestDto} object which
+     * Tests that when a {@link TriggerDailyDigestRequest} object which
      * has a blank organization id gets validated, a constraint violation is
      * raised.
      */
@@ -92,7 +92,7 @@ public class TriggerDailyDigestRequestDtoTest {
         final String[] blankOrgIds = {null, "", "     "};
 
         for (final String blankOrgId : blankOrgIds) {
-            final TriggerDailyDigestRequestDto blankApplicationName = new TriggerDailyDigestRequestDto(
+            final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
                     "application-name",
                     "bundle-name",
                     blankOrgId,
@@ -112,7 +112,7 @@ public class TriggerDailyDigestRequestDtoTest {
 
     @Test
     void testDefaultLocalDateTimeValues() {
-        final TriggerDailyDigestRequestDto blankApplicationName = new TriggerDailyDigestRequestDto(
+        final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
             "application-name",
             "bundle-name",
             "test-default-local-date-time-values-org-id",

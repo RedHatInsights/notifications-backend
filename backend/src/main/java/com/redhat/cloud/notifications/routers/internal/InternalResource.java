@@ -22,7 +22,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
-import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequestDto;
+import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
@@ -484,26 +484,26 @@ public class InternalResource {
 
     /**
      * Sends a daily digest command to the engine via a REST request.
-     * @param triggerDailyDigestRequestDto the settings of the digest.
+     * @param triggerDailyDigestRequest the settings of the digest.
      */
     @Consumes(APPLICATION_JSON)
     @POST
     @Path("/daily-digest")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public void triggerDailyDigest(@NotNull @Valid final TriggerDailyDigestRequestDto triggerDailyDigestRequestDto) {
+    public void triggerDailyDigest(@NotNull @Valid final TriggerDailyDigestRequest triggerDailyDigestRequest) {
         if (!this.environment.isEnvironmentLocal() && !this.environment.isEnvironmentStage()) {
             throw new BadRequestException("the daily digests can only be triggered in the stage environment");
         }
 
         if (
             !this.applicationRepository.applicationBundleExists(
-                triggerDailyDigestRequestDto.getApplicationName(),
-                triggerDailyDigestRequestDto.getBundleName()
+                triggerDailyDigestRequest.getApplicationName(),
+                triggerDailyDigestRequest.getBundleName()
             )
         ) {
             throw new BadRequestException("unable to find the specified application — bundle combination");
         }
 
-        this.dailyDigestService.triggerDailyDigest(triggerDailyDigestRequestDto);
+        this.dailyDigestService.triggerDailyDigest(triggerDailyDigestRequest);
     }
 }
