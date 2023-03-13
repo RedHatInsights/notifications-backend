@@ -261,6 +261,8 @@ objects:
           value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
         - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
           value: ${NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED}
+        - name: NOTIFICATIONS_USE_TEMPLATES_FROM_DB
+          value: ${NOTIFICATIONS_USE_TEMPLATES_FROM_DB}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -327,7 +329,7 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
   description: When this is true, all integration types except emails are disabled
-  value: "false"
+  value: "true"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
@@ -404,7 +406,7 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
   description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
-  value: "false"
+  value: "true"
 - name: NOTIFICATIONS_USE_PATCH_EMAIL_TEMPLATES_V2_ENABLED
   value: "false"
 - name: NOTIFICATIONS_USE_INTEGRATIONS_EMAIL_TEMPLATES_V2_ENABLED
@@ -437,4 +439,6 @@ parameters:
   description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
   value: ""
 - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
+  value: "true"
+- name: NOTIFICATIONS_USE_TEMPLATES_FROM_DB
   value: "true"
