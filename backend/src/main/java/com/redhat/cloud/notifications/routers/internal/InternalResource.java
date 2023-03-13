@@ -488,7 +488,7 @@ public class InternalResource {
      */
     @Consumes(APPLICATION_JSON)
     @POST
-    @Path("/daily-digest")
+    @Path("/daily-digest/trigger")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public void triggerDailyDigest(@NotNull @Valid final TriggerDailyDigestRequest triggerDailyDigestRequest) {
         if (!this.environment.isLocal() && !this.environment.isStage()) {

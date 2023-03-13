@@ -66,7 +66,7 @@ public class DailyDigestResourceTest {
             .when()
             .contentType(JSON)
             .body(Json.encode(triggerDailyDigestRequest))
-            .post("/daily-digest")
+            .post("/daily-digest/trigger")
             .then()
             .statusCode(400)
             .extract()
@@ -106,7 +106,7 @@ public class DailyDigestResourceTest {
             .when()
             .contentType(ContentType.JSON)
             .body(Json.encode(triggerDailyDigestRequest))
-            .post("/daily-digest")
+            .post("/daily-digest/trigger")
             .then()
             .statusCode(204);
 

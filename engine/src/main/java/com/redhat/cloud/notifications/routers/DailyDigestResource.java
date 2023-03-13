@@ -46,6 +46,7 @@ public class DailyDigestResource {
      *                                     command.
      */
     @Consumes(APPLICATION_JSON)
+    @Path("/trigger")
     @Produces(TEXT_PLAIN)
     @POST
     public Response triggerDailyDigest(final TriggerDailyDigestRequest triggerDailyDigestRequest) {
