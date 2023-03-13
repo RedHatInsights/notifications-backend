@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.processors.slack;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
@@ -51,6 +53,9 @@ public class SlackProcessor extends EndpointTypeProcessor {
 
     @Inject
     TemplateService templateService;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Inject
     @RestClient
@@ -105,8 +110,15 @@ public class SlackProcessor extends EndpointTypeProcessor {
         JsonObject data = baseTransformer.toJsonObject(event.getAction());
         data.put("environment_url", environment.url());
 
+        Map<Object, Object> dataAsMap;
+        try {
+            dataAsMap = objectMapper.readValue(data.encode(), Map.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Slack notification data transformation failed", e);
+        }
+
         String message = getTemplate(event.getOrgId())
-                .data("data", data.getMap())
+                .data("data", dataAsMap)
                 .render();
 
         SlackNotification notification = new SlackNotification();
