@@ -18,9 +18,11 @@ public class EnvironmentTest {
      */
     @Test
     void testEnvironmentDefaultValue() {
-        final String expectedValue = "local-dev";
-
-        Assertions.assertEquals(expectedValue, this.environment.name(), "unexpected default value for the environment's name");
+        Assertions.assertEquals(
+            Environment.LOCAL_ENV,
+            this.environment.name(),
+            "unexpected default value for the environment's name"
+        );
     }
 
     /**

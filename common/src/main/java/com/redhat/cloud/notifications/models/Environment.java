@@ -7,7 +7,10 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class Environment {
 
-    @ConfigProperty(name = "env.name", defaultValue = "local-dev")
+    public static final String LOCAL_ENV = "local-dev";
+    public static final String STAGE_ENV = "stage";
+
+    @ConfigProperty(name = "env.name", defaultValue = LOCAL_ENV)
     String environment;
 
     @ConfigProperty(name = "env.base.url", defaultValue = "/")
@@ -26,7 +29,7 @@ public class Environment {
      * @return true if the "ENV_NAME" environment variable is set to "local-dev".
      */
     public boolean isLocal() {
-        return "local-dev".equals(this.environment);
+        return LOCAL_ENV.equals(this.environment);
     }
 
     /**
@@ -34,6 +37,6 @@ public class Environment {
      * @return true if the "ENV_NAME" environment variable is set to "stage".
      */
     public boolean isStage() {
-        return "stage".equals(this.environment);
+        return STAGE_ENV.equals(this.environment);
     }
 }
