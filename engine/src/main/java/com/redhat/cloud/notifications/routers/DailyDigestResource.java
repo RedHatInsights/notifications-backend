@@ -44,7 +44,7 @@ public class DailyDigestResource {
     @Produces(TEXT_PLAIN)
     @POST
     public Response triggerDailyDigest(final TriggerDailyDigestRequest triggerDailyDigestRequest) {
-        if (!this.environment.isEnvironmentStage()) {
+        if (!this.environment.isStage()) {
             return Response
                 .status(Response.Status.BAD_REQUEST)
                 .entity("the daily digests can only be triggered in the stage environment")

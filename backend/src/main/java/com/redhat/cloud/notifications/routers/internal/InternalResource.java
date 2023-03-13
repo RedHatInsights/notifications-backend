@@ -491,7 +491,7 @@ public class InternalResource {
     @Path("/daily-digest")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public void triggerDailyDigest(@NotNull @Valid final TriggerDailyDigestRequest triggerDailyDigestRequest) {
-        if (!this.environment.isEnvironmentLocal() && !this.environment.isEnvironmentStage()) {
+        if (!this.environment.isLocal() && !this.environment.isStage()) {
             throw new BadRequestException("the daily digests can only be triggered in the stage environment");
         }
 

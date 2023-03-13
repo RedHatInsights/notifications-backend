@@ -49,8 +49,8 @@ public class DailyDigestResourceTest {
     @Test
     public void testTriggerDailyDigestNonStage() {
         // Simulate that we are in the prod environment.
-        Mockito.when(this.environment.isEnvironmentLocal()).thenReturn(false);
-        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(false);
+        Mockito.when(this.environment.isLocal()).thenReturn(false);
+        Mockito.when(this.environment.isStage()).thenReturn(false);
 
         final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             "application-name",
@@ -98,7 +98,7 @@ public class DailyDigestResourceTest {
         );
 
         // Simulate that we are in the stage environment.
-        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+        Mockito.when(this.environment.isStage()).thenReturn(true);
 
         // Call the endpoint under test.
         given()

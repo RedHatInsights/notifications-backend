@@ -505,8 +505,8 @@ public class InternalResourceTest extends DbIsolatedTest {
     @Test
     public void testTriggerDailyDigestNonStage() {
         // Simulate that we are in the prod environment.
-        Mockito.when(this.environment.isEnvironmentLocal()).thenReturn(false);
-        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(false);
+        Mockito.when(this.environment.isLocal()).thenReturn(false);
+        Mockito.when(this.environment.isStage()).thenReturn(false);
 
         final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             "application-name",
@@ -552,7 +552,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         // Simulate that we are in the stage environment.
-        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+        Mockito.when(this.environment.isStage()).thenReturn(true);
 
         given()
             .basePath(API_INTERNAL)
@@ -595,7 +595,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         // Simulate that we are in the stage environment.
-        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+        Mockito.when(this.environment.isStage()).thenReturn(true);
 
         final String response = given()
             .basePath(API_INTERNAL)
@@ -635,7 +635,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         // Simulate that we are in the stage environment.
-        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+        Mockito.when(this.environment.isStage()).thenReturn(true);
 
         final String response = given()
                 .basePath(API_INTERNAL)
@@ -722,7 +722,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         // Simulate that we are in the stage environment.
-        Mockito.when(this.environment.isEnvironmentStage()).thenReturn(true);
+        Mockito.when(this.environment.isStage()).thenReturn(true);
 
         for (final TestCase testCase : testCaseList) {
 

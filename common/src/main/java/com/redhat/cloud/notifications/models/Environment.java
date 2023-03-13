@@ -25,7 +25,7 @@ public class Environment {
      * Checks if the "ENV_NAME" environment variable is set to "local-dev".
      * @return true if the "ENV_NAME" environment variable is set to "local-dev".
      */
-    public boolean isEnvironmentLocal() {
+    public boolean isLocal() {
         return "local-dev".equals(this.environment);
     }
 
@@ -33,7 +33,7 @@ public class Environment {
      * Checks if the "ENV_NAME" environment variable is set to "stage".
      * @return true if the "ENV_NAME" environment variable is set to "stage".
      */
-    public boolean isEnvironmentStage() {
+    public boolean isStage() {
         return "stage".equals(this.environment);
     }
 }
