@@ -126,9 +126,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.slack.camel.enabled", defaultValue = "false")
     boolean sendToSlackThroughCamelEnabled;
 
-    @ConfigProperty(name = "env.name", defaultValue = "local-dev")
-    String environment;
-
     @ConfigProperty(name = "notifications.use-secured-email-templates.enabled", defaultValue = "false")
     boolean useSecuredEmailTemplates;
 
@@ -419,7 +416,7 @@ public class FeatureFlipper {
     }
 
     public boolean isSendToSlackThroughCamelEnabled() {
-        return sendToSlackThroughCamelEnabled && ("local-dev".equals(environment) || "stage".equals(environment));
+        return sendToSlackThroughCamelEnabled;
     }
 
     public void setSendToSlackThroughCamelEnabled(boolean sendToSlackThroughCamelEnabled) {
