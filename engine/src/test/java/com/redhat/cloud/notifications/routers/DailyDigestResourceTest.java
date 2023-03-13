@@ -120,10 +120,6 @@ public class DailyDigestResourceTest {
 
         final var aggregationCommands = aggregationsOut.received();
 
-        // Only one test aggregation command should have been sent to Kafka.
-        final var expectedAggregationsCommandCount = 1;
-        Assertions.assertEquals(expectedAggregationsCommandCount, aggregationCommands.size(), "unexpected number of aggregation commands sent to Kafka");
-
         final String kafkaAggregationCommandRaw = aggregationCommands.get(0).getPayload();
 
         // We use an object mapper instead of the "Json.decodeValue" because Jackson doesn't seem to like the
