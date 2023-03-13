@@ -1,12 +1,14 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.events.KafkaMessageWithIdBuilder;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
-import io.vertx.core.json.Json;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -33,6 +35,9 @@ public class DailyDigestResource {
 
     @Inject
     Environment environment;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     /**
      * Triggers a daily digest by sending a command to the Kafka "aggregation"
@@ -65,10 +70,26 @@ public class DailyDigestResource {
             EmailSubscriptionType.DAILY
         );
 
-        final Message<String> message = KafkaMessageWithIdBuilder.build(Json.encode(aggregationCommand));
+        try {
+            final Message<String> message = KafkaMessageWithIdBuilder.build(
+                this.objectMapper.writeValueAsString(aggregationCommand)
+            );
 
-        this.aggregationEmitter.send(message);
+            this.aggregationEmitter.send(message);
 
-        return Response.noContent().build();
+            return Response.noContent().build();
+        } catch (final JsonProcessingException e) {
+            Log.errorf(
+                "unable to trigger a test a daily digest because the aggregation command could not be serialized: %s. The aggregation command in question is: %s",
+                e.getMessage(),
+                aggregationCommand
+            );
+
+            return Response
+                .status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("unable to trigger a daily digest due to an internal error")
+                .type(TEXT_PLAIN)
+                .build();
+        }
     }
 }
