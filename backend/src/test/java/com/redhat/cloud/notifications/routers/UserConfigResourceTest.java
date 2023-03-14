@@ -7,10 +7,13 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
@@ -80,6 +83,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @InjectSpy
     ApplicationRepository applicationRepository;
+
+    @Inject
+    ResourceHelpers resourceHelpers;
 
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
@@ -385,6 +391,51 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .extract().body().as(SettingsValueJsonForm.class);
         rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
         assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
+
+    }
+
+    @Test
+    void testMirroringUpdateToSmailSubscriptionByEventType() {
+        String accountId = "empty";
+        String orgId = "empty";
+        String username = "user";
+        String username2 = "user2";
+
+        String bundle = "rhel";
+        String application = "policies";
+
+        UUID newEventTypeId = resourceHelpers.createEventType(bundle, application, "new-event-type");
+        List<EmailSubscription> emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username);
+        List<EventTypeEmailSubscription> eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
+        assertEquals(0, emailSubscriptionList.size());
+        assertEquals(0, eventTypeEmailSubscriptionList.size());
+
+        // users 1 and 2 subscribes to emails
+        emailSubscriptionRepository.subscribe(accountId, orgId, username, bundle, application, INSTANT);
+        emailSubscriptionRepository.subscribe(accountId, orgId, username2, bundle, application, INSTANT);
+        emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username);
+        assertEquals(1, emailSubscriptionList.size());
+        emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username2);
+        assertEquals(1, emailSubscriptionList.size());
+        eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
+        assertEquals(2, eventTypeEmailSubscriptionList.size());
+        assertEquals(1, eventTypeEmailSubscriptionList.stream().filter(t -> t.getEventType().getId().equals(newEventTypeId)).count());
+        eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username2);
+        assertEquals(2, eventTypeEmailSubscriptionList.size());
+        assertEquals(1, eventTypeEmailSubscriptionList.stream().filter(t -> t.getEventType().getId().equals(newEventTypeId)).count());
+
+        // user 2 unsubscribe
+        emailSubscriptionRepository.unsubscribe(orgId, username2, bundle, application, INSTANT);
+        eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username2);
+        emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username2);
+        assertEquals(0, eventTypeEmailSubscriptionList.size());
+        assertEquals(0, emailSubscriptionList.size());
+
+        // user 1 subscriptions are still here
+        emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username);
+        eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
+        assertEquals(1, emailSubscriptionList.size());
+        assertEquals(2, eventTypeEmailSubscriptionList.size());
     }
 
     @Test
