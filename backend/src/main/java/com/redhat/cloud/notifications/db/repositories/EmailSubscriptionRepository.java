@@ -58,11 +58,10 @@ public class EmailSubscriptionRepository {
     @Transactional
     protected int replicateSubscribeToEventTypeLevel(String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "INSERT INTO email_subscriptions (user_id, org_id, event_type_id, subscription_type) " +
-            "SELECT ees.user_id, ees.org_id, et.id, ees.subscription_type from endpoint_email_subscriptions ees " +
-            "join applications app on ees.application_id = app.id and app.name = :applicationName " +
-            "join bundles bun on app.bundle_id = bun.id and bun.name = :bundleName " +
-            "join event_type et on ees.application_id = et.application_id  " +
-            "WHERE ees.user_id = :userId and ees.org_id = :orgId and ees.subscription_type = :subscriptionType " +
+            "SELECT :userId, :orgId, et.id, :subscriptionType FROM applications app " +
+            "JOIN bundles bun ON app.bundle_id = bun.id " +
+            "JOIN event_type et ON app.id = et.application_id  " +
+            "WHERE app.name = :applicationName AND bun.name = :bundleName " +
             "ON CONFLICT (org_id, user_id, event_type_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
 
         return entityManager.createNativeQuery(query)
