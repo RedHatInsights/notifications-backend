@@ -13,7 +13,7 @@ import javax.inject.Inject;
 import static javax.enterprise.inject.spi.ObserverMethod.DEFAULT_PRIORITY;
 
 @ApplicationScoped
-public class EphemeralDataInitializer {
+public class EphemeralDbInitializer {
     public static final int FLYWAY_PRIORITY = DEFAULT_PRIORITY;
 
     @Inject
