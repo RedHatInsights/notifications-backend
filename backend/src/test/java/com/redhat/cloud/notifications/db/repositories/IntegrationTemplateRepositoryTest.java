@@ -85,14 +85,12 @@ public class IntegrationTemplateRepositoryTest extends DbIsolatedTest {
 
     }
 
-    @Transactional
     Template createTemplate(String name, String description, String data) {
         Template template = new Template();
         template.setName(name);
         template.setDescription(description);
         template.setData(data);
-        entityManager.persist(template);
-        return template;
+        return templateRepository.createTemplate(template);
     }
 
     @Transactional

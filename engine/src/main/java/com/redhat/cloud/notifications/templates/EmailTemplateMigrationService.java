@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
+import com.redhat.cloud.notifications.models.TemplateVersion;
 import io.quarkus.logging.Log;
 
 import javax.inject.Inject;
@@ -24,6 +25,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.INTEGRATION_FAILED_EVENT_TYPE;
@@ -549,6 +551,12 @@ public class EmailTemplateMigrationService {
                     .getSingleResult();
             if (!template.getData().equals(templateFromFS)) {
                 template.setData(templateFromFS);
+                TemplateVersion templateVersion = new TemplateVersion();
+                templateVersion.setParentTemplate(template);
+                templateVersion.setData(template.getData());
+                templateVersion.setVersion(getLatestTemplateVersion(template.getId()) + 1);
+                entityManager.persist(templateVersion);
+                template.setTemplateCurrentVersion(templateVersion);
                 hasBeenUpdated = true;
             }
             if (application.isPresent()) {
@@ -566,8 +574,20 @@ public class EmailTemplateMigrationService {
                 template.setApplication(application.get());
             }
             entityManager.persist(template);
+            TemplateVersion templateVersion = new TemplateVersion();
+            templateVersion.setParentTemplate(template);
+            templateVersion.setVersion(0);
+            templateVersion.setData(template.getData());
+            entityManager.persist(templateVersion);
+            template.setTemplateCurrentVersion(templateVersion);
             return template;
         }
+    }
+
+    private int getLatestTemplateVersion(UUID parentTemplateId) {
+        return entityManager.createQuery("SELECT max(version) from TemplateVersion where parentTemplate.id = :parentTemplateId", Integer.class)
+            .setParameter("parentTemplateId", parentTemplateId)
+            .getSingleResult();
     }
 
     private String loadResourceTemplate(String name, String extension) {

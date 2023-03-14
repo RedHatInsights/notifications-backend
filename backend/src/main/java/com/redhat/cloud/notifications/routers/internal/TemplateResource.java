@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
+import com.redhat.cloud.notifications.models.TemplateVersion;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
@@ -87,6 +88,41 @@ public class TemplateResource {
     @RolesAllowed(RBAC_INTERNAL_USER)
     public Template getTemplate(@RestPath UUID templateId) {
         return templateRepository.findTemplateById(templateId);
+    }
+
+    @GET
+    @Path("/versions/{templateId}")
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(RBAC_INTERNAL_USER)
+    public List<TemplateVersion> getTemplateVersions(@RestPath UUID templateId) {
+        return templateRepository.findAllTemplateVersions(templateId);
+    }
+
+    @PUT
+    @Path("/version/{templateId}/{versionId}")
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(RBAC_INTERNAL_USER)
+    public Response updateTemplateCurrentVersion(@Context SecurityContext sec, @RestPath UUID templateId, @RestPath UUID versionId) {
+        Template template = templateRepository.findTemplateById(templateId);
+        TemplateVersion templateVersion = templateRepository.findTemplateVersion(versionId);
+
+        if (!templateVersion.getParentTemplate().getId().equals(templateId)) {
+            throw new BadRequestException();
+        }
+
+        if (!sec.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
+            if (null == template.getApplication()) {
+                throw new ForbiddenException();
+            }
+            // check if user have permissions to update existing template
+            securityContextUtil.hasPermissionForApplication(sec, template.getApplication().getId());
+        }
+        boolean updated = templateRepository.updateTemplateCurrentVersion(templateId, versionId);
+        if (updated) {
+            return Response.ok().build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
     }
 
     @PUT

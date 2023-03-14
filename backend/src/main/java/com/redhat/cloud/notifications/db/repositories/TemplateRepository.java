@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
+import com.redhat.cloud.notifications.models.TemplateVersion;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -36,6 +37,12 @@ public class TemplateRepository {
             template.setApplication(app);
         }
         entityManager.persist(template);
+        TemplateVersion templateVersion = new TemplateVersion();
+        templateVersion.setParentTemplate(template);
+        templateVersion.setVersion(0);
+        templateVersion.setData(template.getData());
+        entityManager.persist(templateVersion);
+        template.setTemplateCurrentVersion(templateVersion);
         return template;
     }
 
@@ -45,20 +52,56 @@ public class TemplateRepository {
                 .getResultList();
     }
 
+    public List<TemplateVersion> findAllTemplateVersions(UUID parentTemplateId) {
+        return entityManager.createQuery("FROM TemplateVersion where parentTemplate.id = :parentTemplateId", TemplateVersion.class)
+            .setParameter("parentTemplateId", parentTemplateId)
+            .getResultList();
+    }
+
     public Template findTemplateById(UUID id) {
         return findTemplate(id, "Template not found");
     }
 
+    public TemplateVersion findTemplateVersion(UUID id) {
+        TemplateVersion templateVersion = entityManager.find(TemplateVersion.class, id);
+        if (templateVersion == null) {
+            throw new NotFoundException("Template version not found");
+        }
+        return templateVersion;
+    }
+
+    @Transactional
+    public boolean updateTemplateCurrentVersion(UUID templateId, UUID versionId) {
+
+        String hql = "UPDATE Template SET templateCurrentVersion.id = :versionId WHERE id = :templateId";
+        int rowCount = entityManager.createQuery(hql)
+            .setParameter("templateId", templateId)
+            .setParameter("versionId", versionId)
+            .executeUpdate();
+        return rowCount > 0;
+    }
+
     @Transactional
     public boolean updateTemplate(UUID id, Template template) {
-        String hql = "UPDATE Template SET name = :name, description = :description, data = :data WHERE id = :id";
-        int rowCount = entityManager.createQuery(hql)
-                .setParameter("name", template.getName())
-                .setParameter("description", template.getDescription())
-                .setParameter("data", template.getData())
-                .setParameter("id", id)
-                .executeUpdate();
-        return rowCount > 0;
+        Template templateFromDatabase = entityManager.find(Template.class, id);
+        templateFromDatabase.setName(template.getName());
+        templateFromDatabase.setDescription(template.getDescription());
+        templateFromDatabase.setData(template.getData());
+        if (!templateFromDatabase.getData().equals(template.getData())) {
+            TemplateVersion templateVersion = new TemplateVersion();
+            templateVersion.setParentTemplate(templateFromDatabase);
+            templateVersion.setData(template.getData());
+            templateVersion.setVersion(getLatestTemplateVersion(templateFromDatabase.getId()) + 1);
+            entityManager.persist(templateVersion);
+            templateFromDatabase.setTemplateCurrentVersion(templateVersion);
+        }
+        return true;
+    }
+
+    private int getLatestTemplateVersion(UUID parentTemplateId) {
+        return entityManager.createQuery("SELECT max(version) from TemplateVersion where parentTemplate.id = :parentTemplateId", Integer.class)
+            .setParameter("parentTemplateId", parentTemplateId)
+            .getSingleResult();
     }
 
     @Transactional
@@ -67,7 +110,7 @@ public class TemplateRepository {
         if (template == null) {
             throw new NotFoundException("Template not found");
         } else {
-            String checkHql = "SELECT COUNT(*) FROM Template WHERE id != :id AND data LIKE :include";
+            String checkHql = "SELECT COUNT(*) FROM Template WHERE id != :id AND templateCurrentVersion.data LIKE :include";
             long count = entityManager.createQuery(checkHql, Long.class)
                     .setParameter("id", id)
                     .setParameter("include", "%{#include " + template.getName() + "%")

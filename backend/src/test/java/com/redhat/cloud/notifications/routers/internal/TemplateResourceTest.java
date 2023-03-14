@@ -23,7 +23,9 @@ import org.mockito.Mockito;
 
 import javax.ws.rs.BadRequestException;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createAggregationEmailTemplate;
@@ -40,9 +42,12 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.getAllAggregationEm
 import static com.redhat.cloud.notifications.CrudTestHelpers.getAllInstantEmailTemplates;
 import static com.redhat.cloud.notifications.CrudTestHelpers.getAllTemplates;
 import static com.redhat.cloud.notifications.CrudTestHelpers.getInstantEmailTemplatesByEventType;
+import static com.redhat.cloud.notifications.CrudTestHelpers.getTemplate;
+import static com.redhat.cloud.notifications.CrudTestHelpers.getTemplateVersions;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateInstantEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateTemplate;
+import static com.redhat.cloud.notifications.CrudTestHelpers.updateTemplateCurrentVersion;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -81,6 +86,8 @@ public class TemplateResourceTest extends DbIsolatedTest {
         // This creates the common template, retrieves it with a separate REST call and then checks the fields values.
         JsonObject jsonTemplate = createTemplate(adminIdentity, template, 200).get();
 
+        final String templateUUID = jsonTemplate.getString("id");
+
         // This try to create a common template without internal admin role
         createTemplate(internalUserIdentity, template, 403);
 
@@ -88,25 +95,54 @@ public class TemplateResourceTest extends DbIsolatedTest {
         JsonArray jsonTemplates = getAllTemplates(adminIdentity);
         assertEquals(1, jsonTemplates.size());
         jsonTemplates.getJsonObject(0).mapTo(Template.class);
-        assertEquals(jsonTemplate.getString("id"), jsonTemplates.getJsonObject(0).getString("id"));
+        assertEquals(templateUUID, jsonTemplates.getJsonObject(0).getString("id"));
+        assertEquals(0, jsonTemplate.getInteger("templateVersion"));
 
         // Let's update the template and check that the new fields values are correctly persisted.
         template.setName("my-new-template");
         template.setDescription("My new template");
         template.setData("new-template-data");
-        updateTemplate(adminIdentity, jsonTemplate.getString("id"), template, 200);
+        jsonTemplate = updateTemplate(adminIdentity, templateUUID, template, 200).get();
+        assertEquals(1, jsonTemplate.getInteger("templateVersion"));
+
+        // check list of template versions
+        JsonArray jsonTemplateVersions = getTemplateVersions(adminIdentity, templateUUID, 200);
+        assertEquals(2, jsonTemplateVersions.size());
+
+        // downgrade template version to 0
+        List<JsonObject> lstTemplateVersion = jsonTemplateVersions.stream().map(elt -> ((JsonObject) elt)).filter(elt -> elt.getInteger("version") == 0).collect(Collectors.toList());
+        assertEquals(1, lstTemplateVersion.size());
+
+        updateTemplateCurrentVersion(adminIdentity, templateUUID, lstTemplateVersion.get(0).getString("id"), 200);
+
+        jsonTemplate = getTemplate(internalUserIdentity, templateUUID, null, 200).get();
+        assertEquals(0, jsonTemplate.getInteger("templateVersion"));
+
+        // create new template
+        JsonObject jsonTemplateV2 = createTemplate(adminIdentity, buildTemplate("new-template-name", "new-template-data"), 200).get();
+        // test inconsistency between templateId and template version Id
+        updateTemplateCurrentVersion(adminIdentity, jsonTemplateV2.getString("id"), lstTemplateVersion.get(0).getString("id"), 400);
+
+        // update in one more time and check template version
+        jsonTemplate = updateTemplate(adminIdentity, templateUUID, template, 200).get();
+        assertEquals(2, jsonTemplate.getInteger("templateVersion"));
 
         // This try to update a common template without internal admin role
-        updateTemplate(internalUserIdentity, jsonTemplate.getString("id"), template, 403);
+        updateTemplate(internalUserIdentity, templateUUID, null, 403);
 
         // This try to delete a common template without internal admin role
-        deleteTemplate(internalUserIdentity, jsonTemplate.getString("id"), 403);
+        deleteTemplate(internalUserIdentity, templateUUID, 403);
 
         // Now we'll delete the template and check that it no longer exists with the following line.
-        deleteTemplate(adminIdentity, jsonTemplate.getString("id"), 200);
+        deleteTemplate(adminIdentity, templateUUID, 200);
+        deleteTemplate(adminIdentity, jsonTemplateV2.getString("id"), 200);
 
         // We already know the template is gone, but let's check one more time.
         assertTrue(getAllTemplates(adminIdentity).isEmpty());
+
+        // check that template versions has been deleted as well
+        jsonTemplateVersions = getTemplateVersions(adminIdentity, templateUUID, 200);
+        assertEquals(0, jsonTemplateVersions.size());
     }
 
     /**

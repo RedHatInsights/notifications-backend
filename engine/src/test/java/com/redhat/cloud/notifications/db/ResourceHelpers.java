@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
+import com.redhat.cloud.notifications.models.TemplateVersion;
 import io.vertx.core.json.JsonObject;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -127,6 +128,10 @@ public class ResourceHelpers {
         return endpoint;
     }
 
+    public Template createTemplate(String name, String data) {
+        return createTemplate(name, "The best template ever created", data);
+    }
+
     @Transactional
     public Template createTemplate(String name, String description, String data) {
         Template template = new Template();
@@ -134,7 +139,40 @@ public class ResourceHelpers {
         template.setDescription(description);
         template.setData(data);
         entityManager.persist(template);
+        TemplateVersion templateVersion = new TemplateVersion();
+        templateVersion.setParentTemplate(template);
+        templateVersion.setVersion(0);
+        templateVersion.setData(template.getData());
+        entityManager.persist(templateVersion);
+        template.setTemplateCurrentVersion(templateVersion);
         return template;
+    }
+
+    @Transactional
+    public void updateTemplateData(UUID id, String data) {
+        Template template = entityManager.find(Template.class, id);
+        template.setData(data);
+        if (!template.getData().equals(data)) {
+            TemplateVersion templateVersion = new TemplateVersion();
+            templateVersion.setParentTemplate(template);
+            templateVersion.setData(data);
+            templateVersion.setVersion(getLatestTemplateVersion(templateVersion.getParentTemplate().getId()) + 1);
+            entityManager.persist(templateVersion);
+            template.setTemplateCurrentVersion(templateVersion);
+        }
+    }
+
+    private int getLatestTemplateVersion(UUID parentTemplateId) {
+        return entityManager.createQuery("SELECT max(version) from TemplateVersion where parentTemplate.id = :parentTemplateId", Integer.class)
+            .setParameter("parentTemplateId", parentTemplateId)
+            .getSingleResult();
+    }
+
+    @Transactional
+    public void deleteTemplate(UUID id) {
+        entityManager.createQuery("DELETE FROM Template WHERE id = :id")
+            .setParameter("id", id)
+            .executeUpdate();
     }
 
     @Transactional

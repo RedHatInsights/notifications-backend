@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.Entity;
@@ -17,7 +18,6 @@ import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 
-// TODO NOTIF-484 Add templates ownership and restrict access to the templates.
 @Entity
 @Table(name = "template")
 public class Template extends CreationUpdateTimestamped {
@@ -35,7 +35,13 @@ public class Template extends CreationUpdateTimestamped {
     private String description;
 
     @NotNull
+    @Transient
     private String data;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "template_current_version_id")
+    private TemplateVersion templateCurrentVersion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "application_id")
@@ -43,6 +49,13 @@ public class Template extends CreationUpdateTimestamped {
 
     @Transient
     private UUID applicationId;
+
+    public Integer getTemplateVersion() {
+        if (null != templateCurrentVersion) {
+            return templateCurrentVersion.getVersion();
+        }
+        return null;
+    }
 
     public UUID getId() {
         return id;
@@ -69,7 +82,11 @@ public class Template extends CreationUpdateTimestamped {
     }
 
     public String getData() {
-        return data;
+        if (null == templateCurrentVersion) {
+            return data;
+        } else {
+            return templateCurrentVersion.getData();
+        }
     }
 
     public void setData(String data) {
@@ -93,6 +110,14 @@ public class Template extends CreationUpdateTimestamped {
 
     public void setApplicationId(UUID applicationId) {
         this.applicationId = applicationId;
+    }
+
+    public TemplateVersion getTemplateCurrentVersion() {
+        return templateCurrentVersion;
+    }
+
+    public void setTemplateCurrentVersion(TemplateVersion templateCurrentVersion) {
+        this.templateCurrentVersion = templateCurrentVersion;
     }
 
     @Override

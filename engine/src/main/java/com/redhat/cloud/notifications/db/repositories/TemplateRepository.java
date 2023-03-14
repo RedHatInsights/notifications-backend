@@ -61,8 +61,12 @@ public class TemplateRepository {
     }
 
     public Optional<InstantEmailTemplate> findInstantEmailTemplate(UUID eventTypeId) {
-        String hql = "FROM InstantEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
-                "WHERE t.eventType.id = :eventTypeId";
+        String hql = "FROM InstantEmailTemplate t " +
+            "JOIN FETCH t.subjectTemplate st " +
+            "JOIN FETCH st.templateCurrentVersion " +
+            "JOIN FETCH t.bodyTemplate bt " +
+            "JOIN FETCH bt.templateCurrentVersion " +
+            "WHERE t.eventType.id = :eventTypeId";
         try {
             InstantEmailTemplate emailTemplate = statelessSessionFactory.getCurrentSession().createQuery(hql, InstantEmailTemplate.class)
                     .setParameter("eventTypeId", eventTypeId)
@@ -78,8 +82,12 @@ public class TemplateRepository {
     }
 
     public Optional<AggregationEmailTemplate> findAggregationEmailTemplate(String bundleName, String appName, EmailSubscriptionType subscriptionType) {
-        String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
-                "WHERE t.application.bundle.name = :bundleName AND t.application.name = :appName " +
+        String hql = "FROM AggregationEmailTemplate t " +
+            "JOIN FETCH t.subjectTemplate st " +
+            "JOIN FETCH st.templateCurrentVersion " +
+            "JOIN FETCH t.bodyTemplate bt " +
+            "JOIN FETCH bt.templateCurrentVersion " +
+            "WHERE t.application.bundle.name = :bundleName AND t.application.name = :appName " +
                 "AND t.subscriptionType = :subscriptionType";
         try {
             AggregationEmailTemplate emailTemplate = statelessSessionFactory.getCurrentSession().createQuery(hql, AggregationEmailTemplate.class)

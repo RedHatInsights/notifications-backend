@@ -598,12 +598,11 @@ public abstract class CrudTestHelpers {
             getTemplate(header, jsonTemplate.getString("id"), template, 200);
 
             return Optional.of(jsonTemplate);
-        } else {
-            return Optional.empty();
         }
+        return Optional.empty();
     }
 
-    public static void getTemplate(Header header, String templateId, Template expectedTemplate, int expectedStatusCode) {
+    public static Optional<JsonObject> getTemplate(Header header, String templateId, Template expectedTemplate, int expectedStatusCode) {
         String responseBody = given()
                 .basePath(API_INTERNAL)
                 .header(header)
@@ -617,10 +616,41 @@ public abstract class CrudTestHelpers {
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
             JsonObject jsonTemplate = new JsonObject(responseBody);
             jsonTemplate.mapTo(Template.class);
-            assertEquals(expectedTemplate.getName(), jsonTemplate.getString("name"));
-            assertEquals(expectedTemplate.getDescription(), jsonTemplate.getString("description"));
-            assertEquals(expectedTemplate.getData(), jsonTemplate.getString("data"));
+            if (null != expectedTemplate) {
+                assertEquals(expectedTemplate.getName(), jsonTemplate.getString("name"));
+                assertEquals(expectedTemplate.getDescription(), jsonTemplate.getString("description"));
+                assertEquals(expectedTemplate.getData(), jsonTemplate.getString("data"));
+            }
+            return Optional.of(jsonTemplate);
         }
+        return Optional.empty();
+    }
+
+    public static JsonArray getTemplateVersions(Header header, String templateId, int expectedStatusCode) {
+        String responseBody = given()
+            .basePath(API_INTERNAL)
+            .header(header)
+            .pathParam("templateId", templateId)
+            .get("/templates/versions/{templateId}")
+            .then()
+            .statusCode(expectedStatusCode)
+            .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
+            .extract().asString();
+
+        return new JsonArray(responseBody);
+    }
+
+    public static void updateTemplateCurrentVersion(Header header, String templateId, String templateVersionId, int expectedStatusCode) {
+        given()
+            .basePath(API_INTERNAL)
+            .header(header)
+            .pathParam("templateId", templateId)
+            .pathParam("templateVersionId", templateVersionId)
+            .put("/templates/version/{templateId}/{templateVersionId}")
+            .then()
+            .statusCode(expectedStatusCode)
+            .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
+            .extract().asString();
     }
 
     public static JsonArray getAllTemplates(Header header) {
@@ -636,7 +666,7 @@ public abstract class CrudTestHelpers {
         return new JsonArray(responseBody);
     }
 
-    public static void updateTemplate(Header header, String templateId, Template updatedTemplate, int expectedStatusCode) {
+    public static Optional<JsonObject> updateTemplate(Header header, String templateId, Template updatedTemplate, int expectedStatusCode) {
         given()
                 .basePath(API_INTERNAL)
                 .header(header)
@@ -649,7 +679,7 @@ public abstract class CrudTestHelpers {
                 .contentType(TEXT);
 
         // Let's check that the template fields have been correctly updated.
-        getTemplate(header, templateId, updatedTemplate, 200);
+        return getTemplate(header, templateId, updatedTemplate, 200);
     }
 
     public static void deleteTemplate(Header header, String templateId, int expectedStatusCode) {
