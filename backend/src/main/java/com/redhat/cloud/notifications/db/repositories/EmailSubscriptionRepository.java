@@ -34,7 +34,7 @@ public class EmailSubscriptionRepository {
             .setParameter("subscriptionType", subscriptionType.name())
             .executeUpdate();
 
-        replicateSubscribeToEventTypeLevel(orgId, username, subscriptionType);
+        replicateSubscribeToEventTypeLevel(orgId, username, bundleName, applicationName, subscriptionType);
         return true;
     }
 
@@ -56,15 +56,20 @@ public class EmailSubscriptionRepository {
     }
 
     @Transactional
-    protected int replicateSubscribeToEventTypeLevel(String orgId, String username, EmailSubscriptionType subscriptionType) {
+    protected int replicateSubscribeToEventTypeLevel(String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "INSERT INTO email_subscriptions (user_id, org_id, event_type_id, subscription_type) " +
-            "SELECT ees.user_id, ees.org_id, et.id, ees.subscription_type from endpoint_email_subscriptions ees join event_type et on ees.application_id = et.application_id  " +
+            "SELECT ees.user_id, ees.org_id, et.id, ees.subscription_type from endpoint_email_subscriptions ees " +
+            "join applications app on ees.application_id = app.id and app.name = :applicationName " +
+            "join bundles bun on app.bundle_id = bun.id and bun.name = :bundleName " +
+            "join event_type et on ees.application_id = et.application_id  " +
             "WHERE ees.user_id = :userId and ees.org_id = :orgId and ees.subscription_type = :subscriptionType " +
             "ON CONFLICT (org_id, user_id, event_type_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
 
         return entityManager.createNativeQuery(query)
             .setParameter("orgId", orgId)
             .setParameter("userId", username)
+            .setParameter("applicationName", applicationName)
+            .setParameter("bundleName", bundleName)
             .setParameter("subscriptionType", subscriptionType.name())
             .executeUpdate();
     }
@@ -73,7 +78,7 @@ public class EmailSubscriptionRepository {
     protected int replicateUnsubscribeToEventTypeLevel(String orgId, String username, EmailSubscriptionType subscriptionType, String bundleName, String applicationName) {
         String query = "DELETE FROM EventTypeEmailSubscription WHERE id.orgId = :orgId AND id.userId = :userId " +
             "AND id.eventTypeId in (SELECT ev.id FROM EventType ev, Application a, Bundle b WHERE a.bundle.id = b.id and ev.application.id = a.id " +
-            "AND b.name = :bundleName AND a.name = :applicationName) AND id.subscriptionType = :subscriptionType AND id.userId =:userId";
+            "AND b.name = :bundleName AND a.name = :applicationName) AND id.subscriptionType = :subscriptionType";
         return entityManager.createQuery(query)
             .setParameter("orgId", orgId)
             .setParameter("userId", username)
