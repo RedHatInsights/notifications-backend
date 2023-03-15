@@ -9,7 +9,6 @@ public class Environment {
 
     public static final String LOCAL_ENV = "local-dev";
     public static final String STAGE_ENV = "stage";
-    public static final String ENV_EPHEMERAL_PREFIX = "env-ephemeral";
 
     @ConfigProperty(name = "env.name", defaultValue = LOCAL_ENV)
     String environment;
@@ -39,13 +38,5 @@ public class Environment {
      */
     public boolean isStage() {
         return STAGE_ENV.equals(this.environment);
-    }
-
-    /**
-     * Checks if the "ENV_NAME" environment variable is set to "env-ephemeral*".
-     * @return true if the "ENV_NAME" environment variable is set to "env-ephemeral*".
-     */
-    public boolean isEphemeral() {
-        return null != this.environment && this.environment.startsWith(ENV_EPHEMERAL_PREFIX);
     }
 }
