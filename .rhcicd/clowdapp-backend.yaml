@@ -222,8 +222,6 @@ objects:
               name: sources-api-psk
               key: psk
               optional: true
-        - name: QUARKUS_FLYWAY_IGNORE_FUTURE_MIGRATIONS
-          value: ${QUARKUS_FLYWAY_IGNORE_FUTURE_MIGRATIONS}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -371,7 +369,4 @@ parameters:
   description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
   value: "false"
 - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
-  value: "false"
-- name: QUARKUS_FLYWAY_IGNORE_FUTURE_MIGRATIONS
-  description: DO NOT set to true in the stage or production environments. This is meant to be used on ephemeral ONLY to allow running a PR check on notifications-engine with a Flyway migration script that is newer than the latest script known by notifications-backend.
   value: "false"
