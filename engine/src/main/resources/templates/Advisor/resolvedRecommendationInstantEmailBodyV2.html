@@ -24,7 +24,7 @@
     </tr>
     </thead>
     <tbody>
-    {#each action.events}
+    {#each action.events.sortAccordingRiskLevel()}
         <tr>
             <td>
                 <a href="{it.payload.rule_url}">{it.payload.rule_description}</a>

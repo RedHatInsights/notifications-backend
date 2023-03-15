@@ -190,6 +190,19 @@ public class TestHelpers {
                                             .build()
                             )
                             .build(),
+                new Event.EventBuilder()
+                    .withMetadata(new Metadata.MetadataBuilder().build())
+                    .withPayload(
+                        new Payload.PayloadBuilder()
+                            .withAdditionalProperty("rule_id", "rule-id-important-001")
+                            .withAdditionalProperty("rule_description", "nice rule with important risk")
+                            .withAdditionalProperty("total_risk", "3")
+                            .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
+                            .withAdditionalProperty("report_url", "http://the-report-for-rule-id-important-001")
+                            .withAdditionalProperty("rule_url", "http://the-rule-id-important-001")
+                            .build()
+                    )
+                    .build(),
                     new Event.EventBuilder()
                             .withMetadata(new Metadata.MetadataBuilder().build())
                             .withPayload(
@@ -200,19 +213,6 @@ public class TestHelpers {
                                             .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
                                             .withAdditionalProperty("report_url", "http://the-report-for-rule-id-moderate-001")
                                             .withAdditionalProperty("rule_url", "http://the-rule-id-moderate-001")
-                                            .build()
-                            )
-                            .build(),
-                    new Event.EventBuilder()
-                            .withMetadata(new Metadata.MetadataBuilder().build())
-                            .withPayload(
-                                    new Payload.PayloadBuilder()
-                                            .withAdditionalProperty("rule_id", "rule-id-important-001")
-                                            .withAdditionalProperty("rule_description", "nice rule with important risk")
-                                            .withAdditionalProperty("total_risk", "3")
-                                            .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
-                                            .withAdditionalProperty("report_url", "http://the-report-for-rule-id-important-001")
-                                            .withAdditionalProperty("rule_url", "http://the-rule-id-important-001")
                                             .build()
                             )
                             .build(),

@@ -19,6 +19,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -52,6 +53,7 @@ public class TemplateService {
                 .addValueResolver(buildValueResolver(String.class, "toTimeAgo", LocalDateTimeExtension::toTimeAgo))
                 .addValueResolver(buildValueResolver(String.class, "fromIsoLocalDateTime", LocalDateTimeExtension::fromIsoLocalDateTime))
                 .addValueResolver(buildValueResolver(Action.class, "toPrettyJson", ActionExtension::toPrettyJson))
+                .addValueResolver(buildValueResolver(List.class, "sortAccordingRiskLevel", ActionExtension::sortAccordingRiskLevel))
                 .addValueResolver(buildAnyNameFunctionResolver(Context.class, ActionExtension::getFromContext))
                 .addValueResolver(buildAnyNameFunctionResolver(Payload.class, ActionExtension::getFromPayload))
                 .addLocator(dbTemplateLocator)

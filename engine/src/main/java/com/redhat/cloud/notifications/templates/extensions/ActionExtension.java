@@ -4,9 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
+import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import io.quarkus.qute.TemplateExtension;
+import java.util.Comparator;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ActionExtension {
 
@@ -34,5 +39,19 @@ public class ActionExtension {
         } catch (JsonProcessingException jpe) {
             throw new RuntimeException("Error while transforming action to json", jpe);
         }
+    }
+
+    @TemplateExtension
+    public static List<Event> sortAccordingRiskLevel(List<Event> eventList) {
+        Pattern pattern = Pattern.compile("\\d+");
+        Comparator<Event> payloadTotalRiskComparator = Comparator.comparingInt(elt -> Integer.valueOf(elt.getPayload().getAdditionalProperties().get("total_risk").toString()));
+        Comparator<Event> payloadTotalRiskComparatorCriticalToLower = payloadTotalRiskComparator.reversed();
+
+        List<Event> sortedList = eventList.stream().filter(elt ->
+                pattern.matcher(String.valueOf(elt.getPayload().getAdditionalProperties().get("total_risk"))).matches()
+            )
+            .sorted(payloadTotalRiskComparatorCriticalToLower)
+            .collect(Collectors.toList());
+        return sortedList;
     }
 }

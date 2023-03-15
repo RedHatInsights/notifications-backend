@@ -33,7 +33,7 @@
     </tr>
     </thead>
     <tbody>
-    {#each action.events}
+    {#each action.events.sortAccordingRiskLevel()}
         <tr>
             <td>{it.payload.rule_description}</td>
             <td class="rh-severity">

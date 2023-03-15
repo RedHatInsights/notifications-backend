@@ -3,8 +3,10 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
+import com.redhat.cloud.notifications.templates.extensions.ActionExtension;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,6 +47,8 @@ public class TestAdvisorTemplate {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = true;
 
     @BeforeAll
     static void beforeAll() {
@@ -177,6 +181,23 @@ public class TestAdvisorTemplate {
         assertFalse(result.contains("Deactivated Recommendation"));
         assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    @Test
+    void testSortedEventList() {
+        Action action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
+        List<Event> rawEventList = action.getEvents();
+        assertEquals("1", String.valueOf(rawEventList.get(0).getPayload().getAdditionalProperties().get("total_risk")));
+        assertEquals("3", String.valueOf(rawEventList.get(1).getPayload().getAdditionalProperties().get("total_risk")));
+        assertEquals("2", String.valueOf(rawEventList.get(2).getPayload().getAdditionalProperties().get("total_risk")));
+        assertEquals("4", String.valueOf(rawEventList.get(3).getPayload().getAdditionalProperties().get("total_risk")));
+
+        List<Event> sortedEventList = ActionExtension.sortAccordingRiskLevel(action.getEvents());
+        assertEquals(4, sortedEventList.size());
+        assertEquals("4", String.valueOf(sortedEventList.get(0).getPayload().getAdditionalProperties().get("total_risk")));
+        assertEquals("3", String.valueOf(sortedEventList.get(1).getPayload().getAdditionalProperties().get("total_risk")));
+        assertEquals("2", String.valueOf(sortedEventList.get(2).getPayload().getAdditionalProperties().get("total_risk")));
+        assertEquals("1", String.valueOf(sortedEventList.get(3).getPayload().getAdditionalProperties().get("total_risk")));
     }
 
     @Test
@@ -320,7 +341,7 @@ public class TestAdvisorTemplate {
     }
 
     private String generateFromTemplate(TemplateInstance templateInstance, Map<String, Object> context) {
-        return templateInstance
+        String result = templateInstance
             .data("action", Map.of(
                 "context", context,
                 "timestamp", LocalDateTime.now(),
@@ -329,13 +350,22 @@ public class TestAdvisorTemplate {
             .data("environment", environment)
             .data("user", Map.of("firstName", "John", "lastName", "Doe"))
             .render();
+
+        if (SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
+            TestHelpers.writeEmailTemplate(result, templateInstance.getTemplate().getId());
+        }
+        return result;
     }
 
     private String generateFromTemplate(TemplateInstance templateInstance, Action action) {
-        return templateInstance
+        String result = templateInstance
             .data("action", action)
             .data("environment", environment)
             .data("user", Map.of("firstName", "John", "lastName", "Doe"))
             .render();
+        if (SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
+            TestHelpers.writeEmailTemplate(result, templateInstance.getTemplate().getId());
+        }
+        return result;
     }
 }
