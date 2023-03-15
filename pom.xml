@@ -40,7 +40,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <surefire-plugin.version>3.0.0-M9</surefire-plugin.version>
+        <surefire-plugin.version>3.0.0</surefire-plugin.version>
         <checkstyle-plugin.version>3.2.1</checkstyle-plugin.version>
         <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
         <jacoco-plugin.version>0.8.8</jacoco-plugin.version>
