@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -42,12 +43,17 @@ public class TemplateEngineResource {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @Inject
+    StatelessSessionFactory statelessSessionFactory;
+
     @GET
     @Path("/subscription_type_supported")
     @Produces(APPLICATION_JSON)
     public Boolean isSubscriptionTypeSupported(@NotNull @RestQuery String bundleName, @NotNull @RestQuery String applicationName, @NotNull @RestQuery EmailSubscriptionType subscriptionType) {
         if (featureFlipper.isUseTemplatesFromDb()) {
-            return templateRepository.isEmailSubscriptionSupported(bundleName, applicationName, subscriptionType);
+            return statelessSessionFactory.withSession(statelessSession -> {
+                return templateRepository.isEmailSubscriptionSupported(bundleName, applicationName, subscriptionType);
+            });
         } else {
             return emailTemplateFactory.get(bundleName, applicationName).isEmailSubscriptionSupported(subscriptionType);
         }
