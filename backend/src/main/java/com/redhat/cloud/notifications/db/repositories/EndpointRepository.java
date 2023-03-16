@@ -352,4 +352,35 @@ public class EndpointRepository {
             return false;
         }
     }
+
+    /**
+     * Returns a list of endpoints with its properties loaded, which have been
+     * identified as having "basic authentication" and "secret token" secrets
+     * stored in the database, but no references to those secrets in sources.
+     * This signals that the endpoints' secrets need to be migrated to Sources.
+     *
+     * @return a list of endpoints with their properties loaded.
+     */
+    @Deprecated(forRemoval = true)
+    public List<Endpoint> findEndpointWithPropertiesWithStoredSecrets() {
+        final String query =
+            "SELECT e FROM Endpoint e " +
+                "WHERE EXISTS ( " +
+                    "SELECT cp FROM CamelProperties cp " +
+                    "WHERE cp.id = e.id AND cp.basicAuthenticationSourcesId IS NULL AND cp.secretTokenSourcesId IS NULL " +
+                "AND (cp.basicAuthentication IS NOT NULL OR cp.secretToken IS NOT NULL) " +
+                ") OR EXISTS ( " +
+                    "SELECT wp FROM WebhookProperties wp " +
+                    "WHERE wp.id = e.id AND wp.basicAuthenticationSourcesId IS NULL AND wp.secretTokenSourcesId IS NULL " +
+                    "AND (wp.basicAuthentication IS NOT NULL OR wp.secretToken IS NOT NULL) " +
+                ")";
+
+        final List<Endpoint> endpoints =  this.entityManager
+            .createQuery(query, Endpoint.class)
+            .getResultList();
+
+        loadProperties(endpoints);
+
+        return endpoints;
+    }
 }

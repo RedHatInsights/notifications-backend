@@ -3,16 +3,23 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import javax.persistence.TypedQuery;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -20,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
@@ -190,5 +198,123 @@ public class EndpointRepositoryTest {
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint("account-id", orgId, EndpointType.CAMEL);
 
         Assertions.assertFalse(this.endpointRepository.existsByUuidAndOrgId(createdEndpoint.getId(), "incorrect-org-id"));
+    }
+
+    /**
+     * Tests that the function under test only picks up the endpoints that have
+     * basic authentication or secret token secrets that don't have the
+     * corresponding Sources' reference in the table.
+     */
+    @Deprecated(forRemoval = true)
+    @Test
+    void testFindEndpointAndPropertiesMigratableSecrets() {
+        // Create a few camel and webhook endpoints that should be picked by
+        // the function under test, since they don't have sources references.
+        final Map<UUID, Endpoint> multipleFetchableEndpoints = this.resourceHelpers.createTenEndpointFixtures();
+        final Map<UUID, Endpoint> fetchableEndpointsNullEmptybasicAuth = this.resourceHelpers.createFiveEndpointsNullEmptyBasicAuths();
+
+        // Combine the two maps into one single map of expected fetchable
+        // endpoints.
+        final Map<UUID, Endpoint> expectedEndpointsToFetch = Stream
+            .concat(
+                multipleFetchableEndpoints.entrySet().stream(),
+                fetchableEndpointsNullEmptybasicAuth.entrySet().stream())
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        // Create a few endpoints that shouldn't be picked by the function
+        // under test, because they contain references to Sources' secrets.
+        this.resourceHelpers.createTwelveEndpointFixtures();
+
+        // Call the function under test.
+        final List<Endpoint> fetchedEndpoints = this.endpointRepository.findEndpointWithPropertiesWithStoredSecrets();
+
+        // Assert that the only endpoints that were fetched were the expected ones.
+        Assertions.assertEquals(expectedEndpointsToFetch.size(), fetchedEndpoints.size(), "unexpected number of target endpoints fetched");
+
+        // Assert that the endpoints and its properties are the same.
+        for (final Endpoint fetchedEndpoint : fetchedEndpoints) {
+            final Endpoint expectedEndpoint = expectedEndpointsToFetch.get(fetchedEndpoint.getId());
+            Assertions.assertNotNull(expectedEndpoint, "the fetched endpoint from the database wasn't supposed to be fetched");
+
+            Assertions.assertEquals(expectedEndpoint.getDescription(), fetchedEndpoint.getDescription());
+            Assertions.assertEquals(expectedEndpoint.getName(), fetchedEndpoint.getName());
+            Assertions.assertEquals(expectedEndpoint.getType(), fetchedEndpoint.getType());
+            Assertions.assertEquals(expectedEndpoint.getSubType(), fetchedEndpoint.getSubType());
+            Assertions.assertEquals(expectedEndpoint.getOrgId(), fetchedEndpoint.getOrgId());
+
+            if (expectedEndpoint.getType() == EndpointType.CAMEL) {
+                final CamelProperties expectedProperties = expectedEndpoint.getProperties(CamelProperties.class);
+                final CamelProperties fetchedProperties = fetchedEndpoint.getProperties(CamelProperties.class);
+
+                Assertions.assertEquals(expectedProperties.getBasicAuthentication(), fetchedProperties.getBasicAuthentication());
+                Assertions.assertEquals(expectedProperties.getDisableSslVerification(), fetchedProperties.getDisableSslVerification());
+                Assertions.assertEquals(expectedProperties.getSecretToken(), expectedProperties.getSecretToken());
+                Assertions.assertEquals(expectedProperties.getUrl(), fetchedProperties.getUrl());
+            } else {
+                final WebhookProperties expectedWebhookProperties = expectedEndpoint.getProperties(WebhookProperties.class);
+                final WebhookProperties fetchedProperties = fetchedEndpoint.getProperties(WebhookProperties.class);
+
+                Assertions.assertEquals(expectedWebhookProperties.getBasicAuthentication(), fetchedProperties.getBasicAuthentication());
+                Assertions.assertEquals(expectedWebhookProperties.getDisableSslVerification(), fetchedProperties.getDisableSslVerification());
+                Assertions.assertEquals(expectedWebhookProperties.getMethod(), fetchedProperties.getMethod());
+                Assertions.assertEquals(expectedWebhookProperties.getSecretToken(), fetchedProperties.getSecretToken());
+                Assertions.assertEquals(expectedWebhookProperties.getUrl(), fetchedProperties.getUrl());
+            }
+        }
+    }
+
+    /**
+     * Creates a camel endpoint with camel properties, with the references to
+     * the sources secrets empty.
+     * @return the created endpoint.
+     */
+    @Deprecated(forRemoval = true)
+    private Endpoint createCamelEndpointWithCamelProperties() {
+        final CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setBasicAuthentication(new BasicAuthentication("a", "b"));
+        camelProperties.setDisableSslVerification(true);
+        camelProperties.setExtras(Map.of("a", "b"));
+        camelProperties.setSecretToken("secret token!");
+        camelProperties.setUrl("https://example.com");
+
+        final Endpoint camelEndpoint = new Endpoint();
+        camelEndpoint.setAccountId(DEFAULT_ACCOUNT_ID);
+        camelEndpoint.setCreated(LocalDateTime.now(Clock.systemUTC()));
+        camelEndpoint.setDescription("description");
+        camelEndpoint.setEnabled(true);
+        camelEndpoint.setName("name");
+        camelEndpoint.setOrgId(DEFAULT_ORG_ID);
+        camelEndpoint.setProperties(camelProperties);
+        camelEndpoint.setSubType("splunk");
+        camelEndpoint.setType(EndpointType.CAMEL);
+
+        return this.endpointRepository.createEndpoint(camelEndpoint);
+    }
+
+    /**
+     * Creates a webhook endpoint with webhook properties, with the references
+     * to the sources secrets empty.
+     * @return the created endpoint.
+     */
+    @Deprecated(forRemoval = true)
+    private Endpoint createWebhookEndpointWithWebhookProperties() {
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setBasicAuthentication(new BasicAuthentication("a", "b"));
+        webhookProperties.setDisableSslVerification(true);
+        webhookProperties.setMethod(HttpType.GET);
+        webhookProperties.setSecretToken("secret token!");
+        webhookProperties.setUrl("https://example.com");
+
+        final Endpoint webhookEndpoint = new Endpoint();
+        webhookEndpoint.setAccountId(DEFAULT_ACCOUNT_ID);
+        webhookEndpoint.setCreated(LocalDateTime.now(Clock.systemUTC()));
+        webhookEndpoint.setDescription("description");
+        webhookEndpoint.setEnabled(true);
+        webhookEndpoint.setName("name");
+        webhookEndpoint.setOrgId(DEFAULT_ORG_ID);
+        webhookEndpoint.setProperties(webhookProperties);
+        webhookEndpoint.setType(EndpointType.WEBHOOK);
+
+        return this.endpointRepository.createEndpoint(webhookEndpoint);
     }
 }
