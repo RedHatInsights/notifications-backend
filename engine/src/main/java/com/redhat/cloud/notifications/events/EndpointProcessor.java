@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -47,9 +46,6 @@ public class EndpointProcessor {
     @Inject
     MeterRegistry registry;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     private Counter processedItems;
     private Counter endpointTargeted;
 
@@ -82,7 +78,7 @@ public class EndpointProcessor {
                 try {
                     // For each endpoint type, the list of target endpoints is sent alongside with the event to the relevant processor.
                     switch (endpointsByTypeEntry.getKey()) {
-                        // TODO Introduce EndpointType.RHOSE?
+                        // TODO Introduce EndpointType.SLACK?
                         case CAMEL:
                             Map<String, List<Endpoint>> endpointsBySubType = endpointsByTypeEntry.getValue().stream().collect(Collectors.groupingBy(Endpoint::getSubType));
                             for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {

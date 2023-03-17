@@ -15,7 +15,6 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
@@ -114,12 +113,6 @@ class CamelTypeProcessorTest {
 
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
-
-    /**
-     * Used to test that the environment's URL is properly set when sending events to RHOSE.
-     */
-    @Inject
-    Environment environment;
 
     @Inject
     FeatureFlipper featureFlipper;
