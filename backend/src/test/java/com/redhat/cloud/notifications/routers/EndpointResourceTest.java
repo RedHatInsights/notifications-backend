@@ -22,9 +22,6 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
-import com.redhat.cloud.notifications.openbridge.Bridge;
-import com.redhat.cloud.notifications.openbridge.BridgeHelper;
-import com.redhat.cloud.notifications.openbridge.BridgeItemList;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
@@ -41,7 +38,6 @@ import io.restassured.response.Response;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.hibernate.Session;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +52,6 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -73,8 +68,6 @@ import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.EndpointResource.EMPTY_SLACK_CHANNEL_ERROR;
-import static com.redhat.cloud.notifications.routers.EndpointResource.OB_PROCESSOR_ID;
-import static com.redhat.cloud.notifications.routers.EndpointResource.OB_PROCESSOR_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -114,9 +107,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
     EmailSubscriptionRepository emailSubscriptionRepository;
 
     @Inject
-    BridgeHelper bridgeHelper;
-
-    @Inject
     ResourceHelpers resourceHelpers;
 
     @Inject
@@ -135,9 +125,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @InjectMock
     @RestClient
     EndpointTestService endpointTestService;
-
-    @Inject
-    Session databaseSession;
 
     /**
      * We mock the sources service's REST client because there are a few tests
@@ -658,7 +645,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void addOpenBridgeEndpoint() {
+    void addSlackEndpoint() {
 
         String accountId = "empty";
         String orgId = "empty";
@@ -667,8 +654,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
-
-        resourceHelpers.setupTransformationTemplate();
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
@@ -686,19 +671,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(cAttr);
         ep.setStatus(EndpointStatus.DELETING); // Trying to set other status
 
-        // First we try with bogus values for the OB endpoint itself (no valid bridge)
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(500);
-
-        // Now set up some mock OB endpoints (simulate valid bridge)
-        Bridge bridge = mockBridge();
-
         String responseBody = given()
                 .header(identityHeader)
                 .when()
@@ -714,7 +686,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         responsePoint.mapTo(Endpoint.class);
         String id = responsePoint.getString("id");
         assertNotNull(id);
-        assertEquals(EndpointStatus.PROVISIONING.toString(), responsePoint.getString("status"));
+        assertEquals(EndpointStatus.READY.toString(), responsePoint.getString("status"));
 
         try {
             JsonObject endpoint = fetchSingle(id, identityHeader);
@@ -726,17 +698,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(extrasObject);
             String channel  = extrasObject.getString("channel");
             assertEquals("#notifications", channel);
-            assertEquals(responsePoint.getString("id"), extrasObject.getString(OB_PROCESSOR_NAME));
 
             ep.getProperties(CamelProperties.class).getExtras().put("channel", "#updated");
             ep.getProperties(CamelProperties.class).setUrl("https://updated.com");
-
-            /*
-             * Update the endpoint's status to make it seem as it its processor
-             * was ready to be updated. The transaction is required for
-             * Hibernate to run the update query.
-             */
-            this.updateEndpointStatusTo(UUID.fromString(id), EndpointStatus.READY);
 
             // Now update
             responseBody = given()
@@ -754,58 +718,21 @@ public class EndpointResourceTest extends DbIsolatedTest {
             CamelProperties updatedProperties = entityManager.createQuery("FROM CamelProperties WHERE id = :id", CamelProperties.class)
                     .setParameter("id", UUID.fromString(id))
                     .getSingleResult();
-            assertNotNull(updatedProperties.getExtras().get(OB_PROCESSOR_NAME));
-            assertEquals("p-my-id", updatedProperties.getExtras().get(OB_PROCESSOR_ID));
             assertEquals("#updated", updatedProperties.getExtras().get("channel"));
             assertEquals(ep.getProperties(CamelProperties.class).getUrl(), updatedProperties.getUrl());
 
         } finally {
-            /*
-             * Update the endpoint's status to make it seem as it its processor
-             * was ready to be deleted, as otherwise the deletion returns a
-             * "bad request" response.
-             */
-            this.updateEndpointStatusTo(UUID.fromString(id), EndpointStatus.READY);
-
             given()
                     .header(identityHeader)
                     .when().delete("/endpoints/" + id)
                     .then()
                     .statusCode(204);
 
-            Endpoint endpoint = given()
+            given()
                     .header(identityHeader)
-                    .contentType(JSON)
-                    .body(Json.encode(ep))
-                    .when()
-                    .get("/endpoints/" + id)
-                    .then()
-                    .statusCode(200)
-                    .extract().as(Endpoint.class);
-
-            assertEquals(EndpointStatus.DELETING, endpoint.getStatus());
+                    .when().get("/endpoints/" + id)
+                    .then().statusCode(404);
         }
-
-        MockServerConfig.clearOpenBridgeEndpoints(bridge);
-    }
-
-    private Bridge mockBridge() {
-        Bridge bridge = new Bridge("321", "http://some.events/", "my bridge");
-        BridgeItemList<Bridge> bridgeList = new BridgeItemList<>();
-        bridgeList.setSize(1);
-        bridgeList.setTotal(1);
-        List<Bridge> items = new ArrayList<>();
-        items.add(bridge);
-        bridgeList.setItems(items);
-        Map<String, String> auth = new HashMap<>();
-        auth.put("access_token", "li-la-lu-token");
-        Map<String, String> processor = new HashMap<>();
-        processor.put("id", "p-my-id");
-
-        MockServerConfig.addOpenBridgeEndpoints(auth, bridgeList, processor);
-        bridgeHelper.setOurBridgeName("my bridge");
-
-        return bridge;
     }
 
     @Test
@@ -2008,9 +1935,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setName(name);
         endpoint.setServerErrors(serverErrors);
 
-        resourceHelpers.setupTransformationTemplate();
-        Bridge bridge = mockBridge();
-
         for (final var url : ValidNonPrivateUrlValidatorTest.validUrls) {
             // Test with a camel endpoint.
             camelProperties.setUrl(url);
@@ -2043,8 +1967,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200);
         }
-
-        MockServerConfig.clearOpenBridgeEndpoints(bridge);
     }
 
     /**
@@ -2173,183 +2095,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .asString();
 
         Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
-    }
-
-    /**
-     * Tests that when a user updates an endpoint, and its associated RHOSE
-     * processor is not in an actionable state, a bad request error is returned
-     * to the user.
-     */
-    @Test
-    public void testNonActionableRhoseProcessorRaisesBadRequest() {
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-number", "org-id", "user");
-        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
-        // Create the endpoint that we will attempt to modify.
-        final CamelProperties properties = new CamelProperties();
-        properties.setDisableSslVerification(false);
-        properties.setExtras(Map.of(
-                "channel", "test-channel",
-                EndpointResource.OB_PROCESSOR_ID, "processor-id",
-                EndpointResource.OB_PROCESSOR_NAME, "processor-name",
-                "template", "11"
-        ));
-        properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
-        properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(getMockServerUrl());
-
-        final Endpoint endpoint = new Endpoint();
-        endpoint.setDescription("needle in the haystack");
-        endpoint.setEnabled(true);
-        endpoint.setName("endpoint to find");
-        endpoint.setProperties(properties);
-        endpoint.setServerErrors(0);
-        endpoint.setStatus(EndpointStatus.PROVISIONING);
-        endpoint.setSubType("slack");
-        endpoint.setType(EndpointType.CAMEL);
-
-        // Set up a default transformation template for the test to work.
-        this.resourceHelpers.setupTransformationTemplate();
-        // Set up a Bridge since otherwise we cannot create a Slack endpoint.
-        final Bridge bridge = this.mockBridge();
-
-        try {
-            final String response = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(endpoint))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract()
-                    .response()
-                    .asString();
-
-            final JsonObject jsonResponse = new JsonObject(response);
-            final String id = jsonResponse.getString("id");
-
-            Assertions.assertNotNull(id, "the endpoint should have been correctly created, but the response payload didn't have the ID");
-            Assertions.assertFalse(id.isBlank(), "the endpoint should have been correctly created, but the response payload didn't have the ID");
-
-            final List<EndpointStatus> nonActionableStatuses = new ArrayList<>(EnumSet.allOf(EndpointStatus.class));
-            nonActionableStatuses.remove(EndpointStatus.READY);
-            nonActionableStatuses.remove(EndpointStatus.FAILED);
-
-            for (final var nonActionableStatus : nonActionableStatuses) {
-                /*
-                 * Update the endpoint's status to make it seem as it its processor
-                 * was being deleted. The transaction is required for Hibernate to
-                 * run the update query.
-                 */
-                this.updateEndpointStatusTo(UUID.fromString(id), nonActionableStatus);
-
-                final String badRequestResponse = given()
-                        .header(identityHeader)
-                        .when()
-                        .contentType(JSON)
-                        .body(Json.encode(endpoint))
-                        .put(String.format("/endpoints/%s", id))
-                        .then()
-                        .statusCode(400)
-                        .extract()
-                        .asString();
-
-                Assertions.assertEquals("the processor associated with the endpoint is not ready to be modified", badRequestResponse, "unexpected error message returned to the user");
-            }
-        } finally {
-            MockServerConfig.clearOpenBridgeEndpoints(bridge);
-        }
-    }
-
-    /**
-     * Tests that when a user deletes an endpoint, and its associated RHOSE
-     * processor is not in an actionable state, a bad request error is returned
-     * to the user.
-     */
-    @Test
-    public void testDeleteNonActionableRhoseProcessorRaisesBadRequest() {
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-number", "org-id", "user");
-        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
-        // Create the endpoint that we will attempt to delete.
-        final CamelProperties properties = new CamelProperties();
-        properties.setDisableSslVerification(false);
-        properties.setExtras(Map.of(
-            "channel", "test-channel",
-            EndpointResource.OB_PROCESSOR_ID, "processor-id",
-            EndpointResource.OB_PROCESSOR_NAME, "processor-name",
-            "template", "11"
-        ));
-        properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
-        properties.setSecretToken("my-super-secret-token");
-        properties.setUrl(getMockServerUrl());
-
-        final Endpoint endpoint = new Endpoint();
-        endpoint.setDescription("needle in the haystack");
-        endpoint.setEnabled(true);
-        endpoint.setName("endpoint to find");
-        endpoint.setProperties(properties);
-        endpoint.setServerErrors(0);
-        endpoint.setStatus(EndpointStatus.PROVISIONING);
-        endpoint.setSubType("slack");
-        endpoint.setType(EndpointType.CAMEL);
-
-        // Set up a default transformation template for the test to work.
-        this.resourceHelpers.setupTransformationTemplate();
-        // Set up a Bridge since otherwise we cannot create a Slack endpoint.
-        final Bridge bridge = this.mockBridge();
-
-        try {
-            final String response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(endpoint))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract()
-                .response()
-                .asString();
-
-            final JsonObject jsonResponse = new JsonObject(response);
-            final String id = jsonResponse.getString("id");
-
-            Assertions.assertNotNull(id, "the endpoint should have been correctly created, but the response payload didn't have the ID");
-            Assertions.assertFalse(id.isBlank(), "the endpoint should have been correctly created, but the response payload didn't have the ID");
-
-            final List<EndpointStatus> nonActionableStatuses = new ArrayList<>(EnumSet.allOf(EndpointStatus.class));
-            nonActionableStatuses.remove(EndpointStatus.READY);
-            nonActionableStatuses.remove(EndpointStatus.FAILED);
-
-            for (final var nonActionableStatus : nonActionableStatuses) {
-                /*
-                 * Update the endpoint's status to put it in a non-actionable
-                 * state.
-                 */
-                this.updateEndpointStatusTo(UUID.fromString(id), nonActionableStatus);
-
-                final String badRequestResponse = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(endpoint))
-                    .delete(String.format("/endpoints/%s", id))
-                    .then()
-                    .statusCode(400)
-                    .extract()
-                    .asString();
-
-                Assertions.assertEquals("the processor associated with the endpoint is not ready to be deleted", badRequestResponse, "unexpected error message returned to the user");
-            }
-        } finally {
-            MockServerConfig.clearOpenBridgeEndpoints(bridge);
-        }
     }
 
     /**

@@ -140,7 +140,7 @@ public class TemplateRepository {
     // TODO Copied from notifications-backend. Let's try to stop duplicating that code ASAP.
     /**
      * Integration templates are more generic templates directly targeted at Integrations
-     * other than email, like Splunk or Slack via Camel and OpenBridge. See {@link IntegrationTemplate}
+     * other than email, like Splunk or Slack via Camel. See {@link IntegrationTemplate}
      * for more details.
      * @param appName Application name the template applies to. Can be null.
      * @param orgId The organization id for templates that are organization specific. Need to be of Kind ORG

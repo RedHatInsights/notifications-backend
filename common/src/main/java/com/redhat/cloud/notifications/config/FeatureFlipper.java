@@ -123,9 +123,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-event-type-for-subscription.enabled", defaultValue = "false")
     boolean useEventTypeForSubscriptionEnabled;
 
-    @ConfigProperty(name = "notifications.slack.camel.enabled", defaultValue = "false")
-    boolean sendToSlackThroughCamelEnabled;
-
     @ConfigProperty(name = "notifications.use-secured-email-templates.enabled", defaultValue = "false")
     boolean useSecuredEmailTemplates;
 
@@ -160,7 +157,6 @@ public class FeatureFlipper {
         Log.infof("The Advisor's email templates V2 are %s", advisorEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
-        Log.infof("The Slack integration through Camel is %s", sendToSlackThroughCamelEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -413,15 +409,6 @@ public class FeatureFlipper {
     public void setUseEventTypeForSubscriptionEnabled(boolean useEventTypeForSubscriptionEnabled) {
         checkTestLaunchMode();
         this.useEventTypeForSubscriptionEnabled = useEventTypeForSubscriptionEnabled;
-    }
-
-    public boolean isSendToSlackThroughCamelEnabled() {
-        return sendToSlackThroughCamelEnabled;
-    }
-
-    public void setSendToSlackThroughCamelEnabled(boolean sendToSlackThroughCamelEnabled) {
-        checkTestLaunchMode();
-        this.sendToSlackThroughCamelEnabled = sendToSlackThroughCamelEnabled;
     }
 
     public boolean isUseSecuredEmailTemplates() {

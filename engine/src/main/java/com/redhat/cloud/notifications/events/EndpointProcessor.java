@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -9,7 +8,6 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
-import com.redhat.cloud.notifications.processors.rhose.RhoseTypeProcessor;
 import com.redhat.cloud.notifications.processors.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
@@ -43,16 +41,10 @@ public class EndpointProcessor {
     EmailSubscriptionTypeProcessor emailProcessor;
 
     @Inject
-    RhoseTypeProcessor rhoseProcessor;
-
-    @Inject
     SlackProcessor slackProcessor;
 
     @Inject
     MeterRegistry registry;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     private Counter processedItems;
     private Counter endpointTargeted;
@@ -86,17 +78,13 @@ public class EndpointProcessor {
                 try {
                     // For each endpoint type, the list of target endpoints is sent alongside with the event to the relevant processor.
                     switch (endpointsByTypeEntry.getKey()) {
-                        // TODO Introduce EndpointType.RHOSE?
+                        // TODO Introduce EndpointType.SLACK?
                         case CAMEL:
                             Map<String, List<Endpoint>> endpointsBySubType = endpointsByTypeEntry.getValue().stream().collect(Collectors.groupingBy(Endpoint::getSubType));
                             for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
                                 try {
                                     if ("slack".equals(endpointsBySubTypeEntry.getKey())) {
-                                        if (featureFlipper.isSendToSlackThroughCamelEnabled()) {
-                                            slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                        } else {
-                                            rhoseProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                        }
+                                        slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else {
                                         camelProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     }

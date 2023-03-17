@@ -114,8 +114,7 @@ public class Endpoint extends CreationUpdateTimestamped {
     protected void additionalPrePersist() {
         /*
          * Depending on the endpoint type, the id field may or may not already contain a value when the entity
-         * is first persisted. In particular, RHOSE endpoints will already contain an id value because we need
-         * to know that value when the RHOSE processor is created, before the endpoint is persisted on our side.
+         * is first persisted.
          */
         if (id == null) {
             id = UUID.randomUUID();

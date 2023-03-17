@@ -27,8 +27,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         }
         setupMockEngine(properties);
 
-        properties.put("ob.backchannel.user", "ob-user");
-
         System.out.println(" -- Running with properties: " + properties);
         return properties;
     }
@@ -68,7 +66,5 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     void setupMockEngine(Map<String, String> props) {
         MockServerLifecycleManager.start();
         props.put("quarkus.rest-client.rbac-authentication.url", getMockServerUrl());
-        props.put("quarkus.rest-client.ob.url", getMockServerUrl());
-        props.put("quarkus.rest-client.kc.url", getMockServerUrl());
     }
 }

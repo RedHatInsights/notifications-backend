@@ -1,15 +1,11 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.openbridge.Bridge;
-import com.redhat.cloud.notifications.openbridge.BridgeItemList;
-import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.mockserver.model.ClearType;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 
 import java.io.InputStream;
-import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
@@ -76,98 +72,6 @@ public class MockServerConfig {
                 .withPath("/api/rbac/v1/access/"),
                 ClearType.EXPECTATIONS
         );
-    }
-
-    public static void addOpenBridgeEndpoints(Map<String, String> auth, BridgeItemList<Bridge> bridgeList, Map<String, String> processor) {
-        String authString = Json.encode(auth);
-        String bridgeString = Json.encode(bridgeList);
-        String processorString = Json.encode(processor);
-
-        getClient()
-                .when(request()
-                        .withPath("/auth/realms/redhat-external/protocol/openid-connect/token"))
-                .respond(response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(authString));
-
-        getClient()
-                .when(request()
-                        .withPath("/api/smartevents_mgmt/v1/bridges/.*")
-                        .withMethod("GET")
-                )
-                .respond(response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(bridgeString));
-
-        getClient()
-                .when(request()
-                        .withPath("/api/smartevents_mgmt/v1/bridges/.*")
-                        .withQueryStringParameter("name", "heiko-bridge")
-                        .withMethod("GET")
-                )
-                .respond(response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(bridgeString));
-
-        getClient()
-                .when(request()
-                        .withPath("/api/smartevents_mgmt/v1/bridges/.*/processors")
-                        .withMethod("POST")
-                )
-                .respond(response()
-                        .withStatusCode(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(processorString));
-
-        getClient()
-                .when(request()
-                        .withPath("/api/smartevents_mgmt/v1/bridges/.*/processors/" + processor.get("id"))
-                        .withMethod("DELETE")
-                )
-                .respond(response()
-                        .withStatusCode(202));
-
-        getClient()
-                .when(request()
-                        .withPath("/api/smartevents_mgmt/v1/bridges/.*/processors/" + processor.get("id"))
-                        .withMethod("PUT")
-                )
-                .respond(response()
-                        .withStatusCode(202)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(processorString));
-
-    }
-
-    public static void mockBadRequestStatusWithBody() {
-        JsonObject body = new JsonObject();
-        body.put("cause", "something went wrong");
-        body.put("solution", "abort mission");
-        getClient()
-                .when(request()
-                        .withPath("/api/smartevents_mgmt/v1/bridges/.*/errors")
-                        .withMethod("GET")
-                )
-                .respond(response()
-                        .withStatusCode(400)
-                        .withBody(body.encode()));
-    }
-
-    public static void clearOpenBridgeEndpoints(Bridge bridge) {
-        getClient().clear(request()
-                .withPath("/auth/realms/event-bridge-fm/protocol/openid-connect/token"),
-                ClearType.EXPECTATIONS);
-
-        getClient().clear(request()
-                .withPath("/api/smartevents_mgmt/v1/bridges/" + bridge.getId()),
-                ClearType.EXPECTATIONS);
-
-        getClient().clear(request()
-                .withPath("/api/smartevents_mgmt/v1/bridges/" + bridge.getId() + "/processors"),
-                ClearType.EXPECTATIONS);
     }
 
     public static void removeHttpTestEndpoint(HttpRequest request) {
