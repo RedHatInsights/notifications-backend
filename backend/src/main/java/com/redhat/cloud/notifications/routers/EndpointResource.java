@@ -289,13 +289,13 @@ public class EndpointResource {
         }
         checkSystemEndpoint(endpointType);
 
-        endpointRepository.deleteEndpoint(orgId, id);
-
         // Clean up the secrets in Sources.
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
             Endpoint ep = endpointRepository.getEndpoint(orgId, id);
             this.secretUtils.deleteSecretsForEndpoint(ep);
         }
+
+        endpointRepository.deleteEndpoint(orgId, id);
 
         return Response.noContent().build();
     }
