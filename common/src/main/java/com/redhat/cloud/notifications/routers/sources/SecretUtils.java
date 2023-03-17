@@ -4,6 +4,8 @@ import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -14,6 +16,13 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class SecretUtils {
 
+    /**
+     * Used to gather data regarding the number of times that Sources gets
+     * called.
+     */
+    @Inject
+    MeterRegistry meterRegistry;
+
     @ConfigProperty(name = "sources.psk")
     String sourcesPsk;
 
@@ -23,6 +32,8 @@ public class SecretUtils {
     @Inject
     @RestClient
     SourcesService sourcesService;
+
+    private static final String SOURCES_TIMER = "sources.get.secret.request";
 
     /**
      * Loads the endpoint's secrets from Sources.
@@ -36,11 +47,15 @@ public class SecretUtils {
 
             final Long basicAuthSourcesId = props.getBasicAuthenticationSourcesId();
             if (basicAuthSourcesId != null) {
+                final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
+
                 final Secret secret = this.sourcesService.getById(
                     endpoint.getOrgId(),
                     this.sourcesPsk,
                     basicAuthSourcesId
                 );
+
+                getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
 
                 props.setBasicAuthentication(
                     new BasicAuthentication(
@@ -52,11 +67,15 @@ public class SecretUtils {
 
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
             if (secretTokenSourcesId != null) {
+                final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
+
                 final Secret secret = this.sourcesService.getById(
                     endpoint.getOrgId(),
                     this.sourcesPsk,
                     secretTokenSourcesId
                 );
+
+                getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
 
                 props.setSecretToken(secret.password);
             }
