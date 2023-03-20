@@ -109,7 +109,7 @@ public class AdvisorEmailAggregatorTest {
     );
     public static final Map<String, String> TEST_RULE_6 = Map.of(
             RULE_ID, "test|Active_rule_6",
-            RULE_DESCRIPTION, "Active rule 6",
+            RULE_DESCRIPTION, "Active rule 6 with a very long text to validate the carriage return",
             TOTAL_RISK, "2",
             HAS_INCIDENT, "false",
             RULE_URL, "https://console.redhat.com/insights/advisor/recommendations/test|Active_rule_6"

@@ -37,6 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestAdvisorTemplate {
 
+    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
+
     @Inject
     Advisor advisor;
 
@@ -320,7 +322,7 @@ public class TestAdvisorTemplate {
     }
 
     private String generateFromTemplate(TemplateInstance templateInstance, Map<String, Object> context) {
-        return templateInstance
+        String result = templateInstance
             .data("action", Map.of(
                 "context", context,
                 "timestamp", LocalDateTime.now(),
@@ -329,13 +331,25 @@ public class TestAdvisorTemplate {
             .data("environment", environment)
             .data("user", Map.of("firstName", "John", "lastName", "Doe"))
             .render();
+
+        writeEmailTemplate(result, templateInstance.getTemplate().getId());
+        return result;
     }
 
     private String generateFromTemplate(TemplateInstance templateInstance, Action action) {
-        return templateInstance
+        String result = templateInstance
             .data("action", action)
             .data("environment", environment)
             .data("user", Map.of("firstName", "John", "lastName", "Doe"))
             .render();
+
+        writeEmailTemplate(result, templateInstance.getTemplate().getId());
+        return result;
+    }
+
+    public void writeEmailTemplate(String result, String fileName) {
+        if (SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
+            TestHelpers.writeEmailTemplate(result, fileName);
+        }
     }
 }
