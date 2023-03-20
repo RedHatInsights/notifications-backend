@@ -10,6 +10,16 @@
         vertical-align: -2px;
         display: inline-block;
     }
+    .incident-col-16px{
+        padding-right: 0px !important;
+        border-right: 0px !important;
+    }
+    .recommendation-col{
+        width: 60%;
+        word-wrap: anywhere;
+        padding-left: 3px !important;
+        border-left: 0px !important;
+    }
 {/extra-css}
 {#content-title}
     Daily digest - Advisor - Red Hat Enterprise Linux
@@ -28,7 +38,8 @@
     <table class="rh-data-table rh-m-bordered">
         <thead>
         <tr>
-            <th style="width: 60%"><div class="inline-16px"></div>&nbsp;New Recommendation{#if action.context.advisor.new_recommendations.orEmpty.size > 1}s{/if}</th>
+            <th class="incident-col-16px"><div class="inline-16px"></div></th>
+            <th class="recommendation-col"></div>New Recommendation{#if action.context.advisor.new_recommendations.orEmpty.size > 1}s{/if}</th>
             <th style="width: 20%">Total Risk</th>
             <th style="width: 20%">Systems</th>
         </tr>
@@ -36,17 +47,17 @@
         <tbody>
         {#for rec in action.context.advisor.new_recommendations.keySet()}
         <tr>
-            <td style="width: 60%; word-wrap: anywhere;">
+            <td class="incident-col-16px">
                 {#let isIncident = action.context.advisor.new_recommendations.get(rec).has_incident.or("false")}
                     {#if isIncident && (true == isIncident || "true" == isIncident)}
                         <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" />
-                    {#else}
-                        <div class="inline-16px"></div>
                     {/if}
                 {/let}
+            </td>
+            <td class="recommendation-col">
                 <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.new_recommendations.get(rec).rule_description}</a>
             </td>
-            <td class="rh-severity" style="width: 20%">
+            <td class="rh-severity">
                 {#switch action.context.advisor.new_recommendations.get(rec).total_risk}
                 {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
                 {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
@@ -54,7 +65,7 @@
                 {#case "4"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
                 {/switch}
             </td>
-            <td style="width: 20%">{action.context.advisor.new_recommendations.get(rec).systems}</td>
+            <td>{action.context.advisor.new_recommendations.get(rec).systems}</td>
         </tr>
         {/for}
         </tbody>
@@ -67,7 +78,8 @@
     <table class="rh-data-table rh-m-bordered">
         <thead>
         <tr>
-          <th style="width: 60%"><div class="inline-16px"></div>&nbsp;Resolved Recommendation{#if action.context.advisor.resolved_recommendations.orEmpty.size > 1}s{/if}</th>
+          <th class="incident-col-16px"><div class="inline-16px"></div></th>
+          <th class="recommendation-col">Resolved Recommendation{#if action.context.advisor.resolved_recommendations.orEmpty.size > 1}s{/if}</th>
           <th style="width: 20%">Total Risk</th>
           <th style="width: 20%">Systems</th>
         </tr>
@@ -75,17 +87,17 @@
         <tbody>
         {#for rec in action.context.advisor.resolved_recommendations.keySet()}
           <tr>
-            <td style="width: 60%; word-wrap: anywhere; ">
-                {#let isIncident = action.context.advisor.resolved_recommendations.get(rec).has_incident.or("false")}
+            <td class="incident-col-16px">
+              {#let isIncident = action.context.advisor.resolved_recommendations.get(rec).has_incident.or("false")}
                     {#if isIncident && (true == isIncident || "true" == isIncident)}
                         <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" />
-                    {#else}
-                        <div class="inline-16px"></div>
                     {/if}
                 {/let}
+            </td>
+            <td class="recommendation-col">
               <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.resolved_recommendations.get(rec).rule_description}</a>
             </td>
-            <td style="width: 20%">
+            <td>
               {#switch action.context.advisor.resolved_recommendations.get(rec).total_risk}
                 {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
                 {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
@@ -93,7 +105,7 @@
                 {#case "4"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
               {/switch}
             </td>
-            <td style="width: 20%">{action.context.advisor.resolved_recommendations.get(rec).systems}</td>
+            <td>{action.context.advisor.resolved_recommendations.get(rec).systems}</td>
           </tr>
         {/for}
         </tbody>
@@ -106,24 +118,25 @@
     <table class="rh-data-table rh-m-bordered">
        <thead>
         <tr>
-          <th style="width: 60%"><div class="inline-16px"></div>&nbsp;Deactivated Recommendation{#if action.context.advisor.deactivated_recommendations.orEmpty.size > 1}s{/if}</th>
+          <th class="incident-col-16px"><div class="inline-16px"></div></th>
+          <th class="recommendation-col">Deactivated Recommendation{#if action.context.advisor.deactivated_recommendations.orEmpty.size > 1}s{/if}</th>
           <th style="width: 40%">Total Risk</th>
         </tr>
         </thead>
         <tbody>
         {#for rec in action.context.advisor.deactivated_recommendations.keySet()}
           <tr>
-            <td style="width: 60%; word-wrap: anywhere;">
+            <td class="incident-col-16px">
                 {#let isIncident = action.context.advisor.deactivated_recommendations.get(rec).has_incident.or("false")}
                     {#if isIncident && (true == isIncident || "true" == isIncident)}
                         <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" />
-                    {#else}
-                        <div class="inline-16px"></div>
                     {/if}
                 {/let}
+            </td>
+            <td class="recommendation-col">
                 <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.deactivated_recommendations.get(rec).rule_description}</a>
             </td>
-            <td style="width: 40%">
+            <td>
               {#switch action.context.advisor.deactivated_recommendations.get(rec).total_risk}
                 {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
                 {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
