@@ -318,11 +318,10 @@ parameters:
   description: Log level for com.redhat.cloud.notifications
   value: INFO
 - name: NOTIFICATIONS_SLACK_CAMEL_MAXIMUM_REDELIVERIES
-  value: "3"
-- name: NOTIFICATIONS_SLACK_CAMEL_LOG_RETRY_ATTEMPTED
-  value: "true"
+  description: Maximum number of redelivery attempts, which does not include the initial attempt.
+  value: "2"
 - name: NOTIFICATIONS_SLACK_CAMEL_REDELIVERY_DELAY
-  value: "1"
+  value: "1000"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
   description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT30S

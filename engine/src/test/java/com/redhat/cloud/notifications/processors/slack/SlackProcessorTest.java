@@ -29,6 +29,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -73,6 +74,8 @@ public class SlackProcessorTest {
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
         ArgumentCaptor<SlackNotification> argumentCaptor = ArgumentCaptor.forClass(SlackNotification.class);
         verify(internalTemporarySlackService, times(1)).send(argumentCaptor.capture());
+        assertEquals(DEFAULT_ORG_ID, argumentCaptor.getValue().orgId);
+        assertNotNull(argumentCaptor.getValue().historyId);
         assertEquals(WEBHOOK_URL, argumentCaptor.getValue().webhookUrl);
         assertEquals(CHANNEL, argumentCaptor.getValue().channel);
         assertEquals(SLACK_EXPECTED_MSG, argumentCaptor.getValue().message);

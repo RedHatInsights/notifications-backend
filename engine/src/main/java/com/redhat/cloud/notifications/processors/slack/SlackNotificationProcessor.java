@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.slack;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
@@ -28,8 +29,13 @@ public class SlackNotificationProcessor implements Processor {
         SlackNotification slackNotification = objectMapper.readValue(body, SlackNotification.class);
 
         // Then, we're using fields from the parsed SlackNotification to build the outgoing data.
-        in.setHeader("channel", slackNotification.channel);
-        in.setHeader("webhookUrl", slackNotification.webhookUrl);
+        exchange.setProperty("orgId", slackNotification.orgId);
+        exchange.setProperty("historyId", slackNotification.historyId);
+        exchange.setProperty("webhookUrl", slackNotification.webhookUrl);
+        exchange.setProperty("channel", slackNotification.channel);
         in.setBody(slackNotification.message);
+
+        Log.debugf("Processing Slack notification [orgId=%s, historyId=%s, webhookUrl=%s, channel=%s]",
+                slackNotification.orgId, slackNotification.historyId, slackNotification.webhookUrl, slackNotification.channel);
     }
 }

@@ -88,7 +88,7 @@ public class SlackProcessor extends EndpointTypeProcessor {
 
         long startTime = System.currentTimeMillis();
 
-        SlackNotification notification = buildNotification(event, endpoint);
+        SlackNotification notification = buildNotification(event, endpoint, historyId);
 
         NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
         try {
@@ -104,7 +104,7 @@ public class SlackProcessor extends EndpointTypeProcessor {
         persistNotificationHistory(history);
     }
 
-    private SlackNotification buildNotification(Event event, Endpoint endpoint) {
+    private SlackNotification buildNotification(Event event, Endpoint endpoint, UUID historyId) {
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
         JsonObject data = baseTransformer.toJsonObject(event.getAction());
@@ -122,6 +122,8 @@ public class SlackProcessor extends EndpointTypeProcessor {
                 .render();
 
         SlackNotification notification = new SlackNotification();
+        notification.orgId = endpoint.getOrgId();
+        notification.historyId = historyId;
         notification.webhookUrl = properties.getUrl();
         notification.channel = properties.getExtras().get("channel");
         notification.message = message;
