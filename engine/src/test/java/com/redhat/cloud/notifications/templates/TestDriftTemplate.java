@@ -1,35 +1,31 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.DriftTestHelpers;
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
+
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-public class TestDriftTemplate {
-
-    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
-
-    @Inject
-    Environment environment;
+public class TestDriftTemplate extends EmailTemplatesInDbHelper  {
 
     private DriftEmailPayloadAggregator aggregator;
+
+    private static final String EVENT_TYPE_NAME = "drift-baseline-detected";
 
     @BeforeEach
     void setUp() {
@@ -39,40 +35,51 @@ public class TestDriftTemplate {
     @Inject
     FeatureFlipper featureFlipper;
 
-    @Inject
-    Drift driftBean;
-
-    @BeforeEach
-    void beforeEach() {
+    @AfterEach
+    void afterEach() {
         featureFlipper.setDriftEmailTemplatesV2Enabled(false);
+        migrate();
+    }
+
+    @Override
+    protected String getApp() {
+        return "drift";
+    }
+
+    @Override
+    protected List<String> getUsedEventTypeNames() {
+        return List.of(EVENT_TYPE_NAME);
     }
 
     @Test
     public void testInstantEmailTitle() {
         Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
-        String result = generateFromTemplate(driftBean.getTitle(null, EmailSubscriptionType.INSTANT), action);
-        assertTrue(result.contains("2 drifts from baseline detected on 'Machine 1'"));
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateEmailSubject(EVENT_TYPE_NAME, action);
+            assertTrue(result.contains("2 drifts from baseline detected on 'Machine 1'"));
 
-        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(driftBean.getTitle(null, EmailSubscriptionType.INSTANT), action);
-        assertEquals("Instant notification - Drift - Red Hat Enterprise Linux", result);
+            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailSubject(EVENT_TYPE_NAME, action);
+            assertEquals("Instant notification - Drift - Red Hat Enterprise Linux", result);
+        });
     }
 
     @Test
     public void testInstantEmailBody() {
         Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
-        String result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.INSTANT), action);
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateEmailBody(EVENT_TYPE_NAME, action);
+            assertTrue(result.contains("baseline_01"));
+            assertTrue(result.contains("Machine 1"));
 
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains("Machine 1"));
-        writeEmailTemplate(result, "instantEmail.html");
-
-        // test template V2
-        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.INSTANT), action);
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains("Machine 1"));
-        writeEmailTemplate(result, "instantEmailV2.html");
+            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailBody(EVENT_TYPE_NAME, action);
+            assertTrue(result.contains("baseline_01"));
+            assertTrue(result.contains("Machine 1"));
+            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        });
     }
 
     @Test
@@ -88,15 +95,16 @@ public class TestDriftTemplate {
         Map<String, Object> drift = aggregator.getContext();
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
-        String result = generateFromTemplate(driftBean.getTitle(null, EmailSubscriptionType.DAILY), drift);
 
-        writeEmailTemplate(result, "driftEmailMultMult.html");
-        assertTrue(result.contains("3 drifts from baseline detected on 2 unique system"));
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateAggregatedEmailSubject(drift);
+            assertTrue(result.contains("3 drifts from baseline detected on 2 unique system"));
 
-        // test template V2
-        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(driftBean.getTitle(null, EmailSubscriptionType.DAILY), drift);
-        assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", result);
+            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateAggregatedEmailSubject(drift);
+            assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", result);
+        });
     }
 
     @Test
@@ -109,18 +117,17 @@ public class TestDriftTemplate {
         Map<String, Object> drift = aggregator.getContext();
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
-        String result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.DAILY), drift);
 
-        writeEmailTemplate(result, "driftEmailOneOne.html");
-        assertTrue(result.contains("baseline_01"));
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateAggregatedEmailBody(drift);
+            assertTrue(result.contains("baseline_01"));
 
-        // test template V2
-        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.DAILY), drift);
-
-        writeEmailTemplate(result, "driftEmailOneOneV2.html");
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateAggregatedEmailBody(drift);
+            assertTrue(result.contains("baseline_01"));
+            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        });
     }
 
     @Test
@@ -135,22 +142,21 @@ public class TestDriftTemplate {
         Map<String, Object> drift = aggregator.getContext();
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
-        String result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.DAILY), drift);
 
-        writeEmailTemplate(result, "drfitEmailMultOne.html");
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains("baseline_02"));
-        assertTrue(result.contains("baseline_03"));
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateAggregatedEmailBody(drift);
+            assertTrue(result.contains("baseline_01"));
+            assertTrue(result.contains("baseline_02"));
+            assertTrue(result.contains("baseline_03"));
 
-        // test template V2
-        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.DAILY), drift);
-
-        writeEmailTemplate(result, "drfitEmailMultOneV2.html");
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains("baseline_02"));
-        assertTrue(result.contains("baseline_03"));
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateAggregatedEmailBody(drift);
+            assertTrue(result.contains("baseline_01"));
+            assertTrue(result.contains("baseline_02"));
+            assertTrue(result.contains("baseline_03"));
+            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        });
     }
 
     @Test
@@ -165,17 +171,17 @@ public class TestDriftTemplate {
         Map<String, Object> drift = aggregator.getContext();
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
-        String result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.DAILY), drift);
 
-        writeEmailTemplate(result, "driftEmailOneMult.html");
-        assertTrue(result.contains("baseline_01"));
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateAggregatedEmailBody(drift);
+            assertTrue(result.contains("baseline_01"));
 
-        // test template V2
-        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.DAILY), drift);
-        writeEmailTemplate(result, "driftEmailOneMultV2.html");
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateAggregatedEmailBody(drift);
+            assertTrue(result.contains("baseline_01"));
+            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        });
     }
 
     @Test
@@ -192,49 +198,20 @@ public class TestDriftTemplate {
         Map<String, Object> drift = aggregator.getContext();
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
-        String result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.DAILY), drift);
 
-        writeEmailTemplate(result, "driftEmailMultMult.html");
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains("baseline_02"));
-        assertTrue(result.contains("baseline_03"));
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateAggregatedEmailBody(drift);
+            assertTrue(result.contains("baseline_01"));
+            assertTrue(result.contains("baseline_02"));
+            assertTrue(result.contains("baseline_03"));
 
-        // test template V2
-        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(driftBean.getBody(null, EmailSubscriptionType.DAILY), drift);
-        writeEmailTemplate(result, "driftEmailMultMultV2.html");
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains("baseline_02"));
-        assertTrue(result.contains("baseline_03"));
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-    }
-
-    private String generateFromTemplate(TemplateInstance templateInstance, Action action) {
-        return templateInstance
-            .data("action", action)
-            .data("environment", environment)
-            .data("user", Map.of("firstName", "Drift User", "lastName", "RHEL"))
-            .render();
-    }
-
-    private String generateFromTemplate(TemplateInstance templateInstance, Map<String, Object> drift) {
-        return templateInstance
-            .data("action", Map.of("context", drift, "bundle", "rhel"))
-            .data("environment", environment)
-            .data("user", Map.of("firstName", "Drift User", "lastName", "RHEL"))
-            .render();
-    }
-
-    public void writeEmailTemplate(String result, String fileName) {
-        if (SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
-            try {
-                FileWriter writerObj = new FileWriter(fileName);
-                writerObj.write(result);
-                writerObj.close();
-            } catch (IOException e) {
-                System.out.println("An error occurred");
-                e.printStackTrace();
-            }
-        }
+            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateAggregatedEmailBody(drift);
+            assertTrue(result.contains("baseline_01"));
+            assertTrue(result.contains("baseline_02"));
+            assertTrue(result.contains("baseline_03"));
+            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        });
     }
 }

@@ -4,14 +4,11 @@ import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.PatchTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPayloadAggregator;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
@@ -32,16 +29,10 @@ public class TestPatchDailyDigest extends EmailTemplatesInDbHelper {
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_5", bugfix, "host-04"));
 
         statelessSessionFactory.withSession(statelessSession -> {
-            AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
-
-            TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
-            String resultSubject = generateEmail(subjectTemplate, aggregator.getContext());
+            String resultSubject = generateAggregatedEmailSubject(aggregator.getContext());
             assertEquals("Daily digest - Patch - Red Hat Enterprise Linux", resultSubject);
 
-            TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-
-            String resultBody = generateEmail(bodyTemplate, aggregator.getContext());
-            writeEmailTemplate(resultBody, bodyTemplate.getTemplate().getId() + ".html");
+            String resultBody = generateAggregatedEmailBody(aggregator.getContext());
             assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
             assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
             assertTrue(resultBody.contains("Here is your Patch advisories summary affecting your systems"));

@@ -118,26 +118,46 @@ public abstract class EmailTemplatesInDbHelper {
         return generateEmail(subjectTemplate, context);
     }
 
+    protected String generateAggregatedEmailSubject(Action action) {
+        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
+        TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
+        return generateEmail(subjectTemplate, action);
+    }
+
     protected String generateAggregatedEmailBody(Map<String, Object> context) {
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
-        TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
+        TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
         return generateEmail(bodyTemplate, context);
     }
 
+    protected String generateAggregatedEmailBody(Action action) {
+        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
+        TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
+        return generateEmail(bodyTemplate, action);
+    }
+
     protected String generateEmail(TemplateInstance template, Action action) {
-        return template
+        String result = template
             .data("action", action)
             .data("environment", environment)
             .data("user", Map.of("firstName", "John", "lastName", "Doe"))
             .render();
+
+        writeEmailTemplate(result, template.getTemplate().getId() + ".html");
+
+        return result;
     }
 
     protected String generateEmail(TemplateInstance templateInstance, Map<String, Object> context) {
-        return templateInstance
+        String result = templateInstance
             .data("action", Map.of("context", context, "bundle", getBundle(), "timestamp", LocalDateTime.now()))
             .data("environment", environment)
             .data("user", Map.of("firstName", "John", "lastName", "Doe"))
             .render();
+
+        writeEmailTemplate(result, templateInstance.getTemplate().getId() + ".html");
+
+        return result;
     }
 
     protected String getBundle() {

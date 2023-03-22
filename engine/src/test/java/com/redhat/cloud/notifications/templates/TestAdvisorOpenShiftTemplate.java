@@ -6,8 +6,8 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -55,9 +55,10 @@ public class TestAdvisorOpenShiftTemplate extends EmailTemplatesInDbHelper {
         System.setProperty("rhel.advisor.daily-digest.enabled", "true");
     }
 
-    @BeforeEach
-    void beforeEach() {
+    @AfterEach
+    void afterEach() {
         featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(false);
+        migrate();
     }
 
     @Test

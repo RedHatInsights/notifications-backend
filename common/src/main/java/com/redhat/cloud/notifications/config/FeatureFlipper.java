@@ -249,6 +249,11 @@ public class FeatureFlipper {
         return this.policiesEmailTemplatesV2Enabled;
     }
 
+    public void setPoliciesEmailTemplatesV2Enabled(boolean policiesEmailTemplatesV2Enabled) {
+        checkTestLaunchMode();
+        this.policiesEmailTemplatesV2Enabled = policiesEmailTemplatesV2Enabled;
+    }
+
     public boolean isComplianceEmailTemplatesV2Enabled() {
         return complianceEmailTemplatesV2Enabled;
     }

@@ -7,8 +7,8 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -62,8 +62,8 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
         System.setProperty("rhel.advisor.daily-digest.enabled", "true");
     }
 
-    @BeforeEach
-    void beforeEach() {
+    @AfterEach
+    void afterEach() {
         featureFlipper.setAdvisorEmailTemplatesV2Enabled(false);
         migrate();
     }

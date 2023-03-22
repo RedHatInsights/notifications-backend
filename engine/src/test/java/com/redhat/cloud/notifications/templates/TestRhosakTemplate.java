@@ -1,18 +1,16 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import com.redhat.cloud.notifications.models.Environment;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import javax.inject.Inject;
-import java.util.Map;
+import java.util.List;
 
 import static com.redhat.cloud.notifications.templates.Rhosak.ACTION_REQUIRED;
 import static com.redhat.cloud.notifications.templates.Rhosak.DISRUPTION;
@@ -20,71 +18,76 @@ import static com.redhat.cloud.notifications.templates.Rhosak.INSTANCE_CREATED;
 import static com.redhat.cloud.notifications.templates.Rhosak.INSTANCE_DELETED;
 import static com.redhat.cloud.notifications.templates.Rhosak.SCHEDULED_UPGRADE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-public class TestRhosakTemplate {
+public class TestRhosakTemplate extends EmailTemplatesInDbHelper {
 
-    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
     private static final Action ACTION = TestHelpers.createRhosakAction();
-
-    @Inject
-    Environment environment;
 
     @Inject
     FeatureFlipper featureFlipper;
 
-    @Inject
-    Rhosak rhosak;
-
     @AfterEach
     void afterEach() {
         featureFlipper.setRhosakEmailTemplatesV2Enabled(false);
+        migrate();
+    }
+
+    @Override
+    protected String getBundle() {
+        return "application-services";
+    }
+
+    @Override
+    protected String getApp() {
+        return "rhosak";
+    }
+
+    @Override
+    protected List<String> getUsedEventTypeNames() {
+        return List.of(SCHEDULED_UPGRADE, DISRUPTION, INSTANCE_CREATED, INSTANCE_DELETED, ACTION_REQUIRED);
     }
 
     @Test
     public void testDailyEmailBody() {
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateAggregatedEmailBody(ACTION);
+            assertFalse(result.contains(TestHelpers.HCC_LOGO_TARGET));
 
-        TemplateInstance template = rhosak.getBody(null, EmailSubscriptionType.DAILY);
-        String result = generateEmail(template);
-        writeEmailTemplate(result, template.getTemplate().getId());
-
-        // test template V2
-        featureFlipper.setRhosakEmailTemplatesV2Enabled(true);
-        template = rhosak.getBody(null, EmailSubscriptionType.DAILY);
-        result = generateEmail(template);
-        writeEmailTemplate(result, template.getTemplate().getId());
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+            featureFlipper.setRhosakEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateAggregatedEmailBody(ACTION);
+            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        });
     }
 
     @Test
     public void testDailyEmailTitle() {
-        TemplateInstance template = rhosak.getTitle(null, EmailSubscriptionType.DAILY);
-        String result = generateEmail(template);
-        writeEmailTemplate(result, template.getTemplate().getId());
-        assertEquals("Red Hat OpenShift Streams for Apache Kafka Daily Report", result);
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateAggregatedEmailSubject(ACTION);
+            assertEquals("Red Hat OpenShift Streams for Apache Kafka Daily Report", result);
 
-        // test template V2
-        featureFlipper.setRhosakEmailTemplatesV2Enabled(true);
-        template = rhosak.getTitle(null, EmailSubscriptionType.DAILY);
-        result = generateEmail(template);
-        writeEmailTemplate(result, template.getTemplate().getId());
-        assertEquals("Daily digest - Red Hat OpenShift Streams for Apache Kafka - Application and Data Services", result);
+            featureFlipper.setRhosakEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateAggregatedEmailSubject(ACTION);
+            assertEquals("Daily digest - Red Hat OpenShift Streams for Apache Kafka - Application and Data Services", result);
+        });
     }
 
     @ValueSource(strings = { SCHEDULED_UPGRADE, DISRUPTION, INSTANCE_CREATED, INSTANCE_DELETED, ACTION_REQUIRED })
     @ParameterizedTest
     void shouldTestAllEventTypeTemplateTitles(String eventType) {
-        TemplateInstance templateInstance = rhosak.getTitle(eventType, EmailSubscriptionType.INSTANT);
-        String result = generateEmail(templateInstance);
-        writeEmailTemplate(result, templateInstance.getTemplate().getId());
-        testTitle(eventType, result);
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateEmailSubject(eventType, ACTION);
+            testTitle(eventType, result);
 
-        featureFlipper.setRhosakEmailTemplatesV2Enabled(true);
-        templateInstance = rhosak.getTitle(eventType, EmailSubscriptionType.INSTANT);
-        result = generateEmail(templateInstance);
-        writeEmailTemplate(result, templateInstance.getTemplate().getId());
-        testTitle(eventType, result);
+            featureFlipper.setRhosakEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailSubject(eventType, ACTION);
+            testTitle(eventType, result);
+        });
     }
 
     private void testTitle(String eventType, String result) {
@@ -134,16 +137,15 @@ public class TestRhosakTemplate {
     @ValueSource(strings = { SCHEDULED_UPGRADE, DISRUPTION, INSTANCE_CREATED, INSTANCE_DELETED, ACTION_REQUIRED })
     @ParameterizedTest
     void shouldTestAllEventTypeTemplateBodies(String eventType) {
-        TemplateInstance templateInstance = rhosak.getBody(eventType, EmailSubscriptionType.INSTANT);
-        String result = generateEmail(templateInstance);
-        writeEmailTemplate(result, templateInstance.getTemplate().getId());
-        testBody(eventType, result);
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateEmailBody(eventType, ACTION);
+            testBody(eventType, result);
 
-        featureFlipper.setRhosakEmailTemplatesV2Enabled(true);
-        templateInstance = rhosak.getBody(eventType, EmailSubscriptionType.INSTANT);
-        result = generateEmail(templateInstance);
-        writeEmailTemplate(result, templateInstance.getTemplate().getId());
-        testBody(eventType, result);
+            featureFlipper.setRhosakEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailBody(eventType, ACTION);
+            testBody(eventType, result);
+        });
     }
 
     private void testBody(String eventType, String result) {
@@ -189,20 +191,6 @@ public class TestRhosakTemplate {
                 break;
             default:
                 break;
-        }
-    }
-
-    private String generateEmail(TemplateInstance template) {
-        return template
-            .data("action", ACTION)
-            .data("environment", environment)
-            .data("user", Map.of("firstName", "Rhosak User", "lastName", "application-services"))
-            .render();
-    }
-
-    public void writeEmailTemplate(String result, String fileName) {
-        if (SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
-            TestHelpers.writeEmailTemplate(result, fileName);
         }
     }
 }
