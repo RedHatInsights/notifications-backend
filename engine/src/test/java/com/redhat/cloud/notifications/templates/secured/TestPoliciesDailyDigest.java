@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.templates.secured;
 
-import com.redhat.cloud.notifications.SecuredEmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class TestPoliciesDailyDigest extends SecuredEmailTemplatesInDbHelper {
+public class TestPoliciesDailyDigest extends EmailTemplatesInDbHelper {
 
     @Test
     void testSecureTemplate() {
@@ -62,4 +62,8 @@ public class TestPoliciesDailyDigest extends SecuredEmailTemplatesInDbHelper {
         return "policies";
     }
 
+    @Override
+    protected Boolean useSecuredTemplates() {
+        return true;
+    }
 }

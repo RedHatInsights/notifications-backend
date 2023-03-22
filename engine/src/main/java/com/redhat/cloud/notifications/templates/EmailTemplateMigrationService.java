@@ -542,6 +542,9 @@ public class EmailTemplateMigrationService {
      */
     Template getOrCreateTemplate(String name, String extension, String description) {
         String templateFromFS = loadResourceTemplate(name, extension);
+        if (name.contains("V2")) {
+            name = name.replace("V2", "");
+        }
         try {
             boolean hasBeenUpdated = false;
             Template template = entityManager.createQuery("FROM Template WHERE name = :name", Template.class)
@@ -593,11 +596,10 @@ public class EmailTemplateMigrationService {
         }
         for (String eventTypeName : eventTypeNames) {
             Optional<EventType> eventType = findEventType(warnings, bundleName, appName, eventTypeName);
+            Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
+            Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
             if (eventType.isPresent()) {
                 if (!instantEmailTemplateExists(eventType.get())) {
-                    Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
-                    Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
-
                     Log.infof("Creating instant email template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
 
                     InstantEmailTemplate emailTemplate = new InstantEmailTemplate();
@@ -661,10 +663,9 @@ public class EmailTemplateMigrationService {
         }
         Optional<Application> app = findApplication(warnings, bundleName, appName);
         if (app.isPresent()) {
+            Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
+            Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
             if (!aggregationEmailTemplateExists(app.get())) {
-                Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
-                Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
-
                 Log.infof("Creating daily email template for application: %s/%s", bundleName, appName);
 
                 AggregationEmailTemplate emailTemplate = new AggregationEmailTemplate();

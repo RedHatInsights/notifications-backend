@@ -1,11 +1,9 @@
 package com.redhat.cloud.notifications.templates.secured;
 
-import com.redhat.cloud.notifications.SecuredEmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
@@ -13,7 +11,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
@@ -26,11 +23,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class TestAdvisorDailyDigest extends SecuredEmailTemplatesInDbHelper {
+public class TestAdvisorDailyDigest extends EmailTemplatesInDbHelper {
 
     @Test
     void testSecureTemplate() {
-
         AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
         aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_1));
         aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_6));
@@ -43,16 +39,11 @@ public class TestAdvisorDailyDigest extends SecuredEmailTemplatesInDbHelper {
         context.put("end_time", LocalDateTime.now().toString());
 
         statelessSessionFactory.withSession(statelessSession -> {
-            AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
 
-            TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
-            String resultSubject = generateEmail(subjectTemplate, context);
+            String resultSubject = generateAggregatedEmailSubject(context);
             assertEquals("Daily digest - Advisor - Red Hat Enterprise Linux", resultSubject);
 
-            TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-
-            String resultBody = generateEmail(bodyTemplate, context);
-            writeEmailTemplate(resultBody, bodyTemplate.getTemplate().getId() + ".html");
+            String resultBody = generateAggregatedEmailBody(context);
             assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
             assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
             assertTrue(resultBody.contains("New Recommendations"));
@@ -76,4 +67,8 @@ public class TestAdvisorDailyDigest extends SecuredEmailTemplatesInDbHelper {
         return "advisor";
     }
 
+    @Override
+    protected Boolean useSecuredTemplates() {
+        return true;
+    }
 }

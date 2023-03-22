@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.templates.secured;
 
-import com.redhat.cloud.notifications.SecuredEmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class TestResourceOptimizationDailyDigest extends SecuredEmailTemplatesInDbHelper {
+public class TestResourceOptimizationDailyDigest extends EmailTemplatesInDbHelper {
 
     private static final Action ACTION = TestHelpers.createResourceOptimizationAction();
 
@@ -44,5 +44,10 @@ public class TestResourceOptimizationDailyDigest extends SecuredEmailTemplatesIn
     @Override
     protected String getApp() {
         return "resource-optimization";
+    }
+
+    @Override
+    protected Boolean useSecuredTemplates() {
+        return true;
     }
 }

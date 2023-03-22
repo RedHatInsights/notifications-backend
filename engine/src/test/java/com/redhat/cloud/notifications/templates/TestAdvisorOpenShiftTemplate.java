@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-public class TestAdvisorOpenShiftTemplate {
+public class TestAdvisorOpenShiftTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     AdvisorOpenshift advisorOpenshift;
@@ -33,6 +33,21 @@ public class TestAdvisorOpenShiftTemplate {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Override
+    protected String getApp() {
+        return "advisor";
+    }
+
+    @Override
+    protected String getBundle() {
+        return "openshift";
+    }
+
+    @Override
+    protected List<String> getUsedEventTypeNames() {
+        return List.of(NEW_RECOMMENDATION);
+    }
 
     @BeforeAll
     static void beforeAll() {
@@ -68,39 +83,47 @@ public class TestAdvisorOpenShiftTemplate {
     @Test
     public void testInstantEmailTitleForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
-        String result = generateFromTemplate(advisorOpenshift.getTitle(NEW_RECOMMENDATION, INSTANT), action);
 
-        // The date formatting is sensitive to the locale
-        String date = DateTimeFormatter.ofPattern("d MMM uuuu").format(action.getTimestamp());
-        assertEquals("OpenShift - Advisor Instant Notification - " + date, result);
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateEmailSubject(NEW_RECOMMENDATION, action);
 
-        featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(advisorOpenshift.getTitle(NEW_RECOMMENDATION, INSTANT), action);
-        assertEquals("Instant notification - New recommendation - Advisor - OpenShift", result);
+            // The date formatting is sensitive to the locale
+            String date = DateTimeFormatter.ofPattern("d MMM uuuu").format(action.getTimestamp());
+            assertEquals("OpenShift - Advisor Instant Notification - " + date, result);
+
+            featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailSubject(NEW_RECOMMENDATION, action);
+            assertEquals("Instant notification - New recommendation - Advisor - OpenShift", result);
+        });
     }
 
     @Test
     public void testInstantEmailBodyForNewRecommendation() {
-        Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
-        String result = generateFromTemplate(advisorOpenshift.getBody(NEW_RECOMMENDATION, INSTANT), action);
-        checkNewRecommendationsBodyResults(action, result);
+        statelessSessionFactory.withSession(statelessSession -> {
+            Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
-        featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
-        action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
-        result = generateFromTemplate(advisorOpenshift.getBody(NEW_RECOMMENDATION, INSTANT), action);
-        checkNewRecommendationsBodyResults(action, result);
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+            String result = generateEmailBody(NEW_RECOMMENDATION, action);
+            checkNewRecommendationsBodyResults(action, result);
+
+            featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
+            action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
+            migrate();
+            result = generateEmailBody(NEW_RECOMMENDATION, action);
+            checkNewRecommendationsBodyResults(action, result);
+            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        });
     }
 
     private void checkNewRecommendationsBodyResults(Action action, final String result) {
         action.getEvents().forEach(event -> {
             assertTrue(
                 result.contains(event.getPayload().getAdditionalProperties().get("rule_id").toString()),
-                "Body should contain rule id" + event.getPayload().getAdditionalProperties().get("rule_id")
+                "Body should contain rule id " + event.getPayload().getAdditionalProperties().get("rule_id")
             );
             assertTrue(
                 result.contains(event.getPayload().getAdditionalProperties().get("rule_description").toString()),
-                "Body should contain rule description" + event.getPayload().getAdditionalProperties().get("rule_description")
+                "Body should contain rule description " + event.getPayload().getAdditionalProperties().get("rule_description")
             );
         });
 
@@ -122,13 +145,5 @@ public class TestAdvisorOpenShiftTemplate {
         assertFalse(result2.contains("alt=\"Moderate severity\""), "Body 2 should not contain moderate severity rule image");
         assertFalse(result2.contains("alt=\"Important severity\""), "Body 2 should not contain important severity rule image");
         assertFalse(result2.contains("alt=\"Critical severity\""), "Body 2 should not contain critical severity rule image");
-    }
-
-    private String generateFromTemplate(TemplateInstance templateInstance, Action action) {
-        return templateInstance
-            .data("action", action)
-            .data("environment", environment)
-            .data("user", Map.of("firstName", "John", "lastName", "Doe"))
-            .render();
     }
 }

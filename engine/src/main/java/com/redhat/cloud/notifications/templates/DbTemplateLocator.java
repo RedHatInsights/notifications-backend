@@ -3,17 +3,17 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.logging.Log;
+import io.quarkus.qute.Locate;
 import io.quarkus.qute.TemplateLocator;
 import io.quarkus.qute.Variant;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Optional;
 
-@ApplicationScoped
+@Locate(".*")
 public class DbTemplateLocator implements TemplateLocator {
 
     @Inject

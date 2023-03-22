@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.templates.secured;
 
 import com.redhat.cloud.notifications.DriftTestHelpers;
-import com.redhat.cloud.notifications.SecuredEmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class TestDriftDailyDigest extends SecuredEmailTemplatesInDbHelper {
+public class TestDriftDailyDigest extends EmailTemplatesInDbHelper {
 
     @Test
     void testSecureTemplate() {
@@ -61,4 +61,8 @@ public class TestDriftDailyDigest extends SecuredEmailTemplatesInDbHelper {
         return "drift";
     }
 
+    @Override
+    protected Boolean useSecuredTemplates() {
+        return true;
+    }
 }
