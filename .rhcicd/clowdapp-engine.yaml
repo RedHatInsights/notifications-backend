@@ -417,3 +417,6 @@ parameters:
   value: "true"
 - name: NOTIFICATIONS_USE_TEMPLATES_FROM_DB
   value: "true"
+- name: NOTIFICATIONS_SLACK_CAMEL_LOG_RETRY_ATTEMPTED
+  description: Specifies whether the redelivery retries should be logged.
+  value: "true"
