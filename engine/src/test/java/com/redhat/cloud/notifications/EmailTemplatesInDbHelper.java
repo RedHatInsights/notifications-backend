@@ -73,12 +73,12 @@ public abstract class EmailTemplatesInDbHelper {
             resourceHelpers.createApp(bundle.getId(), getApp());
         }
         for (String eventTypeToCreate : getUsedEventTypeNames()) {
-            Application app = resourceHelpers.findApp(getBundle(), getApp());
+            Application application = resourceHelpers.findApp(getBundle(), getApp());
             EventType eventType;
             try {
-                eventType = resourceHelpers.findEventType(advisorOpenshift.getId(), eventTypeToCreate);
+                eventType = resourceHelpers.findEventType(application.getId(), eventTypeToCreate);
             } catch (NoResultException nre) {
-                eventType = resourceHelpers.createEventType(advisorOpenshift.getId(), eventTypeToCreate);
+                eventType = resourceHelpers.createEventType(application.getId(), eventTypeToCreate);
             }
             eventTypes.put(eventTypeToCreate, eventType.getId());
         }
