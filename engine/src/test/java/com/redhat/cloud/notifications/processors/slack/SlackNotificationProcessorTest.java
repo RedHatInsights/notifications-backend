@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 
+import java.util.UUID;
+
+import static com.redhat.cloud.notifications.processors.slack.SlackRouteBuilderTest.buildNotification;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
@@ -26,18 +29,17 @@ public class SlackNotificationProcessorTest extends CamelQuarkusTestSupport {
 
     @Test
     void testProcess() throws Exception {
-        SlackNotification notification = new SlackNotification();
-        notification.channel = "#notifications";
-        notification.webhookUrl = "https://redhat.com";
-        notification.message = "Hello, World!";
+        SlackNotification notification = buildNotification("https://redhat.com");
 
         String notificationAsString = objectMapper.writeValueAsString(notification);
         Exchange exchange = createExchangeWithBody(notificationAsString);
 
         slackNotificationProcessor.process(exchange);
 
-        assertEquals(notification.channel, exchange.getIn().getHeader("channel", String.class));
-        assertEquals(notification.webhookUrl, exchange.getIn().getHeader("webhookUrl", String.class));
+        assertEquals(notification.orgId, exchange.getProperty("orgId", String.class));
+        assertEquals(notification.historyId, exchange.getProperty("historyId", UUID.class));
+        assertEquals(notification.webhookUrl, exchange.getProperty("webhookUrl", String.class));
+        assertEquals(notification.channel, exchange.getProperty("channel", String.class));
         assertEquals(notification.message, exchange.getIn().getBody(String.class));
     }
 }
