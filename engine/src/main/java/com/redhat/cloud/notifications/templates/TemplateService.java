@@ -5,15 +5,11 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.qute.Engine;
-import io.quarkus.qute.EvalContext;
 import io.quarkus.qute.TemplateInstance;
-import io.quarkus.qute.ValueResolver;
 import io.quarkus.scheduler.Scheduled;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 @ApplicationScoped
 public class TemplateService {
@@ -23,9 +19,6 @@ public class TemplateService {
 
     @Inject
     Environment environment;
-
-    @Inject
-    DbTemplateLocator dbTemplateLocator;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -52,30 +45,5 @@ public class TemplateService {
                 .data("user", user)
                 .data("environment", environment)
                 .render();
-    }
-
-    private static <T> ValueResolver buildValueResolver(Class<T> baseClass, String extensionName, Function<T, Object> valueTransformer) {
-        return ValueResolver.builder()
-                .applyToBaseClass(baseClass)
-                .applyToName(extensionName)
-                .resolveSync(new Function<EvalContext, Object>() {
-                    @Override
-                    public Object apply(EvalContext evalContext) {
-                        return valueTransformer.apply((T) evalContext.getBase());
-                    }
-                })
-                .build();
-    }
-
-    private static <T> ValueResolver buildAnyNameFunctionResolver(Class<T> baseClass, BiFunction<T, String, Object> valueTransformer) {
-        return ValueResolver.builder()
-                .applyToBaseClass(baseClass)
-                .resolveSync(new Function<EvalContext, Object>() {
-                    @Override
-                    public Object apply(EvalContext evalContext) {
-                        return valueTransformer.apply((T) evalContext.getBase(), evalContext.getName());
-                    }
-                })
-                .build();
     }
 }
