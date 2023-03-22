@@ -12,19 +12,16 @@ public class ActionExtension {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    // TODO NOTIF-484 Remove this annotation, it has no effect while using a standalone Qute engine.
     @TemplateExtension(matchName = TemplateExtension.ANY)
     public static Object getFromContext(Context context, String key) {
         return context.getAdditionalProperties().get(key);
     }
 
-    // TODO NOTIF-484 Remove this annotation, it has no effect while using a standalone Qute engine.
     @TemplateExtension(matchName = TemplateExtension.ANY)
     public static Object getFromPayload(Payload payload, String key) {
         return payload.getAdditionalProperties().get(key);
     }
 
-    // TODO NOTIF-484 Remove this annotation, it has no effect while using a standalone Qute engine.
     @TemplateExtension
     public static String toPrettyJson(Action action) {
         try {

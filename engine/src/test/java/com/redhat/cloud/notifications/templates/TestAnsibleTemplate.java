@@ -1,84 +1,74 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
-import com.redhat.cloud.notifications.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import java.util.List;
+
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-public class TestAnsibleTemplate {
-
-    @Inject
-    Environment environment;
+public class TestAnsibleTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
 
-    @Inject
-    Ansible ansible;
-
     @AfterEach
     void afterEach() {
         featureFlipper.setAnsibleEmailTemplatesV2Enabled(false);
+        migrate();
+    }
+
+    @Override
+    protected String getBundle() {
+        return "ansible";
+    }
+
+    @Override
+    protected String getApp() {
+        return "reports";
+    }
+
+    @Override
+    protected List<String> getUsedEventTypeNames() {
+        return List.of(Ansible.REPORT_AVAILABLE_EVENT);
     }
 
     @Test
     public void testInstantEmailTitle() {
         Action action = TestHelpers.createAnsibleAction(null);
-        String result = ansible.getTitle(Ansible.REPORT_AVAILABLE_EVENT, EmailSubscriptionType.INSTANT)
-            .data("action", action)
-            .data("environment", environment)
-            .render();
-        assertTrue(result.contains("Ansible"));
+        statelessSessionFactory.withSession(statelessSession -> {
 
-        // test template V2
-        featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
-        result = ansible.getTitle(Ansible.REPORT_AVAILABLE_EVENT, EmailSubscriptionType.INSTANT)
-            .data("action", action)
-            .data("environment", environment)
-            .render();
-        assertEquals("Instant notification - Ansible", result);
+            String result = generateEmailSubject(Ansible.REPORT_AVAILABLE_EVENT, action);
+            assertTrue(result.contains("Ansible"));
 
-        assertThrows(UnsupportedOperationException.class, () -> {
-            ansible.getTitle("unknown-event-type", EmailSubscriptionType.INSTANT)
-                .data("action", action)
-                .data("environment", environment)
-                .render();
+            featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailSubject(Ansible.REPORT_AVAILABLE_EVENT, action);
+            assertEquals("Instant notification - Ansible", result);
         });
     }
 
     @Test
     public void testInstantEmailBody() {
         Action action = TestHelpers.createAnsibleAction("reportUrl");
-        String result = ansible.getBody(Ansible.REPORT_AVAILABLE_EVENT, EmailSubscriptionType.INSTANT)
-            .data("action", action)
-            .data("environment", environment)
-            .render();
-        assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
+        statelessSessionFactory.withSession(statelessSession -> {
 
-        // test template V2
-        featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
-        result = ansible.getBody(Ansible.REPORT_AVAILABLE_EVENT, EmailSubscriptionType.INSTANT)
-            .data("action", action)
-            .data("environment", environment)
-            .render();
-        assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+            String result = generateEmailBody(Ansible.REPORT_AVAILABLE_EVENT, action);
+            assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
 
-        assertThrows(UnsupportedOperationException.class, () -> {
-            ansible.getBody("unknown-event-type", EmailSubscriptionType.INSTANT)
-                .data("action", action)
-                .data("environment", environment)
-                .render();
+            featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailBody(Ansible.REPORT_AVAILABLE_EVENT, action);
+            assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
+            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         });
     }
 }

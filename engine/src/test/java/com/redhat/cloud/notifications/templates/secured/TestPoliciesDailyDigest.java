@@ -1,10 +1,8 @@
 package com.redhat.cloud.notifications.templates.secured;
 
-import com.redhat.cloud.notifications.SecuredEmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
@@ -12,13 +10,12 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class TestPoliciesDailyDigest extends SecuredEmailTemplatesInDbHelper {
+public class TestPoliciesDailyDigest extends EmailTemplatesInDbHelper {
 
     @Test
     void testSecureTemplate() {
@@ -41,16 +38,10 @@ public class TestPoliciesDailyDigest extends SecuredEmailTemplatesInDbHelper {
         payload.put("unique_system_count", 1);
 
         statelessSessionFactory.withSession(statelessSession -> {
-            AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
-
-            TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
-            String resultSubject = generateEmail(subjectTemplate, payload);
+            String resultSubject = generateAggregatedEmailSubject(payload);
             assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", resultSubject);
 
-            TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-
-            String resultBody = generateEmail(bodyTemplate, payload);
-            writeEmailTemplate(resultBody, bodyTemplate.getTemplate().getId() + ".html");
+            String resultBody = generateAggregatedEmailBody(payload);
             assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
             assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
             assertTrue(resultBody.contains("Review the 1 policy that triggered 1 system"));
@@ -62,4 +53,8 @@ public class TestPoliciesDailyDigest extends SecuredEmailTemplatesInDbHelper {
         return "policies";
     }
 
+    @Override
+    protected Boolean useSecuredTemplates() {
+        return true;
+    }
 }

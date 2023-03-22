@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.RbacTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
@@ -7,10 +8,11 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.templates.Rbac.CUSTOM_DEFAULT_ACCESS_UPDATED;
@@ -30,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-public class TestRbacTemplate {
+public class TestRbacTemplate extends EmailTemplatesInDbHelper {
 
     private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
 
@@ -43,37 +45,56 @@ public class TestRbacTemplate {
     @Inject
     Rbac rbac;
 
-    @BeforeEach
-    void beforeEach() {
+    @AfterEach
+    void afterEach() {
         featureFlipper.setRbacEmailTemplatesV2Enabled(false);
+        migrate();
+    }
+
+    @Override
+    protected String getBundle() {
+        return "console";
+    }
+
+    @Override
+    protected String getApp() {
+        return "rbac";
+    }
+
+    @Override
+    protected List<String> getUsedEventTypeNames() {
+        return List.of(RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM);
     }
 
     @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM })
     @ParameterizedTest
     void shouldTestAllEventTypeTemplateTitles(String eventType) {
         Action action = RbacTestHelpers.createRbacAction();
-        String result = generateFromTemplate(rbac.getTitle(eventType, null), action);
-        writeEmailTemplate(result, rbac.getTitle(eventType, null).getTemplate().getId());
-        testTitle(eventType, result);
 
-        featureFlipper.setRbacEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(rbac.getTitle(eventType, null), action);
-        writeEmailTemplate(result, rbac.getTitle(eventType, null).getTemplate().getId());
-        testTitle(eventType, result);
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateEmailSubject(eventType, action);
+            testTitle(eventType, result);
+
+            featureFlipper.setRbacEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailSubject(eventType, action);
+            testTitle(eventType, result);
+        });
     }
 
     @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM })
     @ParameterizedTest
     void shouldTestAllEventTypeTemplateBodies(String eventType) {
         Action action = RbacTestHelpers.createRbacAction();
-        String result = generateFromTemplate(rbac.getBody(eventType, null), action);
-        writeEmailTemplate(result, rbac.getBody(eventType, null).getTemplate().getId());
-        testBody(eventType, result);
+        statelessSessionFactory.withSession(statelessSession -> {
+            String result = generateEmailBody(eventType, action);
+            testBody(eventType, result);
 
-        featureFlipper.setRbacEmailTemplatesV2Enabled(true);
-        result = generateFromTemplate(rbac.getBody(eventType, null), action);
-        writeEmailTemplate(result, rbac.getBody(eventType, null).getTemplate().getId());
-        testBody(eventType, result);
+            featureFlipper.setRbacEmailTemplatesV2Enabled(true);
+            migrate();
+            result = generateEmailBody(eventType, action);
+            testBody(eventType, result);
+        });
     }
 
 
