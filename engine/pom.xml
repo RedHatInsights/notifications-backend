@@ -111,6 +111,11 @@
             <groupId>org.apache.camel.quarkus</groupId>
             <artifactId>camel-quarkus-slack</artifactId>
         </dependency>
+        <!-- Teams through Camel -->
+        <dependency>
+            <groupId>org.apache.camel.quarkus</groupId>
+            <artifactId>camel-quarkus-http</artifactId>
+        </dependency>
 
         <!-- Quarkus BOM -->
         <dependency>
