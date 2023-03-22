@@ -16,7 +16,7 @@ public interface DailyDigestService {
      * @param triggerDailyDigestRequest the daily digest's payload with the
      *                                     desired settings.
      */
-    @Path(Constants.API_INTERNAL + "/daily-digest")
+    @Path(Constants.API_INTERNAL + "/daily-digest/trigger")
     @POST
     @Retry(maxRetries = 3)
     void triggerDailyDigest(TriggerDailyDigestRequest triggerDailyDigestRequest);
