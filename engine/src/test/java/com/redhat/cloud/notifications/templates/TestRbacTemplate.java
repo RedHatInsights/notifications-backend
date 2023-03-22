@@ -90,7 +90,7 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
             String result = generateEmailBody(eventType, action);
             testBody(eventType, result);
 
-            featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
+            featureFlipper.setRbacEmailTemplatesV2Enabled(true);
             migrate();
             result = generateEmailBody(eventType, action);
             testBody(eventType, result);
