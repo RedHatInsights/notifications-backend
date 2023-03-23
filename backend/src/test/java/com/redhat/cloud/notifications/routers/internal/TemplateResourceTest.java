@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
@@ -62,17 +63,26 @@ public class TemplateResourceTest extends DbIsolatedTest {
     @RestClient
     TemplateEngineClient templateEngineClient;
 
+    /**
+     * A common template is a template how not belong to a particular application.
+     * It can be created/updated/deleted only by an internal admin
+     */
+
     @Test
-    void testAllTemplateEndpoints() {
+    void testAllCommonTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        Header internalUserIdentity = TestHelpers.createTurnpikeIdentityHeader("simple-user", "no-power");
 
         Template template = buildTemplate("template-name", "template-data");
 
         // Before we start, the DB shouldn't contain any template.
         assertTrue(getAllTemplates(adminIdentity).isEmpty());
 
-        // This creates the template, retrieves it with a separate REST call and then checks the fields values.
+        // This creates the common template, retrieves it with a separate REST call and then checks the fields values.
         JsonObject jsonTemplate = createTemplate(adminIdentity, template, 200).get();
+
+        // This try to create a common template without internal admin role
+        createTemplate(internalUserIdentity, template, 403);
 
         // The template should now be available in the "all templates" list.
         JsonArray jsonTemplates = getAllTemplates(adminIdentity);
@@ -84,7 +94,13 @@ public class TemplateResourceTest extends DbIsolatedTest {
         template.setName("my-new-template");
         template.setDescription("My new template");
         template.setData("new-template-data");
-        updateTemplate(adminIdentity, jsonTemplate.getString("id"), template);
+        updateTemplate(adminIdentity, jsonTemplate.getString("id"), template, 200);
+
+        // This try to update a common template without internal admin role
+        updateTemplate(internalUserIdentity, jsonTemplate.getString("id"), template, 403);
+
+        // This try to delete a common template without internal admin role
+        deleteTemplate(internalUserIdentity, jsonTemplate.getString("id"), 403);
 
         // Now we'll delete the template and check that it no longer exists with the following line.
         deleteTemplate(adminIdentity, jsonTemplate.getString("id"), 200);
@@ -93,16 +109,69 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertTrue(getAllTemplates(adminIdentity).isEmpty());
     }
 
+    /**
+     * Test crud operations on template, as simple user.
+     * Also test restrictions on crud operations on template as simple user without required role
+     */
     @Test
-    void testAllInstantEmailTemplateEndpoints() {
+    void testAllTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        Header internalUserIdentity = TestHelpers.createTurnpikeIdentityHeader("simple-user", "myAppRole");
+        Header internalUserIdentityOtherApp = TestHelpers.createTurnpikeIdentityHeader("another-simple-user", "anotherAppRole");
 
         // First, we need a bundle, an app and an event type in the DB.
         String bundleId = createBundle(adminIdentity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(adminIdentity, bundleId, "app-name", "App", null, OK).get();
+        String appId = createApp(adminIdentity, bundleId, "app-name", "App", "myAppRole", OK).get();
+        Template template = buildTemplate("template-name", "template-data", appId);
+
+        // Before we start, the DB shouldn't contain any template.
+        assertTrue(getAllTemplates(internalUserIdentity).isEmpty());
+
+        // This creates the template, retrieves it with a separate REST call and then checks the fields values.
+        JsonObject jsonTemplate = createTemplate(internalUserIdentity, template, 200).get();
+
+        // Creating a template without proper application role must be forbidden
+        createTemplate(internalUserIdentityOtherApp, template, 403);
+
+        // The template should now be available in the "all templates" list.
+        JsonArray jsonTemplates = getAllTemplates(internalUserIdentityOtherApp);
+        assertEquals(1, jsonTemplates.size());
+        jsonTemplates = getAllTemplates(internalUserIdentity);
+        assertEquals(1, jsonTemplates.size());
+        jsonTemplates.getJsonObject(0).mapTo(Template.class);
+        assertEquals(jsonTemplate.getString("id"), jsonTemplates.getJsonObject(0).getString("id"));
+
+        // Let's update the template and check that the new fields values are correctly persisted.
+        template.setName("my-new-template");
+        template.setDescription("My new template");
+        template.setData("new-template-data");
+        updateTemplate(internalUserIdentity, jsonTemplate.getString("id"), template, 200);
+
+        // Updating a template without proper application role must be forbidden
+        updateTemplate(internalUserIdentityOtherApp, jsonTemplate.getString("id"), template, 403);
+
+        // Deleting a template without proper application role must be forbidden
+        deleteTemplate(internalUserIdentityOtherApp, jsonTemplate.getString("id"), 403);
+
+        // Now we'll delete the template and check that it no longer exists with the following line.
+        deleteTemplate(internalUserIdentity, jsonTemplate.getString("id"), 200);
+
+        // We already know the template is gone, but let's check one more time.
+        assertTrue(getAllTemplates(internalUserIdentity).isEmpty());
+    }
+
+    @Test
+    void testAllInstantEmailTemplateEndpoints() {
+        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        Header internalUserIdentity = TestHelpers.createTurnpikeIdentityHeader("simple-user", "myAppRole");
+        Header internalUserIdentityOtherApp = TestHelpers.createTurnpikeIdentityHeader("another-simple-user", "anotherAppRole");
+
+        // First, we need a bundle, an app and an event type in the DB.
+        String bundleId = createBundle(adminIdentity, "bundle-name", "Bundle", OK).get();
+        String appId = createApp(adminIdentity, bundleId, "app-name", "App", "myAppRole", OK).get();
         String eventTypeId = createEventType(adminIdentity, appId, "event-type-name", "Event type", "Event type description", OK).get();
 
-        String appId2 = createApp(adminIdentity, bundleId, "app-name-2", "App2", null, OK).get();
+        String appId2 = createApp(adminIdentity, bundleId, "app-name-2", "App2", "anotherAppRole", OK).get();
         String eventTypeId2 = createEventType(adminIdentity, appId2, "event-type-name-2", "Event type 2", "Event type description", OK).get();
 
         // We also need templates that will be linked with the instant email template tested below.
@@ -116,40 +185,46 @@ public class TemplateResourceTest extends DbIsolatedTest {
 
         // First, we'll create, retrieve and check an instant email template that is NOT linked to an event type.
         InstantEmailTemplate emailTemplate = buildInstantEmailTemplate(null, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplate = createInstantEmailTemplate(adminIdentity, emailTemplate, 200).get();
+        JsonObject jsonEmailTemplate = createInstantEmailTemplate(internalUserIdentity, emailTemplate, 200).get();
 
         // Then, we'll do the same with another instant email template that is linked to an event type.
         InstantEmailTemplate emailTemplateWithEventType = buildInstantEmailTemplate(eventTypeId, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplateWithEventType = createInstantEmailTemplate(adminIdentity, emailTemplateWithEventType, 200).get();
+        JsonObject jsonEmailTemplateWithEventType = createInstantEmailTemplate(internalUserIdentity, emailTemplateWithEventType, 200).get();
+
+        // Creating an instant template without proper application role must be forbidden
+        createInstantEmailTemplate(internalUserIdentityOtherApp, emailTemplateWithEventType, 403);
 
         // Then, we'll do the same with another instant email template that is linked to event type 2.
         InstantEmailTemplate emailTemplateWithEventType2 = buildInstantEmailTemplate(eventTypeId2, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplateWithEventType2 = createInstantEmailTemplate(adminIdentity, emailTemplateWithEventType2, 200).get();
+        JsonObject jsonEmailTemplateWithEventType2 = createInstantEmailTemplate(internalUserIdentityOtherApp, emailTemplateWithEventType2, 200).get();
 
         // At this point, the DB should contain 3 instant email template: the one that wasn't linked to the event type and 2 linked to an event type.
-        JsonArray jsonEmailTemplates = getAllInstantEmailTemplates(adminIdentity);
+        JsonArray jsonEmailTemplates = getAllInstantEmailTemplates(internalUserIdentityOtherApp);
         assertEquals(3, jsonEmailTemplates.size());
 
         // Querying for the specific application (appId2) should yield only 1
-        jsonEmailTemplates = getAllInstantEmailTemplates(adminIdentity, appId2);
+        jsonEmailTemplates = getAllInstantEmailTemplates(internalUserIdentityOtherApp, appId2);
         assertEquals(1, jsonEmailTemplates.size());
         jsonEmailTemplates.getJsonObject(0).mapTo(InstantEmailTemplate.class);
         assertEquals(jsonEmailTemplateWithEventType2.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
 
+        // Deleting an instant template instance without proper application role must be forbidden
+        deleteInstantEmailTemplate(internalUserIdentityOtherApp, jsonEmailTemplateWithEventType.getString("id"), 403);
+
         // Now, we'll delete the second instant email template and check that it no longer exists with the following line.
-        deleteInstantEmailTemplate(adminIdentity, jsonEmailTemplateWithEventType.getString("id"));
+        deleteInstantEmailTemplate(internalUserIdentity, jsonEmailTemplateWithEventType.getString("id"), 200);
 
         // Now, we'll delete the third instant email template and check that it no longer exists with the following line.
-        deleteInstantEmailTemplate(adminIdentity, jsonEmailTemplateWithEventType2.getString("id"));
+        deleteInstantEmailTemplate(internalUserIdentityOtherApp, jsonEmailTemplateWithEventType2.getString("id"), 200);
 
         // At this point, the DB should contain one instant email template: the one that wasn't linked to the event type.
-        jsonEmailTemplates = getAllInstantEmailTemplates(adminIdentity);
+        jsonEmailTemplates = getAllInstantEmailTemplates(internalUserIdentity);
         assertEquals(1, jsonEmailTemplates.size());
         jsonEmailTemplates.getJsonObject(0).mapTo(InstantEmailTemplate.class);
         assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
 
         // Retrieving the instant email templates from the event type ID should return an empty list.
-        getInstantEmailTemplatesByEventType(adminIdentity, eventTypeId, false);
+        getInstantEmailTemplatesByEventType(internalUserIdentityOtherApp, eventTypeId, false);
 
         // Let's update the instant email template and check that the new fields values are correctly persisted.
         Template newSubjectTemplate = buildTemplate("new-subject-template-name", "template-data");
@@ -159,7 +234,10 @@ public class TemplateResourceTest extends DbIsolatedTest {
         emailTemplate.setEventTypeId(UUID.fromString(eventTypeId));
         emailTemplate.setSubjectTemplateId(UUID.fromString(newSubjectJsonTemplate.getString("id")));
         emailTemplate.setBodyTemplateId(UUID.fromString(newBodyJsonTemplate.getString("id")));
-        updateInstantEmailTemplate(adminIdentity, jsonEmailTemplate.getString("id"), emailTemplate);
+        updateInstantEmailTemplate(internalUserIdentity, jsonEmailTemplate.getString("id"), emailTemplate, 200);
+
+        // Updating an instant template without proper application role must be forbidden
+        updateInstantEmailTemplate(internalUserIdentityOtherApp, jsonEmailTemplate.getString("id"), emailTemplate, 403);
 
         // The instant email template is now linked to an event type.
         // It should be returned if we retrieve all instant email templates from the event type ID.
@@ -171,50 +249,61 @@ public class TemplateResourceTest extends DbIsolatedTest {
     @Test
     void testAllAggregationEmailTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        Header internalUserIdentity = TestHelpers.createTurnpikeIdentityHeader("simple-user", "myAppRole");
+        Header internalUserIdentityOtherApp = TestHelpers.createTurnpikeIdentityHeader("another-simple-user", "anotherAppRole");
 
         // First, we need a bundle and an app in the DB.
         String bundleId = createBundle(adminIdentity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(adminIdentity, bundleId, "app-name", "App", null, OK).get();
+        String appId = createApp(adminIdentity, bundleId, "app-name", "App", "myAppRole", OK).get();
 
         // We also need templates that will be linked with the aggregation email template tested below.
-        Template subjectTemplate = buildTemplate("subject-template-name", "template-data");
-        JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
-        Template bodyTemplate = buildTemplate("body-template-name", "template-data");
-        JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
+        Template subjectTemplate = buildTemplate("subject-template-name", "template-data", appId);
+        JsonObject subjectJsonTemplate = createTemplate(internalUserIdentity, subjectTemplate, 200).get();
+        Template bodyTemplate = buildTemplate("body-template-name", "template-data", appId);
+        JsonObject bodyJsonTemplate = createTemplate(internalUserIdentity, bodyTemplate, 200).get();
 
         // Before we start, the DB shouldn't contain any aggregation email template.
-        assertTrue(getAllAggregationEmailTemplates(adminIdentity).isEmpty());
+        assertTrue(getAllAggregationEmailTemplates(internalUserIdentityOtherApp).isEmpty());
 
         // First, we'll create, retrieve and check an aggregation email template that is NOT linked to an app.
         AggregationEmailTemplate emailTemplate = buildAggregationEmailTemplate(null, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplate = createAggregationEmailTemplate(adminIdentity, emailTemplate, 200).get();
+        JsonObject jsonEmailTemplate = createAggregationEmailTemplate(internalUserIdentity, emailTemplate, 200).get();
 
         // Then, we'll do the same with another aggregation email template that is linked to an app.
         AggregationEmailTemplate emailTemplateWithApp = buildAggregationEmailTemplate(appId, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplateWithApp = createAggregationEmailTemplate(adminIdentity, emailTemplateWithApp, 200).get();
+        JsonObject jsonEmailTemplateWithApp = createAggregationEmailTemplate(internalUserIdentity, emailTemplateWithApp, 200).get();
+
+        // Creating an aggregation template without proper application role must be forbidden
+        createAggregationEmailTemplate(internalUserIdentityOtherApp, emailTemplateWithApp, 403);
+
+        // Deleting an aggregation template without proper application role must be forbidden
+        deleteAggregationEmailTemplate(internalUserIdentityOtherApp, jsonEmailTemplateWithApp.getString("id"), 403);
 
         // Now, we'll delete the second aggregation email template and check that it no longer exists with the following line.
-        deleteAggregationEmailTemplate(adminIdentity, jsonEmailTemplateWithApp.getString("id"));
+        deleteAggregationEmailTemplate(internalUserIdentity, jsonEmailTemplateWithApp.getString("id"), 200);
 
         // At this point, the DB should contain one aggregation email template: the one that wasn't linked to the app.
-        JsonArray jsonEmailTemplates = getAllAggregationEmailTemplates(adminIdentity);
+        JsonArray jsonEmailTemplates = getAllAggregationEmailTemplates(internalUserIdentityOtherApp);
         assertEquals(1, jsonEmailTemplates.size());
         jsonEmailTemplates.getJsonObject(0).mapTo(AggregationEmailTemplate.class);
         assertEquals(jsonEmailTemplate.getString("id"), jsonEmailTemplates.getJsonObject(0).getString("id"));
 
         // Retrieving the aggregation email templates from the app ID should return an empty list.
-        jsonEmailTemplates = getAggregationEmailTemplatesByApp(adminIdentity, appId);
+        jsonEmailTemplates = getAggregationEmailTemplatesByApp(internalUserIdentityOtherApp, appId);
         assertTrue(jsonEmailTemplates.isEmpty());
 
         // Let's update the aggregation email template and check that the new fields values are correctly persisted.
-        Template newSubjectTemplate = buildTemplate("new-subject-template-name", "template-data");
-        JsonObject newSubjectJsonTemplate = createTemplate(adminIdentity, newSubjectTemplate, 200).get();
-        Template newBodyTemplate = buildTemplate("new-body-template-name", "template-data");
-        JsonObject newBodyJsonTemplate = createTemplate(adminIdentity, newBodyTemplate, 200).get();
+        Template newSubjectTemplate = buildTemplate("new-subject-template-name", "template-data", appId);
+        JsonObject newSubjectJsonTemplate = createTemplate(internalUserIdentity, newSubjectTemplate, 200).get();
+        Template newBodyTemplate = buildTemplate("new-body-template-name", "template-data", appId);
+        JsonObject newBodyJsonTemplate = createTemplate(internalUserIdentity, newBodyTemplate, 200).get();
         emailTemplate.setApplicationId(UUID.fromString(appId));
         emailTemplate.setSubjectTemplateId(UUID.fromString(newSubjectJsonTemplate.getString("id")));
         emailTemplate.setBodyTemplateId(UUID.fromString(newBodyJsonTemplate.getString("id")));
-        updateAggregationEmailTemplate(adminIdentity, jsonEmailTemplate.getString("id"), emailTemplate);
+        updateAggregationEmailTemplate(internalUserIdentity, jsonEmailTemplate.getString("id"), emailTemplate, 200);
+
+        // Updating an aggregation template without proper application role must be forbidden
+        updateAggregationEmailTemplate(internalUserIdentityOtherApp, jsonEmailTemplate.getString("id"), emailTemplate, 403);
 
         // The aggregation email template is now linked to an app.
         // It should be returned if we retrieve all aggregation email templates from the app ID.
@@ -394,6 +483,14 @@ public class TemplateResourceTest extends DbIsolatedTest {
         template.setName(name);
         template.setDescription("My template");
         template.setData(data);
+        return template;
+    }
+
+    private static Template buildTemplate(String name, String data, String appId) {
+        Template template = buildTemplate(name, data);
+        Application app = new Application();
+        app.setId(UUID.fromString(appId));
+        template.setApplication(app);
         return template;
     }
 

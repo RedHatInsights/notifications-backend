@@ -66,7 +66,7 @@ public class EmailTemplateMigrationService {
 
         Log.debug("Migration starting");
         if (featureFlipper.isUseSecuredEmailTemplates()) {
-            getOrCreateTemplate("Secure/Common/insightsEmailBody", "html", "Common Insights email body");
+            getOrCreateTemplate("Secure/Common/insightsEmailBody", "html", "Common Insights email body", Optional.empty());
             if (featureFlipper.isRhelAdvisorDailyDigestEnabled()) {
                 createDailyEmailTemplate(
                     warnings, "rhel", "advisor",
@@ -119,7 +119,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Advisor folder.
              */
-            getOrCreateTemplate("Advisor/insightsEmailBody", "html", "Advisor Insights email body");
+            getOrCreateTemplate("Advisor/insightsEmailBody", "html", "Advisor Insights email body", findApplication(warnings, "rhel", "advisor"));
             createInstantEmailTemplate(
                 warnings, "rhel", "advisor", List.of(DEACTIVATED_RECOMMENDATION),
                 "Advisor/deactivatedRecommendationInstantEmailTitle", "txt", "Advisor deactivated recommendation email title",
@@ -150,7 +150,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/AdvisorOpenshift folder.
              */
-            getOrCreateTemplate("AdvisorOpenshift/insightsEmailBody", "html", "AdvisorOpenshift Insights email body");
+            getOrCreateTemplate("AdvisorOpenshift/insightsEmailBody", "html", "AdvisorOpenshift Insights email body", findApplication(warnings, "openshift", "advisor"));
             createInstantEmailTemplate(
                 warnings, "openshift", "advisor", List.of("new-recommendation"),
                 "AdvisorOpenshift/newRecommendationInstantEmailTitle", "txt", "AdvisorOpenshift new recommendation email title",
@@ -161,7 +161,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Ansible folder.
              */
-            getOrCreateTemplate("Ansible/insightsEmailBody", "html", "Ansible Insights email body");
+            getOrCreateTemplate("Ansible/insightsEmailBody", "html", "Ansible Insights email body", findApplication(warnings, "ansible", "reports"));
             createInstantEmailTemplate(
                 warnings, "ansible", "reports", List.of("report-available"),
                 "Ansible/instantEmailTitle", "txt", "Ansible instant email title",
@@ -172,7 +172,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Compliance folder.
              */
-            getOrCreateTemplate("Compliance/insightsEmailBody", "html", "Compliance Insights email body");
+            getOrCreateTemplate("Compliance/insightsEmailBody", "html", "Compliance Insights email body", findApplication(warnings, "rhel", "compliance"));
             createInstantEmailTemplate(
                 warnings, "rhel", "compliance", List.of("compliance-below-threshold"),
                 "Compliance/complianceBelowThresholdEmailTitle", "txt", "Compliance below threshold email title",
@@ -195,7 +195,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/CostManagement folder.
              */
-            getOrCreateTemplate("CostManagement/insightsEmailBody", "html", "Cost Management Insights email body");
+            getOrCreateTemplate("CostManagement/insightsEmailBody", "html", "Cost Management Insights email body", findApplication(warnings, "openshift", "cost-management"));
             createInstantEmailTemplate(
                 warnings, "openshift", "cost-management", List.of("missing-cost-model"),
                 "CostManagement/MissingCostModelEmailTitle", "txt", "Cost Management missing cost model email title",
@@ -242,7 +242,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Drift folder.
              */
-            getOrCreateTemplate("Drift/insightsEmailBody", "html", "Drift Insights email body");
+            getOrCreateTemplate("Drift/insightsEmailBody", "html", "Drift Insights email body", findApplication(warnings, "rhel", "drift"));
             createInstantEmailTemplate(
                 warnings, "rhel", "drift", List.of("drift-baseline-detected"),
                 "Drift/newBaselineDriftInstantEmailTitle", "txt", "Drift new baseline drift email title",
@@ -259,7 +259,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/EdgeManagement folder.
              */
-            getOrCreateTemplate("EdgeManagement/insightsEmailBody", "html", "EdgeManagement Insights email body");
+            getOrCreateTemplate("EdgeManagement/insightsEmailBody", "html", "EdgeManagement Insights email body", findApplication(warnings, "rhel", "edge-management"));
             createInstantEmailTemplate(
                 warnings, "rhel", "edge-management", List.of("image-creation"),
                 "EdgeManagement/imageCreationTitle", "txt", "EdgeManagement image creation email title",
@@ -276,7 +276,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Inventory folder.
              */
-            getOrCreateTemplate("Inventory/insightsEmailBody", "html", "Inventory Insights email body");
+            getOrCreateTemplate("Inventory/insightsEmailBody", "html", "Inventory Insights email body", findApplication(warnings, "rhel", "inventory"));
             createInstantEmailTemplate(
                 warnings, "rhel", "inventory", List.of("validation-error"),
                 "Inventory/validationErrorEmailTitle", "txt", "Inventory instant email title",
@@ -293,7 +293,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Integrations folder.
              */
-            getOrCreateTemplate("Integrations/insightsEmailBody", "html", "Integrations Insights email body");
+            getOrCreateTemplate("Integrations/insightsEmailBody", "html", "Integrations Insights email body", findApplication(warnings, "console", "integrations"));
             createInstantEmailTemplate(
                 warnings, "console", "integrations", List.of(INTEGRATION_FAILED_EVENT_TYPE),
                 "Integrations/failedIntegrationTitle", "txt", "Integrations failed integration email title",
@@ -310,7 +310,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/MalwareDetection folder.
              */
-            getOrCreateTemplate("MalwareDetection/insightsEmailBody", "html", "Malware Detection Insights email body");
+            getOrCreateTemplate("MalwareDetection/insightsEmailBody", "html", "Malware Detection Insights email body", findApplication(warnings, "rhel", "malware-detection"));
             createInstantEmailTemplate(
                 warnings, "rhel", "malware-detection", List.of("detected-malware"),
                 "MalwareDetection/detectedMalwareInstantEmailTitle", "txt", "Malware Detection detected malware email title",
@@ -321,7 +321,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Patch folder.
              */
-            getOrCreateTemplate("Patch/insightsEmailBody", "html", "Patch Insights email body");
+            getOrCreateTemplate("Patch/insightsEmailBody", "html", "Patch Insights email body", findApplication(warnings, "rhel", "patch"));
             createInstantEmailTemplate(
                 warnings, "rhel", "patch", List.of("new-advisory"),
                 "Patch/newAdvisoriesInstantEmailTitle", "txt", "Patch instant advisories email title",
@@ -338,7 +338,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Policies folder.
              */
-            getOrCreateTemplate("Policies/insightsEmailBody", "html", "Policies Insights email body");
+            getOrCreateTemplate("Policies/insightsEmailBody", "html", "Policies Insights email body", findApplication(warnings, "rhel", "policies"));
             createInstantEmailTemplate(
                 warnings, "rhel", "policies", List.of("policy-triggered"),
                 "Policies/instantEmailTitle", "txt", "Policies instant email title",
@@ -355,7 +355,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Rbac folder.
              */
-            getOrCreateTemplate("Rbac/insightsEmailBody", "html", "Rbac Insights email body");
+            getOrCreateTemplate("Rbac/insightsEmailBody", "html", "Rbac Insights email body", findApplication(warnings, "console", "rbac"));
             createInstantEmailTemplate(
                 warnings, "console", "rbac", List.of("rh-new-role-available"),
                 "Rbac/systemRoleAvailableEmailTitle", "txt", "Rbac system role available email title",
@@ -438,7 +438,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/ResourceOptimization folder.
              */
-            getOrCreateTemplate("ResourceOptimization/insightsEmailBody", "html", "Resource Optimization Insights email body");
+            getOrCreateTemplate("ResourceOptimization/insightsEmailBody", "html", "Resource Optimization Insights email body", findApplication(warnings, "rhel", "resource-optimization"));
             createDailyEmailTemplate(
                 warnings, "rhel", "resource-optimization",
                 "ResourceOptimization/dailyEmailTitle", "txt", "Resource Optimization daily email title",
@@ -449,7 +449,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Rhosak folder.
              */
-            getOrCreateTemplate("Rhosak/rhosakEmailBody", "html", "Rhosak email body");
+            getOrCreateTemplate("Rhosak/rhosakEmailBody", "html", "Rhosak email body", findApplication(warnings, "application-services", "rhosak"));
             createInstantEmailTemplate(
                 warnings, "application-services", "rhosak", List.of("disruption"),
                 "Rhosak/serviceDisruptionTitle", "txt", "Rhosak service disruption email title",
@@ -490,7 +490,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Sources folder.
              */
-            getOrCreateTemplate("Sources/insightsEmailBody", "html", "Sources Insights email body");
+            getOrCreateTemplate("Sources/insightsEmailBody", "html", "Sources Insights email body", findApplication(warnings, "console", "sources"));
             createInstantEmailTemplate(
                 warnings, "console", "sources", List.of("availability-status"),
                 "Sources/availabilityStatusEmailTitle", "txt", "Sources availability status email title",
@@ -501,7 +501,7 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Vulnerability folder.
              */
-            getOrCreateTemplate("Vulnerability/insightsEmailBody", "html", "Vulnerability Insights email body");
+            getOrCreateTemplate("Vulnerability/insightsEmailBody", "html", "Vulnerability Insights email body", findApplication(warnings, "rhel", "vulnerability"));
             createInstantEmailTemplate(
                 warnings, "rhel", "vulnerability", List.of("any-cve-known-exploit"),
                 "Vulnerability/anyCveKnownExploitTitle", "txt", "Vulnerability any CVE known exploit email title",
@@ -533,7 +533,7 @@ public class EmailTemplateMigrationService {
                 featureFlipper.isVulnerabilityEmailTemplatesV2Enabled()
             );
 
-            getOrCreateTemplate("Common/insightsEmailBody", "html", "Common Insights email body");
+            getOrCreateTemplate("Common/insightsEmailBody", "html", "Common Insights email body", Optional.empty());
         }
         Log.debug("Migration ended");
 
@@ -544,7 +544,7 @@ public class EmailTemplateMigrationService {
      * Creates a template only if it does not already exist in the DB.
      * Existing templates are never updated by this migration service.
      */
-    Template getOrCreateTemplate(String name, String extension, String description) {
+    Template getOrCreateTemplate(String name, String extension, String description, Optional<Application> application) {
         String templateFromFS = loadResourceTemplate(name, extension);
         if (name.contains("V2")) {
             name = name.replace("V2", "");
@@ -558,6 +558,9 @@ public class EmailTemplateMigrationService {
                 template.setData(templateFromFS);
                 hasBeenUpdated = true;
             }
+            if (application.isPresent()) {
+                template.setApplication(application.get());
+            }
             Log.infof("Template found in DB: %s" + (hasBeenUpdated ? " has been updated" : StringUtils.EMPTY), name);
             return template;
         } catch (NoResultException e) {
@@ -566,6 +569,9 @@ public class EmailTemplateMigrationService {
             template.setName(name);
             template.setDescription(description);
             template.setData(templateFromFS);
+            if (application.isPresent()) {
+                template.setApplication(application.get());
+            }
             entityManager.persist(template);
             return template;
         }
@@ -600,8 +606,8 @@ public class EmailTemplateMigrationService {
         }
         for (String eventTypeName : eventTypeNames) {
             Optional<EventType> eventType = findEventType(warnings, bundleName, appName, eventTypeName);
-            Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
-            Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
+            Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription, Optional.of(eventType.get().getApplication()));
+            Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription, Optional.of(eventType.get().getApplication()));
             if (eventType.isPresent()) {
                 if (!instantEmailTemplateExists(eventType.get())) {
                     Log.infof("Creating instant email template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
@@ -667,8 +673,8 @@ public class EmailTemplateMigrationService {
         }
         Optional<Application> app = findApplication(warnings, bundleName, appName);
         if (app.isPresent()) {
-            Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
-            Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
+            Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription, app);
+            Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription, app);
             if (!aggregationEmailTemplateExists(app.get())) {
                 Log.infof("Creating daily email template for application: %s/%s", bundleName, appName);
 
