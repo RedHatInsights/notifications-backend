@@ -12,6 +12,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import io.vertx.core.json.JsonObject;
+import java.time.temporal.TemporalUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -145,7 +146,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
         // remove all preferences, and set default hour in the past, nothing should be processed
         helpers.purgeAggregationOrgConfig();
-        testee.setDefaultDailyDigestTime(LocalTime.of(now.getHour() - 2, now.getMinute()));
+        testee.setDefaultDailyDigestTime(now.minusHours(2));
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
 
         testee.processDailyEmail();
