@@ -145,7 +145,7 @@ class DailyEmailAggregationJobAccordingOrgIdPrefTest {
 
         // remove all preferences, and set default hour in the past, nothing should be processed
         helpers.purgeAggregationOrgConfig();
-        testee.setDefaultDailyDigestTime(LocalTime.of(now.getHour() - 2, now.getMinute()));
+        testee.setDefaultDailyDigestTime(now.minusHours(2));
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
 
         testee.processDailyEmail();
