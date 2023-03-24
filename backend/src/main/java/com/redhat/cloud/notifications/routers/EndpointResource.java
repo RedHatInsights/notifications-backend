@@ -27,6 +27,7 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -454,8 +455,10 @@ public class EndpointResource {
             throw new NotFoundException();
         } else {
             if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
+                Log.info("Event type subscription enabled");
                 // subscribe for each event Type of this application
                 for (EventType event : app.getEventTypes()) {
+                    Log.infof("Event type: %s", event.getName());
                     emailSubscriptionRepository.subscribeEventType(orgId, principal.getName(), event.getId(), type);
                 }
                 return true;
