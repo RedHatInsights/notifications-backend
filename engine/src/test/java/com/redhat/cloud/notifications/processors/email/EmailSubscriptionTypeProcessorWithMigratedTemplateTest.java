@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -93,7 +94,7 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
 
         Event event = new Event();
         event.setEventType(events.get(0));
-        event.setAction(emailActionMessage);
+        event.setEventWrapper(new EventWrapperAction(emailActionMessage));
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 

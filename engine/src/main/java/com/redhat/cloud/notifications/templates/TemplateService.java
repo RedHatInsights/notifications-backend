@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.qute.Engine;

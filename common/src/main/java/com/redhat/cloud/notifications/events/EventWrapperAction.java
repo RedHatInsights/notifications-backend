@@ -24,6 +24,7 @@ public class EventWrapperAction implements EventWrapper<Action, EventTypeKeyBund
         return eventTypeKeyBundleAppEventTriplet;
     }
 
+    @Override
     public Action getEvent() {
         return action;
     }

@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.slack;
 
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -116,7 +117,7 @@ public class SlackProcessorTest {
 
         Event event = new Event();
         event.setId(UUID.randomUUID());
-        event.setAction(action);
+        event.setEventWrapper(new EventWrapperAction(action));
 
         return event;
     }
