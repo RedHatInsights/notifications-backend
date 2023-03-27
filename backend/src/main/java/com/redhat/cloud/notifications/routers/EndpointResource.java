@@ -453,22 +453,14 @@ public class EndpointResource {
         if (app == null) {
             throw new NotFoundException();
         } else {
-            if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
-                // subscribe for each event Type of this application
-                for (EventType event : app.getEventTypes()) {
-                    emailSubscriptionRepository.subscribeEventType(orgId, principal.getName(), event.getId(), type);
-                }
-                return true;
-            } else {
-                return emailSubscriptionRepository.subscribe(
-                    accountId,
-                    orgId,
-                    principal.getName(),
-                    bundleName,
-                    applicationName,
-                    type
-                );
-            }
+            return emailSubscriptionRepository.subscribe(
+                accountId,
+                orgId,
+                principal.getName(),
+                bundleName,
+                applicationName,
+                type
+            );
         }
     }
 
