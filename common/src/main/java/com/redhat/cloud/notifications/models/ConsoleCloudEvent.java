@@ -1,11 +1,15 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ConsoleCloudEvent {
@@ -31,6 +35,48 @@ public class ConsoleCloudEvent {
     @JsonProperty("redhataccount")
     String accountId;
 
+    @JsonIgnore
+    private Recipients recipients;
+
+    public static class Recipients {
+
+        private static final String FIELD_ONLY_ADMINS = "only_admins";
+        private static final String FIELD_IGNORE_USER_PREFERENCES = "ignore_user_preferences";
+        private static final String FIELD_USERS = "users";
+
+        private boolean onlyAdmins = false;
+        private boolean ignoreUserPreferences = false;
+        private List<String> users = List.of();
+
+        public Recipients(JsonNode recipients) {
+            if (recipients.has(FIELD_ONLY_ADMINS)) {
+                onlyAdmins = recipients.get(FIELD_ONLY_ADMINS).asBoolean(false);
+            }
+
+            if (recipients.has(FIELD_IGNORE_USER_PREFERENCES)) {
+                ignoreUserPreferences = recipients.get(FIELD_IGNORE_USER_PREFERENCES).asBoolean(false);
+            }
+
+            if (recipients.has(FIELD_USERS)) {
+                users = StreamSupport
+                        .stream(recipients.get(FIELD_USERS).spliterator(), false)
+                        .map(JsonNode::asText)
+                        .collect(Collectors.toList());
+            }
+        }
+
+        public boolean isOnlyAdmins() {
+            return onlyAdmins;
+        }
+
+        public boolean isIgnoreUserPreferences() {
+            return ignoreUserPreferences;
+        }
+
+        public List<String> getUsers() {
+            return users;
+        }
+    }
 
     public UUID getId() {
         return id;
@@ -102,5 +148,13 @@ public class ConsoleCloudEvent {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public Recipients getRecipients() {
+        if (recipients == null && data.has("notification_recipients")) {
+            recipients = new Recipients(data.get("notification_recipients"));
+        }
+
+        return recipients;
     }
 }
