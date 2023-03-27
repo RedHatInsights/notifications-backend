@@ -202,8 +202,8 @@ public class Event {
         return eventWrapper;
     }
 
-    public void setEventWrapper(EventWrapper<?, ?> action) {
-        this.eventWrapper = action;
+    public void setEventWrapper(EventWrapper<?, ?> eventWrapper) {
+        this.eventWrapper = eventWrapper;
     }
 
     @Override
