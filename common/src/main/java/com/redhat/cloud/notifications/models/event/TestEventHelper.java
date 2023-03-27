@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models.event;
 
 import com.redhat.cloud.notifications.events.EventWrapperAction;
+import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -32,6 +33,7 @@ public class TestEventHelper {
     public static final String TEST_ACTION_BUNDLE = "console";
     public static final String TEST_ACTION_APPLICATION = "integrations";
     public static final String TEST_ACTION_EVENT_TYPE = "integration-test";
+    public static final String TEST_CLOUD_EVENT_TYPE = "com.redhat.console.integrations.integration-test";
 
     /**
      * Creates a test action ready to be sent to the engine. It sets the endpoint's UUID in the context.
@@ -84,6 +86,10 @@ public class TestEventHelper {
             return TestEventHelper.TEST_ACTION_BUNDLE.equals(action.getBundle()) &&
                     TestEventHelper.TEST_ACTION_APPLICATION.equals(action.getApplication()) &&
                     TestEventHelper.TEST_ACTION_EVENT_TYPE.equals(action.getEventType());
+        } else if (event.getEventWrapper() instanceof EventWrapperCloudEvent) {
+            return (((EventWrapperCloudEvent) event.getEventWrapper())
+                    .getEvent()
+                    .getType().equals(TEST_CLOUD_EVENT_TYPE));
         }
 
         return false;
