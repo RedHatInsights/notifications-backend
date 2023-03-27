@@ -30,10 +30,10 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     private static final String NEW_ADVISORIES_EVENT = "new-advisory";
     private static final List<String> EVENT_TYPES = Arrays.asList(NEW_ADVISORIES_EVENT);
 
-    private static final String ENHANCEMENT_TYPE = "enhancement";
-    private static final String BUGFIX_TYPE = "bugfix";
-    private static final String SECURITY_TYPE = "security";
-    private static final String UNSPECIFIED_TYPE = "unspecified";
+    private static final String ENHANCEMENT_TYPE = "Enhancement";
+    private static final String BUGFIX_TYPE = "Bugfix";
+    private static final String SECURITY_TYPE = "Security";
+    private static final String UNSPECIFIED_TYPE = "Unspecified";
     private static final List<String> ADVISORY_TYPES = Arrays.asList(ENHANCEMENT_TYPE, BUGFIX_TYPE, SECURITY_TYPE, UNSPECIFIED_TYPE);
 
     private static final String TOTAL_ADVISORIES = "total_advisories";
