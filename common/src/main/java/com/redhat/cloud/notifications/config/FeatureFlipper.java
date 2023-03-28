@@ -120,7 +120,7 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-advisor-openshift-email-templates-v2.enabled", defaultValue = "false")
     boolean advisorOpenShiftEmailTemplatesV2Enabled;
 
-    @ConfigProperty(name = "just-to-test-notifications.use-event-type-for-subscription.enabled", defaultValue = "false")
+    @ConfigProperty(name = "notifications.use-event-type-for-subscription.enabled", defaultValue = "false")
     boolean useEventTypeForSubscriptionEnabled;
 
     @ConfigProperty(name = "notifications.use-secured-email-templates.enabled", defaultValue = "false")
