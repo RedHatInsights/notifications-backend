@@ -25,8 +25,8 @@ objects:
       schedule: ${CRONTAB_AGGREGATION_JOB}
       suspend: ${{SUSPEND_AGGREGATION_JOB}}
       startingDeadlineSeconds: ${{STARTING_DEADLINE}}
-      successfulJobsHistoryLimit: ${SUCCESSFUL_JOBS_HISTORY_LIMIT}
-      failedJobsHistoryLimit: ${FAILED_JOBS_HISTORY_LIMIT}
+      successfulJobsHistoryLimit: 7
+      failedJobsHistoryLimit: 7
       concurrencyPolicy: Forbid
       restartPolicy: OnFailure
       podSpec:
@@ -69,10 +69,6 @@ parameters:
   value: "false"
 - name: CRONTAB_AGGREGATION_JOB
   value: "0 0 * * *"
-- name: SUCCESSFUL_JOBS_HISTORY_LIMIT
-  value: 7
-- name: FAILED_JOBS_HISTORY_LIMIT
-  value: 7
 - name: CPU_LIMIT
   description: CPU limit
   value: 500m
