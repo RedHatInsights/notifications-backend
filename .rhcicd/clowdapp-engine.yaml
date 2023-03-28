@@ -259,7 +259,7 @@ parameters:
   value: https
 - name: BACKOFFICE_PORT
   description: The port for the backoffice host's URL
-  value: 443
+  value: "443"
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"
