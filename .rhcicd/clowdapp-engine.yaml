@@ -149,7 +149,7 @@ objects:
         - name: PROCESSOR_EMAIL_BOP_ENV
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: PROCESSOR_EMAIL_BOP_URL
-          value: https://${BACKOFFICE_HOST}/v1/sendEmails
+          value: ${BACKOFFICE_URL}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
           value: ${PROCESSOR_EMAIL_NO_REPLY}
         - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
@@ -251,9 +251,9 @@ parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
   value: qa
-- name: BACKOFFICE_HOST
-  description: backoffice URL
-  value: backoffice-proxy.apps.ext.spoke.preprod.us-west-2.aws.paas.redhat.com
+- name: BACKOFFICE_URL
+  description: The full url for the backoffice proxy
+  value: https://backoffice-proxy.apps.ext.spoke.preprod.us-west-2.aws.paas.redhat.com
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"
