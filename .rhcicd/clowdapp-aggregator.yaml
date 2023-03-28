@@ -70,9 +70,9 @@ parameters:
 - name: CRONTAB_AGGREGATION_JOB
   value: "0 0 * * *"
 - name: SUCCESSFUL_JOBS_HISTORY_LIMIT
-  value: "7"
+  value: 7
 - name: FAILED_JOBS_HISTORY_LIMIT
-  value: "7"
+  value: 7
 - name: CPU_LIMIT
   description: CPU limit
   value: 500m
