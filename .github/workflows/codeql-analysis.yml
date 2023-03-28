@@ -40,13 +40,15 @@ jobs:
         id: cache-key
         shell: bash
         run: echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
-      - name: Cache Maven dependencies
+      - if: matrix.language == 'java'
+        name: Cache Maven dependencies
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           # The cache key is changed every month to prevent unlimited growth.
           key: maven-cache-${{ steps.cache-key.outputs.date }}
-      - name: Cache Yarn dependencies
+      - if: matrix.language == 'javascript'
+        name: Cache Yarn dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/yarn
