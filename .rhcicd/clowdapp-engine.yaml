@@ -149,7 +149,7 @@ objects:
         - name: PROCESSOR_EMAIL_BOP_ENV
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: PROCESSOR_EMAIL_BOP_URL
-          value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}/v1/sendEmails
+          value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}:${BACKOFFICE_PORT}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
           value: ${PROCESSOR_EMAIL_NO_REPLY}
         - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
@@ -257,6 +257,9 @@ parameters:
 - name: BACKOFFICE_SCHEME
   description: The scheme for the backoffice host's URL
   value: https
+- name: BACKOFFICE_PORT
+  description: The port for the backoffice host's URL
+  value: 443
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"
