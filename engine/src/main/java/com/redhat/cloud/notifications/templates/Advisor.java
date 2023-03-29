@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
-import org.eclipse.microprofile.config.ConfigProvider;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -136,7 +135,7 @@ public class Advisor implements EmailTemplate {
      * TODO Remove this as soon as the daily digest is enabled on prod.
      */
     private boolean isDailyDigestEnabled() {
-        return ConfigProvider.getConfig().getOptionalValue("rhel.advisor.daily-digest.enabled", boolean.class).orElse(false);
+        return featureFlipper.isRhelAdvisorDailyDigestEnabled();
     }
 
     @CheckedTemplate(requireTypeSafeExpressions = false)

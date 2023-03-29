@@ -67,11 +67,13 @@ public class EmailTemplateMigrationService {
         Log.debug("Migration starting");
         if (featureFlipper.isUseSecuredEmailTemplates()) {
             getOrCreateTemplate("Secure/Common/insightsEmailBody", "html", "Common Insights email body");
-            createDailyEmailTemplate(
-                warnings, "rhel", "advisor",
-                "Secure/Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
-                "Secure/Advisor/dailyEmailBody", "html", "Advisor daily email body"
-            );
+            if (featureFlipper.isRhelAdvisorDailyDigestEnabled()) {
+                createDailyEmailTemplate(
+                    warnings, "rhel", "advisor",
+                    "Secure/Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
+                    "Secure/Advisor/dailyEmailBody", "html", "Advisor daily email body"
+                );
+            }
             createDailyEmailTemplate(
                 warnings, "rhel", "compliance",
                 "Secure/Compliance/dailyEmailTitle", "txt", "Compliance daily email title",
@@ -136,12 +138,14 @@ public class EmailTemplateMigrationService {
                 "Advisor/resolvedRecommendationInstantEmailBody", "html", "Advisor resolved recommendation email body",
                 featureFlipper.isAdvisorEmailTemplatesV2Enabled()
             );
-            createDailyEmailTemplate(
-                warnings, "rhel", "advisor",
-                "Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
-                "Advisor/dailyEmailBody", "html", "Advisor daily email body",
-                featureFlipper.isAdvisorEmailTemplatesV2Enabled()
-            );
+            if (featureFlipper.isRhelAdvisorDailyDigestEnabled()) {
+                createDailyEmailTemplate(
+                    warnings, "rhel", "advisor",
+                    "Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
+                    "Advisor/dailyEmailBody", "html", "Advisor daily email body",
+                    featureFlipper.isAdvisorEmailTemplatesV2Enabled()
+                );
+            }
 
             /*
              * Former src/main/resources/templates/AdvisorOpenshift folder.
