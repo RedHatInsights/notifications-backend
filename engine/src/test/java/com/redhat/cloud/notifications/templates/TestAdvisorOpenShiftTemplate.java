@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -47,12 +46,6 @@ public class TestAdvisorOpenShiftTemplate extends EmailTemplatesInDbHelper {
     @Override
     protected List<String> getUsedEventTypeNames() {
         return List.of(NEW_RECOMMENDATION);
-    }
-
-    @BeforeAll
-    static void beforeAll() {
-        // TODO Remove this as soon as the daily digest is enabled on prod.
-        System.setProperty("rhel.advisor.daily-digest.enabled", "true");
     }
 
     @AfterEach
