@@ -28,6 +28,8 @@ import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -82,6 +84,16 @@ public class LifecycleITest extends DbIsolatedTest {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @BeforeEach
+    void beforeEach() {
+        featureFlipper.setInstantEmailsEnabled(true);
+    }
+
+    @AfterEach
+    void afterEach() {
+        featureFlipper.setInstantEmailsEnabled(false);
+    }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);

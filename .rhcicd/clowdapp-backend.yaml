@@ -172,6 +172,8 @@ objects:
           value: ${INTERNAL_RBAC_ENABLED}
         - name: INTERNAL_ADMIN_ROLE
           value: ${INTERNAL_RBAC_ADMIN}
+        - name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
+          value: ${NOTIFICATIONS_INSTANT_EMAILS_ENABLED}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -285,6 +287,8 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: "1"
+- name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
+  value: "false"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO

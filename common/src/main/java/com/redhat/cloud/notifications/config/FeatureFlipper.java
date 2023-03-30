@@ -129,6 +129,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "rhel.advisor.daily-digest.enabled", defaultValue = "false")
     boolean rhelAdvisorDailyDigestEnabled;
 
+    @ConfigProperty(name = "notifications.instant-emails.enabled", defaultValue = "false")
+    boolean instantEmailsEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -161,6 +164,7 @@ public class FeatureFlipper {
         Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
         Log.infof("The Rhel Advisor daily digest is %s", rhelAdvisorDailyDigestEnabled ? "enabled" : "disabled");
+        Log.infof("Instant emails are %s", instantEmailsEnabled, "enabled", "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -436,6 +440,15 @@ public class FeatureFlipper {
     public void setRhelAdvisorDailyDigestEnabled(boolean rhelAdvisorDailyDigestEnabled) {
         checkTestLaunchMode();
         this.rhelAdvisorDailyDigestEnabled = rhelAdvisorDailyDigestEnabled;
+    }
+
+    public boolean isInstantEmailsEnabled() {
+        return instantEmailsEnabled;
+    }
+
+    public void setInstantEmailsEnabled(boolean instantEmailsEnabled) {
+        checkTestLaunchMode();
+        this.instantEmailsEnabled = instantEmailsEnabled;
     }
 
     /**
