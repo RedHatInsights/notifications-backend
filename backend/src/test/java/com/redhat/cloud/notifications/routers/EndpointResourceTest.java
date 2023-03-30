@@ -93,11 +93,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
+        featureFlipper.setInstantEmailsEnabled(true);
     }
 
     @AfterEach
     void afterEach() {
         featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
+        featureFlipper.setInstantEmailsEnabled(false);
     }
 
     @Inject

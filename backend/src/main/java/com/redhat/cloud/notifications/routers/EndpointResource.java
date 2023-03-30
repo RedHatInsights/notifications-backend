@@ -67,6 +67,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -448,6 +449,10 @@ public class EndpointResource {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
+        if (!featureFlipper.isInstantEmailsEnabled() && type == INSTANT) {
+            throw new BadRequestException("Subscribing to instant emails is not supported");
+        }
+
         Application app = applicationRepository.getApplication(bundleName, applicationName);
         if (app == null) {
             throw new NotFoundException();
@@ -474,6 +479,10 @@ public class EndpointResource {
             @PathParam("type") EmailSubscriptionType type) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         String orgId = getOrgId(sec);
+
+        if (!featureFlipper.isInstantEmailsEnabled() && type == INSTANT) {
+            throw new BadRequestException("Unsubscribing from instant emails is not supported");
+        }
 
         Application app = applicationRepository.getApplication(bundleName, applicationName);
         if (app == null) {

@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -86,6 +87,15 @@ public class UserConfigResource {
         final String name = getUserName(sec);
         final String accountId = getAccountId(sec);
         final String orgId = getOrgId(sec);
+
+        // If the instant emails are disabled, we need to check that the request
+        // does not contain any subscription with EmailSubscriptionType.INSTANT.
+        if (!featureFlipper.isInstantEmailsEnabled() && values.bundles.values().stream()
+                .flatMap(bundleSettings -> bundleSettings.applications.values().stream())
+                .flatMap(appSettings -> appSettings.notifications.keySet().stream())
+                .anyMatch(subscriptionType -> subscriptionType == INSTANT)) {
+            throw new BadRequestException("Subscribing to or unsubscribing from instant emails is not supported");
+        }
 
         final List<Boolean> subscriptionRequests = new ArrayList<>();
 
@@ -143,8 +153,12 @@ public class UserConfigResource {
         // TODO Get the DAILY and INSTANT subscriptions with a single SQL query and return UserConfigPreferences directly from Hibernate.
         EmailSubscription daily = emailSubscriptionRepository.getEmailSubscription(orgId, name, bundleName, applicationName, EmailSubscriptionType.DAILY);
         preferences.setDailyEmail(daily != null);
-        EmailSubscription instant = emailSubscriptionRepository.getEmailSubscription(orgId, name, bundleName, applicationName, EmailSubscriptionType.INSTANT);
-        preferences.setInstantEmail(instant != null);
+        if (featureFlipper.isInstantEmailsEnabled()) {
+            EmailSubscription instant = emailSubscriptionRepository.getEmailSubscription(orgId, name, bundleName, applicationName, INSTANT);
+            preferences.setInstantEmail(instant != null);
+        } else {
+            preferences.setInstantEmail(false);
+        }
         return preferences;
     }
 
@@ -191,10 +205,12 @@ public class UserConfigResource {
                 applicationSettingsValue.displayName = application.getDisplayName();
                 applicationSettingsValue.hasForcedEmail = applicationsWithForcedEmails.contains(application);
                 for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
-                    // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
-                    boolean supported = templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType);
-                    if (supported) {
-                        applicationSettingsValue.notifications.put(emailSubscriptionType, false);
+                    if (featureFlipper.isInstantEmailsEnabled() || emailSubscriptionType != INSTANT) {
+                        // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
+                        boolean supported = templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType);
+                        if (supported) {
+                            applicationSettingsValue.notifications.put(emailSubscriptionType, false);
+                        }
                     }
                 }
 
@@ -242,6 +258,16 @@ public class UserConfigResource {
 
         final String userName = getUserName(sec);
         final String orgId = getOrgId(sec);
+
+        // If the instant emails are disabled, we need to check that the request
+        // does not contain any subscription with EmailSubscriptionType.INSTANT.
+        if (!featureFlipper.isInstantEmailsEnabled() && userSettings.bundles.values().stream()
+                .flatMap(bundleSettings -> bundleSettings.applications.values().stream())
+                .flatMap(appSettings -> appSettings.eventTypes.values().stream())
+                .flatMap(eventTypeSettings -> eventTypeSettings.emailSubscriptionTypes.keySet().stream())
+                .anyMatch(subscriptionType -> subscriptionType == INSTANT)) {
+            throw new BadRequestException("Subscribing to or unsubscribing from instant emails is not supported");
+        }
 
         // for each bundle
         userSettings.bundles.forEach((bundleName, bundleSettingsValue) ->
@@ -362,10 +388,12 @@ public class UserConfigResource {
             eventTypeSettingsValue.displayName = eventType.getDisplayName();
             eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
             for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
-                // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
-                boolean supported = templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType);
-                if (supported) {
-                    eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, false);
+                if (featureFlipper.isInstantEmailsEnabled() || emailSubscriptionType != INSTANT) {
+                    // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
+                    boolean supported = templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType);
+                    if (supported) {
+                        eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, false);
+                    }
                 }
             }
             if (eventTypeSettingsValue.emailSubscriptionTypes.size() > 0) {
