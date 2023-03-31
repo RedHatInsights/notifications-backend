@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class PolicyTriggeredCloudEventTransformer extends CloudEventTransformerBase {
+public class PolicyTriggeredCloudEventTransformer extends CloudEventTransformer {
 
     @Inject
     ObjectMapper objectMapper;
