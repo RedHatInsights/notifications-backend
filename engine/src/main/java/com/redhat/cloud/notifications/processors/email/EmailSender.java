@@ -230,7 +230,7 @@ public class EmailSender {
         Set<String> usersEmail = recipients.stream().map(User::getUsername).collect(Collectors.toSet());
         Email email = new Email();
         email.setBodyType(BODY_TYPE_HTML);
-        email.setRecipients(usersEmail);
+        email.setBccList(usersEmail);
         email.setSubject(subject);
         email.setBody(body);
         return email;
