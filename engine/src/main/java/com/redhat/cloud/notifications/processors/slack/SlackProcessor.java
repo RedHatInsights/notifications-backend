@@ -107,7 +107,7 @@ public class SlackProcessor extends EndpointTypeProcessor {
     private SlackNotification buildNotification(Event event, Endpoint endpoint, UUID historyId) {
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
-        JsonObject data = baseTransformer.toJsonObject(event.getEventWrapper());
+        JsonObject data = baseTransformer.toJsonObject(event);
         data.put("environment_url", environment.url());
 
         Map<Object, Object> dataAsMap;

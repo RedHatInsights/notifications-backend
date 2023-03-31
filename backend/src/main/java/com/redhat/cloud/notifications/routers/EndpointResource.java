@@ -18,7 +18,6 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
@@ -68,6 +67,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -449,26 +449,22 @@ public class EndpointResource {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
+        if (!featureFlipper.isInstantEmailsEnabled() && type == INSTANT) {
+            throw new BadRequestException("Subscribing to instant emails is not supported");
+        }
+
         Application app = applicationRepository.getApplication(bundleName, applicationName);
         if (app == null) {
             throw new NotFoundException();
         } else {
-            if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
-                // subscribe for each event Type of this application
-                for (EventType event : app.getEventTypes()) {
-                    emailSubscriptionRepository.subscribeEventType(orgId, principal.getName(), event.getId(), type);
-                }
-                return true;
-            } else {
-                return emailSubscriptionRepository.subscribe(
-                    accountId,
-                    orgId,
-                    principal.getName(),
-                    bundleName,
-                    applicationName,
-                    type
-                );
-            }
+            return emailSubscriptionRepository.subscribe(
+                accountId,
+                orgId,
+                principal.getName(),
+                bundleName,
+                applicationName,
+                type
+            );
         }
     }
 
@@ -484,25 +480,21 @@ public class EndpointResource {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         String orgId = getOrgId(sec);
 
+        if (!featureFlipper.isInstantEmailsEnabled() && type == INSTANT) {
+            throw new BadRequestException("Unsubscribing from instant emails is not supported");
+        }
+
         Application app = applicationRepository.getApplication(bundleName, applicationName);
         if (app == null) {
             throw new NotFoundException();
         } else {
-            if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
-                // unsubscribe for each event Type of this application
-                for (EventType event : app.getEventTypes()) {
-                    emailSubscriptionRepository.unsubscribeEventType(orgId, principal.getName(), event.getId(), type);
-                }
-                return true;
-            } else {
-                return emailSubscriptionRepository.unsubscribe(
-                    orgId,
-                    principal.getName(),
-                    bundleName,
-                    applicationName,
-                    type
-                );
-            }
+            return emailSubscriptionRepository.unsubscribe(
+                orgId,
+                principal.getName(),
+                bundleName,
+                applicationName,
+                type
+            );
         }
     }
 

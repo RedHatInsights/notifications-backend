@@ -1,13 +1,11 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,7 +69,7 @@ public class AdvisorTestHelpers {
         aggregation.setBundleName(action.getBundle());
         aggregation.setApplicationName(action.getApplication());
         aggregation.setOrgId(DEFAULT_ORG_ID);
-        aggregation.setPayload(new BaseTransformer().toJsonObject(new EventWrapperAction(action)));
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(action));
 
         return aggregation;
     }

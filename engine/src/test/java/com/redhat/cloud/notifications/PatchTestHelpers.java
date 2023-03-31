@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -8,8 +7,6 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPayloadAggregator;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
@@ -20,8 +17,6 @@ import java.util.Map;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class PatchTestHelpers {
-
-    public static BaseTransformer baseTransformer = new BaseTransformer();
 
     private static final String ADVISORY_NAME = "advisory_name";
     private static final String ADVISORY_TYPE = "advisory_type";
@@ -57,8 +52,7 @@ public class PatchTestHelpers {
         ));
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
-        JsonObject payload = baseTransformer.toJsonObject(new EventWrapperAction(emailActionMessage));
-        aggregation.setPayload(payload);
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;
     }
@@ -110,8 +104,7 @@ public class PatchTestHelpers {
         ));
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
-        JsonObject payload = baseTransformer.toJsonObject(new EventWrapperAction(emailActionMessage));
-        aggregation.setPayload(payload);
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;
     }

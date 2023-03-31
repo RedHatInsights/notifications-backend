@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class BaseTransformerTest {
@@ -25,11 +27,14 @@ class BaseTransformerTest {
     // Below are the fixtures defined for the tests.
     private static final String FIXTURE_ACCOUNT_ID = "account-id-test";
     private static final String FIXTURE_APPLICATION = "application-test";
+    private static final String FIXTURE_APPLICATION_DISPLAY_NAME = "application-display-name-test";
     private static final String FIXTURE_BUNDLE = "bundle-test";
+    private static final String FIXTURE_BUNDLE_DISPLAY_NAME = "bundle-test-display-name";
     private static Context FIXTURE_CONTEXT;
     private static final String FIXTURE_CONTEXT_ADDITIONAL_PROPERTY = "context-additional-property";
     private static final String FIXTURE_CONTEXT_ADDITIONAL_PROPERTY_VALUE = "context-additional-property-value";
     private static final String FIXTURE_EVENT_TYPE = "event-type-test";
+    private static final String FIXTURE_EVENT_TYPE_DISPLAY_NAME = "event-type-display-name-test";
     private static List<Event> FIXTURE_EVENTS;
     private static final String FIXTURE_METADATA_ADDITIONAL_PROPERTY = "event-metadata-additional-property";
     private static final String FIXTURE_METADATA_ADDITIONAL_PROPERTY_VALUE = "event-metadata-additional-property-value";
@@ -65,11 +70,11 @@ class BaseTransformerTest {
     }
 
     /**
-     * Tests that a proper JSON payload is generated from a fully populated {@link Action}.
+     * Tests that a proper JSON payload is generated from a fully populated {@link Event}.
      */
     @Test
     void toJsonObjectTest() {
-        Action action = new Action();
+        final Action action = new Action();
 
         action.setAccountId(FIXTURE_ACCOUNT_ID);
         action.setApplication(FIXTURE_APPLICATION);
@@ -80,8 +85,16 @@ class BaseTransformerTest {
         action.setOrgId(FIXTURE_ORG_ID);
         action.setTimestamp(FIXTURE_TIMESTAMP);
 
+        // Create an event for the "toJsonObject" function.
+        com.redhat.cloud.notifications.models.Event event = new com.redhat.cloud.notifications.models.Event();
+        event.setApplicationDisplayName(FIXTURE_APPLICATION_DISPLAY_NAME);
+        event.setBundleDisplayName(FIXTURE_BUNDLE_DISPLAY_NAME);
+        event.setEventTypeDisplayName(FIXTURE_EVENT_TYPE_DISPLAY_NAME);
+
+        event.setEventWrapper(new EventWrapperAction(action));
+
         // Call the function under test.
-        JsonObject result = this.baseTransformer.toJsonObject(new EventWrapperAction(action));
+        final JsonObject result = this.baseTransformer.toJsonObject(event);
 
         // Assert the values.
         assertEquals(action.getAccountId(), result.getString(BaseTransformer.ACCOUNT_ID), "the account id isn't the same");
@@ -90,6 +103,17 @@ class BaseTransformerTest {
         assertEquals(action.getEventType(), result.getString(BaseTransformer.EVENT_TYPE), "the event type isn't the same");
         assertEquals(action.getOrgId(), result.getString(BaseTransformer.ORG_ID), "the org id isn't the same");
         assertEquals(action.getTimestamp(), LocalDateTime.parse(result.getString(BaseTransformer.TIMESTAMP)), "the timestamp isn't the same");
+
+        // Assert the display names in the "source" key.
+        final JsonObject source = result.getJsonObject("source");
+        assertNotNull(source, String.format("the \"source\" object is missing from the resulting JSON: %s", result));
+
+        final JsonObject application = source.getJsonObject(BaseTransformer.APPLICATION);
+        Assertions.assertEquals(FIXTURE_APPLICATION_DISPLAY_NAME, application.getString(BaseTransformer.DISPLAY_NAME), "the display name of the application is incorrect");
+        final JsonObject bundle = source.getJsonObject(BaseTransformer.BUNDLE);
+        Assertions.assertEquals(FIXTURE_BUNDLE_DISPLAY_NAME, bundle.getString(BaseTransformer.DISPLAY_NAME), "the display name of the bundle is incorrect");
+        final JsonObject eventType = source.getJsonObject(BaseTransformer.EVENT_TYPE);
+        Assertions.assertEquals(FIXTURE_EVENT_TYPE_DISPLAY_NAME, eventType.getString(BaseTransformer.DISPLAY_NAME), "the display name of the event type is incorrect");
 
         // Assert that the expected context is present in the JSON output.
         if (!result.containsKey(BaseTransformer.CONTEXT)) {

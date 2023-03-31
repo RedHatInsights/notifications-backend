@@ -1,14 +1,11 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,8 +14,6 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static java.time.ZoneOffset.UTC;
 
 public class ComplianceTestHelpers {
-
-    public static BaseTransformer baseTransformer = new BaseTransformer();
 
     public static EmailAggregation createEmailAggregation(String bundle, String application, String eventType, String policyId, String inventoryId) {
         EmailAggregation aggregation = new EmailAggregation();
@@ -56,9 +51,7 @@ public class ComplianceTestHelpers {
         ));
 
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
-        JsonObject payload = baseTransformer.toJsonObject(new EventWrapperAction(emailActionMessage));
-        aggregation.setPayload(payload);
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;
     }

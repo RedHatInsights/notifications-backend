@@ -141,8 +141,8 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 aggregation.setApplicationName(applicationName);
                 aggregation.setBundleName(bundleName);
 
-                JsonObject transformedAction = baseTransformer.toJsonObject(event.getEventWrapper());
-                aggregation.setPayload(transformedAction);
+                final JsonObject transformedEvent = this.baseTransformer.toJsonObject(event);
+                aggregation.setPayload(transformedEvent);
                 emailAggregationRepository.addEmailAggregation(aggregation);
             }
 

@@ -3,10 +3,14 @@ package com.redhat.cloud.notifications.templates.secured;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -24,6 +28,21 @@ import static org.junit.jupiter.api.Assertions.*;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class TestAdvisorDailyDigest extends EmailTemplatesInDbHelper {
+
+    @Inject
+    FeatureFlipper featureFlipper;
+
+    @BeforeEach
+    void beforeEach() {
+        featureFlipper.setRhelAdvisorDailyDigestEnabled(true);
+        migrate();
+    }
+
+    @AfterEach
+    void afterEach() {
+        featureFlipper.setRhelAdvisorDailyDigestEnabled(false);
+        migrate();
+    }
 
     @Test
     void testSecureTemplate() {
