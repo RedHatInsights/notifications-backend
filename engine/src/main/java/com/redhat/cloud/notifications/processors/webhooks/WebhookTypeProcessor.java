@@ -202,6 +202,12 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
                 boolean serverError = false;
                 boolean shouldResetEndpointServerErrors = false;
+                if (isEmailEndpoint) {
+                    JsonObject details = new JsonObject();
+                    int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
+                    details.put("total_recipients", totalRecipients);
+                    history.setDetails(details.getMap());
+                }
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                     // Accepted
                     Log.debugf("Webhook request to %s was successful: %d", url, resp.statusCode());
