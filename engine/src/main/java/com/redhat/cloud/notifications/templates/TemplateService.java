@@ -36,6 +36,7 @@ public class TemplateService {
         return engine.parse(template, null, name).instance();
     }
 
+    @Deprecated(forRemoval = true)
     public String renderTemplate(User user, Object event, TemplateInstance templateInstance) {
         return templateInstance
                 .data("action", event)
@@ -43,5 +44,13 @@ public class TemplateService {
                 .data("user", user)
                 .data("environment", environment)
                 .render();
+    }
+
+    public String renderTemplate(Object event, TemplateInstance templateInstance) {
+        return templateInstance
+            .data("action", event)
+            .data("event", event)
+            .data("environment", environment)
+            .render();
     }
 }

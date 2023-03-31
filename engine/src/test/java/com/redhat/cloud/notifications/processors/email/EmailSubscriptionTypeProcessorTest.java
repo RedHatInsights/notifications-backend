@@ -2,17 +2,20 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -22,11 +25,14 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
+import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -47,11 +53,11 @@ import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionT
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -64,7 +70,7 @@ class EmailSubscriptionTypeProcessorTest {
     @Any
     InMemoryConnector inMemoryConnector;
 
-    @InjectMock
+    @InjectSpy
     EmailAggregationRepository emailAggregationRepository;
 
     @InjectMock
@@ -84,6 +90,9 @@ class EmailSubscriptionTypeProcessorTest {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    TemplateRepository templateRepository;
 
     @Inject
     protected ResourceHelpers resourceHelpers;
@@ -106,12 +115,27 @@ class EmailSubscriptionTypeProcessorTest {
     }
 
     @Test
-    void shouldSuccessfullySendEmail() {
+    void shouldSuccessfullySendTwoAggregatedEmailToTwoRecipients() {
+            shouldSuccessfullySendTwoAggregatedEmails();
+    }
+
+    @Test
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients() {
+        try {
+            featureFlipper.setRemoveUserDataFromEmailTemplateEnabled(true);
+                shouldSuccessfullySendTwoAggregatedEmails();
+        } finally {
+            featureFlipper.setRemoveUserDataFromEmailTemplateEnabled(false);
+        }
+    }
+
+    @Test
+    void shouldSuccessfullySendTwoAggregatedEmails() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
         AggregationCommand aggregationCommand1 = new AggregationCommand(
                 new EmailAggregationKey("org-1", "bundle-1", "app-1"),
-                LocalDateTime.now(),
+                LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().plusDays(1),
                 DAILY
         );
@@ -122,8 +146,45 @@ class EmailSubscriptionTypeProcessorTest {
                 DAILY
         );
 
-        resourceHelpers.createBlankAggregationEmailTemplate("bundle-1", "app-1");
-        resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
+        User user1 = new User();
+        user1.setUsername("foo");
+        User user2 = new User();
+        user2.setUsername("bar");
+        User user3 = new User();
+        user3.setUsername("user3");
+
+        when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any(), any()))
+            .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
+        when(recipientResolver.recipientUsers(any(), anySet(), any()))
+            .then(invocation -> {
+                    Set<RecipientSettings> list = invocation.getArgument(1);
+                    if (list.isEmpty()) {
+                        return Set.of(user1, user2);
+                    }
+                    return Set.of(user1, user2, user3);
+                }
+            );
+
+
+
+
+
+            statelessSessionFactory.withSession(statelessSession -> {
+                AggregationEmailTemplate blankAgg1 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-1", "app-1");
+                AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
+                try{
+                                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "bundle-1", "app-1", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+                                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "bundle-1", "app-1", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
+                } finally {
+                    if (null != blankAgg1) {
+                        resourceHelpers.deleteEmailTemplatesById(blankAgg1.getId());
+                    }
+                    if (null != blankAgg2) {
+                        resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
+                    }
+                }
+            });
+
 
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
@@ -156,7 +217,15 @@ class EmailSubscriptionTypeProcessorTest {
                 eq(aggregationCommand2.getAggregationKey()),
                 eq(aggregationCommand2.getEnd())
         );
-        verifyNoMoreInteractions(emailAggregationRepository);
+
+        if (featureFlipper.isRemoveUserDataFromEmailTemplateEnabled()) {
+            verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+            verify(sender, times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+        } else {
+            verify(sender, times(1)).sendEmail(eq(user1), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+            verify(sender, times(1)).sendEmail(eq(user2), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+            verify(sender, times(1)).sendEmail(eq(user3), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+        }
 
         micrometerAssertionHelper.clearSavedValues();
     }
@@ -166,6 +235,18 @@ class EmailSubscriptionTypeProcessorTest {
         statelessSessionFactory.withSession(statelessSession -> {
             shouldSendDefaultEmail();
         });
+    }
+
+    @Test
+    void shouldSendSingleEmailWithTwoRecieversUsingTemplatesFromDatabase() {
+        try {
+            featureFlipper.setRemoveUserDataFromEmailTemplateEnabled(true);
+            statelessSessionFactory.withSession(statelessSession -> {
+                shouldSendDefaultEmail();
+            });
+        } finally {
+            featureFlipper.setRemoveUserDataFromEmailTemplateEnabled(false);
+        }
     }
 
     void shouldSendDefaultEmail() {
@@ -178,9 +259,9 @@ class EmailSubscriptionTypeProcessorTest {
             user2.setUsername("bar");
 
             when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any(), any()))
-                    .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
-            when(recipientResolver.recipientUsers(any(),  any(), any()))
-                    .thenReturn(Set.of(user1, user2));
+                .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
+            when(recipientResolver.recipientUsers(any(), any(), any()))
+                .thenReturn(Set.of(user1, user2));
 
             Bundle bundle = new Bundle();
             bundle.setName("rhel");
@@ -220,8 +301,12 @@ class EmailSubscriptionTypeProcessorTest {
             endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
             testee.process(event, List.of(endpoint));
-            verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
-            verify(sender, times(1)).sendEmail(eq(user2), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
+            if (featureFlipper.isRemoveUserDataFromEmailTemplateEnabled()) {
+                verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
+            } else {
+                verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
+                verify(sender, times(1)).sendEmail(eq(user2), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
+            }
         } finally {
             featureFlipper.setUseDefaultTemplate(false);
         }

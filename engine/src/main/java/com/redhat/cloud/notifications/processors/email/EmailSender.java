@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EmailSender {
@@ -79,6 +80,47 @@ public class EmailSender {
         bopApiToken = LineBreakCleaner.clean(bopApiToken);
     }
 
+    public void sendEmail(Set<User> user, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory) {
+        final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
+        LocalDateTime start = LocalDateTime.now(UTC);
+
+        Timer.Sample processedTimer = Timer.start(registry);
+
+        EventType eventType = event.getEventType();
+        String bundleName = "NA";
+        String applicationName = "NA";
+        if (eventType != null) {
+            bundleName = eventType.getApplication().getBundle().getName();
+            applicationName = eventType.getApplication().getName();
+        } else if (event.getEventWrapper().getEvent() instanceof Action action) {
+            bundleName = action.getBundle();
+            applicationName = action.getApplication();
+        }
+
+        // uses canonical EmailSubscription
+        try {
+            Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(event.getAccountId(), event.getOrgId());
+
+            // TODO Add recipients processing from policies-notifications processing (failed recipients)
+            //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
+
+            // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
+            //      also add metrics for these failures
+
+            webhookSender.doHttpRequest(
+                event, endpoint,
+                bopRequest,
+                getPayload(user, event.getEventWrapper(), subject, body), "POST", bopUrl, persistHistory);
+
+            processedTimer.stop(registry.timer("processor.email.processed", "bundle", bundleName, "application", applicationName));
+
+            processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
+        } catch (Exception e) {
+            Log.info("Email sending failed", e);
+        }
+    }
+
+    @Deprecated(forRemoval = true) // one email should be able to be send to multiple users because its body must not contains user personal data anymore
     public void sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
@@ -119,6 +161,30 @@ public class EmailSender {
         }
     }
 
+    private JsonObject getPayload(Set<User> users, EventWrapper<?, ?> eventWrapper, TemplateInstance subject, TemplateInstance body) {
+
+        String renderedSubject;
+        String renderedBody;
+        try {
+            renderedSubject = templateService.renderTemplate(eventWrapper.getEvent(), subject);
+            renderedBody = templateService.renderTemplate(eventWrapper.getEvent(), body);
+        } catch (Exception e) {
+            Log.warnf(e,
+                "Unable to render template for %s.",
+                eventWrapper.getKey().toString()
+            );
+            throw e;
+        }
+        Emails emails = new Emails();
+        emails.addEmail(buildEmail(
+            users,
+            renderedSubject,
+            renderedBody
+        ));
+        return JsonObject.mapFrom(emails);
+    }
+
+    @Deprecated(forRemoval = true)
     private JsonObject getPayload(User user, EventWrapper<?, ?> eventWrapper, TemplateInstance subject, TemplateInstance body) {
 
         String renderedSubject;
@@ -150,10 +216,21 @@ public class EmailSender {
                 .putHeader(BOP_ENV_HEADER, bopEnv);
     }
 
+    @Deprecated(forRemoval = true)
     protected Email buildEmail(String recipient, String subject, String body) {
         Email email = new Email();
         email.setBodyType(BODY_TYPE_HTML);
         email.setRecipients(Set.of(recipient));
+        email.setSubject(subject);
+        email.setBody(body);
+        return email;
+    }
+
+    protected Email buildEmail(Set<User> recipients, String subject, String body) {
+        Set<String> usersEmail = recipients.stream().map(User::getUsername).collect(Collectors.toSet());
+        Email email = new Email();
+        email.setBodyType(BODY_TYPE_HTML);
+        email.setRecipients(usersEmail);
         email.setSubject(subject);
         email.setBody(body);
         return email;
