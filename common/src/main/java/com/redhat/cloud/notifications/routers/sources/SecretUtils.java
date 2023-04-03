@@ -12,6 +12,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.WebApplicationException;
+import java.util.UUID;
 
 @ApplicationScoped
 public class SecretUtils {
@@ -49,41 +51,52 @@ public class SecretUtils {
             if (basicAuthSourcesId != null) {
                 final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
 
-                final Secret secret = this.sourcesService.getById(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    basicAuthSourcesId
-                );
+                try {
+                    final Secret secret = this.sourcesService.getById(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        basicAuthSourcesId
+                    );
 
-                getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
-
-                props.setBasicAuthentication(
-                    new BasicAuthentication(
-                        secret.username,
-                        secret.password
-                    )
-                );
+                    props.setBasicAuthentication(
+                        new BasicAuthentication(
+                            secret.username,
+                            secret.password
+                        )
+                    );
+                } catch (final WebApplicationException e) {
+                    this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                } finally {
+                    getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
+                }
             }
 
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
             if (secretTokenSourcesId != null) {
                 final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
 
-                final Secret secret = this.sourcesService.getById(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    secretTokenSourcesId
-                );
+                try {
+                    final Secret secret = this.sourcesService.getById(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        secretTokenSourcesId
+                    );
 
-                getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
-
-                props.setSecretToken(secret.password);
+                    props.setSecretToken(secret.password);
+                } catch (final WebApplicationException e) {
+                    this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                } finally {
+                    getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
+                }
             }
         }
     }
 
     /**
-     * Creates the endpoint's secrets in Sources.
+     * Creates the endpoint's secrets in Sources. In this case, the endpoint's
+     * ID cannot be appended both to the logs or the potential errors with
+     * Sources, since until the endpoint gets saved in the database, it doesn't
+     * have a {@link UUID}.
      * @param endpoint the endpoint to create the secrets from.
      */
     public void createSecretsForEndpoint(Endpoint endpoint) {
@@ -136,36 +149,48 @@ public class SecretUtils {
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
-                    this.sourcesService.delete(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        basicAuthId
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
+                    try {
+                        this.sourcesService.delete(
+                            endpoint.getOrgId(),
+                            this.sourcesPsk,
+                            basicAuthId
+                        );
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
 
-                    props.setBasicAuthenticationSourcesId(null);
+                        props.setBasicAuthenticationSourcesId(null);
+                    } catch (final WebApplicationException e) {
+                        this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                    }
                 } else {
                     Secret secret = new Secret();
 
                     secret.password = basicAuth.getPassword();
                     secret.username = basicAuth.getUsername();
 
-                    this.sourcesService.update(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        basicAuthId,
-                        secret
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
+                    try {
+                        this.sourcesService.update(
+                            endpoint.getOrgId(),
+                            this.sourcesPsk,
+                            basicAuthId,
+                            secret
+                        );
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
+                    } catch (final WebApplicationException e) {
+                        this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                    }
                 }
             } else {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
                     Log.debugf("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
                 } else {
-                    final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
+                    try {
+                        final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
 
-                    props.setBasicAuthenticationSourcesId(id);
+                        props.setBasicAuthenticationSourcesId(id);
+                    } catch (final WebApplicationException e) {
+                        this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                    }
                 }
             }
 
@@ -173,37 +198,49 @@ public class SecretUtils {
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
                 if (secretToken == null || secretToken.isBlank()) {
-                    this.sourcesService.delete(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        secretTokenId
-                    );
+                    try {
+                        this.sourcesService.delete(
+                            endpoint.getOrgId(),
+                            this.sourcesPsk,
+                            secretTokenId
+                        );
 
-                    props.setSecretTokenSourcesId(null);
+                        props.setSecretTokenSourcesId(null);
 
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources during an endpoint update operation", endpoint.getId(), secretTokenId);
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources during an endpoint update operation", endpoint.getId(), secretTokenId);
+                    } catch (final WebApplicationException e) {
+                        this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                    }
                 } else {
                     Secret secret = new Secret();
 
                     secret.password = secretToken;
 
-                    this.sourcesService.update(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        secretTokenId,
-                        secret
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
+                    try {
+                        this.sourcesService.update(
+                            endpoint.getOrgId(),
+                            this.sourcesPsk,
+                            secretTokenId,
+                            secret
+                        );
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
+                    } catch (final WebApplicationException e) {
+                        this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                    }
                 }
             } else {
                 if (secretToken == null || secretToken.isBlank()) {
                     Log.debugf("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null or blank", endpoint.getId());
                 } else {
-                    final long id = this.createSecretTokenSecret(secretToken, endpoint.getOrgId());
+                    try {
+                        final long id = this.createSecretTokenSecret(secretToken, endpoint.getOrgId());
 
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources during an endpoint update operation", endpoint.getId(), id);
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources during an endpoint update operation", endpoint.getId(), id);
 
-                    props.setSecretTokenSourcesId(id);
+                        props.setSecretTokenSourcesId(id);
+                    } catch (final WebApplicationException e) {
+                        this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                    }
                 }
             }
         }
@@ -222,22 +259,30 @@ public class SecretUtils {
 
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
-                this.sourcesService.delete(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    basicAuthId
-                );
-                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
+                try {
+                    this.sourcesService.delete(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        basicAuthId
+                    );
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
+                } catch (final WebApplicationException e) {
+                    this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                }
             }
 
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
-                this.sourcesService.delete(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    secretTokenId
-                );
-                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
+                try {
+                    this.sourcesService.delete(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        secretTokenId
+                    );
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
+                } catch (final WebApplicationException e) {
+                    this.prependEndpointUuidToExceptionAndRethrow(endpoint.getId(), e);
+                }
             }
         }
     }
@@ -299,5 +344,19 @@ public class SecretUtils {
 
         return (basicAuthentication.getPassword() == null || basicAuthentication.getPassword().isBlank()) &&
                 (basicAuthentication.getUsername() == null || basicAuthentication.getUsername().isBlank());
+    }
+
+    /**
+     * Prepends the endpoint's UUID to the thrown {@link WebApplicationException}
+     * in the {@link SourcesService} to make it easier to debug what the
+     * problem might have been. Then, it rethrows the exception.
+     * @param endpointUuid the endpoint's UUID to prepend.
+     * @param e the exception that was thrown by the {@link SourcesService}.
+     */
+    protected void prependEndpointUuidToExceptionAndRethrow(final UUID endpointUuid, final WebApplicationException e) {
+        throw new WebApplicationException(
+            String.format("[endpoint_uuid: %s]%s", endpointUuid, e.getMessage()),
+            e.getResponse()
+        );
     }
 }

@@ -15,6 +15,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.lang.reflect.Method;
 
 /**
  * <p>REST Client for the Sources API. The OpenAPI spec is available at:</p>
@@ -106,13 +107,19 @@ public interface SourcesService {
 
     /**
      * Throws a runtime exception with the client's response for an easier debugging.
+     * @param method the REST client method that was invoked.
      * @param response the received response from Sources.
      * @return the {@link RuntimeException} to be thrown.
      */
     @ClientExceptionMapper
-    static RuntimeException toException(final Response response) {
-        final var errMessage = String.format("Sources responded with a %s status: %s", response.getStatus(), response.readEntity(String.class));
+    static RuntimeException toException(final Method method, final Response response) {
+        final String errorMessage = String.format(
+            "[method: %s][response_status: %s] Unexpected Sources response: %s",
+            method,
+            response.getStatus(),
+            response.readEntity(String.class)
+        );
 
-        throw new WebApplicationException(errMessage, response);
+        throw new WebApplicationException(errorMessage, response);
     }
 }
