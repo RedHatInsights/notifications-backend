@@ -235,7 +235,7 @@ public class EventConsumer {
             // Try to load it as a CloudEvent
             try {
                 EventWrapperCloudEvent eventWrapperCloudEvent = new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload));
-                tags.putIfAbsent(TAG_KEY_EVENT_TYPE_FQN, eventWrapperCloudEvent.getKey().getFullyQualifiedName());
+                tags.put(TAG_KEY_EVENT_TYPE_FQN, eventWrapperCloudEvent.getKey().getFullyQualifiedName());
                 return eventWrapperCloudEvent;
             } catch (ParsingException cloudEventParseException) {
                 /*
