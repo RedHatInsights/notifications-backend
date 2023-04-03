@@ -119,7 +119,7 @@ class EmailAggregatorTest {
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
         statelessSessionFactory.withSession(statelessSession -> {
-            emailAggregationRepository.purgeOldAggregation(aggregationKey, LocalDateTime.now());
+            emailAggregationRepository.purgeOldAggregation(aggregationKey, LocalDateTime.now(ZoneOffset.UTC));
         });
         reset(emailAggregationRepository); // just reset mockito counter
 
