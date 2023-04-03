@@ -110,7 +110,7 @@ public class EventConsumer {
 
             final EventWrapper<?, ?> eventWrapper = parsePayload(payload, tags);
             /*
-             * The event data was successfully parsed (either as an action or a cloud event). Depending the situation
+             * The event data was successfully parsed (either as an action or a cloud event). Depending on the situation
              * we now have a bundle/app/eventType triplet or a fully qualified name for the event type.
              */
 
