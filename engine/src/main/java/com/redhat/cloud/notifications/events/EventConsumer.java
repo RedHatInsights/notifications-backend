@@ -228,8 +228,8 @@ public class EventConsumer {
     private EventWrapper<?, ?> parsePayload(String payload, Map<String, String> tags) {
         try {
             Action action = actionParser.fromJsonString(payload);
-            tags.putIfAbsent(TAG_KEY_BUNDLE, action.getBundle());
-            tags.putIfAbsent(TAG_KEY_APPLICATION, action.getApplication());
+            tags.put(TAG_KEY_BUNDLE, action.getBundle());
+            tags.put(TAG_KEY_APPLICATION, action.getApplication());
             return new EventWrapperAction(action);
         } catch (ParsingException actionParseException) {
             // Try to load it as a CloudEvent
