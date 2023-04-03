@@ -1,16 +1,16 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.models.ConsoleCloudEvent;
 import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
+import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 
 import java.util.UUID;
 
-public class EventWrapperCloudEvent implements EventWrapper<ConsoleCloudEvent, EventTypeKeyFqn> {
+public class EventWrapperCloudEvent implements EventWrapper<NotificationsConsoleCloudEvent, EventTypeKeyFqn> {
 
-    private final ConsoleCloudEvent cloudEvent;
+    private final NotificationsConsoleCloudEvent cloudEvent;
     private final EventTypeKeyFqn eventTypeKeyFqn;
 
-    public EventWrapperCloudEvent(ConsoleCloudEvent cloudEvent) {
+    public EventWrapperCloudEvent(NotificationsConsoleCloudEvent cloudEvent) {
         this.cloudEvent = cloudEvent;
         this.eventTypeKeyFqn = new EventTypeKeyFqn(cloudEvent.getType());
     }
@@ -21,7 +21,7 @@ public class EventWrapperCloudEvent implements EventWrapper<ConsoleCloudEvent, E
     }
 
     @Override
-    public ConsoleCloudEvent getEvent() {
+    public NotificationsConsoleCloudEvent getEvent() {
         return cloudEvent;
     }
 

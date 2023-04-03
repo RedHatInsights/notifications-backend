@@ -5,8 +5,8 @@ import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.ConsoleCloudEvent;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -86,7 +86,7 @@ public class BaseTransformer {
         } else if (eventWrapper instanceof EventWrapperCloudEvent) {
             // Todo: Right now are are forwarding the received event - wondering if we should create our own event and wrap (could be confusing)
             //   or extend the original object (creating a copy of the event with additional fields)
-            ConsoleCloudEvent cloudEvent = ((EventWrapperCloudEvent) eventWrapper).getEvent();
+            NotificationsConsoleCloudEvent cloudEvent = ((EventWrapperCloudEvent) eventWrapper).getEvent();
             return JsonObject.mapFrom(cloudEvent);
         }
 

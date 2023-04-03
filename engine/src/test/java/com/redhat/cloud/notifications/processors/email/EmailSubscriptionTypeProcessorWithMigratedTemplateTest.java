@@ -95,6 +95,7 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
         Event event = new Event();
         event.setEventType(events.get(0));
         event.setEventWrapper(new EventWrapperAction(emailActionMessage));
+        event.setOrgId(DEFAULT_ORG_ID);
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 

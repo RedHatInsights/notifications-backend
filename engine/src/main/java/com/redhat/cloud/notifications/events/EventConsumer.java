@@ -1,16 +1,20 @@
 package com.redhat.cloud.notifications.events;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
+import com.redhat.cloud.event.parser.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformer;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformerFactory;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.ParsingException;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.utils.ActionParser;
-import com.redhat.cloud.notifications.utils.CloudEventParser;
-import com.redhat.cloud.notifications.utils.ParsingException;
+import com.redhat.cloud.notifications.utils.ActionParsingException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -62,7 +66,7 @@ public class EventConsumer {
     ActionParser actionParser;
 
     @Inject
-    CloudEventParser cloudEventParser;
+    ObjectMapper objectMapper;
 
     @Inject
     EventTypeRepository eventTypeRepository;
@@ -79,6 +83,8 @@ public class EventConsumer {
     @Inject
     CloudEventTransformerFactory cloudEventTransformerFactory;
 
+    ConsoleCloudEventParser cloudEventParser;
+
     private Counter rejectedCounter;
     private Counter processingErrorCounter;
     private Counter duplicateCounter;
@@ -90,6 +96,8 @@ public class EventConsumer {
         processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
         processingExceptionCounter = registry.counter(PROCESSING_EXCEPTION_COUNTER_NAME);
         duplicateCounter = registry.counter(DUPLICATE_COUNTER_NAME);
+
+        cloudEventParser = new ConsoleCloudEventParser(objectMapper);
     }
 
     @Incoming(INGRESS_CHANNEL)
@@ -231,13 +239,13 @@ public class EventConsumer {
             tags.put(TAG_KEY_BUNDLE, action.getBundle());
             tags.put(TAG_KEY_APPLICATION, action.getApplication());
             return new EventWrapperAction(action);
-        } catch (ParsingException actionParseException) {
+        } catch (ActionParsingException actionParseException) {
             // Try to load it as a CloudEvent
             try {
-                EventWrapperCloudEvent eventWrapperCloudEvent = new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload));
+                EventWrapperCloudEvent eventWrapperCloudEvent = new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload, NotificationsConsoleCloudEvent.class));
                 tags.put(TAG_KEY_EVENT_TYPE_FQN, eventWrapperCloudEvent.getKey().getFullyQualifiedName());
                 return eventWrapperCloudEvent;
-            } catch (ParsingException cloudEventParseException) {
+            } catch (ConsoleCloudEventParsingException cloudEventParseException) {
                 /*
                  * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
                  * is therefore considered rejected.

@@ -55,6 +55,13 @@
             <version>${insights-notification-schemas-java.version}</version>
         </dependency>
 
+        <!-- events-schemas -->
+        <dependency>
+            <groupId>com.redhat.cloud.event</groupId>
+            <artifactId>event-schemas</artifactId>
+            <version>${redhat.event-schemas.version}</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>io.quarkus</groupId>

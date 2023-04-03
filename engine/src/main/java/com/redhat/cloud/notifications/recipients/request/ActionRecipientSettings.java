@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.recipients.request;
 
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.ConsoleCloudEvent;
+import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
 import java.util.Collection;
@@ -51,8 +51,8 @@ public class ActionRecipientSettings extends RecipientSettings {
                     .stream()
                     .map(r -> new ActionRecipientSettings(r.getOnlyAdmins(), r.getIgnoreUserPreferences(), r.getUsers()))
                     .collect(Collectors.toList());
-        } else if (eventWrapper.getEvent() instanceof ConsoleCloudEvent) {
-            ConsoleCloudEvent cloudEvent = (ConsoleCloudEvent) eventWrapper.getEvent();
+        } else if (eventWrapper.getEvent() instanceof NotificationsConsoleCloudEvent) {
+            NotificationsConsoleCloudEvent cloudEvent = (NotificationsConsoleCloudEvent) eventWrapper.getEvent();
             if (cloudEvent.getRecipients() != null) {
                 return List.of(new ActionRecipientSettings(
                         cloudEvent.getRecipients().isOnlyAdmins(),
