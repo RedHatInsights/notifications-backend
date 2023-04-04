@@ -17,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestAnsibleTemplate extends EmailTemplatesInDbHelper {
 
+    static final String REPORT_AVAILABLE_EVENT = "report-available";
+
     @Inject
     FeatureFlipper featureFlipper;
 
@@ -38,7 +40,7 @@ public class TestAnsibleTemplate extends EmailTemplatesInDbHelper {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(Ansible.REPORT_AVAILABLE_EVENT);
+        return List.of(REPORT_AVAILABLE_EVENT);
     }
 
     @Test
@@ -46,12 +48,12 @@ public class TestAnsibleTemplate extends EmailTemplatesInDbHelper {
         Action action = TestHelpers.createAnsibleAction(null);
         statelessSessionFactory.withSession(statelessSession -> {
 
-            String result = generateEmailSubject(Ansible.REPORT_AVAILABLE_EVENT, action);
+            String result = generateEmailSubject(REPORT_AVAILABLE_EVENT, action);
             assertTrue(result.contains("Ansible"));
 
             featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailSubject(Ansible.REPORT_AVAILABLE_EVENT, action);
+            result = generateEmailSubject(REPORT_AVAILABLE_EVENT, action);
             assertEquals("Instant notification - Ansible", result);
         });
     }
@@ -61,12 +63,12 @@ public class TestAnsibleTemplate extends EmailTemplatesInDbHelper {
         Action action = TestHelpers.createAnsibleAction("reportUrl");
         statelessSessionFactory.withSession(statelessSession -> {
 
-            String result = generateEmailBody(Ansible.REPORT_AVAILABLE_EVENT, action);
+            String result = generateEmailBody(REPORT_AVAILABLE_EVENT, action);
             assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
 
             featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailBody(Ansible.REPORT_AVAILABLE_EVENT, action);
+            result = generateEmailBody(REPORT_AVAILABLE_EVENT, action);
             assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
             assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         });

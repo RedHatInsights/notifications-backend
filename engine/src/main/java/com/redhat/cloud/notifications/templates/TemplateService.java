@@ -29,9 +29,7 @@ public class TemplateService {
      */
     @Scheduled(every = "${notifications.template-service.scheduled-clear.period:5m}", delayed = "${notifications.template-service.scheduled-clear.initial-delay:5m}")
     public void clearTemplates() {
-        if (featureFlipper.isUseTemplatesFromDb()) {
-            engine.clearTemplates();
-        }
+        engine.clearTemplates();
     }
 
     public TemplateInstance compileTemplate(String template, String name) {

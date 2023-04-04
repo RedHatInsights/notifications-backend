@@ -95,7 +95,6 @@ public abstract class EmailTemplatesInDbHelper {
             emailTemplateMigrationService.deleteAllTemplates();
         }
         migrate();
-        featureFlipper.setUseTemplatesFromDb(true);
     }
 
     protected void migrate() {
@@ -105,7 +104,6 @@ public abstract class EmailTemplatesInDbHelper {
     @AfterEach
     void restoreEnv() {
         featureFlipper.setUseSecuredEmailTemplates(false);
-        featureFlipper.setUseTemplatesFromDb(false);
     }
 
     protected String generateEmailSubject(String eventTypeStr, Action action) {

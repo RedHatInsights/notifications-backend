@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
@@ -16,17 +17,12 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.templates.Blank;
-import com.redhat.cloud.notifications.templates.Default;
-import com.redhat.cloud.notifications.templates.EmailTemplate;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -51,7 +47,6 @@ import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionT
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -68,9 +63,6 @@ class EmailSubscriptionTypeProcessorTest {
     @Inject
     @Any
     InMemoryConnector inMemoryConnector;
-
-    @InjectMock
-    EmailTemplateFactory emailTemplateFactory;
 
     @InjectMock
     EmailAggregationRepository emailAggregationRepository;
@@ -93,9 +85,11 @@ class EmailSubscriptionTypeProcessorTest {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @Inject
+    protected ResourceHelpers resourceHelpers;
+
     @BeforeEach
     void beforeEach() {
-        featureFlipper.setUseTemplatesFromDb(false);
         featureFlipper.setUseDefaultTemplate(false);
     }
 
@@ -128,7 +122,8 @@ class EmailSubscriptionTypeProcessorTest {
                 DAILY
         );
 
-        when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
+        resourceHelpers.createBlankAggregationEmailTemplate("bundle-1", "app-1");
+        resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
 
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
@@ -167,42 +162,10 @@ class EmailSubscriptionTypeProcessorTest {
     }
 
     @Test
-    void shouldSendDefaultEmailTemplatesAsFiles() {
-        when(emailTemplateFactory.get(anyString(), anyString()))
-                .thenReturn(new Default(new EmailTemplate() {
-                    @Override
-                    public TemplateInstance getTitle(String eventType, EmailSubscriptionType type) {
-                        throw new UnsupportedOperationException("Not supported");
-                    }
-
-                    @Override
-                    public TemplateInstance getBody(String eventType, EmailSubscriptionType type) {
-                        throw new UnsupportedOperationException("Not supported");
-                    }
-
-                    @Override
-                    public boolean isSupported(String eventType, EmailSubscriptionType type) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isEmailSubscriptionSupported(EmailSubscriptionType type) {
-                        return false;
-                    }
-                }));
-        shouldSendDefaultEmail();
-    }
-
-    @Test
     void shouldSendDefaultEmailTemplatesFromDatabase() {
-        try {
-            featureFlipper.setUseTemplatesFromDb(true);
-            statelessSessionFactory.withSession(statelessSession -> {
-                shouldSendDefaultEmail();
-            });
-        } finally {
-            featureFlipper.setUseTemplatesFromDb(false);
-        }
+        statelessSessionFactory.withSession(statelessSession -> {
+            shouldSendDefaultEmail();
+        });
     }
 
     void shouldSendDefaultEmail() {

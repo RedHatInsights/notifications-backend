@@ -14,8 +14,6 @@ import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -53,16 +51,6 @@ public class EmailTemplateMigrationServiceTest {
 
     @Inject
     FeatureFlipper featureFlipper;
-
-    @BeforeEach
-    void beforeEach() {
-        featureFlipper.setUseTemplatesFromDb(true);
-    }
-
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setUseTemplatesFromDb(false);
-    }
 
     @Test
     void testMigration() {

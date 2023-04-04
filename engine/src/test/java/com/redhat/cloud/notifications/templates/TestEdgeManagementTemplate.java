@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestEdgeManagementTemplate extends EmailTemplatesInDbHelper {
 
+    static final String IMAGE_CREATION = "image-creation";
+    static final String UPDATE_DEVICES = "update-devices";
     private static final Action ACTION = TestHelpers.createEdgeManagementAction();
 
     @Inject
@@ -28,7 +30,7 @@ public class TestEdgeManagementTemplate extends EmailTemplatesInDbHelper {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(EdgeManagement.IMAGE_CREATION, EdgeManagement.UPDATE_DEVICES);
+        return List.of(IMAGE_CREATION, UPDATE_DEVICES);
     }
 
     @AfterEach
@@ -40,12 +42,12 @@ public class TestEdgeManagementTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testImageCreationEmailTitle() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(EdgeManagement.IMAGE_CREATION, ACTION);
+            String result = generateEmailSubject(IMAGE_CREATION, ACTION);
             assertTrue(result.startsWith("Edge Management - Image Creation Started"));
 
             featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailSubject(EdgeManagement.IMAGE_CREATION, ACTION);
+            result = generateEmailSubject(IMAGE_CREATION, ACTION);
             assertEquals("Instant notification - Image creation started - Edge Management - Red Hat Enterprise Linux", result);
         });
     }
@@ -53,12 +55,12 @@ public class TestEdgeManagementTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testImageCreationEmailBody() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(EdgeManagement.IMAGE_CREATION, ACTION);
+            String result = generateEmailBody(IMAGE_CREATION, ACTION);
             assertTrue(result.contains("A new image was created"));
 
             featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailBody(EdgeManagement.IMAGE_CREATION, ACTION);
+            result = generateEmailBody(IMAGE_CREATION, ACTION);
             assertTrue(result.contains("A new image named"));
             assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         });
@@ -67,12 +69,12 @@ public class TestEdgeManagementTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testUpdateDeviceEmailTitle() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(EdgeManagement.UPDATE_DEVICES, ACTION);
+            String result = generateEmailSubject(UPDATE_DEVICES, ACTION);
             assertTrue(result.startsWith("Update Device Started"));
 
             featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailSubject(EdgeManagement.UPDATE_DEVICES, ACTION);
+            result = generateEmailSubject(UPDATE_DEVICES, ACTION);
             assertEquals("Instant notification - Update device started - Edge Management - Red Hat Enterprise Linux", result);
         });
     }
@@ -81,12 +83,12 @@ public class TestEdgeManagementTemplate extends EmailTemplatesInDbHelper {
     public void testUpdateDeviceEmailBody() {
 
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(EdgeManagement.UPDATE_DEVICES, ACTION);
+            String result = generateEmailBody(UPDATE_DEVICES, ACTION);
             assertTrue(result.contains("An Update for the device"));
 
             featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailBody(EdgeManagement.UPDATE_DEVICES, ACTION);
+            result = generateEmailBody(UPDATE_DEVICES, ACTION);
             assertTrue(result.contains("An Update for the device"));
             assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         });
