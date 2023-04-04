@@ -606,9 +606,9 @@ public class EmailTemplateMigrationService {
         }
         for (String eventTypeName : eventTypeNames) {
             Optional<EventType> eventType = findEventType(warnings, bundleName, appName, eventTypeName);
-            Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription, Optional.of(eventType.get().getApplication()));
-            Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription, Optional.of(eventType.get().getApplication()));
             if (eventType.isPresent()) {
+                Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription, Optional.of(eventType.get().getApplication()));
+                Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription, Optional.of(eventType.get().getApplication()));
                 if (!instantEmailTemplateExists(eventType.get())) {
                     Log.infof("Creating instant email template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
 
