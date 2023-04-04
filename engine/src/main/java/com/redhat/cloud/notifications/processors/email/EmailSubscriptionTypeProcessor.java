@@ -164,7 +164,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 .getEmailSubscribersUserId(event.getOrgId(), bundleName, applicationName, eventTypeName, emailSubscriptionType));
 
         Set<User> userList = recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers);
-        if (featureFlipper.isRemoveUserDataFromEmailTemplateEnabled()) {
+        if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
             emailSender.sendEmail(userList, event, subject, body, true);
         } else {
             for (User user : userList) {
@@ -222,7 +222,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
         if (subject != null && body != null) {
             Map<User, Map<String, Object>> aggregationsByUsers = emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime);
 
-            if (featureFlipper.isRemoveUserDataFromEmailTemplateEnabled()) {
+            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
                 Map<Map<String, Object>, Set<User>> aggregationsEmailContext = aggregationsByUsers.keySet().stream()
                     .collect(Collectors.groupingBy(aggregationsByUsers::get, Collectors.toSet()));
 

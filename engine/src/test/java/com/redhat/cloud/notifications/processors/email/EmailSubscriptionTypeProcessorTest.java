@@ -116,16 +116,16 @@ class EmailSubscriptionTypeProcessorTest {
 
     @Test
     void shouldSuccessfullySendTwoAggregatedEmailToTwoRecipients() {
-            shouldSuccessfullySendTwoAggregatedEmails();
+        shouldSuccessfullySendTwoAggregatedEmails();
     }
 
     @Test
     void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients() {
         try {
-            featureFlipper.setRemoveUserDataFromEmailTemplateEnabled(true);
-                shouldSuccessfullySendTwoAggregatedEmails();
+            featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(true);
+            shouldSuccessfullySendTwoAggregatedEmails();
         } finally {
-            featureFlipper.setRemoveUserDataFromEmailTemplateEnabled(false);
+            featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(false);
         }
     }
 
@@ -165,26 +165,21 @@ class EmailSubscriptionTypeProcessorTest {
                 }
             );
 
-
-
-
-
-            statelessSessionFactory.withSession(statelessSession -> {
-                AggregationEmailTemplate blankAgg1 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-1", "app-1");
-                AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
-                try{
-                                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "bundle-1", "app-1", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-                                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "bundle-1", "app-1", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
-                } finally {
-                    if (null != blankAgg1) {
-                        resourceHelpers.deleteEmailTemplatesById(blankAgg1.getId());
-                    }
-                    if (null != blankAgg2) {
-                        resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
-                    }
+        statelessSessionFactory.withSession(statelessSession -> {
+            AggregationEmailTemplate blankAgg1 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-1", "app-1");
+            AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
+            try {
+                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "bundle-1", "app-1", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "bundle-1", "app-1", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
+            } finally {
+                if (null != blankAgg1) {
+                    resourceHelpers.deleteEmailTemplatesById(blankAgg1.getId());
                 }
-            });
-
+                if (null != blankAgg2) {
+                    resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
+                }
+            }
+        });
 
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
         inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
@@ -218,7 +213,7 @@ class EmailSubscriptionTypeProcessorTest {
                 eq(aggregationCommand2.getEnd())
         );
 
-        if (featureFlipper.isRemoveUserDataFromEmailTemplateEnabled()) {
+        if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
             verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
             verify(sender, times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
         } else {
@@ -240,12 +235,12 @@ class EmailSubscriptionTypeProcessorTest {
     @Test
     void shouldSendSingleEmailWithTwoRecieversUsingTemplatesFromDatabase() {
         try {
-            featureFlipper.setRemoveUserDataFromEmailTemplateEnabled(true);
+            featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(true);
             statelessSessionFactory.withSession(statelessSession -> {
                 shouldSendDefaultEmail();
             });
         } finally {
-            featureFlipper.setRemoveUserDataFromEmailTemplateEnabled(false);
+            featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(false);
         }
     }
 
@@ -301,7 +296,7 @@ class EmailSubscriptionTypeProcessorTest {
             endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
             testee.process(event, List.of(endpoint));
-            if (featureFlipper.isRemoveUserDataFromEmailTemplateEnabled()) {
+            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
                 verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
             } else {
                 verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));

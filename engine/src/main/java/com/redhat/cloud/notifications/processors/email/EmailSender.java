@@ -80,7 +80,7 @@ public class EmailSender {
         bopApiToken = LineBreakCleaner.clean(bopApiToken);
     }
 
-    public void sendEmail(Set<User> user, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory) {
+    public void sendEmail(Set<User> users, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory) {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
@@ -110,13 +110,15 @@ public class EmailSender {
             webhookSender.doHttpRequest(
                 event, endpoint,
                 bopRequest,
-                getPayload(user, event.getEventWrapper(), subject, body), "POST", bopUrl, persistHistory);
-
-            processedTimer.stop(registry.timer("processor.email.processed", "bundle", bundleName, "application", applicationName));
-
-            processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
+                getPayload(users, event.getEventWrapper(), subject, body),
+                "POST",
+                bopUrl,
+                persistHistory);
         } catch (Exception e) {
-            Log.info("Email sending failed", e);
+            Log.error("Email sending failed", e);
+        } finally {
+            processedTimer.stop(registry.timer("processor.email.processed", "bundle", bundleName, "application", applicationName));
+            processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
         }
     }
 

@@ -129,8 +129,8 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.instant-emails.enabled", defaultValue = "false")
     boolean instantEmailsEnabled;
 
-    @ConfigProperty(name = "notifications.remove-user-from-email-template.enabled", defaultValue = "false")
-    boolean removeUserDataFromEmailTemplateEnabled;
+    @ConfigProperty(name = "notifications.send-single-email-for-multiple-recipients.enabled", defaultValue = "false")
+    boolean sendSingleEmailForMultipleRecipientsEnabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
@@ -164,7 +164,7 @@ public class FeatureFlipper {
         Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
         Log.infof("The Rhel Advisor daily digest is %s", rhelAdvisorDailyDigestEnabled ? "enabled" : "disabled");
         Log.infof("Instant emails are %s", instantEmailsEnabled, "enabled", "disabled");
-        Log.infof("The removal of user data on email template is %s", removeUserDataFromEmailTemplateEnabled ? "enabled" : "disabled");
+        Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -442,12 +442,12 @@ public class FeatureFlipper {
         this.instantEmailsEnabled = instantEmailsEnabled;
     }
 
-    public boolean isRemoveUserDataFromEmailTemplateEnabled() {
-        return removeUserDataFromEmailTemplateEnabled;
+    public boolean isSendSingleEmailForMultipleRecipientsEnabled() {
+        return sendSingleEmailForMultipleRecipientsEnabled;
     }
 
-    public void setRemoveUserDataFromEmailTemplateEnabled(boolean removeUserDataFromEmailTemplateEnabled) {
-        this.removeUserDataFromEmailTemplateEnabled = removeUserDataFromEmailTemplateEnabled;
+    public void setSendSingleEmailForMultipleRecipientsEnabled(boolean sendSingleEmailForMultipleRecipientsEnabled) {
+        this.sendSingleEmailForMultipleRecipientsEnabled = sendSingleEmailForMultipleRecipientsEnabled;
     }
 
     /**
