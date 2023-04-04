@@ -26,6 +26,8 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
+import com.redhat.cloud.notifications.routers.sources.SourcesException;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -171,7 +173,11 @@ public class EndpointResource {
         for (Endpoint endpoint: endpoints) {
             // Fetch the secrets from Sources.
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-                this.secretUtils.loadSecretsForEndpoint(endpoint);
+                try {
+                    this.secretUtils.loadSecretsForEndpoint(endpoint);
+                } catch (final SourcesException e) {
+                    Log.error(e.getMessage(), e);
+                }
             }
         }
 
@@ -220,7 +226,11 @@ public class EndpointResource {
          * for more details.
          */
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            this.secretUtils.createSecretsForEndpoint(endpoint);
+            try {
+                this.secretUtils.createSecretsForEndpoint(endpoint);
+            } catch (final SourcesException e) {
+                Log.error(e.getMessage(), e);
+            }
         }
 
         return endpointRepository.createEndpoint(endpoint);
@@ -296,7 +306,11 @@ public class EndpointResource {
         } else {
             // Fetch the secrets from Sources.
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-                this.secretUtils.loadSecretsForEndpoint(endpoint);
+                try {
+                    this.secretUtils.loadSecretsForEndpoint(endpoint);
+                } catch (final SourcesException e) {
+                    Log.error(e.getMessage(), e);
+                }
             }
 
             return endpoint;
@@ -319,7 +333,11 @@ public class EndpointResource {
         // Clean up the secrets in Sources.
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
             Endpoint ep = endpointRepository.getEndpoint(orgId, id);
-            this.secretUtils.deleteSecretsForEndpoint(ep);
+            try {
+                this.secretUtils.deleteSecretsForEndpoint(ep);
+            } catch (final SourcesException e) {
+                Log.error(e.getMessage(), e);
+            }
         }
 
         endpointRepository.deleteEndpoint(orgId, id);
@@ -406,7 +424,11 @@ public class EndpointResource {
                 databaseEndpointProps.setBasicAuthentication(incomingEndpointProps.getBasicAuthentication());
                 databaseEndpointProps.setSecretToken(incomingEndpointProps.getSecretToken());
 
-                this.secretUtils.updateSecretsForEndpoint(dbEndpoint);
+                try {
+                    this.secretUtils.updateSecretsForEndpoint(dbEndpoint);
+                } catch (final SourcesException e) {
+                    Log.error(e.getMessage(), e);
+                }
             }
         }
 

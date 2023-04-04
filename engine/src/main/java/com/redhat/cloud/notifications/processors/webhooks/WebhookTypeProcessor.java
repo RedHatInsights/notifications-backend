@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnabled;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
+import com.redhat.cloud.notifications.routers.sources.SourcesException;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
@@ -163,7 +164,11 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
          * Get the basic authentication and secret token secrets from Sources.
          */
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            this.secretUtils.loadSecretsForEndpoint(endpoint);
+            try {
+                this.secretUtils.loadSecretsForEndpoint(endpoint);
+            } catch (final SourcesException e) {
+                Log.error(e.getMessage(), e);
+            }
         }
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {

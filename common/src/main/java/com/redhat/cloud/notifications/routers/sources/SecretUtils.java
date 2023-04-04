@@ -13,6 +13,18 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+/**
+ * A utility class to help manage the endpoints' secrets. The checked
+ * exceptions that are thrown were made in purpose to force the consumers to
+ * take action in case anything wrong happens with the Sources service. The
+ * reason behind this is letting runtime exceptions in this particular case
+ * might result in unexpected behavior. For example, in the "get endpoints"
+ * resource, if 100 endpoints get fetched, the typical behavior is to then
+ * fetch the secrets for each single one. If any of those endpoints contain
+ * invalid references to Sources secrets, then the exception would get raised
+ * and the error would be returned instead of the endpoints list, which could
+ * in turn produce a blank page in the front end.
+ */
 @ApplicationScoped
 public class SecretUtils {
 
@@ -38,8 +50,10 @@ public class SecretUtils {
     /**
      * Loads the endpoint's secrets from Sources.
      * @param endpoint the endpoint to get the secrets from.
+     * @throws SourcesException if any unexpected response is received from
+     * Sources.
      */
-    public void loadSecretsForEndpoint(Endpoint endpoint) {
+    public void loadSecretsForEndpoint(Endpoint endpoint) throws SourcesException {
         EndpointProperties endpointProperties = endpoint.getProperties();
 
         if (endpointProperties instanceof SourcesSecretable) {
@@ -49,35 +63,43 @@ public class SecretUtils {
             if (basicAuthSourcesId != null) {
                 final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
 
-                final Secret secret = this.sourcesService.getById(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    basicAuthSourcesId
-                );
+                try {
+                    final Secret secret = this.sourcesService.getById(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        basicAuthSourcesId
+                    );
 
-                getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
-
-                props.setBasicAuthentication(
-                    new BasicAuthentication(
-                        secret.username,
-                        secret.password
-                    )
-                );
+                    props.setBasicAuthentication(
+                        new BasicAuthentication(
+                            secret.username,
+                            secret.password
+                        )
+                    );
+                } catch (final SourcesRuntimeException e) {
+                    throw new SourcesException(endpoint.getId(), basicAuthSourcesId, false, e);
+                } finally {
+                    getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
+                }
             }
 
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
             if (secretTokenSourcesId != null) {
                 final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
 
-                final Secret secret = this.sourcesService.getById(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    secretTokenSourcesId
-                );
+                try {
+                    final Secret secret = this.sourcesService.getById(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        secretTokenSourcesId
+                    );
 
-                getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
-
-                props.setSecretToken(secret.password);
+                    props.setSecretToken(secret.password);
+                } catch (final SourcesRuntimeException e) {
+                    throw new SourcesException(endpoint.getId(), secretTokenSourcesId, false, e);
+                } finally {
+                    getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
+                }
             }
         }
     }
@@ -85,8 +107,10 @@ public class SecretUtils {
     /**
      * Creates the endpoint's secrets in Sources.
      * @param endpoint the endpoint to create the secrets from.
+     * @throws SourcesException if any unexpected response is received from
+     * Sources.
      */
-    public void createSecretsForEndpoint(Endpoint endpoint) {
+    public void createSecretsForEndpoint(Endpoint endpoint) throws SourcesException {
         EndpointProperties endpointProperties = endpoint.getProperties();
 
         if (endpointProperties instanceof SourcesSecretable) {
@@ -94,20 +118,28 @@ public class SecretUtils {
 
             final BasicAuthentication basicAuth = props.getBasicAuthentication();
             if (!this.isBasicAuthNullOrBlank(basicAuth)) {
-                final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
+                try {
+                    final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
 
-                Log.infof("[secret_id: %s] Basic authentication secret created in Sources", id);
+                    Log.infof("[secret_id: %s] Basic authentication secret created in Sources", id);
 
-                props.setBasicAuthenticationSourcesId(id);
+                    props.setBasicAuthenticationSourcesId(id);
+                } catch (final SourcesRuntimeException e) {
+                    throw new SourcesException(e);
+                }
             }
 
             final String secretToken = props.getSecretToken();
             if (secretToken != null && !secretToken.isBlank()) {
-                final long id = this.createSecretTokenSecret(secretToken, endpoint.getOrgId());
+                try {
+                    final long id = this.createSecretTokenSecret(secretToken, endpoint.getOrgId());
 
-                Log.infof("[secret_id: %s] Secret token secret created in Sources", id);
+                    Log.infof("[secret_id: %s] Secret token secret created in Sources", id);
 
-                props.setSecretTokenSourcesId(id);
+                    props.setSecretTokenSourcesId(id);
+                } catch (final SourcesRuntimeException e) {
+                    throw new SourcesException(e);
+                }
             }
         }
     }
@@ -125,8 +157,10 @@ public class SecretUtils {
      *  assumed that the user wants the secret to be created.</li>
      * </ul>
      * @param endpoint the endpoint to update the secrets from.
+     * @throws SourcesException if any unexpected response is received from
+     * Sources.
      */
-    public void updateSecretsForEndpoint(Endpoint endpoint) {
+    public void updateSecretsForEndpoint(Endpoint endpoint) throws SourcesException {
         EndpointProperties endpointProperties = endpoint.getProperties();
 
         if (endpointProperties instanceof SourcesSecretable) {
@@ -136,36 +170,48 @@ public class SecretUtils {
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
-                    this.sourcesService.delete(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        basicAuthId
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
+                    try {
+                        this.sourcesService.delete(
+                            endpoint.getOrgId(),
+                            this.sourcesPsk,
+                            basicAuthId
+                        );
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
 
-                    props.setBasicAuthenticationSourcesId(null);
+                        props.setBasicAuthenticationSourcesId(null);
+                    } catch (final SourcesRuntimeException e) {
+                        throw new SourcesException(endpoint.getId(), basicAuthId, true, e);
+                    }
                 } else {
                     Secret secret = new Secret();
 
                     secret.password = basicAuth.getPassword();
                     secret.username = basicAuth.getUsername();
 
-                    this.sourcesService.update(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        basicAuthId,
-                        secret
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
+                    try {
+                        this.sourcesService.update(
+                            endpoint.getOrgId(),
+                            this.sourcesPsk,
+                            basicAuthId,
+                            secret
+                        );
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
+                    } catch (final SourcesRuntimeException e) {
+                        throw new SourcesException(endpoint.getId(), basicAuthId, true, e);
+                    }
                 }
             } else {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
                     Log.debugf("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
                 } else {
-                    final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
+                    try {
+                        final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
 
-                    props.setBasicAuthenticationSourcesId(id);
+                        props.setBasicAuthenticationSourcesId(id);
+                    } catch (final SourcesRuntimeException e) {
+                        throw new SourcesException(endpoint.getId(), true, e);
+                    }
                 }
             }
 
@@ -173,37 +219,49 @@ public class SecretUtils {
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
                 if (secretToken == null || secretToken.isBlank()) {
-                    this.sourcesService.delete(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        secretTokenId
-                    );
+                    try {
+                        this.sourcesService.delete(
+                            endpoint.getOrgId(),
+                            this.sourcesPsk,
+                            secretTokenId
+                        );
 
-                    props.setSecretTokenSourcesId(null);
+                        props.setSecretTokenSourcesId(null);
 
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources during an endpoint update operation", endpoint.getId(), secretTokenId);
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources during an endpoint update operation", endpoint.getId(), secretTokenId);
+                    } catch (final SourcesRuntimeException e) {
+                        throw new SourcesException(endpoint.getId(), secretTokenId, true, e);
+                    }
                 } else {
                     Secret secret = new Secret();
 
                     secret.password = secretToken;
 
-                    this.sourcesService.update(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        secretTokenId,
-                        secret
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
+                    try {
+                        this.sourcesService.update(
+                            endpoint.getOrgId(),
+                            this.sourcesPsk,
+                            secretTokenId,
+                            secret
+                        );
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
+                    } catch (final SourcesRuntimeException e) {
+                        throw new SourcesException(endpoint.getId(), secretTokenId, true, e);
+                    }
                 }
             } else {
                 if (secretToken == null || secretToken.isBlank()) {
                     Log.debugf("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null or blank", endpoint.getId());
                 } else {
-                    final long id = this.createSecretTokenSecret(secretToken, endpoint.getOrgId());
+                    try {
+                        final long id = this.createSecretTokenSecret(secretToken, endpoint.getOrgId());
 
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources during an endpoint update operation", endpoint.getId(), id);
+                        Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources during an endpoint update operation", endpoint.getId(), id);
 
-                    props.setSecretTokenSourcesId(id);
+                        props.setSecretTokenSourcesId(id);
+                    } catch (final SourcesRuntimeException e) {
+                        throw new SourcesException(endpoint.getId(), true, e);
+                    }
                 }
             }
         }
@@ -213,8 +271,10 @@ public class SecretUtils {
      * Deletes the endpoint's secrets. It requires for the properties to have a "basic authentication" ID or "secret
      * token" ID on the database.
      * @param endpoint the endpoint to delete the secrets from.
+     * @throws SourcesException if any unexpected response is received from
+     * Sources.
      */
-    public void deleteSecretsForEndpoint(Endpoint endpoint) {
+    public void deleteSecretsForEndpoint(Endpoint endpoint) throws SourcesException {
         EndpointProperties endpointProperties = endpoint.getProperties();
 
         if (endpointProperties instanceof SourcesSecretable) {
@@ -222,22 +282,30 @@ public class SecretUtils {
 
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
-                this.sourcesService.delete(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    basicAuthId
-                );
-                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
+                try {
+                    this.sourcesService.delete(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        basicAuthId
+                    );
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
+                } catch (final SourcesRuntimeException e) {
+                    throw new SourcesException(endpoint.getId(), basicAuthId, false, e);
+                }
             }
 
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
-                this.sourcesService.delete(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    secretTokenId
-                );
-                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
+                try {
+                    this.sourcesService.delete(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        secretTokenId
+                    );
+                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
+                } catch (final SourcesRuntimeException e) {
+                    throw new SourcesException(endpoint.getId(), secretTokenId, false, e);
+                }
             }
         }
     }
@@ -247,8 +315,10 @@ public class SecretUtils {
      * @param basicAuthentication the contents of the "basic authentication" secret.
      * @param orgId the organization id related to this operation for the tenant identification.
      * @return the id of the created secret.
+     * @throws SourcesException if any unexpected response is received from
+     * Sources.
      */
-    private long createBasicAuthentication(final BasicAuthentication basicAuthentication, final String orgId) {
+    private long createBasicAuthentication(final BasicAuthentication basicAuthentication, final String orgId) throws SourcesException {
         Secret secret = new Secret();
 
         secret.authenticationType = Secret.TYPE_BASIC_AUTH;
@@ -270,7 +340,7 @@ public class SecretUtils {
      * @param orgId the organization id related to this operation for the tenant identification.
      * @return the id of the created secret.
      */
-    private long createSecretTokenSecret(final String secretToken, final String orgId) {
+    private long createSecretTokenSecret(final String secretToken, final String orgId) throws SourcesException {
         Secret secret = new Secret();
 
         secret.authenticationType = Secret.TYPE_SECRET_TOKEN;

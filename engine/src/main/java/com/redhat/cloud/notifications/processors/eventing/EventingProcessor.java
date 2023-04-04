@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
+import com.redhat.cloud.notifications.routers.sources.SourcesException;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -118,7 +119,11 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
         if (featureFlipper.isSourcesUsedAsSecretsBackend()) {
             // Get the basic authentication and secret token secrets from Sources.
-            secretUtils.loadSecretsForEndpoint(endpoint);
+            try {
+                this.secretUtils.loadSecretsForEndpoint(endpoint);
+            } catch (final SourcesException e) {
+                Log.error(e.getMessage(), e);
+            }
         }
         getSecretToken(properties).ifPresent(secretToken -> metaData.put(TOKEN_HEADER, secretToken));
         getBasicAuth(properties).ifPresent(basicAuth -> metaData.put("basicAuth", basicAuth));
