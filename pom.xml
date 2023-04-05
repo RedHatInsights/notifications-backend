@@ -46,7 +46,7 @@
         <jacoco-plugin.version>0.8.9</jacoco-plugin.version>
         <checkstyle.version>10.9.3</checkstyle.version>
 
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.18.0</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <failsafe.version>3.3.1</failsafe.version>
