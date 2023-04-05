@@ -27,7 +27,6 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "iteration": 1654069298871,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -99,7 +98,7 @@ data:
             "showThresholdMarkers": true,
             "text": {}
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -165,7 +164,7 @@ data:
             "showThresholdMarkers": true,
             "text": {}
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -240,7 +239,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -300,7 +299,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -376,7 +375,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -436,7 +435,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -512,7 +511,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -572,7 +571,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -637,7 +636,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -732,7 +731,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -833,7 +832,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -937,7 +936,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1036,7 +1035,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -1130,6 +1129,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "fill": 1,
@@ -1158,7 +1158,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1168,11 +1168,17 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PDD8BE47D10408F45"
+              },
+              "editorMode": "code",
               "exemplar": true,
               "expr": "sum(rate(processor_email_processed_total[5m])) by (application,bundle)",
               "hide": false,
               "interval": "",
               "legendFormat": "{{bundle}}/{{application}}",
+              "range": true,
               "refId": "A"
             }
           ],
@@ -1242,7 +1248,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1325,7 +1331,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1421,7 +1427,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -1434,6 +1440,254 @@ data:
           ],
           "title": "Aggregator cronjob - last successful run",
           "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 23
+          },
+          "id": 213,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "exemplar": true,
+              "expr": "sum(rate(processor_slack_processed_total[5m])) by (application,bundle)",
+              "legendFormat": "{{bundle}}/{{application}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Processed Slack notifications",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 23
+          },
+          "id": 216,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": true,
+              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://success\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "legendFormat": "Success",
+              "range": true,
+              "refId": "Success"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://handler\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Handled",
+              "range": true,
+              "refId": "Handled"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://httpFailed\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Http failed",
+              "range": true,
+              "refId": "Http Failed"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://ioFailed\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "hide": false,
+              "legendFormat": "IO Failed",
+              "range": true,
+              "refId": "IO Fail"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://targetUrlValidationFailed\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Target validation url failed",
+              "range": true,
+              "refId": "Target validation url failed"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://secureConnectionFailed\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Secure connection failed",
+              "range": true,
+              "refId": "Secure connection failed"
+            }
+          ],
+          "title": "Processed Splunk + Snow notifications",
+          "type": "timeseries"
         },
         {
           "collapsed": false,
@@ -1487,7 +1741,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1577,7 +1831,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1673,7 +1927,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.5.2",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -1746,6 +2000,8 @@ data:
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
@@ -1779,7 +2035,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -1801,7 +2058,8 @@ data:
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "bottom"
+              "placement": "bottom",
+              "showLegend": true
             },
             "tooltip": {
               "mode": "single",
@@ -1833,7 +2091,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -1866,7 +2125,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -1891,6 +2150,8 @@ data:
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
@@ -1924,7 +2185,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -1946,7 +2208,8 @@ data:
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "bottom"
+              "placement": "bottom",
+              "showLegend": true
             },
             "tooltip": {
               "mode": "single",
@@ -1978,7 +2241,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -2011,7 +2275,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -2036,6 +2300,8 @@ data:
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
@@ -2069,7 +2335,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -2091,7 +2358,8 @@ data:
             "legend": {
               "calcs": [],
               "displayMode": "list",
-              "placement": "bottom"
+              "placement": "bottom",
+              "showLegend": true
             },
             "tooltip": {
               "mode": "single",
@@ -2123,7 +2391,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -2156,7 +2425,7 @@ data:
             "text": {},
             "textMode": "auto"
           },
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "exemplar": true,
@@ -2204,7 +2473,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2289,7 +2558,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2374,7 +2643,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2468,7 +2737,7 @@ data:
             "alertThreshold": false
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2571,7 +2840,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2652,7 +2921,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -2758,7 +3027,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -2852,6 +3121,21 @@ data:
           "datasource": {
             "uid": "$datasource"
           },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              }
+            },
+            "overrides": []
+          },
           "gridPos": {
             "h": 9,
             "w": 16,
@@ -2866,6 +3150,44 @@ data:
             "show": true
           },
           "links": [],
+          "options": {
+            "calculate": false,
+            "calculation": {},
+            "cellGap": 2,
+            "cellValues": {},
+            "color": {
+              "exponent": 0.5,
+              "fill": "#c15c17",
+              "mode": "opacity",
+              "reverse": false,
+              "scale": "exponential",
+              "scheme": "Oranges",
+              "steps": 128
+            },
+            "exemplars": {
+              "color": "rgba(255,0,255,0.7)"
+            },
+            "filterValues": {
+              "le": 1e-9
+            },
+            "legend": {
+              "show": true
+            },
+            "rowsFrame": {
+              "layout": "auto"
+            },
+            "showValue": "never",
+            "tooltip": {
+              "show": true,
+              "yHistogram": false
+            },
+            "yAxis": {
+              "axisPlacement": "left",
+              "reverse": false,
+              "unit": "ms"
+            }
+          },
+          "pluginVersion": "9.3.8",
           "reverseYBuckets": false,
           "targets": [
             {
@@ -2966,7 +3288,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.1",
+          "pluginVersion": "9.3.8",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -3069,7 +3391,7 @@ data:
         }
       ],
       "refresh": "15m",
-      "schemaVersion": 36,
+      "schemaVersion": 37,
       "style": "dark",
       "tags": [
         "notifications"
@@ -3138,7 +3460,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 40,
+      "version": 2,
       "weekStart": ""
     }
 kind: ConfigMap
