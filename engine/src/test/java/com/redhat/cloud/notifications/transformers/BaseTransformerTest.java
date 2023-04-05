@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.transformers;
 
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -90,7 +91,7 @@ class BaseTransformerTest {
         event.setBundleDisplayName(FIXTURE_BUNDLE_DISPLAY_NAME);
         event.setEventTypeDisplayName(FIXTURE_EVENT_TYPE_DISPLAY_NAME);
 
-        event.setAction(action);
+        event.setEventWrapper(new EventWrapperAction(action));
 
         // Call the function under test.
         final JsonObject result = this.baseTransformer.toJsonObject(event);

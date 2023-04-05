@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -132,9 +133,9 @@ class CamelTypeProcessorTest {
 
         // We need input data for the test.
         Event event = buildEvent();
-        Endpoint endpoint1 = buildCamelEndpoint(event.getAction().getAccountId());
+        Endpoint endpoint1 = buildCamelEndpoint(event.getEventWrapper().getAccountId());
         CamelProperties properties1 = endpoint1.getProperties(CamelProperties.class);
-        Endpoint endpoint2 = buildCamelEndpoint(event.getAction().getAccountId());
+        Endpoint endpoint2 = buildCamelEndpoint(event.getEventWrapper().getAccountId());
 
         // Let's trigger the processing.
         camelProcessor.process(event, List.of(endpoint1, endpoint2));
@@ -237,7 +238,7 @@ class CamelTypeProcessorTest {
 
         Event event = new Event();
         event.setId(FIXTURE_EVENT_ORIGINAL_UUID);
-        event.setAction(action);
+        event.setEventWrapper(new EventWrapperAction(action));
         return event;
     }
 

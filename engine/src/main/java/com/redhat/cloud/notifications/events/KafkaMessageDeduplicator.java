@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
+import com.redhat.cloud.notifications.models.EventTypeKey;
 import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -51,7 +52,7 @@ public class KafkaMessageDeduplicator {
      * will be used and the other ones will be ignored. An invalid header value will be counted and logged, but won't
      * interrupt the message processing: the deduplication will be disabled for the message.
      */
-    public UUID findMessageId(String bundleName, String applicationName, Message<String> message) {
+    public UUID findMessageId(EventTypeKey eventTypeKey, Message<String> message) {
         boolean found = false;
         Optional<KafkaMessageMetadata> metadata = message.getMetadata(KafkaMessageMetadata.class);
         if (metadata.isPresent()) {
@@ -61,8 +62,8 @@ public class KafkaMessageDeduplicator {
                 Header header = headers.next();
                 if (header.value() == null) {
                     invalidMessageIdCounter.increment();
-                    Log.warnf("Application %s/%s sent an invalid Kafka header [%s=null]. They must change their " +
-                                    "integration and send a non-null value.", bundleName, applicationName, MESSAGE_ID_HEADER);
+                    Log.warnf("Application sent an EventType(%s) with an invalid Kafka header [%s=null]. They must change their " +
+                                    "integration and send a non-null value.", eventTypeKey, MESSAGE_ID_HEADER);
                 } else {
                     String headerValue = new String(header.value(), UTF_8);
                     try {
@@ -72,25 +73,25 @@ public class KafkaMessageDeduplicator {
                             throw new IllegalArgumentException("Wrong UUID version received");
                         }
                         validMessageIdCounter.increment();
-                        Log.tracef("Application %s/%s sent a valid Kafka header [%s=%s]",
-                                bundleName, applicationName, MESSAGE_ID_HEADER, headerValue);
+                        Log.tracef("Application sent an EventType(%s) with a valid Kafka header [%s=%s]",
+                                eventTypeKey, MESSAGE_ID_HEADER, headerValue);
                         return messageId;
                     } catch (IllegalArgumentException e) {
                         invalidMessageIdCounter.increment();
-                        Log.warnf("Application %s/%s sent an invalid Kafka header [%s=%s]. They must change their " +
-                                "integration and send a valid UUID (version 4).", bundleName, applicationName, MESSAGE_ID_HEADER, headerValue);
+                        Log.warnf("Application sent an EventType(%s) with an invalid Kafka header [%s=%s]. They must change their " +
+                                "integration and send a valid UUID (version 4).", eventTypeKey, MESSAGE_ID_HEADER, headerValue);
                     }
                 }
             }
             if (headers.hasNext()) {
-                Log.warnf("Application %s/%s sent multiple Kafka headers [%s]. They must change their " +
-                                "integration and send only one value.", bundleName, applicationName, MESSAGE_ID_HEADER);
+                Log.warnf("Application sent an EventType(%s) with multiple Kafka headers [%s]. They must change their " +
+                                "integration and send only one value.", eventTypeKey, MESSAGE_ID_HEADER);
             }
         }
         if (!found) {
             missingMessageIdCounter.increment();
-            Log.tracef("Application %s/%s did not send any Kafka header [%s]",
-                    bundleName, applicationName, MESSAGE_ID_HEADER);
+            Log.tracef("Application sent an EventType(%s) but did not send any Kafka header [%s]",
+                    eventTypeKey, MESSAGE_ID_HEADER);
         }
         // This will be returned if the message ID is either invalid or not found.
         return null;

@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.AggregationCommand;
@@ -16,6 +17,7 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
@@ -119,21 +121,25 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (endpoints != null && !endpoints.isEmpty()) {
-            Action action = event.getAction();
+            // TODO: Check if we should be using the eventType or application's id instead of the name
+            EventType eventType = event.getEventType();
+            String bundleName = eventType.getApplication().getBundle().getName();
+            String applicationName = eventType.getApplication().getName();
+            String eventTypeName = eventType.getName();
             boolean shouldSaveAggregation;
             if (featureFlipper.isUseTemplatesFromDb()) {
-                shouldSaveAggregation = templateRepository.isEmailAggregationSupported(action.getBundle(), action.getApplication(), NON_INSTANT_SUBSCRIPTION_TYPES);
+                shouldSaveAggregation = templateRepository.isEmailAggregationSupported(bundleName, applicationName, NON_INSTANT_SUBSCRIPTION_TYPES);
             } else {
-                EmailTemplate template = emailTemplateFactory.get(action.getBundle(), action.getApplication());
+                EmailTemplate template = emailTemplateFactory.get(bundleName, applicationName);
                 shouldSaveAggregation = NON_INSTANT_SUBSCRIPTION_TYPES.stream()
-                        .anyMatch(emailSubscriptionType -> template.isSupported(action.getEventType(), emailSubscriptionType));
+                        .anyMatch(emailSubscriptionType -> template.isSupported(eventTypeName, emailSubscriptionType));
             }
 
             if (shouldSaveAggregation) {
                 EmailAggregation aggregation = new EmailAggregation();
-                aggregation.setOrgId(action.getOrgId());
-                aggregation.setApplicationName(action.getApplication());
-                aggregation.setBundleName(action.getBundle());
+                aggregation.setOrgId(event.getOrgId());
+                aggregation.setApplicationName(applicationName);
+                aggregation.setBundleName(bundleName);
 
                 final JsonObject transformedEvent = this.baseTransformer.toJsonObject(event);
                 aggregation.setPayload(transformedEvent);
@@ -147,7 +153,10 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     private void sendEmail(Event event, Set<Endpoint> endpoints) {
         EmailSubscriptionType emailSubscriptionType = EmailSubscriptionType.INSTANT;
         processedEmailCount.increment();
-        Action action = event.getAction();
+        EventType eventType = event.getEventType();
+        String bundleName = eventType.getApplication().getBundle().getName();
+        String applicationName = eventType.getApplication().getName();
+        String eventTypeName = eventType.getName();
 
         final TemplateInstance subject;
         final TemplateInstance body;
@@ -164,13 +173,13 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 body = templateService.compileTemplate(bodyData, "body");
             }
         } else {
-            EmailTemplate emailTemplate = emailTemplateFactory.get(action.getBundle(), action.getApplication());
-            if (!emailTemplate.isSupported(action.getEventType(), emailSubscriptionType)) {
+            EmailTemplate emailTemplate = emailTemplateFactory.get(bundleName, applicationName);
+            if (!emailTemplate.isSupported(eventTypeName, emailSubscriptionType)) {
                 return;
             }
 
-            TemplateInstance fileTemplateSubject = emailTemplate.getTitle(action.getEventType(), emailSubscriptionType);
-            TemplateInstance fileTemplateBody = emailTemplate.getBody(action.getEventType(), emailSubscriptionType);
+            TemplateInstance fileTemplateSubject = emailTemplate.getTitle(eventTypeName, emailSubscriptionType);
+            TemplateInstance fileTemplateBody = emailTemplate.getBody(eventTypeName, emailSubscriptionType);
 
             if (fileTemplateSubject == null || fileTemplateBody == null) {
                 if (fileTemplateSubject != null || fileTemplateBody != null) {
@@ -191,13 +200,13 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
 
         Set<RecipientSettings> requests = Stream.concat(
                 endpoints.stream().map(EndpointRecipientSettings::new),
-                ActionRecipientSettings.fromAction(action).stream()
+                ActionRecipientSettings.fromEventWrapper(event.getEventWrapper()).stream()
         ).collect(Collectors.toSet());
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(action.getOrgId(), action.getBundle(), action.getApplication(), action.getEventType(), emailSubscriptionType));
+                .getEmailSubscribersUserId(event.getOrgId(), bundleName, applicationName, eventTypeName, emailSubscriptionType));
 
-        for (User user : recipientResolver.recipientUsers(action.getOrgId(), requests, subscribers)) {
+        for (User user : recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers)) {
             emailSender.sendEmail(user, event, subject, body, true);
         }
     }
@@ -276,7 +285,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
 
                 Event event = new Event();
                 event.setId(UUID.randomUUID());
-                event.setAction(action);
+                event.setEventWrapper(new EventWrapperAction(action));
 
                 emailSender.sendEmail(aggregation.getKey(), event, subject, body, false);
             }

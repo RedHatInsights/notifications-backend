@@ -75,7 +75,6 @@ public class InventoryTestHelpers {
         ));
 
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
         aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;

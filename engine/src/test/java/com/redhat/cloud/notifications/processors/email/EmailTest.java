@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -131,7 +132,7 @@ public class EmailTest {
         Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
 
         Event event = new Event();
-        event.setAction(emailActionMessage);
+        event.setEventWrapper(new EventWrapperAction(emailActionMessage));
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 
@@ -244,7 +245,7 @@ public class EmailTest {
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         Event event = new Event();
-        event.setAction(emailActionMessage);
+        event.setEventWrapper(new EventWrapperAction(emailActionMessage));
 
         EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
 

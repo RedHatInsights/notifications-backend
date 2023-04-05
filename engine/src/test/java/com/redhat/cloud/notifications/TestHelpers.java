@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -663,7 +664,7 @@ public class TestHelpers {
      */
     public static JsonObject wrapActionToJsonObject(final Action action) {
         com.redhat.cloud.notifications.models.Event event = new com.redhat.cloud.notifications.models.Event();
-        event.setAction(action);
+        event.setEventWrapper(new EventWrapperAction(action));
 
         return new BaseTransformer().toJsonObject(event);
     }

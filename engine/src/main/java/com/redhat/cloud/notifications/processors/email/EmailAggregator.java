@@ -167,7 +167,7 @@ public class EmailAggregator {
                 return recipients.stream().map(r -> {
                     JsonObject recipient = (JsonObject) r;
                     return recipient.mapTo(Recipient.class);
-                }).map(ActionRecipientSettings::new).collect(Collectors.toList());
+                }).map(r -> new ActionRecipientSettings(r.getOnlyAdmins(), r.getIgnoreUserPreferences(), r.getUsers())).collect(Collectors.toList());
             }
 
         }

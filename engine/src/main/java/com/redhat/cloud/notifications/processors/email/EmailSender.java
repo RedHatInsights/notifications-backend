@@ -1,9 +1,10 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
@@ -81,13 +82,14 @@ public class EmailSender {
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
-        Action action = event.getAction();
-
         Timer.Sample processedTimer = Timer.start(registry);
+        EventType eventType = event.getEventType();
+        String bundleName = eventType.getApplication().getBundle().getName();
+        String applicationName = eventType.getApplication().getName();
 
         // uses canonical EmailSubscription
         try {
-            Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(action.getAccountId(), action.getOrgId());
+            Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(event.getAccountId(), event.getOrgId());
 
             // TODO Add recipients processing from policies-notifications processing (failed recipients)
             //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
@@ -98,9 +100,9 @@ public class EmailSender {
             webhookSender.doHttpRequest(
                     event, endpoint,
                     bopRequest,
-                    getPayload(user, action, subject, body), "POST", bopUrl, persistHistory);
+                    getPayload(user, event.getEventWrapper(), subject, body), "POST", bopUrl, persistHistory);
 
-            processedTimer.stop(registry.timer("processor.email.processed", "bundle", action.getBundle(), "application", action.getApplication()));
+            processedTimer.stop(registry.timer("processor.email.processed", "bundle", bundleName, "application", applicationName));
 
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
         } catch (Exception e) {
@@ -108,19 +110,17 @@ public class EmailSender {
         }
     }
 
-    private JsonObject getPayload(User user, Action action, TemplateInstance subject, TemplateInstance body) {
+    private JsonObject getPayload(User user, EventWrapper<?, ?> eventWrapper, TemplateInstance subject, TemplateInstance body) {
 
         String renderedSubject;
         String renderedBody;
         try {
-            renderedSubject = templateService.renderTemplate(user, action, subject);
-            renderedBody = templateService.renderTemplate(user, action, body);
+            renderedSubject = templateService.renderTemplate(user, eventWrapper.getEvent(), subject);
+            renderedBody = templateService.renderTemplate(user, eventWrapper.getEvent(), body);
         } catch (Exception e) {
             Log.warnf(e,
-                    "Unable to render template for bundle: [%s] application: [%s], eventType: [%s].",
-                    action.getBundle(),
-                    action.getApplication(),
-                    action.getEventType()
+                    "Unable to render template for %s.",
+                    eventWrapper.getKey().toString()
             );
             throw e;
         }

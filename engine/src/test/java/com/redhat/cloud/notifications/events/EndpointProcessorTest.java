@@ -65,7 +65,7 @@ public class EndpointProcessorTest {
         final Action rawAction = Parser.decode(jsonAction);
 
         final Event event = new Event();
-        event.setAction(rawAction);
+        event.setEventWrapper(new EventWrapperAction(rawAction));
         event.setId(rawAction.getId());
         event.setOrgId(orgId);
 
@@ -95,7 +95,7 @@ public class EndpointProcessorTest {
         eventType.setId(eventTypeId);
 
         final Event event = new Event();
-        event.setAction(testAction);
+        event.setEventWrapper(new EventWrapperAction(testAction));
         event.setEventType(eventType);
         event.setId(testAction.getId());
         event.setOrgId(orgId);

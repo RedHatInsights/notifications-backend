@@ -241,7 +241,6 @@ class RhosakEmailAggregatorTest {
 
         emailActionMessage.setAccountId(ACCOUNT_ID);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
         aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;
@@ -279,7 +278,6 @@ class RhosakEmailAggregatorTest {
 
         emailActionMessage.setAccountId(ACCOUNT_ID);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
         aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;

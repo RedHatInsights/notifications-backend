@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.qute.Engine;
@@ -39,9 +38,10 @@ public class TemplateService {
         return engine.parse(template, null, name).instance();
     }
 
-    public String renderTemplate(User user, Action action, TemplateInstance templateInstance) {
+    public String renderTemplate(User user, Object event, TemplateInstance templateInstance) {
         return templateInstance
-                .data("action", action)
+                .data("action", event)
+                .data("event", event)
                 .data("user", user)
                 .data("environment", environment)
                 .render();

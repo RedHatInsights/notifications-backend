@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -66,6 +67,10 @@ public class EventType {
 
     @JsonInclude(NON_NULL)
     private String description;
+
+    @JsonInclude(NON_NULL)
+    @Column(name = "fqn")
+    private String fullyQualifiedName;
 
     @NotNull
     @Transient
