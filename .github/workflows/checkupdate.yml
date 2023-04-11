@@ -21,6 +21,6 @@ jobs:
           git add -A
           git commit -m "Update ubi-minimal:latest image digest" || echo "No changes to commit"
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           title: 'Update ubi-minimal:latest image digest'
