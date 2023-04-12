@@ -95,7 +95,7 @@ public class EndpointProcessor {
                                         slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else if ("teams".equals(endpointsBySubTypeEntry.getKey())) {
                                         teamsProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                    } else if ("google-chat".equals(endpointsBySubTypeEntry.getKey())) {
+                                    } else if ("google_chat".equals(endpointsBySubTypeEntry.getKey())) {
                                         googleChatProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else {
                                         camelProcessor.process(event, endpointsBySubTypeEntry.getValue());

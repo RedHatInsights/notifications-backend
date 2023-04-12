@@ -123,7 +123,7 @@ public class GoogleChatProcessor extends EndpointTypeProcessor {
     }
 
     private TemplateInstance getTemplate(String orgId) {
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, orgId, ORG, "google-spaces")
+        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, orgId, ORG, "google_chat")
                 .orElseThrow(() -> new IllegalStateException("No default template defined for integration"));
         String template = integrationTemplate.getTheTemplate().getData();
         return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
