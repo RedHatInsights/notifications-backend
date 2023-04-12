@@ -51,6 +51,13 @@ public class GoogleChatRouteBuilder extends RouteBuilder {
                 .setHeader(HTTP_METHOD, constant("POST"))
                 .setHeader(CONTENT_TYPE, constant("application/json"))
                 .doTry()
+                    /*
+                     * Webhook urls provided by Google have already encoded parameters, by default, Camel will also encode endpoint urls.
+                     * Parameters such as token values, won't be usable if they are encoded twice.
+                     * To avoid double encoding, Camel provides the `RAW()` instruction. It can be applied to parameters values but not on full url.
+                     * That involve to split Urls parameters, surround each value by `RAW()` instruction, then concat all those to rebuild endpoint url.
+                     * To avoid all those steps, we decode the full url, then Camel will encode it to send the expected format to Google servers.
+                     */
                     .toD(URLDecoder.decode("${exchangeProperty.webhookUrl}", StandardCharsets.UTF_8), maxEndpointCacheSize)
                 .doCatch(HttpOperationFailedException.class)
                     .process(notificationErrorProcessor);
