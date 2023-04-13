@@ -1,13 +1,16 @@
 package com.redhat.cloud.notifications.recipients.request;
 
+import com.redhat.cloud.event.core.v1.Recipients;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -51,13 +54,13 @@ public class ActionRecipientSettings extends RecipientSettings {
                     .stream()
                     .map(r -> new ActionRecipientSettings(r.getOnlyAdmins(), r.getIgnoreUserPreferences(), r.getUsers()))
                     .collect(Collectors.toList());
-        } else if (eventWrapper.getEvent() instanceof NotificationsConsoleCloudEvent) {
-            NotificationsConsoleCloudEvent cloudEvent = (NotificationsConsoleCloudEvent) eventWrapper.getEvent();
-            if (cloudEvent.getRecipients() != null) {
+        } else if (eventWrapper.getEvent() instanceof NotificationsConsoleCloudEvent cloudEvent) {
+            Optional<Recipients> recipients = cloudEvent.getRecipients();
+            if (recipients.isPresent()) {
                 return List.of(new ActionRecipientSettings(
-                        cloudEvent.getRecipients().isOnlyAdmins(),
-                        cloudEvent.getRecipients().isIgnoreUserPreferences(),
-                        cloudEvent.getRecipients().getUsers()
+                        recipients.get().getOnlyAdmins(),
+                        recipients.get().getIgnoreUserPreferences(),
+                        Arrays.asList(recipients.get().getUsers())
                 ));
             }
         }

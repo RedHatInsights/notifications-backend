@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.events;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformer;
@@ -65,9 +64,6 @@ public class EventConsumer {
     ActionParser actionParser;
 
     @Inject
-    ObjectMapper objectMapper;
-
-    @Inject
     EventTypeRepository eventTypeRepository;
 
     @Inject
@@ -82,7 +78,7 @@ public class EventConsumer {
     @Inject
     CloudEventTransformerFactory cloudEventTransformerFactory;
 
-    ConsoleCloudEventParser cloudEventParser;
+    ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
     private Counter rejectedCounter;
     private Counter processingErrorCounter;
@@ -95,8 +91,6 @@ public class EventConsumer {
         processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
         processingExceptionCounter = registry.counter(PROCESSING_EXCEPTION_COUNTER_NAME);
         duplicateCounter = registry.counter(DUPLICATE_COUNTER_NAME);
-
-        cloudEventParser = new ConsoleCloudEventParser(objectMapper);
     }
 
     @Incoming(INGRESS_CHANNEL)
