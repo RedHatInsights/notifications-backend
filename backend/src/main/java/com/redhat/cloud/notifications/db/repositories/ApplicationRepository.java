@@ -90,6 +90,7 @@ public class ApplicationRepository {
         if (bundleName != null) {
             sql += " WHERE bundle.name = :bundleName";
         }
+        sql += " ORDER BY displayName ASC";
         TypedQuery<Application> query = entityManager.createQuery(sql, Application.class);
         if (bundleName != null) {
             query = query.setParameter("bundleName", bundleName);
