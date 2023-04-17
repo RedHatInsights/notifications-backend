@@ -28,7 +28,7 @@ export namespace Schemas {
 
   export const AggregationEmailTemplate = zodSchemaAggregationEmailTemplate();
   export type AggregationEmailTemplate = {
-    application?: Application1 | undefined | null;
+    application?: Application | undefined | null;
     application_id?: UUID | undefined | null;
     body_template?: Template | undefined | null;
     body_template_id: UUID;
@@ -42,18 +42,29 @@ export namespace Schemas {
 
   export const Application = zodSchemaApplication();
   export type Application = {
-    display_name: string;
-    id: UUID;
-  };
-
-  export const Application1 = zodSchemaApplication1();
-  export type Application1 = {
     bundle_id: UUID;
     created?: LocalDateTime | undefined | null;
     display_name: string;
     id?: UUID | undefined | null;
     name: string;
     updated?: LocalDateTime | undefined | null;
+  };
+
+  export const Application1 = zodSchemaApplication1();
+  export type Application1 = {
+    display_name: string;
+    id: UUID;
+  };
+
+  export const ApplicationSettingsValue = zodSchemaApplicationSettingsValue();
+  export type ApplicationSettingsValue = {
+    hasForcedEmail?: boolean | undefined | null;
+    notifications?:
+      | {
+          [x: string]: boolean;
+        }
+      | undefined
+      | null;
   };
 
   export const BasicAuthentication = zodSchemaBasicAuthentication();
@@ -97,6 +108,16 @@ export namespace Schemas {
     updated?: LocalDateTime | undefined | null;
   };
 
+  export const BundleSettingsValue = zodSchemaBundleSettingsValue();
+  export type BundleSettingsValue = {
+    applications?:
+      | {
+          [x: string]: ApplicationSettingsValue;
+        }
+      | undefined
+      | null;
+  };
+
   export const CamelProperties = zodSchemaCamelProperties();
   export type CamelProperties = {
     basic_authentication?: BasicAuthentication | undefined | null;
@@ -114,7 +135,9 @@ export namespace Schemas {
   export const CreateBehaviorGroupRequest =
     zodSchemaCreateBehaviorGroupRequest();
   export type CreateBehaviorGroupRequest = {
-    bundle_id: UUID;
+    bundle_id?: UUID | undefined | null;
+    bundle_name?: string | undefined | null;
+    bundle_uuid_or_bundle_name_valid?: boolean | undefined | null;
     display_name: string;
     endpoint_ids?: Array<string> | undefined | null;
     event_type_ids?: Array<string> | undefined | null;
@@ -196,11 +219,7 @@ export namespace Schemas {
     | 'FAILED';
 
   export const EndpointType = zodSchemaEndpointType();
-  export type EndpointType =
-    | 'webhook'
-    | 'email_subscription'
-    | 'default'
-    | 'camel';
+  export type EndpointType = 'webhook' | 'email_subscription' | 'camel';
 
   export const Environment = zodSchemaEnvironment();
   export type Environment = 'PROD' | 'STAGE' | 'EPHEMERAL' | 'LOCAL_SERVER';
@@ -242,10 +261,11 @@ export namespace Schemas {
 
   export const EventType = zodSchemaEventType();
   export type EventType = {
-    application?: Application1 | undefined | null;
+    application?: Application | undefined | null;
     application_id: UUID;
     description?: string | undefined | null;
     display_name: string;
+    fully_qualified_name?: string | undefined | null;
     id?: UUID | undefined | null;
     name: string;
   };
@@ -304,7 +324,7 @@ export namespace Schemas {
 
   export const InternalUserPermissions = zodSchemaInternalUserPermissions();
   export type InternalUserPermissions = {
-    applications: Array<Application>;
+    applications: Array<Application1>;
     is_admin: boolean;
     roles: Array<string>;
   };
@@ -314,6 +334,9 @@ export namespace Schemas {
 
   export const LocalDateTime = zodSchemaLocalDateTime();
   export type LocalDateTime = string;
+
+  export const LocalTime = zodSchemaLocalTime();
+  export type LocalTime = string;
 
   export const MessageValidationResponse = zodSchemaMessageValidationResponse();
   export type MessageValidationResponse = {
@@ -397,6 +420,16 @@ export namespace Schemas {
     environment?: Environment | undefined | null;
   };
 
+  export const SettingsValues = zodSchemaSettingsValues();
+  export type SettingsValues = {
+    bundles?:
+      | {
+          [x: string]: BundleSettingsValue;
+        }
+      | undefined
+      | null;
+  };
+
   export const Status = zodSchemaStatus();
   export type Status = 'UP' | 'MAINTENANCE';
 
@@ -410,6 +443,15 @@ export namespace Schemas {
     updated?: LocalDateTime | undefined | null;
   };
 
+  export const TriggerDailyDigestRequest = zodSchemaTriggerDailyDigestRequest();
+  export type TriggerDailyDigestRequest = {
+    application_name: string;
+    bundle_name: string;
+    end?: LocalDateTime | undefined | null;
+    org_id: string;
+    start?: LocalDateTime | undefined | null;
+  };
+
   export const UUID = zodSchemaUUID();
   export type UUID = string;
 
@@ -417,8 +459,15 @@ export namespace Schemas {
     zodSchemaUpdateBehaviorGroupRequest();
   export type UpdateBehaviorGroupRequest = {
     display_name?: string | undefined | null;
+    display_name_not_null_and_blank?: boolean | undefined | null;
     endpoint_ids?: Array<string> | undefined | null;
     event_type_ids?: Array<string> | undefined | null;
+  };
+
+  export const UserConfigPreferences = zodSchemaUserConfigPreferences();
+  export type UserConfigPreferences = {
+    daily_email?: boolean | undefined | null;
+    instant_email?: boolean | undefined | null;
   };
 
   export const WebhookProperties = zodSchemaWebhookProperties();
@@ -456,7 +505,7 @@ export namespace Schemas {
   function zodSchemaAggregationEmailTemplate() {
       return z
       .object({
-          application: zodSchemaApplication1().optional().nullable(),
+          application: zodSchemaApplication().optional().nullable(),
           application_id: zodSchemaUUID().optional().nullable(),
           body_template: zodSchemaTemplate().optional().nullable(),
           body_template_id: zodSchemaUUID(),
@@ -473,8 +522,12 @@ export namespace Schemas {
   function zodSchemaApplication() {
       return z
       .object({
+          bundle_id: zodSchemaUUID(),
+          created: zodSchemaLocalDateTime().optional().nullable(),
           display_name: z.string(),
-          id: zodSchemaUUID(),
+          id: zodSchemaUUID().optional().nullable(),
+          name: z.string(),
+          updated: zodSchemaLocalDateTime().optional().nullable(),
       })
       .nonstrict();
   }
@@ -482,12 +535,17 @@ export namespace Schemas {
   function zodSchemaApplication1() {
       return z
       .object({
-          bundle_id: zodSchemaUUID(),
-          created: zodSchemaLocalDateTime().optional().nullable(),
           display_name: z.string(),
-          id: zodSchemaUUID().optional().nullable(),
-          name: z.string(),
-          updated: zodSchemaLocalDateTime().optional().nullable(),
+          id: zodSchemaUUID(),
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaApplicationSettingsValue() {
+      return z
+      .object({
+          hasForcedEmail: z.boolean().optional().nullable(),
+          notifications: z.record(z.boolean()).optional().nullable(),
       })
       .nonstrict();
   }
@@ -548,6 +606,17 @@ export namespace Schemas {
       .nonstrict();
   }
 
+  function zodSchemaBundleSettingsValue() {
+      return z
+      .object({
+          applications: z
+          .record(zodSchemaApplicationSettingsValue())
+          .optional()
+          .nullable(),
+      })
+      .nonstrict();
+  }
+
   function zodSchemaCamelProperties() {
       return z
       .object({
@@ -565,7 +634,9 @@ export namespace Schemas {
   function zodSchemaCreateBehaviorGroupRequest() {
       return z
       .object({
-          bundle_id: zodSchemaUUID(),
+          bundle_id: zodSchemaUUID().optional().nullable(),
+          bundle_name: z.string().optional().nullable(),
+          bundle_uuid_or_bundle_name_valid: z.boolean().optional().nullable(),
           display_name: z.string(),
           endpoint_ids: z.array(z.string()).optional().nullable(),
           event_type_ids: z.array(z.string()).optional().nullable(),
@@ -670,7 +741,7 @@ export namespace Schemas {
   }
 
   function zodSchemaEndpointType() {
-      return z.enum(['webhook', 'email_subscription', 'default', 'camel']);
+      return z.enum(['webhook', 'email_subscription', 'camel']);
   }
 
   function zodSchemaEnvironment() {
@@ -712,10 +783,11 @@ export namespace Schemas {
   function zodSchemaEventType() {
       return z
       .object({
-          application: zodSchemaApplication1().optional().nullable(),
+          application: zodSchemaApplication().optional().nullable(),
           application_id: zodSchemaUUID(),
           description: z.string().optional().nullable(),
           display_name: z.string(),
+          fully_qualified_name: z.string().optional().nullable(),
           id: zodSchemaUUID().optional().nullable(),
           name: z.string(),
       })
@@ -798,7 +870,7 @@ export namespace Schemas {
   function zodSchemaInternalUserPermissions() {
       return z
       .object({
-          applications: z.array(zodSchemaApplication()),
+          applications: z.array(zodSchemaApplication1()),
           is_admin: z.boolean(),
           roles: z.array(z.string()),
       })
@@ -810,6 +882,10 @@ export namespace Schemas {
   }
 
   function zodSchemaLocalDateTime() {
+      return z.string();
+  }
+
+  function zodSchemaLocalTime() {
       return z.string();
   }
 
@@ -910,6 +986,14 @@ export namespace Schemas {
       .nonstrict();
   }
 
+  function zodSchemaSettingsValues() {
+      return z
+      .object({
+          bundles: z.record(zodSchemaBundleSettingsValue()).optional().nullable(),
+      })
+      .nonstrict();
+  }
+
   function zodSchemaStatus() {
       return z.enum(['UP', 'MAINTENANCE']);
   }
@@ -927,6 +1011,18 @@ export namespace Schemas {
       .nonstrict();
   }
 
+  function zodSchemaTriggerDailyDigestRequest() {
+      return z
+      .object({
+          application_name: z.string(),
+          bundle_name: z.string(),
+          end: zodSchemaLocalDateTime().optional().nullable(),
+          org_id: z.string(),
+          start: zodSchemaLocalDateTime().optional().nullable(),
+      })
+      .nonstrict();
+  }
+
   function zodSchemaUUID() {
       return z.string();
   }
@@ -935,8 +1031,18 @@ export namespace Schemas {
       return z
       .object({
           display_name: z.string().optional().nullable(),
+          display_name_not_null_and_blank: z.boolean().optional().nullable(),
           endpoint_ids: z.array(z.string()).optional().nullable(),
           event_type_ids: z.array(z.string()).optional().nullable(),
+      })
+      .nonstrict();
+  }
+
+  function zodSchemaUserConfigPreferences() {
+      return z
+      .object({
+          daily_email: z.boolean().optional().nullable(),
+          instant_email: z.boolean().optional().nullable(),
       })
       .nonstrict();
   }
@@ -1221,7 +1327,7 @@ export namespace Operations {
     }
 
     export type Payload =
-      | ValidatedResponse<'Application1', 200, Schemas.Application1>
+      | ValidatedResponse<'Application', 200, Schemas.Application>
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
       | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
@@ -1234,7 +1340,7 @@ export namespace Operations {
         .data(params.body)
         .config({
             rules: [
-                new ValidateRule(Schemas.Application1, 'Application1', 200),
+                new ValidateRule(Schemas.Application, 'Application', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
                 new ValidateRule(Schemas.__Empty, '__Empty', 403),
             ],
@@ -1249,7 +1355,7 @@ export namespace Operations {
     }
 
     export type Payload =
-      | ValidatedResponse<'Application1', 200, Schemas.Application1>
+      | ValidatedResponse<'Application', 200, Schemas.Application>
       | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
       | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
@@ -1264,7 +1370,7 @@ export namespace Operations {
         .queryParams(query)
         .config({
             rules: [
-                new ValidateRule(Schemas.Application1, 'Application1', 200),
+                new ValidateRule(Schemas.Application, 'Application', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 401),
                 new ValidateRule(Schemas.__Empty, '__Empty', 403),
             ],
@@ -1276,7 +1382,7 @@ export namespace Operations {
   export namespace InternalResourceUpdateApplication {
     export interface Params {
       appId: Schemas.UUID;
-      body: Schemas.Application1;
+      body: Schemas.Application;
     }
 
     export type Payload =
@@ -1743,8 +1849,8 @@ export namespace Operations {
   }
   // GET /bundles/{bundleId}/applications
   export namespace InternalResourceGetApplications {
-    const Response200 = z.array(Schemas.Application1);
-    type Response200 = Array<Schemas.Application1>;
+    const Response200 = z.array(Schemas.Application);
+    type Response200 = Array<Schemas.Application>;
     export interface Params {
       bundleId: Schemas.UUID;
     }
@@ -1773,229 +1879,96 @@ export namespace Operations {
         .build();
     };
   }
-  // GET /dev/rhose
-  export namespace RhoseTestHelperPrintOurBridge {
-    const Response200 = z.string();
-    type Response200 = string;
-    export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
-      | ValidatedResponse<'unknown', undefined, unknown>;
-    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
-    export const actionCreator = (): ActionCreator => {
-        const path = './dev/rhose';
-        const query = {} as Record<string, any>;
-        return actionBuilder('GET', path)
-        .queryParams(query)
-        .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
-        })
-        .build();
-    };
-  }
-  // GET /dev/rhose/bridges
-  export namespace RhoseTestHelperPrintAllBridges {
-    const Response200 = z.string();
-    type Response200 = string;
-    export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
-      | ValidatedResponse<'unknown', undefined, unknown>;
-    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
-    export const actionCreator = (): ActionCreator => {
-        const path = './dev/rhose/bridges';
-        const query = {} as Record<string, any>;
-        return actionBuilder('GET', path)
-        .queryParams(query)
-        .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
-        })
-        .build();
-    };
-  }
-  // POST /dev/rhose/events/{accountId}/{pn}
-  export namespace RhoseTestHelperSendEvent {
-    const AccountId = z.string();
-    type AccountId = string;
-    const Pn = z.string();
-    type Pn = string;
-    const Response200 = z.string();
-    type Response200 = string;
+  // GET /daily-digest/time-preference/{orgId}
+  export namespace InternalResourceGetDailyDigestTimePreference {
+    const OrgId = z.string();
+    type OrgId = string;
     export interface Params {
-      accountId: AccountId;
-      pn: Pn;
+      orgId: OrgId;
     }
 
     export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = './dev/rhose/events/{accountId}/{pn}'
-        .replace('{accountId}', params['accountId'].toString())
-        .replace('{pn}', params['pn'].toString());
-        const query = {} as Record<string, any>;
-        return actionBuilder('POST', path)
-        .queryParams(query)
-        .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
-        })
-        .build();
-    };
-  }
-  // GET /dev/rhose/processors
-  export namespace RhoseTestHelperPrintOurProcessors {
-    const Response200 = z.string();
-    type Response200 = string;
-    export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
-      | ValidatedResponse<'unknown', undefined, unknown>;
-    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
-    export const actionCreator = (): ActionCreator => {
-        const path = './dev/rhose/processors';
-        const query = {} as Record<string, any>;
-        return actionBuilder('GET', path)
-        .queryParams(query)
-        .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
-        })
-        .build();
-    };
-  }
-  // GET /dev/rhose/processors/{id}
-  export namespace RhoseTestHelperPrintProcessorById {
-    const Id = z.string();
-    type Id = string;
-    const Response200 = z.string();
-    type Response200 = string;
-    export interface Params {
-      id: Id;
-    }
-
-    export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
-      | ValidatedResponse<'unknown', undefined, unknown>;
-    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
-    export const actionCreator = (params: Params): ActionCreator => {
-        const path = './dev/rhose/processors/{id}'.replace(
-            '{id}',
-            params['id'].toString()
+        const path = './daily-digest/time-preference/{orgId}'.replace(
+            '{orgId}',
+            params['orgId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('GET', path)
         .queryParams(query)
         .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
   }
-  // PUT /dev/rhose/processors/{id}
-  export namespace RhoseTestHelperUpdateProcessor {
-    const Id = z.string();
-    type Id = string;
-    const Response200 = z.string();
-    type Response200 = string;
+  // PUT /daily-digest/time-preference/{orgId}
+  export namespace InternalResourceSaveDailyDigestTimePreference {
+    const OrgId = z.string();
+    type OrgId = string;
     export interface Params {
-      id: Id;
+      orgId: OrgId;
+      body: Schemas.LocalTime;
     }
 
     export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = './dev/rhose/processors/{id}'.replace(
-            '{id}',
-            params['id'].toString()
+        const path = './daily-digest/time-preference/{orgId}'.replace(
+            '{orgId}',
+            params['orgId'].toString()
         );
         const query = {} as Record<string, any>;
         return actionBuilder('PUT', path)
         .queryParams(query)
+        .data(params.body)
         .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
   }
-  // DELETE /dev/rhose/processors/{id}
-  export namespace RhoseTestHelperDeleteProcessor {
-    const Id = z.string();
-    type Id = string;
-    const Response200 = z.string();
-    type Response200 = string;
+  // POST /daily-digest/trigger
+  export namespace InternalResourceTriggerDailyDigest {
     export interface Params {
-      id: Id;
+      body: Schemas.TriggerDailyDigestRequest;
     }
 
     export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 201, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
       | ValidatedResponse<'unknown', undefined, unknown>;
     export type ActionCreator = Action<Payload, ActionValidatableConfig>;
     export const actionCreator = (params: Params): ActionCreator => {
-        const path = './dev/rhose/processors/{id}'.replace(
-            '{id}',
-            params['id'].toString()
-        );
-        const query = {} as Record<string, any>;
-        return actionBuilder('DELETE', path)
-        .queryParams(query)
-        .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
-        })
-        .build();
-    };
-  }
-  // POST /dev/rhose/processors/{name}
-  export namespace RhoseTestHelperAddProcessor {
-    const Name = z.string();
-    type Name = string;
-    const Response200 = z.string();
-    type Response200 = string;
-    export interface Params {
-      name: Name;
-    }
-
-    export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
-      | ValidatedResponse<'unknown', undefined, unknown>;
-    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
-    export const actionCreator = (params: Params): ActionCreator => {
-        const path = './dev/rhose/processors/{name}'.replace(
-            '{name}',
-            params['name'].toString()
-        );
+        const path = './daily-digest/trigger';
         const query = {} as Record<string, any>;
         return actionBuilder('POST', path)
         .queryParams(query)
+        .data(params.body)
         .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
-        })
-        .build();
-    };
-  }
-  // DELETE /dev/rhose/processors/{name}
-  export namespace RhoseTestHelperDeleteProcessorsByNamePrefix {
-    const Name = z.string();
-    type Name = string;
-    const Response200 = z.string();
-    type Response200 = string;
-    export interface Params {
-      name: Name;
-    }
-
-    export type Payload =
-      | ValidatedResponse<'unknown', 200, Response200>
-      | ValidatedResponse<'unknown', undefined, unknown>;
-    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
-    export const actionCreator = (params: Params): ActionCreator => {
-        const path = './dev/rhose/processors/{name}'.replace(
-            '{name}',
-            params['name'].toString()
-        );
-        const query = {} as Record<string, any>;
-        return actionBuilder('DELETE', path)
-        .queryParams(query)
-        .config({
-            rules: [new ValidateRule(Response200, 'unknown', 200)],
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 201),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
         })
         .build();
     };
@@ -2174,6 +2147,29 @@ export namespace Operations {
         return actionBuilder('PUT', path)
         .queryParams(query)
         .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 204),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
+        })
+        .build();
+    };
+  }
+  // PUT /subscription-to-event-type/migrate
+  export namespace SubscriptionToEventTypeMigrationServiceMigrate {
+    export type Payload =
+      | ValidatedResponse<'__Empty', 204, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (): ActionCreator => {
+        const path = './subscription-to-event-type/migrate';
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
         .config({
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 204),
@@ -2825,6 +2821,42 @@ export namespace Operations {
             rules: [
                 new ValidateRule(Schemas.__Empty, '__Empty', 200),
                 new ValidateRule(Schemas.__Empty, '__Empty', 400),
+            ],
+        })
+        .build();
+    };
+  }
+  // POST /validation/console-cloud-event
+  export namespace ValidationResourceValidateConsoleCloudEvent {
+    const Body = z.string();
+    type Body = string;
+    export interface Params {
+      body: Body;
+    }
+
+    export type Payload =
+      | ValidatedResponse<'__Empty', 200, Schemas.__Empty>
+      | ValidatedResponse<
+          'MessageValidationResponse',
+          400,
+          Schemas.MessageValidationResponse
+        >
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path = './validation/console-cloud-event';
+        const query = {} as Record<string, any>;
+        return actionBuilder('POST', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Schemas.__Empty, '__Empty', 200),
+                new ValidateRule(
+                    Schemas.MessageValidationResponse,
+                    'MessageValidationResponse',
+                    400
+                ),
             ],
         })
         .build();

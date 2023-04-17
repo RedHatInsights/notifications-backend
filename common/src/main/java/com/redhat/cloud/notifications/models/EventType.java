@@ -121,6 +121,14 @@ public class EventType {
         this.description = description;
     }
 
+    public void setFullyQualifiedName(String fullyQualifiedName) {
+        this.fullyQualifiedName = fullyQualifiedName;
+    }
+
+    public String getFullyQualifiedName() {
+        return fullyQualifiedName;
+    }
+
     public UUID getApplicationId() {
         if (applicationId == null && application != null) {
             applicationId = application.getId();

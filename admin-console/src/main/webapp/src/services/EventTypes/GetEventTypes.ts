@@ -13,7 +13,8 @@ const validateResponse = validationResponseTransformer(
                 name: value.name,
                 displayName: value.display_name,
                 description: value.description ?? '',
-                applicationId: value.application_id
+                applicationId: value.application_id,
+                fullyQualifiedName: value.fully_qualified_name ?? ''
             }));
 
             return validatedResponse(

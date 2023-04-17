@@ -8,6 +8,7 @@ export type CreateEventType = {
     description: string;
     applicationId: string;
     name: string;
+    fullyQualifiedName: string;
 
 }
 
@@ -19,7 +20,8 @@ const actionCreator =  (params: CreateEventType) => {
                 application_id: params.applicationId,
                 description: params.description,
                 display_name: params.displayName,
-                name: params.name
+                name: params.name,
+                fully_qualified_name: params.fullyQualifiedName
 
             }
         });
@@ -32,7 +34,8 @@ const actionCreator =  (params: CreateEventType) => {
             application_id: params.applicationId,
             description: params.description,
             display_name: params.displayName,
-            name: params.name
+            name: params.name,
+            fully_qualified_name: params.fullyQualifiedName
 
         }
     });
