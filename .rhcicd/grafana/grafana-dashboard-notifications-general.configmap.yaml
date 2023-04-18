@@ -990,13 +990,6 @@ data:
           }
         },
         {
-          "aliasColors": {
-            "processed (per minute) ": "green",
-            "rejected (per minute) ": "red"
-          },
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
           "datasource": {
             "type": "prometheus",
             "uid": "$datasource"
@@ -1004,124 +997,178 @@ data:
           "description": "",
           "fieldConfig": {
             "defaults": {
-              "links": []
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "rejected (per minute)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "exceptions (per minute)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "rejected"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "exception"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
-          "fill": 1,
-          "fillGradient": 0,
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 6,
             "y": 15
           },
-          "hiddenSeries": false,
-          "id": 50,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": false,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null as zero",
+          "id": 218,
           "options": {
-            "alertThreshold": false
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
           },
-          "percentage": false,
           "pluginVersion": "9.3.8",
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "skSy3ZB7k"
+                "uid": "$datasource"
               },
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(increase(processor_input_processed_total{service=\"notifications-engine-service\"}[5m]))",
-              "format": "time_series",
               "hide": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "processed (per minute) {{kubernetes_pod_name}}",
-              "refId": "A"
+              "legendFormat": "processed",
+              "range": true,
+              "refId": "Processed"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "skSy3ZB7k"
+                "uid": "$datasource"
               },
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(increase(input_rejected_total{service=\"notifications-engine-service\"}[5m]))",
-              "format": "time_series",
               "hide": false,
-              "instant": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "rejected (per minute) {{kubernetes_pod_name}}",
-              "refId": "B"
+              "legendFormat": "rejected",
+              "range": true,
+              "refId": "Rejected"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "skSy3ZB7k"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(increase(input_processing_exception_total{service=\"notifications-engine-service\"}[5m]))",
-              "format": "time_series",
               "hide": false,
-              "instant": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "exceptions (per minute) {{kubernetes_pod_name}}",
-              "refId": "C"
+              "legendFormat": "exception",
+              "range": true,
+              "refId": "Exception"
             }
           ],
-          "thresholds": [],
-          "timeRegions": [],
-          "title": "Payload processed",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "mode": "time",
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:107",
-              "decimals": -1,
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:108",
-              "format": "short",
-              "logBase": 1,
-              "show": false
-            }
-          ],
-          "yaxis": {
-            "align": false
-          }
+          "title": "Payloads processed",
+          "type": "timeseries"
         },
         {
           "aliasColors": {},
@@ -3587,7 +3634,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 2,
+      "version": 10,
       "weekStart": ""
     }
 kind: ConfigMap
