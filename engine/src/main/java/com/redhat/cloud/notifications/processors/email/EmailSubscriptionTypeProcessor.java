@@ -239,7 +239,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                         aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY));
             });
         } catch (Exception e) {
-            Log.info("Error while processing aggregation", e);
+            Log.warn("Error while processing aggregation", e);
             failedAggregationCommandCount.increment();
         }
     }
