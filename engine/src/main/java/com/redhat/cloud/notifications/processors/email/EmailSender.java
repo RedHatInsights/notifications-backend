@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.events.EventWrapper;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
@@ -83,9 +84,17 @@ public class EmailSender {
         LocalDateTime start = LocalDateTime.now(UTC);
 
         Timer.Sample processedTimer = Timer.start(registry);
+
         EventType eventType = event.getEventType();
-        String bundleName = eventType.getApplication().getBundle().getName();
-        String applicationName = eventType.getApplication().getName();
+        String bundleName = "NA";
+        String applicationName = "NA";
+        if (eventType != null) {
+            bundleName = eventType.getApplication().getBundle().getName();
+            applicationName = eventType.getApplication().getName();
+        } else if (event.getEventWrapper().getEvent() instanceof Action action) {
+            bundleName = action.getBundle();
+            applicationName = action.getApplication();
+        }
 
         // uses canonical EmailSubscription
         try {
