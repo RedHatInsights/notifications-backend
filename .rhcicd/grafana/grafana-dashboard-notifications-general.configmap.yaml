@@ -1690,6 +1690,133 @@ data:
           "type": "timeseries"
         },
         {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 31
+          },
+          "hiddenSeries": false,
+          "id": 217,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "9.3.8",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.ingress\"}",
+              "format": "time_series",
+              "hide": false,
+              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "range": true,
+              "refId": "platform.notifications.ingress"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.tocamel\"}",
+              "hide": false,
+              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "range": true,
+              "refId": "platform.notifications.tocamel"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.fromcamel\"}",
+              "hide": false,
+              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "range": true,
+              "refId": "platform.notifications.fromcamel"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.aggregation\"}",
+              "hide": false,
+              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "range": true,
+              "refId": "platform.notifications.aggregation"
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "title": "Kafka Lag",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:76",
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:77",
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false
+          }
+        },
+        {
           "collapsed": false,
           "datasource": {
             "type": "prometheus",
@@ -1699,7 +1826,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 31
+            "y": 39
           },
           "id": 179,
           "panels": [],
@@ -1721,7 +1848,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 32
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 174,
@@ -1811,7 +1938,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 32
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 208,
@@ -1907,7 +2034,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 32
+            "y": 40
           },
           "hiddenSeries": false,
           "id": 189,
@@ -2051,7 +2178,7 @@ data:
             "h": 5,
             "w": 4,
             "x": 0,
-            "y": 40
+            "y": 48
           },
           "id": 186,
           "options": {
@@ -2107,7 +2234,7 @@ data:
             "h": 5,
             "w": 4,
             "x": 4,
-            "y": 40
+            "y": 48
           },
           "id": 193,
           "options": {
@@ -2201,7 +2328,7 @@ data:
             "h": 5,
             "w": 4,
             "x": 8,
-            "y": 40
+            "y": 48
           },
           "id": 209,
           "options": {
@@ -2257,7 +2384,7 @@ data:
             "h": 5,
             "w": 4,
             "x": 12,
-            "y": 40
+            "y": 48
           },
           "id": 210,
           "options": {
@@ -2351,7 +2478,7 @@ data:
             "h": 5,
             "w": 4,
             "x": 16,
-            "y": 40
+            "y": 48
           },
           "id": 184,
           "options": {
@@ -2407,7 +2534,7 @@ data:
             "h": 5,
             "w": 4,
             "x": 20,
-            "y": 40
+            "y": 48
           },
           "id": 194,
           "options": {
@@ -2453,7 +2580,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 45
+            "y": 53
           },
           "hiddenSeries": false,
           "id": 113,
@@ -2538,7 +2665,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 45
+            "y": 53
           },
           "hiddenSeries": false,
           "id": 175,
@@ -2623,7 +2750,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 45
+            "y": 53
           },
           "hiddenSeries": false,
           "id": 176,
@@ -2717,7 +2844,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 45
+            "y": 53
           },
           "hiddenSeries": false,
           "id": 177,
@@ -2820,7 +2947,7 @@ data:
             "h": 7,
             "w": 12,
             "x": 0,
-            "y": 53
+            "y": 61
           },
           "hiddenSeries": false,
           "id": 166,
@@ -2901,7 +3028,7 @@ data:
             "h": 7,
             "w": 12,
             "x": 12,
-            "y": 53
+            "y": 61
           },
           "hiddenSeries": false,
           "id": 167,
@@ -2978,7 +3105,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 60
+            "y": 68
           },
           "id": 24,
           "panels": [],
@@ -3006,7 +3133,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 61
+            "y": 69
           },
           "hiddenSeries": false,
           "id": 22,
@@ -3140,7 +3267,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 61
+            "y": 69
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -3267,7 +3394,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 70
+            "y": 78
           },
           "hiddenSeries": false,
           "id": 85,
