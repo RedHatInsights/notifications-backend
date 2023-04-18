@@ -48,6 +48,8 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     public static final String PROCESSED_EMAIL_COUNTER = "processor.email.processed";
     public static final String FAILED_WEBHOOK_COUNTER = "processor.webhook.failed";
     public static final String FAILED_EMAIL_COUNTER = "processor.email.failed";
+    public static final String RETRIED_WEBHOOK_COUNTER = "processor.webhook.retried";
+    public static final String RETRIED_EMAIL_COUNTER = "processor.email.retried";
     public static final String DISABLED_WEBHOOKS_COUNTER = "processor.webhook.disabled.endpoints";
     public static final String ERROR_TYPE_TAG_KEY = "error_type";
     public static final String CLIENT_TAG_VALUE = "client";
@@ -99,8 +101,10 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     private Counter processedWebhookCount;
     private Counter failedWebhookCount;
+    private Counter retriedWebhookCount;
     private Counter processedEmailCount;
     private Counter failedEmailCount;
+    private Counter retriedEmailCount;
     private Counter disabledWebhooksClientErrorCount;
     private Counter disabledWebhooksServerErrorCount;
     private RetryPolicy<Object> retryPolicy;
@@ -109,8 +113,11 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     void postConstruct() {
         processedWebhookCount = registry.counter(PROCESSED_WEBHOOK_COUNTER);
         failedWebhookCount = registry.counter(FAILED_WEBHOOK_COUNTER);
+        retriedWebhookCount = registry.counter(RETRIED_WEBHOOK_COUNTER);
+
         processedEmailCount = registry.counter(PROCESSED_EMAIL_COUNTER);
         failedEmailCount = registry.counter(FAILED_EMAIL_COUNTER);
+        retriedEmailCount = registry.counter(RETRIED_EMAIL_COUNTER);
 
         disabledWebhooksClientErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
         disabledWebhooksServerErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
@@ -177,9 +184,10 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         final long startTime = System.currentTimeMillis();
         boolean isEmailEndpoint = endpoint.getType() == EMAIL_SUBSCRIPTION;
 
+        incrementProcessedMetrics(isEmailEndpoint);
+
         try {
             Failsafe.with(retryPolicy).run(() -> {
-                incrementProcessedMetrics(isEmailEndpoint);
                 // TODO NOTIF-488 We may want to move to a non-reactive HTTP client in the future.
                 HttpResponse<Buffer> resp = req.sendJsonObject(payload).await().atMost(awaitTimeout);
                 NotificationHistory history = buildNotificationHistory(event, endpoint, startTime);
@@ -263,10 +271,11 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                     history.setDetails(details.getMap());
                 }
 
-                updateMetrics(history.getStatus(), isEmailEndpoint);
                 if (serverError) {
+                    updateRetryMetrics(isEmailEndpoint);
                     throw new ServerErrorException(history);
                 }
+                updateMetrics(history.getStatus(), isEmailEndpoint);
                 if (persistHistory) {
                     persistNotificationHistory(history);
                 }
@@ -287,8 +296,8 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 details.put("method", method);
                 details.put("error_message", e.getMessage()); // TODO This message isn't always the most descriptive..
                 history.setDetails(details.getMap());
-                updateMetrics(history.getStatus(), isEmailEndpoint);
             }
+            updateMetrics(history.getStatus(), isEmailEndpoint);
             if (persistHistory) {
                 persistNotificationHistory(history);
             }
@@ -302,6 +311,14 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
             } else {
                 failedWebhookCount.increment();
             }
+        }
+    }
+
+    private void updateRetryMetrics(boolean isEmailEndpoint) {
+        if (isEmailEndpoint) {
+            retriedEmailCount.increment();
+        } else {
+            retriedWebhookCount.increment();
         }
     }
 

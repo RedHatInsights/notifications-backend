@@ -50,6 +50,8 @@ import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProc
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.FAILED_WEBHOOK_COUNTER;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.PROCESSED_EMAIL_COUNTER;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.PROCESSED_WEBHOOK_COUNTER;
+import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.RETRIED_EMAIL_COUNTER;
+import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.RETRIED_WEBHOOK_COUNTER;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.SERVER_TAG_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -92,6 +94,8 @@ public class WebhookTest {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_EMAIL_COUNTER);
         micrometerAssertionHelper.saveCounterValuesBeforeTest(FAILED_WEBHOOK_COUNTER);
         micrometerAssertionHelper.saveCounterValuesBeforeTest(FAILED_EMAIL_COUNTER);
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(RETRIED_WEBHOOK_COUNTER);
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(RETRIED_EMAIL_COUNTER);
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY);
     }
 
@@ -149,7 +153,7 @@ public class WebhookTest {
     @Test
     void testEmailWebhook() {
         commonTestWebhook(true);
-        validateCounters(0, 1, 0, 0);
+        validateCounters(0, 1, 0, 0, 0, 0);
     }
 
     @Test
@@ -182,25 +186,25 @@ public class WebhookTest {
     @Test
     void testRetryWithFinalSuccess() {
         testRetry(true, false);
-        validateCounters(MAX_RETRY_ATTEMPTS, 0, 3, 0);
+        validateCounters(1, 0, 0, 0, MAX_RETRY_ATTEMPTS - 1, 0);
     }
 
     @Test
     void testRetryWithFinalFailure() {
         testRetry(false, false);
-        validateCounters(MAX_RETRY_ATTEMPTS, 0, 4, 0);
+        validateCounters(1, 0, 1, 0, MAX_RETRY_ATTEMPTS, 0);
     }
 
     @Test
     void testEmailRetryWithFinalSuccess() {
         testRetry(true, true);
-        validateCounters(0, MAX_RETRY_ATTEMPTS, 0, 3);
+        validateCounters(0, 1, 0, 0, 0, MAX_RETRY_ATTEMPTS - 1);
     }
 
     @Test
     void testEmailRetryWithFinalFailure() {
         testRetry(false, true);
-        validateCounters(0, MAX_RETRY_ATTEMPTS, 0, MAX_RETRY_ATTEMPTS);
+        validateCounters(0, 1, 0, 1, 0, MAX_RETRY_ATTEMPTS);
     }
 
     @Test
@@ -221,7 +225,7 @@ public class WebhookTest {
 
             assertFalse(history.isInvocationResult());
             assertEquals(NotificationStatus.FAILED_INTERNAL, history.getStatus());
-            validateCounters(0, 0, 1, 0);
+            validateCounters(1, 0, 1, 0, 0, 0);
         }
     }
 
@@ -282,7 +286,7 @@ public class WebhookTest {
             // Remove expectations
             MockServerLifecycleManager.getClient().clear(mockServerRequest);
         }
-        validateCounters(1, 0, 1, 0);
+        validateCounters(1, 0, 1, 0, 0, 0);
         featureFlipper.setDisableWebhookEndpointsOnFailure(false);
     }
 
@@ -314,7 +318,7 @@ public class WebhookTest {
             // Remove expectations
             MockServerLifecycleManager.getClient().clear(mockServerRequest);
         }
-        validateCounters(16, 0, 16, 0);
+        validateCounters(4, 0, 4, 0, 16, 0);
         featureFlipper.setDisableWebhookEndpointsOnFailure(false);
     }
 
@@ -332,7 +336,7 @@ public class WebhookTest {
         } finally {
             featureFlipper.setEmailsOnlyMode(false);
         }
-        validateCounters(0, 0, 0, 0);
+        validateCounters(0, 0, 0, 0, 0, 0);
     }
 
     void persistEndpoint(Endpoint endpoint) {
@@ -405,10 +409,12 @@ public class WebhookTest {
     }
 
 
-    private void validateCounters(int processedWebhook, int processedEmail, int failedWebhook, int failedEmail) {
+    private void validateCounters(int processedWebhook, int processedEmail, int failedWebhook, int failedEmail, int retriedWebhook, int retiedEmail) {
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_WEBHOOK_COUNTER, processedWebhook);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_EMAIL_COUNTER, processedEmail);
         micrometerAssertionHelper.assertCounterIncrement(FAILED_WEBHOOK_COUNTER, failedWebhook);
         micrometerAssertionHelper.assertCounterIncrement(FAILED_EMAIL_COUNTER, failedEmail);
+        micrometerAssertionHelper.assertCounterIncrement(RETRIED_WEBHOOK_COUNTER, retriedWebhook);
+        micrometerAssertionHelper.assertCounterIncrement(RETRIED_EMAIL_COUNTER, retiedEmail);
     }
 }
