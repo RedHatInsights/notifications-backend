@@ -46,7 +46,7 @@
     "eslint-plugin-jsx-a11y": "^6.5.1",
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.3.0",
-    "openapi2typescript-cli": "0.6.1",
+    "openapi2typescript-cli": "0.7.0",
     "react-scripts": "5.0.1",
     "typescript": "4.7.4"
   },

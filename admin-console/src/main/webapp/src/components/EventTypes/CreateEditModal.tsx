@@ -49,7 +49,25 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             onChange={ handleChange }
                             id='name'
                             name="name"
-                        /></FormGroup>
+                        />
+                    </FormGroup>
+                    <FormGroup
+                        label='Event type name'
+                        fieldId='fullyQualifiedName'
+                        isRequired
+                        helperText={ props.isEdit ? <HelperText>
+                            <HelperTextItem variant="warning" hasIcon>
+                                If this field is modified it may affect existing behavior.
+                            </HelperTextItem>
+                        </HelperText> : 'This is the fully qualified name for the event type. e.g. \'com.redhat.console.insights.policies.policy-triggered\'' }>
+                        <TextInput
+                            type='text'
+                            value={ eventType.fullyQualifiedName }
+                            onChange={ handleChange }
+                            id='fullyQualifiedName'
+                            name="fullyQualifiedName"
+                        />
+                    </FormGroup>
                     <FormGroup label='Display name' fieldId='display-name' isRequired
                         helperText='This is the name you want to display on the UI'>
                         <TextInput
@@ -58,7 +76,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             onChange={ handleChange }
                             id='display-name'
                             name="displayName"
-                        /></FormGroup>
+                        />
+                    </FormGroup>
                     <FormGroup label='Description' fieldId='description'
                         helperText='Optional short description that appears in the UI
                                                 to help admin decide how to notify users.'>
@@ -68,7 +87,8 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             onChange={ handleChange }
                             id='description'
                             name="description"
-                        /></FormGroup>
+                        />
+                    </FormGroup>
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             isLoading={ props.isLoading } isDisabled={ props.isLoading }

@@ -47,6 +47,7 @@ export interface EventType {
     name: string;
     description: string;
     applicationId: string;
+    fullyQualifiedName: string;
 }
 
 type InstantEmailTemplateRow = {
@@ -81,7 +82,7 @@ export type Application1 = {
   };
 
 export type AggregationTemplate = {
-    application?: Schemas.Application1 | undefined | null;
+    application?: Schemas.Application | undefined | null;
     application_id?: UUID | undefined | null;
     body_template?: Schemas.Template | undefined | null;
     body_template_id: UUID;
