@@ -6,7 +6,6 @@ import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.processors.slack.SlackRouteBuilder.SLACK_INCOMING_ROUTE;
 
@@ -14,10 +13,8 @@ import static com.redhat.cloud.notifications.processors.slack.SlackRouteBuilder.
 public class RetryCounterProcessor implements Processor {
 
     public static final String CAMEL_SLACK_RETRY_COUNTER = "camel.slack.retry.counter";
-    @Inject
     MeterRegistry registry;
-
-    private Counter slackRetryCounter;
+    Counter slackRetryCounter;
 
     public RetryCounterProcessor(MeterRegistry registry) {
         this.registry = registry;
@@ -33,6 +30,7 @@ public class RetryCounterProcessor implements Processor {
                 break;
             default:
                 Log.warnf("Unsupported route Id: %s", routeId);
+                break;
         }
     }
 }
