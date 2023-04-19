@@ -221,10 +221,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               }
@@ -240,12 +236,12 @@ data:
           "id": 181,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "lastNotNull"
+                "last"
               ],
               "fields": "/^Up$/",
               "values": false
@@ -258,15 +254,14 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(up{container=\"notifications-backend-service\"})",
-              "instant": true,
-              "interval": "",
+              "hide": false,
               "legendFormat": "Up",
-              "refId": "A"
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "notifications-backend-service - UPs",
@@ -303,10 +298,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               }
@@ -322,12 +313,12 @@ data:
           "id": 206,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "mean"
+                "last"
               ],
               "fields": "/^Up$/",
               "values": false
@@ -340,15 +331,14 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(up{container=\"notifications-engine-service\"})",
-              "instant": true,
-              "interval": "",
+              "hide": false,
               "legendFormat": "Up",
-              "refId": "A"
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "notifications-engine-service - UPs",
@@ -385,10 +375,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               }
@@ -404,12 +390,12 @@ data:
           "id": 185,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "lastNotNull"
+                "last"
               ],
               "fields": "/^Up$/",
               "values": false
@@ -422,15 +408,14 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(up{container=\"notifications-gw-service\"})",
-              "instant": true,
-              "interval": "",
+              "hide": false,
               "legendFormat": "Up",
-              "refId": "A"
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "notifications-gw-service - UPs",
@@ -467,10 +452,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               }
@@ -486,12 +467,12 @@ data:
           "id": 221,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "mean"
+                "last"
               ],
               "fields": "/^Up$/",
               "values": false
@@ -504,15 +485,14 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(up{container=\"eventing-integrations-servicenow\"})",
-              "instant": true,
-              "interval": "",
+              "hide": false,
               "legendFormat": "Up",
-              "refId": "A"
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "eventing-integrations-servicenow - UPs",
@@ -549,10 +529,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               }
@@ -568,12 +544,12 @@ data:
           "id": 222,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "lastNotNull"
+                "last"
               ],
               "fields": "/^Up$/",
               "values": false
@@ -586,15 +562,14 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(up{container=\"eventing-splunk-quarkus-service\"})",
-              "instant": true,
-              "interval": "",
+              "hide": false,
               "legendFormat": "Up",
-              "refId": "A"
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "eventing-splunk-quarkus-service - UPs",
@@ -638,14 +613,14 @@ data:
           "id": 163,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "mean"
+                "last"
               ],
-              "fields": "",
+              "fields": "/^Restarts$/",
               "values": false
             },
             "text": {},
@@ -656,15 +631,14 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-backend-service\"})",
-              "instant": true,
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
+              "hide": false,
+              "legendFormat": "Restarts",
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "notifications-backend-service - Restarts",
@@ -672,6 +646,7 @@ data:
         },
         {
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "description": "Number of current restarts (since pod deployment)",
@@ -707,14 +682,14 @@ data:
           "id": 207,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "mean"
+                  "last"
               ],
-              "fields": "",
+              "fields": "/^Restarts$/",
               "values": false
             },
             "text": {},
@@ -723,12 +698,16 @@ data:
           "pluginVersion": "9.3.8",
           "targets": [
             {
-              "exemplar": true,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
               "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-engine-service\"})",
-              "instant": true,
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
+              "hide": false,
+              "legendFormat": "Restarts",
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "notifications-engine-service - Restarts",
@@ -736,6 +715,7 @@ data:
         },
         {
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "description": "Number of current restarts (since pod deployment)",
@@ -771,14 +751,14 @@ data:
           "id": 164,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "mean"
+                  "last"
               ],
-              "fields": "",
+              "fields": "/^Restarts$/",
               "values": false
             },
             "text": {},
@@ -787,12 +767,16 @@ data:
           "pluginVersion": "9.3.8",
           "targets": [
             {
-              "exemplar": true,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
               "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-gw-service\"})",
-              "instant": true,
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
+              "hide": false,
+              "legendFormat": "Restarts",
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "notifications-gw-service - Restarts",
@@ -836,14 +820,14 @@ data:
           "id": 223,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "mean"
+                  "last"
               ],
-              "fields": "",
+              "fields": "/^Restarts$/",
               "values": false
             },
             "text": {},
@@ -854,15 +838,14 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(kube_pod_container_status_restarts_total{container=\"eventing-integrations-servicenow\"})",
-              "instant": true,
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
+              "hide": false,
+              "legendFormat": "Restarts",
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "eventing-integrations-servicenow - Restarts",
@@ -906,12 +889,12 @@ data:
           "id": 224,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "mean"
+                  "last"
               ],
               "fields": "",
               "values": false
@@ -924,15 +907,14 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(kube_pod_container_status_restarts_total{container=\"eventing-splunk-quarkus-service\"})",
-              "instant": true,
-              "interval": "",
-              "legendFormat": "",
-              "refId": "A"
+              "hide": false,
+              "legendFormat": "Restarts",
+              "range": true,
+              "refId": "B"
             }
           ],
           "title": "eventing-splunk-quarkus-service - Restarts",
@@ -956,49 +938,84 @@ data:
           "type": "row"
         },
         {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
           "datasource": {
             "type": "prometheus",
             "uid": "$datasource"
           },
           "description": "",
-          "fill": 1,
-          "fillGradient": 0,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 0,
             "y": 15
           },
-          "hiddenSeries": false,
           "id": 217,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 1,
-          "nullPointMode": "null as zero",
           "options": {
-            "alertThreshold": true
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
           },
-          "percentage": false,
           "pluginVersion": "9.3.8",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
           "targets": [
             {
               "datasource": {
@@ -1050,37 +1067,8 @@ data:
               "refId": "platform.notifications.aggregation"
             }
           ],
-          "thresholds": [],
-          "timeRegions": [],
           "title": "Kafka Lag",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "mode": "time",
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:76",
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:77",
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false
-          }
+          "type": "timeseries"
         },
         {
           "datasource": {
@@ -1365,178 +1353,194 @@ data:
           "type": "row"
         },
         {
-          "aliasColors": {},
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
           "datasource": {
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "fill": 1,
-          "fillGradient": 0,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 0,
             "y": 24
           },
-          "hiddenSeries": false,
           "id": 144,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": false,
-          "linewidth": 1,
-          "nullPointMode": "null",
           "options": {
-            "alertThreshold": true
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
           },
-          "percentage": false,
           "pluginVersion": "9.3.8",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
+              "editorMode": "builder",
               "expr": "sum(rate(processor_email_processed_total[5m])) by (application,bundle)",
               "hide": false,
-              "interval": "",
-              "legendFormat": "{{bundle}}/{{application}}",
+              "legendFormat": "email notifications",
               "range": true,
-              "refId": "A"
+              "refId": "B"
             }
           ],
-          "thresholds": [],
-          "timeRegions": [],
           "title": "Processed email notifications",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "mode": "time",
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:38",
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:39",
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false
-          }
+          "type": "timeseries"
         },
         {
-          "aliasColors": {},
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
-          "fill": 1,
-          "fillGradient": 0,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
           "gridPos": {
             "h": 8,
             "w": 6,
             "x": 6,
             "y": 24
           },
-          "hiddenSeries": false,
           "id": 136,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": false,
-          "linewidth": 1,
-          "nullPointMode": "null as zero",
           "options": {
-            "alertThreshold": true
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
           },
-          "percentage": false,
           "pluginVersion": "9.3.8",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
               "expr": "sum(increase(processor_webhook_processed_total[5m]))",
               "hide": false,
-              "interval": "",
-              "legendFormat": "webhooks",
-              "refId": "A"
+              "legendFormat": "webhook notifications",
+              "range": true,
+              "refId": "B"
             }
           ],
-          "thresholds": [],
-          "timeRegions": [],
           "title": "Processed webhook notifications",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "mode": "time",
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "$$hashKey": "object:38",
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            },
-            {
-              "$$hashKey": "object:39",
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false
-          }
+          "type": "timeseries"
         },
         {
           "datasource": {
@@ -1624,7 +1628,7 @@ data:
               "editorMode": "builder",
               "exemplar": true,
               "expr": "sum(rate(processor_slack_processed_total[5m])) by (application,bundle)",
-              "legendFormat": "{{bundle}}/{{application}}",
+              "legendFormat": "slack notifications",
               "range": true,
               "refId": "A"
             }
@@ -3457,7 +3461,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 30,
+      "version": 31,
       "weekStart": ""
     }
 kind: ConfigMap
