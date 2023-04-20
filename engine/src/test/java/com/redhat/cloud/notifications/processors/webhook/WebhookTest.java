@@ -94,14 +94,7 @@ public class WebhookTest {
 
     @BeforeEach
     void beforeEach() {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_WEBHOOK_COUNTER);
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_EMAIL_COUNTER);
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(FAILED_WEBHOOK_COUNTER);
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(FAILED_EMAIL_COUNTER);
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(RETRIED_WEBHOOK_COUNTER);
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(RETRIED_EMAIL_COUNTER);
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(SUCCESSFUL_WEBHOOK_COUNTER);
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(SUCCESSFUL_EMAIL_COUNTER);
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_WEBHOOK_COUNTER, PROCESSED_EMAIL_COUNTER, FAILED_WEBHOOK_COUNTER, FAILED_EMAIL_COUNTER, RETRIED_WEBHOOK_COUNTER, RETRIED_EMAIL_COUNTER, SUCCESSFUL_WEBHOOK_COUNTER, SUCCESSFUL_EMAIL_COUNTER);
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY);
     }
 
