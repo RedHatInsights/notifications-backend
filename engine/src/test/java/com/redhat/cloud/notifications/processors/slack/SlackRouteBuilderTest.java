@@ -1,8 +1,6 @@
 package com.redhat.cloud.notifications.processors.slack;
 
 import com.redhat.cloud.notifications.Json;
-import com.redhat.cloud.notifications.TestLifecycleManager;
-import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
@@ -19,7 +17,6 @@ import static io.restassured.http.ContentType.JSON;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 
 @QuarkusTest
-@QuarkusTestResource(TestLifecycleManager.class)
 public class SlackRouteBuilderTest extends CamelQuarkusTestSupport {
 
     @Override

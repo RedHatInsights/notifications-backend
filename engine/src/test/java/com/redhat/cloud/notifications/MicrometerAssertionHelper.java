@@ -60,6 +60,34 @@ public class MicrometerAssertionHelper {
         assertEquals(expectedIncrement, actualIncrement);
     }
 
+    public void saveCounterValueFilteredByTagsBeforeTest(String counterName, String tagKeys, String tagValue) {
+        Collection<Counter> counters = registry.find(counterName)
+            .tagKeys(tagKeys)
+            .counters();
+        for (Counter counter : counters) {
+            Meter.Id id = counter.getId();
+            if (id.getTag(tagKeys).equals(tagValue)) {
+                counterValuesBeforeTest.put(counterName + tagKeys + tagValue, counter.count());
+                break;
+            }
+        }
+    }
+
+    public void assertCounterValueFilteredByTagsIncrement(String counterName, String tagKeys, String tagValue, double expectedIncrement) {
+        Collection<Counter> counters = registry.find(counterName)
+            .tagKeys(tagKeys)
+            .counters();
+        for (Counter counter : counters) {
+            Meter.Id id = counter.getId();
+            if (id.getTag(tagKeys).equals(tagValue)) {
+                double actualIncrement = counter.count() - counterValuesBeforeTest.getOrDefault(
+                    counterName + tagKeys + tagValue, 0D);
+                assertEquals(expectedIncrement, actualIncrement);
+                break;
+            }
+        }
+    }
+
     public void assertCounterIncrement(String counterName, double expectedIncrement) {
         double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0D);
         assertEquals(expectedIncrement, actualIncrement);

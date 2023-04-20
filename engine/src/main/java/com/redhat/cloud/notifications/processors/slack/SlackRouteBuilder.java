@@ -18,6 +18,7 @@ public class SlackRouteBuilder extends RouteBuilder {
 
     public static final String REST_PATH = API_INTERNAL + "/slack";
     public static final String SLACK_OUTGOING_ROUTE = "slack-outgoing";
+    public static final String SLACK_INCOMING_ROUTE = "slack-incoming";
 
     private static final String SLACK_DIRECT_ENDPOINT = "direct:slack";
     private static final String EXCEPTION_DIRECT_ENDPOINT = "direct:exception";
@@ -37,6 +38,9 @@ public class SlackRouteBuilder extends RouteBuilder {
     @Inject
     SlackNotificationProcessor slackNotificationProcessor;
 
+    @Inject
+    RetryCounterProcessor retryCounterProcessor;
+
     @Override
     public void configure() {
 
@@ -48,6 +52,7 @@ public class SlackRouteBuilder extends RouteBuilder {
         onException(IOException.class)
                 .maximumRedeliveries(maxRedeliveries)
                 .redeliveryDelay(redeliveryDelay)
+                .onRedelivery(retryCounterProcessor)
                 .retryAttemptedLogLevel(INFO)
                 .to(EXCEPTION_DIRECT_ENDPOINT)
                 .handled(true); // The exception won't bubble-up to the caller.
@@ -57,13 +62,14 @@ public class SlackRouteBuilder extends RouteBuilder {
          * Let's treat that like an HTTP 4xx error for now, which implies no retry. It will still be logged.
          */
         onException(CamelExchangeException.class)
-                .to(EXCEPTION_DIRECT_ENDPOINT);
+                .to(EXCEPTION_DIRECT_ENDPOINT)
+                .handled(true);
 
         /*
          * This route simply logs exceptions with more details than what Camel provides by default.
          */
         from(EXCEPTION_DIRECT_ENDPOINT)
-                .routeId("exception-logging")
+                .routeId("slack-exception-logging")
                 .log(ERROR, ERROR_MSG);
 
         /*
@@ -72,7 +78,7 @@ public class SlackRouteBuilder extends RouteBuilder {
         rest(REST_PATH)
                 .post()
                 .consumes("application/json")
-                .routeId("slack-incoming")
+                .routeId(SLACK_INCOMING_ROUTE)
                 .to(SLACK_DIRECT_ENDPOINT);
 
         /*

@@ -105,14 +105,12 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     @Inject
     FeatureFlipper featureFlipper;
 
-    private Counter processedEmailCount;
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
     private Counter failedAggregationCommandCount;
 
     @PostConstruct
     void postConstruct() {
-        processedEmailCount = registry.counter("processor.email.processed");
         rejectedAggregationCommandCount = registry.counter(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME);
         processedAggregationCommandCount = registry.counter(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME);
         failedAggregationCommandCount = registry.counter(AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
@@ -152,7 +150,6 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
 
     private void sendEmail(Event event, Set<Endpoint> endpoints) {
         EmailSubscriptionType emailSubscriptionType = EmailSubscriptionType.INSTANT;
-        processedEmailCount.increment();
         EventType eventType = event.getEventType();
         String bundleName = eventType.getApplication().getBundle().getName();
         String applicationName = eventType.getApplication().getName();

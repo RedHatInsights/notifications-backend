@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.mockserver.model.HttpResponse;
 import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
@@ -12,42 +13,65 @@ import static com.redhat.cloud.notifications.processors.slack.SlackRouteBuilder.
 import static com.redhat.cloud.notifications.processors.slack.SlackRouteBuilderTest.buildNotification;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
-import static org.mockserver.model.HttpError.error;
 import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.verify.VerificationTimes.atLeast;
 
 @QuarkusTest
-public class SlackRedeliveriesTest {
+public class SlackMetricsTest {
 
-    private static final String MOCK_PATH = "/camel/slack/retries";
+    private static final String MOCK_PATH = "/camel/slack";
+    private static final String MOCK_PATH_KO = "/camel/slack_ko";
 
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
     @Test
-    void test() {
+    void testCallOk() {
+
         saveMetrics();
-
         SlackNotification notification = buildNotification(getMockServerUrl() + MOCK_PATH);
-        mockSlackServerFailure();
+        mockSlackServerOk();
         given()
-                .contentType(JSON)
-                .body(Json.encode(notification))
-                .when().post(REST_PATH)
-                .then().statusCode(200);
-        verifyRedeliveries();
+            .contentType(JSON)
+            .body(Json.encode(notification))
+            .when().post(REST_PATH)
+            .then().statusCode(200);
 
-        verifyMetrics();
+        verifyMetricsCallOk();
     }
 
-    private void verifyMetrics() {
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
+    @Test
+    void testCallFailure() {
+
+        saveMetrics();
+        SlackNotification notification = buildNotification(getMockServerUrl() + MOCK_PATH_KO);
+        mockSlackServerKo();
+        given()
+            .contentType(JSON)
+            .body(Json.encode(notification))
+            .when().post(REST_PATH)
+            .then().statusCode(200);
+
+        verifyMetricsCallKo();
+    }
+
+    private void verifyMetricsCallOk() {
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 0);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 1);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 1);
-        micrometerAssertionHelper.assertCounterIncrement("camel.slack.retry.counter", 2);
+        micrometerAssertionHelper.assertCounterIncrement("camel.slack.retry.counter", 0);
+    }
+
+    private void verifyMetricsCallKo() {
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterIncrement("camel.slack.retry.counter", 0);
     }
 
     private void saveMetrics() {
@@ -60,14 +84,13 @@ public class SlackRedeliveriesTest {
         micrometerAssertionHelper.saveCounterValuesBeforeTest("camel.slack.retry.counter");
     }
 
-    private static void mockSlackServerFailure() {
+    private static void mockSlackServerOk() {
         getClient()
-                .when(request().withMethod("POST").withPath(MOCK_PATH))
-                .error(error().withDropConnection(true));
+                .when(request().withMethod("POST").withPath(MOCK_PATH)).respond(new HttpResponse().withStatusCode(200));
     }
 
-    private static void verifyRedeliveries() {
+    private static void mockSlackServerKo() {
         getClient()
-                .verify(request().withMethod("POST").withPath(MOCK_PATH), atLeast(3));
+            .when(request().withMethod("POST").withPath(MOCK_PATH_KO)).respond(new HttpResponse().withStatusCode(500));
     }
 }
