@@ -687,7 +687,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "/^Restarts$/",
               "values": false
@@ -756,7 +756,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "/^Restarts$/",
               "values": false
@@ -825,7 +825,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "/^Restarts$/",
               "values": false
@@ -894,7 +894,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "",
               "values": false
@@ -909,7 +909,7 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "builder",
+              "editorMode": "code",
               "expr": "sum(kube_pod_container_status_restarts_total{container=\"eventing-splunk-quarkus-service\"})",
               "hide": false,
               "legendFormat": "Restarts",
@@ -2019,7 +2019,7 @@ data:
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
-                "drawStyle": "line",
+                "drawStyle": "bars",
                 "fillOpacity": 0,
                 "gradientMode": "none",
                 "hideFrom": {
@@ -2033,7 +2033,7 @@ data:
                 "scaleDistribution": {
                   "type": "linear"
                 },
-                "showPoints": "auto",
+                "showPoints": "never",
                 "spanNulls": false,
                 "stacking": {
                   "group": "A",
@@ -2051,15 +2051,57 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failure"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Retry"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -2086,12 +2128,41 @@ data:
               "datasource": {
                 "uid": "$datasource"
               },
-              "editorMode": "builder",
-              "exemplar": true,
-              "expr": "sum(rate(processor_slack_processed_total[5m])) by (application,bundle)",
-              "legendFormat": "slack notifications",
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "round(sum(increase(CamelExchangesTotal_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m])) - sum(increase(CamelExchangesFailuresHandled_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m])))",
+              "instant": false,
+              "legendFormat": "Success",
               "range": true,
-              "refId": "A"
+              "refId": "Success"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "round(sum(increase(CamelExchangesFailuresHandled_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m])))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Failure",
+              "range": true,
+              "refId": "Failure"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "round(sum(increase(camel_slack_retry_counter_total[5m])))",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "Retry",
+              "range": true,
+              "refId": "Retry"
             }
           ],
           "title": "Processed Slack notifications",
@@ -2386,7 +2457,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "lastNotNull"
+                "lastNotNull"
               ],
               "fields": "",
               "values": false
@@ -3722,7 +3793,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-24h",
+        "from": "now-12h",
         "to": "now"
       },
       "timepicker": {
@@ -3753,7 +3824,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 39,
+      "version": 50,
       "weekStart": ""
     }
 kind: ConfigMap
