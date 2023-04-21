@@ -921,6 +921,466 @@ data:
           "type": "stat"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 3,
+            "x": 0,
+            "y": 14
+          },
+          "id": 231,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "jvm_memory_used_bytes{service=\"notifications-backend-service\", area=\"heap\", id=\"Tenured Gen\"}",
+              "hide": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "notifications-backend-service - Memory leak detection",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 3,
+            "x": 3,
+            "y": 14
+          },
+          "id": 232,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "jvm_memory_used_bytes{service=\"notifications-engine-service\", area=\"heap\", id=\"Tenured Gen\"}",
+              "hide": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "notifications-engine-service - Memory leak detection",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 3,
+            "x": 6,
+            "y": 14
+          },
+          "id": 233,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "jvm_memory_used_bytes{service=\"notifications-gw-service\", area=\"heap\", id=\"Tenured Gen\"}",
+              "hide": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "notifications-gw-service - Memory leak detection",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 3,
+            "x": 9,
+            "y": 14
+          },
+          "id": 234,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "jvm_memory_used_bytes{service=\"eventing-splunk-quarkus-service\", area=\"heap\", id=\"Tenured Gen\"}",
+              "hide": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "eventing-splunk-quarkus-service - Memory leak detection",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 3,
+            "x": 12,
+            "y": 14
+          },
+          "id": 235,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "jvm_memory_used_bytes{service=\"eventing-integrations-servicenow\", area=\"heap\", id=\"Tenured Gen\"}",
+              "hide": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "eventing-integrations-servicenow - Memory leak detection",
+          "type": "timeseries"
+        },
+        {
           "collapsed": false,
           "datasource": {
             "type": "prometheus",
@@ -930,7 +1390,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 14
+            "y": 22
           },
           "id": 191,
           "panels": [],
@@ -1000,7 +1460,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 15
+            "y": 23
           },
           "id": 217,
           "options": {
@@ -1129,7 +1589,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 15
+            "y": 23
           },
           "id": 172,
           "options": {
@@ -1282,7 +1742,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 15
+            "y": 23
           },
           "id": 218,
           "options": {
@@ -1345,7 +1805,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 23
+            "y": 31
           },
           "id": 226,
           "panels": [],
@@ -1414,7 +1874,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 24
+            "y": 32
           },
           "id": 144,
           "options": {
@@ -1509,7 +1969,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 24
+            "y": 32
           },
           "id": 136,
           "options": {
@@ -1605,7 +2065,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 24
+            "y": 32
           },
           "id": 213,
           "options": {
@@ -1699,7 +2159,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 24
+            "y": 32
           },
           "id": 216,
           "options": {
@@ -1797,7 +2257,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 32
+            "y": 40
           },
           "id": 228,
           "panels": [],
@@ -1818,7 +2278,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 33
+            "y": 41
           },
           "hiddenSeries": false,
           "id": 201,
@@ -1916,7 +2376,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 33
+            "y": 41
           },
           "id": 205,
           "options": {
@@ -1958,7 +2418,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 41
+            "y": 49
           },
           "id": 188,
           "panels": [],
@@ -1979,7 +2439,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 42
+            "y": 50
           },
           "hiddenSeries": false,
           "id": 153,
@@ -2070,7 +2530,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 42
+            "y": 50
           },
           "hiddenSeries": false,
           "id": 161,
@@ -2151,11 +2611,11 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 50
+            "y": 58
           },
           "id": 179,
           "panels": [],
-          "title": "Service metrics",
+          "title": "HTTP",
           "type": "row"
         },
         {
@@ -2217,7 +2677,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 51
+            "y": 59
           },
           "id": 174,
           "options": {
@@ -2309,7 +2769,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 51
+            "y": 59
           },
           "id": 208,
           "options": {
@@ -2401,7 +2861,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 51
+            "y": 59
           },
           "id": 189,
           "options": {
@@ -2448,7 +2908,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 59
+            "y": 67
           },
           "hiddenSeries": false,
           "id": 113,
@@ -2533,7 +2993,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 59
+            "y": 67
           },
           "hiddenSeries": false,
           "id": 175,
@@ -2618,7 +3078,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 59
+            "y": 67
           },
           "hiddenSeries": false,
           "id": 176,
@@ -2712,7 +3172,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 59
+            "y": 67
           },
           "hiddenSeries": false,
           "id": 177,
@@ -2802,168 +3262,6 @@ data:
           }
         },
         {
-          "aliasColors": {},
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": {
-            "uid": "$datasource"
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 0,
-            "y": 67
-          },
-          "hiddenSeries": false,
-          "id": 166,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": false,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "9.3.8",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-backend-service\"}) BY (pod, namespace)",
-              "interval": "",
-              "legendFormat": "{{pod}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeRegions": [],
-          "title": "notifications-backend - memory usage",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "mode": "time",
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            },
-            {
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": true,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": {
-            "uid": "$datasource"
-          },
-          "fill": 1,
-          "fillGradient": 0,
-          "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 12,
-            "y": 67
-          },
-          "hiddenSeries": false,
-          "id": 167,
-          "legend": {
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": false,
-          "linewidth": 1,
-          "nullPointMode": "null",
-          "options": {
-            "alertThreshold": true
-          },
-          "percentage": false,
-          "pluginVersion": "9.3.8",
-          "pointradius": 2,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "sum(container_memory_working_set_bytes{container=\"notifications-gw-service\"}) BY (pod, namespace)",
-              "interval": "",
-              "legendFormat": "{{pod}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeRegions": [],
-          "title": "notifications-gw - memory usage",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "mode": "time",
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            },
-            {
-              "format": "short",
-              "logBase": 1,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false
-          }
-        },
-        {
           "collapsed": false,
           "datasource": {
             "type": "prometheus",
@@ -2973,7 +3271,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 74
+            "y": 75
           },
           "id": 24,
           "panels": [],
@@ -3001,7 +3299,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 75
+            "y": 76
           },
           "hiddenSeries": false,
           "id": 22,
@@ -3135,7 +3433,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 75
+            "y": 76
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -3262,7 +3560,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 84
+            "y": 85
           },
           "hiddenSeries": false,
           "id": 85,
@@ -3455,7 +3753,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 34,
+      "version": 39,
       "weekStart": ""
     }
 kind: ConfigMap
