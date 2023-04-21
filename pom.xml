@@ -41,7 +41,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <surefire-plugin.version>3.0.0</surefire-plugin.version>
-        <checkstyle-plugin.version>3.2.1</checkstyle-plugin.version>
+        <checkstyle-plugin.version>3.2.2</checkstyle-plugin.version>
         <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
         <jacoco-plugin.version>0.8.9</jacoco-plugin.version>
         <checkstyle.version>10.9.3</checkstyle.version>
