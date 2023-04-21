@@ -25,14 +25,18 @@ public class NotificationErrorProcessor implements Processor {
         String responseBody = httpException.getResponseBody();
         Map<String, String> responseHeaders = httpException.getResponseHeaders();
 
-        StringBuilder builder = new StringBuilder();
+        StringBuilder headerBuilder = new StringBuilder();
         for (String key : responseHeaders.keySet()) {
-            builder.append(key).append(":").append(responseHeaders.get(key)).append(",");
+            headerBuilder.append(key).append(":").append(responseHeaders.get(key)).append(",");
         }
 
-        Log.infof("Received error response from endpoint: %s, body: %s, headers: %s",
-            new String[]{(exchange.getFromEndpoint() != null ? exchange.getFromEndpoint().getEndpointUri() :
-                    "unknown"), responseBody, builder.toString()});
+        Log.infof("Received error response from notification [orgId=%s, historyId=%s, webhookUrl=%s] with return code: [%s], headers: [%s], body: [%s]",
+            exchange.getProperty("orgId"),
+            exchange.getProperty("historyId"),
+            exchange.getProperty("webhookUrl"),
+            httpException.getHttpResponseCode(),
+            headerBuilder.toString(),
+            responseBody);
         throw httpException;
     }
 }
