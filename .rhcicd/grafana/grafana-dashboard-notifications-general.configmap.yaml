@@ -1974,7 +1974,7 @@ data:
               "refId": "Retry"
             }
           ],
-          "title": "Processed email notifications",
+          "title": "Email",
           "type": "timeseries"
         },
         {
@@ -2139,7 +2139,7 @@ data:
               "refId": "Retry"
             }
           ],
-          "title": "Processed webhook notifications",
+          "title": "Webhook",
           "type": "timeseries"
         },
         {
@@ -2305,7 +2305,7 @@ data:
               "refId": "Retry"
             }
           ],
-          "title": "Processed Slack notifications",
+          "title": "Slack",
           "type": "timeseries"
         },
         {
@@ -2325,7 +2325,7 @@ data:
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
-                "drawStyle": "line",
+                "drawStyle": "bars",
                 "fillOpacity": 0,
                 "gradientMode": "none",
                 "hideFrom": {
@@ -2364,13 +2364,187 @@ data:
                 ]
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 18,
-            "y": 32
+            "x": 0,
+            "y": 40
+          },
+          "id": 236,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": true,
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://success\",eventType=\"ExchangeSentEvent\", service=\"eventing-splunk-quarkus-service\"}[5m]))",
+              "legendFormat": "Success",
+              "range": true,
+              "refId": "Success"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://httpFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-splunk-quarkus-service\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Http failed",
+              "range": true,
+              "refId": "Http Failed"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://ioFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-splunk-quarkus-service\"}[5m]))",
+              "hide": false,
+              "legendFormat": "IO Failed",
+              "range": true,
+              "refId": "IO Fail"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://targetUrlValidationFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-splunk-quarkus-service\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Target validation url failed",
+              "range": true,
+              "refId": "Target validation url failed"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://secureConnectionFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-splunk-quarkus-service\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Secure connection failed",
+              "range": true,
+              "refId": "Secure connection failed"
+            }
+          ],
+          "title": "Splunk",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 40
           },
           "id": 216,
           "options": {
@@ -2393,7 +2567,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://success\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://success\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
               "legendFormat": "Success",
               "range": true,
               "refId": "Success"
@@ -2404,19 +2578,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://handler\",eventType=\"ExchangeSentEvent\"}[5m]))",
-              "hide": false,
-              "legendFormat": "Handled",
-              "range": true,
-              "refId": "Handled"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://httpFailed\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://httpFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
               "hide": false,
               "legendFormat": "Http failed",
               "range": true,
@@ -2428,7 +2590,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://ioFailed\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://ioFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
               "hide": false,
               "legendFormat": "IO Failed",
               "range": true,
@@ -2440,7 +2602,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://targetUrlValidationFailed\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://targetUrlValidationFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
               "hide": false,
               "legendFormat": "Target validation url failed",
               "range": true,
@@ -2452,14 +2614,180 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(rate(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://secureConnectionFailed\",eventType=\"ExchangeSentEvent\"}[5m]))",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://secureConnectionFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
               "hide": false,
               "legendFormat": "Secure connection failed",
               "range": true,
               "refId": "Secure connection failed"
             }
           ],
-          "title": "Processed Splunk + Snow notifications",
+          "title": "Snow",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failure"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Retry"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 40
+          },
+          "id": 237,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "sum(increase(CamelExchangesSucceeded_total{namespace=~\"notifications-.+\", routeId=\"teams-outgoing\"}[5m]))",
+              "instant": false,
+              "legendFormat": "Success",
+              "range": true,
+              "refId": "Success"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(CamelExchangesTotal_total{namespace=~\"notifications-.+\", routeId=\"teams-outgoing\"}[5m])) - sum(increase(CamelExchangesSucceeded_total{namespace=~\"notifications-.+\", routeId=\"teams-outgoing\"}[5m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Failure",
+              "range": true,
+              "refId": "Failure"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "sum(increase(camel_teams_retry_counter_total[5m]))",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "Retry",
+              "range": true,
+              "refId": "Retry"
+            }
+          ],
+          "title": "Teams",
           "type": "timeseries"
         },
         {
@@ -2468,7 +2796,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 40
+            "y": 48
           },
           "id": 228,
           "panels": [],
@@ -2489,7 +2817,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 41
+            "y": 49
           },
           "hiddenSeries": false,
           "id": 201,
@@ -2587,7 +2915,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 41
+            "y": 49
           },
           "id": 205,
           "options": {
@@ -2629,7 +2957,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 49
+            "y": 57
           },
           "id": 188,
           "panels": [],
@@ -2650,7 +2978,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 50
+            "y": 58
           },
           "hiddenSeries": false,
           "id": 153,
@@ -2741,7 +3069,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 50
+            "y": 58
           },
           "hiddenSeries": false,
           "id": 161,
@@ -2822,7 +3150,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 58
+            "y": 66
           },
           "id": 179,
           "panels": [],
@@ -2888,7 +3216,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 59
+            "y": 67
           },
           "id": 174,
           "options": {
@@ -2980,7 +3308,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 59
+            "y": 67
           },
           "id": 208,
           "options": {
@@ -3072,7 +3400,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 59
+            "y": 67
           },
           "id": 189,
           "options": {
@@ -3119,7 +3447,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 67
+            "y": 75
           },
           "hiddenSeries": false,
           "id": 113,
@@ -3204,7 +3532,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 67
+            "y": 75
           },
           "hiddenSeries": false,
           "id": 175,
@@ -3289,7 +3617,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 67
+            "y": 75
           },
           "hiddenSeries": false,
           "id": 176,
@@ -3383,7 +3711,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 67
+            "y": 75
           },
           "hiddenSeries": false,
           "id": 177,
@@ -3482,7 +3810,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 75
+            "y": 83
           },
           "id": 24,
           "panels": [],
@@ -3510,7 +3838,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 76
+            "y": 84
           },
           "hiddenSeries": false,
           "id": 22,
@@ -3644,7 +3972,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 76
+            "y": 84
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -3771,7 +4099,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 85
+            "y": 93
           },
           "hiddenSeries": false,
           "id": 85,
@@ -3964,7 +4292,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 3,
+      "version": 4,
       "weekStart": ""
     }
 kind: ConfigMap
