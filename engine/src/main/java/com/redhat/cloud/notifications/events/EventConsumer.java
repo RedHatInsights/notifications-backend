@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
-import com.redhat.cloud.event.parser.ConsoleCloudEventParsingException;
+import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformer;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformerFactory;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
