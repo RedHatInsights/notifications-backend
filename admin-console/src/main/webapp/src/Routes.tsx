@@ -6,6 +6,7 @@ import { BundlePage } from './pages/BundlePage';
 import { EmailTemplatePage } from './pages/EmailTemplatePage';
 import { MessageValidatorPage } from './pages/MessageValidatorPage';
 import { RenderEmailPage } from './pages/RenderEmailPage';
+import { ConsoleCloudEventValidatorPage } from './pages/ConsoleCloudEventValidatorPage';
 
 interface Path {
     readonly path: string;
@@ -18,7 +19,8 @@ export const linkTo = {
     email: () => '/email',
     newEmailTemplate: () => '/email-templates',
     emailTemplates: (templateId: string) => `/email-templates/${templateId}`,
-    messageValidator: () => '/utils/message-validator'
+    messageValidator: () => '/utils/message-validator',
+    consoleCloudEventValidator: () => '/utils/console-cloud-event-validator'
 };
 
 const pathRoutes: Path[] = [
@@ -45,6 +47,10 @@ const pathRoutes: Path[] = [
     {
         path: linkTo.messageValidator(),
         component: MessageValidatorPage
+    },
+    {
+        path: linkTo.consoleCloudEventValidator(),
+        component: ConsoleCloudEventValidatorPage
     }
 ];
 
@@ -58,7 +64,7 @@ export const Routes: React.FunctionComponent<unknown> = _props => {
                     path={ pathRoute.path }
                 />
             )) }
-            <Redirect to={ linkTo.messageValidator() } />
+            <Redirect to={ linkTo.consoleCloudEventValidator() } />
         </Switch>
     );
 };

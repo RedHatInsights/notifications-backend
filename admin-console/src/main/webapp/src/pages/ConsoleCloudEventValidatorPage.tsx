@@ -4,8 +4,8 @@ import { useParameterizedQuery } from 'react-fetching-library';
 import { Operations } from '../generated/OpenapiInternal';
 import { Validator } from '../components/Validator/Validator';
 
-export const MessageValidatorPage: React.FunctionComponent = () => {
-    const validateService = useParameterizedQuery(Operations.ValidationResourceValidateMessage.actionCreator);
+export const ConsoleCloudEventValidatorPage: React.FunctionComponent = () => {
+    const validateService = useParameterizedQuery(Operations.ValidationResourceValidateConsoleCloudEvent.actionCreator);
 
     const validate = React.useCallback(async (jsonMessage: string) => {
         const query = validateService.query;
