@@ -54,7 +54,7 @@ public class SlackRouteBuilder extends RouteBuilder {
                 .redeliveryDelay(redeliveryDelay)
                 .onRedelivery(retryCounterProcessor)
                 .retryAttemptedLogLevel(INFO)
-                .to(EXCEPTION_DIRECT_ENDPOINT); // The exception won't bubble-up to the caller.
+                .to(EXCEPTION_DIRECT_ENDPOINT);
 
         /*
          * We only saw a CamelExchangeException so far because of a misconfiguration of a Slack integration.
