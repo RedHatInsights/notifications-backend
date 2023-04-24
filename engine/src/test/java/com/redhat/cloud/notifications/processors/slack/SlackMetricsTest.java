@@ -49,7 +49,7 @@ public class SlackMetricsTest {
             .contentType(JSON)
             .body(Json.encode(notification))
             .when().post(REST_PATH)
-            .then().statusCode(200);
+            .then().statusCode(500);
 
         verifyMetricsCallKo();
     }
@@ -65,9 +65,9 @@ public class SlackMetricsTest {
     }
 
     private void verifyMetricsCallKo() {
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 0);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 0);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 0);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 0);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 1);
