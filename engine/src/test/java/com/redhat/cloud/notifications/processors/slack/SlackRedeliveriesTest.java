@@ -34,18 +34,18 @@ public class SlackRedeliveriesTest {
                 .contentType(JSON)
                 .body(Json.encode(notification))
                 .when().post(REST_PATH)
-                .then().statusCode(200);
+                .then().statusCode(500);
         verifyRedeliveries();
 
         verifyMetrics();
     }
 
     private void verifyMetrics() {
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 0);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_INCOMING_ROUTE, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 0);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", SlackRouteBuilder.SLACK_OUTGOING_ROUTE, 1);
         micrometerAssertionHelper.assertCounterIncrement("camel.slack.retry.counter", 2);
     }

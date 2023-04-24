@@ -54,16 +54,14 @@ public class SlackRouteBuilder extends RouteBuilder {
                 .redeliveryDelay(redeliveryDelay)
                 .onRedelivery(retryCounterProcessor)
                 .retryAttemptedLogLevel(INFO)
-                .to(EXCEPTION_DIRECT_ENDPOINT)
-                .handled(true); // The exception won't bubble-up to the caller.
+                .to(EXCEPTION_DIRECT_ENDPOINT); // The exception won't bubble-up to the caller.
 
         /*
          * We only saw a CamelExchangeException so far because of a misconfiguration of a Slack integration.
          * Let's treat that like an HTTP 4xx error for now, which implies no retry. It will still be logged.
          */
         onException(CamelExchangeException.class)
-                .to(EXCEPTION_DIRECT_ENDPOINT)
-                .handled(true);
+                .to(EXCEPTION_DIRECT_ENDPOINT);
 
         /*
          * This route simply logs exceptions with more details than what Camel provides by default.
