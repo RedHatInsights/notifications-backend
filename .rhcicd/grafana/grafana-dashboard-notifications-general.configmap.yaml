@@ -1809,7 +1809,7 @@ data:
           },
           "id": 226,
           "panels": [],
-          "title": "Kafka output",
+          "title": "Connectors",
           "type": "row"
         },
         {
@@ -1868,7 +1868,53 @@ data:
               },
               "unit": "short"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failed"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Retry"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -1896,12 +1942,36 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "builder",
-              "expr": "sum(rate(processor_email_processed_total[5m])) by (application,bundle)",
+              "editorMode": "code",
+              "expr": "sum(increase(processor_email_successful_total[5m]))",
               "hide": false,
-              "legendFormat": "email notifications",
+              "legendFormat": "Success",
               "range": true,
-              "refId": "B"
+              "refId": "Success"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(processor_email_failed_total[5m]))",
+              "hide": false,
+              "legendFormat": "Failed",
+              "range": true,
+              "refId": "Failed"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(processor_email_retried_total[5m]))",
+              "hide": false,
+              "legendFormat": "Retry",
+              "range": true,
+              "refId": "Retry"
             }
           ],
           "title": "Processed email notifications",
@@ -1963,7 +2033,53 @@ data:
               },
               "unit": "short"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failure"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Retry"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -1991,12 +2107,36 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "builder",
-              "expr": "sum(increase(processor_webhook_processed_total[5m]))",
+              "editorMode": "code",
+              "expr": "sum(increase(processor_webhook_successful_total[5m]))",
               "hide": false,
-              "legendFormat": "webhook notifications",
+              "legendFormat": "Success",
               "range": true,
-              "refId": "B"
+              "refId": "Success"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(processor_webhook_failed_total[5m]))",
+              "hide": false,
+              "legendFormat": "Failure",
+              "range": true,
+              "refId": "Failure"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(processor_webhook_retried_total[5m]))",
+              "hide": false,
+              "legendFormat": "Retry",
+              "range": true,
+              "refId": "Retry"
             }
           ],
           "title": "Processed webhook notifications",
@@ -2130,7 +2270,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "round(sum(increase(CamelExchangesTotal_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m])) - sum(increase(CamelExchangesFailuresHandled_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m])))",
+              "expr": "sum(increase(CamelExchangesSucceeded_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m]))",
               "instant": false,
               "legendFormat": "Success",
               "range": true,
@@ -2142,7 +2282,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "round(sum(increase(CamelExchangesFailuresHandled_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m])))",
+              "expr": "sum(increase(CamelExchangesTotal_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m])) - sum(increase(CamelExchangesSucceeded_total{namespace=~\"notifications-.+\", routeId=\"slack-outgoing\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "Failure",
@@ -2156,7 +2296,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "round(sum(increase(camel_slack_retry_counter_total[5m])))",
+              "expr": "sum(increase(camel_slack_retry_counter_total[5m]))",
               "hide": false,
               "instant": false,
               "interval": "",
@@ -3793,7 +3933,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-12h",
+        "from": "now-24h",
         "to": "now"
       },
       "timepicker": {
@@ -3824,7 +3964,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 50,
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap
