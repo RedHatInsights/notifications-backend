@@ -313,7 +313,7 @@ public class ResourceHelpers {
             endpoint.setOrgId(DEFAULT_ORG_ID);
 
             // Should it be a camel, or a webhook endpoint?
-            if (random.nextBoolean()) {
+            if (i % 2 == 0) {
                 endpoint.setType(EndpointType.CAMEL);
                 endpoint.setSubType("dromedary");
 
@@ -322,7 +322,7 @@ public class ResourceHelpers {
                 camelProperties.setUrl("https://example.org");
 
                 // Maybe set a basic authentication, maybe not...
-                if (random.nextBoolean()) {
+                if (i % 3 == 0) {
                     camelProperties.setBasicAuthentication(
                         new BasicAuthentication(
                             UUID.randomUUID().toString(),
@@ -332,7 +332,7 @@ public class ResourceHelpers {
                 }
 
                 // Maybe set a secret token, maybe not...
-                if (random.nextBoolean()) {
+                if (i % 3 == 0) {
                     camelProperties.setSecretToken(UUID.randomUUID().toString());
                 }
 
@@ -349,7 +349,7 @@ public class ResourceHelpers {
                 webhookProperties.setUrl("https://example.org");
 
                 // Maybe set a basic authentication, maybe not...
-                if (random.nextBoolean()) {
+                if (i % 3 == 0) {
                     webhookProperties.setBasicAuthentication(
                         new BasicAuthentication(
                             UUID.randomUUID().toString(),
@@ -359,7 +359,7 @@ public class ResourceHelpers {
                 }
 
                 // Maybe set a secret token, maybe not...
-                if (random.nextBoolean()) {
+                if (i % 3 == 0) {
                     webhookProperties.setSecretToken(UUID.randomUUID().toString());
                 }
 
@@ -476,7 +476,7 @@ public class ResourceHelpers {
             endpoint.setOrgId(DEFAULT_ORG_ID);
 
             // Should it be a camel, or a webhook endpoint?
-            if (random.nextBoolean()) {
+            if (i % 3 == 0) {
                 endpoint.setType(EndpointType.CAMEL);
                 endpoint.setSubType("dromedary");
 
