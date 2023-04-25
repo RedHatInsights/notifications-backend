@@ -64,6 +64,8 @@
         <quarkus.platform.version>2.16.6.Final</quarkus.platform.version>
         <redhat.event-schemas.version>1.4.5</redhat.event-schemas.version>
 
+        <sonar.maven.plugin.version>3.9.1.2184</sonar.maven.plugin.version>
+
     </properties>
 
     <dependencyManagement>
@@ -232,6 +234,11 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar.maven.plugin.version}</version>
             </plugin>
         </plugins>
     </build>
