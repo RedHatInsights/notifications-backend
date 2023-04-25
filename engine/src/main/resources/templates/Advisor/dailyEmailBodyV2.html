@@ -50,7 +50,7 @@
             <td class="incident-col-16px">
                 {#let isIncident = action.context.advisor.new_recommendations.get(rec).has_incident.or("false")}
                     {#if isIncident && (true == isIncident || "true" == isIncident)}
-                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" />
+                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" width="16" />
                     {/if}
                 {/let}
             </td>
@@ -90,7 +90,7 @@
             <td class="incident-col-16px">
               {#let isIncident = action.context.advisor.resolved_recommendations.get(rec).has_incident.or("false")}
                     {#if isIncident && (true == isIncident || "true" == isIncident)}
-                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" />
+                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" width="16" />
                     {/if}
                 {/let}
             </td>
@@ -129,7 +129,7 @@
             <td class="incident-col-16px">
                 {#let isIncident = action.context.advisor.deactivated_recommendations.get(rec).has_incident.or("false")}
                     {#if isIncident && (true == isIncident || "true" == isIncident)}
-                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" />
+                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" width="16" />
                     {/if}
                 {/let}
             </td>
