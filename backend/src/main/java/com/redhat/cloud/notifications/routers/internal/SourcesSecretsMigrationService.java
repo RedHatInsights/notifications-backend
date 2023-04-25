@@ -51,7 +51,7 @@ public class SourcesSecretsMigrationService {
             // since this is not a destructive operation.
             try {
                 this.secretUtils.createSecretsForEndpoint(endpoint);
-            } catch (final WebApplicationException e) {
+            } catch (final Exception e) {
                 Log.errorf("[endpoint_id: %s] error when migrating the endpoint secrets: unable to create the secrets for the endpoint: %s", e.getResponse().getEntity());
                 errorCounter++;
 
