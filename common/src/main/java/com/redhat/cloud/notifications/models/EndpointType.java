@@ -10,7 +10,9 @@ public enum EndpointType {
     @JsonProperty("email_subscription")
     EMAIL_SUBSCRIPTION(false),
     @JsonProperty("camel")
-    CAMEL(true);
+    CAMEL(true),
+    @JsonProperty("ansible")
+    ANSIBLE(false);
 
     public final boolean requiresSubType;
 
