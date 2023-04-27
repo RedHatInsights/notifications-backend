@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.networknt.schema.ValidationMessage;
+import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
+import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventValidationException;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.ParsingException;
@@ -32,6 +34,8 @@ public class ValidationResource {
 
     @Inject
     ApplicationRepository applicationRepository;
+
+    ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
     @GET
     @Path("/baet")
@@ -72,6 +76,36 @@ public class ValidationResource {
         } catch (ParsingException parsingException) {
             MessageValidationResponse responseMessage = new MessageValidationResponse();
             for (ValidationMessage message : parsingException.getValidationMessages()) {
+                responseMessage.addError(message.getPath(), message.getMessage());
+            }
+            return Response.status(BAD_REQUEST).entity(responseMessage).build();
+        }
+
+        return Response.ok().build();
+    }
+
+    @POST
+    @Consumes(APPLICATION_JSON)
+    @APIResponses({
+        @APIResponse(
+            content = @Content(
+                mediaType = APPLICATION_JSON,
+                schema = @Schema(
+                    implementation = MessageValidationResponse.class,
+                    required = true
+                )
+            ),
+            responseCode = "400"
+            ),
+        @APIResponse(content = @Content(mediaType = TEXT_PLAIN), responseCode = "200"),
+    })
+    @Path("/console-cloud-event")
+    public Response validateConsoleCloudEvent(String action) {
+        try {
+            consoleCloudEventParser.validate(action);
+        } catch (ConsoleCloudEventValidationException exception) {
+            MessageValidationResponse responseMessage = new MessageValidationResponse();
+            for (ValidationMessage message : exception.getValidationMessages()) {
                 responseMessage.addError(message.getPath(), message.getMessage());
             }
             return Response.status(BAD_REQUEST).entity(responseMessage).build();
