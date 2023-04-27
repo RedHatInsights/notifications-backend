@@ -5,15 +5,12 @@ import com.redhat.cloud.notifications.RbacTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.Environment;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import javax.inject.Inject;
 import java.util.List;
-import java.util.Map;
 
 import static com.redhat.cloud.notifications.templates.Rbac.CUSTOM_DEFAULT_ACCESS_UPDATED;
 import static com.redhat.cloud.notifications.templates.Rbac.CUSTOM_ROLE_CREATED;
@@ -33,11 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestRbacTemplate extends EmailTemplatesInDbHelper {
-
-    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
-
-    @Inject
-    Environment environment;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -291,21 +283,6 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
                 break;
             default:
                 break;
-        }
-    }
-
-
-    private String generateFromTemplate(TemplateInstance templateInstance, Action action) {
-        return templateInstance
-            .data("action", action)
-            .data("environment", environment)
-            .data("user", Map.of("firstName", "Drift User", "lastName", "RHEL"))
-            .render();
-    }
-
-    public void writeEmailTemplate(String result, String fileName) {
-        if (SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
-            TestHelpers.writeEmailTemplate(result, fileName);
         }
     }
 }

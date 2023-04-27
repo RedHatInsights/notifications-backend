@@ -17,6 +17,7 @@
             body,
             .rh-content__block,
             .rh-data-table,
+            .rh-data-table-bordered,
             .rh-masthead__subhead {
                 font-family: 'Red Hat Display', Helvetica, sans-serif;
             }
@@ -119,12 +120,9 @@
             .rh-template-container {
                 padding: 0 0 30px 0;
                 width: 600px;
+                background-color: #ededed;
             }
 
-            .rh-template-container,
-            .rh-template-container > tbody {
-                background: #ededed;
-            }
 
             .rh-head,
             .rh-body,
@@ -144,6 +142,7 @@
             .rh-masthead,
             .rh-content,
             .rh-data-table,
+            .rh-data-table-bordered,
             .rh-head {
                 width: 100% !important;
                 align: center;
@@ -277,37 +276,49 @@
                 text-align: left;
             }
 
-            .rh-data-table tbody th {
+            .rh-data-table tbody th,
+            .rh-data-table-bordered tbody th{
                 font-weight: 500;
                 text-align: left;
                 width: 200px;
             }
 
-            .rh-data-table.rh-m-bordered th {
+            .rh-data-table.rh-m-bordered th,
+            .rh-data-table-bordered th {
                 padding: 10px;
                 text-align: left;
                 font-size: 14px;
                 font-weight: bold;
-                background-color: #ededed;
+                background-color: #ededed !important;
             }
 
-            .rh-data-table.rh-m-bordered td {
+            .rh-data-table-bordered thead th{
                 padding: 10px;
                 text-align: left;
+                font-size: 14px;
+                font-weight: bold;
+                background-color: #ededed !important;
             }
 
-            .rh-data-table.rh-m-bordered {
+
+            .rh-data-table.rh-m-bordered,
+            .rh-data-table-bordered tbody {
+                background-color: #ffffff !important;
                 border-collapse: collapse;
             }
 
             .rh-m-bordered th,
-            .rh-m-bordered td {
+            .rh-data-table-bordered th,
+            .rh-m-bordered td,
+            .rh-data-table-bordered td {
+                padding: 10px;
                 border-width: 1px;
                 border-color: #b8bbbe;
                 border-style: solid;
             }
 
-            .rh-m-bordered tr:nth-child(even) {
+            .rh-m-bordered,
+            .rh-data-table-bordered tbody tr:nth-child(even) {
                 background-color: #fafafa;
             }
 
@@ -352,7 +363,10 @@
                 }
 
                 .rh-data-table.rh-m-bordered th,
-                .rh-data-table.rh-m-bordered td {
+                .rh-data-table-bordered th,
+                .rh-data-table.rh-m-bordered td,
+                .rh-data-table-bordered td,
+                .rh-data-table-bordered tbody td{
                     padding: 5px;
                     text-align: left;
                 }
@@ -379,7 +393,7 @@
     <table align="center" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" class="rh-body-table">
         <tr>
             <td align="center" valign="top" class="rh-body-cell">
-                <table border="0" cellpadding="0" cellspacing="0" class="rh-template-container">
+                <table border="0" cellpadding="0" cellspacing="0" class="rh-template-container" >
 
                     <!-- Head -->
                     <tr>
@@ -389,7 +403,7 @@
                                     <!--Red Hat logo-->
                                     <td align="center" class="rh-masthead__brand">
                                         <a href="{environment.url}" target="_blank" class="rh-masthead__brand-link">
-                                            <img src="https://console.redhat.com/apps/frontend-assets/console-logos/Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png" alt="Red Hat logo" class="rh-masthead__brand-img" />
+                                            <img src="https://console.redhat.com/apps/frontend-assets/console-logos/Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png" alt="Red Hat logo" class="rh-masthead__brand-img" border="0" width="350" />
                                         </a>
                                     </td>
                                 </tr>
@@ -423,7 +437,7 @@
                                                 <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section1}{/}</span>
                                             </p>
                                         </td>
-                                        <td {#if renderSection1AsIncident.or(false)} class="rh-masthead__incident_section__head" {#else} class="rh-masthead__section__head" {/if}>
+                                        <td {#if renderSection1AsIncident.or(false)} class="rh-masthead__incident_section__head" {#else} class="rh-masthead__section__head" {/if} style="text-align: right">
                                             <p><span class="rh-masthead__section__head__counter">{#insert content-title-right-part-section1}{/}</span>
                                         </td>
                                     </tr>
@@ -474,7 +488,7 @@
                                                 <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section2}{/}</span>
                                             </p>
                                         </td>
-                                        <td class="rh-masthead__section__head">
+                                        <td class="rh-masthead__section__head" style="text-align: right">
                                             <p><span class="rh-masthead__section__head__counter">{#insert content-title-right-part-section2}{/}</span>
                                         </td>
                                     </tr>
