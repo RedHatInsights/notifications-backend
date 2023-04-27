@@ -212,6 +212,7 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-mailer</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
