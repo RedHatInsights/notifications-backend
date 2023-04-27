@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
+import com.redhat.cloud.notifications.processors.google.chat.GoogleChatProcessor;
 import com.redhat.cloud.notifications.processors.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.teams.TeamsProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
@@ -46,6 +47,9 @@ public class EndpointProcessor {
 
     @Inject
     TeamsProcessor teamsProcessor;
+
+    @Inject
+    GoogleChatProcessor googleChatProcessor;
 
     @Inject
     MeterRegistry registry;
@@ -91,6 +95,8 @@ public class EndpointProcessor {
                                         slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else if ("teams".equals(endpointsBySubTypeEntry.getKey())) {
                                         teamsProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                                    } else if ("google_chat".equals(endpointsBySubTypeEntry.getKey())) {
+                                        googleChatProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else {
                                         camelProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     }
