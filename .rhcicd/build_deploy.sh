@@ -18,10 +18,15 @@ function buildAndDeploy() {
     docker --config="$DOCKER_CONF" login -u="$QUAY_USER" -p="$QUAY_TOKEN" quay.io
     docker --config="$DOCKER_CONF" build -t "${IMAGE}:${IMAGE_TAG}" . -f docker/Dockerfile.${IMAGE_NAME}.jvm
     docker --config="$DOCKER_CONF" push "${IMAGE}:${IMAGE_TAG}"
-    docker --config="$DOCKER_CONF" tag "${IMAGE}:${IMAGE_TAG}" "${IMAGE}:qa"
-    docker --config="$DOCKER_CONF" push "${IMAGE}:qa"
-    docker --config="$DOCKER_CONF" tag "${IMAGE}:${IMAGE_TAG}" "${IMAGE}:latest"
-    docker --config="$DOCKER_CONF" push "${IMAGE}:latest"
+    if [[ $GIT_BRANCH == *"security-compliance"* ]]; then
+        docker --config="$DOCKER_CONF" tag "${IMAGE}:${IMAGE_TAG}" "${IMAGE}:security-compliance"
+        docker --config="$DOCKER_CONF" push "${IMAGE}:security-compliance"
+    else
+        docker --config="$DOCKER_CONF" tag "${IMAGE}:${IMAGE_TAG}" "${IMAGE}:qa"
+        docker --config="$DOCKER_CONF" push "${IMAGE}:qa"
+        docker --config="$DOCKER_CONF" tag "${IMAGE}:${IMAGE_TAG}" "${IMAGE}:latest"
+        docker --config="$DOCKER_CONF" push "${IMAGE}:latest"
+    fi
 }
 
 buildAndDeploy "notifications-aggregator"
