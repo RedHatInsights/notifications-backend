@@ -20,7 +20,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
-import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
@@ -591,7 +591,7 @@ public class EndpointResource {
             throw new NotFoundException("integration not found");
         }
 
-        final var endpointTestRequest = new EndpointTestRequest(uuid, orgId);
+        final var endpointTestRequest = new InternalEndpointTestRequest(uuid, orgId);
 
         this.endpointTestService.testEndpoint(endpointTestRequest);
     }

@@ -22,7 +22,7 @@ import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
-import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
@@ -2245,10 +2245,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .statusCode(204);
 
         // Capture the sent payload to verify it.
-        final ArgumentCaptor<EndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(EndpointTestRequest.class);
+        final ArgumentCaptor<InternalEndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(InternalEndpointTestRequest.class);
         Mockito.verify(this.endpointTestService).testEndpoint(capturedPayload.capture());
 
-        final EndpointTestRequest sentPayload = capturedPayload.getValue();
+        final InternalEndpointTestRequest sentPayload = capturedPayload.getValue();
 
         Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
         Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");

@@ -13,7 +13,7 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
-import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -49,13 +49,13 @@ public class EndpointTestResourceTest {
         final String orgId = "test-endpoint-engine-test";
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(EndpointType.CAMEL, "slack", true, 0);
 
-        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest(createdEndpoint.getId(), orgId);
+        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest(createdEndpoint.getId(), orgId);
 
         // Call the endpoint under test.
         given()
             .when()
             .contentType(ContentType.JSON)
-            .body(Json.encode(endpointTestRequest))
+            .body(Json.encode(internalEndpointTestRequest))
             .post("/internal/endpoints/test")
             .then()
             .statusCode(204);
