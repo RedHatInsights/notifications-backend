@@ -94,9 +94,9 @@ public class TemplateResource {
     @Transactional
     @RolesAllowed(RBAC_INTERNAL_USER)
     public Response updateTemplate(@Context SecurityContext sec, @RestPath UUID templateId, Template template) {
-        Template templateFromDb = templateRepository.findTemplateById(templateId);
         // Common templates don't have any applicationId, only internal admins can manage them
         if (!sec.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
+            Template templateFromDb = templateRepository.findTemplateById(templateId);
             if (null == templateFromDb.getApplication() || null == template.getApplicationId()) {
                 throw new ForbiddenException();
             }
