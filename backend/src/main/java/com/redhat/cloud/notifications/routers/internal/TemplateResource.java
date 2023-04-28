@@ -123,7 +123,7 @@ public class TemplateResource {
         if (!sec.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             Template templateFromDb = templateRepository.findTemplateById(templateId);
             if (null == templateFromDb.getApplication()) {
-                throw new ForbiddenException();
+                throw new ForbiddenException("Common templates can only be deleted by administrators");
             }
             securityContextUtil.hasPermissionForApplication(sec, templateFromDb.getApplication().getId());
         }
