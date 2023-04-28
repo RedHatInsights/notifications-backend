@@ -119,9 +119,9 @@ public class TemplateResource {
     @Transactional
     @RolesAllowed(RBAC_INTERNAL_USER)
     public boolean deleteTemplate(@Context SecurityContext sec, @RestPath UUID templateId) {
-        Template templateFromDb = templateRepository.findTemplateById(templateId);
         // Common templates don't have any applicationId, only internal admins can manage them
         if (!sec.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
+            Template templateFromDb = templateRepository.findTemplateById(templateId);
             if (null == templateFromDb.getApplication()) {
                 throw new ForbiddenException();
             }
