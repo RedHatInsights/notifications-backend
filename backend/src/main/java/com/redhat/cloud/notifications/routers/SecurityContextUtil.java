@@ -55,6 +55,9 @@ public class SecurityContextUtil {
         if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             return;
         }
+        if (applicationId == null) {
+            throw new ForbiddenException("Common templates can only be managed by administrators");
+        }
 
         List<InternalRoleAccess> internalRoleAccessList = internalRoleAccessRepository.getByApplication(applicationId);
 
