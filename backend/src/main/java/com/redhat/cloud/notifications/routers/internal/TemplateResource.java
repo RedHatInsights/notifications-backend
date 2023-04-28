@@ -98,7 +98,7 @@ public class TemplateResource {
         if (!sec.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             Template templateFromDb = templateRepository.findTemplateById(templateId);
             if (null == templateFromDb.getApplication() || null == template.getApplicationId()) {
-                throw new ForbiddenException();
+                throw new ForbiddenException("Common templates can only be updated by administrators");
             }
             // check if user have permissions to update existing template
             securityContextUtil.hasPermissionForApplication(sec, templateFromDb.getApplication().getId());
