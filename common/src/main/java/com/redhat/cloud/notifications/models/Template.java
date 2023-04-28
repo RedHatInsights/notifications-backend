@@ -36,7 +36,7 @@ public class Template extends CreationUpdateTimestamped {
     @NotNull
     private String data;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id")
     private Application application;
 
