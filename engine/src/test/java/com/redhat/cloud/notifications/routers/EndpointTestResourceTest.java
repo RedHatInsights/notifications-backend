@@ -20,11 +20,13 @@ import io.restassured.http.ContentType;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import org.awaitility.Awaitility;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -94,7 +96,16 @@ public class EndpointTestResourceTest {
         Assertions.assertEquals(expectedEventsCount, events.size(), "unexpected number of test action events");
 
         final Event event = events.get(0);
+
         final Metadata metadata = event.getMetadata();
+        final Map<String, Object> metadataAdditionalProperties = metadata.getAdditionalProperties();
+
+        final int expectedMetadataAdditionalPropertiesCount = 1;
+        Assertions.assertEquals(expectedMetadataAdditionalPropertiesCount, metadataAdditionalProperties.size(), "unexpected number of metadata additional properties");
+
+        final String metadataValue = (String) metadata.getAdditionalProperties().get(TestEventHelper.TEST_ACTION_METADATA_KEY);
+
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_METADATA_VALUE, metadataValue, "unexpected event metadata value");
 
         final Payload payload = event.getPayload();
         final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();
@@ -105,5 +116,83 @@ public class EndpointTestResourceTest {
         final String payloadValue = (String) payload.getAdditionalProperties().get(TestEventHelper.TEST_ACTION_PAYLOAD_KEY);
 
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_PAYLOAD_VALUE, payloadValue, "unexpected event payload value");
+    }
+
+    /**
+     * Tests that when a "Test Endpoint" request with a custom message is
+     * received, a "test endpoint integration" event is posted to the egress
+     * channel.
+     */
+    @Test
+    void testEndpointCustomMessage() {
+        final String orgId = "test-endpoint-engine-test";
+        final String customMessage = "Hello, World!";
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(EndpointType.CAMEL, "slack", true, 0);
+
+        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest(createdEndpoint.getId(), customMessage, orgId);
+
+        // Call the endpoint under test.
+        given()
+            .when()
+            .contentType(ContentType.JSON)
+            .body(Json.encode(internalEndpointTestRequest))
+            .post("/internal/endpoints/test")
+            .then()
+            .statusCode(204);
+
+        // We should receive the action triggered by the REST call.
+        InMemorySink<String> actionsOut = this.inMemoryConnector.sink(FromCamelHistoryFiller.EGRESS_CHANNEL);
+
+        // Make sure that the message was received before continuing.
+        Awaitility.await().until(
+            () -> actionsOut.received().size() == 1
+        );
+
+        final List<? extends Message<String>> actionsList = actionsOut.received();
+
+        // Only one test action should have been sent to Kafka.
+        final int expectedActionsCount = 1;
+        Assertions.assertEquals(expectedActionsCount, actionsList.size(), "unexpected number of actions sent to Kafka");
+
+        final String kafkaActionRaw = actionsList.get(0).getPayload();
+        final Action kafkaAction = Parser.decode(kafkaActionRaw);
+
+        // Check that the top level values coincide.
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_BUNDLE, kafkaAction.getBundle(), "unexpected bundle in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_APPLICATION, kafkaAction.getApplication(), "unexpected application in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_EVENT_TYPE, kafkaAction.getEventType(), "unexpected event type in the test action");
+        Assertions.assertEquals(orgId, kafkaAction.getOrgId(), "unexpected org id in the test action");
+
+        final Context context = kafkaAction.getContext();
+        final Map<String, Object> contextProperties = context.getAdditionalProperties();
+        Assertions.assertEquals(createdEndpoint.getId().toString(), contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
+
+        // Check the events, their metadata and their payload.
+        final List<Event> events = kafkaAction.getEvents();
+
+        final int expectedEventsCount = 1;
+        Assertions.assertEquals(expectedEventsCount, events.size(), "unexpected number of test action events");
+
+        final Event event = events.get(0);
+
+        final Metadata metadata = event.getMetadata();
+        final Map<String, Object> metadataAdditionalProperties = metadata.getAdditionalProperties();
+
+        final int expectedMetadataAdditionalPropertiesCount = 1;
+        Assertions.assertEquals(expectedMetadataAdditionalPropertiesCount, metadataAdditionalProperties.size(), "unexpected number of metadata additional properties");
+
+        final String metadataValue = (String) metadata.getAdditionalProperties().get(TestEventHelper.TEST_ACTION_METADATA_KEY);
+
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_METADATA_VALUE, metadataValue, "unexpected event metadata value");
+
+        final Payload payload = event.getPayload();
+        final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();
+
+        final int expectedPayloadAdditionalPropertiesCount = 1;
+        Assertions.assertEquals(expectedPayloadAdditionalPropertiesCount, payloadAdditionalProperties.size(), "unexpected number of payload additional properties");
+
+        final String payloadValue = (String) payload.getAdditionalProperties().get(TestEventHelper.TEST_ACTION_PAYLOAD_KEY);
+
+        Assertions.assertEquals(customMessage, payloadValue, "unexpected event payload value");
     }
 }

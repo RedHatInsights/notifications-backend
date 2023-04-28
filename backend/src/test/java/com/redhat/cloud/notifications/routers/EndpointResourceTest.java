@@ -22,6 +22,7 @@ import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
+import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
@@ -2240,6 +2241,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         given()
             .header(identityHeader)
             .when()
+            .contentType(JSON)
             .post(path)
             .then()
             .statusCode(204);
@@ -2252,6 +2254,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
         Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
+        Assertions.assertNull(sentPayload.message, "the sent message should be null since no custom message was specified");
     }
 
     /**
@@ -2274,6 +2277,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final String responseBody = given()
             .header(identityHeader)
             .when()
+            .contentType(JSON)
             .post(path)
             .then()
             .statusCode(404)
@@ -2282,6 +2286,82 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .asString();
 
         Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
+    }
+
+    /**
+     * Tests that when a user specifies a custom message, then it gets properly
+     * sent to the engine.
+     */
+    @Test
+    void testEndpointTestCustomMessage() {
+        final String accountId = "test-endpoint-test-account-number";
+        final String orgId = "test-endpoint-test-org-id";
+
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        final String customTestMessage = "Hello, World!";
+        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest(customTestMessage);
+
+        // Call the endpoint under test.
+        final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(endpointTestRequest))
+            .post(path)
+            .then()
+            .statusCode(204);
+
+        // Capture the sent payload to verify it.
+        final ArgumentCaptor<InternalEndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(InternalEndpointTestRequest.class);
+        Mockito.verify(this.endpointTestService).testEndpoint(capturedPayload.capture());
+
+        final InternalEndpointTestRequest sentPayload = capturedPayload.getValue();
+
+        Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
+        Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
+        Assertions.assertEquals(customTestMessage, sentPayload.message, "the sent message does not match the one from the fixture");
+    }
+
+    /**
+     * Tests that when a user specifies a blank custom message, then a bad
+     * request response is returned.
+     */
+    @Test
+    void testEndpointTestBlankMessageReturnsBadRequest() {
+        final String accountId = "test-endpoint-test-account-number";
+        final String orgId = "test-endpoint-test-org-id";
+
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        final String blankTestMessage = "";
+        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest(blankTestMessage);
+
+        // Call the endpoint under test.
+        final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
+        final String response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(endpointTestRequest))
+            .post(path)
+            .then()
+            .statusCode(400)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("the custom message cannot be empty", response, "unexpected response from the endpoint");
     }
 
     /**

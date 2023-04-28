@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 
 import java.time.Clock;
@@ -24,6 +25,8 @@ public class TestEventHelper {
      * Regular action test data.
      */
     public static final String TEST_ACTION_CONTEXT_ENDPOINT_ID = "integration-uuid";
+    public static final String TEST_ACTION_METADATA_KEY = "meta-information";
+    public static final String TEST_ACTION_METADATA_VALUE = "Meta information about the action";
     public static final String TEST_ACTION_PAYLOAD_KEY = "message";
     public static final String TEST_ACTION_PAYLOAD_VALUE = "Congratulations! The integration you created on https://console.redhat.com was successfully tested!";
     /**
@@ -36,12 +39,25 @@ public class TestEventHelper {
     public static final String TEST_CLOUD_EVENT_TYPE = "com.redhat.console.integrations.integration-test";
 
     /**
-     * Creates a test action ready to be sent to the engine. It sets the endpoint's UUID in the context.
+     * Creates a test action with a default message ready to be sent to the
+     * engine. It sets the endpoint's UUID in the context.
      * @param endpointUuid the endpoint UUID that will be set in the context.
      * @param orgId the org ID for the action.
      * @return the created action.
      */
     public static Action createTestAction(final UUID endpointUuid, final String orgId) {
+        return createTestAction(endpointUuid, TEST_ACTION_PAYLOAD_VALUE, orgId);
+    }
+
+    /**
+     * Creates a test action ready to be sent to the engine with a custom
+     * message. It sets the endpoint's UUID in the context.
+     * @param endpointUuid the endpoint UUID that will be set in the context.
+     * @param message      the custom message to be set in the action.
+     * @param orgId        the org ID for the action.
+     * @return the created action.
+     */
+    public static Action createTestAction(final UUID endpointUuid, final String message, final String orgId) {
         Action testAction = new Action();
 
         final var context = new com.redhat.cloud.notifications.ingress.Context();
@@ -51,11 +67,15 @@ public class TestEventHelper {
         /*
          * Create a test event which will be sent along with the action.
          */
-        Event testEvent = new Event();
+        final Event testEvent = new Event();
 
-        Payload payload = new Payload();
-        payload.setAdditionalProperty(TEST_ACTION_PAYLOAD_KEY, TEST_ACTION_PAYLOAD_VALUE);
+        final Metadata metadata = new Metadata();
+        metadata.setAdditionalProperty(TEST_ACTION_METADATA_KEY, TEST_ACTION_METADATA_VALUE);
 
+        final Payload payload = new Payload();
+        payload.setAdditionalProperty(TEST_ACTION_PAYLOAD_KEY, message);
+
+        testEvent.setMetadata(metadata);
         testEvent.setPayload(payload);
 
         /*

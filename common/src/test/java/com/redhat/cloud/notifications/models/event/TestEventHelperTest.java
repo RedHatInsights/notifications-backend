@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -51,6 +52,46 @@ public class TestEventHelperTest {
         final String payloadValue = (String) payload.getAdditionalProperties().get(TestEventHelper.TEST_ACTION_PAYLOAD_KEY);
 
         Assertions.assertEquals(TestEventHelper.TEST_ACTION_PAYLOAD_VALUE, payloadValue, "unexpected event payload value");
+    }
+
+    /**
+     * Tests that the action gets properly created with the expected values.
+     */
+    @Test
+    public void createTestActionCustomMessageTest() {
+        final UUID endpointUuid = UUID.randomUUID();
+        final String customMessage = "Hello, World!";
+        final String orgId = UUID.randomUUID().toString();
+
+        final Action testAction = TestEventHelper.createTestAction(endpointUuid, customMessage, orgId);
+
+        // Check that the top level values coincide.
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_BUNDLE, testAction.getBundle(), "unexpected bundle in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_APPLICATION, testAction.getApplication(), "unexpected application in the test action");
+        Assertions.assertEquals(TestEventHelper.TEST_ACTION_EVENT_TYPE, testAction.getEventType(), "unexpected event type in the test action");
+        Assertions.assertEquals(orgId, testAction.getOrgId(), "unexpected org id in the test action");
+
+        final Context context = testAction.getContext();
+        final Map<String, Object> contextProperties = context.getAdditionalProperties();
+        Assertions.assertEquals(endpointUuid, contextProperties.get(TestEventHelper.TEST_ACTION_CONTEXT_ENDPOINT_ID), "unexpected endpoint ID received in the action's context");
+
+        // Check the events, their metadata and their payload.
+        final List<Event> events = testAction.getEvents();
+
+        final int expectedEventsCount = 1;
+        Assertions.assertEquals(expectedEventsCount, events.size(), "unexpected number of test action events");
+
+        final Event event = events.get(0);
+
+        final Payload payload = event.getPayload();
+        final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();
+
+        final int expectedPayloadAdditionalPropertiesCount = 1;
+        Assertions.assertEquals(expectedPayloadAdditionalPropertiesCount, payloadAdditionalProperties.size(), "unexpected number of payload additional properties");
+
+        final String payloadValue = (String) payload.getAdditionalProperties().get(TestEventHelper.TEST_ACTION_PAYLOAD_KEY);
+
+        Assertions.assertEquals(customMessage, payloadValue, "unexpected event payload value");
     }
 
     /**

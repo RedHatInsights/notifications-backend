@@ -37,10 +37,19 @@ public class EndpointTestResource {
     @Path("/test")
     @POST
     public void testEndpoint(@Valid final InternalEndpointTestRequest internalEndpointTestRequest) {
-        final Action testAction = TestEventHelper.createTestAction(
-            internalEndpointTestRequest.endpointUuid,
-            internalEndpointTestRequest.orgId
-        );
+        final Action testAction;
+        if (internalEndpointTestRequest.isMessageBlank()) {
+            testAction = TestEventHelper.createTestAction(
+                internalEndpointTestRequest.endpointUuid,
+                internalEndpointTestRequest.orgId
+            );
+        } else {
+            testAction = TestEventHelper.createTestAction(
+                internalEndpointTestRequest.endpointUuid,
+                internalEndpointTestRequest.message,
+                internalEndpointTestRequest.orgId
+            );
+        }
 
         final String encodedAction = Parser.encode(testAction);
         final Message<String> message = KafkaMessageWithIdBuilder.build(encodedAction);

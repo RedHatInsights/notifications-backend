@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
@@ -573,6 +574,7 @@ public class EndpointResource {
      * @return a "no content" response on success.
      */
     @APIResponse(responseCode = "204", description = "No Content")
+    @Consumes(APPLICATION_JSON)
     @POST
     @Path("/{uuid}/test")
     @Parameters({
@@ -584,16 +586,26 @@ public class EndpointResource {
             )
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid) {
+    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @RequestBody EndpointTestRequest requestBody) {
         final String orgId = SecurityContextUtil.getOrgId(sec);
 
         if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
             throw new NotFoundException("integration not found");
         }
 
-        final var endpointTestRequest = new InternalEndpointTestRequest(uuid, orgId);
+        final InternalEndpointTestRequest internalEndpointTestRequest;
+        if (requestBody == null) {
+            internalEndpointTestRequest = new InternalEndpointTestRequest(uuid, null, orgId);
+        } else {
+            if (requestBody.isMessageBlank()) {
+                throw new BadRequestException("the custom message cannot be empty");
+            }
 
-        this.endpointTestService.testEndpoint(endpointTestRequest);
+            internalEndpointTestRequest = new InternalEndpointTestRequest(uuid, requestBody.message, orgId);
+
+        }
+
+        this.endpointTestService.testEndpoint(internalEndpointTestRequest);
     }
 
     private static void checkSystemEndpoint(EndpointType endpointType) {
