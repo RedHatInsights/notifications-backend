@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,11 +20,12 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 public class PatchTestHelpers {
 
     private static final String ADVISORY_NAME = "advisory_name";
+    private static final String SYNOPSIS = "synopsis";
     private static final String ADVISORY_TYPE = "advisory_type";
     private static final String UNIQUE_HOSTS_CNT = "unique_system_count";
     private static final String ADVISORIES_KEY = "advisories";
 
-    public static EmailAggregation createEmailAggregation(String bundle, String application, String advisoryName, String advisoryType, String inventory_id) {
+    public static EmailAggregation createEmailAggregation(String bundle, String application, String advisoryName, String synopsis, String advisoryType, String inventory_id) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
@@ -45,6 +47,7 @@ public class PatchTestHelpers {
                         .withPayload(
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty(ADVISORY_NAME, advisoryName)
+                                        .withAdditionalProperty(SYNOPSIS, synopsis)
                                         .withAdditionalProperty(ADVISORY_TYPE, advisoryType)
                                         .build()
                         )
@@ -79,6 +82,7 @@ public class PatchTestHelpers {
                 .withPayload(
                         new Payload.PayloadBuilder()
                                 .withAdditionalProperty(ADVISORY_NAME, "RH-1")
+                                .withAdditionalProperty(SYNOPSIS, "synopsis")
                                 .withAdditionalProperty(ADVISORY_TYPE, "ENHANCEMENT")
                                 .build()
                 )
@@ -88,6 +92,7 @@ public class PatchTestHelpers {
                         .withPayload(
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty(ADVISORY_NAME, "RH-2")
+                                        .withAdditionalProperty(SYNOPSIS, "synopsis")
                                         .withAdditionalProperty(ADVISORY_TYPE, "BUGFIX")
                                         .build()
                         )
@@ -97,6 +102,7 @@ public class PatchTestHelpers {
                         .withPayload(
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty(ADVISORY_NAME, "RH-3")
+                                        .withAdditionalProperty(SYNOPSIS, "synopsis")
                                         .withAdditionalProperty(ADVISORY_TYPE, "UNKNOWN")
                                         .build()
                         )
@@ -109,9 +115,9 @@ public class PatchTestHelpers {
         return aggregation;
     }
 
-    public static ArrayList<String> getAdvisoriesByType(PatchEmailPayloadAggregator aggregator, String advisoryType) {
+    public static ArrayList<LinkedHashMap<String, String>> getAdvisoriesByType(PatchEmailPayloadAggregator aggregator, String advisoryType) {
         Map<String, Object> patch = (Map<String, Object>) ((Map<String, Object>) aggregator.getContext()).get("patch");
-        return (ArrayList<String>) patch.get(advisoryType);
+        return (ArrayList<LinkedHashMap<String, String>>) patch.get(advisoryType);
     }
 
 

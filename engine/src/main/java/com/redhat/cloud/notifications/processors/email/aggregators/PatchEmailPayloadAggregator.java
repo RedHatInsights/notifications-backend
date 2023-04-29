@@ -22,6 +22,7 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     // Patch event payload
     private static final String ADVISORY_NAME = "advisory_name";
     private static final String ADVISORY_TYPE = "advisory_type";
+    private static final String SYNOPSIS = "synopsis";
 
     // Patch aggregator
     private static final String PATCH_KEY = "patch";
@@ -34,6 +35,7 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     private static final String BUGFIX_TYPE = "bugfix";
     private static final String SECURITY_TYPE = "security";
     private static final String UNSPECIFIED_TYPE = "unspecified";
+    private static final String OTHER_TYPE = "other";
     private static final List<String> ADVISORY_TYPES = Arrays.asList(ENHANCEMENT_TYPE, BUGFIX_TYPE, SECURITY_TYPE, UNSPECIFIED_TYPE);
 
     private static final String TOTAL_ADVISORIES = "total_advisories";
@@ -42,10 +44,10 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     public PatchEmailPayloadAggregator() {
         JsonObject patch = new JsonObject();
 
-        patch.put(ENHANCEMENT_TYPE, new JsonArray());
-        patch.put(BUGFIX_TYPE, new JsonArray());
         patch.put(SECURITY_TYPE, new JsonArray());
-        patch.put(UNSPECIFIED_TYPE, new JsonArray());
+        patch.put(BUGFIX_TYPE, new JsonArray());
+        patch.put(ENHANCEMENT_TYPE, new JsonArray());
+        patch.put(OTHER_TYPE, new JsonArray());
 
         context.put(PATCH_KEY, patch);
         context.put(TOTAL_ADVISORIES, totalAdvisories);
@@ -75,7 +77,14 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
             }
 
             String advisoryName = payload.getString(ADVISORY_NAME);
-            patch.getJsonArray(advisoryType).add(advisoryName);
+
+            // Group unspecified advisories under other type
+            if (advisoryType.equals(UNSPECIFIED_TYPE)) {
+                advisoryType = OTHER_TYPE.toString();
+            }
+
+            String synopsis = payload.getString(SYNOPSIS);
+            patch.getJsonArray(advisoryType).add(new JsonObject().put("name", advisoryName).put("synopsis", synopsis));
             totalAdvisories.incrementAndGet();
         });
     }
