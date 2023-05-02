@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
+import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -251,6 +252,7 @@ public class EndpointRepository {
             // Group endpoints in types and load in batches for each type.
             Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
+            loadTypedProperties(WebhookProperties.class, endpointSet, ANSIBLE);
             loadTypedProperties(WebhookProperties.class, endpointSet, WEBHOOK);
             loadTypedProperties(CamelProperties.class, endpointSet, CAMEL);
             loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EMAIL_SUBSCRIPTION);
