@@ -109,6 +109,7 @@ public class EndpointProcessor {
                             emailProcessor.process(event, endpointsByTypeEntry.getValue());
                             break;
                         case WEBHOOK:
+                        case ANSIBLE:
                             webhookProcessor.process(event, endpointsByTypeEntry.getValue());
                             break;
                         default:

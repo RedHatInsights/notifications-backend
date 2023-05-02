@@ -85,6 +85,7 @@ public class EndpointRepository {
              */
             endpoint.getProperties().setEndpoint(endpoint);
             switch (endpoint.getType()) {
+                case ANSIBLE:
                 case CAMEL:
                 case WEBHOOK:
                 case EMAIL_SUBSCRIPTION:
@@ -230,6 +231,7 @@ public class EndpointRepository {
             return true;
         } else {
             switch (endpoint.getType()) {
+                case ANSIBLE:
                 case WEBHOOK:
                     WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
                     return entityManager.createQuery(webhookQuery)
@@ -263,6 +265,7 @@ public class EndpointRepository {
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
+        loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.ANSIBLE);
         loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK);
         loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL);
         loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION);

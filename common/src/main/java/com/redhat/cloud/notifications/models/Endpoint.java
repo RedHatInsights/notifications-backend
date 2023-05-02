@@ -83,6 +83,7 @@ public class Endpoint extends CreationUpdateTimestamped {
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
         @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
+        @JsonSubTypes.Type(value = WebhookProperties.class, name = "ansible"),
         @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription"),
         @JsonSubTypes.Type(value = CamelProperties.class, name = "camel")
     })
