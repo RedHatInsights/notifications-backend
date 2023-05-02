@@ -2523,7 +2523,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(204);
 
-        // GET the endpoint and check that is no longer exists.
+        // GET the endpoint and check that it no longer exists.
         given()
                 .header(identityHeader)
                 .pathParam("id", jsonEndpoint.getString("id"))
