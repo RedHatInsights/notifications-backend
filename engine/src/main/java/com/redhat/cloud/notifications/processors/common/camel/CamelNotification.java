@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.processors.common.camel;
 
 import java.util.UUID;
 
-public class CommonCamelNotification {
+public class CamelNotification {
 
     public String orgId;
 

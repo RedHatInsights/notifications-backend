@@ -13,24 +13,21 @@ import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.processors.google.chat.InternalTemporaryGoogleChatService;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonObject;
+import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ORG;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 
-@ApplicationScoped
-public class CamelProcessor extends EndpointTypeProcessor {
+public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -49,10 +46,6 @@ public class CamelProcessor extends EndpointTypeProcessor {
 
     @Inject
     ObjectMapper objectMapper;
-
-    @Inject
-    @RestClient
-    InternalTemporaryGoogleChatService internalTemporaryGoogleSpacesService;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
@@ -75,30 +68,26 @@ public class CamelProcessor extends EndpointTypeProcessor {
 
         UUID historyId = UUID.randomUUID();
 
-        Log.infof("Sending Google Chat notification through Camel [orgId=%s, eventId=%s, historyId=%s]",
-                endpoint.getOrgId(), event.getId(), historyId);
+        Log.infof("Sending %s notification through Camel [orgId=%s, eventId=%s, historyId=%s]",
+            getIntegrationName(), endpoint.getOrgId(), event.getId(), historyId);
 
         long startTime = System.currentTimeMillis();
 
-        CommonCamelNotification notification = buildNotification(event, endpoint, historyId);
-
         NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
         try {
-            internalTemporaryGoogleSpacesService.send(notification);
+            sendNotification(event, endpoint, historyId);
             history.setStatus(NotificationStatus.SUCCESS);
         } catch (Exception e) {
             history.setStatus(NotificationStatus.FAILED_INTERNAL);
             history.setDetails(Map.of("failure", e.getMessage()));
-            Log.infof(e, "Sending Google Chat notification through Camel failed [eventId=%s, historyId=%s]", event.getId(), historyId);
+            Log.infof(e, "Sending %s notification through Camel failed [eventId=%s, historyId=%s]", getIntegrationName(), event.getId(), historyId);
         }
         long invocationTime = System.currentTimeMillis() - startTime;
         history.setInvocationTime(invocationTime);
         persistNotificationHistory(history);
     }
 
-    private CommonCamelNotification buildNotification(Event event, Endpoint endpoint, UUID historyId) {
-        CamelProperties properties = endpoint.getProperties(CamelProperties.class);
-
+    protected String buildNotificationMessage(Event event) {
         JsonObject data = baseTransformer.toJsonObject(event);
         data.put("environment_url", environment.url());
 
@@ -106,26 +95,39 @@ public class CamelProcessor extends EndpointTypeProcessor {
         try {
             dataAsMap = objectMapper.readValue(data.encode(), Map.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Google Chat notification data transformation failed", e);
+            throw new RuntimeException(getIntegrationName() + " notification data transformation failed", e);
         }
 
         String message = getTemplate(event.getOrgId())
                 .data("data", dataAsMap)
                 .render();
 
-        CommonCamelNotification notification = new CommonCamelNotification();
-        notification.orgId = endpoint.getOrgId();
-        notification.historyId = historyId;
-        notification.webhookUrl = properties.getUrl();
-        notification.message = message;
-
-        return notification;
+        return message;
     }
 
     private TemplateInstance getTemplate(String orgId) {
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, orgId, ORG, "google_chat")
+        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, orgId, ORG, getIntegrationType())
                 .orElseThrow(() -> new IllegalStateException("No default template defined for integration"));
         String template = integrationTemplate.getTheTemplate().getData();
         return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
     }
+
+    protected CamelNotification getCamelNotification(Event event, Endpoint endpoint, UUID historyId) {
+        String message = buildNotificationMessage(event);
+        CamelProperties properties = endpoint.getProperties(CamelProperties.class);
+
+        CamelNotification notification = new CamelNotification();
+        notification.orgId = endpoint.getOrgId();
+        notification.historyId = historyId;
+        notification.webhookUrl = properties.getUrl();
+        notification.message = message;
+        return notification;
+    }
+
+    protected abstract String getIntegrationName();
+
+    protected abstract String getIntegrationType();
+
+    protected abstract void sendNotification(Event event, Endpoint endpoint, UUID historyId) throws Exception;
+
 }

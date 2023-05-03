@@ -11,7 +11,7 @@ import java.util.Map;
  * This processor logs an Http error response
  */
 @ApplicationScoped
-public class NotificationErrorProcessor implements Processor {
+public class HttpOperationFailedExceptionProcessor implements Processor {
 
     @Override
     public void process(Exchange exchange) throws Exception {
