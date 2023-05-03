@@ -22,11 +22,11 @@ public class TestPatchDailyDigest extends EmailTemplatesInDbHelper {
     @Test
     void testSecureTemplate() {
         PatchEmailPayloadAggregator aggregator = new PatchEmailPayloadAggregator();
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_1", security, "host-01"));
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_2", enhancement, "host-01"));
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_3", enhancement, "host-02"));
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_4", bugfix, "host-03"));
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_5", bugfix, "host-04"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_1", "synopsis", security, "host-01"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_2", "synopsis", enhancement, "host-01"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_3", "synopsis", enhancement, "host-02"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_4", "synopsis", bugfix, "host-03"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_5", "synopsis", bugfix, "host-04"));
 
         statelessSessionFactory.withSession(statelessSession -> {
             String resultSubject = generateAggregatedEmailSubject(aggregator.getContext());

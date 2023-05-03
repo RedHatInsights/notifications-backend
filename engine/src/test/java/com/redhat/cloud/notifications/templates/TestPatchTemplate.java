@@ -88,10 +88,10 @@ public class TestPatchTemplate extends EmailTemplatesInDbHelper {
         String enhancement = "enhancement";
         String bugfix = "bugfix";
         String security = "security";
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_1", security, "host-01"));
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_2", enhancement, "host-01"));
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_3", enhancement, "host-02"));
-        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_4", bugfix, "host-03"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_1", "synopsis", security, "host-01"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_2", "synopsis", enhancement, "host-01"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_3", "synopsis", enhancement, "host-02"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation(bundle, application, "advisory_4", "synopsis", bugfix, "host-03"));
         aggregator.setStartTime(LocalDateTime.now());
         aggregator.setEndTimeKey(LocalDateTime.now());
 
@@ -102,7 +102,7 @@ public class TestPatchTemplate extends EmailTemplatesInDbHelper {
             featureFlipper.setPatchEmailTemplatesV2Enabled(true);
             migrate();
             result = generateAggregatedEmailBody(aggregator.getContext());
-            assertTrue(result.contains("Here is your Patch advisories summary affecting your systems"));
+            assertTrue(result.contains("There are 4 new advisories affecting your systems."));
             assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         });
     }
