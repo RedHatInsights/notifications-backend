@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.teams;
 
+import com.redhat.cloud.notifications.processors.common.camel.CamelNotification;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
@@ -18,5 +19,5 @@ public interface InternalTemporaryTeamsService {
     @POST
     @Consumes(APPLICATION_JSON)
     @Retry
-    void send(@NotNull TeamsNotification notification);
+    void send(@NotNull CamelNotification notification);
 }

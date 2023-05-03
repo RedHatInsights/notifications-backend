@@ -1,8 +1,8 @@
-package com.redhat.cloud.notifications.processors.teams;
+package com.redhat.cloud.notifications.processors.common.camel;
 
 import java.util.UUID;
 
-public class TeamsNotification {
+public class CommonCamelNotification {
 
     public String orgId;
 

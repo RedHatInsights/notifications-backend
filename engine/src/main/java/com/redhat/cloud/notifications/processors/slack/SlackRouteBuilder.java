@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.slack;
 
+import com.redhat.cloud.notifications.processors.common.camel.RetryCounterProcessor;
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.builder.RouteBuilder;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -10,6 +11,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.LoggingLevel.ERROR;
 import static org.apache.camel.LoggingLevel.INFO;
 
@@ -75,7 +77,7 @@ public class SlackRouteBuilder extends RouteBuilder {
          */
         rest(REST_PATH)
                 .post()
-                .consumes("application/json")
+                .consumes(APPLICATION_JSON)
                 .routeId(SLACK_INCOMING_ROUTE)
                 .to(SLACK_DIRECT_ENDPOINT);
 

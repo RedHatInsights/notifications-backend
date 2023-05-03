@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.google.chat;
 
+import com.redhat.cloud.notifications.processors.common.camel.HttpOperationFailedExceptionProcessor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -9,6 +10,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_METHOD;
 
@@ -17,7 +19,7 @@ public class GoogleChatRouteBuilder extends RouteBuilder {
 
     public static final String REST_PATH = API_INTERNAL + "/google-chat";
     public static final String OUTGOING_ROUTE = "google-chat-outgoing";
-
+    public static final String GOOGLE_CHAT_INCOMING_ROUTE = "google-chat-incoming";
     private static final String DIRECT_ENDPOINT = "direct:google-chat";
 
     @ConfigProperty(name = "notifications.google.chat.camel.max-endpoint-cache-size", defaultValue = "100")
@@ -27,7 +29,7 @@ public class GoogleChatRouteBuilder extends RouteBuilder {
     GoogleChatNotificationProcessor googleChatNotificationProcessor;
 
     @Inject
-    NotificationErrorProcessor notificationErrorProcessor;
+    HttpOperationFailedExceptionProcessor notificationErrorProcessor;
 
     @Override
     public void configure() {
@@ -37,8 +39,8 @@ public class GoogleChatRouteBuilder extends RouteBuilder {
          */
         rest(REST_PATH)
                 .post()
-                .consumes("application/json")
-                .routeId("google-chat-incoming")
+                .consumes(APPLICATION_JSON)
+                .routeId(GOOGLE_CHAT_INCOMING_ROUTE)
                 .to(DIRECT_ENDPOINT);
 
         /*
@@ -49,7 +51,7 @@ public class GoogleChatRouteBuilder extends RouteBuilder {
                 .process(googleChatNotificationProcessor)
                 .removeHeaders("CamelHttp*")
                 .setHeader(HTTP_METHOD, constant("POST"))
-                .setHeader(CONTENT_TYPE, constant("application/json"))
+                .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
                 .doTry()
                     /*
                      * Webhook urls provided by Google have already encoded parameters, by default, Camel will also encode endpoint urls.

@@ -7,6 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_METHOD;
 
@@ -15,6 +16,8 @@ public class TeamsRouteBuilder extends RouteBuilder {
 
     public static final String REST_PATH = API_INTERNAL + "/teams";
     public static final String TEAMS_OUTGOING_ROUTE = "teams-outgoing";
+
+    public static final String TEAMS_INCOMING_ROUTE = "teams-incoming";
 
     private static final String TEAMS_DIRECT_ENDPOINT = "direct:teams";
 
@@ -32,8 +35,8 @@ public class TeamsRouteBuilder extends RouteBuilder {
          */
         rest(REST_PATH)
                 .post()
-                .consumes("application/json")
-                .routeId("teams-incoming")
+                .consumes(APPLICATION_JSON)
+                .routeId(TEAMS_INCOMING_ROUTE)
                 .to(TEAMS_DIRECT_ENDPOINT);
 
         /*
@@ -44,7 +47,7 @@ public class TeamsRouteBuilder extends RouteBuilder {
                 .process(teamsNotificationProcessor)
                 .removeHeaders("CamelHttp*")
                 .setHeader(HTTP_METHOD, constant("POST"))
-                .setHeader(CONTENT_TYPE, constant("application/json"))
+                .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
                 .toD("${exchangeProperty.webhookUrl}", maxEndpointCacheSize);
     }
 }

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.google.chat;
 
+import com.redhat.cloud.notifications.processors.common.camel.CamelNotification;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import javax.validation.constraints.NotNull;
@@ -17,5 +18,5 @@ public interface InternalTemporaryGoogleChatService {
     @POST
     @Consumes(APPLICATION_JSON)
     @Retry
-    void send(@NotNull GoogleChatNotification notification);
+    void send(@NotNull CamelNotification notification);
 }

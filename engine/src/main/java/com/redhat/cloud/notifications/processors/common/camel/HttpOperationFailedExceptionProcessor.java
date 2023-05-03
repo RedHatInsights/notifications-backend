@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.google.chat;
+package com.redhat.cloud.notifications.processors.common.camel;
 
 import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;

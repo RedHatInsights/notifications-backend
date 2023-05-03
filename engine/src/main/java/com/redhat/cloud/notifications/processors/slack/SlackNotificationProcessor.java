@@ -1,13 +1,12 @@
 package com.redhat.cloud.notifications.processors.slack;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.redhat.cloud.notifications.processors.common.camel.CamelNotification;
+import com.redhat.cloud.notifications.processors.common.camel.CamelNotificationProcessor;
 import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
-import org.apache.camel.Processor;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 /*
  * This processor transforms an incoming Slack notification, initially received as JSON data,
@@ -15,27 +14,24 @@ import javax.inject.Inject;
  * the desired Slack channel.
  */
 @ApplicationScoped
-public class SlackNotificationProcessor implements Processor {
-
-    @Inject
-    ObjectMapper objectMapper;
+public class SlackNotificationProcessor extends CamelNotificationProcessor {
 
     @Override
-    public void process(Exchange exchange) throws Exception {
-
-        // First, we need to parse the incoming JSON data into a SlackNotification.
-        Message in = exchange.getIn();
-        String body = in.getBody(String.class);
-        SlackNotification slackNotification = objectMapper.readValue(body, SlackNotification.class);
-
-        // Then, we're using fields from the parsed SlackNotification to build the outgoing data.
-        exchange.setProperty("orgId", slackNotification.orgId);
-        exchange.setProperty("historyId", slackNotification.historyId);
-        exchange.setProperty("webhookUrl", slackNotification.webhookUrl);
-        exchange.setProperty("channel", slackNotification.channel);
-        in.setBody(slackNotification.message);
-
-        Log.debugf("Processing Slack notification [orgId=%s, historyId=%s, webhookUrl=%s, channel=%s]",
+    protected void logProcessingMessage(final CamelNotification commonNotification, final String exchangeBody) throws JsonProcessingException {
+        if (Log.isDebugEnabled()) {
+            SlackNotification slackNotification = getSlackNotification(exchangeBody);
+            Log.debugf("Processing Slack notification [orgId=%s, historyId=%s, webhookUrl=%s, channel=%s]",
                 slackNotification.orgId, slackNotification.historyId, slackNotification.webhookUrl, slackNotification.channel);
+        }
+    }
+
+    @Override
+    protected void addExtraProperties(final Exchange exchange, final String exchangeBody) throws JsonProcessingException {
+        SlackNotification slackNotification = getSlackNotification(exchangeBody);
+        exchange.setProperty("channel", slackNotification.channel);
+    }
+
+    private SlackNotification getSlackNotification(final String exchangeBody) throws JsonProcessingException {
+        return objectMapper.readValue(exchangeBody, SlackNotification.class);
     }
 }

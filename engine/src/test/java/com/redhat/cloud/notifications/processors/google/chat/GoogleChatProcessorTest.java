@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.Template;
+import com.redhat.cloud.notifications.processors.common.camel.CamelNotification;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -73,7 +74,7 @@ public class GoogleChatProcessorTest {
 
         verify(templateRepository, times(1)).findIntegrationTemplate(any(), any(), any(), any());
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
-        ArgumentCaptor<GoogleChatNotification> argumentCaptor = ArgumentCaptor.forClass(GoogleChatNotification.class);
+        ArgumentCaptor<CamelNotification> argumentCaptor = ArgumentCaptor.forClass(CamelNotification.class);
         verify(internalTemporaryGoogleChatService, times(1)).send(argumentCaptor.capture());
         assertEquals(DEFAULT_ORG_ID, argumentCaptor.getValue().orgId);
         assertNotNull(argumentCaptor.getValue().historyId);

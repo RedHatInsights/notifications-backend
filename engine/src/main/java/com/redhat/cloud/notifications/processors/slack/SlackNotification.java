@@ -1,16 +1,9 @@
 package com.redhat.cloud.notifications.processors.slack;
 
-import java.util.UUID;
+import com.redhat.cloud.notifications.processors.common.camel.CamelNotification;
 
-public class SlackNotification {
-
-    public String orgId;
-
-    public UUID historyId;
-
-    public String webhookUrl;
+public class SlackNotification extends CamelNotification {
 
     public String channel;
 
-    public String message;
 }
