@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.google.chat;
 
-import com.redhat.cloud.notifications.processors.common.camel.HttpOperationFailedExceptionProcessor;
+import com.redhat.cloud.notifications.processors.camel.HttpOperationFailedExceptionProcessor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -10,6 +10,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_METHOD;
@@ -18,7 +19,7 @@ import static org.apache.camel.Exchange.HTTP_METHOD;
 public class GoogleChatRouteBuilder extends RouteBuilder {
 
     public static final String REST_PATH = API_INTERNAL + "/google-chat";
-    public static final String OUTGOING_ROUTE = "google-chat-outgoing";
+    public static final String GOOGLE_CHAT_OUTGOING_ROUTE = "google-chat-outgoing";
     public static final String GOOGLE_CHAT_INCOMING_ROUTE = "google-chat-incoming";
     private static final String DIRECT_ENDPOINT = "direct:google-chat";
 
@@ -47,10 +48,10 @@ public class GoogleChatRouteBuilder extends RouteBuilder {
          * This route transforms an incoming REST payload into a message that is eventually sent to Google Chat.
          */
         from(DIRECT_ENDPOINT)
-                .routeId(OUTGOING_ROUTE)
+                .routeId(GOOGLE_CHAT_OUTGOING_ROUTE)
                 .process(googleChatNotificationProcessor)
                 .removeHeaders("CamelHttp*")
-                .setHeader(HTTP_METHOD, constant("POST"))
+                .setHeader(HTTP_METHOD, constant(POST))
                 .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
                 .doTry()
                     /*

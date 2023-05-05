@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.processors.slack;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.processors.common.camel.CamelProcessor;
+import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;

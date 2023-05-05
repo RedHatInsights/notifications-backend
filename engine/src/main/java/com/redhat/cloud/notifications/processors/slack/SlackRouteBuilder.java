@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.slack;
 
-import com.redhat.cloud.notifications.processors.common.camel.RetryCounterProcessor;
+import com.redhat.cloud.notifications.processors.camel.RetryCounterProcessor;
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.builder.RouteBuilder;
 import org.eclipse.microprofile.config.inject.ConfigProperty;

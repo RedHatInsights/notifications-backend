@@ -7,6 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_METHOD;
@@ -46,7 +47,7 @@ public class TeamsRouteBuilder extends RouteBuilder {
                 .routeId(TEAMS_OUTGOING_ROUTE)
                 .process(teamsNotificationProcessor)
                 .removeHeaders("CamelHttp*")
-                .setHeader(HTTP_METHOD, constant("POST"))
+                .setHeader(HTTP_METHOD, constant(POST))
                 .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
                 .toD("${exchangeProperty.webhookUrl}", maxEndpointCacheSize);
     }

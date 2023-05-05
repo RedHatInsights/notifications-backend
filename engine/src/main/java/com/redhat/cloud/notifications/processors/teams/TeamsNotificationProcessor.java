@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.teams;
 
-import com.redhat.cloud.notifications.processors.common.camel.CamelNotificationProcessor;
+import com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor;
 
 import javax.enterprise.context.ApplicationScoped;
 

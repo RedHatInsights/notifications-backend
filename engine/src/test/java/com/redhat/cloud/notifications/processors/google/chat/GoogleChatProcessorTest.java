@@ -14,7 +14,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.Template;
-import com.redhat.cloud.notifications.processors.common.camel.CamelNotification;
+import com.redhat.cloud.notifications.processors.camel.CamelNotification;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;

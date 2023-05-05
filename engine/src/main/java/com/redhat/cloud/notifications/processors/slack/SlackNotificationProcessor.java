@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.processors.slack;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.redhat.cloud.notifications.processors.common.camel.CamelNotification;
-import com.redhat.cloud.notifications.processors.common.camel.CamelNotificationProcessor;
+import com.redhat.cloud.notifications.processors.camel.CamelNotification;
+import com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor;
 import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;
 
