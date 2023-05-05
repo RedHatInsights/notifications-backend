@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.camel;
+package com.redhat.cloud.notifications.processors.eventing;
 
 import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.DelayedThrower;

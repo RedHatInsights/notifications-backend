@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.camel;
+package com.redhat.cloud.notifications.processors.eventing;
 
 import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
@@ -19,7 +19,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
-import com.redhat.cloud.notifications.processors.eventing.CamelTypeProcessor;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;

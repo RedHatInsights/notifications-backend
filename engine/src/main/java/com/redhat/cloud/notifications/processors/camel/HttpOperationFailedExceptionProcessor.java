@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.common.camel;
+package com.redhat.cloud.notifications.processors.camel;
 
 import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;

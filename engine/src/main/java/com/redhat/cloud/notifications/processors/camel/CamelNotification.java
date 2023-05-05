@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.common.camel;
+package com.redhat.cloud.notifications.processors.camel;
 
 import java.util.UUID;
 

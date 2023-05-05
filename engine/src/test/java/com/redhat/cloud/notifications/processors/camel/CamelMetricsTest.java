@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
-import com.redhat.cloud.notifications.processors.slack.SlackNotification;
 import org.junit.jupiter.api.Test;
 import org.mockserver.model.HttpResponse;
 import javax.inject.Inject;
@@ -10,12 +9,11 @@ import javax.inject.Inject;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
-import static com.redhat.cloud.notifications.processors.slack.SlackRouteBuilderTest.buildNotification;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.mockserver.model.HttpRequest.request;
 
-public class CamelMetricsHelper {
+public abstract class CamelMetricsTest {
 
     protected String restPath;
     protected String mockPath;
@@ -25,30 +23,32 @@ public class CamelMetricsHelper {
     protected String retryCounterName;
 
     @Inject
-    MicrometerAssertionHelper micrometerAssertionHelper;
+    protected MicrometerAssertionHelper micrometerAssertionHelper;
 
     @Test
     void testCallOk() {
         saveMetrics();
-        SlackNotification notification = buildNotification(getMockServerUrl() + mockPath);
         mockSlackServerOk();
         given()
             .contentType(JSON)
-            .body(Json.encode(notification))
+            .body(Json.encode(buildNotification(getMockServerUrl() + mockPath)))
             .when().post(restPath)
             .then().statusCode(200);
 
         verifyMetricsCallOk();
     }
 
+    protected Object buildNotification(String webhookUrl) {
+        return CamelRouteBuilderTest.buildNotification(webhookUrl);
+    }
+
     @Test
     void testCallFailure() {
         saveMetrics();
-        SlackNotification notification = buildNotification(getMockServerUrl() + mockPathKo);
         mockSlackServerKo();
         given()
             .contentType(JSON)
-            .body(Json.encode(notification))
+            .body(Json.encode(buildNotification(getMockServerUrl() + mockPathKo)))
             .when().post(restPath)
             .then().statusCode(500);
 

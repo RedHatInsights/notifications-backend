@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.common.camel;
+package com.redhat.cloud.notifications.processors.camel;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
