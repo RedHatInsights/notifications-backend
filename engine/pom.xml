@@ -12,6 +12,10 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <apache.commons.csv.version>1.10.0</apache.commons.csv.version>
+    </properties>
+
     <dependencies>
 
         <!-- notifications modules -->
@@ -92,6 +96,13 @@
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-jdbc</artifactId>
+        </dependency>
+
+        <!-- CSV Transformer -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${apache.commons.csv.version}</version>
         </dependency>
 
         <!-- Slack through Camel -->
