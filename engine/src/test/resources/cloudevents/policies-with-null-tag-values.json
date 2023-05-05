@@ -1,0 +1,65 @@
+{
+  "id":"90b1c461-2303-4ae1-9d41-efb86df30bb3",
+  "source":"urn:redhat:source:policies:insights:policies",
+  "subject":"urn:redhat:subject:rhel_system:91cf2945-527e-4d1c-9bb3-7860ff78b057",
+  "time":"2023-05-03T15:27:34.214083854Z",
+  "type":"com.redhat.console.insights.policies.policy-triggered",
+  "data":{
+    "policies":[
+      {
+        "condition":"facts.arch = \"x86_64\"",
+        "description":"This is a sample policy for testing",
+        "id":"906b0bfe-58e0-4764-86b8-29f6d91571fc",
+        "name":"iqe-policies-2022-11-19-00:26:09:984664",
+        "url":"https://console.stage.redhat.com//insights/policies/policy/906b0bfe-58e0-4764-86b8-29f6d91571fc"
+      },
+      {
+        "condition":"facts.arch = \"x86_64\"",
+        "description":"This is a sample policy for testing",
+        "id":"45caa7ae-86fd-4df7-a6cd-494c2f4e92e1",
+        "name":"iqe-policies-2022-12-07-12:10:38:017462",
+        "url":"https://console.stage.redhat.com//insights/policies/policy/45caa7ae-86fd-4df7-a6cd-494c2f4e92e1"
+      },
+      {
+        "condition":"facts.arch = \"x86_64\"",
+        "description":"This is a sample policy for testing",
+        "id":"1e647aea-6958-4c98-b98f-2bcde1e64f93",
+        "name":"iqe-policies-2023-02-10-12:18:42:255151",
+        "url":"https://console.stage.redhat.com//insights/policies/policy/1e647aea-6958-4c98-b98f-2bcde1e64f93"
+      },
+      {
+        "condition":"facts.arch = \"x86_64\"",
+        "description":"This is a sample policy for testing",
+        "id":"6304f9fb-513e-4ffd-9372-c2dc7d04c39d",
+        "name":"iqe-policies-2023-04-26-15:03:01:391672",
+        "url":"https://console.stage.redhat.com//insights/policies/policy/6304f9fb-513e-4ffd-9372-c2dc7d04c39d"
+      }
+    ],
+    "system":{
+      "check_in":"2023-05-03T15:27:33.740942Z",
+      "display_name":"iqe-vulnerability-gibkhsimzi",
+      "tags":[
+        {
+          "key":"vulnerability_group",
+          "namespace":"insights-client"
+        },
+        {
+          "key":"key",
+          "namespace":"insights-client",
+          "value":"vulnerability-1"
+        },
+        {
+          "key":"group",
+          "namespace":"insights-client",
+          "value":"vulnerability-2"
+        }
+      ],
+      "inventory_id":"91cf2945-527e-4d1c-9bb3-7860ff78b057"
+    }
+  },
+  "$schema":"https://console.redhat.com/api/schemas/events/v1/events.json",
+  "specversion":"1.0",
+  "dataschema":"https://console.redhat.com/api/schemas/apps/policies/v1/policy-triggered.json",
+  "redhatorgid":"11789772",
+  "redhataccount":"6089719"
+}

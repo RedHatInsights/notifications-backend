@@ -39,8 +39,12 @@ public class PolicyTriggeredCloudEventTransformer extends CloudEventTransformer 
             Context context = new Context.ContextBuilder()
                     .withAdditionalProperty("inventory_id", rhelSystem.getInventoryID())
                     .withAdditionalProperty("display_name", rhelSystem.getDisplayName())
-                    .withAdditionalProperty("tags", Arrays.stream(rhelSystem.getTags())
-                            .map(tag -> Map.of("key", tag.getKey(), "value", tag.getValue()))
+                    .withAdditionalProperty(
+                            "tags",
+                            Arrays.stream(rhelSystem.getTags()).map(tag -> Map.of(
+                                    "key", tag.getKey(),
+                                    "value", tag.getValue() == null ? "" : tag.getValue()
+                            ))
                             .collect(Collectors.toList())
                     )
                     .withAdditionalProperty("system_check_in", rhelSystem.getCheckIn())

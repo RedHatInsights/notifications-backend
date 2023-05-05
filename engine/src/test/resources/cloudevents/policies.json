@@ -1,0 +1,49 @@
+{
+  "id":"2de1e968-b851-47b1-a8ac-1d355ad223bb",
+  "source":"urn:redhat:source:policies:insights:policies",
+  "subject":"urn:redhat:subject:rhel_system:2279dc9f-bbc6-4477-b7e3-6c68d39f0d07",
+  "time":"2023-05-03T02:09:06.245424792Z",
+  "type":"com.redhat.console.insights.policies.policy-triggered",
+  "data":{
+    "policies":[
+      {
+        "condition":"facts.arch = \"x86_64\"",
+        "description":"This is a sample policy for testing",
+        "id":"d41049d9-23e0-47ae-bd27-ecd1615fd200",
+        "name":"iqe-policies-2023-02-20-00:03:36:664678",
+        "url":"https://console.stage.redhat.com//insights/policies/policy/d41049d9-23e0-47ae-bd27-ecd1615fd200"
+      },
+      {
+        "condition":"facts.arch = \"x86_64\"",
+        "description":"This is a sample policy for testing",
+        "id":"ad9d9d77-c429-4011-b477-d3a4e4a401a3",
+        "name":"iqe-policies-2022-10-30-12:21:10:620318",
+        "url":"https://console.stage.redhat.com//insights/policies/policy/ad9d9d77-c429-4011-b477-d3a4e4a401a3"
+      },
+      {
+        "condition":"facts.arch = \"x86_64\"",
+        "description":"This is a sample policy for testing",
+        "id":"5657323d-63df-4420-9544-8192084be0e4",
+        "name":"iqe-policies-2023-02-20-00:02:57:967414",
+        "url":"https://console.stage.redhat.com//insights/policies/policy/5657323d-63df-4420-9544-8192084be0e4"
+      }
+    ],
+    "system":{
+      "check_in":"2023-05-03T02:09:05.828152Z",
+      "display_name":"iqe-patch-rhel-80-tag-a66a9f1f-6ffa-4925-815e-855467f70cec",
+      "tags":[
+        {
+          "key":"patch_1fi0",
+          "namespace":"insights-client",
+          "value":"patchman-ui"
+        }
+      ],
+      "inventory_id":"2279dc9f-bbc6-4477-b7e3-6c68d39f0d07"
+    }
+  },
+  "$schema":"https://console.redhat.com/api/schemas/events/v1/events.json",
+  "specversion":"1.0",
+  "dataschema":"https://console.redhat.com/api/schemas/apps/policies/v1/policy-triggered.json",
+  "redhatorgid":"11789772",
+  "redhataccount":"6089719"
+}
