@@ -7,16 +7,14 @@ import org.hibernate.Session;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import java.sql.Date;
+import javax.persistence.TypedQuery;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class EventRepository {
@@ -68,46 +66,54 @@ public class EventRepository {
     public List<Event> findEventsToExport(final String orgId, final LocalDate from, final LocalDate to) {
         this.validateFromTo(from, to);
 
-        final CriteriaBuilder criteriaBuilder = this.session.getCriteriaBuilder();
-        final CriteriaQuery<Event> criteria = criteriaBuilder.createQuery(Event.class);
-        final Root<Event> root = criteria.from(Event.class);
-
-        criteria.multiselect(
-            root.get("id"),
-            root.get("bundleDisplayName"),
-            root.get("applicationDisplayName"),
-            root.get("eventTypeDisplayName"),
-            root.get("created")
+        final StringBuilder findEventsQuery = new StringBuilder();
+        findEventsQuery.append(
+            "SELECT NEW com.redhat.cloud.notifications.models.Event( " +
+                "e.id, " +
+                "e.bundleDisplayName, " +
+                "e.applicationDisplayName, " +
+                "e.eventTypeDisplayName, " +
+                "e.created) " +
+            "FROM " +
+                "Event AS e " +
+            "WHERE " +
+                "e.orgId = :orgId"
         );
 
-        final List<Predicate> predicates = new ArrayList<>(3);
-
-        // Make sure we are grabbing the events from the correct tenant.
-        predicates.add(
-            criteriaBuilder.equal(root.get("orgId"), orgId)
-        );
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("orgId", List.of(orgId));
 
         if (from != null) {
-            predicates.add(
-                criteriaBuilder.greaterThanOrEqualTo(
-                    root.get("created"),
-                    Date.from(from.atStartOfDay(ZoneId.systemDefault()).toInstant())
-                )
+            findEventsQuery.append(
+                " AND " +
+                    "e.created >= :createdMin"
+            );
+
+            parameters.put(
+                "createdMin",
+                Date.from(from.atStartOfDay(ZoneId.systemDefault()).toInstant())
             );
         }
 
         if (to != null) {
-            predicates.add(
-                criteriaBuilder.lessThanOrEqualTo(
-                    root.get("created"),
-                    Date.from(to.atTime(MAX_HOURS, MAX_MINUTES, MAX_SECONDS, MAX_NANOSECONDS).toInstant(ZoneOffset.UTC))
-                )
+            findEventsQuery.append(
+                " AND " +
+                    "e.created <= :createdMax"
+            );
+
+            parameters.put(
+                "createdMax",
+                Date.from(to.atTime(MAX_HOURS, MAX_MINUTES, MAX_SECONDS, MAX_NANOSECONDS).toInstant(ZoneOffset.UTC))
             );
         }
 
-        criteria.where(predicates.toArray(new Predicate[]{}));
+        final TypedQuery<Event> findEventsRanged = this.entityManager.createQuery(findEventsQuery.toString(), Event.class);
 
-        return this.entityManager.createQuery(criteria).getResultList();
+        for (final Map.Entry<String, Object> entry : parameters.entrySet()) {
+            findEventsRanged.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        return findEventsRanged.getResultList();
     }
 
     /**
