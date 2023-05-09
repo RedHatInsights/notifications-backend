@@ -245,8 +245,6 @@ objects:
           value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
         - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
           value: ${NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED}
-        - name: NOTIFICATIONS_USE_TEMPLATES_FROM_DB
-          value: ${NOTIFICATIONS_USE_TEMPLATES_FROM_DB}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -420,8 +418,6 @@ parameters:
   description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
   value: ""
 - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
-  value: "true"
-- name: NOTIFICATIONS_USE_TEMPLATES_FROM_DB
   value: "true"
 - name: NOTIFICATIONS_SLACK_CAMEL_LOG_RETRY_ATTEMPTED
   description: Specifies whether the redelivery retries should be logged.
