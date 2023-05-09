@@ -8,8 +8,6 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Environment;
-import com.redhat.cloud.notifications.templates.Rhosak.Templates;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,13 +17,11 @@ import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Map;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 class RhosakEmailAggregatorTest {
@@ -183,31 +179,6 @@ class RhosakEmailAggregatorTest {
 
         assertEquals(1, disruptions.size(), "aggregator should have content in disruption body");
         assertEquals(1, upgrades.size(), "aggregator should have content in upgrades body");
-
-        // test template render
-        TemplateInstance dailyBodyTemplateInstance = Templates.dailyRhosakEmailsBody();
-        TemplateInstance dailyTittleTemplateInstance = Templates.dailyRhosakEmailsTitle();
-
-        Action emailActionMessage = new Action();
-        aggregator.setStartTime(LocalDateTime.now());
-        Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
-        aggregator.getContext().forEach(contextBuilder::withAdditionalProperty);
-
-        emailActionMessage.setContext(contextBuilder.build());
-        String title = dailyTittleTemplateInstance
-                .data("action", emailActionMessage)
-                .data("environment", environment)
-                .render();
-        assertTrue(title.contains("Red Hat OpenShift Streams for Apache Kafka Daily Report"), "Title must contain RHOSAK related digest info");
-        String body = dailyBodyTemplateInstance
-                .data("action", emailActionMessage)
-                .data("user", Map.of("firstName", "machi1990", "lastName", "Last Name"))
-                .data("environment", environment)
-                .render();
-        assertTrue(body.contains("The following table summarizes the OpenShift Streams instances affected by unexpected disruptions of the OpenShift Streams service."), "Body must contain service disruption summary");
-        assertTrue(body.contains("The following table summarizes Kafka upgrade activity for your OpenShift Streams instances."), "Body must contain upgrades summary");
-        assertTrue(body.contains("Hello machi1990."), "Body must contain greeting message");
-        assertTrue(body.contains("This is the daily report for your OpenShift Streams instances"), "Body must contain greeting message");
     }
 
     private static EmailAggregation createDisruptionEmailAggregation(String kafkaName, String impactedArea) {

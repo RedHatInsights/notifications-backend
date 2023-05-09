@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.templates.Sources.AVAILABILITY_STATUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestSourcesTemplate extends EmailTemplatesInDbHelper {
 
+    static final String AVAILABILITY_STATUS = "availability-status";
     private static final Action ACTION = TestHelpers.createSourcesAction();
 
     @Inject

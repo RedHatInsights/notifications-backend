@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
@@ -19,7 +18,6 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Account
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -58,17 +56,11 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
     @RestClient
     ITUserService itUserService;
 
-    @InjectSpy
-    EmailTemplateFactory emailTemplateFactory;
-
     @InjectMock
     WebhookTypeProcessor webhookSender;
 
     @InjectSpy
     TemplateRepository templateRepository;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     String commonTest() {
         mockGetUsers(1);
@@ -127,21 +119,10 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
     }
 
     @Test
-    void testEmailSubscriptionInstantFromFileSystem() {
-        featureFlipper.setUseTemplatesFromDb(false);
-        commonTest();
-        verify(emailTemplateFactory, times(2)).get(anyString(), anyString());
-        verify(templateRepository, times(0)).findInstantEmailTemplate(any(UUID.class));
-    }
-
-    @Test
     void testEmailSubscriptionInstantFromDatabase() {
-        featureFlipper.setUseTemplatesFromDb(true);
         String renderedEmailFromDb = commonTest();
-        verify(emailTemplateFactory, times(0)).get(anyString(), anyString());
         verify(templateRepository, times(1)).findInstantEmailTemplate(any(UUID.class));
 
-        featureFlipper.setUseTemplatesFromDb(false);
         String renderedEmailFromFs = commonTest();
         assertEquals(renderedEmailFromDb, renderedEmailFromFs);
     }

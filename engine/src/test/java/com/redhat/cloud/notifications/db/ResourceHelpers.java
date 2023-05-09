@@ -17,10 +17,12 @@ import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 
 import java.security.SecureRandom;
@@ -201,5 +203,54 @@ public class ResourceHelpers {
         entityManager.createQuery("DELETE FROM Endpoint WHERE id = :id")
                 .setParameter("id", id)
                 .executeUpdate();
+    }
+
+    public AggregationEmailTemplate createBlankAggregationEmailTemplate(String bundleName, String appName) {
+
+        Bundle bundle = null;
+        try {
+            bundle = findBundle(bundleName);
+        } catch (NoResultException nre) {
+            bundle = createBundle(bundleName);
+        }
+
+        Application app = null;
+        try {
+            app = findApp(bundleName, appName);
+        } catch (NoResultException nre) {
+            app = createApp(bundle.getId(), appName);
+        }
+
+        Template blankTemplate = createTemplate("blank_" + UUID.randomUUID(), "test blank template", StringUtils.EMPTY);
+
+        return createAggregationEmailTemplate(app.getId(), blankTemplate.getId(), blankTemplate.getId(), true);
+    }
+
+    public InstantEmailTemplate createBlankInstantEmailTemplate(String bundleName, String appName, String eventTypeName) {
+
+        Bundle bundle = null;
+        try {
+            bundle = findBundle(bundleName);
+        } catch (NoResultException nre) {
+            bundle = createBundle(bundleName);
+        }
+
+        Application app = null;
+        try {
+            app = findApp(bundleName, appName);
+        } catch (NoResultException nre) {
+            app = createApp(bundle.getId(), appName);
+        }
+
+        EventType eventType = null;
+        try {
+            eventType = findEventType(app.getId(), eventTypeName);
+        } catch (NoResultException nre) {
+            eventType = createEventType(app.getId(), eventTypeName);
+        }
+
+        Template blankTemplate = createTemplate("blank_" + UUID.randomUUID(), "test blank template", StringUtils.EMPTY);
+
+        return createInstantEmailTemplate(eventType.getId(), blankTemplate.getId(), blankTemplate.getId(), true);
     }
 }

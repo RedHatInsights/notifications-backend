@@ -10,8 +10,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.inject.Inject;
 import java.time.LocalDateTime;
@@ -20,8 +18,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
@@ -36,9 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
-
-    @Inject
-    Advisor advisor;
 
     @Inject
     Environment environment;
@@ -67,28 +60,6 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
     void beforeEach() {
         featureFlipper.setRhelAdvisorDailyDigestEnabled(true);
         migrate();
-    }
-
-    @ValueSource(strings = { NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION, DEACTIVATED_RECOMMENDATION })
-    @ParameterizedTest
-    void shouldSupportDailyEmailSubscriptionType(String eventType) {
-        assertTrue(advisor.isSupported(eventType, DAILY));
-    }
-
-    @ValueSource(strings = { NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION, DEACTIVATED_RECOMMENDATION })
-    @ParameterizedTest
-    void shouldSupportNewResolvedAndDeactivatedRecommendations(String eventType) {
-        assertTrue(advisor.isSupported(eventType, INSTANT));
-    }
-
-    @Test
-    void shouldSupportInstantSubscriptionType() {
-        assertTrue(advisor.isEmailSubscriptionSupported(INSTANT));
-    }
-
-    @Test
-    void shouldSupportDailySubscriptionType() {
-        assertTrue(advisor.isEmailSubscriptionSupported(DAILY));
     }
 
     @Test
@@ -272,15 +243,6 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("My Host"), "Body should contain the display_name");
 
         action.setEvents(action.getEvents().stream().filter(event -> event.getPayload().getAdditionalProperties().get("total_risk").equals("1")).collect(Collectors.toList()));
-        String result2 = Advisor.Templates.newRecommendationInstantEmailBody()
-            .data("action", action)
-            .data("environment", environment)
-            .render();
-
-        assertTrue(result2.contains("alt=\"Low severity\""), "Body 2 should contain low severity rule image");
-        assertFalse(result2.contains("alt=\"Moderate severity\""), "Body 2 should not contain moderate severity rule image");
-        assertFalse(result2.contains("alt=\"Important severity\""), "Body 2 should not contain important severity rule image");
-        assertFalse(result2.contains("alt=\"Critical severity\""), "Body 2 should not contain critical severity rule image");
     }
 
     @Test

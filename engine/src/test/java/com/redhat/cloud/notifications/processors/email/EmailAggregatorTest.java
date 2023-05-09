@@ -14,8 +14,6 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.templates.Blank;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -46,9 +44,6 @@ import static org.mockito.Mockito.when;
 
 @QuarkusTest
 class EmailAggregatorTest {
-
-    @InjectMock
-    EmailTemplateFactory emailTemplateFactory;
 
     @InjectSpy
     EmailAggregationRepository emailAggregationRepository;
@@ -156,7 +151,6 @@ class EmailAggregatorTest {
 
             emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
 
-            when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
             result.putAll(emailAggregator.getAggregated(aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
         });
         return result;

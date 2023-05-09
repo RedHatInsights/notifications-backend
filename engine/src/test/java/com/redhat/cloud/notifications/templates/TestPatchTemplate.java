@@ -19,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestPatchTemplate extends EmailTemplatesInDbHelper {
 
+    static final String NEW_ADVISORY = "new-advisory";
+
     private static final Action ACTION = PatchTestHelpers.createPatchAction();
 
     @Inject
@@ -37,18 +39,18 @@ public class TestPatchTemplate extends EmailTemplatesInDbHelper {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(Patch.NEW_ADVISORY);
+        return List.of(NEW_ADVISORY);
     }
 
     @Test
     public void testNewAdvisoryEmailTitle() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(Patch.NEW_ADVISORY, ACTION);
+            String result = generateEmailSubject(NEW_ADVISORY, ACTION);
             assertTrue(result.contains("Red Hat has recently released new advisories affecting your systems"));
 
             featureFlipper.setPatchEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailSubject(Patch.NEW_ADVISORY, ACTION);
+            result = generateEmailSubject(NEW_ADVISORY, ACTION);
             assertEquals("Instant notification - New advisories affecting your systems - Patch - Red Hat Enterprise Linux", result);
         });
     }
@@ -56,12 +58,12 @@ public class TestPatchTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testNewAdvisoryEmailBody() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(Patch.NEW_ADVISORY, ACTION);
+            String result = generateEmailBody(NEW_ADVISORY, ACTION);
             assertTrue(result.contains("Red Hat Insights has just released new Advisories for your organization"));
 
             featureFlipper.setPatchEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailBody(Patch.NEW_ADVISORY, ACTION);
+            result = generateEmailBody(NEW_ADVISORY, ACTION);
             assertTrue(result.contains("Red Hat Insights has just released new Advisories for your organization"));
             assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         });

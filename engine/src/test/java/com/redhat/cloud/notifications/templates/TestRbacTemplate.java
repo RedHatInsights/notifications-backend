@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.RbacTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,30 +13,32 @@ import org.junit.jupiter.params.provider.ValueSource;
 import javax.inject.Inject;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.templates.Rbac.CUSTOM_DEFAULT_ACCESS_UPDATED;
-import static com.redhat.cloud.notifications.templates.Rbac.CUSTOM_ROLE_CREATED;
-import static com.redhat.cloud.notifications.templates.Rbac.CUSTOM_ROLE_DELETED;
-import static com.redhat.cloud.notifications.templates.Rbac.CUSTOM_ROLE_UPDATED;
-import static com.redhat.cloud.notifications.templates.Rbac.GROUP_CREATED;
-import static com.redhat.cloud.notifications.templates.Rbac.GROUP_DELETED;
-import static com.redhat.cloud.notifications.templates.Rbac.GROUP_UPDATED;
-import static com.redhat.cloud.notifications.templates.Rbac.PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM;
-import static com.redhat.cloud.notifications.templates.Rbac.RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS;
-import static com.redhat.cloud.notifications.templates.Rbac.RH_NEW_ROLE_AVAILABLE;
-import static com.redhat.cloud.notifications.templates.Rbac.RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED;
-import static com.redhat.cloud.notifications.templates.Rbac.RH_PLATFORM_DEFAULT_ROLE_UPDATED;
-import static com.redhat.cloud.notifications.templates.Rbac.RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestRbacTemplate extends EmailTemplatesInDbHelper {
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    static final String RH_NEW_ROLE_AVAILABLE = "rh-new-role-available";
+    static final String RH_PLATFORM_DEFAULT_ROLE_UPDATED = "rh-platform-default-role-updated";
+    static final String RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED = "rh-non-platform-default-role-updated";
+    static final String CUSTOM_ROLE_CREATED = "custom-role-created";
+    static final String CUSTOM_ROLE_UPDATED = "custom-role-updated";
+    static final String CUSTOM_ROLE_DELETED = "custom-role-deleted";
+    static final String RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS = "rh-new-role-added-to-default-access";
+    static final String RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS = "rh-role-removed-from-default-access";
+    static final String CUSTOM_DEFAULT_ACCESS_UPDATED = "custom-default-access-updated";
+    static final String GROUP_CREATED = "group-created";
+    static final String GROUP_UPDATED = "group-updated";
+    static final String GROUP_DELETED = "group-deleted";
+    static final String PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM = "platform-default-group-turned-into-custom";
+    private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = false;
 
     @Inject
-    Rbac rbac;
+    Environment environment;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @AfterEach
     void afterEach() {

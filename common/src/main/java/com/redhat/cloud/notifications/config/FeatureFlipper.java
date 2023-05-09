@@ -54,9 +54,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-default-template", defaultValue = "false")
     boolean useDefaultTemplate;
 
-    @ConfigProperty(name = "notifications.use-templates-from-db", defaultValue = "false")
-    boolean useTemplatesFromDb;
-
     @ConfigProperty(name = "notifications.disable-webhook-endpoints-on-failure", defaultValue = "false")
     boolean disableWebhookEndpointsOnFailure;
 
@@ -139,7 +136,6 @@ public class FeatureFlipper {
         Log.infof("The actions reinjection in case of Camel integration error is %s", enableReInject ? "enabled" : "disabled");
         Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
         Log.infof("The use of default templates is %s", useDefaultTemplate ? "enabled" : "disabled");
-        Log.infof("The use of templates from database is %s", useTemplatesFromDb ? "enabled" : "disabled");
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
         Log.infof("The use of rbac for fetching users is %s", useRbacForFetchingUsers ? "enabled" : "disabled");
@@ -205,15 +201,6 @@ public class FeatureFlipper {
     public void setUseDefaultTemplate(boolean useDefaultTemplate) {
         checkTestLaunchMode();
         this.useDefaultTemplate = useDefaultTemplate;
-    }
-
-    public boolean isUseTemplatesFromDb() {
-        return useTemplatesFromDb;
-    }
-
-    public void setUseTemplatesFromDb(boolean useTemplatesFromDb) {
-        checkTestLaunchMode();
-        this.useTemplatesFromDb = useTemplatesFromDb;
     }
 
     public boolean isDisableWebhookEndpointsOnFailure() {

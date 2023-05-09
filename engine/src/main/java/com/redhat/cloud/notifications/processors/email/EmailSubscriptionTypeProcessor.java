@@ -25,9 +25,6 @@ import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
-import com.redhat.cloud.notifications.templates.Default;
-import com.redhat.cloud.notifications.templates.EmailTemplate;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
@@ -79,9 +76,6 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     BaseTransformer baseTransformer;
 
     @Inject
-    EmailTemplateFactory emailTemplateFactory;
-
-    @Inject
     EmailSender emailSender;
 
     @Inject
@@ -123,15 +117,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
             EventType eventType = event.getEventType();
             String bundleName = eventType.getApplication().getBundle().getName();
             String applicationName = eventType.getApplication().getName();
-            String eventTypeName = eventType.getName();
-            boolean shouldSaveAggregation;
-            if (featureFlipper.isUseTemplatesFromDb()) {
-                shouldSaveAggregation = templateRepository.isEmailAggregationSupported(bundleName, applicationName, NON_INSTANT_SUBSCRIPTION_TYPES);
-            } else {
-                EmailTemplate template = emailTemplateFactory.get(bundleName, applicationName);
-                shouldSaveAggregation = NON_INSTANT_SUBSCRIPTION_TYPES.stream()
-                        .anyMatch(emailSubscriptionType -> template.isSupported(eventTypeName, emailSubscriptionType));
-            }
+            boolean shouldSaveAggregation = templateRepository.isEmailAggregationSupported(bundleName, applicationName, NON_INSTANT_SUBSCRIPTION_TYPES);
 
             if (shouldSaveAggregation) {
                 EmailAggregation aggregation = new EmailAggregation();
@@ -158,41 +144,15 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
         final TemplateInstance subject;
         final TemplateInstance body;
 
-        if (featureFlipper.isUseTemplatesFromDb()) {
-            Optional<InstantEmailTemplate> instantEmailTemplate = templateRepository
-                    .findInstantEmailTemplate(event.getEventType().getId());
-            if (instantEmailTemplate.isEmpty()) {
-                return;
-            } else {
-                String subjectData = instantEmailTemplate.get().getSubjectTemplate().getData();
-                subject = templateService.compileTemplate(subjectData, "subject");
-                String bodyData = instantEmailTemplate.get().getBodyTemplate().getData();
-                body = templateService.compileTemplate(bodyData, "body");
-            }
+        Optional<InstantEmailTemplate> instantEmailTemplate = templateRepository
+                .findInstantEmailTemplate(event.getEventType().getId());
+        if (instantEmailTemplate.isEmpty()) {
+            return;
         } else {
-            EmailTemplate emailTemplate = emailTemplateFactory.get(bundleName, applicationName);
-            if (!emailTemplate.isSupported(eventTypeName, emailSubscriptionType)) {
-                return;
-            }
-
-            TemplateInstance fileTemplateSubject = emailTemplate.getTitle(eventTypeName, emailSubscriptionType);
-            TemplateInstance fileTemplateBody = emailTemplate.getBody(eventTypeName, emailSubscriptionType);
-
-            if (fileTemplateSubject == null || fileTemplateBody == null) {
-                if (fileTemplateSubject != null || fileTemplateBody != null) {
-                    Log.warnf("Only one of the subject and body was found for event: %s/%s/%s", event.getBundleDisplayName(), event.getApplicationDisplayName(), event.getEventTypeDisplayName());
-                }
-
-                if (featureFlipper.isUseDefaultTemplate()) {
-                    fileTemplateBody = Default.getBody(fileTemplateSubject != null, fileTemplateBody != null);
-                    fileTemplateSubject = Default.getTitle();
-                } else {
-                    return;
-                }
-            }
-
-            subject = fileTemplateSubject;
-            body = fileTemplateBody;
+            String subjectData = instantEmailTemplate.get().getSubjectTemplate().getData();
+            subject = templateService.compileTemplate(subjectData, "subject");
+            String bodyData = instantEmailTemplate.get().getBodyTemplate().getData();
+            body = templateService.compileTemplate(bodyData, "body");
         }
 
         Set<RecipientSettings> requests = Stream.concat(
@@ -245,21 +205,13 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
         TemplateInstance subject = null;
         TemplateInstance body = null;
 
-        if (featureFlipper.isUseTemplatesFromDb()) {
-            Optional<AggregationEmailTemplate> aggregationEmailTemplate = templateRepository
-                    .findAggregationEmailTemplate(aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType);
-            if (aggregationEmailTemplate.isPresent()) {
-                String subjectData = aggregationEmailTemplate.get().getSubjectTemplate().getData();
-                subject = templateService.compileTemplate(subjectData, "subject");
-                String bodyData = aggregationEmailTemplate.get().getBodyTemplate().getData();
-                body = templateService.compileTemplate(bodyData, "body");
-            }
-        } else {
-            EmailTemplate emailTemplate = emailTemplateFactory.get(aggregationKey.getBundle(), aggregationKey.getApplication());
-            if (emailTemplate.isEmailSubscriptionSupported(emailSubscriptionType)) {
-                subject = emailTemplate.getTitle(null, emailSubscriptionType);
-                body = emailTemplate.getBody(null, emailSubscriptionType);
-            }
+        Optional<AggregationEmailTemplate> aggregationEmailTemplate = templateRepository
+                .findAggregationEmailTemplate(aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType);
+        if (aggregationEmailTemplate.isPresent()) {
+            String subjectData = aggregationEmailTemplate.get().getSubjectTemplate().getData();
+            subject = templateService.compileTemplate(subjectData, "subject");
+            String bodyData = aggregationEmailTemplate.get().getBodyTemplate().getData();
+            body = templateService.compileTemplate(bodyData, "body");
         }
 
         if (subject != null && body != null) {

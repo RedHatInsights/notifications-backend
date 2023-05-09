@@ -17,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestComplianceTemplate extends EmailTemplatesInDbHelper {
 
+    static final String COMPLIANCE_BELOW_THRESHOLD = "compliance-below-threshold";
+    static final String REPORT_UPLOAD_FAILED = "report-upload-failed";
     private static final Action ACTION = TestHelpers.createComplianceAction();
 
     @Inject
@@ -35,18 +37,18 @@ public class TestComplianceTemplate extends EmailTemplatesInDbHelper {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(Compliance.COMPLIANCE_BELOW_THRESHOLD, Compliance.REPORT_UPLOAD_FAILED);
+        return List.of(COMPLIANCE_BELOW_THRESHOLD, REPORT_UPLOAD_FAILED);
     }
 
     @Test
     public void testInstantComplianceBelowThresholdEmailBody() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(Compliance.COMPLIANCE_BELOW_THRESHOLD, ACTION);
+            String result = generateEmailBody(COMPLIANCE_BELOW_THRESHOLD, ACTION);
             assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("policy_id").toString()));
 
             featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailBody(Compliance.COMPLIANCE_BELOW_THRESHOLD, ACTION);
+            result = generateEmailBody(COMPLIANCE_BELOW_THRESHOLD, ACTION);
             assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("policy_id").toString()));
             assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         });
@@ -55,12 +57,12 @@ public class TestComplianceTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testInstantComplianceBelowThresholdEmailTitle() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(Compliance.COMPLIANCE_BELOW_THRESHOLD, ACTION);
+            String result = generateEmailSubject(COMPLIANCE_BELOW_THRESHOLD, ACTION);
             assertTrue(result.contains("is non-compliant with policy"));
 
             featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailSubject(Compliance.COMPLIANCE_BELOW_THRESHOLD, ACTION);
+            result = generateEmailSubject(COMPLIANCE_BELOW_THRESHOLD, ACTION);
             assertEquals("Instant notification - Compliance - Red Hat Enterprise Linux", result);
         });
     }
@@ -68,12 +70,12 @@ public class TestComplianceTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testInstantReportUploadFailedEmailBody() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(Compliance.REPORT_UPLOAD_FAILED, ACTION);
+            String result = generateEmailBody(REPORT_UPLOAD_FAILED, ACTION);
             assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("error").toString()));
 
             featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailBody(Compliance.REPORT_UPLOAD_FAILED, ACTION);
+            result = generateEmailBody(REPORT_UPLOAD_FAILED, ACTION);
             assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("error").toString()));
             assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         });
@@ -82,12 +84,12 @@ public class TestComplianceTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testInstantReportUploadFailedEmailTitle() {
         statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(Compliance.REPORT_UPLOAD_FAILED, ACTION);
+            String result = generateEmailSubject(REPORT_UPLOAD_FAILED, ACTION);
             assertTrue(result.contains("Failed to upload report from system"));
 
             featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
             migrate();
-            result = generateEmailSubject(Compliance.REPORT_UPLOAD_FAILED, ACTION);
+            result = generateEmailSubject(REPORT_UPLOAD_FAILED, ACTION);
             assertEquals("Instant notification - Compliance - Red Hat Enterprise Linux", result);
         });
     }

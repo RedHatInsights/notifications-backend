@@ -12,11 +12,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import javax.inject.Inject;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.templates.Rhosak.ACTION_REQUIRED;
-import static com.redhat.cloud.notifications.templates.Rhosak.DISRUPTION;
-import static com.redhat.cloud.notifications.templates.Rhosak.INSTANCE_CREATED;
-import static com.redhat.cloud.notifications.templates.Rhosak.INSTANCE_DELETED;
-import static com.redhat.cloud.notifications.templates.Rhosak.SCHEDULED_UPGRADE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,6 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestRhosakTemplate extends EmailTemplatesInDbHelper {
 
+    static final String SCHEDULED_UPGRADE = "scheduled-upgrade";
+    static final String DISRUPTION = "disruption";
+    static final String INSTANCE_CREATED = "instance-created";
+    static final String INSTANCE_DELETED = "instance-deleted";
+    static final String ACTION_REQUIRED = "action-required";
     private static final Action ACTION = TestHelpers.createRhosakAction();
 
     @Inject
