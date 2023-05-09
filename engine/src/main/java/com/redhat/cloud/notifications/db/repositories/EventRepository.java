@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -109,7 +110,7 @@ public class EventRepository {
      * @param to the end date of the filter.
      */
     protected void validateFromTo(final LocalDate from, final LocalDate to) {
-        final LocalDate today = LocalDate.now();
+        final LocalDate today = LocalDate.now(ZoneOffset.UTC);
         final LocalDate aMonthAgo = today.minusMonths(1);
 
         if (from != null) {
