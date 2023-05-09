@@ -56,7 +56,7 @@ public class EventRepository {
         );
 
         final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("orgId", List.of(orgId));
+        parameters.put("orgId", orgId);
 
         if (from != null) {
             findEventsQuery.append(
