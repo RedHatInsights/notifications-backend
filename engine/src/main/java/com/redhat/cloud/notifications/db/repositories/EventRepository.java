@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Event;
-import org.hibernate.Session;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -21,9 +20,6 @@ import java.util.Map;
 public class EventRepository {
     @Inject
     EntityManager entityManager;
-
-    @Inject
-    Session session;
 
     @Inject
     StatelessSessionFactory statelessSessionFactory;
