@@ -114,25 +114,25 @@ public class EventRepository {
         final LocalDate aMonthAgo = today.minusMonths(1);
 
         if (from != null) {
-            if (from.compareTo(today) > 0) {
+            if (from.isAfter(today)) {
                 throw new IllegalStateException("can't fetch events from the future!");
             }
 
-            if (aMonthAgo.compareTo(from) > 0) {
+            if (aMonthAgo.isAfter(from)) {
                 throw new IllegalStateException("events that are older than a month cannot be fetched");
             }
 
-            if (to != null && to.compareTo(from) < 0) {
+            if (to != null && to.isBefore(from)) {
                 throw new IllegalStateException("the 'to' date cannot be lower than the 'from' date");
             }
         }
 
         if (to != null) {
-            if (to.compareTo(today) > 0) {
+            if (to.isAfter(today)) {
                 throw new IllegalStateException("can't fetch events from the future!");
             }
 
-            if (aMonthAgo.compareTo(to) > 0) {
+            if (aMonthAgo.isAfter(to)) {
                 throw new IllegalStateException("events that are older than a month cannot be fetched");
             }
         }
