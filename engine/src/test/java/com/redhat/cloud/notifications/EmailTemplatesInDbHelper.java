@@ -13,6 +13,8 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import com.redhat.cloud.notifications.templates.TemplateService;
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.Mailer;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.AfterEach;
@@ -34,6 +36,12 @@ public abstract class EmailTemplatesInDbHelper {
     protected static final String COMMON_SECURED_LABEL_CHECK = "common template for secured env";
 
     private static final boolean SHOULD_WRITE_ON_FILE_FOR_DEBUG = true;
+    private static final boolean SHOULD_SEND_EMAIL_FOR_DEBUG = false;
+
+    private static final String SEND_EMAIL_TO = "test.email@replace.me";
+
+    @Inject
+    Mailer mailer;
 
     @Inject
     Environment environment;
@@ -143,7 +151,7 @@ public abstract class EmailTemplatesInDbHelper {
             .data("user", Map.of("firstName", "John", "lastName", "Doe"))
             .render();
 
-        writeEmailTemplate(result, template.getTemplate().getId() + ".html");
+        writeOrSendEmailTemplate(result, template.getTemplate().getId() + ".html");
 
         return result;
     }
@@ -155,7 +163,7 @@ public abstract class EmailTemplatesInDbHelper {
             .data("user", Map.of("firstName", "John", "lastName", "Doe"))
             .render();
 
-        writeEmailTemplate(result, templateInstance.getTemplate().getId() + ".html");
+        writeOrSendEmailTemplate(result, templateInstance.getTemplate().getId() + ".html");
 
         return result;
     }
@@ -172,9 +180,17 @@ public abstract class EmailTemplatesInDbHelper {
         return false;
     }
 
-    protected void writeEmailTemplate(String result, String fileName) {
+    protected void writeOrSendEmailTemplate(String result, String fileName) {
         if (SHOULD_WRITE_ON_FILE_FOR_DEBUG) {
-            TestHelpers.writeEmailTemplate(result, fileName);
+            TestHelpers.writeEmailTemplate(result, fileName + UUID.randomUUID() + ".html");
+        }
+
+        if (SHOULD_SEND_EMAIL_FOR_DEBUG) {
+            Mail m = Mail.withHtml(SEND_EMAIL_TO,
+                fileName,
+                result
+            );
+            mailer.send(m);
         }
     }
 

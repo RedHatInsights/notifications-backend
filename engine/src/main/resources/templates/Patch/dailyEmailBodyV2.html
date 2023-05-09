@@ -16,30 +16,29 @@
 {#content-body-section1}
     {#for key in action.context.patch.keySet()}
         {#if action.context.patch.get(key).size() > 0}
-            <p>
-                <table class="rh-data-table rh-m-bordered">
-                    <thead>
+            <div style="height: 24px">&nbsp;</div>
+            <table class="rh-data-table-bordered">
+                <thead>
+                    <tr>
+                      <th>
+                        <span style="text-transform: capitalize">{key}</span> advisories
+                      </th>
+                      <th>Synopsis</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for advisory in action.context.patch.get(key)}
                         <tr>
-                          <th>
-                            <span style="text-transform: capitalize">{key}</span> advisories
-                        </th>
-                          <th>Synopsis</th>
+                            <td style="width: 40%">
+                                <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory["name"]}">{advisory["name"]}</a>
+                            </td>
+                            <td style="width: 60%">
+                                {advisory["synopsis"]}
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="rh-body-table">
-                        {#for advisory in action.context.patch.get(key)}
-                            <tr>
-                                <td style="width: 40%">
-                                    <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory["name"]}">{advisory["name"]}</a>
-                                </td>
-                                <td style="width: 60%">
-                                    {advisory["synopsis"]}
-                                </td>
-                            </tr>
-                        {/for}
-                    </tbody>
-                </table>
-            </p>
+                    {/for}
+                </tbody>
+            </table>
         {/if}
     {/for}
 {/content-body-section1}
