@@ -8,9 +8,10 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -18,27 +19,6 @@ import java.util.Map;
 
 @ApplicationScoped
 public class EventRepository {
-    /**
-     * The maximum hours value. Taken from
-     * {@link java.time.temporal.ChronoField#HOUR_OF_DAY}
-     */
-    private static final int MAX_HOURS = 23;
-    /**
-     * The maximum minutes value. Taken from
-     * {@link java.time.temporal.ChronoField#MINUTE_OF_HOUR}
-     */
-    private static final int MAX_MINUTES = 59;
-    /**
-     * The maximum seconds value. Taken from
-     * {@link java.time.temporal.ChronoField#SECOND_OF_MINUTE}
-     */
-    private static final int MAX_SECONDS = 59;
-    /**
-     * The maximum nanoseconds value. Taken from
-     * {@link java.time.temporal.ChronoField#NANO_OF_SECOND}
-     */
-    private static final int MAX_NANOSECONDS = 999999999;
-
     @Inject
     EntityManager entityManager;
 
@@ -91,7 +71,7 @@ public class EventRepository {
 
             parameters.put(
                 "createdMin",
-                Date.from(from.atStartOfDay(ZoneId.systemDefault()).toInstant())
+                Timestamp.valueOf(from.atStartOfDay())
             );
         }
 
@@ -103,7 +83,7 @@ public class EventRepository {
 
             parameters.put(
                 "createdMax",
-                Date.from(to.atTime(MAX_HOURS, MAX_MINUTES, MAX_SECONDS, MAX_NANOSECONDS).toInstant(ZoneOffset.UTC))
+                Timestamp.valueOf(to.atTime(LocalTime.MAX))
             );
         }
 
