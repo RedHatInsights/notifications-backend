@@ -22,6 +22,7 @@ import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.logging.Log;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
@@ -204,9 +205,13 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 boolean shouldResetEndpointServerErrors = false;
                 if (isEmailEndpoint) {
                     JsonObject details = new JsonObject();
-                    int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
-                    details.put("total_recipients", totalRecipients);
-                    history.setDetails(details.getMap());
+                    try {
+                        int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
+                        details.put("total_recipients", totalRecipients);
+                        history.setDetails(details.getMap());
+                    } catch (Exception ex) {
+                        Log.info("This email payload doesn't use bccList");
+                    }
                 }
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                     // Accepted
