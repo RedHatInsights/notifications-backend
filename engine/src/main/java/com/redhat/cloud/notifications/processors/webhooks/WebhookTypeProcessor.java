@@ -22,7 +22,6 @@ import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.logging.Log;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpRequest;
