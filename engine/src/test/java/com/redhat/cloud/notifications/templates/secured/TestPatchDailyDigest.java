@@ -35,7 +35,7 @@ public class TestPatchDailyDigest extends EmailTemplatesInDbHelper {
             String resultBody = generateAggregatedEmailBody(aggregator.getContext());
             assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
             assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-            assertTrue(resultBody.contains("Here is your Patch advisories summary affecting your systems"));
+            assertTrue(resultBody.contains("new advisories affecting your systems"));
         });
     }
 

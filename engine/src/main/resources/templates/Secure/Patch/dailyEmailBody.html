@@ -10,24 +10,30 @@
 {#content-title-right-part-section1}
     <a target="_blank" href="{environment.url}/insights/patch/advisories">{action.context.total_advisories}</a>
 {/content-title-right-part-section1}
+{#content-subtitle-section1}
+    There are {action.context.total_advisories} new advisories affecting your systems.
+{/content-subtitle-section1}
 {#content-body-section1}
-
-    Here is your Patch advisories summary affecting your systems.
-
     {#for key in action.context.patch.keySet()}
         {#if action.context.patch.get(key).size() > 0}
             <div style="height: 24px">&nbsp;</div>
             <table class="rh-data-table-bordered">
                 <thead>
                     <tr>
-                      <th style="text-transform: capitalize">{key} advisories</th>
+                      <th>
+                        <span style="text-transform: capitalize">{key}</span> advisories
+                      </th>
+                      <th>Synopsis</th>
                     </tr>
                 </thead>
                 <tbody>
                     {#for advisory in action.context.patch.get(key)}
                         <tr>
-                            <td>
-                                <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory}">{advisory}</a>
+                            <td style="width: 40%">
+                                <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory["name"]}">{advisory["name"]}</a>
+                            </td>
+                            <td style="width: 60%">
+                                {advisory["synopsis"]}
                             </td>
                         </tr>
                     {/for}
@@ -37,6 +43,6 @@
     {/for}
 {/content-body-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/patch/advisories">Go to Advisories</a>
+    <a target="_blank" href="{environment.url}/insights/patch/advisories">Open Advisories in Insights</a>
 {/content-button-section1}
 {/include}
