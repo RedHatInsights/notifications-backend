@@ -14,16 +14,17 @@ public class GoogleChatExceptionProcessor extends ExceptionProcessor {
             "with status code [%d] and body [%s]";
 
     @Override
-    protected void log(Throwable t, Exchange exchange) {
+    protected void process(Throwable t, Exchange exchange) {
         if (t instanceof HttpOperationFailedException) {
+            HttpOperationFailedException e = (HttpOperationFailedException) t;
             Log.errorf(
                     HTTP_LOG_MSG,
                     getRouteId(exchange),
                     getOrgId(exchange),
                     getExchangeId(exchange),
                     getTargetUrl(exchange),
-                    ((HttpOperationFailedException) t).getStatusCode(),
-                    ((HttpOperationFailedException) t).getResponseBody()
+                    e.getStatusCode(),
+                    e.getResponseBody()
             );
         } else {
             logDefault(t, exchange);

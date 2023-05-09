@@ -14,7 +14,7 @@ public class TeamsExceptionProcessor extends ExceptionProcessor {
             "with status code [%d] and body [%s]";
 
     @Override
-    protected void log(Throwable t, Exchange exchange) {
+    protected void process(Throwable t, Exchange exchange) {
         if (t instanceof HttpOperationFailedException) {
             Log.errorf(
                     HTTP_LOG_MSG,

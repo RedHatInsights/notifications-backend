@@ -38,13 +38,13 @@ import static org.mockserver.verify.VerificationTimes.atLeast;
 public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
     private static final String KAFKA_SOURCE_MOCK = "direct:kafka-source-mock";
-    private static final String REMOTE_SERVER_PATH = "/some/path";
+    protected static final String REMOTE_SERVER_PATH = "/some/path";
 
     @Inject
-    ConnectorConfig connectorConfig;
+    protected ConnectorConfig connectorConfig;
 
     @Inject
-    MicrometerAssertionHelper micrometerAssertionHelper;
+    protected MicrometerAssertionHelper micrometerAssertionHelper;
 
     @Override
     public boolean isUseRouteBuilder() {
@@ -151,7 +151,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 2);
     }
 
-    private void saveRoutesMetrics(String... routeIds) {
+    protected void saveRoutesMetrics(String... routeIds) {
         for (String routeId : routeIds) {
             micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesFailuresHandled", "routeId", routeId);
             micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesSucceeded", "routeId", routeId);
@@ -159,13 +159,13 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         }
     }
 
-    private void checkRouteMetrics(String routeId, double expectedFailuresHandledIncrement, double expectedSucceededIncrement, double expectedTotalIncrement) {
+    protected void checkRouteMetrics(String routeId, double expectedFailuresHandledIncrement, double expectedSucceededIncrement, double expectedTotalIncrement) {
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled",  "routeId", routeId, expectedFailuresHandledIncrement);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", routeId, expectedSucceededIncrement);
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", routeId, expectedTotalIncrement);
     }
 
-    private void mockKafkaSourceEndpoint() throws Exception {
+    protected void mockKafkaSourceEndpoint() throws Exception {
         adviceWith(ENGINE_TO_CONNECTOR, context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() {
@@ -174,7 +174,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         });
     }
 
-    private MockEndpoint mockRemoteServerEndpoint() throws Exception {
+    protected MockEndpoint mockRemoteServerEndpoint() throws Exception {
         adviceWith(connectorConfig.getConnectorName(), context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
@@ -184,21 +184,21 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return getMockEndpoint(getMockEndpointUri());
     }
 
-    private String mockRemoteServer500() {
+    protected String mockRemoteServer500() {
         getClient()
                 .when(request().withMethod("POST").withPath(REMOTE_SERVER_PATH))
                 .respond(new HttpResponse().withStatusCode(500).withBody("My custom internal error"));
         return getMockServerUrl() + REMOTE_SERVER_PATH;
     }
 
-    private String mockRemoteServerNetworkFailure() {
+    protected String mockRemoteServerNetworkFailure() {
         getClient()
                 .when(request().withMethod("POST").withPath(REMOTE_SERVER_PATH))
                 .error(error().withDropConnection(true));
         return getMockServerUrl() + REMOTE_SERVER_PATH;
     }
 
-    private MockEndpoint mockKafkaSinkEndpoint() throws Exception {
+    protected MockEndpoint mockKafkaSinkEndpoint() throws Exception {
         adviceWith(CONNECTOR_TO_ENGINE, context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
@@ -212,7 +212,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return kafkaEndpoint;
     }
 
-    private String sendMessageToKafkaSource(JsonObject notification) {
+    protected String sendMessageToKafkaSource(JsonObject notification) {
 
         String cloudEventId = UUID.randomUUID().toString();
 
@@ -227,7 +227,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return cloudEventId;
     }
 
-    private static void assertKafkaSinkIsSatisfied(String cloudEventId, JsonObject notification, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful, String... expectedOutcomeStarts) throws InterruptedException {
+    protected static void assertKafkaSinkIsSatisfied(String cloudEventId, JsonObject notification, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful, String... expectedOutcomeStarts) throws InterruptedException {
 
         kafkaSinkMockEndpoint.assertIsSatisfied();
 
