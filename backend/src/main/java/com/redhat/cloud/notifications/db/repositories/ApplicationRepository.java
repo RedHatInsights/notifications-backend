@@ -207,7 +207,7 @@ public class ApplicationRepository {
 
     public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId, String eventTypeName) {
         if (limiter != null) {
-            limiter.setSortFields(EventType.SORT_FIELDS, EventType.DEPRECATED_SORT_FIELDS);
+            limiter.setSortFields(EventType.SORT_FIELDS);
         }
 
         return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName)

@@ -37,15 +37,7 @@ import static javax.persistence.FetchType.LAZY;
 public class BehaviorGroup extends CreationUpdateTimestamped {
 
     public static final Map<String, String> SORT_FIELDS = Map.of(
-            "display_name", "bg.displayName",
-
-            // NOTIF-674 Remove these entries after the frontend has been updated
-            "displayname", "bg.displayName"
-    );
-
-    // NOTIF-674 Delete after confirming all deprecated fields are no longer used
-    public static final Set<String> DEPRECATED_SORT_FIELDS = Set.of(
-            "displayname"
+            "display_name", "bg.displayName"
     );
 
     @Id
