@@ -130,6 +130,7 @@ class EmailSubscriptionTypeProcessorTest {
 
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
+        // Because this test will use a real Payload Aggregator
         AggregationCommand aggregationCommand1 = new AggregationCommand(
             new EmailAggregationKey("org-1", "rhel", "policies"),
             LocalDateTime.now(ZoneOffset.UTC).minusDays(1),

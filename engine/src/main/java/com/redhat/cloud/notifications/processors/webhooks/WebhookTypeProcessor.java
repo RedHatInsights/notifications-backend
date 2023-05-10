@@ -34,7 +34,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
@@ -202,14 +204,16 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
                 boolean serverError = false;
                 boolean shouldResetEndpointServerErrors = false;
+                Map<String, Object> details = new HashMap<>();
                 if (isEmailEndpoint) {
-                    JsonObject details = new JsonObject();
-                    try {
-                        int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
-                        details.put("total_recipients", totalRecipients);
-                        history.setDetails(details.getMap());
-                    } catch (Exception ex) {
-                        Log.info("This email payload doesn't use bccList");
+                    if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
+                        try {
+                            int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
+                            details.put("total_recipients", totalRecipients);
+                            history.setDetails(details);
+                        } catch (Exception ex) {
+                            Log.error("Could not set the total_recipients field in the history details", ex);
+                        }
                     }
                 }
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
@@ -281,12 +285,11 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 }
 
                 if (history.getStatus() == NotificationStatus.FAILED_INTERNAL) {
-                    JsonObject details = new JsonObject();
                     details.put("url", url);
                     details.put("method", method);
                     details.put("code", resp.statusCode());
                     details.put("response_body", resp.bodyAsString());
-                    history.setDetails(details.getMap());
+                    history.setDetails(details);
                 }
 
                 if (serverError) {
@@ -299,11 +302,11 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
                 Log.debugf("Failed: %s", e.getMessage());
 
-                JsonObject details = new JsonObject();
+                Map<String, Object> details = new HashMap<>();
                 details.put("url", url);
                 details.put("method", method);
                 details.put("error_message", e.getMessage()); // TODO This message isn't always the most descriptive..
-                history.setDetails(details.getMap());
+                history.setDetails(details);
             }
         } finally {
             updateMetrics(history.getStatus(), isEmailEndpoint);
