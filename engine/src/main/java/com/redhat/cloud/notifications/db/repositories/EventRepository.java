@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.models.Event;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -17,9 +16,6 @@ import java.util.Map;
 
 @ApplicationScoped
 public class EventRepository {
-    @Inject
-    EntityManager entityManager;
-
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
@@ -82,7 +78,9 @@ public class EventRepository {
             );
         }
 
-        final TypedQuery<Event> findEventsRanged = this.entityManager.createQuery(findEventsQuery.toString(), Event.class);
+        final TypedQuery<Event> findEventsRanged = this.statelessSessionFactory
+            .getCurrentSession()
+            .createQuery(findEventsQuery.toString(), Event.class);
 
         for (final Map.Entry<String, Object> entry : parameters.entrySet()) {
             findEventsRanged.setParameter(entry.getKey(), entry.getValue());

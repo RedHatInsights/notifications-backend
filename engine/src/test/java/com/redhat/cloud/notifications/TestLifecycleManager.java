@@ -60,6 +60,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     void setupPostgres(Map<String, String> props) throws SQLException {
         postgreSQLContainer = new PostgreSQLContainer<>("postgres:11");
+        postgreSQLContainer.setCommand("postgres", "-c", "log_statement=all");
         postgreSQLContainer.start();
         // Now that postgres is started, we need to get its URL and tell Quarkus
         // quarkus.datasource.driver=io.opentelemetry.instrumentation.jdbc.OpenTelemetryDriver
