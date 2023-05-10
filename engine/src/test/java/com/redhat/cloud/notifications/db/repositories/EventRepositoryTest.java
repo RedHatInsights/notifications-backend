@@ -38,6 +38,8 @@ public class EventRepositoryTest {
     private EventType createdEventType;
     private final List<Event> createdEvents = new ArrayList<>(5);
 
+    private static final LocalDate TODAY = LocalDate.now();
+
     @Inject
     EntityManager entityManager;
 
@@ -118,8 +120,7 @@ public class EventRepositoryTest {
      */
     @Test
     void testGetJustFrom() {
-        final LocalDate today = LocalDate.now();
-        final LocalDate fourDaysAgo = today.minusDays(4);
+        final LocalDate fourDaysAgo = TODAY.minusDays(4);
 
         this.statelessSessionFactory.withSession(session -> {
             final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, null);
@@ -146,8 +147,7 @@ public class EventRepositoryTest {
      */
     @Test
     void testGetJustTo() {
-        final LocalDate today = LocalDate.now();
-        final LocalDate threeDaysAgo = today.minusDays(3);
+        final LocalDate threeDaysAgo = TODAY.minusDays(3);
 
         this.statelessSessionFactory.withSession(session -> {
             final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, threeDaysAgo);
@@ -173,9 +173,8 @@ public class EventRepositoryTest {
      */
     @Test
     void testGetDateRange() {
-        final LocalDate today = LocalDate.now();
-        final LocalDate fourDaysAgo = today.minusDays(4);
-        final LocalDate threeDaysAgo = today.minusDays(3);
+        final LocalDate fourDaysAgo = TODAY.minusDays(4);
+        final LocalDate threeDaysAgo = TODAY.minusDays(3);
 
         this.statelessSessionFactory.withSession(session -> {
             final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, threeDaysAgo);
@@ -219,9 +218,7 @@ public class EventRepositoryTest {
      */
     @Test
     void testValidDates() {
-        final LocalDate today = LocalDate.now();
-
-        this.eventRepository.validateFromTo(today.minusDays(10), today.minusDays(5));
+        this.eventRepository.validateFromTo(TODAY.minusDays(10), TODAY.minusDays(5));
     }
 
     /**
@@ -230,11 +227,9 @@ public class EventRepositoryTest {
      */
     @Test
     void testInvalidFromDateFuture() {
-        final LocalDate today = LocalDate.now();
-
         final IllegalStateException exception = Assertions.assertThrows(
             IllegalStateException.class,
-            () -> this.eventRepository.validateFromTo(today.plusDays(1), null)
+            () -> this.eventRepository.validateFromTo(TODAY.plusDays(1), null)
         );
 
         Assertions.assertEquals("can't fetch events from the future!", exception.getMessage(), "unexpected error message when validating a 'from' date from the future");
@@ -246,11 +241,9 @@ public class EventRepositoryTest {
      */
     @Test
     void testInvalidFromDateOlderMonth() {
-        final LocalDate today = LocalDate.now();
-
         final IllegalStateException exception = Assertions.assertThrows(
             IllegalStateException.class,
-            () -> this.eventRepository.validateFromTo(today.minusMonths(1).minusDays(1), null)
+            () -> this.eventRepository.validateFromTo(TODAY.minusMonths(1).minusDays(1), null)
         );
 
         Assertions.assertEquals("events that are older than a month cannot be fetched", exception.getMessage(), "unexpected error message when validating a 'from' date older than a month");
@@ -262,11 +255,9 @@ public class EventRepositoryTest {
      */
     @Test
     void testInvalidFromDateAfterToDate() {
-        final LocalDate today = LocalDate.now();
-
         final IllegalStateException exception = Assertions.assertThrows(
             IllegalStateException.class,
-            () -> this.eventRepository.validateFromTo(today.minusDays(5), today.minusDays(10))
+            () -> this.eventRepository.validateFromTo(TODAY.minusDays(5), TODAY.minusDays(10))
         );
 
         Assertions.assertEquals("the 'to' date cannot be lower than the 'from' date", exception.getMessage(), "unexpected error message when validating a 'from' date which is after a 'to' date");
@@ -278,11 +269,9 @@ public class EventRepositoryTest {
      */
     @Test
     void testInvalidToDateFuture() {
-        final LocalDate today = LocalDate.now();
-
         final IllegalStateException exception = Assertions.assertThrows(
             IllegalStateException.class,
-            () -> this.eventRepository.validateFromTo(null, today.plusDays(1))
+            () -> this.eventRepository.validateFromTo(null, TODAY.plusDays(1))
         );
 
         Assertions.assertEquals("can't fetch events from the future!", exception.getMessage(), "unexpected error message when validating a 'to' date from the future");
@@ -294,11 +283,9 @@ public class EventRepositoryTest {
      */
     @Test
     void testInvalidToDateOlderMonth() {
-        final LocalDate today = LocalDate.now();
-
         final IllegalStateException exception = Assertions.assertThrows(
             IllegalStateException.class,
-            () -> this.eventRepository.validateFromTo(null, today.minusMonths(1).minusDays(1))
+            () -> this.eventRepository.validateFromTo(null, TODAY.minusMonths(1).minusDays(1))
         );
 
         Assertions.assertEquals("events that are older than a month cannot be fetched", exception.getMessage(), "unexpected error message when validating a 'to' date older than a month");
