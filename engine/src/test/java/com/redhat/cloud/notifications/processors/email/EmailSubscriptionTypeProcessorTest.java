@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -92,9 +91,6 @@ class EmailSubscriptionTypeProcessorTest {
     FeatureFlipper featureFlipper;
 
     @Inject
-    TemplateRepository templateRepository;
-
-    @Inject
     protected ResourceHelpers resourceHelpers;
 
     @BeforeEach
@@ -129,21 +125,23 @@ class EmailSubscriptionTypeProcessorTest {
         }
     }
 
-    @Test
+
     void shouldSuccessfullySendTwoAggregatedEmails() {
+
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
         AggregationCommand aggregationCommand1 = new AggregationCommand(
-                new EmailAggregationKey("org-1", "bundle-1", "app-1"),
-                LocalDateTime.now().minusDays(1),
-                LocalDateTime.now().plusDays(1),
-                DAILY
+            new EmailAggregationKey("org-1", "rhel", "policies"),
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(1),
+            LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
+            DAILY
         );
+
         AggregationCommand aggregationCommand2 = new AggregationCommand(
-                new EmailAggregationKey("org-2", "bundle-2", "app-2"),
-                LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
-                LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
-                DAILY
+            new EmailAggregationKey("org-2", "bundle-2", "app-2"),
+            LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
+            LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
+            DAILY
         );
 
         User user1 = new User();
@@ -165,63 +163,59 @@ class EmailSubscriptionTypeProcessorTest {
                 }
             );
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            AggregationEmailTemplate blankAgg1 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-1", "app-1");
-            AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
-            try {
-                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "bundle-1", "app-1", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "bundle-1", "app-1", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
-            } finally {
-                if (null != blankAgg1) {
-                    resourceHelpers.deleteEmailTemplatesById(blankAgg1.getId());
-                }
-                if (null != blankAgg2) {
-                    resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
-                }
-            }
-        });
+        AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
+        try {
+            statelessSessionFactory.withSession(statelessSession -> {
+                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
+            });
 
-        inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
-        inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
+            inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
+            inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
 
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
-        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
-        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
+            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
+            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
+            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
-        // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-        verify(emailAggregationRepository, times(1)).getEmailAggregation(
+            // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
+            verify(emailAggregationRepository, times(1)).getEmailAggregation(
                 eq(aggregationCommand1.getAggregationKey()),
                 eq(aggregationCommand1.getStart()),
                 eq(aggregationCommand1.getEnd()),
                 eq(0),
                 anyInt()
-        );
+            );
 
-        verify(emailAggregationRepository, times(1)).purgeOldAggregation(
+            verify(emailAggregationRepository, times(1)).purgeOldAggregation(
                 eq(aggregationCommand1.getAggregationKey()),
                 eq(aggregationCommand1.getEnd())
-        );
-        verify(emailAggregationRepository, times(1)).getEmailAggregation(
+            );
+            verify(emailAggregationRepository, times(1)).getEmailAggregation(
                 eq(aggregationCommand2.getAggregationKey()),
                 eq(aggregationCommand2.getStart()),
                 eq(aggregationCommand2.getEnd()),
                 eq(0),
                 anyInt()
-        );
-        verify(emailAggregationRepository, times(1)).purgeOldAggregation(
+            );
+            verify(emailAggregationRepository, times(1)).purgeOldAggregation(
                 eq(aggregationCommand2.getAggregationKey()),
                 eq(aggregationCommand2.getEnd())
-        );
+            );
 
-        if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-            verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
-            verify(sender, times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
-        } else {
-            verify(sender, times(1)).sendEmail(eq(user1), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
-            verify(sender, times(1)).sendEmail(eq(user2), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
-            verify(sender, times(1)).sendEmail(eq(user3), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
+                verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+                verify(sender, times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+            } else {
+                verify(sender, times(1)).sendEmail(eq(user1), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+                verify(sender, times(1)).sendEmail(eq(user2), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+                verify(sender, times(1)).sendEmail(eq(user3), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+            }
+
+        } finally {
+            if (null != blankAgg2) {
+                resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
+            }
         }
-
         micrometerAssertionHelper.clearSavedValues();
     }
 
