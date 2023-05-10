@@ -63,6 +63,8 @@ public class EventRepositoryTest {
         this.createdApplication = this.resourceHelpers.createApp(this.createdBundle.getId(), "test-engine-event-repository-application");
         this.createdEventType = this.resourceHelpers.createEventType(this.createdApplication.getId(), "test-engine-event-repository-event-type");
 
+        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
         // Create five events which will be used in the tests.
         for (int i = 0; i < 5; i++) {
             final Event event = new Event();
@@ -76,20 +78,11 @@ public class EventRepositoryTest {
             event.setApplicationDisplayName(this.createdApplication.getDisplayName());
             event.setBundleId(this.createdBundle.getId());
             event.setBundleDisplayName(this.createdBundle.getDisplayName());
+            event.setCreated(now.minusDays(i + 1));
 
             this.entityManager.persist(event);
 
             this.createdEvents.add(event);
-        }
-
-        final LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-
-        // Modify the events' creation date.
-        for (int i = 0; i < 5; i++) {
-            final Event event = this.createdEvents.get(i);
-            event.setCreated(now.minusDays(i + 1));
-
-            this.entityManager.persist(event);
         }
     }
 
