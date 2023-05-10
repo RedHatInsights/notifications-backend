@@ -123,6 +123,8 @@ public class EventRepositoryTest {
         this.statelessSessionFactory.withSession(session -> {
             final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, null);
 
+            Assertions.assertEquals(4, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago");
+
             for (final Event event : result) {
                 final LocalDate eventDate = event.getCreated().toLocalDate();
 
@@ -150,6 +152,8 @@ public class EventRepositoryTest {
         this.statelessSessionFactory.withSession(session -> {
             final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, threeDaysAgo);
 
+            Assertions.assertEquals(3, result.size(), "unexpected number of events received when applying the 'to' filter to three days ago");
+
             for (final Event event : result) {
                 final LocalDate eventDate = event.getCreated().toLocalDate();
 
@@ -176,6 +180,8 @@ public class EventRepositoryTest {
 
         this.statelessSessionFactory.withSession(session -> {
             final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, threeDaysAgo);
+
+            Assertions.assertEquals(2, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago, and the 'to' filter to three days ago");
 
             for (final Event event : result) {
                 final LocalDate eventDate = event.getCreated().toLocalDate();
