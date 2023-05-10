@@ -108,9 +108,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-vulnerability-email-templates-v2.enabled", defaultValue = "false")
     boolean vulnerabilityEmailTemplatesV2Enabled;
 
-    @ConfigProperty(name = "notifications.use-rhosak-email-templates-v2.enabled", defaultValue = "false")
-    boolean rhosakEmailTemplatesV2Enabled;
-
     @ConfigProperty(name = "notifications.use-advisor-email-templates-v2.enabled", defaultValue = "false")
     boolean advisorEmailTemplatesV2Enabled;
 
@@ -154,7 +151,6 @@ public class FeatureFlipper {
         Log.infof("The Resource optimization's email templates V2 are %s", resourceOptimizationManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Vulnerability's email templates V2 are %s", vulnerabilityEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The use of secured email templates is %s", useSecuredEmailTemplates ? "enabled" : "disabled");
-        Log.infof("The Rhosak's email templates V2 are %s", rhosakEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The RBAC's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor's email templates V2 are %s", advisorEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
@@ -364,15 +360,6 @@ public class FeatureFlipper {
     public void setVulnerabilityEmailTemplatesV2Enabled(boolean vulnerabilityEmailTemplatesV2Enabled) {
         checkTestLaunchMode();
         this.vulnerabilityEmailTemplatesV2Enabled = vulnerabilityEmailTemplatesV2Enabled;
-    }
-
-    public boolean isRhosakEmailTemplatesV2Enabled() {
-        return rhosakEmailTemplatesV2Enabled;
-    }
-
-    public void setRhosakEmailTemplatesV2Enabled(boolean rhosakEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.rhosakEmailTemplatesV2Enabled = rhosakEmailTemplatesV2Enabled;
     }
 
     public boolean isRbacEmailTemplatesV2Enabled() {

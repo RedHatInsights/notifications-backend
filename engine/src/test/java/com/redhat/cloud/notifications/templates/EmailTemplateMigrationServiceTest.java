@@ -113,18 +113,6 @@ public class EmailTemplateMigrationServiceTest {
         EventType operatorDataReceived = resourceHelpers.createEventType(costManagement.getId(), "cm-operator-data-received");
 
         /*
-         * Bundle: application-services
-         */
-        Bundle applicationServices = resourceHelpers.createBundle("application-services");
-        // App: rhosak
-        Application rhosak = resourceHelpers.createApp(applicationServices.getId(), "rhosak");
-        EventType scheduledUpgrade = resourceHelpers.createEventType(rhosak.getId(), "scheduled-upgrade");
-        EventType disruption = resourceHelpers.createEventType(rhosak.getId(), "disruption");
-        EventType instanceCreated = resourceHelpers.createEventType(rhosak.getId(), "instance-created");
-        EventType instanceDeleted = resourceHelpers.createEventType(rhosak.getId(), "instance-deleted");
-        EventType actionRequired = resourceHelpers.createEventType(rhosak.getId(), "action-required");
-
-        /*
          * Bundle: ansible
          */
         Bundle ansible = resourceHelpers.createBundle("ansible");
@@ -227,17 +215,6 @@ public class EmailTemplateMigrationServiceTest {
             findAndCompileInstantEmailTemplate(operatorDataProcessed.getId());
             findAndCompileInstantEmailTemplate(operatorDataReceived.getId());
             assertTrue(templateRepository.findAggregationEmailTemplate(openshift.getName(), costManagement.getName(), DAILY).isEmpty());
-
-            /*
-             * Bundle: application-services
-             */
-            // App: rhosak
-            findAndCompileInstantEmailTemplate(scheduledUpgrade.getId());
-            findAndCompileInstantEmailTemplate(disruption.getId());
-            findAndCompileInstantEmailTemplate(instanceCreated.getId());
-            findAndCompileInstantEmailTemplate(instanceDeleted.getId());
-            findAndCompileInstantEmailTemplate(actionRequired.getId());
-            findAndCompileAggregationEmailTemplate(applicationServices.getName(), rhosak.getName(), DAILY);
 
             /*
              * Bundle: ansible

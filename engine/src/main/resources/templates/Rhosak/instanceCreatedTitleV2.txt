@@ -1,1 +1,0 @@
-Instant notification - Instance Created - Red Hat OpenShift Streams for Apache Kafka - Application and Data Services
