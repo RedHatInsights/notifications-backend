@@ -447,6 +447,7 @@ public class FeatureFlipper {
     }
 
     public void setSendSingleEmailForMultipleRecipientsEnabled(boolean sendSingleEmailForMultipleRecipientsEnabled) {
+        checkTestLaunchMode();
         this.sendSingleEmailForMultipleRecipientsEnabled = sendSingleEmailForMultipleRecipientsEnabled;
     }
 
