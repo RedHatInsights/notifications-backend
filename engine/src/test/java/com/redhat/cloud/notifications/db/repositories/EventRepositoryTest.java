@@ -17,13 +17,11 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -289,13 +287,5 @@ public class EventRepositoryTest {
         );
 
         Assertions.assertEquals("events that are older than a month cannot be fetched", exception.getMessage(), "unexpected error message when validating a 'to' date older than a month");
-    }
-
-    String generateRandomString() {
-        final byte[] array = new byte[50];
-        final Random random = new Random();
-        random.nextBytes(array);
-
-        return new String(array, StandardCharsets.UTF_8);
     }
 }
