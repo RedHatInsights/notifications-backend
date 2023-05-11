@@ -78,13 +78,13 @@ public class TestHelpers {
 
         emailActionMessage.setOrgId(orgId);
 
-        JsonObject payload = TestHelpers.wrapActionToJsonObject(emailActionMessage);
         if (null != extraRecipient) {
+            JsonObject payload = TestHelpers.wrapActionToJsonObject(emailActionMessage);
             Recipient recipient = new Recipient();
             recipient.setUsers(List.of(extraRecipient));
             payload.put("recipients", List.of(recipient));
+            aggregation.setPayload(payload);
         }
-        aggregation.setPayload(payload);
 
         return aggregation;
     }
