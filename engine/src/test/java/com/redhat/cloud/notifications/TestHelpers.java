@@ -589,64 +589,6 @@ public class TestHelpers {
             .build();
     }
 
-    public static Action createRhosakAction() {
-        Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(StringUtils.EMPTY);
-        emailActionMessage.setApplication(StringUtils.EMPTY);
-        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        emailActionMessage.setEventType(eventType);
-        emailActionMessage.setRecipients(List.of());
-
-        Map<String, Map<String, Object>> disruptions =  Map.of(UUID.randomUUID().toString(),
-                                                                Map.of("name", "instance name2", "start_time", LocalDateTime.now().minusHours(5).toString(), "impacted_area", "Area 1"),
-                                                                UUID.randomUUID().toString(),
-                                                                Map.of("name", "instance name3", "start_time", LocalDateTime.now().minusHours(5).toString(), "impacted_area", "Area 2"));
-
-        emailActionMessage.setContext(
-            new Context.ContextBuilder()
-                .withAdditionalProperty("start_time", "2020-08-03T15:22:42.199046")
-                .withAdditionalProperty("upgrades", Map.of(UUID.randomUUID().toString(), Map.of("name", "instance name1", "upgrade_time", LocalDateTime.now().minusHours(2).toString(), "kafka_version", 17)))
-                .withAdditionalProperty("disruptions", disruptions)
-                .withAdditionalProperty("upgrade_time", LocalDateTime.now().minusHours(2).toString())
-                .withAdditionalProperty("actions_to_minimize_impacts", List.of("Action 1", "Action 2", "Action 3"))
-                .withAdditionalProperty("kafka_version", 15)
-                .withAdditionalProperty("upgrade_duration", 6)
-                .withAdditionalProperty("created_at", LocalDateTime.now().minusHours(2).toString())
-                .withAdditionalProperty("name", "name1")
-                .withAdditionalProperty("browserUrl", "https://console.redhat.com")
-                .withAdditionalProperty("bootstrap_server_host", "rhosak_host:9090")
-                .withAdditionalProperty("issue_description", "This is my test issue")
-                .withAdditionalProperty("action_required", "You need more coffee")
-                .withAdditionalProperty("action_completion_time", LocalDateTime.now().minusHours(4).toString())
-                .withAdditionalProperty("impacted_area", "Area1")
-                .build()
-        );
-
-        emailActionMessage.setEvents(List.of(
-            new Event.EventBuilder()
-                .withMetadata(new Metadata.MetadataBuilder().build())
-                .withPayload(
-                    new Payload.PayloadBuilder()
-                        .withAdditionalProperty("name", "name-01")
-                        .build()
-                )
-                .build(),
-            new Event.EventBuilder()
-                .withMetadata(new Metadata.MetadataBuilder().build())
-                .withPayload(
-                    new Payload.PayloadBuilder()
-                        .withAdditionalProperty("name", "name-02")
-                        .build()
-                )
-                .build()
-        ));
-
-        emailActionMessage.setAccountId(StringUtils.EMPTY);
-        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
-        return emailActionMessage;
-    }
-
     public static void writeEmailTemplate(String result, String fileName) {
         final String TARGET_DIR = "target";
         try {

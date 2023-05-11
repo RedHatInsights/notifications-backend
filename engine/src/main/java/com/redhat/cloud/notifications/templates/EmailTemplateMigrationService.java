@@ -109,11 +109,6 @@ public class EmailTemplateMigrationService {
                 "Secure/Vulnerability/dailyEmailTitle", "txt", "Vulnerability daily email title",
                 "Secure/Vulnerability/dailyEmailBody", "html", "Vulnerability daily email body"
             );
-            createDailyEmailTemplate(
-                warnings, "application-services", "rhosak",
-                "Secure/Rhosak/dailyRhosakEmailsTitle", "txt", "Rhosak daily email title",
-                "Secure/Rhosak/dailyRhosakEmailsBody", "html", "Rhosak daily email body"
-            );
         } else {
 
             /*
@@ -444,47 +439,6 @@ public class EmailTemplateMigrationService {
                 "ResourceOptimization/dailyEmailTitle", "txt", "Resource Optimization daily email title",
                 "ResourceOptimization/dailyEmailBody", "html", "Resource Optimization daily email body",
                 featureFlipper.isResourceOptimizationManagementEmailTemplatesV2Enabled()
-            );
-
-            /*
-             * Former src/main/resources/templates/Rhosak folder.
-             */
-            getOrCreateTemplate("Rhosak/rhosakEmailBody", "html", "Rhosak email body");
-            createInstantEmailTemplate(
-                warnings, "application-services", "rhosak", List.of("disruption"),
-                "Rhosak/serviceDisruptionTitle", "txt", "Rhosak service disruption email title",
-                "Rhosak/serviceDisruptionBody", "html", "Rhosak service disruption email body",
-                featureFlipper.isRhosakEmailTemplatesV2Enabled()
-            );
-            createInstantEmailTemplate(
-                warnings, "application-services", "rhosak", List.of("instance-created"),
-                "Rhosak/instanceCreatedTitle", "txt", "Rhosak instance created email title",
-                "Rhosak/instanceCreatedBody", "html", "Rhosak instance created email body",
-                featureFlipper.isRhosakEmailTemplatesV2Enabled()
-            );
-            createInstantEmailTemplate(
-                warnings, "application-services", "rhosak", List.of("instance-deleted"),
-                "Rhosak/instanceDeletedTitle", "txt", "Rhosak instance deleted email title",
-                "Rhosak/instanceDeletedBody", "html", "Rhosak instance deleted email body",
-                featureFlipper.isRhosakEmailTemplatesV2Enabled()
-            );
-            createInstantEmailTemplate(
-                warnings, "application-services", "rhosak", List.of("action-required"),
-                "Rhosak/actionRequiredTitle", "txt", "Rhosak action required email title",
-                "Rhosak/actionRequiredBody", "html", "Rhosak action required email body",
-                featureFlipper.isRhosakEmailTemplatesV2Enabled()
-            );
-            createInstantEmailTemplate(
-                warnings, "application-services", "rhosak", List.of("scheduled-upgrade"),
-                "Rhosak/scheduledUpgradeTitle", "txt", "Rhosak scheduled upgrade email title",
-                "Rhosak/scheduledUpgradeBody", "html", "Rhosak scheduled upgrade email body",
-                featureFlipper.isRhosakEmailTemplatesV2Enabled()
-            );
-            createDailyEmailTemplate(
-                warnings, "application-services", "rhosak",
-                "Rhosak/dailyRhosakEmailsTitle", "txt", "Rhosak daily email title",
-                "Rhosak/dailyRhosakEmailsBody", "html", "Rhosak daily email body",
-                featureFlipper.isRhosakEmailTemplatesV2Enabled()
             );
 
             /*
