@@ -36,7 +36,7 @@ public class EventRepositoryTest {
     private EventType createdEventType;
     private final List<Event> createdEvents = new ArrayList<>(5);
 
-    private static final LocalDate TODAY = LocalDate.now();
+    private static final LocalDate TODAY = LocalDate.now(ZoneOffset.UTC);
 
     @Inject
     EntityManager entityManager;
