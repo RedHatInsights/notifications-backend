@@ -163,8 +163,13 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
                 .getEmailSubscribersUserId(event.getOrgId(), bundleName, applicationName, eventTypeName, emailSubscriptionType));
 
-        for (User user : recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers)) {
-            emailSender.sendEmail(user, event, subject, body, true);
+        Set<User> userList = recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers);
+        if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
+            emailSender.sendEmail(userList, event, subject, body, true);
+        } else {
+            for (User user : userList) {
+                emailSender.sendEmail(user, event, subject, body, true);
+            }
         }
     }
 
@@ -215,29 +220,59 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
         }
 
         if (subject != null && body != null) {
-            for (Map.Entry<User, Map<String, Object>> aggregation :
-                    emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime).entrySet()) {
+            Map<User, Map<String, Object>> aggregationsByUsers = emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime);
 
-                Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
-                aggregation.getValue().forEach(contextBuilder::withAdditionalProperty);
+            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
+                Map<Map<String, Object>, Set<User>> aggregationsEmailContext = aggregationsByUsers.keySet().stream()
+                    .collect(Collectors.groupingBy(aggregationsByUsers::get, Collectors.toSet()));
 
-                Action action = new Action();
-                action.setContext(contextBuilder.build());
-                action.setEvents(List.of());
-                action.setOrgId(aggregationKey.getOrgId());
-                action.setApplication(aggregationKey.getApplication());
-                action.setBundle(aggregationKey.getBundle());
+                for (Map.Entry<Map<String, Object>, Set<User>> aggregation : aggregationsEmailContext.entrySet()) {
 
-                // We don't have an event type as this aggregates over multiple event types
-                action.setEventType(null);
-                action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
+                    Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
+                    aggregation.getKey().forEach(contextBuilder::withAdditionalProperty);
 
-                Event event = new Event();
-                event.setId(UUID.randomUUID());
-                event.setEventWrapper(new EventWrapperAction(action));
+                    Action action = new Action();
+                    action.setContext(contextBuilder.build());
+                    action.setEvents(List.of());
+                    action.setOrgId(aggregationKey.getOrgId());
+                    action.setApplication(aggregationKey.getApplication());
+                    action.setBundle(aggregationKey.getBundle());
 
-                emailSender.sendEmail(aggregation.getKey(), event, subject, body, false);
+                    // We don't have an event type as this aggregates over multiple event types
+                    action.setEventType(null);
+                    action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
+
+                    Event event = new Event();
+                    event.setId(UUID.randomUUID());
+                    event.setEventWrapper(new EventWrapperAction(action));
+
+                    emailSender.sendEmail(aggregation.getValue(), event, subject, body, false);
+                }
+            } else {
+                for (Map.Entry<User, Map<String, Object>> aggregation : aggregationsByUsers.entrySet()) {
+
+                    Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
+                    aggregation.getValue().forEach(contextBuilder::withAdditionalProperty);
+
+                    Action action = new Action();
+                    action.setContext(contextBuilder.build());
+                    action.setEvents(List.of());
+                    action.setOrgId(aggregationKey.getOrgId());
+                    action.setApplication(aggregationKey.getApplication());
+                    action.setBundle(aggregationKey.getBundle());
+
+                    // We don't have an event type as this aggregates over multiple event types
+                    action.setEventType(null);
+                    action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
+
+                    Event event = new Event();
+                    event.setId(UUID.randomUUID());
+                    event.setEventWrapper(new EventWrapperAction(action));
+
+                    emailSender.sendEmail(aggregation.getKey(), event, subject, body, false);
+                }
             }
+
         }
 
         if (delete) {

@@ -129,6 +129,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.instant-emails.enabled", defaultValue = "false")
     boolean instantEmailsEnabled;
 
+    @ConfigProperty(name = "notifications.send-single-email-for-multiple-recipients.enabled", defaultValue = "false")
+    boolean sendSingleEmailForMultipleRecipientsEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -161,6 +164,7 @@ public class FeatureFlipper {
         Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
         Log.infof("The Rhel Advisor daily digest is %s", rhelAdvisorDailyDigestEnabled ? "enabled" : "disabled");
         Log.infof("Instant emails are %s", instantEmailsEnabled, "enabled", "disabled");
+        Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -436,6 +440,15 @@ public class FeatureFlipper {
     public void setInstantEmailsEnabled(boolean instantEmailsEnabled) {
         checkTestLaunchMode();
         this.instantEmailsEnabled = instantEmailsEnabled;
+    }
+
+    public boolean isSendSingleEmailForMultipleRecipientsEnabled() {
+        return sendSingleEmailForMultipleRecipientsEnabled;
+    }
+
+    public void setSendSingleEmailForMultipleRecipientsEnabled(boolean sendSingleEmailForMultipleRecipientsEnabled) {
+        checkTestLaunchMode();
+        this.sendSingleEmailForMultipleRecipientsEnabled = sendSingleEmailForMultipleRecipientsEnabled;
     }
 
     /**

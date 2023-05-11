@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.processors.email.aggregators.ResourceOptimizationPayloadAggregator;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
@@ -38,6 +39,10 @@ public class TestHelpers {
     public static final String eventType = "test-email-subscription-instant";
 
     public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventory_id) {
+        return createEmailAggregation(orgId, bundle, application, policyId, inventory_id, null);
+    }
+
+    public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventory_id, String extraRecipient) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
@@ -73,7 +78,13 @@ public class TestHelpers {
 
         emailActionMessage.setOrgId(orgId);
 
-        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
+        JsonObject payload = TestHelpers.wrapActionToJsonObject(emailActionMessage);
+        if (null != extraRecipient) {
+            Recipient recipient = new Recipient();
+            recipient.setUsers(List.of(extraRecipient));
+            payload.put("recipients", List.of(recipient));
+        }
+        aggregation.setPayload(payload);
 
         return aggregation;
     }

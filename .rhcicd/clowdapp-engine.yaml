@@ -245,6 +245,8 @@ objects:
           value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
         - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
           value: ${NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED}
+        - name: NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED
+          value: ${NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -422,3 +424,5 @@ parameters:
 - name: NOTIFICATIONS_SLACK_CAMEL_LOG_RETRY_ATTEMPTED
   description: Specifies whether the redelivery retries should be logged.
   value: "true"
+- name: NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED
+  value: "false"
