@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -15,7 +16,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
+import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.Template;
@@ -24,7 +25,6 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -35,6 +35,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -270,27 +271,48 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public void setupTransformationTemplate() {
-        // Set up the transformationTemplate in the DB if needed
-        try {
-            entityManager.createQuery("FROM IntegrationTemplate WHERE templateKind = :templateKind", IntegrationTemplate.class)
-                    .setParameter("templateKind", IntegrationTemplate.TemplateKind.DEFAULT)
-                    .getSingleResult();
-        } catch (NoResultException nre) {
-            // Not found, creating one
-            Template template = new Template();
-            template.setName("aTemplate");
-            template.setDescription("what's this?");
-            template.setData("Li la lu");
-            entityManager.persist(template);
-
-            IntegrationTemplate gt = new IntegrationTemplate();
-            gt.setTemplateKind(IntegrationTemplate.TemplateKind.DEFAULT);
-            gt.setIntegrationType("slack");
-            gt.setTheTemplate(template);
-            entityManager.persist(gt);
-        }
+    public Template createTemplate(String name, String description, String data) {
+        Template template = new Template();
+        template.setName(name);
+        template.setDescription(description);
+        template.setData(data);
+        entityManager.persist(template);
+        return template;
     }
+
+    @Transactional
+    public InstantEmailTemplate createInstantEmailTemplate(UUID eventTypeId, UUID subjectTemplateId, UUID bodyTemplateId) {
+        InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
+        instantEmailTemplate.setEventType(entityManager.find(EventType.class, eventTypeId));
+        instantEmailTemplate.setEventTypeId(eventTypeId);
+        instantEmailTemplate.setSubjectTemplate(entityManager.find(Template.class, subjectTemplateId));
+        instantEmailTemplate.setSubjectTemplateId(subjectTemplateId);
+        instantEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
+        instantEmailTemplate.setBodyTemplateId(bodyTemplateId);
+        entityManager.persist(instantEmailTemplate);
+        return instantEmailTemplate;
+    }
+
+    @Transactional
+    public AggregationEmailTemplate createAggregationEmailTemplate(UUID appId, UUID subjectTemplateId, UUID bodyTemplateId) {
+        AggregationEmailTemplate aggregationEmailTemplate = new AggregationEmailTemplate();
+        aggregationEmailTemplate.setApplication(entityManager.find(Application.class, appId));
+        aggregationEmailTemplate.setApplicationId(appId);
+        aggregationEmailTemplate.setSubjectTemplate(entityManager.find(Template.class, subjectTemplateId));
+        aggregationEmailTemplate.setSubjectTemplateId(subjectTemplateId);
+        aggregationEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
+        aggregationEmailTemplate.setBodyTemplateId(bodyTemplateId);
+        aggregationEmailTemplate.setSubscriptionType(DAILY);
+        entityManager.persist(aggregationEmailTemplate);
+        return aggregationEmailTemplate;
+    }
+
+    @Transactional
+    public void deleteEmailTemplatesById(UUID templateId) {
+        entityManager.createQuery("DELETE FROM InstantEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregationEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
+    }
+
 
     /**
      * Generates twelve endpoints with either {@link CamelProperties} or

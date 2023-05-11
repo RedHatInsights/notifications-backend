@@ -1,21 +1,16 @@
 package com.redhat.cloud.notifications.templates;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.quarkus.qute.TemplateInstance;
-import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -32,22 +27,6 @@ public class TemplateEngineResource {
 
     @Inject
     TemplateService templateService;
-
-    @Inject
-    TemplateRepository templateRepository;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @GET
-    @Path("/subscription_type_supported")
-    @Produces(APPLICATION_JSON)
-    public Boolean isSubscriptionTypeSupported(@NotNull @RestQuery String bundleName, @NotNull @RestQuery String applicationName, @NotNull @RestQuery EmailSubscriptionType subscriptionType) {
-
-        return statelessSessionFactory.withSession(statelessSession -> {
-            return templateRepository.isEmailSubscriptionSupported(bundleName, applicationName, subscriptionType);
-        });
-    }
 
     @PUT
     @Path("/render")

@@ -313,5 +313,4 @@ class EmailSubscriptionTypeProcessorTest {
 
         micrometerAssertionHelper.clearSavedValues();
     }
-
 }

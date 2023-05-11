@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal;
 
+import com.redhat.cloud.notifications.CrudTestHelpers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -42,7 +43,6 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.getInstantEmailTemp
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateInstantEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateTemplate;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -66,7 +66,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     void testAllTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
-        Template template = buildTemplate("template-name", "template-data");
+        Template template = CrudTestHelpers.buildTemplate("template-name", "template-data");
 
         // Before we start, the DB shouldn't contain any template.
         assertTrue(getAllTemplates(adminIdentity).isEmpty());
@@ -106,24 +106,24 @@ public class TemplateResourceTest extends DbIsolatedTest {
         String eventTypeId2 = createEventType(adminIdentity, appId2, "event-type-name-2", "Event type 2", "Event type description", OK).get();
 
         // We also need templates that will be linked with the instant email template tested below.
-        Template subjectTemplate = buildTemplate("subject-template-name", "template-data");
+        Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-template-name", "template-data");
         JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
-        Template bodyTemplate = buildTemplate("body-template-name", "template-data");
+        Template bodyTemplate = CrudTestHelpers.buildTemplate("body-template-name", "template-data");
         JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
 
         // Before we start, the DB shouldn't contain any instant email template.
         assertTrue(getAllInstantEmailTemplates(adminIdentity).isEmpty());
 
         // First, we'll create, retrieve and check an instant email template that is NOT linked to an event type.
-        InstantEmailTemplate emailTemplate = buildInstantEmailTemplate(null, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        InstantEmailTemplate emailTemplate = CrudTestHelpers.buildInstantEmailTemplate(null, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
         JsonObject jsonEmailTemplate = createInstantEmailTemplate(adminIdentity, emailTemplate, 200).get();
 
         // Then, we'll do the same with another instant email template that is linked to an event type.
-        InstantEmailTemplate emailTemplateWithEventType = buildInstantEmailTemplate(eventTypeId, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        InstantEmailTemplate emailTemplateWithEventType = CrudTestHelpers.buildInstantEmailTemplate(eventTypeId, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
         JsonObject jsonEmailTemplateWithEventType = createInstantEmailTemplate(adminIdentity, emailTemplateWithEventType, 200).get();
 
         // Then, we'll do the same with another instant email template that is linked to event type 2.
-        InstantEmailTemplate emailTemplateWithEventType2 = buildInstantEmailTemplate(eventTypeId2, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        InstantEmailTemplate emailTemplateWithEventType2 = CrudTestHelpers.buildInstantEmailTemplate(eventTypeId2, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
         JsonObject jsonEmailTemplateWithEventType2 = createInstantEmailTemplate(adminIdentity, emailTemplateWithEventType2, 200).get();
 
         // At this point, the DB should contain 3 instant email template: the one that wasn't linked to the event type and 2 linked to an event type.
@@ -152,9 +152,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
         getInstantEmailTemplatesByEventType(adminIdentity, eventTypeId, false);
 
         // Let's update the instant email template and check that the new fields values are correctly persisted.
-        Template newSubjectTemplate = buildTemplate("new-subject-template-name", "template-data");
+        Template newSubjectTemplate = CrudTestHelpers.buildTemplate("new-subject-template-name", "template-data");
         JsonObject newSubjectJsonTemplate = createTemplate(adminIdentity, newSubjectTemplate, 200).get();
-        Template newBodyTemplate = buildTemplate("new-body-template-name", "template-data");
+        Template newBodyTemplate = CrudTestHelpers.buildTemplate("new-body-template-name", "template-data");
         JsonObject newBodyJsonTemplate = createTemplate(adminIdentity, newBodyTemplate, 200).get();
         emailTemplate.setEventTypeId(UUID.fromString(eventTypeId));
         emailTemplate.setSubjectTemplateId(UUID.fromString(newSubjectJsonTemplate.getString("id")));
@@ -177,20 +177,20 @@ public class TemplateResourceTest extends DbIsolatedTest {
         String appId = createApp(adminIdentity, bundleId, "app-name", "App", null, OK).get();
 
         // We also need templates that will be linked with the aggregation email template tested below.
-        Template subjectTemplate = buildTemplate("subject-template-name", "template-data");
+        Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-template-name", "template-data");
         JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
-        Template bodyTemplate = buildTemplate("body-template-name", "template-data");
+        Template bodyTemplate = CrudTestHelpers.buildTemplate("body-template-name", "template-data");
         JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
 
         // Before we start, the DB shouldn't contain any aggregation email template.
         assertTrue(getAllAggregationEmailTemplates(adminIdentity).isEmpty());
 
         // First, we'll create, retrieve and check an aggregation email template that is NOT linked to an app.
-        AggregationEmailTemplate emailTemplate = buildAggregationEmailTemplate(null, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        AggregationEmailTemplate emailTemplate = CrudTestHelpers.buildAggregationEmailTemplate(null, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
         JsonObject jsonEmailTemplate = createAggregationEmailTemplate(adminIdentity, emailTemplate, 200).get();
 
         // Then, we'll do the same with another aggregation email template that is linked to an app.
-        AggregationEmailTemplate emailTemplateWithApp = buildAggregationEmailTemplate(appId, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        AggregationEmailTemplate emailTemplateWithApp = CrudTestHelpers.buildAggregationEmailTemplate(appId, subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
         JsonObject jsonEmailTemplateWithApp = createAggregationEmailTemplate(adminIdentity, emailTemplateWithApp, 200).get();
 
         // Now, we'll delete the second aggregation email template and check that it no longer exists with the following line.
@@ -207,9 +207,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertTrue(jsonEmailTemplates.isEmpty());
 
         // Let's update the aggregation email template and check that the new fields values are correctly persisted.
-        Template newSubjectTemplate = buildTemplate("new-subject-template-name", "template-data");
+        Template newSubjectTemplate = CrudTestHelpers.buildTemplate("new-subject-template-name", "template-data");
         JsonObject newSubjectJsonTemplate = createTemplate(adminIdentity, newSubjectTemplate, 200).get();
-        Template newBodyTemplate = buildTemplate("new-body-template-name", "template-data");
+        Template newBodyTemplate = CrudTestHelpers.buildTemplate("new-body-template-name", "template-data");
         JsonObject newBodyJsonTemplate = createTemplate(adminIdentity, newBodyTemplate, 200).get();
         emailTemplate.setApplicationId(UUID.fromString(appId));
         emailTemplate.setSubjectTemplateId(UUID.fromString(newSubjectJsonTemplate.getString("id")));
@@ -232,11 +232,11 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertTrue(getAllTemplates(adminIdentity).isEmpty());
 
         // Then, we'll persist an outer template, which includes another template.
-        Template helloTemplate = buildTemplate("hello-template", "Hello, {#include world-template /}");
+        Template helloTemplate = CrudTestHelpers.buildTemplate("hello-template", "Hello, {#include world-template /}");
         JsonObject jsonHelloTemplate = createTemplate(adminIdentity, helloTemplate, 200).get();
 
         // We also need to persist the included template.
-        Template worldTemplate = buildTemplate("world-template", "World!");
+        Template worldTemplate = CrudTestHelpers.buildTemplate("world-template", "World!");
         JsonObject jsonWorldTemplate = createTemplate(adminIdentity, worldTemplate, 200).get();
 
         // At this point, the DB should contain two templates.
@@ -389,32 +389,4 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertEquals("Action parsing failed for payload: I am invalid!", new JsonObject(responseBody).getString("message"));
     }
 
-    private static Template buildTemplate(String name, String data) {
-        Template template = new Template();
-        template.setName(name);
-        template.setDescription("My template");
-        template.setData(data);
-        return template;
-    }
-
-    private static InstantEmailTemplate buildInstantEmailTemplate(String eventTypeId, String subjectTemplateId, String bodyTemplateId) {
-        InstantEmailTemplate emailTemplate = new InstantEmailTemplate();
-        if (eventTypeId != null) {
-            emailTemplate.setEventTypeId(UUID.fromString(eventTypeId));
-        }
-        emailTemplate.setSubjectTemplateId(UUID.fromString(subjectTemplateId));
-        emailTemplate.setBodyTemplateId(UUID.fromString(bodyTemplateId));
-        return emailTemplate;
-    }
-
-    private static AggregationEmailTemplate buildAggregationEmailTemplate(String appId, String subjectTemplateId, String bodyTemplateId) {
-        AggregationEmailTemplate emailTemplate = new AggregationEmailTemplate();
-        emailTemplate.setSubscriptionType(DAILY);
-        if (appId != null) {
-            emailTemplate.setApplicationId(UUID.fromString(appId));
-        }
-        emailTemplate.setSubjectTemplateId(UUID.fromString(subjectTemplateId));
-        emailTemplate.setBodyTemplateId(UUID.fromString(bodyTemplateId));
-        return emailTemplate;
-    }
 }
