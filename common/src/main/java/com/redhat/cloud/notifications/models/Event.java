@@ -14,6 +14,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -92,6 +93,25 @@ public class Event {
         applicationId = eventType.getApplication().getId();
         applicationDisplayName = eventType.getApplication().getDisplayName();
         eventTypeDisplayName = eventType.getDisplayName();
+    }
+
+    /**
+     * Constructor used to build events that will be exported. The idea is that
+     * the exported events should look the same as they look in the event log.
+     * That is why just a few of the fields are used to construct an event,
+     * which are the fields that will be pulled from the database.
+     * @param id the {@link UUID} of the event.
+     * @param bundleDisplayName the display name of the bundle.
+     * @param applicationDisplayName the display name of the application.
+     * @param eventTypeDisplayName the display name of the event type.
+     * @param created the date in which the event was created.
+     */
+    public Event(final UUID id, final String bundleDisplayName, final String applicationDisplayName, final String eventTypeDisplayName, final Date created) {
+        this.id = id;
+        this.bundleDisplayName = bundleDisplayName;
+        this.applicationDisplayName = applicationDisplayName;
+        this.eventTypeDisplayName = eventTypeDisplayName;
+        this.created = Timestamp.from(created.toInstant());
     }
 
     public UUID getId() {
