@@ -15,6 +15,7 @@ import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockS
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.EGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.exports.ExportsEventListener.EXPORT_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
@@ -44,6 +45,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(TOCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(EXPORT_CHANNEL));
 
         properties.put("reinject.enabled", "true");
 
@@ -85,6 +87,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     void setupMockEngine(Map<String, String> props) {
         MockServerLifecycleManager.start();
+        props.put("quarkus.rest-client.export-service.url", getMockServerUrl());
         props.put("quarkus.rest-client.rbac-s2s.url", getMockServerUrl());
         props.put("quarkus.rest-client.it-s2s.url", getMockServerUrl());
         props.put("quarkus.rest-client.internal-slack.url", "http://localhost:9087");
