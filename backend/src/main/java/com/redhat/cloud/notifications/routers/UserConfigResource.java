@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
+import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailSubscription;
@@ -22,9 +23,7 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationS
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
-import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -68,11 +67,10 @@ public class UserConfigResource {
     ApplicationRepository applicationRepository;
 
     @Inject
-    @RestClient
-    TemplateEngineClient templateEngineClient;
+    EventTypeRepository eventTypeRepository;
 
     @Inject
-    EventTypeRepository eventTypeRepository;
+    TemplateRepository templateRepository;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -207,7 +205,7 @@ public class UserConfigResource {
                 for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
                     if (featureFlipper.isInstantEmailsEnabled() || emailSubscriptionType != INSTANT) {
                         // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
-                        boolean supported = templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType);
+                        boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
                         if (supported) {
                             applicationSettingsValue.notifications.put(emailSubscriptionType, false);
                         }
@@ -390,7 +388,7 @@ public class UserConfigResource {
             for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
                 if (featureFlipper.isInstantEmailsEnabled() || emailSubscriptionType != INSTANT) {
                     // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
-                    boolean supported = templateEngineClient.isSubscriptionTypeSupported(bundle.getName(), application.getName(), emailSubscriptionType);
+                    boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
                     if (supported) {
                         eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, false);
                     }

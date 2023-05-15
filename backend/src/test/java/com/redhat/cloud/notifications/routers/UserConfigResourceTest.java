@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.CrudTestHelpers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
@@ -10,10 +11,15 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
+import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
+import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
@@ -22,14 +28,14 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationS
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
-import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
+import io.vertx.core.json.JsonObject;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,13 +47,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.CrudTestHelpers.createAggregationEmailTemplate;
+import static com.redhat.cloud.notifications.CrudTestHelpers.createInstantEmailTemplate;
+import static com.redhat.cloud.notifications.CrudTestHelpers.createTemplate;
+import static com.redhat.cloud.notifications.CrudTestHelpers.deleteAggregationEmailTemplate;
+import static com.redhat.cloud.notifications.CrudTestHelpers.deleteInstantEmailTemplate;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -80,15 +89,18 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
 
-    @InjectMock
-    @RestClient
-    TemplateEngineClient templateEngineClient;
+    @ConfigProperty(name = "internal.admin-role")
+    String adminRole;
 
     @InjectSpy
     ApplicationRepository applicationRepository;
 
     @Inject
     ResourceHelpers resourceHelpers;
+
+    @Inject
+    EventTypeRepository eventTypeRepository;
+
 
     private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
         for (Field section : jsonForm.fields.get(0).sections) {
@@ -180,9 +192,10 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         String bundle = "rhel";
         String application = "policies";
+        String eventType = "policy-triggered";
 
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, INSTANT)).thenReturn(TRUE);
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(TRUE);
+        String instantTemplateId = createInstantTemplate(bundle, application, eventType);
+        String aggregationTemplateId = createAggregationTemplate(bundle, application);
 
         SettingsValueJsonForm jsonForm = getPreferencesByBundle(identityHeader, bundle);
 
@@ -305,7 +318,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "not-found-bundle", "not-found-app", INSTANT));
 
         // Does not add event type if is not supported by the templates
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(FALSE);
+        deleteAggregationTemplate(aggregationTemplateId);
         SettingsValueJsonForm settingsValueJsonForm = given()
                 .header(identityHeader)
                 .when().get("/user-config/notification-preference?bundleName=rhel")
@@ -319,8 +332,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals("bundles[rhel].applications[policies].notifications[INSTANT]", rhelPolicy2.fields.get(0).fields.get(0).name);
 
         // Skip the application if there are no supported types
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, INSTANT)).thenReturn(FALSE);
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(FALSE);
+        deleteInstantTemplate(instantTemplateId);
         settingsValueJsonForm = given()
                 .header(identityHeader)
                 .when().get("/user-config/notification-preference?bundleName=rhel")
@@ -414,8 +426,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String application = "policies";
         String eventType = "policy-triggered";
 
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, INSTANT)).thenReturn(TRUE);
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(TRUE);
+        String instantTemplateId = createInstantTemplate(bundle, application, eventType);
+        String aggregationTemplateId = createAggregationTemplate(bundle, application);
 
         // should return code 400 because the subscription by event type feature is not available yet
         given()
@@ -514,7 +526,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals(0, initialValues.size());
 
         // Does not add event type if is not supported by the templates
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(FALSE);
+        deleteAggregationTemplate(aggregationTemplateId);
         SettingsValueByEventTypeJsonForm settingsValueJsonForm = given()
             .header(identityHeader)
             .when().get(path)
@@ -531,8 +543,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertTrue(notificationPreferenes.containsKey(INSTANT));
 
         // Skip the application if there are no supported types
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, INSTANT)).thenReturn(FALSE);
-        when(templateEngineClient.isSubscriptionTypeSupported(bundle, application, DAILY)).thenReturn(FALSE);
+        deleteInstantTemplate(instantTemplateId);
         settingsValueJsonForm = given()
             .header(identityHeader)
             .when().get(path)
@@ -588,5 +599,48 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .contentType(JSON)
                 .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+    }
+
+    private String createInstantTemplate(String bundle, String application, String eventTypeName) {
+        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+
+        // We also need templates that will be linked with the instant email template tested below.
+        Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
+
+        JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
+        Template bodyTemplate = CrudTestHelpers.buildTemplate("body-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
+        JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
+
+        Application app = applicationRepository.getApplication(bundle, application);
+        EventType eventType = eventTypeRepository.find(app.getId(), eventTypeName).get();
+
+        InstantEmailTemplate emailTemplate = CrudTestHelpers.buildInstantEmailTemplate(eventType.getId().toString(), subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        JsonObject jsonEmailTemplate = createInstantEmailTemplate(adminIdentity, emailTemplate, 200).get();
+        return jsonEmailTemplate.getString("id");
+    }
+
+    private void deleteInstantTemplate(String templateId) {
+        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        deleteInstantEmailTemplate(adminIdentity, templateId);
+    }
+
+    private String createAggregationTemplate(String bundle, String application) {
+        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+
+        Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-aggregation-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
+        JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
+        Template bodyTemplate = CrudTestHelpers.buildTemplate("body-aggregation-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
+        JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
+
+        Application app = applicationRepository.getApplication(bundle, application);
+
+        AggregationEmailTemplate emailTemplate = CrudTestHelpers.buildAggregationEmailTemplate(app.getId().toString(), subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        JsonObject jsonEmailTemplate = createAggregationEmailTemplate(adminIdentity, emailTemplate, 200).get();
+        return jsonEmailTemplate.getString("id");
+    }
+
+    private void deleteAggregationTemplate(String templateId) {
+        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        deleteAggregationEmailTemplate(adminIdentity, templateId);
     }
 }

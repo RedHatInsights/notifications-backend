@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
-
 @ApplicationScoped
 public class TemplateRepository {
 
@@ -33,22 +31,6 @@ public class TemplateRepository {
 
     private Optional<InstantEmailTemplate> defaultEmailTemplate = null;
 
-    public boolean isEmailSubscriptionSupported(String bundleName, String appName, EmailSubscriptionType subscriptionType) {
-        if (subscriptionType == INSTANT) {
-            if (featureFlipper.isUseDefaultTemplate()) {
-                return true;
-            }
-
-            String hql = "SELECT COUNT(*) FROM InstantEmailTemplate " +
-                    "WHERE eventType.application.bundle.name = :bundleName AND eventType.application.name = :appName";
-            return statelessSessionFactory.getCurrentSession().createQuery(hql, Long.class)
-                    .setParameter("bundleName", bundleName)
-                    .setParameter("appName", appName)
-                    .getSingleResult() > 0;
-        } else {
-            return isEmailAggregationSupported(bundleName, appName, List.of(subscriptionType));
-        }
-    }
 
     public boolean isEmailAggregationSupported(String bundleName, String appName, List<EmailSubscriptionType> subscriptionTypes) {
         String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.bundle.name = :bundleName " +

@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.templates;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.qute.Engine;
@@ -18,9 +17,6 @@ public class TemplateService {
 
     @Inject
     Environment environment;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     /*
      * When a DB template is modified (edited or deleted), its old version may still be included into another template

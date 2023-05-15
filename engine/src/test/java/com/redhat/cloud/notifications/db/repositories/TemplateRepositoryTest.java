@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -58,54 +57,6 @@ public class TemplateRepositoryTest {
 
         subjectTemplate = resourceHelpers.createTemplate("subject-template-" + UUID.randomUUID(), "Subject template", "You have a notification!");
         bodyTemplate = resourceHelpers.createTemplate("body-template-" + UUID.randomUUID(), "Body template", "Something happened!");
-    }
-
-    @Test
-    void testIsEmailSubscriptionSupported() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            // First, email subscription is not supported by any application.
-            assertIsEmailSubscriptionSupported(false, false, false, false, false, false);
-
-            // Then we link an instant email template with event-type-1 (which is a child entity of app-1).
-            InstantEmailTemplate createdInstanceEmailTemplate = resourceHelpers.createInstantEmailTemplate(eventType1.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
-
-            /*
-             * Expectations:
-             * - app-1 should now support INSTANT email subscription, but not DAILY
-             * - other applications shouldn't support any kind of email subscription
-             */
-            assertIsEmailSubscriptionSupported(true, false, false, false, false, false);
-
-            // Then we link an aggregation (DAILY) email template with event-type2 (which is a child entity of app-2).
-            AggregationEmailTemplate createdTemplate = resourceHelpers.createAggregationEmailTemplate(app2.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
-
-            /*
-             * Expectations:
-             * - app-1 should now support INSTANT email subscription, but not DAILY
-             * - app-2 should now support DAILY email subscription, but not INSTANT
-             * - other applications shouldn't support any kind of email subscription
-             */
-            assertIsEmailSubscriptionSupported(true, false, false, true, false, false);
-
-            resourceHelpers.deleteEmailTemplatesById(createdTemplate.getId());
-            resourceHelpers.deleteEmailTemplatesById(createdInstanceEmailTemplate.getId());
-        });
-    }
-
-    private void assertIsEmailSubscriptionSupported(boolean app1Instant, boolean app1Daily, boolean app2Instant,
-                                                    boolean app2Daily, boolean unknownAppInstant, boolean unknownAppDaily) {
-
-        // bundle / app-1 / event-type-1
-        assertEquals(app1Instant, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app1.getName(), INSTANT));
-        assertEquals(app1Daily, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app1.getName(), DAILY));
-
-        // bundle / app-2 / event-type-2
-        assertEquals(app2Instant, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app2.getName(), INSTANT));
-        assertEquals(app2Daily, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app2.getName(), DAILY));
-
-        // unknown-bundle / unknown-app
-        assertEquals(unknownAppInstant, templateRepository.isEmailSubscriptionSupported("unknown-bundle", "unknown-app", INSTANT));
-        assertEquals(unknownAppDaily, templateRepository.isEmailSubscriptionSupported("unknown-bundle", "unknown-app", DAILY));
     }
 
     @Test
