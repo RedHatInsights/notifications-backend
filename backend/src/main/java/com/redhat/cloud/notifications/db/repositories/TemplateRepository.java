@@ -333,7 +333,7 @@ public class TemplateRepository {
         }
     }
 
-    public boolean isEmailAggregationSupported(String bundleName, String appName, List<EmailSubscriptionType> subscriptionTypes) {
+    private boolean isEmailAggregationSupported(String bundleName, String appName, List<EmailSubscriptionType> subscriptionTypes) {
         String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.bundle.name = :bundleName " +
             "AND application.name = :appName AND subscriptionType IN (:subscriptionTypes)";
         return entityManager.createQuery(hql, Long.class)
