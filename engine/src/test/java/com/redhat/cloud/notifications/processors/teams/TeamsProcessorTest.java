@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.google.chat;
+package com.redhat.cloud.notifications.processors.teams;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
@@ -13,7 +13,7 @@ import javax.inject.Inject;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class GoogleChatProcessorTest extends CamelProcessorTest {
+public class TeamsProcessorTest extends CamelProcessorTest {
 
     private static final String GOOGLE_SPACES_TEMPLATE = "{#if data.context.display_name??}" +
             "<{data.environment_url}/insights/inventory/{data.context.inventory_id}|{data.context.display_name}> " +
@@ -27,11 +27,11 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
 
 
     @Inject
-    GoogleChatProcessor googleSpacesProcessor;
+    TeamsProcessor teamsProcessor;
 
     @InjectMock
     @RestClient
-    InternalTemporaryGoogleChatService internalTemporaryGoogleChatService;
+    InternalTemporaryTeamsService internalTemporaryTeamsService;
 
     @Override
     protected String getCuteTemplate() {
@@ -45,16 +45,16 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
 
     @Override
     protected String getSubType() {
-        return "google-chat";
+        return "teams";
     }
 
     @Override
     protected CamelProcessor getCamelProcessor() {
-        return googleSpacesProcessor;
+        return teamsProcessor;
     }
 
     @Override
     protected InternalCamelTemporaryService getInternalClient() {
-        return internalTemporaryGoogleChatService;
+        return internalTemporaryTeamsService;
     }
 }

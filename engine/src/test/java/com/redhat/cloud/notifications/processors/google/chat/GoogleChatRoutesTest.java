@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.google.chat;
 
-import com.redhat.cloud.notifications.processors.camel.CamelMetricsTest;
+import com.redhat.cloud.notifications.processors.camel.CamelRoutesTest;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -9,14 +9,16 @@ import static com.redhat.cloud.notifications.processors.google.chat.GoogleChatRo
 import static com.redhat.cloud.notifications.processors.google.chat.GoogleChatRouteBuilder.GOOGLE_CHAT_OUTGOING_ROUTE;
 
 @QuarkusTest
-public class GoogleChatMetricsTest extends CamelMetricsTest {
+public class GoogleChatRoutesTest extends CamelRoutesTest {
 
 
     @BeforeEach
     void beforeTest() {
         restPath = GoogleChatRouteBuilder.REST_PATH;
-        mockPath = "/camel/googlechat";
-        mockPathKo = "/camel/googlechat_ko";
+        mockPath = "/camel/google_chat";
+        mockPathKo = "/camel/google_chat_ko";
+        mockPathRetries = "/camel/google_chat_retries";
+        mockRouteEndpoint = "mock:google_chat_test_routes";
         camelIncomingRouteName = GOOGLE_CHAT_INCOMING_ROUTE;
         camelOutgoingRouteName = GOOGLE_CHAT_OUTGOING_ROUTE;
         retryCounterName = CAMEL_GOOGLE_CHAT_RETRY_COUNTER;
