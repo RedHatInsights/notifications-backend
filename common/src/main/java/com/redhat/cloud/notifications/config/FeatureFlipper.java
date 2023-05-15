@@ -159,7 +159,7 @@ public class FeatureFlipper {
         Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
         Log.infof("The Rhel Advisor daily digest is %s", rhelAdvisorDailyDigestEnabled ? "enabled" : "disabled");
-        Log.infof("Instant emails are %s", instantEmailsEnabled, "enabled", "disabled");
+        Log.infof("Instant emails are %s", instantEmailsEnabled ? "enabled" : "disabled");
         Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
     }
 
