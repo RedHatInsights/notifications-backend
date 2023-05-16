@@ -6,11 +6,11 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
+import com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatProcessor;
+import com.redhat.cloud.notifications.processors.camel.slack.SlackProcessor;
+import com.redhat.cloud.notifications.processors.camel.teams.TeamsProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
-import com.redhat.cloud.notifications.processors.eventing.CamelTypeProcessor;
-import com.redhat.cloud.notifications.processors.google.chat.GoogleChatProcessor;
-import com.redhat.cloud.notifications.processors.slack.SlackProcessor;
-import com.redhat.cloud.notifications.processors.teams.TeamsProcessor;
+import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,7 +37,7 @@ public class EndpointProcessor {
     WebhookTypeProcessor webhookProcessor;
 
     @Inject
-    CamelTypeProcessor camelProcessor;
+    EventingProcessor camelProcessor;
 
     @Inject
     EmailSubscriptionTypeProcessor emailProcessor;

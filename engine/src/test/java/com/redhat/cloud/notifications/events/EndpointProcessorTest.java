@@ -11,7 +11,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
-import com.redhat.cloud.notifications.processors.slack.SlackProcessor;
+import com.redhat.cloud.notifications.processors.camel.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;

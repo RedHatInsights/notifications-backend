@@ -7,9 +7,9 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import javax.enterprise.context.ApplicationScoped;
 
-import static com.redhat.cloud.notifications.processors.google.chat.GoogleChatRouteBuilder.GOOGLE_CHAT_INCOMING_ROUTE;
-import static com.redhat.cloud.notifications.processors.slack.SlackRouteBuilder.SLACK_INCOMING_ROUTE;
-import static com.redhat.cloud.notifications.processors.teams.TeamsRouteBuilder.TEAMS_INCOMING_ROUTE;
+import static com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatRouteBuilder.GOOGLE_CHAT_INCOMING_ROUTE;
+import static com.redhat.cloud.notifications.processors.camel.slack.SlackRouteBuilder.SLACK_INCOMING_ROUTE;
+import static com.redhat.cloud.notifications.processors.camel.teams.TeamsRouteBuilder.TEAMS_INCOMING_ROUTE;
 
 @ApplicationScoped
 public class RetryCounterProcessor implements Processor {

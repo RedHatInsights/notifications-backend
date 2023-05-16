@@ -16,7 +16,7 @@ import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNE
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.EGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
-import static com.redhat.cloud.notifications.processors.eventing.CamelTypeProcessor.TOCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
