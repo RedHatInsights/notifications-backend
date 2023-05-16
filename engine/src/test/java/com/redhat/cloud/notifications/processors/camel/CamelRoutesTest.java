@@ -158,7 +158,7 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
 
     private void mockServerKo() {
         getClient()
-            .when(request().withMethod(POST.name()).withPath(mockPathKo)).respond(new HttpResponse().withStatusCode(500));
+            .when(request().withMethod(POST.name()).withPath(mockPathKo)).respond(new HttpResponse().withStatusCode(500).withBody("My custom internal error"));
     }
 
     private void mockServerFailure() {

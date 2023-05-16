@@ -114,12 +114,10 @@ objects:
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
-        - name: NOTIFICATIONS_SLACK_CAMEL_MAXIMUM_REDELIVERIES
-          value: ${NOTIFICATIONS_SLACK_CAMEL_MAXIMUM_REDELIVERIES}
-        - name: NOTIFICATIONS_SLACK_CAMEL_LOG_RETRY_ATTEMPTED
-          value: ${NOTIFICATIONS_SLACK_CAMEL_LOG_RETRY_ATTEMPTED}
-        - name: NOTIFICATIONS_SLACK_CAMEL_REDELIVERY_DELAY
-          value: ${NOTIFICATIONS_SLACK_CAMEL_REDELIVERY_DELAY}
+        - name: NOTIFICATIONS_CAMEL_MAXIMUM_REDELIVERIES
+          value: ${NOTIFICATIONS_CAMEL_MAXIMUM_REDELIVERIES}
+        - name: NOTIFICATIONS_CAMEL_REDELIVERY_DELAY
+          value: ${NOTIFICATIONS_CAMEL_REDELIVERY_DELAY}
         - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
           value: ${NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS}
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
@@ -321,10 +319,10 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
-- name: NOTIFICATIONS_SLACK_CAMEL_MAXIMUM_REDELIVERIES
+- name: NOTIFICATIONS_CAMEL_MAXIMUM_REDELIVERIES
   description: Maximum number of redelivery attempts, which does not include the initial attempt.
   value: "2"
-- name: NOTIFICATIONS_SLACK_CAMEL_REDELIVERY_DELAY
+- name: NOTIFICATIONS_CAMEL_REDELIVERY_DELAY
   value: "1000"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
   description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
@@ -416,9 +414,6 @@ parameters:
   description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
   value: ""
 - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
-  value: "true"
-- name: NOTIFICATIONS_SLACK_CAMEL_LOG_RETRY_ATTEMPTED
-  description: Specifies whether the redelivery retries should be logged.
   value: "true"
 - name: NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED
   value: "false"
