@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.models.validation;
 
+import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,7 @@ public class ValidNonPrivateUrlValidatorTest {
     public static final String[] malformedUrls = {"htt:/example.com", "redhat.com", "redhat"};
     public static final String[] validUrls = {"http://redhat.com", "https://redhat.com"};
     public static final String[] unknownHosts = {"https://non-existing-webpage-test-one-two-three.com", "http://another-non-existing-webpage.com"};
-
+    public static final String[] loopbackAddress = {"https://127.0.0.1", "https://127.0.5.2", "https://127.255.255.255", "https://localhost"};
     private static Validator validator;
 
     /**
@@ -96,6 +98,16 @@ public class ValidNonPrivateUrlValidatorTest {
     @Test
     public void unknownHostTest() {
         this.testHosts(unknownHosts, ValidNonPrivateUrlValidator.UNKNOWN_HOST);
+    }
+
+    @Test
+    public void loopbackHostTest() {
+        try {
+            ProfileManager.setLaunchMode(LaunchMode.NORMAL);
+            this.testHosts(loopbackAddress, ValidNonPrivateUrlValidator.LOOPBACK_ADDRESS);
+        } finally {
+            ProfileManager.setLaunchMode(LaunchMode.TEST);
+        }
     }
 
     /**
