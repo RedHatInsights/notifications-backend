@@ -10,13 +10,13 @@ import static org.apache.camel.LoggingLevel.INFO;
 
 public abstract class CamelCommonExceptionHandler extends RouteBuilder {
 
-    @ConfigProperty(name = "notifications.google.chat.camel.max-endpoint-cache-size", defaultValue = "100")
+    @ConfigProperty(name = "notifications.camel.max-endpoint-cache-size", defaultValue = "100")
     protected int maxEndpointCacheSize;
 
-    @ConfigProperty(name = "notifications.slack.camel.maximum-redeliveries", defaultValue = "2")
+    @ConfigProperty(name = "notifications.camel.maximum-redeliveries", defaultValue = "2")
     int maxRedeliveries;
 
-    @ConfigProperty(name = "notifications.slack.camel.redelivery-delay", defaultValue = "1000")
+    @ConfigProperty(name = "notifications.camel.redelivery-delay", defaultValue = "1000")
     long redeliveryDelay;
 
     @Inject
@@ -29,9 +29,7 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
 
     private static final String ERROR_MSG_HTTP_OPERATION_FAILED = COMMON_ERROR_MSG + "with status code: [${exception.statusCode}] and body [${exception.responseBody}]";
 
-    private static final String EXCEPTION_STACK_TRACE = "\n${exception.stacktrace}";
-
-    private static final String ERROR_MSG = COMMON_ERROR_MSG + EXCEPTION_STACK_TRACE;
+    private static final String ERROR_MSG = COMMON_ERROR_MSG + "\n${exception.stacktrace}";
 
     protected void configureCommonExceptionHandler() {
 

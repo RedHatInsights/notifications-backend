@@ -9,9 +9,8 @@ import org.apache.camel.Processor;
 import javax.inject.Inject;
 
 /*
- * This processor transforms an incoming Slack notification, initially received as JSON data,
- * into a data structure that can be used by the Camel Slack component to send a message to
- * the desired Slack channel.
+ * This processor transforms an incoming notification, initially received as JSON data,
+ * into a data structure that can be used by the Camel component to send a message.
  */
 public abstract class CamelNotificationProcessor implements Processor {
 
@@ -21,12 +20,12 @@ public abstract class CamelNotificationProcessor implements Processor {
     @Override
     public void process(Exchange exchange) throws Exception {
 
-        // First, we need to parse the incoming JSON data into a SlackNotification.
+        // First, we need to parse the incoming JSON data into a CamelNotification.
         Message in = exchange.getIn();
         String body = in.getBody(String.class);
         CamelNotification commonNotification = objectMapper.readValue(body, CamelNotification.class);
 
-        // Then, we're using fields from the parsed SlackNotification to build the outgoing data.
+        // Then, we're using fields from the parsed CamelNotification to build the outgoing data.
         exchange.setProperty("orgId", commonNotification.orgId);
         exchange.setProperty("historyId", commonNotification.historyId);
         exchange.setProperty("webhookUrl", commonNotification.webhookUrl);
@@ -45,6 +44,6 @@ public abstract class CamelNotificationProcessor implements Processor {
     }
 
     protected String getIntegrationName() {
-        return "Undefined";
+        throw new IllegalStateException("Integration name must be provided");
     }
 }
