@@ -4,8 +4,11 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -13,6 +16,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
@@ -48,6 +53,9 @@ public class SourcesSecretsMigrationServiceTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
+
+    @Inject
+    Session session;
 
     @InjectMock
     @RestClient
@@ -228,6 +236,90 @@ public class SourcesSecretsMigrationServiceTest {
     }
 
     /**
+     * Tests that when exceptions are raised during the migration, the
+     * execution continues. Also checks that when an exception occurs, then
+     * the created Sources secrets are deleted from there too.
+     */
+    @Deprecated(forRemoval = true)
+    @Test
+    public void testExceptionContinuesExecution() {
+        // Creates ten endpoint fixtures that should be picked up by the
+        // migration process. However, these endpoints will be updated so that
+        // they contain an invalid URL, which should cause an exception.
+        // Therefore, these endpoints should trigger a rollback upon saving
+        // them.
+        final Map<UUID, Endpoint> tenFullEndpoints = this.resourceHelpers.createTenEndpointFixtures();
+
+        // Set an invalid private "https://10.0.0.21" URL which should trigger
+        // a constraint violation exception when attempting to save the
+        // endpoint after updating its references to Sources secrets.
+        for (final Map.Entry<UUID, Endpoint> entry : tenFullEndpoints.entrySet()) {
+            this.setInvalidUrlForEndpoint(entry.getValue());
+        }
+
+        // Creates five more endpoints which have null or blank basic
+        // authentication objects and valid secret tokens. Therefore, only the
+        // secret tokens should be migrated.
+        final Map<UUID, Endpoint> fivePartialEndpoints = this.resourceHelpers.createFiveEndpointsNullEmptyBasicAuths();
+
+        // Return a secret every time the service gets called. In this case we
+        // don't mind if the same ID is returned every time, since the goal of
+        // this test isn't to check that the middleware logic works as
+        // expected.
+        final Secret stubSecret = new Secret();
+        stubSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        Mockito.when(this.sourcesService.create(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(stubSecret);
+
+        // Call the endpoint under test.
+        given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .when()
+            .contentType(JSON)
+            .post("/sources-migration")
+            .then()
+            .statusCode(204);
+
+        // The "delete secrets" operation should have been called double the
+        // times as full endpoints were created.
+        Mockito.verify(this.sourcesService, Mockito.times(tenFullEndpoints.size() * 2)).delete(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
+
+        // Verify that the ten full endpoints don't have any Sources references
+        // stored in their database properties.
+        for (final Map.Entry<UUID, Endpoint> entry : tenFullEndpoints.entrySet()) {
+            final Endpoint endpoint = this.endpointRepository.getEndpoint(entry.getValue().getOrgId(), entry.getKey());
+            Assertions.assertNotNull(endpoint, "the endpoint was not fetched from the database");
+
+            final EndpointProperties endpointProperties = endpoint.getProperties();
+            if (endpointProperties instanceof SourcesSecretable properties) {
+                Assertions.assertNull(properties.getBasicAuthenticationSourcesId(), "the basic authentication Sources secret reference should not have been saved in the database");
+                Assertions.assertNull(properties.getSecretTokenSourcesId(), "the secret token Sources secret reference should not have been saved in the database");
+            } else {
+                Assertions.fail("an endpoint was fetched which didn't have Sources secretable properties");
+            }
+        }
+
+        // Verify that the five partial endpoints do have Sources secrets
+        // references.
+        for (final Map.Entry<UUID, Endpoint> entry : fivePartialEndpoints.entrySet()) {
+            final Endpoint endpoint = this.endpointRepository.getEndpoint(entry.getValue().getOrgId(), entry.getKey());
+            Assertions.assertNotNull(endpoint, "the endpoint was not fetched from the database");
+
+            final EndpointProperties endpointProperties = endpoint.getProperties();
+            if (endpointProperties instanceof SourcesSecretable properties) {
+                final Long basicAuthSourcesId = properties.getBasicAuthenticationSourcesId();
+                final Long secretTokenSourcesId = properties.getSecretTokenSourcesId();
+
+                Assertions.assertTrue(
+                    (basicAuthSourcesId != null) || (secretTokenSourcesId != null),
+                    "either the basic authentication or the secret token should have a Sources reference, but none had it");
+            } else {
+                Assertions.fail("an endpoint was fetched which didn't have Sources secretable properties");
+            }
+        }
+    }
+
+    /**
      * Custom argument matcher which checks if two secrets are the same one. It
      * skips the {@link Secret#id} equals check and the reference check on
      * purpose, because the idea is that Mockito should return the stub based
@@ -256,5 +348,37 @@ public class SourcesSecretsMigrationServiceTest {
         return basicAuthentication == null
             || (basicAuthentication.getPassword() == null || basicAuthentication.getPassword().isBlank())
             || (basicAuthentication.getUsername() == null || basicAuthentication.getUsername().isBlank());
+    }
+
+    /**
+     * Sets the given endpoint properties' URL field to an invalid URL, in
+     * order to trigger a {@link javax.validation.ConstraintViolationException}
+     * in the {@link SourcesSecretsMigrationService#migrateEndpointSecretsSources()}
+     * function.
+     * @param endpoint the endpoint which its URL will be set to an invalid
+     *                 value.
+     */
+    @Deprecated(forRemoval = true)
+    private void setInvalidUrlForEndpoint(final Endpoint endpoint) {
+        final EndpointProperties endpointProperties = endpoint.getProperties();
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append("UPDATE ");
+        if (endpointProperties instanceof CamelProperties) {
+            sb.append("CamelProperties AS p ");
+            sb.append("SET p.url = 'http://10.0.0.21' ");
+        } else if (endpointProperties instanceof WebhookProperties) {
+            sb.append("WebhookProperties AS p ");
+            sb.append("SET p.url = 'http://10.0.0.21' ");
+        }
+        sb.append("WHERE p.id = :uuid");
+
+        final Transaction tx = this.session.beginTransaction();
+        this.entityManager
+            .createQuery(sb.toString())
+            .setParameter("uuid", endpoint.getId())
+            .executeUpdate();
+
+        tx.commit();
     }
 }

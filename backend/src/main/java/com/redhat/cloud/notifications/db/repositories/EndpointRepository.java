@@ -357,15 +357,21 @@ public class EndpointRepository {
     }
 
     /**
-     * Returns a list of endpoints with its properties loaded, which have been
-     * identified as having "basic authentication" and "secret token" secrets
-     * stored in the database, but no references to those secrets in sources.
-     * This signals that the endpoints' secrets need to be migrated to Sources.
+     * Returns a map of endpoint {@link UUID}s and their related organization
+     * ids, which have been identified as having "basic authentication" and
+     * "secret token" secrets stored in the database, but no references to
+     * those secrets in sources. This signals that the endpoints' secrets need
+     * to be migrated to Sources. The function returns just this information
+     * because the goal is to then call {@link #getEndpoint(String, UUID)}
+     * inside a transactional function, and update those endpoints. That way,
+     * when wrapped with a try-catch block, we should be able to catch any
+     * errors that occur while migrating the data.
      *
-     * @return a list of endpoints with their properties loaded.
+     * @return a map of {@link UUID}s and organization IDs of the endpoints
+     * that should be migrated.
      */
     @Deprecated(forRemoval = true)
-    public List<Endpoint> findEndpointWithPropertiesWithStoredSecrets() {
+    public Map<UUID, String> findEndpointWithPropertiesWithStoredSecrets() {
         final String query =
             "SELECT e FROM Endpoint e " +
                 "WHERE EXISTS ( " +
@@ -382,8 +388,8 @@ public class EndpointRepository {
             .createQuery(query, Endpoint.class)
             .getResultList();
 
-        loadProperties(endpoints);
-
-        return endpoints;
+        return endpoints
+            .stream()
+            .collect(Collectors.toMap(Endpoint::getId, Endpoint::getOrgId));
     }
 }

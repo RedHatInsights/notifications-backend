@@ -226,40 +226,16 @@ public class EndpointRepositoryTest {
         this.resourceHelpers.createTwelveEndpointFixtures();
 
         // Call the function under test.
-        final List<Endpoint> fetchedEndpoints = this.endpointRepository.findEndpointWithPropertiesWithStoredSecrets();
+        final Map<UUID, String> eligibleEndpoints = this.endpointRepository.findEndpointWithPropertiesWithStoredSecrets();
 
         // Assert that the only endpoints that were fetched were the expected ones.
-        Assertions.assertEquals(expectedEndpointsToFetch.size(), fetchedEndpoints.size(), "unexpected number of target endpoints fetched");
+        Assertions.assertEquals(expectedEndpointsToFetch.size(), eligibleEndpoints.size(), "unexpected number of eligible endpoints identified");
 
         // Assert that the endpoints and its properties are the same.
-        for (final Endpoint fetchedEndpoint : fetchedEndpoints) {
-            final Endpoint expectedEndpoint = expectedEndpointsToFetch.get(fetchedEndpoint.getId());
-            Assertions.assertNotNull(expectedEndpoint, "the fetched endpoint from the database wasn't supposed to be fetched");
-
-            Assertions.assertEquals(expectedEndpoint.getDescription(), fetchedEndpoint.getDescription());
-            Assertions.assertEquals(expectedEndpoint.getName(), fetchedEndpoint.getName());
-            Assertions.assertEquals(expectedEndpoint.getType(), fetchedEndpoint.getType());
-            Assertions.assertEquals(expectedEndpoint.getSubType(), fetchedEndpoint.getSubType());
-            Assertions.assertEquals(expectedEndpoint.getOrgId(), fetchedEndpoint.getOrgId());
-
-            if (expectedEndpoint.getType() == EndpointType.CAMEL) {
-                final CamelProperties expectedProperties = expectedEndpoint.getProperties(CamelProperties.class);
-                final CamelProperties fetchedProperties = fetchedEndpoint.getProperties(CamelProperties.class);
-
-                Assertions.assertEquals(expectedProperties.getBasicAuthentication(), fetchedProperties.getBasicAuthentication());
-                Assertions.assertEquals(expectedProperties.getDisableSslVerification(), fetchedProperties.getDisableSslVerification());
-                Assertions.assertEquals(expectedProperties.getSecretToken(), expectedProperties.getSecretToken());
-                Assertions.assertEquals(expectedProperties.getUrl(), fetchedProperties.getUrl());
-            } else {
-                final WebhookProperties expectedWebhookProperties = expectedEndpoint.getProperties(WebhookProperties.class);
-                final WebhookProperties fetchedProperties = fetchedEndpoint.getProperties(WebhookProperties.class);
-
-                Assertions.assertEquals(expectedWebhookProperties.getBasicAuthentication(), fetchedProperties.getBasicAuthentication());
-                Assertions.assertEquals(expectedWebhookProperties.getDisableSslVerification(), fetchedProperties.getDisableSslVerification());
-                Assertions.assertEquals(expectedWebhookProperties.getMethod(), fetchedProperties.getMethod());
-                Assertions.assertEquals(expectedWebhookProperties.getSecretToken(), fetchedProperties.getSecretToken());
-                Assertions.assertEquals(expectedWebhookProperties.getUrl(), fetchedProperties.getUrl());
-            }
+        for (final Map.Entry<UUID, String> fetchedEndpoint : eligibleEndpoints.entrySet()) {
+            final Endpoint expectedEndpoint = expectedEndpointsToFetch.get(fetchedEndpoint.getKey());
+            Assertions.assertNotNull(expectedEndpoint, "the identified endpoint from the database wasn't supposed to be fetched");
+            Assertions.assertEquals(expectedEndpoint.getOrgId(), fetchedEndpoint.getValue(), "the org id of the identified endpoint doesn't match");
         }
     }
 
