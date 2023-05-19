@@ -194,6 +194,8 @@ objects:
           value: ${QUARKUS_OPENTELEMETRY_ENABLED}
         - name: QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT
           value: ${QUARKUS_OPENTELEMETRY_ENDPOINT}
+        - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
+          value: "false"
         - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
           value: ${SOURCES_ENABLED}
         - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
@@ -340,5 +342,7 @@ parameters:
 - name: SOURCES_ENABLED
   description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
   value: "false"
+- name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
+  value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
 - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
   value: "false"
