@@ -27,8 +27,18 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
 public class OrgConfigResource {
+
+    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
+    static class OrgConfigResourceV1 extends OrgConfigResource {
+
+    }
+
+    @Path(Constants.API_NOTIFICATIONS_V_2_0 + "/org-config")
+    static class OrgConfigResourceV2 extends OrgConfigResource {
+
+    }
+
 
     static final List<Integer> ALLOWED_MINUTES = Arrays.asList(0, 15, 30, 45);
 

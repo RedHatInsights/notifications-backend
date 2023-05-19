@@ -5,6 +5,102 @@
 When using IntelliJ IDEA, use the 'default' style. This is matched by checkstyle,
 which is invoked when running maven.
 
+=== Multiple API Versions
+
+Notifications might host multiple API versions at the same time. This is done by replacing some calls depending the
+requested version. The version is part of the URL (as per platform guidelines). When starting a new version, most of
+the APIs have the same implementation. To make the process of adding a new API version as easy as possible the following
+strategy is used.
+
+The `@Path` annotation in each resource is moved to an inner class with the version name. e.g.
+
+```java
+@Path("api/notifications/v1.0/endpoints")
+class EndpointResource {
+   @GET
+   public void myPath() {
+   }
+}
+```
+
+becomes:
+
+```java
+class EndpointResource {
+
+    @Path("api/notifications/v1.0/endpoints")
+    class V1 extends EndpointResource {
+
+    }
+
+    @Path("api/notifications/v2.0/endpoints")
+    class V2 extends EndpointResource {
+
+    }
+
+   @GET
+   public void myPath() {
+   }
+}
+```
+
+=== Modify an existing API
+
+Consider we want a new implementation of an API, with different behavior and even params.
+
+```java
+class EndpointResource {
+
+    @Path("api/notifications/v1.0/endpoints")
+    class V1 extends EndpointResource {
+
+    }
+
+    @Path("api/notifications/v2.0/endpoints")
+    class V2 extends EndpointResource {
+
+    }
+
+   @GET
+   public void myPath() {
+   }
+
+   @POST
+   public void myOldPostRequest() {
+        // ... do some old stuff
+   }
+}
+```
+
+We would update it as follow:
+
+```
+class EndpointResource {
+
+    @Path("api/notifications/v1.0/endpoints")
+    class V1 extends EndpointResource {
+        @POST
+       public void myOldPostRequest() {
+            // ... do some old stuff
+       }
+    }
+
+    @Path("api/notifications/v2.0/endpoints")
+    class V2 extends EndpointResource {
+        @POST
+        public List<?> myNewRequest(@QueryParam int coolParam) {
+            // ... More nice behavior
+        }
+    }
+
+   @GET
+   public void myPath() {
+   }
+}
+```
+
+In this example, we moved the old request o the `V1` class and added the new behavior in `V2`. That's it!
+
 == Enabling the MockServer log during tests
 
 This project uses link:https://www.mock-server.com[MockServer] to mock external services during the tests execution.

@@ -156,7 +156,7 @@ public class InternalResource {
     @Produces(MediaType.APPLICATION_JSON)
     @PermitAll
     public String serveInternalOpenAPI() {
-        return oApiFilter.serveOpenApi(OApiFilter.INTERNAL);
+        return oApiFilter.serveOpenApi(OApiFilter.INTERNAL, null);
     }
 
     @POST
