@@ -28,6 +28,8 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
+import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -1839,60 +1841,68 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
 
         testCases.add(
+            new TestCase(ValidNonPrivateUrlValidator.LOOPBACK_ADDRESS, ValidNonPrivateUrlValidatorTest.loopbackAddress)
+        );
+
+        testCases.add(
             new TestCase(
                 ValidNonPrivateUrlValidator.UNKNOWN_HOST,
                 ValidNonPrivateUrlValidatorTest.unknownHosts
             )
         );
+        try {
+            ProfileManager.setLaunchMode(LaunchMode.NORMAL);
+            // Test the URLs with both camel and webhook endpoints.
+            for (final var testCase : testCases) {
+                for (final var url : testCase.testUrls) {
+                    // Test with a camel endpoint.
+                    camelProperties.setUrl(url);
+                    endpoint.setSubType("slack");
+                    endpoint.setType(EndpointType.CAMEL);
+                    endpoint.setProperties(camelProperties);
 
-        // Test the URLs with both camel and webhook endpoints.
-        for (final var testCase : testCases) {
-            for (final var url : testCase.testUrls) {
-                // Test with a camel endpoint.
-                camelProperties.setUrl(url);
-                endpoint.setSubType("slack");
-                endpoint.setType(EndpointType.CAMEL);
-                endpoint.setProperties(camelProperties);
+                    final String camelResponse =
+                        given()
+                            .header(identityHeader)
+                            .when()
+                            .contentType(JSON)
+                            .body(Json.encode(endpoint))
+                            .post("/endpoints")
+                            .then()
+                            .statusCode(400)
+                            .extract()
+                            .asString();
 
-                final String camelResponse =
-                    given()
-                        .header(identityHeader)
-                        .when()
-                        .contentType(JSON)
-                        .body(Json.encode(endpoint))
-                        .post("/endpoints")
-                        .then()
-                        .statusCode(400)
-                        .extract()
-                        .asString();
+                    final String camelConstraintViolation = TestHelpers.extractConstraintViolationFromResponse(camelResponse);
 
-                final String camelConstraintViolation = TestHelpers.extractConstraintViolationFromResponse(camelResponse);
+                    Assertions.assertEquals(testCase.expectedErrorMessage, camelConstraintViolation, String.format("unexpected constraint violation for url \"%s\"", url));
 
-                Assertions.assertEquals(testCase.expectedErrorMessage, camelConstraintViolation, String.format("unexpected constraint violation for url \"%s\"", url));
+                    // Test with a webhook endpoint.
+                    webhookProperties.setUrl(url);
+                    // Reset the subtype since it doesn't make sense a "slack" subtype for webhook endpoints.
+                    endpoint.setSubType(null);
+                    endpoint.setType(EndpointType.WEBHOOK);
+                    endpoint.setProperties(webhookProperties);
 
-                // Test with a webhook endpoint.
-                webhookProperties.setUrl(url);
-                // Reset the subtype since it doesn't make sense a "slack" subtype for webhook endpoints.
-                endpoint.setSubType(null);
-                endpoint.setType(EndpointType.WEBHOOK);
-                endpoint.setProperties(webhookProperties);
+                    final String webhookResponse =
+                        given()
+                            .header(identityHeader)
+                            .when()
+                            .contentType(JSON)
+                            .body(Json.encode(endpoint))
+                            .post("/endpoints")
+                            .then()
+                            .statusCode(400)
+                            .extract()
+                            .asString();
 
-                final String webhookResponse =
-                    given()
-                        .header(identityHeader)
-                        .when()
-                        .contentType(JSON)
-                        .body(Json.encode(endpoint))
-                        .post("/endpoints")
-                        .then()
-                        .statusCode(400)
-                        .extract()
-                        .asString();
+                    final String webhookConstraintViolation = TestHelpers.extractConstraintViolationFromResponse(webhookResponse);
 
-                final String webhookConstraintViolation = TestHelpers.extractConstraintViolationFromResponse(webhookResponse);
-
-                Assertions.assertEquals(testCase.expectedErrorMessage, webhookConstraintViolation, String.format("unexpected constraint violation for url \"%s\"", url));
+                    Assertions.assertEquals(testCase.expectedErrorMessage, webhookConstraintViolation, String.format("unexpected constraint violation for url \"%s\"", url));
+                }
             }
+        } finally {
+            ProfileManager.setLaunchMode(LaunchMode.TEST);
         }
     }
 

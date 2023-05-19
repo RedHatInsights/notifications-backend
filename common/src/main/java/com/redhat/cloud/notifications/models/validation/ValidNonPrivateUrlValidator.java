@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models.validation;
 
+import io.quarkus.runtime.configuration.ProfileManager;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import java.net.InetAddress;
@@ -9,6 +10,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
+import static io.quarkus.runtime.LaunchMode.NORMAL;
+
 public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNonPrivateUrl, String> {
 
     // Error messages.
@@ -16,7 +19,7 @@ public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNon
     public static final String INVALID_URL = "The endpoint's URL is invalid";
     public static final String PRIVATE_IP = "The host of the endpoint's URL resolves to a private IP";
     public static final String UNKNOWN_HOST = "The IP address of the endpoint URL's host cannot be determined";
-
+    public static final String LOOPBACK_ADDRESS = "The host of the endpoint's URL resolves to a loopback address";
     // Allowed protocol schemes.
     private static final String SCHEME_HTTP = "http";
     private static final String SCHEME_HTTPS = "https";
@@ -75,6 +78,12 @@ public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNon
         // If the given host's IP is in the private range, then it's invalid.
         if (address.isSiteLocalAddress()) {
             this.replaceDefaultMessage(constraintValidatorContext, PRIVATE_IP);
+
+            return false;
+        }
+
+        if (ProfileManager.getLaunchMode() == NORMAL && address.isLoopbackAddress()) {
+            this.replaceDefaultMessage(constraintValidatorContext, LOOPBACK_ADDRESS);
 
             return false;
         }
