@@ -17,7 +17,6 @@ import io.smallrye.common.annotation.Blocking;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,22 +68,21 @@ public class ExportEventListener {
      * Notifications is the target application, and the requested resource and
      * formats are supported, the corresponding payload is sent to the export
      * service.
-     * @param message the incoming message from the channel.
-     * @return a read commit on the received message.
+     * @param payload the incoming payload from the channel.
      */
     @Blocking
     @Incoming(EXPORT_CHANNEL)
-    public CompletionStage<Void> eventListener(final Message<String> message) {
+    public void eventListener(final String payload) {
         // Attempt deserializing the received message as a Cloud Event.
         final ConsoleCloudEvent receivedEvent;
         try {
-            receivedEvent = this.consoleCloudEventParser.fromJsonString(message.getPayload());
+            receivedEvent = this.consoleCloudEventParser.fromJsonString(payload);
         } catch (final ConsoleCloudEventParsingException e) {
             Log.errorf("the received payload from the 'export-requests' topic is not a parseable Cloud Event: %s", e.getMessage());
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
-            return message.ack();
+            return;
         }
 
         // Extract the export request's UUID from the subject.
@@ -93,27 +90,27 @@ public class ExportEventListener {
         try {
             exportRequestUuid = this.extractExportUuidFromSubject(receivedEvent.getSubject());
         } catch (final IllegalArgumentException | IllegalStateException e) {
-            Log.errorf("unable to extract the export request's UUID from the subject '%s': %s. Original Cloud Event: %s", receivedEvent.getSubject(), e.getMessage(), message.getPayload());
+            Log.errorf("unable to extract the export request's UUID from the subject '%s': %s. Original Cloud Event: %s", receivedEvent.getSubject(), e.getMessage(), payload);
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
-            return message.ack();
+            return;
         }
 
         // Make sure that we are attempting to handle an export request.
         if (!this.isAnExportRequest(receivedEvent)) {
-            Log.debugf("[export_request_uuid: %s] ignoring received event from the 'export-requests' topic since either it doesn't come from the 'export-service' or it is not of the 'request-export' type: %s", exportRequestUuid, message.getPayload());
-            return message.ack();
+            Log.debugf("[export_request_uuid: %s] ignoring received event from the 'export-requests' topic since either it doesn't come from the 'export-service' or it is not of the 'request-export' type: %s", exportRequestUuid, payload);
+            return;
         }
 
         // Also, make sure that it contains the expected payload's structure.
         final Optional<ExportRequest> requestMaybe = receivedEvent.getData(ExportRequest.class);
         if (requestMaybe.isEmpty()) {
-            Log.errorf("[export_request_uuid: %s] unable to process the export request: the cloud event's data is empty. Original cloud event: %s", exportRequestUuid, message.getPayload());
+            Log.errorf("[export_request_uuid: %s] unable to process the export request: the cloud event's data is empty. Original cloud event: %s", exportRequestUuid, payload);
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
-            return message.ack();
+            return;
         }
 
         // Extract a few bits of information that will be reused over and over.
@@ -123,24 +120,24 @@ public class ExportEventListener {
         final UUID resourceUuid = exportRequest.getUUID();
 
         // If the application target isn't Notifications, then we can simply
-        // skip the message.
+        // skip the payload.
         if (!APPLICATION_NAME.equals(application)) {
-            Log.debugf("[export_request_uuid: %s][resource_uuid: %s] export request ignored for Cloud Event since the target application is '%s': %s", exportRequestUuid, resourceUuid, application, message.getPayload());
-            return message.ack();
+            Log.debugf("[export_request_uuid: %s][resource_uuid: %s] export request ignored for Cloud Event since the target application is '%s': %s", exportRequestUuid, resourceUuid, application, payload);
+            return;
         }
 
         final String resource = exportRequest.getResource();
 
         // Check that we support the requested resource type to export.
         if (!this.isValidResourceType(resource)) {
-            Log.errorf("[export_request_uuid: %s][resource_uuid: %s] export request could not be fulfilled: the requested resource type '%s' is not handled. Original cloud event: %s", exportRequestUuid, resourceUuid, resource, message.getPayload());
+            Log.errorf("[export_request_uuid: %s][resource_uuid: %s] export request could not be fulfilled: the requested resource type '%s' is not handled. Original cloud event: %s", exportRequestUuid, resourceUuid, resource, payload);
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
             this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
-            return message.ack();
+            return;
         }
 
         final Format format = exportRequest.getFormat();
@@ -159,7 +156,7 @@ public class ExportEventListener {
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
             this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
-            return message.ack();
+            return;
         } catch (final IllegalStateException e) {
             Log.debugf("[export_request_uuid: %][resource_uuid: %s] well formatted but invalid \"from\" date received: %s. Error cause: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_FROM), e.getMessage());
 
@@ -168,7 +165,7 @@ public class ExportEventListener {
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, String.format("invalid 'from' filter date specified: %s", e.getMessage()));
             this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
-            return message.ack();
+            return;
         }
 
         final LocalDate to;
@@ -182,7 +179,7 @@ public class ExportEventListener {
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
             this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
-            return message.ack();
+            return;
         } catch (final IllegalStateException e) {
             Log.debugf("[export_request_uuid: %][resource_uuid: %s] well formatted but invalid \"to\" date received: %s. Error cause: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO), e.getMessage());
 
@@ -191,7 +188,7 @@ public class ExportEventListener {
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, String.format("invalid 'to' filter date specified: %s", e.getMessage()));
             this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
-            return message.ack();
+            return;
         }
 
         // Make sure that the "from" date is before of the "to" date, to avoid
@@ -204,7 +201,7 @@ public class ExportEventListener {
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the 'to' date cannot be lower than the 'from' date");
             this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
-            return message.ack();
+            return;
         }
 
         // Handle exporting the requested resource type.
@@ -239,15 +236,13 @@ public class ExportEventListener {
 
                     this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
-                    final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize message in the correct format");
+                    final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
                     this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
                 }
             });
         }
 
         this.meterRegistry.counter(EXPORTS_SERVICE_SUCCESSES_COUNTER).increment();
-
-        return message.ack();
     }
 
     /**
