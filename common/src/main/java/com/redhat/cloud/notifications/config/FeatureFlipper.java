@@ -447,6 +447,7 @@ public class FeatureFlipper {
     }
 
     public void setExportsServiceIntegrationEnabled(final boolean enabled) {
+        checkTestLaunchMode();
         this.exportsServiceIntegrationEnabled = enabled;
     }
 
