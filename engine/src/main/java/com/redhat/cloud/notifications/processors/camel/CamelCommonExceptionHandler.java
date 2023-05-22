@@ -7,6 +7,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import javax.inject.Inject;
 import java.io.IOException;
 
+import static org.apache.camel.LoggingLevel.ERROR;
 import static org.apache.camel.LoggingLevel.INFO;
 
 public abstract class CamelCommonExceptionHandler extends RouteBuilder {
@@ -55,9 +56,9 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
             .retryAttemptedLogLevel(INFO)
             .choice()
                 .when(simple(IS_INTEGRATION_WITH_CHANNEL_EXPRESSION))
-                    .log(INFO, ERROR_MSG_WITH_CHANNEL)
+                    .log(ERROR, ERROR_MSG_WITH_CHANNEL)
                 .otherwise()
-                    .log(INFO, ERROR_MSG)
+                    .log(ERROR, ERROR_MSG)
             .endChoice();
 
         /*
@@ -66,9 +67,9 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
         onException(HttpOperationFailedException.class)
             .choice()
                 .when(simple(IS_INTEGRATION_WITH_CHANNEL_EXPRESSION))
-                    .log(INFO, ERROR_MSG_WITH_CHANNEL_HTTP_OPERATION_FAILED)
+                    .log(ERROR, ERROR_MSG_WITH_CHANNEL_HTTP_OPERATION_FAILED)
                 .otherwise()
-                    .log(INFO, ERROR_MSG_HTTP_OPERATION_FAILED)
+                    .log(ERROR, ERROR_MSG_HTTP_OPERATION_FAILED)
             .endChoice();
 
         /*
@@ -77,9 +78,9 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
         onException(Exception.class)
             .choice()
                 .when(simple(IS_INTEGRATION_WITH_CHANNEL_EXPRESSION))
-                    .log(INFO, ERROR_MSG_WITH_CHANNEL)
+                    .log(ERROR, ERROR_MSG_WITH_CHANNEL)
                 .otherwise()
-                    .log(INFO, ERROR_MSG)
+                    .log(ERROR, ERROR_MSG)
             .endChoice();
     }
 }
