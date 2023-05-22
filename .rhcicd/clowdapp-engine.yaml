@@ -251,8 +251,8 @@ objects:
           value: ${NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED}
         - name: NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED
           value: ${NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED}
-        - name: NOTIFICATIONS_EXPORTS_SERVICE_ENABLED
-          value: ${NOTIFICATIONS_EXPORTS_SERVICE_ENABLED}
+        - name: NOTIFICATIONS_EXPORT_SERVICE_ENABLED
+          value: ${NOTIFICATIONS_EXPORT_SERVICE_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -436,5 +436,5 @@ parameters:
 - name: KAFKA_CLIENT_LOG_LEVEL
   value: INFO
 - name: NOTIFICATIONS_EXPORTS_SERVICE_ENABLED
-  description: Enables the integration with the exports service.
+  description: Enables the integration with the export service.
   value: "false"

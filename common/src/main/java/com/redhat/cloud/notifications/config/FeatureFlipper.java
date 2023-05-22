@@ -129,8 +129,8 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.send-single-email-for-multiple-recipients.enabled", defaultValue = "false")
     boolean sendSingleEmailForMultipleRecipientsEnabled;
 
-    @ConfigProperty(name = "notifications.exports-service.enabled", defaultValue = "false")
-    boolean exportsServiceIntegrationEnabled;
+    @ConfigProperty(name = "notifications.export-service.enabled", defaultValue = "false")
+    boolean exportServiceIntegrationEnabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
@@ -164,7 +164,7 @@ public class FeatureFlipper {
         Log.infof("The Rhel Advisor daily digest is %s", rhelAdvisorDailyDigestEnabled ? "enabled" : "disabled");
         Log.infof("Instant emails are %s", instantEmailsEnabled ? "enabled" : "disabled");
         Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
-        Log.infof("The integration with the exports service is %s", exportsServiceIntegrationEnabled ? "enabled" : "disabled");
+        Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -442,13 +442,13 @@ public class FeatureFlipper {
         this.sendSingleEmailForMultipleRecipientsEnabled = sendSingleEmailForMultipleRecipientsEnabled;
     }
 
-    public boolean isExportsServiceIntegrationEnabled() {
-        return this.exportsServiceIntegrationEnabled;
+    public boolean isExportServiceIntegrationEnabled() {
+        return this.exportServiceIntegrationEnabled;
     }
 
-    public void setExportsServiceIntegrationEnabled(final boolean enabled) {
+    public void setExportServiceIntegrationEnabled(final boolean enabled) {
         checkTestLaunchMode();
-        this.exportsServiceIntegrationEnabled = enabled;
+        this.exportServiceIntegrationEnabled = enabled;
     }
 
     /**

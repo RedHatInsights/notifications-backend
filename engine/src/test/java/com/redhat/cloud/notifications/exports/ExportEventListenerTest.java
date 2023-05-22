@@ -46,16 +46,16 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.exports.ExportsEventListener.EXPORT_CHANNEL;
-import static com.redhat.cloud.notifications.exports.ExportsEventListener.FILTER_DATE_FROM;
-import static com.redhat.cloud.notifications.exports.ExportsEventListener.FILTER_DATE_TO;
+import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
+import static com.redhat.cloud.notifications.exports.ExportEventListener.FILTER_DATE_FROM;
+import static com.redhat.cloud.notifications.exports.ExportEventListener.FILTER_DATE_TO;
 import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class ExportsEventListenerTest {
+public class ExportEventListenerTest {
 
     private static final LocalDate TODAY = LocalDate.now(ZoneOffset.UTC);
 
@@ -66,7 +66,7 @@ public class ExportsEventListenerTest {
     EventRepository eventRepository;
 
     @Inject
-    ExportsEventListener exportsEventListener;
+    ExportEventListener exportEventListener;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -93,7 +93,7 @@ public class ExportsEventListenerTest {
             .when(request().withPath(".*/upload"))
             .respond(response().withStatusCode(200));
 
-        this.featureFlipper.setExportsServiceIntegrationEnabled(true);
+        this.featureFlipper.setExportServiceIntegrationEnabled(true);
     }
 
     /**
@@ -103,23 +103,23 @@ public class ExportsEventListenerTest {
     void clearMockServer() {
         MockServerLifecycleManager.getClient().reset();
 
-        this.featureFlipper.setExportsServiceIntegrationEnabled(false);
+        this.featureFlipper.setExportServiceIntegrationEnabled(false);
     }
 
     /**
      * Tests that when an export request is received with an invalid resource
-     * type, then an error is sent to the exports service.
+     * type, then an error is sent to the export service.
      */
     @Test
     void testInvalidResourceTypeRaisesError() {
         // Save the counter values to assert the "errors count" change later.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportsEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set a resource type which we don't
         // support.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportsEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
         final ExportRequestClass data = cee.getData().getExportRequest();
         data.setResource("invalid-type");
 
@@ -127,7 +127,7 @@ public class ExportsEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the exports service.
+        // Wait until the handler sends an error to the export service.
         await()
             .atMost(Duration.ofSeconds(10))
             .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error")).length != 0);
@@ -143,7 +143,7 @@ public class ExportsEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/error",
-            ExportsEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.getExportCeUuid(),
             data.getApplication(),
             data.getUUID()
         );
@@ -159,23 +159,23 @@ public class ExportsEventListenerTest {
         Assertions.assertEquals("the specified resource type is unsupported by this application", body.getString("message"), "unexpected error message received in the error's body");
 
         // Assert that the errors counter was incremented.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportsEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
     }
 
     /**
      * Tests that when an export request is received and the specified "from"
-     * filter is non-parseable, an error is sent to the exports service.
+     * filter is non-parseable, an error is sent to the export service.
      */
     @Test
     void testNonParseableFromFilterRaisesError() {
         // Save the counter values to assert the "errors count" change later.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportsEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set a resource type which we don't
         // support.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportsEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
         final ExportRequestClass data = cee.getData().getExportRequest();
         data.setFilters(Map.of("from", "invalid-date"));
 
@@ -183,7 +183,7 @@ public class ExportsEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the exports service.
+        // Wait until the handler sends an error to the export service.
         await()
             .atMost(Duration.ofSeconds(10))
             .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error")).length != 0);
@@ -199,7 +199,7 @@ public class ExportsEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/error",
-            ExportsEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.getExportCeUuid(),
             data.getApplication(),
             data.getUUID()
         );
@@ -215,23 +215,23 @@ public class ExportsEventListenerTest {
         Assertions.assertEquals("unable to parse the 'from' date filter with the 'yyyy-mm-dd' format", body.getString("message"), "unexpected error message received in the error's body");
 
         // Assert that the errors counter was incremented.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportsEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
     }
 
     /**
      * Tests that when an export request is received and the specified "to"
-     * filter is non-parseable, an error is sent to the exports service.
+     * filter is non-parseable, an error is sent to the export service.
      */
     @Test
     void testNonParseableToFilterRaisesError() {
         // Save the counter values to assert the "errors count" change later.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportsEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set a resource type which we don't
         // support.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportsEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
         final ExportRequestClass data = cee.getData().getExportRequest();
         data.setFilters(Map.of("to", "invalid-date"));
 
@@ -239,7 +239,7 @@ public class ExportsEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the exports service.
+        // Wait until the handler sends an error to the export service.
         await()
             .atMost(Duration.ofSeconds(10))
             .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error")).length != 0);
@@ -255,7 +255,7 @@ public class ExportsEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/error",
-            ExportsEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.getExportCeUuid(),
             data.getApplication(),
             data.getUUID()
         );
@@ -271,17 +271,17 @@ public class ExportsEventListenerTest {
         Assertions.assertEquals("unable to parse the 'to' date filter with the 'yyyy-mm-dd' format", body.getString("message"), "unexpected error message received in the error's body");
 
         // Assert that the errors counter was incremented.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportsEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
     }
 
     /**
      * Tests that when an export request is received and the specified filters
-     * filter are invalid, an error is sent to the exports service.
+     * filter are invalid, an error is sent to the export service.
      */
     @Test
     void testInvalidFiltersRaisesError() {
         // Save the counter values to assert the "errors count" change later.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportsEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
 
         record TestCase(LocalDate from, LocalDate to, String expectedErrorMessage) { }
 
@@ -341,25 +341,25 @@ public class ExportsEventListenerTest {
 
             // Generate an export request but set a resource type which we don't
             // support.
-            final GenericConsoleCloudEvent<ExportRequest> cee = ExportsEventTestHelper.createExportCloudEventFixture(Format.JSON);
+            final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
             final ExportRequestClass data = cee.getData().getExportRequest();
             final Map<String, Object> filters = data.getFilters();
             // Clear the filters to start fresh with them.
             filters.clear();
 
             if (testCase.from != null) {
-                filters.put(ExportsEventListener.FILTER_DATE_FROM, testCase.from.toString());
+                filters.put(ExportEventListener.FILTER_DATE_FROM, testCase.from.toString());
             }
 
             if (testCase.to != null) {
-                filters.put(ExportsEventListener.FILTER_DATE_TO, testCase.to.toString());
+                filters.put(ExportEventListener.FILTER_DATE_TO, testCase.to.toString());
             }
 
             // Serialize the payload and send it to the Kafka topic.
             final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
             exportIn.send(consoleCloudEventParser.toJson(cee));
 
-            // Wait until the handler sends an error to the exports service.
+            // Wait until the handler sends an error to the export service.
             await()
                 .atMost(Duration.ofSeconds(10))
                 .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error")).length != 0);
@@ -375,7 +375,7 @@ public class ExportsEventListenerTest {
 
             final String expectedPath = String.format(
                 "/app/export/v1/%s/%s/%s/error",
-                ExportsEventTestHelper.getExportCeUuid(),
+                ExportEventTestHelper.getExportCeUuid(),
                 data.getApplication(),
                 data.getUUID()
             );
@@ -396,23 +396,23 @@ public class ExportsEventListenerTest {
         }
 
         // Assert that the errors counter was incremented.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportsEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, testCases.size());
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, testCases.size());
     }
 
     /**
      * Tests that when a valid JSON export request is received, then a valid
-     * request is sent to the exports service, containing the expected body.
+     * request is sent to the export service, containing the expected body.
      */
     @Test
     void testExportJSON() throws IOException, URISyntaxException {
         // Save the counter values to assert the "successes count" change later.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportsEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set a resource type which we don't
         // support.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportsEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
         final ExportRequestClass data = cee.getData().getExportRequest();
 
         // Serialize the payload and send it to the Kafka topic.
@@ -425,7 +425,7 @@ public class ExportsEventListenerTest {
         // unsupported one.
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the exports service.
+        // Wait until the handler sends an error to the export service.
         await()
             .atMost(Duration.ofSeconds(10))
             .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload")).length != 0);
@@ -441,7 +441,7 @@ public class ExportsEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/upload",
-            ExportsEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.getExportCeUuid(),
             data.getApplication(),
             data.getUUID()
         );
@@ -451,7 +451,7 @@ public class ExportsEventListenerTest {
         Assertions.assertEquals(
             request.getFirstHeader("Content-Type"),
             MediaType.APPLICATION_JSON.toString(),
-            "unexpected content type header sent to the exports service"
+            "unexpected content type header sent to the export service"
         );
 
         // Check the PSK.
@@ -473,23 +473,23 @@ public class ExportsEventListenerTest {
         Assertions.assertEquals(expectedJson.encodePrettily(), resultJson.encodePrettily(), "unexpected JSON body received");
 
         // Assert that the successes counter was incremented.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportsEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 1);
     }
 
     /**
      * Tests that when a valid CSV export request is received, then a valid
-     * request is sent to the exports service, containing the expected body.
+     * request is sent to the export service, containing the expected body.
      */
     @Test
     void testExportCSV() throws IOException, URISyntaxException {
         // Save the counter values to assert the "successes count" change later.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportsEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set a resource type which we don't
         // support.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportsEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
         final ExportRequestClass data = cee.getData().getExportRequest();
         data.setFormat(Format.CSV);
 
@@ -503,7 +503,7 @@ public class ExportsEventListenerTest {
         // unsupported one.
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the exports service.
+        // Wait until the handler sends an error to the export service.
         await()
             .atMost(Duration.ofSeconds(10))
             .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload")).length != 0);
@@ -516,7 +516,7 @@ public class ExportsEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/upload",
-            ExportsEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.getExportCeUuid(),
             data.getApplication(),
             data.getUUID()
         );
@@ -526,7 +526,7 @@ public class ExportsEventListenerTest {
         Assertions.assertEquals(
             request.getFirstHeader("Content-Type"),
             "text/csv",
-            "unexpected content type header sent to the exports service"
+            "unexpected content type header sent to the export service"
         );
 
         // Check the PSK.
@@ -541,7 +541,7 @@ public class ExportsEventListenerTest {
         Assertions.assertEquals(expectedContents, request.getBodyAsString(), "unexpected CSV body received");
 
         // Assert that the successes counter was incremented.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportsEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 1);
     }
 
     /**
@@ -550,7 +550,7 @@ public class ExportsEventListenerTest {
      */
     @Test
     void testNoDate() {
-        this.exportsEventListener.extractDateFromFilter(new HashMap<>(), ExportsEventListener.FILTER_DATE_FROM);
+        this.exportEventListener.extractDateFromFilter(new HashMap<>(), ExportEventListener.FILTER_DATE_FROM);
     }
 
     /**
@@ -560,11 +560,11 @@ public class ExportsEventListenerTest {
     @Test
     void testValidDate() {
         final Map<String, Object> filters = Map.of(
-            ExportsEventListener.FILTER_DATE_FROM,
+            ExportEventListener.FILTER_DATE_FROM,
             TODAY.toString()
         );
 
-        final LocalDate result = this.exportsEventListener.extractDateFromFilter(filters, FILTER_DATE_FROM);
+        final LocalDate result = this.exportEventListener.extractDateFromFilter(filters, FILTER_DATE_FROM);
 
         Assertions.assertEquals(TODAY, result, "the date was not correctly extracted from the map");
     }
@@ -576,7 +576,7 @@ public class ExportsEventListenerTest {
     @Test
     void testInvalidDateFuture() {
         final Map<String, Object> filters = Map.of(
-            ExportsEventListener.FILTER_DATE_FROM,
+            ExportEventListener.FILTER_DATE_FROM,
             TODAY
                 .plusDays(1)
                 .toString()
@@ -584,7 +584,7 @@ public class ExportsEventListenerTest {
 
         final IllegalStateException exception = Assertions.assertThrows(
             IllegalStateException.class,
-            () -> this.exportsEventListener.extractDateFromFilter(filters, FILTER_DATE_FROM)
+            () -> this.exportEventListener.extractDateFromFilter(filters, FILTER_DATE_FROM)
         );
 
         Assertions.assertEquals("the specified date is in the future", exception.getMessage(), "unexpected error message when extracting and validating a date from the future");
@@ -597,7 +597,7 @@ public class ExportsEventListenerTest {
     @Test
     void testInvalidDateOlderMonth() {
         final Map<String, Object> filters = Map.of(
-            ExportsEventListener.FILTER_DATE_TO,
+            ExportEventListener.FILTER_DATE_TO,
             TODAY
                 .minusMonths(1)
                 .minusDays(1)
@@ -606,7 +606,7 @@ public class ExportsEventListenerTest {
 
         final IllegalStateException exception = Assertions.assertThrows(
             IllegalStateException.class,
-            () -> this.exportsEventListener.extractDateFromFilter(filters, FILTER_DATE_TO)
+            () -> this.exportEventListener.extractDateFromFilter(filters, FILTER_DATE_TO)
         );
 
         Assertions.assertEquals("the specified date is older than a month", exception.getMessage(), "unexpected error message when extracting and validating a date older than a month");
@@ -621,7 +621,7 @@ public class ExportsEventListenerTest {
         final UUID subjectUuid = UUID.randomUUID();
         final String validSubject = String.format("urn:redhat:subject:export-service:request:%s", subjectUuid);
 
-        final UUID extractedUuid = this.exportsEventListener.extractExportUuidFromSubject(validSubject);
+        final UUID extractedUuid = this.exportEventListener.extractExportUuidFromSubject(validSubject);
 
         Assertions.assertEquals(subjectUuid, extractedUuid, "unexpected UUID extracted from the subject");
     }
@@ -641,7 +641,7 @@ public class ExportsEventListenerTest {
         for (final String invalidSubject : invalidSubjects) {
             Assertions.assertThrows(
                 IllegalStateException.class,
-                () -> this.exportsEventListener.extractExportUuidFromSubject(invalidSubject)
+                () -> this.exportEventListener.extractExportUuidFromSubject(invalidSubject)
             );
         }
     }

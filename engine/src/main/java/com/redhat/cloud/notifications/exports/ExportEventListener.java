@@ -36,7 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @ApplicationScoped
-public class ExportsEventListener {
+public class ExportEventListener {
 
     public static final String APPLICATION_NAME = "urn:redhat:application:notifications";
     public static final String CE_EXPORT_REQUEST_TYPE = "com.redhat.console.export-service.request";
@@ -56,7 +56,7 @@ public class ExportsEventListener {
     EventRepository eventRepository;
 
     @RestClient
-    ExportsService exportsService;
+    ExportService exportService;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -83,7 +83,7 @@ public class ExportsEventListener {
     @Transactional
     public CompletionStage<Void> eventListener(final Message<String> message) {
         // If the integration is disabled simply ignore the messages.
-        if (!this.featureFlipper.isExportsServiceIntegrationEnabled()) {
+        if (!this.featureFlipper.isExportServiceIntegrationEnabled()) {
             return message.ack();
         }
 
@@ -149,7 +149,7 @@ public class ExportsEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
-            this.exportsService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
             return message.ack();
         }
@@ -163,12 +163,12 @@ public class ExportsEventListener {
         try {
             from = this.extractDateFromFilter(filters, FILTER_DATE_FROM);
         } catch (final DateTimeParseException e) {
-            Log.debugf("[export_request_uuid: %s][resource_uuid: %s] bad \"from\" date format. Notifying the exports service with a 400 error. Received date: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_FROM));
+            Log.debugf("[export_request_uuid: %s][resource_uuid: %s] bad \"from\" date format. Notifying the export service with a 400 error. Received date: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_FROM));
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
-            this.exportsService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
             return message.ack();
         } catch (final IllegalStateException e) {
@@ -177,7 +177,7 @@ public class ExportsEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, String.format("invalid 'from' filter date specified: %s", e.getMessage()));
-            this.exportsService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
             return message.ack();
         }
@@ -186,12 +186,12 @@ public class ExportsEventListener {
         try {
             to = this.extractDateFromFilter(filters, FILTER_DATE_TO);
         } catch (final DateTimeParseException e) {
-            Log.debugf("[export_request_uuid: %][resource_uuid: %s] bad \"to\" date format. Notifying the exports service with a 400 error. Received date: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO));
+            Log.debugf("[export_request_uuid: %][resource_uuid: %s] bad \"to\" date format. Notifying the export service with a 400 error. Received date: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO));
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
-            this.exportsService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
             return message.ack();
         } catch (final IllegalStateException e) {
@@ -200,7 +200,7 @@ public class ExportsEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, String.format("invalid 'to' filter date specified: %s", e.getMessage()));
-            this.exportsService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
             return message.ack();
         }
@@ -213,7 +213,7 @@ public class ExportsEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the 'to' date cannot be lower than the 'from' date");
-            this.exportsService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
 
             return message.ack();
         }
@@ -230,19 +230,19 @@ public class ExportsEventListener {
                         case CSV -> {
                             resultsTransformer = new CSVEventTransformer();
                             contents = resultsTransformer.transform(events);
-                            this.exportsService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, contents);
+                            this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, contents);
                         }
                         case JSON -> {
                             resultsTransformer = new JSONEventTransformer();
                             contents = resultsTransformer.transform(events);
-                            this.exportsService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, contents);
+                            this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, contents);
                         }
                         default -> {
                             final ExportError exportError = new ExportError(
                                 HttpStatus.SC_BAD_REQUEST,
                                 String.format("the specified format '%s' is unsupported for the request", format)
                             );
-                            this.exportsService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+                            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
                         }
                     }
                 } catch (final TransformationException e) {
@@ -251,7 +251,7 @@ public class ExportsEventListener {
                     this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
                     final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize message in the correct format");
-                    this.exportsService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+                    this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
                 }
             });
         }
@@ -274,7 +274,7 @@ public class ExportsEventListener {
      * Checks if the provided Cloud Event comes from the "export-service" and
      * if the event type is a proper export request.
      * @param cloudEvent the cloud event to check.
-     * @return true if the cloud event comes from the exports service, and it is
+     * @return true if the cloud event comes from the export service, and it is
      * of the "export request" type.
      */
     boolean isAnExportRequest(final ConsoleCloudEvent cloudEvent) {

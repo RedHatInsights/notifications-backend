@@ -15,15 +15,15 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
-public class ExportsEventTestHelper {
+public class ExportEventTestHelper {
 
     private static final UUID EXPORT_CE_UUID = UUID.randomUUID();
     public static final LocalDateTime EXPORT_CE_TIME = LocalDateTime.now(ZoneOffset.UTC);
     public static final String EXPORT_CE_DATA_SCHEMA = "https://console.redhat.com/api/schemas/apps/export-service/v1/export-request.json";
-    public static final String EXPORT_CE_SOURCE = ExportsEventListener.EXPORT_SERVICE_URN;
+    public static final String EXPORT_CE_SOURCE = ExportEventListener.EXPORT_SERVICE_URN;
     public static final String EXPORT_CE_SPEC_VERSION = "1.0";
     public static final String EXPORT_CE_SUBJECT = String.format("urn:redhat:subject:export-service:request:%s", EXPORT_CE_UUID);
-    public static final String EXPORT_CE_TYPE = ExportsEventListener.CE_EXPORT_REQUEST_TYPE;
+    public static final String EXPORT_CE_TYPE = ExportEventListener.CE_EXPORT_REQUEST_TYPE;
     public static final UUID EXPORT_CE_ID = UUID.randomUUID();
 
     /**
@@ -58,14 +58,14 @@ public class ExportsEventTestHelper {
         final LocalDate today = LocalDate.now();
 
         final Map<String, Object> filters = new HashMap<>();
-        filters.put(ExportsEventListener.FILTER_DATE_FROM, today.minusDays(10).toString());
-        filters.put(ExportsEventListener.FILTER_DATE_TO, today.minusDays(5).toString());
+        filters.put(ExportEventListener.FILTER_DATE_FROM, today.minusDays(10).toString());
+        filters.put(ExportEventListener.FILTER_DATE_TO, today.minusDays(5).toString());
 
         final ExportRequestClass exportRequestClass = new ExportRequestClass();
-        exportRequestClass.setApplication(ExportsEventListener.APPLICATION_NAME);
+        exportRequestClass.setApplication(ExportEventListener.APPLICATION_NAME);
         exportRequestClass.setFilters(filters);
         exportRequestClass.setFormat(format);
-        exportRequestClass.setResource(ExportsEventListener.RESOURCE_TYPE_EVENTS);
+        exportRequestClass.setResource(ExportEventListener.RESOURCE_TYPE_EVENTS);
         exportRequestClass.setUUID(EXPORT_CE_ID);
         exportRequestClass.setXRhIdentity(EXPORT_CE_XHRID);
 

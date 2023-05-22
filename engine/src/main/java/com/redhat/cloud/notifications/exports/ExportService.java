@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 
 @RegisterRestClient(configKey = "export-service")
-public interface ExportsService {
+public interface ExportService {
 
     /**
      * Sends a JSON payload to the export service.
