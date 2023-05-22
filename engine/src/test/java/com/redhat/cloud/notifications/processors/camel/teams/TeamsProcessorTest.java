@@ -15,14 +15,14 @@ import javax.inject.Inject;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class TeamsProcessorTest extends CamelProcessorTest {
 
-    private static final String GOOGLE_SPACES_TEMPLATE = "{#if data.context.display_name??}" +
+    private static final String TEAMS_TEMPLATE = "{#if data.context.display_name??}" +
             "<{data.environment_url}/insights/inventory/{data.context.inventory_id}|{data.context.display_name}> " +
             "triggered {data.events.size()} event{#if data.events.size() > 1}s{/if}" +
             "{#else}{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered{/if} " +
             "from {data.bundle}/{data.application}. " +
             "<{data.environment_url}/insights/{data.application}|Open {data.application}>";
 
-    private static final String GOOGLE_SPACES_EXPECTED_MSG = "<//insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
+    private static final String TEAMS_EXPECTED_MSG = "<//insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
             "triggered 1 event from rhel/policies. <//insights/policies|Open policies>";
 
 
@@ -34,13 +34,13 @@ public class TeamsProcessorTest extends CamelProcessorTest {
     InternalTemporaryTeamsService internalTemporaryTeamsService;
 
     @Override
-    protected String getCuteTemplate() {
-        return GOOGLE_SPACES_TEMPLATE;
+    protected String getQuteTemplate() {
+        return TEAMS_TEMPLATE;
     }
 
     @Override
     protected String getExpectedMessage() {
-        return GOOGLE_SPACES_EXPECTED_MSG;
+        return TEAMS_EXPECTED_MSG;
     }
 
     @Override

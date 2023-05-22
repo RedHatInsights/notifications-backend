@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.camel;
 
+import com.redhat.cloud.notifications.processors.camel.slack.SlackRouteBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -27,9 +28,18 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
     private static final String COMMON_ERROR_MSG = "Message sending failed on ${routeId}: [orgId=${exchangeProperty.orgId}, " +
         "historyId=${exchangeProperty.historyId}, webhookUrl=${exchangeProperty.webhookUrl}] ";
 
+    private static final String ERROR_MSG_WITH_CHANNEL_PREFIX = "Message sending failed on ${routeId}: [orgId=${exchangeProperty.orgId}, " +
+        "historyId=${exchangeProperty.historyId}, webhookUrl=${exchangeProperty.webhookUrl}, channel=${exchangeProperty.channel}] ";
+
     private static final String ERROR_MSG_HTTP_OPERATION_FAILED = COMMON_ERROR_MSG + "with status code: [${exception.statusCode}] and body [${exception.responseBody}]";
 
     private static final String ERROR_MSG = COMMON_ERROR_MSG + "\n${exception.stacktrace}";
+
+    private static final String ERROR_MSG_WITH_CHANNEL_HTTP_OPERATION_FAILED = ERROR_MSG_WITH_CHANNEL_PREFIX + "with status code: [${exception.statusCode}] and body [${exception.responseBody}]";
+
+    private static final String ERROR_MSG_WITH_CHANNEL = ERROR_MSG_WITH_CHANNEL_PREFIX + "\n${exception.stacktrace}";
+
+    private static final String IS_INTEGRATION_WITH_CHANNEL_EXPRESSION =    "${routeId} in '" + SlackRouteBuilder.SLACK_INCOMING_ROUTE + "," + SlackRouteBuilder.SLACK_OUTGOING_ROUTE + "'";
 
     protected void configureCommonExceptionHandler() {
 
@@ -43,18 +53,33 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
             .redeliveryDelay(redeliveryDelay)
             .onRedelivery(retryCounterProcessor)
             .retryAttemptedLogLevel(INFO)
-            .log(INFO, ERROR_MSG);
+            .choice()
+                .when(simple(IS_INTEGRATION_WITH_CHANNEL_EXPRESSION))
+                    .log(INFO, ERROR_MSG_WITH_CHANNEL)
+                .otherwise()
+                    .log(INFO, ERROR_MSG)
+            .endChoice();
 
         /*
          * Simply logs more details than what Camel provides by default in case of HTTP error.
          */
         onException(HttpOperationFailedException.class)
-            .log(INFO, ERROR_MSG_HTTP_OPERATION_FAILED);
+            .choice()
+                .when(simple(IS_INTEGRATION_WITH_CHANNEL_EXPRESSION))
+                    .log(INFO, ERROR_MSG_WITH_CHANNEL_HTTP_OPERATION_FAILED)
+                .otherwise()
+                    .log(INFO, ERROR_MSG_HTTP_OPERATION_FAILED)
+            .endChoice();
 
         /*
          * Simply logs more details than what Camel provides by default.
          */
         onException(Exception.class)
-            .log(INFO, ERROR_MSG);
+            .choice()
+                .when(simple(IS_INTEGRATION_WITH_CHANNEL_EXPRESSION))
+                    .log(INFO, ERROR_MSG_WITH_CHANNEL)
+                .otherwise()
+                    .log(INFO, ERROR_MSG)
+            .endChoice();
     }
 }

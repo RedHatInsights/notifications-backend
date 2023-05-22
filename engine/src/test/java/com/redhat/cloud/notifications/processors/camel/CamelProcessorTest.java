@@ -42,7 +42,7 @@ public abstract class CamelProcessorTest {
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
 
-    protected abstract String getCuteTemplate();
+    protected abstract String getQuteTemplate();
 
     protected abstract String getExpectedMessage();
 
@@ -80,7 +80,7 @@ public abstract class CamelProcessorTest {
     protected void mockTemplate() {
         Template template = new Template();
         template.setName("Test template");
-        template.setData(getCuteTemplate());
+        template.setData(getQuteTemplate());
 
         IntegrationTemplate integrationTemplate = new IntegrationTemplate();
         integrationTemplate.setTheTemplate(template);

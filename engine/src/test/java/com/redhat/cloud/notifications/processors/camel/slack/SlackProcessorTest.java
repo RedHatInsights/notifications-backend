@@ -39,7 +39,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
     InternalTemporarySlackService internalTemporarySlackService;
 
     @Override
-    protected String getCuteTemplate() {
+    protected String getQuteTemplate() {
         return SLACK_TEMPLATE;
     }
 

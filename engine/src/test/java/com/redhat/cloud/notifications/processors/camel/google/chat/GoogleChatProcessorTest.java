@@ -15,15 +15,15 @@ import javax.inject.Inject;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class GoogleChatProcessorTest extends CamelProcessorTest {
 
-    private static final String GOOGLE_SPACES_TEMPLATE = "{#if data.context.display_name??}" +
+    private static final String GOOGLE_CHAT_TEMPLATE = "{\"text\":\"{#if data.context.display_name??}" +
             "<{data.environment_url}/insights/inventory/{data.context.inventory_id}|{data.context.display_name}> " +
             "triggered {data.events.size()} event{#if data.events.size() > 1}s{/if}" +
             "{#else}{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered{/if} " +
             "from {data.bundle}/{data.application}. " +
-            "<{data.environment_url}/insights/{data.application}|Open {data.application}>";
+            "<{data.environment_url}/insights/{data.application}|Open {data.application}>\"}";
 
-    private static final String GOOGLE_SPACES_EXPECTED_MSG = "<//insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
-            "triggered 1 event from rhel/policies. <//insights/policies|Open policies>";
+    private static final String GOOGLE_CHAT_EXPECTED_MSG = "{\"text\":\"<//insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
+            "triggered 1 event from rhel/policies. <//insights/policies|Open policies>\"}";
 
 
     @Inject
@@ -34,13 +34,13 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
     InternalTemporaryGoogleChatService internalTemporaryGoogleChatService;
 
     @Override
-    protected String getCuteTemplate() {
-        return GOOGLE_SPACES_TEMPLATE;
+    protected String getQuteTemplate() {
+        return GOOGLE_CHAT_TEMPLATE;
     }
 
     @Override
     protected String getExpectedMessage() {
-        return GOOGLE_SPACES_EXPECTED_MSG;
+        return GOOGLE_CHAT_EXPECTED_MSG;
     }
 
     @Override
