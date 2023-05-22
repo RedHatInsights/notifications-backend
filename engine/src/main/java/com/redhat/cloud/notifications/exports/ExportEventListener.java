@@ -23,7 +23,6 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
@@ -80,7 +79,6 @@ public class ExportEventListener {
      */
     @Blocking
     @Incoming(EXPORT_CHANNEL)
-    @Transactional
     public CompletionStage<Void> eventListener(final Message<String> message) {
         // If the integration is disabled simply ignore the messages.
         if (!this.featureFlipper.isExportServiceIntegrationEnabled()) {
