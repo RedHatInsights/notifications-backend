@@ -12,6 +12,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 
+@Path("/app/export/v1")
 @RegisterRestClient(configKey = "export-service")
 public interface ExportService {
 
@@ -24,7 +25,7 @@ public interface ExportService {
      * @param exportContents the payload of the request.
      */
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/app/export/v1/{exportRequestUuid}/{application}/{resourceUuid}/upload")
+    @Path("/{exportRequestUuid}/{application}/{resourceUuid}/upload")
     @POST
     @Retry(maxRetries = 3)
     void uploadJSONExport(
@@ -44,7 +45,7 @@ public interface ExportService {
      * @param exportContents the payload of the request.
      */
     @Consumes("text/csv")
-    @Path("/app/export/v1/{exportRequestUuid}/{application}/{resourceUuid}/upload")
+    @Path("/{exportRequestUuid}/{application}/{resourceUuid}/upload")
     @POST
     @Retry(maxRetries = 3)
     void uploadCSVExport(
@@ -65,7 +66,7 @@ public interface ExportService {
      * @param exportError the error payload.
      */
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/app/export/v1/{exportRequestUuid}/{application}/{resourceUuid}/error")
+    @Path("/{exportRequestUuid}/{application}/{resourceUuid}/error")
     @POST
     @Retry(maxRetries = 3)
     void notifyErrorExport(
