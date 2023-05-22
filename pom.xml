@@ -12,7 +12,6 @@
     <modules>
         <module>aggregator</module>
         <module>backend</module>
-        <module>camel-sender-demo</module>
         <module>checkstyle</module>
         <module>common</module>
         <module>common-aggregator</module>

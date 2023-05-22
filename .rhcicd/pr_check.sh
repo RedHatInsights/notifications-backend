@@ -33,7 +33,6 @@ source $CICD_ROOT/cji_smoke_test.sh
 
 # Build additional images that won't be pushed to Quay
 docker build . -f docker/Dockerfile.notifications-aggregator.jvm
-docker build . -f docker/Dockerfile.notifications-camel-demo-log.jvm
 
 # Until test results produce a junit XML file, create a dummy result file so Jenkins will pass
 mkdir -p $WORKSPACE/artifacts
