@@ -129,7 +129,7 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.send-single-email-for-multiple-recipients.enabled", defaultValue = "false")
     boolean sendSingleEmailForMultipleRecipientsEnabled;
 
-    @ConfigProperty(name = "notifications.export-service.enabled", defaultValue = "false")
+    @ConfigProperty(name = "mp.messaging.incoming.export-requests.enabled", defaultValue = "false")
     boolean exportServiceIntegrationEnabled;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
@@ -440,15 +440,6 @@ public class FeatureFlipper {
     public void setSendSingleEmailForMultipleRecipientsEnabled(boolean sendSingleEmailForMultipleRecipientsEnabled) {
         checkTestLaunchMode();
         this.sendSingleEmailForMultipleRecipientsEnabled = sendSingleEmailForMultipleRecipientsEnabled;
-    }
-
-    public boolean isExportServiceIntegrationEnabled() {
-        return this.exportServiceIntegrationEnabled;
-    }
-
-    public void setExportServiceIntegrationEnabled(final boolean enabled) {
-        checkTestLaunchMode();
-        this.exportServiceIntegrationEnabled = enabled;
     }
 
     /**

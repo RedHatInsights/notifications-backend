@@ -251,7 +251,7 @@ objects:
           value: ${NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED}
         - name: NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED
           value: ${NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED}
-        - name: NOTIFICATIONS_EXPORT_SERVICE_ENABLED
+        - name: MP_MESSAGING_INCOMING_EXPORT_REQUESTS_ENABLED
           value: ${NOTIFICATIONS_EXPORT_SERVICE_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
@@ -327,7 +327,7 @@ parameters:
   description: When this is true, all integration types except emails are disabled
   value: "true"
 - name: NOTIFICATIONS_LOG_LEVEL
-  description: Log level for com.redhat.cloud.notifications
+  description: Log level for com.redhat.cloud.notificationsq
   value: INFO
 - name: NOTIFICATIONS_CAMEL_MAXIMUM_REDELIVERIES
   description: Maximum number of redelivery attempts, which does not include the initial attempt.

@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.transformers.TransformersHelpers;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -68,9 +67,6 @@ public class ExportEventListenerTest {
     @Inject
     ExportEventListener exportEventListener;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     @Any
     @Inject
     InMemoryConnector inMemoryConnector;
@@ -92,8 +88,6 @@ public class ExportEventListenerTest {
         mockServer
             .when(request().withPath(".*/upload"))
             .respond(response().withStatusCode(200));
-
-        this.featureFlipper.setExportServiceIntegrationEnabled(true);
     }
 
     /**
@@ -102,8 +96,6 @@ public class ExportEventListenerTest {
     @AfterEach
     void clearMockServer() {
         MockServerLifecycleManager.getClient().reset();
-
-        this.featureFlipper.setExportServiceIntegrationEnabled(false);
     }
 
     /**

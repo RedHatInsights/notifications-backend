@@ -6,7 +6,6 @@ import com.redhat.cloud.event.apps.exportservice.v1.Format;
 import com.redhat.cloud.event.parser.ConsoleCloudEvent;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.transformers.event.CSVEventTransformer;
@@ -58,9 +57,6 @@ public class ExportEventListener {
     ExportService exportService;
 
     @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
     MeterRegistry meterRegistry;
 
     @Inject
@@ -80,11 +76,6 @@ public class ExportEventListener {
     @Blocking
     @Incoming(EXPORT_CHANNEL)
     public CompletionStage<Void> eventListener(final Message<String> message) {
-        // If the integration is disabled simply ignore the messages.
-        if (!this.featureFlipper.isExportServiceIntegrationEnabled()) {
-            return message.ack();
-        }
-
         // Attempt deserializing the received message as a Cloud Event.
         final ConsoleCloudEvent receivedEvent;
         try {
