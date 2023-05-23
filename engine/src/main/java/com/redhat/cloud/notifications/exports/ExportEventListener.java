@@ -78,7 +78,7 @@ public class ExportEventListener {
         try {
             receivedEvent = this.consoleCloudEventParser.fromJsonString(payload);
         } catch (final ConsoleCloudEventParsingException e) {
-            Log.errorf("the received payload from the 'export-requests' topic is not a parseable Cloud Event: %s", e.getMessage());
+            Log.errorf("the received payload from the 'export-requests' topic is not a parseable Cloud Event: %s", e);
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
@@ -90,7 +90,7 @@ public class ExportEventListener {
         try {
             exportRequestUuid = this.extractExportUuidFromSubject(receivedEvent.getSubject());
         } catch (final IllegalArgumentException | IllegalStateException e) {
-            Log.errorf("unable to extract the export request's UUID from the subject '%s': %s. Original Cloud Event: %s", receivedEvent.getSubject(), e.getMessage(), payload);
+            Log.errorf(e, "unable to extract the export request's UUID from the subject '%s'. Original Cloud Event: %s", receivedEvent.getSubject(), payload);
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
