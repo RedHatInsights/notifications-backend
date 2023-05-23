@@ -135,7 +135,7 @@ public class ExportEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
             return;
         }
@@ -154,7 +154,7 @@ public class ExportEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
             return;
         } catch (final IllegalStateException e) {
@@ -163,7 +163,7 @@ public class ExportEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, String.format("invalid 'from' filter date specified: %s", e.getMessage()));
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
             return;
         }
@@ -177,7 +177,7 @@ public class ExportEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
             return;
         } catch (final IllegalStateException e) {
@@ -186,7 +186,7 @@ public class ExportEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, String.format("invalid 'to' filter date specified: %s", e.getMessage()));
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
             return;
         }
@@ -199,7 +199,7 @@ public class ExportEventListener {
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the 'to' date cannot be lower than the 'from' date");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
             return;
         }
@@ -216,19 +216,19 @@ public class ExportEventListener {
                         case CSV -> {
                             resultsTransformer = new CSVEventTransformer();
                             contents = resultsTransformer.transform(events);
-                            this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, contents);
+                            this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, contents);
                         }
                         case JSON -> {
                             resultsTransformer = new JSONEventTransformer();
                             contents = resultsTransformer.transform(events);
-                            this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, contents);
+                            this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, contents);
                         }
                         default -> {
                             final ExportError exportError = new ExportError(
                                 HttpStatus.SC_BAD_REQUEST,
                                 String.format("the specified format '%s' is unsupported for the request", format)
                             );
-                            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+                            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
                         }
                     }
                 } catch (final TransformationException e) {
@@ -237,7 +237,7 @@ public class ExportEventListener {
                     this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
                     final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
-                    this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, application, resourceUuid, exportError);
+                    this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
                 }
             });
         }
