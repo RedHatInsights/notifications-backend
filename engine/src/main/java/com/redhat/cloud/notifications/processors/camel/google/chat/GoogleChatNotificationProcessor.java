@@ -14,4 +14,9 @@ public class GoogleChatNotificationProcessor extends CamelNotificationProcessor 
     protected String getIntegrationName() {
         return "Google Chat";
     }
+
+    @Override
+    public String getSource() {
+        return "googlechat";
+    }
 }

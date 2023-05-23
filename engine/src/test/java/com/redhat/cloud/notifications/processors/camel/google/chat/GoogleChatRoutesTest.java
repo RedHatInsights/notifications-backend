@@ -18,7 +18,8 @@ public class GoogleChatRoutesTest extends CamelRoutesTest {
         mockPath = "/camel/google_chat";
         mockPathKo = "/camel/google_chat_ko";
         mockPathRetries = "/camel/google_chat_retries";
-        mockRouteEndpoint = "mock:google_chat_test_routes";
+        routeEndpoint = "https://foo.com";
+        mockRouteEndpoint = "mock:https:foo.com";
         camelIncomingRouteName = GOOGLE_CHAT_INCOMING_ROUTE;
         camelOutgoingRouteName = GOOGLE_CHAT_OUTGOING_ROUTE;
         retryCounterName = CAMEL_GOOGLE_CHAT_RETRY_COUNTER;

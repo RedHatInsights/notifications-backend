@@ -11,7 +11,6 @@ import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
@@ -26,6 +25,8 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ORG;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
+import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_INTERNAL;
+import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
 
 public abstract class CamelProcessor extends EndpointTypeProcessor {
 
@@ -76,9 +77,9 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
         try {
             sendNotification(event, endpoint, historyId);
-            history.setStatus(NotificationStatus.SUCCESS);
+            history.setStatus(PROCESSING);
         } catch (Exception e) {
-            history.setStatus(NotificationStatus.FAILED_INTERNAL);
+            history.setStatus(FAILED_INTERNAL);
             history.setDetails(Map.of("failure", e.getMessage()));
             Log.infof(e, "Sending %s notification through Camel failed [eventId=%s, historyId=%s]", getIntegrationName(), event.getId(), historyId);
         }

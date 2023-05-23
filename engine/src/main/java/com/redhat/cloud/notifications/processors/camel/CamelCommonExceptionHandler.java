@@ -7,8 +7,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import javax.inject.Inject;
 import java.io.IOException;
 
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
 import static org.apache.camel.LoggingLevel.ERROR;
 import static org.apache.camel.LoggingLevel.INFO;
+import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.direct;
 
 public abstract class CamelCommonExceptionHandler extends RouteBuilder {
 
@@ -50,6 +53,7 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
          * logged eventually if none of the retry attempts were successful.
          */
         onException(IOException.class)
+            .handled(true)
             .maximumRedeliveries(maxRedeliveries)
             .redeliveryDelay(redeliveryDelay)
             .onRedelivery(retryCounterProcessor)
@@ -59,28 +63,39 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
                     .log(ERROR, ERROR_MSG_WITH_CHANNEL)
                 .otherwise()
                     .log(ERROR, ERROR_MSG)
-            .endChoice();
+            .end()
+            .setProperty(SUCCESSFUL, constant(false))
+            .setProperty(OUTCOME, simple("${exception.message}"))
+            .to(direct("return"));
 
         /*
          * Simply logs more details than what Camel provides by default in case of HTTP error.
          */
         onException(HttpOperationFailedException.class)
+            .handled(true)
             .choice()
                 .when(simple(IS_INTEGRATION_WITH_CHANNEL_EXPRESSION))
                     .log(ERROR, ERROR_MSG_WITH_CHANNEL_HTTP_OPERATION_FAILED)
                 .otherwise()
                     .log(ERROR, ERROR_MSG_HTTP_OPERATION_FAILED)
-            .endChoice();
+            .end()
+            .setProperty(SUCCESSFUL, constant(false))
+            .setProperty(OUTCOME, simple("${exception.message}"))
+            .to(direct("return"));
 
         /*
          * Simply logs more details than what Camel provides by default.
          */
         onException(Exception.class)
+            .handled(true)
             .choice()
                 .when(simple(IS_INTEGRATION_WITH_CHANNEL_EXPRESSION))
                     .log(ERROR, ERROR_MSG_WITH_CHANNEL)
                 .otherwise()
                     .log(ERROR, ERROR_MSG)
-            .endChoice();
+            .end()
+            .setProperty(SUCCESSFUL, constant(false))
+            .setProperty(OUTCOME, simple("${exception.message}"))
+            .to(direct("return"));
     }
 }

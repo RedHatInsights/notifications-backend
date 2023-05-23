@@ -8,6 +8,13 @@ import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import javax.inject.Inject;
 
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.HISTORY_ID;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.ORG_ID;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SOURCE;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.START_TIME;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.TYPE;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.WEBHOOK_URL;
+
 /*
  * This processor transforms an incoming notification, initially received as JSON data,
  * into a data structure that can be used by the Camel component to send a message.
@@ -25,10 +32,19 @@ public abstract class CamelNotificationProcessor implements Processor {
         String body = in.getBody(String.class);
         CamelNotification commonNotification = objectMapper.readValue(body, CamelNotification.class);
 
+        // This property will be used later to determine the invocation time.
+        exchange.setProperty(START_TIME, System.currentTimeMillis());
+
+        // Source of the Cloud Event returned to the Notifications engine.
+        exchange.setProperty(SOURCE, getSource());
+
+        // Type of the Cloud Event returned to the Notifications engine.
+        exchange.setProperty(TYPE, "com.redhat.console.notifications.toCamel." + getSource());
+
         // Then, we're using fields from the parsed CamelNotification to build the outgoing data.
-        exchange.setProperty("orgId", commonNotification.orgId);
-        exchange.setProperty("historyId", commonNotification.historyId);
-        exchange.setProperty("webhookUrl", commonNotification.webhookUrl);
+        exchange.setProperty(ORG_ID, commonNotification.orgId);
+        exchange.setProperty(HISTORY_ID, commonNotification.historyId);
+        exchange.setProperty(WEBHOOK_URL, commonNotification.webhookUrl);
         addExtraProperties(exchange, body);
         in.setBody(commonNotification.message);
 
@@ -46,4 +62,6 @@ public abstract class CamelNotificationProcessor implements Processor {
     protected String getIntegrationName() {
         throw new IllegalStateException("Integration name must be provided");
     }
+
+    protected abstract String getSource();
 }

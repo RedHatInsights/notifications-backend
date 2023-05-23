@@ -16,4 +16,9 @@ public class TeamsNotificationProcessor extends CamelNotificationProcessor {
     protected String getIntegrationName() {
         return "Teams";
     }
+
+    @Override
+    public String getSource() {
+        return "microsoftteams";
+    }
 }
