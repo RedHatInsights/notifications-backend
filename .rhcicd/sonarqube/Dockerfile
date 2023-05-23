@@ -1,5 +1,5 @@
-# Image available at https://images.paas.redhat.com/repository/alm/ubi9-java17-runtime.
-FROM images.paas.redhat.com/alm/ubi9-java17-runtime:mr39
+# Image available at https://catalog.redhat.com/software/containers/ubi9/openjdk-17-runtime.
+FROM registry.access.redhat.com/ubi9/openjdk-17-runtime
 
 # Switch to the root user to be able to install the required packages.
 USER root
