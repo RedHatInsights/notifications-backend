@@ -33,7 +33,7 @@ RUN mkdir --parents "/var/cache/yum/metadata" \
          -noprompt \
          -storepass "${cacerts_keystore_password}" \
          -trustcacerts \
-    && rm ${rh_it_root_ca_file}
+    && rm "${rh_it_root_ca_file}"
 
 # Go back to the default, unprivileged user.
 USER default
