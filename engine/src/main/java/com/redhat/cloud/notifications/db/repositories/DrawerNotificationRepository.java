@@ -18,7 +18,7 @@ public class DrawerNotificationRepository {
     }
 
     public List<DrawerNotification> getDrawerNotificationsByUserId(String userId) {
-        String query = "SELECT dn FROM DrawerNotification dn WHERE id.userId = :userId";
+        String query = "SELECT dn FROM DrawerNotification dn WHERE userId = :userId";
         return statelessSessionFactory.getCurrentSession().createQuery(query, DrawerNotification.class)
             .setParameter("userId", userId)
             .getResultList();

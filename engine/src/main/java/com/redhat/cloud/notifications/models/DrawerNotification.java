@@ -1,18 +1,22 @@
 package com.redhat.cloud.notifications.models;
 
-import javax.persistence.EmbeddedId;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.MapsId;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Objects;
+import java.util.UUID;
 
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 import static java.time.ZoneOffset.UTC;
 
 @Entity
@@ -20,8 +24,10 @@ import static java.time.ZoneOffset.UTC;
 public class DrawerNotification {
 
 
-    @EmbeddedId
-    private DrawerNotificationId id;
+    @Id
+    @GeneratedValue
+    @JsonProperty(access = READ_ONLY)
+    private UUID id;
 
     private Timestamp created;
 
@@ -29,28 +35,38 @@ public class DrawerNotification {
     @Size(max = 50)
     private String orgId;
 
-    @ManyToOne
-    @MapsId("eventId")
+    @NotNull
+    @Size(max = 50)
+    public String userId;
+
+    @NotNull
+    @Transient
+    private UUID eventId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id")
     private Event event;
 
     @NotNull
     private boolean read;
 
-    public DrawerNotificationId getId() {
+    public DrawerNotification() {
+    }
+
+    public UUID getId() {
         return id;
     }
 
-    public void setId(DrawerNotificationId id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
     public String getUserId() {
-        return id.userId;
+        return userId;
     }
 
     public void setUserId(String userId) {
-        id.userId = userId;
+        this.userId = userId;
     }
 
     public String getOrgId() {
@@ -85,11 +101,12 @@ public class DrawerNotification {
         this.read = read;
     }
 
-    public DrawerNotification() {
+    public UUID getEventId() {
+        return eventId;
     }
 
-    public DrawerNotification(DrawerNotificationId id) {
-        this.id = id;
+    public void setEventId(UUID eventId) {
+        this.eventId = eventId;
     }
 
     @PrePersist
@@ -98,22 +115,5 @@ public class DrawerNotification {
         if (created == null) {
             created = Timestamp.valueOf(LocalDateTime.now(UTC));
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o instanceof DrawerNotification) {
-            DrawerNotification other = (DrawerNotification) o;
-            return Objects.equals(id, other.id);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
     }
 }
