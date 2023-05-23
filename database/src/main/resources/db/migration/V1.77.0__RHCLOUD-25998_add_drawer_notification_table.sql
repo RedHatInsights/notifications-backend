@@ -1,6 +1,6 @@
 CREATE TABLE public.drawer_notification (
     id UUID NOT NULL,
-    user_id varchar(50) NOT NULL,
+    user_id text NOT NULL,
     org_id text NOT NULL,
     event_id uuid NOT NULL,
     created timestamp NOT NULL,

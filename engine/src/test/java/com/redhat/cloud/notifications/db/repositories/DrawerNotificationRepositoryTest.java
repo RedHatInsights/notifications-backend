@@ -79,16 +79,24 @@ public class DrawerNotificationRepositoryTest {
             notificationDrawer2.setOrgId(DEFAULT_ORG_ID);
             drawerNotificationsRepository.create(notificationDrawer2);
 
-            List<DrawerNotification> drawerNotificationUser1 = drawerNotificationsRepository.getDrawerNotificationsByUserId("user-1");
-            List<DrawerNotification> drawerNotificationUser3 = drawerNotificationsRepository.getDrawerNotificationsByUserId("user-3");
+            List<DrawerNotification> drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
+            List<DrawerNotification> drawerNotificationUser3 = getDrawerNotificationsByUserId("user-3");
 
             assertEquals(1, drawerNotificationUser1.size());
             assertNotNull(drawerNotificationUser1.get(0).getCreated());
             assertEquals(0, drawerNotificationUser3.size());
 
             entityManager.createQuery("DELETE FROM Event WHERE id = :uuid").setParameter("uuid", createdEvent.getId()).executeUpdate();
-            drawerNotificationUser1 = drawerNotificationsRepository.getDrawerNotificationsByUserId("user-1");
+            drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
             assertEquals(0, drawerNotificationUser1.size());
         });
+    }
+
+    public List<DrawerNotification> getDrawerNotificationsByUserId(String userId) {
+        String query = "SELECT dn FROM DrawerNotification dn WHERE dn.userId = :userId and dn.orgId = :orgId";
+        return entityManager.createQuery(query, DrawerNotification.class)
+            .setParameter("userId", userId)
+            .setParameter("orgId", DEFAULT_ORG_ID)
+            .getResultList();
     }
 }
