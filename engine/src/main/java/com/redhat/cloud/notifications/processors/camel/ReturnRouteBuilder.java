@@ -11,7 +11,7 @@ public class ReturnRouteBuilder extends EndpointRouteBuilder {
 
     public static final String RETURN_ROUTE_NAME = "return";
 
-    @ConfigProperty(name = "notifications.camel.kafka-return-topic")
+    @ConfigProperty(name = "mp.messaging.fromcamel.topic")
     String kafkaReturnTopic;
 
     @Inject

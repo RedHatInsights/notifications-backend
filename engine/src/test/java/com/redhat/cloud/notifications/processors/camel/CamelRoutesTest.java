@@ -35,7 +35,7 @@ import static org.mockserver.verify.VerificationTimes.atLeast;
 
 public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
 
-    @ConfigProperty(name = "notifications.camel.kafka-return-topic")
+    @ConfigProperty(name = "mp.messaging.fromcamel.topic")
     protected String kafkaReturnTopic;
 
     protected String restPath;
