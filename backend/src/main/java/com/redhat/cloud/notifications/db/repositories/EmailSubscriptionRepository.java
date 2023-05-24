@@ -96,12 +96,12 @@ public class EmailSubscriptionRepository {
     }
 
     public int subscribeEventType(String orgId, String username, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
-        // Because Drawer subscription are opt-out by default
-        // We will store un-subscriptions only on database
-        if (DRAWER == subscriptionType) {
-            return deleteEventTypeSubscription(orgId, username, eventTypeId, subscriptionType);
-        } else {
+        // Opt-in: only subscriptions are stored on database
+        // Opt-on: only un-subscriptions are stored on database
+        if (subscriptionType.isOptIn()) {
             return addEventTypeSubscription(orgId, username, eventTypeId, subscriptionType, true);
+        } else {
+            return deleteEventTypeSubscription(orgId, username, eventTypeId, subscriptionType);
         }
     }
 
@@ -122,12 +122,12 @@ public class EmailSubscriptionRepository {
     }
 
     public int unsubscribeEventType(String orgId, String userId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
-        if (DRAWER == subscriptionType) {
-            // Because Drawer subscription are opt-out by default
-            // We will store un-subscriptions only on database
-            return addEventTypeSubscription(orgId, userId, eventTypeId, subscriptionType, false);
-        } else {
+        // Opt-in: only subscriptions are stored on database
+        // Opt-on: only un-subscriptions are stored on database
+        if (subscriptionType.isOptIn()) {
             return deleteEventTypeSubscription(orgId, userId, eventTypeId, subscriptionType);
+        } else {
+            return addEventTypeSubscription(orgId, userId, eventTypeId, subscriptionType, false);
         }
     }
 

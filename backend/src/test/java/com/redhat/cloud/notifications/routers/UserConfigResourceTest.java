@@ -150,7 +150,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return result;
     }
 
-    private SettingsValues createSettingsValue(String bundle, String application, Boolean daily, Boolean instant) {
+    private SettingsValues createSettingsValue(String bundle, String application, boolean daily, boolean instant) {
         ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
         applicationSettingsValue.notifications.put(DAILY, daily);
         applicationSettingsValue.notifications.put(INSTANT, instant);
@@ -164,7 +164,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return settingsValues;
     }
 
-    private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, Boolean daily, Boolean instant, Boolean drawer) {
+    private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
 
         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
         eventTypeSettingsValue.emailSubscriptionTypes.put(DAILY, daily);

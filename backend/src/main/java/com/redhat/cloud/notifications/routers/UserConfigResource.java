@@ -392,7 +392,7 @@ public class UserConfigResource {
                     // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
                     boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
                     if (supported) {
-                        eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, emailSubscriptionType == DRAWER);
+                        eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, emailSubscriptionType.isOptOut());
                     }
                 }
             }
