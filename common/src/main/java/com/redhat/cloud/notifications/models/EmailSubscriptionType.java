@@ -4,7 +4,9 @@ import java.time.Duration;
 
 public enum EmailSubscriptionType {
     INSTANT(null),
-    DAILY(Duration.ofDays(1));
+    DAILY(Duration.ofDays(1)),
+    DRAWER(null);
+
 
     private Duration duration;
 

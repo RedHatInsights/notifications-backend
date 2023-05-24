@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -205,7 +206,8 @@ public class UserConfigResource {
                 for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
                     if (featureFlipper.isInstantEmailsEnabled() || emailSubscriptionType != INSTANT) {
                         // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
-                        boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
+                        boolean supported = emailSubscriptionType != DRAWER
+                            && templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
                         if (supported) {
                             applicationSettingsValue.notifications.put(emailSubscriptionType, false);
                         }
@@ -390,7 +392,7 @@ public class UserConfigResource {
                     // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
                     boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
                     if (supported) {
-                        eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, false);
+                        eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, emailSubscriptionType == DRAWER);
                     }
                 }
             }
@@ -417,7 +419,7 @@ public class UserConfigResource {
                     SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettings = appSettings.eventTypes.get(emailSubscription.getEventType().getName());
                     if (eventTypeSettings != null) {
                         if (eventTypeSettings.emailSubscriptionTypes.containsKey(emailSubscription.getType())) {
-                            eventTypeSettings.emailSubscriptionTypes.put(emailSubscription.getType(), true);
+                            eventTypeSettings.emailSubscriptionTypes.put(emailSubscription.getType(), emailSubscription.isSubscribed());
                         }
                     }
                 }

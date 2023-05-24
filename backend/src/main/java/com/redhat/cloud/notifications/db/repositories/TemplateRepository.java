@@ -317,19 +317,24 @@ public class TemplateRepository {
     }
 
     public boolean isEmailSubscriptionSupported(String bundleName, String appName, EmailSubscriptionType subscriptionType) {
-        if (subscriptionType == INSTANT) {
-            if (featureFlipper.isUseDefaultTemplate()) {
-                return true;
-            }
+        switch (subscriptionType) {
+            case INSTANT:
+                if (featureFlipper.isUseDefaultTemplate()) {
+                    return true;
+                }
 
-            String hql = "SELECT COUNT(*) FROM InstantEmailTemplate " +
-                "WHERE eventType.application.bundle.name = :bundleName AND eventType.application.name = :appName";
-            return entityManager.createQuery(hql, Long.class)
-                .setParameter("bundleName", bundleName)
-                .setParameter("appName", appName)
-                .getSingleResult() > 0;
-        } else {
-            return isEmailAggregationSupported(bundleName, appName, List.of(subscriptionType));
+                String hql = "SELECT COUNT(*) FROM InstantEmailTemplate " +
+                    "WHERE eventType.application.bundle.name = :bundleName AND eventType.application.name = :appName";
+                return entityManager.createQuery(hql, Long.class)
+                    .setParameter("bundleName", bundleName)
+                    .setParameter("appName", appName)
+                    .getSingleResult() > 0;
+            case DAILY:
+                return isEmailAggregationSupported(bundleName, appName, List.of(subscriptionType));
+            case DRAWER:
+                return featureFlipper.isDrawerEnabled();
+            default:
+                return false;
         }
     }
 

@@ -6,6 +6,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapsId;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
 @Entity
@@ -19,6 +20,9 @@ public class EventTypeEmailSubscription {
     @MapsId("eventTypeId")
     @JoinColumn(name = "event_type_id")
     private EventType eventType;
+
+    @NotNull
+    private boolean subscribed;
 
     public void setId(EventTypeEmailSubscriptionId id) {
         this.id = id;
@@ -54,6 +58,14 @@ public class EventTypeEmailSubscription {
 
     public void setEventType(EventType eventType) {
         this.eventType = eventType;
+    }
+
+    public boolean isSubscribed() {
+        return subscribed;
+    }
+
+    public void setSubscribed(boolean subscribed) {
+        this.subscribed = subscribed;
     }
 
     @Override

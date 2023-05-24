@@ -200,6 +200,8 @@ objects:
           value: ${SOURCES_ENABLED}
         - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
           value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
+        - name: NOTIFICATIONS_DRAWER_ENABLED
+          value: ${NOTIFICATIONS_DRAWER_ENABLED}
         - name: SOURCES_PSK
           valueFrom:
             secretKeyRef:
@@ -345,4 +347,6 @@ parameters:
 - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
   value: "false"
 - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_DRAWER_ENABLED
   value: "false"
