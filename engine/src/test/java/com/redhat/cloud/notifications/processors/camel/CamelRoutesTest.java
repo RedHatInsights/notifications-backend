@@ -23,6 +23,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static com.redhat.cloud.notifications.processors.camel.OutgoingCloudEventBuilder.CE_SPEC_VERSION;
 import static com.redhat.cloud.notifications.processors.camel.OutgoingCloudEventBuilder.CE_TYPE;
+import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder.RETURN_ROUTE_NAME;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
@@ -210,7 +211,7 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
     }
 
     protected MockEndpoint mockKafkaEndpoint() throws Exception {
-        adviceWith("return", context(), new AdviceWithRouteBuilder() {
+        adviceWith(RETURN_ROUTE_NAME, context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
                 mockEndpointsAndSkip("kafka:" + kafkaReturnTopic + "*");

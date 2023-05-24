@@ -9,6 +9,8 @@ import javax.inject.Inject;
 @ApplicationScoped
 public class ReturnRouteBuilder extends EndpointRouteBuilder {
 
+    public static final String RETURN_ROUTE_NAME = "return";
+
     @ConfigProperty(name = "notifications.camel.kafka-return-topic")
     String kafkaReturnTopic;
 
@@ -17,8 +19,8 @@ public class ReturnRouteBuilder extends EndpointRouteBuilder {
 
     @Override
     public void configure() {
-        from(direct("return"))
-                .routeId("return")
+        from(direct(RETURN_ROUTE_NAME))
+                .routeId(RETURN_ROUTE_NAME)
                 .process(outgoingCloudEventBuilder)
                 .to(kafka(kafkaReturnTopic));
     }

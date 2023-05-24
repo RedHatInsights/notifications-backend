@@ -8,6 +8,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
+import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder.RETURN_ROUTE_NAME;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_METHOD;
@@ -52,6 +53,6 @@ public class TeamsRouteBuilder extends CamelCommonExceptionHandler {
                 .toD("${exchangeProperty.webhookUrl}", maxEndpointCacheSize)
                 .setProperty(SUCCESSFUL, constant(true))
                 .setProperty(OUTCOME, simple("Event ${exchangeProperty.historyId} sent successfully"))
-                .to(direct("return"));
+                .to(direct(RETURN_ROUTE_NAME));
     }
 }

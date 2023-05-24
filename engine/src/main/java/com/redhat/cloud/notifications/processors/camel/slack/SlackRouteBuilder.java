@@ -7,6 +7,7 @@ import javax.inject.Inject;
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
+import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder.RETURN_ROUTE_NAME;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.direct;
 
@@ -44,6 +45,6 @@ public class SlackRouteBuilder extends CamelCommonExceptionHandler {
                 .toD("slack:${exchangeProperty.channel}?webhookUrl=${exchangeProperty.webhookUrl}", maxEndpointCacheSize)
                 .setProperty(SUCCESSFUL, constant(true))
                 .setProperty(OUTCOME, simple("Event ${exchangeProperty.historyId} sent successfully"))
-                .to(direct("return"));
+                .to(direct(RETURN_ROUTE_NAME));
     }
 }

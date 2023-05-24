@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
+import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder.RETURN_ROUTE_NAME;
 import static org.apache.camel.LoggingLevel.ERROR;
 import static org.apache.camel.LoggingLevel.INFO;
 import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.direct;
@@ -66,7 +67,7 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
             .end()
             .setProperty(SUCCESSFUL, constant(false))
             .setProperty(OUTCOME, simple("${exception.message}"))
-            .to(direct("return"));
+            .to(direct(RETURN_ROUTE_NAME));
 
         /*
          * Simply logs more details than what Camel provides by default in case of HTTP error.
@@ -81,7 +82,7 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
             .end()
             .setProperty(SUCCESSFUL, constant(false))
             .setProperty(OUTCOME, simple("${exception.message}"))
-            .to(direct("return"));
+            .to(direct(RETURN_ROUTE_NAME));
 
         /*
          * Simply logs more details than what Camel provides by default.
@@ -96,6 +97,6 @@ public abstract class CamelCommonExceptionHandler extends RouteBuilder {
             .end()
             .setProperty(SUCCESSFUL, constant(false))
             .setProperty(OUTCOME, simple("${exception.message}"))
-            .to(direct("return"));
+            .to(direct(RETURN_ROUTE_NAME));
     }
 }
