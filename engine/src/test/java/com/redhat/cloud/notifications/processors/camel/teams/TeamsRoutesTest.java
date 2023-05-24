@@ -17,7 +17,8 @@ public class TeamsRoutesTest extends CamelRoutesTest {
         mockPath = "/camel/teams";
         mockPathKo = "/camel/teams_ko";
         mockPathRetries = "/camel/teams_retries";
-        mockRouteEndpoint = "mock:teams_test_routes";
+        routeEndpoint = "https://foo.com";
+        mockRouteEndpoint = "mock:https:foo.com";
         camelIncomingRouteName = TEAMS_INCOMING_ROUTE;
         camelOutgoingRouteName = TEAMS_OUTGOING_ROUTE;
         retryCounterName = CAMEL_TEAMS_RETRY_COUNTER;

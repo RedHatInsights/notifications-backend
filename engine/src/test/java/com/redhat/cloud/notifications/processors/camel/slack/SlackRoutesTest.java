@@ -8,7 +8,6 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -18,6 +17,7 @@ import static com.redhat.cloud.notifications.processors.camel.slack.SlackRouteBu
 import static com.redhat.cloud.notifications.processors.camel.slack.SlackRouteBuilder.SLACK_OUTGOING_ROUTE;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 
 @QuarkusTest
@@ -60,12 +60,13 @@ public class SlackRoutesTest extends CamelRoutesTest {
                 mockEndpointsAndSkip("slack:" + testRoutesChannel + "*");
             }
         });
+        MockEndpoint kafkaEndpoint = mockKafkaEndpoint();
 
         SlackNotification notification = buildCamelSlackNotification("https://foo.bar");
         notification.channel = testRoutesChannel;
 
         // Camel encodes the '#' character into '%23' when building the mock endpoint URI.
-        MockEndpoint slackEndpoint = getMockEndpoint("mock:slack:" + URLEncoder.encode(testRoutesChannel, StandardCharsets.UTF_8));
+        MockEndpoint slackEndpoint = getMockEndpoint("mock:slack:" + URLEncoder.encode(testRoutesChannel, UTF_8));
         slackEndpoint.expectedBodiesReceived(notification.message);
 
         given()
@@ -75,5 +76,6 @@ public class SlackRoutesTest extends CamelRoutesTest {
             .then().statusCode(200);
 
         slackEndpoint.assertIsSatisfied();
+        assertKafkaIsSatisfied(notification, kafkaEndpoint, true, "Event " + notification.historyId + " sent successfully");
     }
 }

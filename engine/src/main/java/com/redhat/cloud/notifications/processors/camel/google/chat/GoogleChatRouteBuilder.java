@@ -4,13 +4,17 @@ import com.redhat.cloud.notifications.processors.camel.CamelCommonExceptionHandl
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
+import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder.RETURN_ROUTE_NAME;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_METHOD;
+import static org.apache.camel.builder.endpoint.StaticEndpointBuilders.direct;
 
 @ApplicationScoped
 public class GoogleChatRouteBuilder extends CamelCommonExceptionHandler {
@@ -53,6 +57,9 @@ public class GoogleChatRouteBuilder extends CamelCommonExceptionHandler {
                  * That involve to split Urls parameters, surround each value by `RAW()` instruction, then concat all those to rebuild endpoint url.
                  * To avoid all those steps, we decode the full url, then Camel will encode it to send the expected format to Google servers.
                  */
-                .toD(URLDecoder.decode("${exchangeProperty.webhookUrl}", StandardCharsets.UTF_8), maxEndpointCacheSize);
+                .toD(URLDecoder.decode("${exchangeProperty.webhookUrl}", UTF_8), maxEndpointCacheSize)
+                .setProperty(SUCCESSFUL, constant(true))
+                .setProperty(OUTCOME, simple("Event ${exchangeProperty.historyId} sent successfully"))
+                .to(direct(RETURN_ROUTE_NAME));
     }
 }

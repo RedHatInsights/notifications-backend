@@ -31,6 +31,11 @@ public class SlackNotificationProcessor extends CamelNotificationProcessor {
         exchange.setProperty("channel", slackNotification.channel);
     }
 
+    @Override
+    public String getSource() {
+        return "slack";
+    }
+
     private SlackNotification getSlackNotification(final String exchangeBody) throws JsonProcessingException {
         return objectMapper.readValue(exchangeBody, SlackNotification.class);
     }
