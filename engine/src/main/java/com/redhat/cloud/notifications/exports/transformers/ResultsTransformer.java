@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.exports;
+package com.redhat.cloud.notifications.exports.transformers;
 
 import java.util.List;
 

@@ -8,6 +8,8 @@ import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.exports.transformers.ResultsTransformer;
+import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.exports.transformers.event.CSVEventTransformer;
 import com.redhat.cloud.notifications.exports.transformers.event.JSONEventTransformer;
 import com.redhat.cloud.notifications.models.Event;

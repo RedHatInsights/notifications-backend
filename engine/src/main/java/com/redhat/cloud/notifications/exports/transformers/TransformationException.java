@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.exports;
+package com.redhat.cloud.notifications.exports.transformers;
 
 /**
  * A wrapper exception class which wraps any transformation errors.
