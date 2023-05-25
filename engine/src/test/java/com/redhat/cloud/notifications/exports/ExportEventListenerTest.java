@@ -100,7 +100,10 @@ public class ExportEventListenerTest {
     @Test
     void testInvalidResourceTypeRaisesError() {
         // Save the counter values to assert the "errors count" change later.
+        // Also save the successes counter, to make sure that it doesn't get
+        // accidentally incremented.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
@@ -145,8 +148,10 @@ public class ExportEventListenerTest {
         Assertions.assertEquals("400", body.getString("code"), "unexpected error code received in the error's body");
         Assertions.assertEquals("the specified resource type is unsupported by this application", body.getString("message"), "unexpected error message received in the error's body");
 
-        // Assert that the errors counter was incremented.
+        // Assert that the errors counter was incremented, and that the
+        // successes counter did not increment.
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 
     /**
@@ -156,7 +161,10 @@ public class ExportEventListenerTest {
     @Test
     void testNonParseableEventsFromFilterRaisesError() {
         // Save the counter values to assert the "errors count" change later.
+        // Also save the successes counter, to make sure that it doesn't get
+        // accidentally incremented.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
@@ -201,8 +209,10 @@ public class ExportEventListenerTest {
         Assertions.assertEquals("400", body.getString("code"), "unexpected error code received in the error's body");
         Assertions.assertEquals("unable to parse the 'from' date filter with the 'yyyy-mm-dd' format", body.getString("message"), "unexpected error message received in the error's body");
 
-        // Assert that the errors counter was incremented.
+        // Assert that the errors counter was incremented, and that the
+        // successes counter did not increment.
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 
     /**
@@ -212,7 +222,10 @@ public class ExportEventListenerTest {
     @Test
     void testNonParseableEventsToFilterRaisesError() {
         // Save the counter values to assert the "errors count" change later.
+        // Also save the successes counter, to make sure that it doesn't get
+        // accidentally incremented.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
@@ -257,8 +270,10 @@ public class ExportEventListenerTest {
         Assertions.assertEquals("400", body.getString("code"), "unexpected error code received in the error's body");
         Assertions.assertEquals("unable to parse the 'to' date filter with the 'yyyy-mm-dd' format", body.getString("message"), "unexpected error message received in the error's body");
 
-        // Assert that the errors counter was incremented.
+        // Assert that the errors counter was incremented, and that the
+        // successes counter did not increment.
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 
     /**
@@ -268,7 +283,10 @@ public class ExportEventListenerTest {
     @Test
     void testInvalidEventsFiltersRaisesErrors() {
         // Save the counter values to assert the "errors count" change later.
+        // Also save the successes counter, to make sure that it doesn't get
+        // accidentally incremented.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         record TestCase(LocalDate from, LocalDate to, String expectedErrorMessage) { }
 
@@ -382,8 +400,10 @@ public class ExportEventListenerTest {
             this.clearMockServer();
         }
 
-        // Assert that the errors counter was incremented.
+        // Assert that the errors counter was incremented, and that the
+        // successes counter did not increment.
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, testCases.size());
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 
     /**
@@ -394,6 +414,9 @@ public class ExportEventListenerTest {
     @Test
     void testExportEventsJSON() throws IOException, URISyntaxException {
         // Save the counter values to assert the "successes count" change later.
+        // Also save the "errors" counter to assert that it did not
+        // accidentally increment.
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
@@ -460,7 +483,9 @@ public class ExportEventListenerTest {
         // spot where the problem is.
         Assertions.assertEquals(expectedJson.encodePrettily(), resultJson.encodePrettily(), "unexpected JSON body received");
 
-        // Assert that the successes counter was incremented.
+        // Assert that the successes counter was incremented, and that the
+        // failures counter did not increment.
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 0);
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 1);
     }
 
@@ -472,6 +497,9 @@ public class ExportEventListenerTest {
     @Test
     void testExportEventsCSV() throws IOException, URISyntaxException {
         // Save the counter values to assert the "successes count" change later.
+        // Also save the "errors" counter to assert that it did not
+        // accidentally increment.
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
@@ -529,7 +557,9 @@ public class ExportEventListenerTest {
 
         Assertions.assertEquals(expectedContents, request.getBodyAsString(), "unexpected CSV body received");
 
-        // Assert that the successes counter was incremented.
+        // Assert that the successes counter was incremented, and that the
+        // failures counter did not increment.
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 0);
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 1);
     }
 
