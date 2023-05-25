@@ -17,6 +17,7 @@ objects:
     - notifications-backend
     - rbac
     optionalDependencies:
+    - export-service
     - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
     database:
       sharedDbAppName: notifications-backend
