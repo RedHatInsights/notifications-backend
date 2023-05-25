@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
 import com.redhat.cloud.notifications.exports.transformers.TransformersHelpers;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -39,15 +40,12 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
-import static com.redhat.cloud.notifications.exports.ExportEventListener.FILTER_DATE_FROM;
-import static com.redhat.cloud.notifications.exports.ExportEventListener.FILTER_DATE_TO;
 import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -55,9 +53,6 @@ import static org.mockserver.model.HttpResponse.response;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ExportEventListenerTest {
-
-    private static final LocalDate TODAY = LocalDate.now(ZoneOffset.UTC);
-
     @ConfigProperty(name = "export-service.psk")
     String exportServicePsk;
 
@@ -304,7 +299,7 @@ public class ExportEventListenerTest {
             new TestCase(
                 today.minusDays(5),
                 today.minusDays(10),
-                "the 'to' date cannot be lower than the 'from' date"
+                "'from' date must be earlier than the 'to' date"
             )
         );
 
@@ -340,11 +335,11 @@ public class ExportEventListenerTest {
             filters.clear();
 
             if (testCase.from != null) {
-                filters.put(ExportEventListener.FILTER_DATE_FROM, testCase.from.toString());
+                filters.put(EventFiltersExtractor.FILTER_DATE_FROM, testCase.from.toString());
             }
 
             if (testCase.to != null) {
-                filters.put(ExportEventListener.FILTER_DATE_TO, testCase.to.toString());
+                filters.put(EventFiltersExtractor.FILTER_DATE_TO, testCase.to.toString());
             }
 
             // Serialize the payload and send it to the Kafka topic.
@@ -534,74 +529,6 @@ public class ExportEventListenerTest {
 
         // Assert that the successes counter was incremented.
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 1);
-    }
-
-    /**
-     * Tests that when no dates are provided the function under test does not
-     * raise any exceptions.
-     */
-    @Test
-    void testNoDate() {
-        this.exportEventListener.extractDateFromFilter(new HashMap<>(), ExportEventListener.FILTER_DATE_FROM);
-    }
-
-    /**
-     * Tests that when a proper date is provided in the filters map, it is
-     * correctly extracted from the map.
-     */
-    @Test
-    void testValidDate() {
-        final Map<String, Object> filters = Map.of(
-            ExportEventListener.FILTER_DATE_FROM,
-            TODAY.toString()
-        );
-
-        final LocalDate result = this.exportEventListener.extractDateFromFilter(filters, FILTER_DATE_FROM);
-
-        Assertions.assertEquals(TODAY, result, "the date was not correctly extracted from the map");
-    }
-
-    /**
-     * Tests that "from" dates that are in the future cause an exception to
-     * raise.
-     */
-    @Test
-    void testInvalidDateFuture() {
-        final Map<String, Object> filters = Map.of(
-            ExportEventListener.FILTER_DATE_FROM,
-            TODAY
-                .plusDays(1)
-                .toString()
-        );
-
-        final IllegalStateException exception = Assertions.assertThrows(
-            IllegalStateException.class,
-            () -> this.exportEventListener.extractDateFromFilter(filters, FILTER_DATE_FROM)
-        );
-
-        Assertions.assertEquals("the specified date is in the future", exception.getMessage(), "unexpected error message when extracting and validating a date from the future");
-    }
-
-    /**
-     * Tests that "from" dates that are older than a month cause an exception
-     * to raise.
-     */
-    @Test
-    void testInvalidDateOlderMonth() {
-        final Map<String, Object> filters = Map.of(
-            ExportEventListener.FILTER_DATE_TO,
-            TODAY
-                .minusMonths(1)
-                .minusDays(1)
-                .toString()
-        );
-
-        final IllegalStateException exception = Assertions.assertThrows(
-            IllegalStateException.class,
-            () -> this.exportEventListener.extractDateFromFilter(filters, FILTER_DATE_TO)
-        );
-
-        Assertions.assertEquals("the specified date is older than a month", exception.getMessage(), "unexpected error message when extracting and validating a date older than a month");
     }
 
     /**

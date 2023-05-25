@@ -8,6 +8,9 @@ import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
+import com.redhat.cloud.notifications.exports.filters.events.EventFilters;
+import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
 import com.redhat.cloud.notifications.exports.transformers.ResultsTransformer;
 import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.exports.transformers.event.CSVEventTransformer;
@@ -23,11 +26,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -40,8 +39,6 @@ public class ExportEventListener {
     public static final String CE_EXPORT_REQUEST_TYPE = "com.redhat.console.export-service.request";
     public static final String EXPORT_CHANNEL = "export-requests";
     public static final String EXPORT_SERVICE_URN = "urn:redhat:source:console:app:export-service";
-    public static final String FILTER_DATE_FROM = "from";
-    public static final String FILTER_DATE_TO = "to";
     public static final String RESOURCE_TYPE_EVENTS = "urn:redhat:application:notifications:export:events";
 
     protected static final String EXPORTS_SERVICE_FAILURES_COUNTER = "exports.service.failures";
@@ -49,6 +46,9 @@ public class ExportEventListener {
 
     private final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
     private final Pattern subjectUuidExtractPattern = Pattern.compile("^urn:redhat:subject:export-service:request:(?<uuid>.+)$");
+
+    @Inject
+    EventFiltersExtractor eventFiltersExtractor;
 
     @Inject
     EventRepository eventRepository;
@@ -144,72 +144,23 @@ public class ExportEventListener {
 
         final Format format = exportRequest.getFormat();
         final String orgId = receivedEvent.getOrgId();
-        final Map<String, Object> filters = exportRequest.getFilters();
-
-        // Extract the "from" and/or "to" date filters.
-        final LocalDate from;
-        try {
-            from = this.extractDateFromFilter(filters, FILTER_DATE_FROM);
-        } catch (final DateTimeParseException e) {
-            Log.debugf("[export_request_uuid: %s][resource_uuid: %s] bad \"from\" date format. Notifying the export service with a 400 error. Received date: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_FROM));
-
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
-
-            final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-
-            return;
-        } catch (final IllegalStateException e) {
-            Log.debugf("[export_request_uuid: %][resource_uuid: %s] well formatted but invalid \"from\" date received: %s. Error cause: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_FROM), e.getMessage());
-
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
-
-            final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, String.format("invalid 'from' filter date specified: %s", e.getMessage()));
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-
-            return;
-        }
-
-        final LocalDate to;
-        try {
-            to = this.extractDateFromFilter(filters, FILTER_DATE_TO);
-        } catch (final DateTimeParseException e) {
-            Log.debugf("[export_request_uuid: %][resource_uuid: %s] bad \"to\" date format. Notifying the export service with a 400 error. Received date: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO));
-
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
-
-            final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-
-            return;
-        } catch (final IllegalStateException e) {
-            Log.debugf("[export_request_uuid: %][resource_uuid: %s] well formatted but invalid \"to\" date received: %s. Error cause: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO), e.getMessage());
-
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
-
-            final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, String.format("invalid 'to' filter date specified: %s", e.getMessage()));
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-
-            return;
-        }
-
-        // Make sure that the "from" date is before of the "to" date, to avoid
-        // hitting the database with conditions that would report no results.
-        if (to != null && from != null && to.isBefore(from)) {
-            Log.debugf("[export_request_uuid: %s][resource_uuid: %s] the received \"to\" date filter [%s] is before the \"from\" date filter [%s]", exportRequestUuid, resourceUuid, from.toString(), to.toString());
-
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
-
-            final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the 'to' date cannot be lower than the 'from' date");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-
-            return;
-        }
 
         // Handle exporting the requested resource type.
         if (RESOURCE_TYPE_EVENTS.equals(resource)) {
+            final EventFilters eventFilters;
+            try {
+                eventFilters = this.eventFiltersExtractor.extract(exportRequestUuid, resourceUuid, exportRequest);
+            } catch (FilterExtractionException e) {
+                this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
+
+                final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, e.getMessage());
+                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+
+                return;
+            }
+
             this.statelessSessionFactory.withSession(session -> {
-                final List<Event> events = this.eventRepository.findEventsToExport(orgId, from, to);
+                final List<Event> events = this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to());
 
                 final ResultsTransformer<Event> resultsTransformer;
                 final String contents;
@@ -266,38 +217,6 @@ public class ExportEventListener {
     boolean isAnExportRequest(final ConsoleCloudEvent cloudEvent) {
         return EXPORT_SERVICE_URN.equals(cloudEvent.getSource())
             && CE_EXPORT_REQUEST_TYPE.equals(cloudEvent.getType());
-    }
-
-    /**
-     * Extracts the date from the provided filter. It also looks if the given
-     * date is valid, in the sense of it not being older than a month or in the
-     * future. {@code null} dates are considered valid, since that means that
-     * there is no filter to apply to the queries.
-     * @param filters the map of filters.
-     * @param filterName the name of the filter of the date to extract.
-     * @return the parsed date or {@code null} if there is no date in the
-     * specified filter.
-     */
-    LocalDate extractDateFromFilter(final Map<String, Object> filters, final String filterName) {
-        final Object dateAsString = filters.get(filterName);
-
-        if (dateAsString == null) {
-            return null;
-        }
-
-        final LocalDate parsedDate = LocalDate.parse((String) dateAsString);
-
-        final LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        if (parsedDate.isAfter(today)) {
-            throw new IllegalStateException("the specified date is in the future");
-        }
-
-        final LocalDate aMonthAgo = today.minusMonths(1);
-        if (aMonthAgo.isAfter(parsedDate)) {
-            throw new IllegalStateException("the specified date is older than a month");
-        }
-
-        return parsedDate;
     }
 
     /**

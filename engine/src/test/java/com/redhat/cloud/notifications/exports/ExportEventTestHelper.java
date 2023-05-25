@@ -4,6 +4,7 @@ import com.redhat.cloud.event.apps.exportservice.v1.ExportRequest;
 import com.redhat.cloud.event.apps.exportservice.v1.ExportRequestClass;
 import com.redhat.cloud.event.apps.exportservice.v1.Format;
 import com.redhat.cloud.event.parser.GenericConsoleCloudEvent;
+import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -58,8 +59,8 @@ public class ExportEventTestHelper {
         final LocalDate today = LocalDate.now();
 
         final Map<String, Object> filters = new HashMap<>();
-        filters.put(ExportEventListener.FILTER_DATE_FROM, today.minusDays(10).toString());
-        filters.put(ExportEventListener.FILTER_DATE_TO, today.minusDays(5).toString());
+        filters.put(EventFiltersExtractor.FILTER_DATE_FROM, today.minusDays(10).toString());
+        filters.put(EventFiltersExtractor.FILTER_DATE_TO, today.minusDays(5).toString());
 
         final ExportRequestClass exportRequestClass = new ExportRequestClass();
         exportRequestClass.setApplication(ExportEventListener.APPLICATION_NAME);
