@@ -24,7 +24,11 @@ public class EventFiltersExtractor {
     /**
      * Extracts the event filters from the Cloud Event.
      * @param exportRequest the export request itself to get the filters from.
-     * @throws FilterExtractionException if the filters could not be extracted.
+     * @throws FilterExtractionException if the filters could not be extracted
+     *                                   due to them being malformed, being
+     *                                   older than a month, being in the
+     *                                   future, or being a "from" filter that
+     *                                   is older than the "to" filter.
      */
     public EventFilters extract(final ExportRequestClass exportRequest) throws FilterExtractionException {
         final Map<String, Object> filters = exportRequest.getFilters();

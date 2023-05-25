@@ -6,16 +6,9 @@ import com.redhat.cloud.event.apps.exportservice.v1.Format;
 import com.redhat.cloud.event.parser.ConsoleCloudEvent;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
-import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
-import com.redhat.cloud.notifications.exports.filters.events.EventFilters;
-import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
-import com.redhat.cloud.notifications.exports.transformers.ResultsTransformer;
 import com.redhat.cloud.notifications.exports.transformers.TransformationException;
-import com.redhat.cloud.notifications.exports.transformers.event.CSVEventTransformer;
-import com.redhat.cloud.notifications.exports.transformers.event.JSONEventTransformer;
-import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.exports.transformers.UnsupportedFormatException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -28,10 +21,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,19 +44,13 @@ public class ExportEventListener {
     Counter failuresCounter;
 
     @Inject
-    EventFiltersExtractor eventFiltersExtractor;
-
-    @Inject
-    EventRepository eventRepository;
+    EventExporterService eventExporterService;
 
     @RestClient
     ExportService exportService;
 
     @Inject
     MeterRegistry meterRegistry;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     @ConfigProperty(name = "export-service.psk")
     String exportServicePsk;
@@ -156,56 +141,50 @@ public class ExportEventListener {
         final String orgId = receivedEvent.getOrgId();
 
         // Handle exporting the requested resource type.
-        if (RESOURCE_TYPE_EVENTS.equals(resource)) {
-            final EventFilters eventFilters;
-            try {
-                eventFilters = this.eventFiltersExtractor.extract(exportRequest);
-            } catch (FilterExtractionException e) {
-                this.failuresCounter.increment();
+        final String exportedContents;
+        try {
+            exportedContents = this.eventExporterService.exportEvents(exportRequest, orgId);
+        } catch (FilterExtractionException e) {
+            this.failuresCounter.increment();
 
-                final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, e.getMessage());
+            final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, e.getMessage());
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+
+            return;
+        } catch (TransformationException e) {
+            Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
+
+            this.failuresCounter.increment();
+
+            final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+
+            return;
+        } catch (UnsupportedFormatException e) {
+            Log.debugf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unsupported format", exportRequestUuid, resourceUuid, format);
+
+            final ExportError exportError = new ExportError(
+                HttpStatus.SC_BAD_REQUEST,
+                String.format("the specified format '%s' is unsupported for the request", format)
+            );
+            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+
+            return;
+        }
+
+        // Send the contents to the export service.
+        switch (format) {
+            case CSV -> this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportedContents);
+            case JSON -> this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportedContents);
+            default -> {
+                Log.debugf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unsupported format", exportRequestUuid, resourceUuid, format);
+
+                final ExportError exportError = new ExportError(
+                    HttpStatus.SC_BAD_REQUEST,
+                    String.format("the specified format '%s' is unsupported for the request", format)
+                );
+
                 this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-
-                return;
-            }
-
-            // Fetch the events from the database.
-            final AtomicReference<List<Event>> events = new AtomicReference<>();
-            this.statelessSessionFactory.withSession(session -> {
-                events.set(this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to()));
-            });
-
-            try {
-                final ResultsTransformer<Event> resultsTransformer;
-                final String contents;
-                switch (format) {
-                    case CSV -> {
-                        resultsTransformer = new CSVEventTransformer();
-                        contents = resultsTransformer.transform(events.get());
-                        this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, contents);
-                    }
-                    case JSON -> {
-                        resultsTransformer = new JSONEventTransformer();
-                        contents = resultsTransformer.transform(events.get());
-                        this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, contents);
-                    }
-                    default -> {
-                        final ExportError exportError = new ExportError(
-                            HttpStatus.SC_BAD_REQUEST,
-                            String.format("the specified format '%s' is unsupported for the request", format)
-                        );
-                        this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-                    }
-                }
-            } catch (final TransformationException e) {
-                Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
-
-                this.failuresCounter.increment();
-
-                final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
-                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-
-                return;
             }
         }
 

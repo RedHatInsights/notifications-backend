@@ -154,7 +154,7 @@ public class ExportEventListenerTest {
      * filter is non-parseable, an error is sent to the export service.
      */
     @Test
-    void testNonParseableFromFilterRaisesError() {
+    void testNonParseableEventsFromFilterRaisesError() {
         // Save the counter values to assert the "errors count" change later.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
 
@@ -210,7 +210,7 @@ public class ExportEventListenerTest {
      * filter is non-parseable, an error is sent to the export service.
      */
     @Test
-    void testNonParseableToFilterRaisesError() {
+    void testNonParseableEventsToFilterRaisesError() {
         // Save the counter values to assert the "errors count" change later.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
 
@@ -266,7 +266,7 @@ public class ExportEventListenerTest {
      * filter are invalid, an error is sent to the export service.
      */
     @Test
-    void testInvalidFiltersRaisesError() {
+    void testInvalidEventsFiltersRaisesErrors() {
         // Save the counter values to assert the "errors count" change later.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
 
@@ -387,11 +387,12 @@ public class ExportEventListenerTest {
     }
 
     /**
-     * Tests that when a valid JSON export request is received, then a valid
-     * request is sent to the export service, containing the expected body.
+     * Tests that when a valid JSON export request for exporting events is
+     * received, then a valid request is sent to the export service, containing
+     * the expected body.
      */
     @Test
-    void testExportJSON() throws IOException, URISyntaxException {
+    void testExportEventsJSON() throws IOException, URISyntaxException {
         // Save the counter values to assert the "successes count" change later.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
@@ -464,11 +465,12 @@ public class ExportEventListenerTest {
     }
 
     /**
-     * Tests that when a valid CSV export request is received, then a valid
-     * request is sent to the export service, containing the expected body.
+     * Tests that when a valid CSV export request for exporting events is
+     * received, then a valid request is sent to the export service, containing
+     * the expected body.
      */
     @Test
-    void testExportCSV() throws IOException, URISyntaxException {
+    void testExportEventsCSV() throws IOException, URISyntaxException {
         // Save the counter values to assert the "successes count" change later.
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
