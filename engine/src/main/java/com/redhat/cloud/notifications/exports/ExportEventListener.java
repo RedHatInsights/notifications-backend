@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.exports.transformers.TransformationExcepti
 import com.redhat.cloud.notifications.exports.transformers.event.CSVEventTransformer;
 import com.redhat.cloud.notifications.exports.transformers.event.JSONEventTransformer;
 import com.redhat.cloud.notifications.models.Event;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.Blocking;
@@ -24,6 +25,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
@@ -47,6 +49,8 @@ public class ExportEventListener {
     private final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
     private final Pattern subjectUuidExtractPattern = Pattern.compile("^urn:redhat:subject:export-service:request:(?<uuid>.+)$");
 
+    Counter failuresCounter;
+
     @Inject
     EventFiltersExtractor eventFiltersExtractor;
 
@@ -65,6 +69,11 @@ public class ExportEventListener {
     @ConfigProperty(name = "export-service.psk")
     String exportServicePsk;
 
+    @PostConstruct
+    void postConstruct() {
+        this.failuresCounter = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER);
+    }
+
     /**
      * Listens to the exports channel, extracts the request's data, and if
      * Notifications is the target application, and the requested resource and
@@ -82,7 +91,7 @@ public class ExportEventListener {
         } catch (final ConsoleCloudEventParsingException e) {
             Log.error("the received payload from the 'export-requests' topic is not a parseable Cloud Event", e);
 
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
+            this.failuresCounter.increment();
 
             return;
         }
@@ -94,7 +103,7 @@ public class ExportEventListener {
         } catch (final IllegalArgumentException | IllegalStateException e) {
             Log.errorf(e, "unable to extract the export request's UUID from the subject '%s'. Original Cloud Event: %s", receivedEvent.getSubject(), payload);
 
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
+            this.failuresCounter.increment();
 
             return;
         }
@@ -110,7 +119,7 @@ public class ExportEventListener {
         if (requestMaybe.isEmpty()) {
             Log.errorf("[export_request_uuid: %s] unable to process the export request: the cloud event's data is empty. Original cloud event: %s", exportRequestUuid, payload);
 
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
+            this.failuresCounter.increment();
 
             return;
         }
@@ -134,7 +143,7 @@ public class ExportEventListener {
         if (!this.isValidResourceType(resource)) {
             Log.errorf("[export_request_uuid: %s][resource_uuid: %s] export request could not be fulfilled: the requested resource type '%s' is not handled. Original cloud event: %s", exportRequestUuid, resourceUuid, resource, payload);
 
-            this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
+            this.failuresCounter.increment();
 
             final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
             this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
@@ -151,7 +160,7 @@ public class ExportEventListener {
             try {
                 eventFilters = this.eventFiltersExtractor.extract(exportRequestUuid, resourceUuid, exportRequest);
             } catch (FilterExtractionException e) {
-                this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
+                this.failuresCounter.increment();
 
                 final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, e.getMessage());
                 this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
@@ -187,7 +196,7 @@ public class ExportEventListener {
                 } catch (final TransformationException e) {
                     Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
 
-                    this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
+                    this.failuresCounter.increment();
 
                     final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
                     this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
