@@ -44,7 +44,7 @@ public class EventFiltersExtractor {
 
             throw new FilterExtractionException("unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
         } catch (final IllegalStateException e) {
-            Log.debugf("[export_request_uuid: %][resource_uuid: %s] well formatted but invalid \"from\" date received: %s. Error cause: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_FROM), e.getMessage());
+            Log.debugf(e, "[export_request_uuid: %][resource_uuid: %s] well formatted but invalid \"from\" date received: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_FROM));
 
             throw new FilterExtractionException(String.format("invalid 'from' filter date specified: %s", e.getMessage()));
         }
@@ -53,11 +53,11 @@ public class EventFiltersExtractor {
         try {
             to = this.extractDateFromObject(filters.get(FILTER_DATE_TO));
         } catch (final DateTimeParseException e) {
-            Log.debugf("[export_request_uuid: %][resource_uuid: %s] bad \"to\" date format. Notifying the export service with a 400 error. Received date: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO));
+            Log.debugf(e, "[export_request_uuid: %][resource_uuid: %s] bad \"to\" date format. Notifying the export service with a 400 error. Received date: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO));
 
             throw new FilterExtractionException("unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
         } catch (final IllegalStateException e) {
-            Log.debugf("[export_request_uuid: %][resource_uuid: %s] well formatted but invalid \"to\" date received: %s. Error cause: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO), e.getMessage());
+            Log.debugf(e, "[export_request_uuid: %][resource_uuid: %s] well formatted but invalid \"to\" date received: %s", exportRequestUuid, resourceUuid, filters.get(FILTER_DATE_TO));
 
             throw new FilterExtractionException(String.format("invalid 'to' filter date specified: %s", e.getMessage()));
         }

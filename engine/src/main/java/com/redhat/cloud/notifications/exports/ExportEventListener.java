@@ -80,7 +80,7 @@ public class ExportEventListener {
         try {
             receivedEvent = this.consoleCloudEventParser.fromJsonString(payload);
         } catch (final ConsoleCloudEventParsingException e) {
-            Log.errorf("the received payload from the 'export-requests' topic is not a parseable Cloud Event: %s", e);
+            Log.error("the received payload from the 'export-requests' topic is not a parseable Cloud Event", e);
 
             this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
@@ -185,7 +185,7 @@ public class ExportEventListener {
                         }
                     }
                 } catch (final TransformationException e) {
-                    Log.errorf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage(), e);
+                    Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
 
                     this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER).increment();
 
