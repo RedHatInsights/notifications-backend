@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -48,6 +49,9 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    NotificationHistoryRepository notificationHistoryRepository;
+
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (featureFlipper.isEmailsOnlyMode()) {
@@ -72,20 +76,18 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         Log.infof("Sending %s notification through Camel [orgId=%s, eventId=%s, historyId=%s]",
             getIntegrationName(), endpoint.getOrgId(), event.getId(), historyId);
 
-        long startTime = System.currentTimeMillis();
-
         NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
+        history.setStatus(PROCESSING);
+        persistNotificationHistory(history);
+
         try {
             sendNotification(event, endpoint, historyId);
-            history.setStatus(PROCESSING);
         } catch (Exception e) {
             history.setStatus(FAILED_INTERNAL);
             history.setDetails(Map.of("failure", e.getMessage()));
+            notificationHistoryRepository.updateHistoryItem(history);
             Log.infof(e, "Sending %s notification through Camel failed [eventId=%s, historyId=%s]", getIntegrationName(), event.getId(), historyId);
         }
-        long invocationTime = System.currentTimeMillis() - startTime;
-        history.setInvocationTime(invocationTime);
-        persistNotificationHistory(history);
     }
 
     protected String buildNotificationMessage(Event event) {
