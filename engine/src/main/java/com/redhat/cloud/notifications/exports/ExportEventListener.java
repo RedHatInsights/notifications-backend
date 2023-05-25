@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -168,40 +169,44 @@ public class ExportEventListener {
                 return;
             }
 
+            // Fetch the events from the database.
+            final AtomicReference<List<Event>> events = new AtomicReference<>();
             this.statelessSessionFactory.withSession(session -> {
-                final List<Event> events = this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to());
+                events.set(this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to()));
+            });
 
+            try {
                 final ResultsTransformer<Event> resultsTransformer;
                 final String contents;
-                try {
-                    switch (format) {
-                        case CSV -> {
-                            resultsTransformer = new CSVEventTransformer();
-                            contents = resultsTransformer.transform(events);
-                            this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, contents);
-                        }
-                        case JSON -> {
-                            resultsTransformer = new JSONEventTransformer();
-                            contents = resultsTransformer.transform(events);
-                            this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, contents);
-                        }
-                        default -> {
-                            final ExportError exportError = new ExportError(
-                                HttpStatus.SC_BAD_REQUEST,
-                                String.format("the specified format '%s' is unsupported for the request", format)
-                            );
-                            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-                        }
+                switch (format) {
+                    case CSV -> {
+                        resultsTransformer = new CSVEventTransformer();
+                        contents = resultsTransformer.transform(events.get());
+                        this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, contents);
                     }
-                } catch (final TransformationException e) {
-                    Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
-
-                    this.failuresCounter.increment();
-
-                    final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
-                    this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                    case JSON -> {
+                        resultsTransformer = new JSONEventTransformer();
+                        contents = resultsTransformer.transform(events.get());
+                        this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, contents);
+                    }
+                    default -> {
+                        final ExportError exportError = new ExportError(
+                            HttpStatus.SC_BAD_REQUEST,
+                            String.format("the specified format '%s' is unsupported for the request", format)
+                        );
+                        this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                    }
                 }
-            });
+            } catch (final TransformationException e) {
+                Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
+
+                this.failuresCounter.increment();
+
+                final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
+                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+
+                return;
+            }
         }
 
         this.meterRegistry.counter(EXPORTS_SERVICE_SUCCESSES_COUNTER).increment();
