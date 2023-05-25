@@ -13,7 +13,6 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @QuarkusTest
 public class EventFiltersExtractorTest {
@@ -30,7 +29,7 @@ public class EventFiltersExtractorTest {
      */
     @Test
     void testNoDate() throws FilterExtractionException {
-        final EventFilters eventFilters = this.eventFiltersExtractor.extract(UUID.randomUUID(), UUID.randomUUID(), new ExportRequestClass());
+        final EventFilters eventFilters = this.eventFiltersExtractor.extract(new ExportRequestClass());
 
         Assertions.assertNull(eventFilters.from(), "on empty filters the 'from' date should be null, since that means that no initial date filter has been specified");
         Assertions.assertNull(eventFilters.to(), "on empty filters the 'to' date should be null, since that means that no final date filter has been specified");
@@ -54,7 +53,7 @@ public class EventFiltersExtractorTest {
             )
         );
 
-        final EventFilters result = this.eventFiltersExtractor.extract(UUID.randomUUID(), UUID.randomUUID(), exportRequestClass);
+        final EventFilters result = this.eventFiltersExtractor.extract(exportRequestClass);
 
         Assertions.assertEquals(this.TODAY.minusDays(2), result.from(), "the 'from' date was not correctly extracted from the Cloud Event's payload");
         Assertions.assertEquals(this.TODAY.minusDays(1), result.to(), "the 'to' date was not correctly extracted from the Cloud Event's payload");
@@ -76,7 +75,7 @@ public class EventFiltersExtractorTest {
 
         final FilterExtractionException exception = Assertions.assertThrows(
             FilterExtractionException.class,
-            () -> this.eventFiltersExtractor.extract(UUID.randomUUID(), UUID.randomUUID(), exportRequest)
+            () -> this.eventFiltersExtractor.extract(exportRequest)
         );
 
         Assertions.assertEquals("unable to parse the 'from' date filter with the 'yyyy-mm-dd' format", exception.getMessage(), "unexpected error message in the FilterExtractionException when an unparseable 'from' date is present in the filters");
@@ -98,7 +97,7 @@ public class EventFiltersExtractorTest {
 
         final FilterExtractionException exception = Assertions.assertThrows(
             FilterExtractionException.class,
-            () -> this.eventFiltersExtractor.extract(UUID.randomUUID(), UUID.randomUUID(), exportRequest)
+            () -> this.eventFiltersExtractor.extract(exportRequest)
         );
 
         Assertions.assertEquals("unable to parse the 'to' date filter with the 'yyyy-mm-dd' format", exception.getMessage(), "unexpected error message in the FilterExtractionException when an unparseable 'from' date is present in the filters");
@@ -141,7 +140,7 @@ public class EventFiltersExtractorTest {
 
             final FilterExtractionException exception = Assertions.assertThrows(
                 FilterExtractionException.class,
-                () -> this.eventFiltersExtractor.extract(UUID.randomUUID(), UUID.randomUUID(), exportRequest)
+                () -> this.eventFiltersExtractor.extract(exportRequest)
             );
 
             Assertions.assertEquals(testCase.expectedExceptionMessage(), exception.getMessage(), String.format("unexpected error message for test case %s", testCase));
@@ -185,7 +184,7 @@ public class EventFiltersExtractorTest {
 
             final FilterExtractionException exception = Assertions.assertThrows(
                 FilterExtractionException.class,
-                () -> this.eventFiltersExtractor.extract(UUID.randomUUID(), UUID.randomUUID(), exportRequest)
+                () -> this.eventFiltersExtractor.extract(exportRequest)
             );
 
             Assertions.assertEquals(testCase.expectedExceptionMessage(), exception.getMessage(), String.format("unexpected error message for test case %s", testCase));
@@ -211,7 +210,7 @@ public class EventFiltersExtractorTest {
 
         final FilterExtractionException exception = Assertions.assertThrows(
             FilterExtractionException.class,
-            () -> this.eventFiltersExtractor.extract(UUID.randomUUID(), UUID.randomUUID(), exportRequest)
+            () -> this.eventFiltersExtractor.extract(exportRequest)
         );
 
         Assertions.assertEquals("'from' date must be earlier than the 'to' date", exception.getMessage(), "unexpected error message when providing a final date filter which is before the initial date filter");

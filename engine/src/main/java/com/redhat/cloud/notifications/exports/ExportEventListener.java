@@ -159,7 +159,7 @@ public class ExportEventListener {
         if (RESOURCE_TYPE_EVENTS.equals(resource)) {
             final EventFilters eventFilters;
             try {
-                eventFilters = this.eventFiltersExtractor.extract(exportRequestUuid, resourceUuid, exportRequest);
+                eventFilters = this.eventFiltersExtractor.extract(exportRequest);
             } catch (FilterExtractionException e) {
                 this.failuresCounter.increment();
 
