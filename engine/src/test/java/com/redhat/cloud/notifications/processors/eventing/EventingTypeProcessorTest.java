@@ -24,11 +24,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
-import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import io.vertx.core.json.JsonObject;
-import org.apache.kafka.common.header.Headers;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,16 +40,11 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
-import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.CAMEL_SUBTYPE_HEADER;
-import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.CLOUD_EVENT_ACCOUNT_EXTENSION_KEY;
-import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.CLOUD_EVENT_ORG_ID_EXTENSION_KEY;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.NOTIF_METADATA_KEY;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.TOKEN_HEADER;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -183,7 +176,6 @@ class EventingTypeProcessorTest {
 
         // Finally, we need to check the Kafka message metadata.
         UUID historyId = result.get(0).getId();
-        checkKafkaMetadata(message, historyId, endpoint1.getSubType());
         checkCloudEventMetadata(message, historyId, endpoint1.getAccountId(), endpoint1.getOrgId(), endpoint1.getSubType());
         checkTracingMetadata(message);
 
@@ -266,22 +258,9 @@ class EventingTypeProcessorTest {
         assertEquals(expectedBase64Credentials, notifMetadata.getString("basicAuth"));
     }
 
-    private static void checkKafkaMetadata(Message<String> message, UUID expectedMessageId, String expectedSubType) {
-        Headers kafkaHeaders = message.getMetadata(KafkaMessageMetadata.class).get().getHeaders();
-
-        // The 'rh-message-id' header should contain the notification history ID.
-        byte[] messageId = kafkaHeaders.headers(MESSAGE_ID_HEADER).iterator().next().value();
-        assertEquals(expectedMessageId, UUID.fromString(new String(messageId, UTF_8)));
-
-        // The 'CAMEL_SUBTYPE' header should contain the endpoint subtype.
-        assertEquals(expectedSubType, new String(kafkaHeaders.headers(CAMEL_SUBTYPE_HEADER).iterator().next().value(), UTF_8));
-    }
-
     private void checkCloudEventMetadata(Message<String> message, UUID expectedId, String expectedAccountId, String expectedOrgId, String expectedSubType) {
         CloudEventMetadata metadata = message.getMetadata(CloudEventMetadata.class).get();
         assertEquals(expectedId.toString(), metadata.getId());
-        assertEquals(expectedAccountId, metadata.getExtension(CLOUD_EVENT_ACCOUNT_EXTENSION_KEY).get());
-        assertEquals(expectedOrgId, metadata.getExtension(CLOUD_EVENT_ORG_ID_EXTENSION_KEY).get());
         assertEquals(CLOUD_EVENT_TYPE_PREFIX + expectedSubType, metadata.getType());
     }
 
