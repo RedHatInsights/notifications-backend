@@ -327,7 +327,7 @@ parameters:
   description: When this is true, all integration types except emails are disabled
   value: "true"
 - name: NOTIFICATIONS_LOG_LEVEL
-  description: Log level for com.redhat.cloud.notificationsq
+  description: Log level for com.redhat.cloud.notifications
   value: INFO
 - name: NOTIFICATIONS_CAMEL_MAXIMUM_REDELIVERIES
   description: Maximum number of redelivery attempts, which does not include the initial attempt.
