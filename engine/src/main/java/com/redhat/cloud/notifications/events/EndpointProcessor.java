@@ -14,6 +14,8 @@ import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.logging.Log;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -51,6 +53,11 @@ public class EndpointProcessor {
     @Inject
     GoogleChatProcessor googleChatProcessor;
 
+    @ConfigProperty(name = "notifications.disable.camel.subtype.processing", defaultValue = "none")
+    String disableCamelSubtypeProcessing;
+
+    List<String> disabledCamelSubtypes;
+
     @Inject
     MeterRegistry registry;
 
@@ -61,6 +68,12 @@ public class EndpointProcessor {
     void init() {
         processedItems = registry.counter(PROCESSED_MESSAGES_COUNTER_NAME);
         endpointTargeted = registry.counter(PROCESSED_ENDPOINTS_COUNTER_NAME);
+
+        if (disableCamelSubtypeProcessing != null) {
+            disabledCamelSubtypes = List.of(disableCamelSubtypeProcessing.split(","));
+        } else {
+            disabledCamelSubtypes = List.of();
+        }
     }
 
     public void process(Event event) {
@@ -91,6 +104,11 @@ public class EndpointProcessor {
                             Map<String, List<Endpoint>> endpointsBySubType = endpointsByTypeEntry.getValue().stream().collect(Collectors.groupingBy(Endpoint::getSubType));
                             for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
                                 try {
+                                    if (disabledCamelSubtypes.contains(endpointsBySubTypeEntry.getKey())) {
+                                        Log.infof("Processing of %s is skipped because its on the list of disabled camel subtypes", endpointsBySubTypeEntry.getKey());
+                                        continue;
+                                    }
+
                                     if ("slack".equals(endpointsBySubTypeEntry.getKey())) {
                                         slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else if ("teams".equals(endpointsBySubTypeEntry.getKey())) {
