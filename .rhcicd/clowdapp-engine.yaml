@@ -173,6 +173,8 @@ objects:
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
+        - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
+          value: ${QUARKUS_HIBERNATE_ORM_LOG_SQL}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -328,6 +330,8 @@ parameters:
   value: "1000"
 - name: NOTIFICATIONS_CAMEL_MAX_ENDPOINT_CACHE_SIZE
   value: "100"
+- name: QUARKUS_HIBERNATE_ORM_LOG_SQL
+  value: "false"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
   description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT30S
