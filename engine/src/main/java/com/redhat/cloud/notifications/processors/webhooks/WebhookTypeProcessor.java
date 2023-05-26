@@ -200,7 +200,9 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 }
 
                 // TODO NOTIF-488 We may want to move to a non-reactive HTTP client in the future.
+                Log.debugf("Starting webhook call for eventId=%s to url=%s", event.getId(), url);
                 HttpResponse<Buffer> resp = req.sendJsonObject(payload).await().atMost(awaitTimeout);
+                Log.debugf("Ended webhook call for eventId=%s to url=%s", event.getId(), url);
 
                 boolean serverError = false;
                 boolean shouldResetEndpointServerErrors = false;
