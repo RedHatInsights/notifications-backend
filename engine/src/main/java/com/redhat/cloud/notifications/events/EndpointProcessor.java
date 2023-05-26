@@ -53,7 +53,7 @@ public class EndpointProcessor {
     @Inject
     GoogleChatProcessor googleChatProcessor;
 
-    @ConfigProperty(name = "notifications.disable.camel.subtype.processing", defaultValue = "")
+    @ConfigProperty(name = "notifications.disable.camel.subtype.processing", defaultValue = "none")
     String disableCamelSubtypeProcessing;
 
     List<String> disabledCamelSubtypes;
