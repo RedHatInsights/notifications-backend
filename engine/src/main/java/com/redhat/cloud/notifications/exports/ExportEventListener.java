@@ -42,6 +42,7 @@ public class ExportEventListener {
     private final Pattern subjectUuidExtractPattern = Pattern.compile("^urn:redhat:subject:export-service:request:(?<uuid>.+)$");
 
     Counter failuresCounter;
+    Counter successesCounter;
 
     @Inject
     EventExporterService eventExporterService;
@@ -58,6 +59,7 @@ public class ExportEventListener {
     @PostConstruct
     void postConstruct() {
         this.failuresCounter = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.successesCounter = this.meterRegistry.counter(EXPORTS_SERVICE_SUCCESSES_COUNTER);
     }
 
     /**
@@ -188,7 +190,7 @@ public class ExportEventListener {
             }
         }
 
-        this.meterRegistry.counter(EXPORTS_SERVICE_SUCCESSES_COUNTER).increment();
+        this.successesCounter.increment();
     }
 
     /**
