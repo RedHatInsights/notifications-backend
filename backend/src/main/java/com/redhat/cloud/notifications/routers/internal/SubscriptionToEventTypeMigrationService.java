@@ -33,8 +33,8 @@ public class SubscriptionToEventTypeMigrationService {
         int affectedRows = entityManager.createQuery(query).executeUpdate();
         Log.infof("%d record(s) deleted", affectedRows);
 
-        query = "INSERT INTO email_subscriptions (user_id, org_id, event_type_id, subscription_type) " +
-            "SELECT ees.user_id, ees.org_id, et.id, ees.subscription_type from endpoint_email_subscriptions ees join event_type et on ees.application_id = et.application_id";
+        query = "INSERT INTO email_subscriptions (user_id, org_id, event_type_id, subscription_type, subscribed) " +
+            "SELECT ees.user_id, ees.org_id, et.id, ees.subscription_type, true from endpoint_email_subscriptions ees join event_type et on ees.application_id = et.application_id";
 
         affectedRows = entityManager.createNativeQuery(query).executeUpdate();
         Log.infof("%d record(s) inserted", affectedRows);

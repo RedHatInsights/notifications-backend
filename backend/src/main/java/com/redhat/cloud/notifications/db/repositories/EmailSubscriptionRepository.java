@@ -65,8 +65,8 @@ public class EmailSubscriptionRepository {
 
     @Transactional
     protected int replicateSubscribeToEventTypeLevel(String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
-        String query = "INSERT INTO email_subscriptions (user_id, org_id, event_type_id, subscription_type) " +
-            "SELECT :userId, :orgId, et.id, :subscriptionType FROM applications app " +
+        String query = "INSERT INTO email_subscriptions (user_id, org_id, event_type_id, subscription_type, subscribed) " +
+            "SELECT :userId, :orgId, et.id, :subscriptionType, :subscribed FROM applications app " +
             "JOIN bundles bun ON app.bundle_id = bun.id " +
             "JOIN event_type et ON app.id = et.application_id  " +
             "WHERE app.name = :applicationName AND bun.name = :bundleName " +
@@ -78,6 +78,7 @@ public class EmailSubscriptionRepository {
             .setParameter("applicationName", applicationName)
             .setParameter("bundleName", bundleName)
             .setParameter("subscriptionType", subscriptionType.name())
+            .setParameter("subscribed", true) // only email subscription replication is supported
             .executeUpdate();
     }
 
