@@ -76,7 +76,7 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Min(0)
     private int serverErrors;
 
-    @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class, CamelProperties.class })
+    @Schema(oneOf = { WebhookProperties.class, SystemSubscriptionProperties.class, CamelProperties.class })
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             property = "type",
@@ -84,7 +84,8 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonSubTypes({
         @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
         @JsonSubTypes.Type(value = WebhookProperties.class, name = "ansible"),
-        @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription"),
+        @JsonSubTypes.Type(value = SystemSubscriptionProperties.class, name = "email_subscription"),
+        @JsonSubTypes.Type(value = SystemSubscriptionProperties.class, name = "drawer"),
         @JsonSubTypes.Type(value = CamelProperties.class, name = "camel")
     })
     @Valid

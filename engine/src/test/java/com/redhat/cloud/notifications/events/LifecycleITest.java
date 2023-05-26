@@ -18,7 +18,6 @@ import com.redhat.cloud.notifications.models.BehaviorGroupActionId;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionId;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -27,6 +26,7 @@ import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.EventTypeBehaviorId;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.email.EmailSender;
 import com.redhat.cloud.notifications.recipients.User;
@@ -253,7 +253,7 @@ public class LifecycleITest {
     }
 
     Endpoint getAccountCanonicalEmailEndpoint(String accountId, String orgId) {
-        return endpointRepository.getOrCreateDefaultEmailSubscription(accountId, orgId);
+        return endpointRepository.getOrCreateDefaultSystemSubscription(accountId, orgId, EMAIL_SUBSCRIPTION);
     }
 
     private Endpoint createWebhookEndpoint(String accountId, String secretToken) {
@@ -266,7 +266,7 @@ public class LifecycleITest {
     }
 
     private void addDefaultBehaviorGroupAction(BehaviorGroup behaviorGroup) {
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
         properties.setOnlyAdmins(true);
         Endpoint endpoint = createEndpoint(null, EMAIL_SUBSCRIPTION, "Email endpoint", "System email endpoint", properties);
         addBehaviorGroupAction(behaviorGroup.getId(), endpoint.getId());

@@ -20,7 +20,7 @@ import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
-import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.models.RequestSystemEmailSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -158,7 +158,7 @@ public class LifecycleITest extends DbIsolatedTest {
         defaultBehaviorGroupProperties.setOnlyAdmins(true);
 
         // All events are stored in the canonical email endpoint
-        RequestEmailSubscriptionProperties userEmailEndpointRequest = new RequestEmailSubscriptionProperties();
+        RequestSystemEmailSubscriptionProperties userEmailEndpointRequest = new RequestSystemEmailSubscriptionProperties();
 
         // Identity header used for all public APIs calls. Internal APIs calls need a different token.
         Header identityHeader = initRbacMock(accountId, orgId, username, RbacAccess.FULL_ACCESS);
@@ -493,7 +493,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(JSON);
     }
 
-    private String getEmailEndpoint(Header identityHeader, RequestEmailSubscriptionProperties properties) {
+    private String getEmailEndpoint(Header identityHeader, RequestSystemEmailSubscriptionProperties properties) {
         return given()
                 .basePath(API_INTEGRATIONS_V_1_0)
                 .header(identityHeader)

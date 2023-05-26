@@ -57,7 +57,8 @@ public class EndpointRepositoryTest {
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.EMAIL_SUBSCRIPTION, null, "3", NOT_USED, null, true),
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.CAMEL, NOT_USED, "4", NOT_USED, null, false),
             resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.CAMEL, NOT_USED, "5", NOT_USED, null, false),
-            resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.CAMEL, NOT_USED, "6", NOT_USED, null, false)
+            resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.CAMEL, NOT_USED, "6", NOT_USED, null, false),
+            resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.DRAWER, null, "7", NOT_USED, null, true)
         )
                 // In java 17 - my system retrieves a created field (LocalDateTime) with higher precision of what's really stored - load the data for the sake of the test.
                 .map(endpoint -> endpointRepository.getEndpoint(endpoint.getOrgId(), endpoint.getId())).toList();
@@ -65,7 +66,8 @@ public class EndpointRepositoryTest {
         Set<CompositeEndpointType> compositeEndpointTypes = Set.of(
                 CompositeEndpointType.fromString("camel"),
                 CompositeEndpointType.fromString("webhook"),
-                CompositeEndpointType.fromString("email_subscription")
+                CompositeEndpointType.fromString("email_subscription"),
+                CompositeEndpointType.fromString("drawer")
         );
 
         Function<Query, List<Endpoint>> provider = query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query);
@@ -90,7 +92,7 @@ public class EndpointRepositoryTest {
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::isEnabled).collect(Collectors.toList()),
                 Query.Sort.Order.ASC,
-                List.of(Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE)
+                List.of(Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE)
         );
 
         TestHelpers.testSorting(
@@ -98,7 +100,7 @@ public class EndpointRepositoryTest {
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::getType).collect(Collectors.toList()),
                 Query.Sort.Order.ASC,
-                List.of(EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.EMAIL_SUBSCRIPTION, EndpointType.WEBHOOK)
+                List.of(EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.DRAWER, EndpointType.EMAIL_SUBSCRIPTION, EndpointType.WEBHOOK)
         );
 
         TestHelpers.testSorting(

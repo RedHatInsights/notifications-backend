@@ -12,7 +12,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "email_properties")
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class EmailSubscriptionProperties extends EndpointProperties {
+public class SystemSubscriptionProperties extends EndpointProperties {
 
     @NotNull
     private boolean onlyAdmins;
@@ -46,7 +46,7 @@ public class EmailSubscriptionProperties extends EndpointProperties {
         this.groupId = groupId;
     }
 
-    public boolean hasSameProperties(EmailSubscriptionProperties otherProps) {
+    public boolean hasSameProperties(SystemSubscriptionProperties otherProps) {
         if (otherProps == null) {
             return false;
         }

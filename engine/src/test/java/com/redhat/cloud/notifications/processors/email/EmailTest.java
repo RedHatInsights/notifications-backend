@@ -9,12 +9,12 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
@@ -134,7 +134,7 @@ public class EmailTest {
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(emailActionMessage));
 
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
@@ -247,7 +247,7 @@ public class EmailTest {
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(emailActionMessage));
 
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);

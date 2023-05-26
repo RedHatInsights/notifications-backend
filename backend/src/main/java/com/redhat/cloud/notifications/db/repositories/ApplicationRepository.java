@@ -132,7 +132,7 @@ public class ApplicationRepository {
                 "JOIN etb.behaviorGroup.actions action " +
                 "WHERE a.bundle.id = :bundleId AND (etb.behaviorGroup.orgId is NULL OR etb.behaviorGroup.orgId = :orgId) " +
                 "AND EXISTS (" +
-                    "SELECT 1 FROM EmailSubscriptionProperties props " +
+                    "SELECT 1 FROM SystemSubscriptionProperties props " +
                     "WHERE action.id.endpointId = props.id AND props.ignorePreferences = true" +
                 ")";
         return entityManager.createQuery(query, Application.class)

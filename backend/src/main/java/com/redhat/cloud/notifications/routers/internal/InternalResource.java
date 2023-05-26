@@ -15,11 +15,11 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CurrentStatus;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
@@ -59,6 +59,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.net.URI;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -68,6 +69,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -402,19 +405,22 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Response updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
         if (propertiesList == null) {
-            throw new BadRequestException("The request body must contain a list of EmailSubscriptionProperties");
+            throw new BadRequestException("The request body must contain a list of RequestDefaultBehaviorGroupPropertyList");
         }
 
         if (propertiesList.size() != propertiesList.stream().distinct().count()) {
-            throw new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates");
+            throw new BadRequestException("The list of RequestDefaultBehaviorGroupPropertyList should not contain duplicates");
         }
 
-        List<Endpoint> endpoints = propertiesList.stream().map(p -> {
-            EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        List<Endpoint> endpoints = new ArrayList<>();
+        for (RequestDefaultBehaviorGroupPropertyList p : propertiesList) {
+            SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
             properties.setOnlyAdmins(p.isOnlyAdmins());
             properties.setIgnorePreferences(p.isIgnorePreferences());
-            return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, null, properties);
-        }).collect(Collectors.toList());
+            endpoints.add(endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, EMAIL_SUBSCRIPTION));
+            endpoints.add(endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, DRAWER));
+        }
+
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,
                 endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
