@@ -5,9 +5,7 @@ import com.redhat.cloud.event.apps.exportservice.v1.ExportRequestClass;
 import com.redhat.cloud.event.apps.exportservice.v1.Format;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.GenericConsoleCloudEvent;
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
-import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
@@ -18,16 +16,12 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySource;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.AfterEach;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.MediaType;
 
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
@@ -36,7 +30,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -46,9 +39,6 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
-import static org.awaitility.Awaitility.await;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -62,36 +52,16 @@ public class ExportEventListenerTest {
     @Inject
     ExportEventListener exportEventListener;
 
+    @InjectMock
+    @RestClient
+    ExportService exportService;
+
     @Any
     @Inject
     InMemoryConnector inMemoryConnector;
 
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
-
-    /**
-     * Sets up the routes for the Mock Server.
-     */
-    @BeforeEach
-    void setUpMockServerRoutes() {
-        final ClientAndServer mockServer = MockServerLifecycleManager.getClient();
-
-        mockServer
-            .when(request().withPath(".*/error"))
-            .respond(response().withStatusCode(200));
-
-        mockServer
-            .when(request().withPath(".*/upload"))
-            .respond(response().withStatusCode(200));
-    }
-
-    /**
-     * Clears everything from the Mock Server.
-     */
-    @AfterEach
-    void clearMockServer() {
-        MockServerLifecycleManager.getClient().reset();
-    }
 
     /**
      * Tests that when an export request is received with an invalid resource
@@ -117,36 +87,8 @@ public class ExportEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the export service.
-        await()
-            .atMost(Duration.ofSeconds(10))
-            .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error")).length != 0);
-
-        // Assert that only one request was received.
-        final HttpRequest[] requests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error"));
-        Assertions.assertEquals(1, requests.length, "unexpected number of requests received in the error endpoint");
-
-        final HttpRequest request = requests[0];
-
-        // Assert that the correct path was called.
-        final String path = request.getPath().toString();
-
-        final String expectedPath = String.format(
-            "/app/export/v1/%s/%s/%s/error",
-            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
-            data.getApplication(),
-            data.getUUID()
-        );
-
-        Assertions.assertEquals(expectedPath, path, "unexpected path parameters sent to the error endpoint");
-
-        // Check the PSK.
-        Assertions.assertEquals(request.getFirstHeader(Constants.X_RH_EXPORT_SERVICE_PSK), this.exportServicePsk, "unexpected PSK value received");
-
-        final JsonObject body = new JsonObject(request.getBodyAsString());
-
-        Assertions.assertEquals("400", body.getString("code"), "unexpected error code received in the error's body");
-        Assertions.assertEquals("the specified resource type is unsupported by this application", body.getString("message"), "unexpected error message received in the error's body");
+        // Assert that the export service was called as expected.
+        this.assertErrorNotificationIsCorrect("400", "the specified resource type is unsupported by this application");
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
@@ -168,8 +110,7 @@ public class ExportEventListenerTest {
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
-        // Generate an export request but set a resource type which we don't
-        // support.
+        // Generate an export request but set an invalid "from" filter.
         final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
         final ExportRequestClass data = cee.getData().getExportRequest();
         data.setFilters(Map.of("from", "invalid-date"));
@@ -178,36 +119,8 @@ public class ExportEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the export service.
-        await()
-            .atMost(Duration.ofSeconds(10))
-            .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error")).length != 0);
-
-        // Assert that only one request was received.
-        final HttpRequest[] requests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error"));
-        Assertions.assertEquals(1, requests.length, "unexpected number of requests received in the error endpoint");
-
-        final HttpRequest request = requests[0];
-
-        // Assert that the correct path was called.
-        final String path = request.getPath().toString();
-
-        final String expectedPath = String.format(
-            "/app/export/v1/%s/%s/%s/error",
-            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
-            data.getApplication(),
-            data.getUUID()
-        );
-
-        Assertions.assertEquals(expectedPath, path, "unexpected path parameters sent to the error endpoint");
-
-        // Check the PSK.
-        Assertions.assertEquals(request.getFirstHeader(Constants.X_RH_EXPORT_SERVICE_PSK), this.exportServicePsk, "unexpected PSK value received");
-
-        final JsonObject body = new JsonObject(request.getBodyAsString());
-
-        Assertions.assertEquals("400", body.getString("code"), "unexpected error code received in the error's body");
-        Assertions.assertEquals("unable to parse the 'from' date filter with the 'yyyy-mm-dd' format", body.getString("message"), "unexpected error message received in the error's body");
+        // Assert that the export service was called as expected.
+        this.assertErrorNotificationIsCorrect("400", "unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
@@ -229,8 +142,7 @@ public class ExportEventListenerTest {
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
-        // Generate an export request but set a resource type which we don't
-        // support.
+        // Generate an export request but set an invalid "to" filter.
         final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
         final ExportRequestClass data = cee.getData().getExportRequest();
         data.setFilters(Map.of("to", "invalid-date"));
@@ -239,36 +151,8 @@ public class ExportEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the export service.
-        await()
-            .atMost(Duration.ofSeconds(10))
-            .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error")).length != 0);
-
-        // Assert that only one request was received.
-        final HttpRequest[] requests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error"));
-        Assertions.assertEquals(1, requests.length, "unexpected number of requests received in the error endpoint");
-
-        final HttpRequest request = requests[0];
-
-        // Assert that the correct path was called.
-        final String path = request.getPath().toString();
-
-        final String expectedPath = String.format(
-            "/app/export/v1/%s/%s/%s/error",
-            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
-            data.getApplication(),
-            data.getUUID()
-        );
-
-        Assertions.assertEquals(expectedPath, path, "unexpected path parameters sent to the error endpoint");
-
-        // Check the PSK.
-        Assertions.assertEquals(request.getFirstHeader(Constants.X_RH_EXPORT_SERVICE_PSK), this.exportServicePsk, "unexpected PSK value received");
-
-        final JsonObject body = new JsonObject(request.getBodyAsString());
-
-        Assertions.assertEquals("400", body.getString("code"), "unexpected error code received in the error's body");
-        Assertions.assertEquals("unable to parse the 'to' date filter with the 'yyyy-mm-dd' format", body.getString("message"), "unexpected error message received in the error's body");
+        // Assert that the export service was called as expected.
+        this.assertErrorNotificationIsCorrect("400", "unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
@@ -342,8 +226,6 @@ public class ExportEventListenerTest {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         for (final TestCase testCase : testCases) {
-            this.setUpMockServerRoutes();
-
             // Generate an export request but set a resource type which we don't
             // support.
             final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
@@ -364,40 +246,11 @@ public class ExportEventListenerTest {
             final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
             exportIn.send(consoleCloudEventParser.toJson(cee));
 
-            // Wait until the handler sends an error to the export service.
-            await()
-                .atMost(Duration.ofSeconds(10))
-                .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error")).length != 0);
+            // Assert that the export service was called as expected.
+            this.assertErrorNotificationIsCorrect("400", testCase.expectedErrorMessage());
 
-            // Assert that only one request was received.
-            final HttpRequest[] requests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/error"));
-            Assertions.assertEquals(1, requests.length, "unexpected number of requests received in the error endpoint");
-
-            final HttpRequest request = requests[0];
-
-            // Assert that the correct path was called.
-            final String path = request.getPath().toString();
-
-            final String expectedPath = String.format(
-                "/app/export/v1/%s/%s/%s/error",
-                ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
-                data.getApplication(),
-                data.getUUID()
-            );
-
-            Assertions.assertEquals(expectedPath, path, "unexpected path parameters sent to the error endpoint");
-
-            // Check the PSK.
-            Assertions.assertEquals(request.getFirstHeader(Constants.X_RH_EXPORT_SERVICE_PSK), this.exportServicePsk, "unexpected PSK value received");
-
-            final JsonObject body = new JsonObject(request.getBodyAsString());
-
-            Assertions.assertEquals("400", body.getString("code"), "unexpected error code received in the error's body");
-            Assertions.assertEquals(testCase.expectedErrorMessage, body.getString("message"), String.format("unexpected error message received in the error's body. Test case: %s", testCase));
-
-            // Clear the recorded requests to not mess up with the next
-            // iteration.
-            this.clearMockServer();
+            // Clear the invocations to the mock.
+            Mockito.clearInvocations(this.exportService);
         }
 
         // Assert that the errors counter was incremented, and that the
@@ -424,7 +277,6 @@ public class ExportEventListenerTest {
         // Generate an export request but set a resource type which we don't
         // support.
         final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
-        final ExportRequestClass data = cee.getData().getExportRequest();
 
         // Serialize the payload and send it to the Kafka topic.
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
@@ -432,41 +284,30 @@ public class ExportEventListenerTest {
         // Return fixture events when the repository is called.
         Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
 
-        // Send the JSON payload but replace the "json" format with an
-        // unsupported one.
+        // Send the JSON payload.
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the export service.
-        await()
-            .atMost(Duration.ofSeconds(10))
-            .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload")).length != 0);
+        // Assert that the export service was called as expected.
+        final ArgumentCaptor<String> capturedPsk = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<UUID> capturedExportUuid = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<String> capturedApplication = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<UUID> capturedResourceUuid = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<String> capturedJSONContents = ArgumentCaptor.forClass(String.class);
 
-        // Assert that only one request was received.
-        final HttpRequest[] requests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload"));
-        Assertions.assertEquals(1, requests.length, "unexpected number of requests received in the upload endpoint");
+        // Wait at most 10 seconds before failing.
+        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).uploadJSONExport(capturedPsk.capture(), capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedJSONContents.capture());
 
-        final HttpRequest request = requests[0];
+        // Assert that the PSK is correct.
+        Assertions.assertEquals(this.exportServicePsk, capturedPsk.getValue(), "unexpected PSK sent to the export service");
 
-        // Assert that the correct path was called.
-        final String path = request.getPath().toString();
+        // Assert that the export request's UUID is correct.
+        Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_EXPORT_UUID, capturedExportUuid.getValue(), "unexpected export request UUID sent to the export service");
 
-        final String expectedPath = String.format(
-            "/app/export/v1/%s/%s/%s/upload",
-            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
-            data.getApplication(),
-            data.getUUID()
-        );
+        // Assert that the export request's application is correct.
+        Assertions.assertEquals(ExportEventListener.APPLICATION_NAME, capturedApplication.getValue(), "unexpected application's name sent to the export service");
 
-        Assertions.assertEquals(expectedPath, path, "unexpected path parameters sent to the upload endpoint");
-
-        Assertions.assertEquals(
-            request.getFirstHeader("Content-Type"),
-            MediaType.APPLICATION_JSON.toString(),
-            "unexpected content type header sent to the export service"
-        );
-
-        // Check the PSK.
-        Assertions.assertEquals(request.getFirstHeader(Constants.X_RH_EXPORT_SERVICE_PSK), this.exportServicePsk, "unexpected PSK value received");
+        // Assert that the export request's resource UUID is correct.
+        Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_RESOURCE_UUID, capturedResourceUuid.getValue(), "unexpected resource UUID sent to the export service");
 
         // Load the expected body output.
         final URL jsonResourceUrl = this.getClass().getResource("/resultstransformers/event/expectedResult.json");
@@ -477,7 +318,7 @@ public class ExportEventListenerTest {
         // Assert that both the expected contents and the result are valid JSON
         // objects.
         final JsonArray expectedJson = new JsonArray(expectedContents);
-        final JsonArray resultJson = new JsonArray(request.getBodyAsString());
+        final JsonArray resultJson = new JsonArray(capturedJSONContents.getValue());
 
         // Encode both prettily so that if an error occurs, it is easier to
         // spot where the problem is.
@@ -516,38 +357,30 @@ public class ExportEventListenerTest {
         // Return fixture events when the repository is called.
         Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
 
-        // Send the JSON payload but replace the "json" format with an
-        // unsupported one.
+        // Send the JSON payload.
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
-        // Wait until the handler sends an error to the export service.
-        await()
-            .atMost(Duration.ofSeconds(10))
-            .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload")).length != 0);
+        // Assert that the export service was called as expected.
+        final ArgumentCaptor<String> capturedPsk = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<UUID> capturedExportUuid = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<String> capturedApplication = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<UUID> capturedResourceUuid = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<String> capturedCSVContents = ArgumentCaptor.forClass(String.class);
 
-        final HttpRequest[] requests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload"));
-        Assertions.assertEquals(1, requests.length, "unexpected number of requests received in the upload endpoint");
+        // Wait at most 10 seconds before failing.
+        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).uploadCSVExport(capturedPsk.capture(), capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedCSVContents.capture());
 
-        final HttpRequest request = requests[0];
-        final String path = request.getPath().toString();
+        // Assert that the PSK is correct.
+        Assertions.assertEquals(this.exportServicePsk, capturedPsk.getValue(), "unexpected PSK sent to the export service");
 
-        final String expectedPath = String.format(
-            "/app/export/v1/%s/%s/%s/upload",
-            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
-            data.getApplication(),
-            data.getUUID()
-        );
+        // Assert that the export request's UUID is correct.
+        Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_EXPORT_UUID, capturedExportUuid.getValue(), "unexpected export request UUID sent to the export service");
 
-        Assertions.assertEquals(expectedPath, path, "unexpected path parameters sent to the upload endpoint");
+        // Assert that the export request's application is correct.
+        Assertions.assertEquals(ExportEventListener.APPLICATION_NAME, capturedApplication.getValue(), "unexpected application's name sent to the export service");
 
-        Assertions.assertEquals(
-            request.getFirstHeader("Content-Type"),
-            "text/csv",
-            "unexpected content type header sent to the export service"
-        );
-
-        // Check the PSK.
-        Assertions.assertEquals(request.getFirstHeader(Constants.X_RH_EXPORT_SERVICE_PSK), this.exportServicePsk, "unexpected PSK value received");
+        // Assert that the export request's resource UUID is correct.
+        Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_RESOURCE_UUID, capturedResourceUuid.getValue(), "unexpected resource UUID sent to the export service");
 
         // Load the expected body output.
         final URL csvResourceUrl = this.getClass().getResource("/resultstransformers/event/expectedResult.csv");
@@ -555,7 +388,7 @@ public class ExportEventListenerTest {
 
         final String expectedContents = Files.readString(Path.of(csvResourceUrl.toURI()));
 
-        Assertions.assertEquals(expectedContents, request.getBodyAsString(), "unexpected CSV body received");
+        Assertions.assertEquals(expectedContents, capturedCSVContents.getValue(), "unexpected CSV body received");
 
         // Assert that the successes counter was incremented, and that the
         // failures counter did not increment.
@@ -595,5 +428,43 @@ public class ExportEventListenerTest {
                 () -> this.exportEventListener.extractExportUuidFromSubject(invalidSubject)
             );
         }
+    }
+
+    /**
+     * Asserts that the sent error notification to the export service contains
+     * the proper export request's UUID, the proper application name, the
+     * proper resource request's UUID and the proper status code and proper
+     * error messages.
+     * @param expectedStatusCode the expected status code to check.
+     * @param expectedErrorMessage the expected error message to check.
+     */
+    void assertErrorNotificationIsCorrect(final String expectedStatusCode, final String expectedErrorMessage) {
+        // Assert that the export service was called as expected.
+        final ArgumentCaptor<String> capturedPsk = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<UUID> capturedExportUuid = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<String> capturedApplication = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<UUID> capturedResourceUuid = ArgumentCaptor.forClass(UUID.class);
+        final ArgumentCaptor<ExportError> capturedError = ArgumentCaptor.forClass(ExportError.class);
+
+        // Wait at most 10 seconds before failing.
+        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).notifyErrorExport(capturedPsk.capture(), capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedError.capture());
+
+        // Assert that the PSK is correct.
+        Assertions.assertEquals(this.exportServicePsk, capturedPsk.getValue(), "unexpected PSK sent to the export service");
+
+        // Assert that the export request's UUID is correct.
+        Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_EXPORT_UUID, capturedExportUuid.getValue(), "unexpected export request UUID sent to the export service");
+
+        // Assert that the export request's application is correct.
+        Assertions.assertEquals(ExportEventListener.APPLICATION_NAME, capturedApplication.getValue(), "unexpected application's name sent to the export service");
+
+        // Assert that the export request's resource UUID is correct.
+        Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_RESOURCE_UUID, capturedResourceUuid.getValue(), "unexpected resource UUID sent to the export service");
+
+        // Assert that the sent error has the expected payload.
+        final ExportError capturedPayload = capturedError.getValue();
+
+        Assertions.assertEquals(expectedStatusCode, capturedPayload.getCode(), "unexpected status code sent to the export service");
+        Assertions.assertEquals(expectedErrorMessage, capturedPayload.getMessage(), "unexpected error message sent to the export service");
     }
 }
