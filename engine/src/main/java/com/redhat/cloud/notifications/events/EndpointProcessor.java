@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.logging.Log;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -92,12 +93,16 @@ public class EndpointProcessor {
                             for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
                                 try {
                                     if ("slack".equals(endpointsBySubTypeEntry.getKey())) {
+                                        Log.debugf("Preparing to call Slack processor for eventId=%s", event.getId());
                                         slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else if ("teams".equals(endpointsBySubTypeEntry.getKey())) {
+                                        Log.debugf("Preparing to call Teams processor for eventId=%s", event.getId());
                                         teamsProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else if ("google_chat".equals(endpointsBySubTypeEntry.getKey())) {
+                                        Log.debugf("Preparing to call Google Chat processor for eventId=%s", event.getId());
                                         googleChatProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else {
+                                        Log.debugf("Preparing to call Eventing processor for eventId=%s", event.getId());
                                         camelProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     }
                                 } catch (Exception e) {
@@ -106,10 +111,12 @@ public class EndpointProcessor {
                             }
                             break;
                         case EMAIL_SUBSCRIPTION:
+                            Log.debugf("Preparing to call Email processor for eventId=%s", event.getId());
                             emailProcessor.process(event, endpointsByTypeEntry.getValue());
                             break;
                         case WEBHOOK:
                         case ANSIBLE:
+                            Log.debugf("Preparing to call Webhook processor for eventId=%s", event.getId());
                             webhookProcessor.process(event, endpointsByTypeEntry.getValue());
                             break;
                         default:
