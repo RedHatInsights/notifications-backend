@@ -61,7 +61,7 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.16.6.Final</quarkus.platform.version>
-        <redhat.event-schemas.version>1.4.5</redhat.event-schemas.version>
+        <redhat.event-schemas.version>1.4.7</redhat.event-schemas.version>
 
     </properties>
 
