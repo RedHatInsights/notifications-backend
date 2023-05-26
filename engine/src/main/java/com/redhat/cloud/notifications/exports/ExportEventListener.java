@@ -72,127 +72,131 @@ public class ExportEventListener {
     @Blocking
     @Incoming(EXPORT_CHANNEL)
     public void eventListener(final String payload) {
-        // Attempt deserializing the received message as a Cloud Event.
-        final ConsoleCloudEvent receivedEvent;
         try {
-            receivedEvent = this.consoleCloudEventParser.fromJsonString(payload);
-        } catch (final ConsoleCloudEventParsingException e) {
-            Log.error("the received payload from the 'export-requests' topic is not a parseable Cloud Event", e);
+            // Attempt deserializing the received message as a Cloud Event.
+            final ConsoleCloudEvent receivedEvent;
+            try {
+                receivedEvent = this.consoleCloudEventParser.fromJsonString(payload);
+            } catch (final ConsoleCloudEventParsingException e) {
+                Log.error("the received payload from the 'export-requests' topic is not a parseable Cloud Event", e);
 
-            this.failuresCounter.increment();
+                this.failuresCounter.increment();
 
-            return;
-        }
+                return;
+            }
 
-        // Extract the export request's UUID from the subject.
-        final UUID exportRequestUuid;
-        try {
-            exportRequestUuid = this.extractExportUuidFromSubject(receivedEvent.getSubject());
-        } catch (final IllegalArgumentException | IllegalStateException e) {
-            Log.errorf(e, "unable to extract the export request's UUID from the subject '%s'. Original Cloud Event: %s", receivedEvent.getSubject(), payload);
+            // Extract the export request's UUID from the subject.
+            final UUID exportRequestUuid;
+            try {
+                exportRequestUuid = this.extractExportUuidFromSubject(receivedEvent.getSubject());
+            } catch (final IllegalArgumentException | IllegalStateException e) {
+                Log.errorf(e, "unable to extract the export request's UUID from the subject '%s'. Original Cloud Event: %s", receivedEvent.getSubject(), payload);
 
-            this.failuresCounter.increment();
+                this.failuresCounter.increment();
 
-            return;
-        }
+                return;
+            }
 
-        // Make sure that we are attempting to handle an export request.
-        if (!this.isAnExportRequest(receivedEvent)) {
-            Log.debugf("[export_request_uuid: %s] ignoring received event from the 'export-requests' topic since either it doesn't come from the 'export-service' or it is not of the 'request-export' type: %s", exportRequestUuid, payload);
-            return;
-        }
+            // Make sure that we are attempting to handle an export request.
+            if (!this.isAnExportRequest(receivedEvent)) {
+                Log.debugf("[export_request_uuid: %s] ignoring received event from the 'export-requests' topic since either it doesn't come from the 'export-service' or it is not of the 'request-export' type: %s", exportRequestUuid, payload);
+                return;
+            }
 
-        // Also, make sure that it contains the expected payload's structure.
-        final Optional<ExportRequest> requestMaybe = receivedEvent.getData(ExportRequest.class);
-        if (requestMaybe.isEmpty()) {
-            Log.errorf("[export_request_uuid: %s] unable to process the export request: the cloud event's data is empty. Original cloud event: %s", exportRequestUuid, payload);
+            // Also, make sure that it contains the expected payload's structure.
+            final Optional<ExportRequest> requestMaybe = receivedEvent.getData(ExportRequest.class);
+            if (requestMaybe.isEmpty()) {
+                Log.errorf("[export_request_uuid: %s] unable to process the export request: the cloud event's data is empty. Original cloud event: %s", exportRequestUuid, payload);
 
-            this.failuresCounter.increment();
+                this.failuresCounter.increment();
 
-            return;
-        }
+                return;
+            }
 
-        // Extract a few bits of information that will be reused over and over.
-        final ExportRequest request = requestMaybe.get();
-        final ExportRequestClass exportRequest = request.getExportRequest();
-        final String application = exportRequest.getApplication();
-        final UUID resourceUuid = exportRequest.getUUID();
+            // Extract a few bits of information that will be reused over and over.
+            final ExportRequest request = requestMaybe.get();
+            final ExportRequestClass exportRequest = request.getExportRequest();
+            final String application = exportRequest.getApplication();
+            final UUID resourceUuid = exportRequest.getUUID();
 
-        // If the application target isn't Notifications, then we can simply
-        // skip the payload.
-        if (!APPLICATION_NAME.equals(application)) {
-            Log.debugf("[export_request_uuid: %s][resource_uuid: %s] export request ignored for Cloud Event since the target application is '%s': %s", exportRequestUuid, resourceUuid, application, payload);
-            return;
-        }
+            // If the application target isn't Notifications, then we can simply
+            // skip the payload.
+            if (!APPLICATION_NAME.equals(application)) {
+                Log.debugf("[export_request_uuid: %s][resource_uuid: %s] export request ignored for Cloud Event since the target application is '%s': %s", exportRequestUuid, resourceUuid, application, payload);
+                return;
+            }
 
-        final String resource = exportRequest.getResource();
+            final String resource = exportRequest.getResource();
 
-        // Check that we support the requested resource type to export.
-        if (!this.isValidResourceType(resource)) {
-            Log.errorf("[export_request_uuid: %s][resource_uuid: %s] export request could not be fulfilled: the requested resource type '%s' is not handled. Original cloud event: %s", exportRequestUuid, resourceUuid, resource, payload);
+            // Check that we support the requested resource type to export.
+            if (!this.isValidResourceType(resource)) {
+                Log.errorf("[export_request_uuid: %s][resource_uuid: %s] export request could not be fulfilled: the requested resource type '%s' is not handled. Original cloud event: %s", exportRequestUuid, resourceUuid, resource, payload);
 
-            this.failuresCounter.increment();
+                this.failuresCounter.increment();
 
-            final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
+                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
-            return;
-        }
+                return;
+            }
 
-        final Format format = exportRequest.getFormat();
-        final String orgId = receivedEvent.getOrgId();
+            final Format format = exportRequest.getFormat();
+            final String orgId = receivedEvent.getOrgId();
 
-        // Handle exporting the requested resource type.
-        final String exportedContents;
-        try {
-            exportedContents = this.eventExporterService.exportEvents(exportRequest, orgId);
-        } catch (FilterExtractionException e) {
-            this.failuresCounter.increment();
+            // Handle exporting the requested resource type.
+            final String exportedContents;
+            try {
+                exportedContents = this.eventExporterService.exportEvents(exportRequest, orgId);
+            } catch (FilterExtractionException e) {
+                this.failuresCounter.increment();
 
-            final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, e.getMessage());
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, e.getMessage());
+                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
-            return;
-        } catch (TransformationException e) {
-            Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
+                return;
+            } catch (TransformationException e) {
+                Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
 
-            this.failuresCounter.increment();
+                this.failuresCounter.increment();
 
-            final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
+                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
-            return;
-        } catch (UnsupportedFormatException e) {
-            Log.debugf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unsupported format", exportRequestUuid, resourceUuid, format);
-
-            final ExportError exportError = new ExportError(
-                HttpStatus.SC_BAD_REQUEST,
-                String.format("the specified format '%s' is unsupported for the request", format)
-            );
-            this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
-
-            return;
-        }
-
-        // Send the contents to the export service.
-        switch (format) {
-            case CSV -> this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportedContents);
-            case JSON -> this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportedContents);
-            default -> {
+                return;
+            } catch (UnsupportedFormatException e) {
                 Log.debugf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unsupported format", exportRequestUuid, resourceUuid, format);
 
                 final ExportError exportError = new ExportError(
                     HttpStatus.SC_BAD_REQUEST,
                     String.format("the specified format '%s' is unsupported for the request", format)
                 );
-
                 this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
                 return;
             }
-        }
 
-        this.successesCounter.increment();
+            // Send the contents to the export service.
+            switch (format) {
+                case CSV -> this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportedContents);
+                case JSON -> this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportedContents);
+                default -> {
+                    Log.debugf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unsupported format", exportRequestUuid, resourceUuid, format);
+
+                    final ExportError exportError = new ExportError(
+                        HttpStatus.SC_BAD_REQUEST,
+                        String.format("the specified format '%s' is unsupported for the request", format)
+                    );
+
+                    this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+
+                    return;
+                }
+            }
+
+            this.successesCounter.increment();
+        } catch (final Exception e) {
+            Log.errorf(e, "something went wrong when handling a resource request from the export service. Received payload: %s", payload);
+        }
     }
 
     /**
