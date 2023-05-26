@@ -187,6 +187,8 @@ public class ExportEventListener {
                 );
 
                 this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+
+                return;
             }
         }
 
