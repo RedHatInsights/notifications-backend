@@ -133,7 +133,7 @@ public class ExportEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/error",
-            ExportEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
             data.getApplication(),
             data.getUUID()
         );
@@ -194,7 +194,7 @@ public class ExportEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/error",
-            ExportEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
             data.getApplication(),
             data.getUUID()
         );
@@ -255,7 +255,7 @@ public class ExportEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/error",
-            ExportEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
             data.getApplication(),
             data.getUUID()
         );
@@ -380,7 +380,7 @@ public class ExportEventListenerTest {
 
             final String expectedPath = String.format(
                 "/app/export/v1/%s/%s/%s/error",
-                ExportEventTestHelper.getExportCeUuid(),
+                ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
                 data.getApplication(),
                 data.getUUID()
             );
@@ -452,7 +452,7 @@ public class ExportEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/upload",
-            ExportEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
             data.getApplication(),
             data.getUUID()
         );
@@ -533,7 +533,7 @@ public class ExportEventListenerTest {
 
         final String expectedPath = String.format(
             "/app/export/v1/%s/%s/%s/upload",
-            ExportEventTestHelper.getExportCeUuid(),
+            ExportEventTestHelper.EXPORT_CE_EXPORT_UUID,
             data.getApplication(),
             data.getUUID()
         );

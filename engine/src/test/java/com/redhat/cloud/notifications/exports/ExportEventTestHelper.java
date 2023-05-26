@@ -18,14 +18,26 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class ExportEventTestHelper {
 
-    private static final UUID EXPORT_CE_UUID = UUID.randomUUID();
     public static final LocalDateTime EXPORT_CE_TIME = LocalDateTime.now(ZoneOffset.UTC);
     public static final String EXPORT_CE_DATA_SCHEMA = "https://console.redhat.com/api/schemas/apps/export-service/v1/export-request.json";
     public static final String EXPORT_CE_SOURCE = ExportEventListener.EXPORT_SERVICE_URN;
     public static final String EXPORT_CE_SPEC_VERSION = "1.0";
-    public static final String EXPORT_CE_SUBJECT = String.format("urn:redhat:subject:export-service:request:%s", EXPORT_CE_UUID);
     public static final String EXPORT_CE_TYPE = ExportEventListener.CE_EXPORT_REQUEST_TYPE;
+    /**
+     * The {@link UUID} of the export request which is the parent of the
+     * resource requests. One export request will be composed of many resource
+     * requests sent to different applications.
+     */
+    public static final UUID EXPORT_CE_EXPORT_UUID = UUID.randomUUID();
+    public static final String EXPORT_CE_SUBJECT = String.format("urn:redhat:subject:export-service:request:%s", EXPORT_CE_EXPORT_UUID);
+    /**
+     * The {@link UUID} of the message itself.
+     */
     public static final UUID EXPORT_CE_ID = UUID.randomUUID();
+    /**
+     * The {@link UUID} of the requested resource.
+     */
+    public static final UUID EXPORT_CE_RESOURCE_UUID = UUID.randomUUID();
 
     /**
      * <p>A base64 encoded XRHID header containing:
@@ -67,7 +79,7 @@ public class ExportEventTestHelper {
         exportRequestClass.setFilters(filters);
         exportRequestClass.setFormat(format);
         exportRequestClass.setResource(ExportEventListener.RESOURCE_TYPE_EVENTS);
-        exportRequestClass.setUUID(EXPORT_CE_ID);
+        exportRequestClass.setUUID(EXPORT_CE_RESOURCE_UUID);
         exportRequestClass.setXRhIdentity(EXPORT_CE_XHRID);
 
         final ExportRequest exportRequest = new ExportRequest();
@@ -87,15 +99,5 @@ public class ExportEventTestHelper {
         cce.setType(EXPORT_CE_TYPE);
 
         return cce;
-    }
-
-    /**
-     * Get the {@link UUID} of the export request. Beware that the Cloud
-     * Event's {@link UUID} is not the same as the {@link UUID} of the export
-     * request, or the {@link UUID} of the resource.
-     * @return the generated export request's {@link UUID}.
-     */
-    public static UUID getExportCeUuid() {
-        return EXPORT_CE_UUID;
     }
 }
