@@ -107,6 +107,7 @@ public class EventConsumer {
          * Step 1
          * The payload (JSON) is parsed into an Action.
          */
+        UUID[] eventId = new UUID[1]; // TODO Temp, remove ASAP
         try {
 
             final EventWrapper<?, ?> eventWrapper = parsePayload(payload, tags);
@@ -192,6 +193,8 @@ public class EventConsumer {
                         // NOTIF-499 If there is no ID provided whatsoever we create one.
                         event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
                     }
+                    eventId[0] = event.getId();
+                    Log.infof("Event id is %s", event.getId());
                     eventRepository.create(event);
                     /*
                      * Step 7
@@ -222,6 +225,7 @@ public class EventConsumer {
                     TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
                     TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, "")
             ));
+            Log.infof("Done processing event with id %s", eventId[0]);
         }
         return message.ack();
     }
