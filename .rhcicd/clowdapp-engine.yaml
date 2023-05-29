@@ -254,6 +254,10 @@ objects:
           value: ${NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED}
         - name: MP_MESSAGING_INCOMING_EXPORT_REQUESTS_ENABLED
           value: ${NOTIFICATIONS_EXPORT_SERVICE_ENABLED}
+        - name: MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_INTERVAL_MS
+          value: ${MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_INTERVAL_MS}
+        - name: MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_RECORDS
+          value: ${MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_RECORDS}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -439,3 +443,9 @@ parameters:
 - name: NOTIFICATIONS_EXPORTS_SERVICE_ENABLED
   description: Enables the integration with the export service.
   value: "false"
+- name: MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_INTERVAL_MS
+  description: Maximum delay between invocations of poll()
+  value: "300000"
+- name: MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_RECORDS
+  description: Maximum number of records returned in a single call to poll()
+  value: "500"
