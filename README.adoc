@@ -29,12 +29,12 @@ becomes:
 class EndpointResource {
 
     @Path("api/notifications/v1.0/endpoints")
-    class V1 extends EndpointResource {
+    public static class V1 extends EndpointResource {
 
     }
 
     @Path("api/notifications/v2.0/endpoints")
-    class V2 extends EndpointResource {
+    public static class V2 extends EndpointResource {
 
     }
 
@@ -89,7 +89,7 @@ class EndpointResource {
     class V2 extends EndpointResource {
         @POST
         public List<?> myNewRequest(@QueryParam int coolParam) {
-            // ... More nice behavior
+            // ... New API. Different params, different return value
         }
     }
 
