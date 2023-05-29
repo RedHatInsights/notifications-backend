@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.exports;
 
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequest;
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequestClass;
 import com.redhat.cloud.event.apps.exportservice.v1.Format;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequest;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.GenericConsoleCloudEvent;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
@@ -79,8 +79,8 @@ public class ExportEventListenerTest {
 
         // Generate an export request but set a resource type which we don't
         // support.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
-        final ExportRequestClass data = cee.getData().getExportRequest();
+        final GenericConsoleCloudEvent<ResourceRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final ResourceRequestClass data = cee.getData().getResourceRequest();
         data.setResource("invalid-type");
 
         // Serialize the payload and send it to the Kafka topic.
@@ -111,8 +111,8 @@ public class ExportEventListenerTest {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set an invalid "from" filter.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
-        final ExportRequestClass data = cee.getData().getExportRequest();
+        final GenericConsoleCloudEvent<ResourceRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final ResourceRequestClass data = cee.getData().getResourceRequest();
         data.setFilters(Map.of("from", "invalid-date"));
 
         // Serialize the payload and send it to the Kafka topic.
@@ -143,8 +143,8 @@ public class ExportEventListenerTest {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set an invalid "to" filter.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
-        final ExportRequestClass data = cee.getData().getExportRequest();
+        final GenericConsoleCloudEvent<ResourceRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final ResourceRequestClass data = cee.getData().getResourceRequest();
         data.setFilters(Map.of("to", "invalid-date"));
 
         // Serialize the payload and send it to the Kafka topic.
@@ -228,8 +228,8 @@ public class ExportEventListenerTest {
         for (final TestCase testCase : testCases) {
             // Generate an export request but set a resource type which we don't
             // support.
-            final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
-            final ExportRequestClass data = cee.getData().getExportRequest();
+            final GenericConsoleCloudEvent<ResourceRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
+            final ResourceRequestClass data = cee.getData().getResourceRequest();
             final Map<String, Object> filters = data.getFilters();
             // Clear the filters to start fresh with them.
             filters.clear();
@@ -276,7 +276,7 @@ public class ExportEventListenerTest {
 
         // Generate an export request but set a resource type which we don't
         // support.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final GenericConsoleCloudEvent<ResourceRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
 
         // Serialize the payload and send it to the Kafka topic.
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
@@ -347,8 +347,8 @@ public class ExportEventListenerTest {
 
         // Generate an export request but set a resource type which we don't
         // support.
-        final GenericConsoleCloudEvent<ExportRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
-        final ExportRequestClass data = cee.getData().getExportRequest();
+        final GenericConsoleCloudEvent<ResourceRequest> cee = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
+        final ResourceRequestClass data = cee.getData().getResourceRequest();
         data.setFormat(Format.CSV);
 
         // Serialize the payload and send it to the Kafka topic.
@@ -394,40 +394,6 @@ public class ExportEventListenerTest {
         // failures counter did not increment.
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 0);
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 1);
-    }
-
-    /**
-     * Tests that the function under test correctly extracts the {@link UUID}
-     * from the subject.
-     */
-    @Test
-    void testValidSubjectExtractUuid() {
-        final UUID subjectUuid = UUID.randomUUID();
-        final String validSubject = String.format("urn:redhat:subject:export-service:request:%s", subjectUuid);
-
-        final UUID extractedUuid = this.exportEventListener.extractExportUuidFromSubject(validSubject);
-
-        Assertions.assertEquals(subjectUuid, extractedUuid, "unexpected UUID extracted from the subject");
-    }
-
-    /**
-     * Tests that the function under test throws an exception when an invalid
-     * subject is received.
-     */
-    @Test
-    void testInvalidSubjectExtractUuid() {
-        final List<String> invalidSubjects = List.of(
-            UUID.randomUUID().toString(),
-            String.format("urn:redhat:subject:%s", UUID.randomUUID()),
-            "random subject"
-        );
-
-        for (final String invalidSubject : invalidSubjects) {
-            Assertions.assertThrows(
-                IllegalStateException.class,
-                () -> this.exportEventListener.extractExportUuidFromSubject(invalidSubject)
-            );
-        }
     }
 
     /**

@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.exports;
 
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequest;
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequestClass;
 import com.redhat.cloud.event.apps.exportservice.v1.Format;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequest;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
 import com.redhat.cloud.event.parser.GenericConsoleCloudEvent;
 import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
 
@@ -19,7 +19,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 public class ExportEventTestHelper {
 
     public static final LocalDateTime EXPORT_CE_TIME = LocalDateTime.now(ZoneOffset.UTC);
-    public static final String EXPORT_CE_DATA_SCHEMA = "https://console.redhat.com/api/schemas/apps/export-service/v1/export-request.json";
+    public static final String EXPORT_CE_DATA_SCHEMA = "https://console.redhat.com/api/schemas/apps/export-service/v1/resource-request.json";
     public static final String EXPORT_CE_SOURCE = ExportEventListener.EXPORT_SERVICE_URN;
     public static final String EXPORT_CE_SPEC_VERSION = "1.0";
     public static final String EXPORT_CE_TYPE = ExportEventListener.CE_EXPORT_REQUEST_TYPE;
@@ -67,25 +67,26 @@ public class ExportEventTestHelper {
      *               payload contents in.
      * @return the generated "export request" Cloud Event.
      */
-    public static GenericConsoleCloudEvent<ExportRequest> createExportCloudEventFixture(final Format format) {
+    public static GenericConsoleCloudEvent<ResourceRequest> createExportCloudEventFixture(final Format format) {
         final LocalDate today = LocalDate.now();
 
         final Map<String, Object> filters = new HashMap<>();
         filters.put(EventFiltersExtractor.FILTER_DATE_FROM, today.minusDays(10).toString());
         filters.put(EventFiltersExtractor.FILTER_DATE_TO, today.minusDays(5).toString());
 
-        final ExportRequestClass exportRequestClass = new ExportRequestClass();
-        exportRequestClass.setApplication(ExportEventListener.APPLICATION_NAME);
-        exportRequestClass.setFilters(filters);
-        exportRequestClass.setFormat(format);
-        exportRequestClass.setResource(ExportEventListener.RESOURCE_TYPE_EVENTS);
-        exportRequestClass.setUUID(EXPORT_CE_RESOURCE_UUID);
-        exportRequestClass.setXRhIdentity(EXPORT_CE_XHRID);
+        final ResourceRequestClass resourceRequestClass = new ResourceRequestClass();
+        resourceRequestClass.setApplication(ExportEventListener.APPLICATION_NAME);
+        resourceRequestClass.setExportRequestUUID(EXPORT_CE_EXPORT_UUID);
+        resourceRequestClass.setFilters(filters);
+        resourceRequestClass.setFormat(format);
+        resourceRequestClass.setResource(ExportEventListener.RESOURCE_TYPE_EVENTS);
+        resourceRequestClass.setUUID(EXPORT_CE_RESOURCE_UUID);
+        resourceRequestClass.setXRhIdentity(EXPORT_CE_XHRID);
 
-        final ExportRequest exportRequest = new ExportRequest();
-        exportRequest.setExportRequest(exportRequestClass);
+        final ResourceRequest exportRequest = new ResourceRequest();
+        exportRequest.setResourceRequest(resourceRequestClass);
 
-        final GenericConsoleCloudEvent<ExportRequest> cce = new GenericConsoleCloudEvent<>();
+        final GenericConsoleCloudEvent<ResourceRequest> cce = new GenericConsoleCloudEvent<>();
 
         cce.setAccountId(DEFAULT_ACCOUNT_ID);
         cce.setData(exportRequest);

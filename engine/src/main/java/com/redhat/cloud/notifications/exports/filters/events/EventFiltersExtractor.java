@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.exports.filters.events;
 
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequestClass;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
 import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
 import io.quarkus.logging.Log;
 
@@ -23,15 +23,15 @@ public class EventFiltersExtractor {
 
     /**
      * Extracts the event filters from the Cloud Event.
-     * @param exportRequest the export request itself to get the filters from.
+     * @param resourceRequest the resource request itself to get the filters from.
      * @throws FilterExtractionException if the filters could not be extracted
      *                                   due to them being malformed, being
      *                                   older than a month, being in the
      *                                   future, or being a "from" filter that
      *                                   is older than the "to" filter.
      */
-    public EventFilters extract(final ExportRequestClass exportRequest) throws FilterExtractionException {
-        final Map<String, Object> filters = exportRequest.getFilters();
+    public EventFilters extract(final ResourceRequestClass resourceRequest) throws FilterExtractionException {
+        final Map<String, Object> filters = resourceRequest.getFilters();
         if (filters == null) {
             return new EventFilters(null, null);
         }
@@ -41,11 +41,11 @@ public class EventFiltersExtractor {
         try {
             from = this.extractDateFromObject(filters.get(FILTER_DATE_FROM));
         } catch (final DateTimeParseException e) {
-            Log.debugf("[resource_uuid: %s] bad \"from\" date format. Notifying the export service with a 400 error. Received date: %s", exportRequest.getUUID(), filters.get(FILTER_DATE_FROM));
+            Log.debugf("[export_request_uuid: %s][resource_uuid: %s] bad \"from\" date format. Notifying the export service with a 400 error. Received date: %s", resourceRequest.getExportRequestUUID(), resourceRequest.getUUID(), filters.get(FILTER_DATE_FROM));
 
             throw new FilterExtractionException("unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
         } catch (final IllegalStateException e) {
-            Log.debugf(e, "[resource_uuid: %s] well formatted but invalid \"from\" date received: %s", exportRequest.getUUID(), filters.get(FILTER_DATE_FROM));
+            Log.debugf(e, "[export_request_uuid: %s][resource_uuid: %s] well formatted but invalid \"from\" date received: %s", resourceRequest.getExportRequestUUID(), resourceRequest.getUUID(), filters.get(FILTER_DATE_FROM));
 
             throw new FilterExtractionException(String.format("invalid 'from' filter date specified: %s", e.getMessage()));
         }
@@ -54,11 +54,11 @@ public class EventFiltersExtractor {
         try {
             to = this.extractDateFromObject(filters.get(FILTER_DATE_TO));
         } catch (final DateTimeParseException e) {
-            Log.debugf(e, "[resource_uuid: %s] bad \"to\" date format. Notifying the export service with a 400 error. Received date: %s", exportRequest.getUUID(), filters.get(FILTER_DATE_TO));
+            Log.debugf(e, "[export_request_uuid: %s][resource_uuid: %s] bad \"to\" date format. Notifying the export service with a 400 error. Received date: %s", resourceRequest.getExportRequestUUID(), resourceRequest.getUUID(), filters.get(FILTER_DATE_TO));
 
             throw new FilterExtractionException("unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
         } catch (final IllegalStateException e) {
-            Log.debugf(e, "[resource_uuid: %s] well formatted but invalid \"to\" date received: %s", exportRequest.getUUID(), filters.get(FILTER_DATE_TO));
+            Log.debugf(e, "[export_request_uuid: %s][resource_uuid: %s] well formatted but invalid \"to\" date received: %s", resourceRequest.getExportRequestUUID(), resourceRequest.getUUID(), filters.get(FILTER_DATE_TO));
 
             throw new FilterExtractionException(String.format("invalid 'to' filter date specified: %s", e.getMessage()));
         }
@@ -66,7 +66,7 @@ public class EventFiltersExtractor {
         // Make sure that the "from" date is before of the "to" date, to avoid
         // hitting the database with conditions that would report no results.
         if (to != null && from != null && to.isBefore(from)) {
-            Log.debugf("[resource_uuid: %s] the received \"to\" date filter [%s] is before the \"from\" date filter [%s]", exportRequest.getUUID(), from.toString(), to.toString());
+            Log.debugf("[resource_uuid: %s] the received \"to\" date filter [%s] is before the \"from\" date filter [%s]", resourceRequest.getUUID(), from.toString(), to.toString());
 
             throw new FilterExtractionException("'from' date must be earlier than the 'to' date");
         }

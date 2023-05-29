@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.exports;
 
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequestClass;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
@@ -31,8 +31,8 @@ public class EventExporterService {
 
     /**
      * Exports the events to the format specified in the request.
-     * @param exportRequest the request to extract the filters and the required
-     *                      data from.
+     * @param resourceRequest the request to extract the filters and the
+     *                        required data from.
      * @param orgId the associated organization ID of the request.
      * @return a string containing the serialized contents.
      * @throws FilterExtractionException if the filters could not be extracted
@@ -45,9 +45,9 @@ public class EventExporterService {
      * @throws UnsupportedFormatException if the specified format is not
      *                                    supported by Notifications.
      */
-    public String exportEvents(final ExportRequestClass exportRequest, final String orgId) throws FilterExtractionException, TransformationException, UnsupportedFormatException {
+    public String exportEvents(final ResourceRequestClass resourceRequest, final String orgId) throws FilterExtractionException, TransformationException, UnsupportedFormatException {
         // Extract the filters from the request.
-        final EventFilters eventFilters = this.eventFiltersExtractor.extract(exportRequest);
+        final EventFilters eventFilters = this.eventFiltersExtractor.extract(resourceRequest);
 
         // Fetch the events from the database.
         final AtomicReference<List<Event>> events = new AtomicReference<>();
@@ -55,7 +55,7 @@ public class EventExporterService {
             events.set(this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to()));
         });
 
-        switch (exportRequest.getFormat()) {
+        switch (resourceRequest.getFormat()) {
             case CSV -> {
                 return new CSVEventTransformer().transform(events.get());
             }

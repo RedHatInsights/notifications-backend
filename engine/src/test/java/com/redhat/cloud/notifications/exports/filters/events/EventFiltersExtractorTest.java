@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.exports.filters.events;
 
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequestClass;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
 import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
@@ -29,7 +29,7 @@ public class EventFiltersExtractorTest {
      */
     @Test
     void testNoDate() throws FilterExtractionException {
-        final EventFilters eventFilters = this.eventFiltersExtractor.extract(new ExportRequestClass());
+        final EventFilters eventFilters = this.eventFiltersExtractor.extract(new ResourceRequestClass());
 
         Assertions.assertNull(eventFilters.from(), "on empty filters the 'from' date should be null, since that means that no initial date filter has been specified");
         Assertions.assertNull(eventFilters.to(), "on empty filters the 'to' date should be null, since that means that no final date filter has been specified");
@@ -43,8 +43,8 @@ public class EventFiltersExtractorTest {
      */
     @Test
     void testValidDates() throws FilterExtractionException {
-        final ExportRequestClass exportRequestClass = new ExportRequestClass();
-        exportRequestClass.setFilters(
+        final ResourceRequestClass resourceRequest = new ResourceRequestClass();
+        resourceRequest.setFilters(
             Map.of(
                 EventFiltersExtractor.FILTER_DATE_FROM,
                 this.TODAY.minusDays(2).toString(),
@@ -53,7 +53,7 @@ public class EventFiltersExtractorTest {
             )
         );
 
-        final EventFilters result = this.eventFiltersExtractor.extract(exportRequestClass);
+        final EventFilters result = this.eventFiltersExtractor.extract(resourceRequest);
 
         Assertions.assertEquals(this.TODAY.minusDays(2), result.from(), "the 'from' date was not correctly extracted from the Cloud Event's payload");
         Assertions.assertEquals(this.TODAY.minusDays(1), result.to(), "the 'to' date was not correctly extracted from the Cloud Event's payload");
@@ -65,8 +65,8 @@ public class EventFiltersExtractorTest {
      */
     @Test
     void testUnparseableFromDateRaisesException() {
-        final ExportRequestClass exportRequest = new ExportRequestClass();
-        exportRequest.setFilters(
+        final ResourceRequestClass resourceRequest = new ResourceRequestClass();
+        resourceRequest.setFilters(
             Map.of(
                 EventFiltersExtractor.FILTER_DATE_FROM,
                 "Hello, World!"
@@ -75,7 +75,7 @@ public class EventFiltersExtractorTest {
 
         final FilterExtractionException exception = Assertions.assertThrows(
             FilterExtractionException.class,
-            () -> this.eventFiltersExtractor.extract(exportRequest)
+            () -> this.eventFiltersExtractor.extract(resourceRequest)
         );
 
         Assertions.assertEquals("unable to parse the 'from' date filter with the 'yyyy-mm-dd' format", exception.getMessage(), "unexpected error message in the FilterExtractionException when an unparseable 'from' date is present in the filters");
@@ -87,8 +87,8 @@ public class EventFiltersExtractorTest {
      */
     @Test
     void testUnparseableToDateRaisesException() {
-        final ExportRequestClass exportRequest = new ExportRequestClass();
-        exportRequest.setFilters(
+        final ResourceRequestClass resourceRequest = new ResourceRequestClass();
+        resourceRequest.setFilters(
             Map.of(
                 EventFiltersExtractor.FILTER_DATE_TO,
                 "Hello, World!"
@@ -97,7 +97,7 @@ public class EventFiltersExtractorTest {
 
         final FilterExtractionException exception = Assertions.assertThrows(
             FilterExtractionException.class,
-            () -> this.eventFiltersExtractor.extract(exportRequest)
+            () -> this.eventFiltersExtractor.extract(resourceRequest)
         );
 
         Assertions.assertEquals("unable to parse the 'to' date filter with the 'yyyy-mm-dd' format", exception.getMessage(), "unexpected error message in the FilterExtractionException when an unparseable 'from' date is present in the filters");
@@ -130,8 +130,8 @@ public class EventFiltersExtractorTest {
         );
 
         for (final TestCase testCase : testCases) {
-            final ExportRequestClass exportRequest = new ExportRequestClass();
-            exportRequest.setFilters(
+            final ResourceRequestClass resourceRequest = new ResourceRequestClass();
+            resourceRequest.setFilters(
                 Map.of(
                     EventFiltersExtractor.FILTER_DATE_FROM,
                     testCase.dateUnderTest()
@@ -140,7 +140,7 @@ public class EventFiltersExtractorTest {
 
             final FilterExtractionException exception = Assertions.assertThrows(
                 FilterExtractionException.class,
-                () -> this.eventFiltersExtractor.extract(exportRequest)
+                () -> this.eventFiltersExtractor.extract(resourceRequest)
             );
 
             Assertions.assertEquals(testCase.expectedExceptionMessage(), exception.getMessage(), String.format("unexpected error message for test case %s", testCase));
@@ -174,8 +174,8 @@ public class EventFiltersExtractorTest {
         );
 
         for (final TestCase testCase : testCases) {
-            final ExportRequestClass exportRequest = new ExportRequestClass();
-            exportRequest.setFilters(
+            final ResourceRequestClass resourceRequest = new ResourceRequestClass();
+            resourceRequest.setFilters(
                 Map.of(
                     EventFiltersExtractor.FILTER_DATE_TO,
                     testCase.dateUnderTest()
@@ -184,7 +184,7 @@ public class EventFiltersExtractorTest {
 
             final FilterExtractionException exception = Assertions.assertThrows(
                 FilterExtractionException.class,
-                () -> this.eventFiltersExtractor.extract(exportRequest)
+                () -> this.eventFiltersExtractor.extract(resourceRequest)
             );
 
             Assertions.assertEquals(testCase.expectedExceptionMessage(), exception.getMessage(), String.format("unexpected error message for test case %s", testCase));
@@ -198,8 +198,8 @@ public class EventFiltersExtractorTest {
      */
     @Test
     void testToDatesBeforeFromDatesRaiseExceptions() {
-        final ExportRequestClass exportRequest = new ExportRequestClass();
-        exportRequest.setFilters(
+        final ResourceRequestClass resourceRequest = new ResourceRequestClass();
+        resourceRequest.setFilters(
             Map.of(
                 EventFiltersExtractor.FILTER_DATE_FROM,
                 this.TODAY.minusDays(5).toString(),
@@ -210,7 +210,7 @@ public class EventFiltersExtractorTest {
 
         final FilterExtractionException exception = Assertions.assertThrows(
             FilterExtractionException.class,
-            () -> this.eventFiltersExtractor.extract(exportRequest)
+            () -> this.eventFiltersExtractor.extract(resourceRequest)
         );
 
         Assertions.assertEquals("'from' date must be earlier than the 'to' date", exception.getMessage(), "unexpected error message when providing a final date filter which is before the initial date filter");

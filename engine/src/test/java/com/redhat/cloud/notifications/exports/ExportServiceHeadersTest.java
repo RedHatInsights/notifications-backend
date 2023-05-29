@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.exports;
 
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequest;
 import com.redhat.cloud.event.apps.exportservice.v1.Format;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequest;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.GenericConsoleCloudEvent;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
@@ -79,7 +79,7 @@ public class ExportServiceHeadersTest {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Set up a simple helper class.
-        record TestCase(GenericConsoleCloudEvent<ExportRequest> cloudEvent, String expectedMediaType) { }
+        record TestCase(GenericConsoleCloudEvent<ResourceRequest> cloudEvent, String expectedMediaType) { }
 
         final List<TestCase> testCases = new ArrayList<>();
 

@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.exports;
 
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequest;
-import com.redhat.cloud.event.apps.exportservice.v1.ExportRequestClass;
 import com.redhat.cloud.event.apps.exportservice.v1.Format;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequest;
+import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
 import com.redhat.cloud.event.parser.ConsoleCloudEvent;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
@@ -23,8 +23,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @ApplicationScoped
 public class ExportEventListener {
@@ -39,7 +37,6 @@ public class ExportEventListener {
     protected static final String EXPORTS_SERVICE_SUCCESSES_COUNTER = "exports.service.successes";
 
     private final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
-    private final Pattern subjectUuidExtractPattern = Pattern.compile("^urn:redhat:subject:export-service:request:(?<uuid>.+)$");
 
     Counter failuresCounter;
     Counter successesCounter;
@@ -85,28 +82,16 @@ public class ExportEventListener {
                 return;
             }
 
-            // Extract the export request's UUID from the subject.
-            final UUID exportRequestUuid;
-            try {
-                exportRequestUuid = this.extractExportUuidFromSubject(receivedEvent.getSubject());
-            } catch (final IllegalArgumentException | IllegalStateException e) {
-                Log.errorf(e, "unable to extract the export request's UUID from the subject '%s'. Original Cloud Event: %s", receivedEvent.getSubject(), payload);
-
-                this.failuresCounter.increment();
-
-                return;
-            }
-
             // Make sure that we are attempting to handle an export request.
             if (!this.isAnExportRequest(receivedEvent)) {
-                Log.debugf("[export_request_uuid: %s] ignoring received event from the 'export-requests' topic since either it doesn't come from the 'export-service' or it is not of the 'request-export' type: %s", exportRequestUuid, payload);
+                Log.debugf("ignoring received event from the 'export-requests' topic since either it doesn't come from the 'export-service' or it is not of the 'request-export' type: %s", payload);
                 return;
             }
 
             // Also, make sure that it contains the expected payload's structure.
-            final Optional<ExportRequest> requestMaybe = receivedEvent.getData(ExportRequest.class);
+            final Optional<ResourceRequest> requestMaybe = receivedEvent.getData(ResourceRequest.class);
             if (requestMaybe.isEmpty()) {
-                Log.errorf("[export_request_uuid: %s] unable to process the export request: the cloud event's data is empty. Original cloud event: %s", exportRequestUuid, payload);
+                Log.errorf("unable to process the export request: the cloud event's data is empty. Original cloud event: %s", payload);
 
                 this.failuresCounter.increment();
 
@@ -114,10 +99,11 @@ public class ExportEventListener {
             }
 
             // Extract a few bits of information that will be reused over and over.
-            final ExportRequest request = requestMaybe.get();
-            final ExportRequestClass exportRequest = request.getExportRequest();
-            final String application = exportRequest.getApplication();
-            final UUID resourceUuid = exportRequest.getUUID();
+            final ResourceRequest request = requestMaybe.get();
+            final ResourceRequestClass resourceRequest = request.getResourceRequest();
+            final String application = resourceRequest.getApplication();
+            final UUID exportRequestUuid = resourceRequest.getExportRequestUUID();
+            final UUID resourceUuid = resourceRequest.getUUID();
 
             // If the application target isn't Notifications, then we can simply
             // skip the payload.
@@ -126,7 +112,7 @@ public class ExportEventListener {
                 return;
             }
 
-            final String resource = exportRequest.getResource();
+            final String resource = resourceRequest.getResource();
 
             // Check that we support the requested resource type to export.
             if (!this.isValidResourceType(resource)) {
@@ -140,13 +126,13 @@ public class ExportEventListener {
                 return;
             }
 
-            final Format format = exportRequest.getFormat();
+            final Format format = resourceRequest.getFormat();
             final String orgId = receivedEvent.getOrgId();
 
             // Handle exporting the requested resource type.
             final String exportedContents;
             try {
-                exportedContents = this.eventExporterService.exportEvents(exportRequest, orgId);
+                exportedContents = this.eventExporterService.exportEvents(resourceRequest, orgId);
             } catch (FilterExtractionException e) {
                 this.failuresCounter.increment();
 
@@ -218,24 +204,5 @@ public class ExportEventListener {
     boolean isAnExportRequest(final ConsoleCloudEvent cloudEvent) {
         return EXPORT_SERVICE_URN.equals(cloudEvent.getSource())
             && CE_EXPORT_REQUEST_TYPE.equals(cloudEvent.getType());
-    }
-
-    /**
-     * Extracts the export request's {@link UUID}, which comes in the Cloud
-     * Event's subject. Beware that the Cloud Event's {@link UUID} is not the
-     * same as the export request's {@link UUID}, or the resource's
-     * {@link UUID}.
-     * @param subject the received subject of the Cloud Event.
-     * @return the extracted {@link UUID} from the subject.
-     */
-    UUID extractExportUuidFromSubject(final String subject) {
-        final Matcher matcher = this.subjectUuidExtractPattern.matcher(subject);
-
-        // Attempt to find the expected UUID in the subject.
-        matcher.find();
-
-        // Attempt to build the UUID. In any unsuccessful case, exceptions will
-        // be thrown which have to be
-        return UUID.fromString(matcher.group("uuid"));
     }
 }
