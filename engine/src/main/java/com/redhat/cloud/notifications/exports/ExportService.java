@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.exports;
 
 import com.redhat.cloud.notifications.Constants;
+import io.quarkus.rest.client.reactive.ClientExceptionMapper;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestPath;
@@ -9,7 +10,9 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.UUID;
 
 @Path("/app/export/v1")
@@ -82,11 +85,11 @@ public interface ExportService {
      * debugging.
      * @param response the received response from the Export Service.
      * @return the {@link RuntimeException} to be thrown.
-     *
+     */
     @ClientExceptionMapper
     static RuntimeException toException(final Response response) {
         final String errMessage = String.format("The export service responded with a %s status: %s", response.getStatus(), response.readEntity(String.class));
 
         throw new WebApplicationException(errMessage, response);
-    }*/
+    }
 }

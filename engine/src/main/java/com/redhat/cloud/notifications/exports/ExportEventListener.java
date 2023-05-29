@@ -21,6 +21,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -181,6 +183,21 @@ public class ExportEventListener {
 
             this.successesCounter.increment();
         } catch (final Exception e) {
+            if (e instanceof final WebApplicationException wae) {
+                final int statusCode = wae.getResponse().getStatus();
+                final Response.Status.Family responseFamily = Response.Status.Family.familyOf(statusCode);
+
+                if (responseFamily == Response.Status.Family.CLIENT_ERROR) {
+                    this.failuresCounter.increment();
+                }
+
+                if (responseFamily == Response.Status.Family.SERVER_ERROR) {
+                    this.failuresCounter.increment();
+                }
+
+                return;
+            }
+
             Log.errorf(e, "something went wrong when handling a resource request from the export service. Received payload: %s", payload);
         }
     }

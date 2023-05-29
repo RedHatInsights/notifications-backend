@@ -4,6 +4,7 @@ import com.redhat.cloud.event.apps.exportservice.v1.Format;
 import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequest;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.GenericConsoleCloudEvent;
+import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -13,6 +14,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySource;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,18 +38,21 @@ import static org.mockserver.model.HttpResponse.response;
 
 /**
  * While {@link ExportEventListenerTest} uses mocks to test the whole logic of
- * the handler, this class uses a Mock Server in order to explicitly check that
- * the content type headers we send are the correct ones.
+ * the handler, this class uses a Mock Server in order to check some other
+ * things that are just simpler to check by using a mock server.
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class ExportServiceHeadersTest {
+public class ExportEventListenerMockServerTest {
     @InjectMock
     EventRepository eventRepository;
 
     @Any
     @Inject
     InMemoryConnector inMemoryConnector;
+
+    @Inject
+    MicrometerAssertionHelper micrometerAssertionHelper;
 
     /**
      * Sets up the routes for the Mock Server.
@@ -136,5 +141,82 @@ public class ExportServiceHeadersTest {
             // next iteration.
             this.clearMockServer();
         }
+    }
+
+    /**
+     * Tests that when a "client error" status code is returned from the export
+     * service then the failures counter increases.
+     */
+    @Test
+    void testError400IncreasesFailureMetric() {
+        final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
+
+        // Save all the counters to later assert that only the expected ones
+        // were increased.
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
+
+        // Generate the expected event.
+        final GenericConsoleCloudEvent<ResourceRequest> cce = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
+
+        // Serialize the payload and send it to the Kafka topic.
+        final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
+
+        // Return fixture events when the repository is called.
+        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
+
+        // Reset the mock server since we need it to return a specific response.
+        MockServerLifecycleManager.getClient().reset();
+        MockServerLifecycleManager.getClient()
+            .when(request().withPath(".*/upload"))
+            .respond(response().withStatusCode(HttpStatus.SC_BAD_REQUEST));
+
+        // Send the JSON payload.
+        exportIn.send(consoleCloudEventParser.toJson(cce));
+
+        // Assert that only the failures counter increased their value.
+        this.micrometerAssertionHelper.awaitAndAssertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
+    }
+
+    /**
+     * Tests that when a "server error" status code is returned from the export
+     * service then the failures counter increases.
+     */
+    @Test
+    void testError500IncreasesFailureMetric() {
+        final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
+
+        // Save all the counters to later assert that only the expected ones
+        // were increased.
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
+
+        // Generate the expected event.
+        final GenericConsoleCloudEvent<ResourceRequest> cce = ExportEventTestHelper.createExportCloudEventFixture(Format.JSON);
+
+        // Serialize the payload and send it to the Kafka topic.
+        final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
+
+        // Return fixture events when the repository is called.
+        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
+
+        // Reset the mock server since we need it to return a specific response.
+        MockServerLifecycleManager.getClient().reset();
+        MockServerLifecycleManager.getClient()
+            .when(request().withPath(".*/upload"))
+            .respond(response().withStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR));
+
+        // Send the JSON payload.
+        exportIn.send(consoleCloudEventParser.toJson(cce));
+
+        // Wait until the handler sends the payload to the export service.
+        await()
+            .atMost(Duration.ofSeconds(10))
+            .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload")).length != 0);
+
+        // Assert that only the failures counter increased their value.
+        this.micrometerAssertionHelper.awaitAndAssertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 }
