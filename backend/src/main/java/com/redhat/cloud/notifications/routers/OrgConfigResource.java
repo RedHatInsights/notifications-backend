@@ -30,12 +30,12 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 public class OrgConfigResource {
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
-    static class OrgConfigResourceV1 extends OrgConfigResource {
+    static class V1 extends OrgConfigResource {
 
     }
 
     @Path(Constants.API_NOTIFICATIONS_V_2_0 + "/org-config")
-    static class OrgConfigResourceV2 extends OrgConfigResource {
+    static class V2 extends OrgConfigResource {
 
     }
 

@@ -11,13 +11,23 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path(API_NOTIFICATIONS_V_1_0 + "/status")
 public class StatusResource {
 
     @Inject
     StatusRepository statusRepository;
+
+    @Path(API_NOTIFICATIONS_V_1_0 + "/status")
+    public static class V1 extends StatusResource {
+
+    }
+
+    @Path(API_NOTIFICATIONS_V_2_0 + "/status")
+    public static class V2 extends StatusResource {
+
+    }
 
     @GET
     @Produces(APPLICATION_JSON)

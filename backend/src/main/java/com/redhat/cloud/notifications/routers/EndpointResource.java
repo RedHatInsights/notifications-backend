@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
@@ -110,6 +111,16 @@ public class EndpointResource {
      */
     @Inject
     SecretUtils secretUtils;
+
+    @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
+    static class V1 extends EndpointResource {
+
+    }
+
+    @Path(Constants.API_INTEGRATIONS_V_2_0 + "/endpoints")
+    static class V2 extends EndpointResource {
+
+    }
 
     @GET
     @Produces(APPLICATION_JSON)
