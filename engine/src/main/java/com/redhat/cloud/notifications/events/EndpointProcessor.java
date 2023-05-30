@@ -29,6 +29,9 @@ public class EndpointProcessor {
     public static final String PROCESSED_MESSAGES_COUNTER_NAME = "processor.input.processed";
     public static final String PROCESSED_ENDPOINTS_COUNTER_NAME = "processor.input.endpoint.processed";
     public static final String DELAYED_EXCEPTION_MSG = "Exceptions were thrown during an event processing";
+    public static final String SLACK_ENDPOINT_SUBTYPE = "slack";
+    public static final String TEAMS_ENDPOINT_SUBTYPE = "teams";
+    public static final String GOOGLE_CHAT_ENDPOINT_SUBTYPE = "google_chat";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -91,11 +94,11 @@ public class EndpointProcessor {
                             Map<String, List<Endpoint>> endpointsBySubType = endpointsByTypeEntry.getValue().stream().collect(Collectors.groupingBy(Endpoint::getSubType));
                             for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
                                 try {
-                                    if ("slack".equals(endpointsBySubTypeEntry.getKey())) {
+                                    if (SLACK_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
                                         slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                    } else if ("teams".equals(endpointsBySubTypeEntry.getKey())) {
+                                    } else if (TEAMS_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
                                         teamsProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                    } else if ("google_chat".equals(endpointsBySubTypeEntry.getKey())) {
+                                    } else if (GOOGLE_CHAT_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
                                         googleChatProcessor.process(event, endpointsBySubTypeEntry.getValue());
                                     } else {
                                         camelProcessor.process(event, endpointsBySubTypeEntry.getValue());

@@ -3,13 +3,9 @@ package com.redhat.cloud.notifications.processors.camel.teams;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessorTest;
-import com.redhat.cloud.notifications.processors.camel.InternalCamelTemporaryService;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import javax.inject.Inject;
-
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -25,13 +21,8 @@ public class TeamsProcessorTest extends CamelProcessorTest {
     private static final String TEAMS_EXPECTED_MSG = "<//insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
             "triggered 1 event from rhel/policies. <//insights/policies|Open policies>";
 
-
     @Inject
     TeamsProcessor teamsProcessor;
-
-    @InjectMock
-    @RestClient
-    InternalTemporaryTeamsService internalTemporaryTeamsService;
 
     @Override
     protected String getQuteTemplate() {
@@ -51,10 +42,5 @@ public class TeamsProcessorTest extends CamelProcessorTest {
     @Override
     protected CamelProcessor getCamelProcessor() {
         return teamsProcessor;
-    }
-
-    @Override
-    protected InternalCamelTemporaryService getInternalClient() {
-        return internalTemporaryTeamsService;
     }
 }

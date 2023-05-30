@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsConverter;
+import com.redhat.cloud.notifications.events.ConnectorReceiver;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 
@@ -45,7 +46,7 @@ public class NotificationHistoryRepository {
     /**
      * Update a stub history item with data we have received from the Camel sender
      *
-     * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
+     * @see ConnectorReceiver
      */
     @Transactional
     public boolean updateHistoryItem(NotificationHistory notificationHistory) {

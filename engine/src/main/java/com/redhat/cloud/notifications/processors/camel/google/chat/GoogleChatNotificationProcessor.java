@@ -1,22 +1,20 @@
 package com.redhat.cloud.notifications.processors.camel.google.chat;
 
+import com.redhat.cloud.notifications.processors.camel.CamelNotification;
 import com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor;
+
 import javax.enterprise.context.ApplicationScoped;
 
 /*
  * This processor transforms an incoming Google Chat notification, initially received as JSON data,
- * into a data structure that can be used by the Camel HTTP component to send a message to Google Chat.
+ * into a data structure that can be used by the Camel HTTP component to send a message to
+ * the desired Google Chat space.
  */
 @ApplicationScoped
-public class GoogleChatNotificationProcessor extends CamelNotificationProcessor {
+public class GoogleChatNotificationProcessor extends CamelNotificationProcessor<CamelNotification> {
 
     @Override
-    protected String getIntegrationName() {
-        return "Google Chat";
-    }
-
-    @Override
-    public String getSource() {
-        return "googlechat";
+    public String getConnectorName() {
+        return "google_chat";
     }
 }

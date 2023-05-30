@@ -23,7 +23,7 @@ import javax.persistence.EntityManager;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.INTEGRATION_FAILED_EVENT_TYPE;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.INTEGRATION_FAILED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;

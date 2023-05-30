@@ -7,9 +7,9 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import javax.enterprise.context.ApplicationScoped;
 
-import static com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatRouteBuilder.GOOGLE_CHAT_INCOMING_ROUTE;
-import static com.redhat.cloud.notifications.processors.camel.slack.SlackRouteBuilder.SLACK_INCOMING_ROUTE;
-import static com.redhat.cloud.notifications.processors.camel.teams.TeamsRouteBuilder.TEAMS_INCOMING_ROUTE;
+import static com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatRouteBuilder.GOOGLE_CHAT_ROUTE;
+import static com.redhat.cloud.notifications.processors.camel.slack.SlackRouteBuilder.SLACK_ROUTE;
+import static com.redhat.cloud.notifications.processors.camel.teams.TeamsRouteBuilder.TEAMS_ROUTE;
 
 @ApplicationScoped
 public class RetryCounterProcessor implements Processor {
@@ -34,13 +34,13 @@ public class RetryCounterProcessor implements Processor {
     public void process(Exchange exchange) throws Exception {
         final String routeId = exchange.getFromRouteId();
         switch (routeId) {
-            case SLACK_INCOMING_ROUTE :
+            case SLACK_ROUTE:
                 slackRetryCounter.increment();
                 break;
-            case TEAMS_INCOMING_ROUTE :
+            case TEAMS_ROUTE:
                 teamsRetryCounter.increment();
                 break;
-            case GOOGLE_CHAT_INCOMING_ROUTE :
+            case GOOGLE_CHAT_ROUTE:
                 googleChatRetryCounter.increment();
                 break;
             default:

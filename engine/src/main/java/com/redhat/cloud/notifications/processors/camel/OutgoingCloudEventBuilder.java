@@ -9,9 +9,9 @@ import javax.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.HISTORY_ID;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
-import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SOURCE;
+import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.RETURN_SOURCE;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.START_TIME;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.TYPE;
@@ -40,8 +40,8 @@ public class OutgoingCloudEventBuilder implements Processor {
         JsonObject outgoingCloudEvent = new JsonObject();
         outgoingCloudEvent.put("type", CE_TYPE);
         outgoingCloudEvent.put("specversion", CE_SPEC_VERSION);
-        outgoingCloudEvent.put("source", exchange.getProperty(SOURCE, String.class));
-        outgoingCloudEvent.put("id", exchange.getProperty(HISTORY_ID, String.class));
+        outgoingCloudEvent.put("source", exchange.getProperty(RETURN_SOURCE, String.class));
+        outgoingCloudEvent.put("id", exchange.getProperty(ID, String.class));
         outgoingCloudEvent.put("time", LocalDateTime.now(ZoneOffset.UTC).toString());
         // TODO The serialization to JSON shouldn't be needed here. Migrate this later!
         outgoingCloudEvent.put("data", data.toJson());

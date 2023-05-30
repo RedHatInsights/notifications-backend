@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.redhat.cloud.notifications.events.FromCamelHistoryFiller;
+import com.redhat.cloud.notifications.events.ConnectorReceiver;
 import com.redhat.cloud.notifications.events.KafkaMessageWithIdBuilder;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Parser;
@@ -23,7 +23,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path(API_INTERNAL + "/endpoints")
 public class EndpointTestResource {
 
-    @Channel(FromCamelHistoryFiller.EGRESS_CHANNEL)
+    @Channel(ConnectorReceiver.EGRESS_CHANNEL)
     @Inject
     Emitter<String> eventEmitter;
 

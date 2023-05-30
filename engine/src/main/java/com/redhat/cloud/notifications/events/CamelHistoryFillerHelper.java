@@ -20,7 +20,7 @@ public class CamelHistoryFillerHelper {
      *
      * @param jo Map containing the returned data
      * @return Nothing
-     * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
+     * @see ConnectorReceiver
      */
     public boolean updateHistoryItem(Map<String, Object> jo) {
         String historyId = (String) jo.get("historyId");

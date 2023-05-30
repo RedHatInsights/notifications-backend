@@ -1,9 +1,6 @@
 package com.redhat.cloud.notifications.processors.camel.slack;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.redhat.cloud.notifications.processors.camel.CamelNotification;
 import com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor;
-import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -14,29 +11,20 @@ import javax.enterprise.context.ApplicationScoped;
  * the desired Slack channel.
  */
 @ApplicationScoped
-public class SlackNotificationProcessor extends CamelNotificationProcessor {
+public class SlackNotificationProcessor extends CamelNotificationProcessor<SlackNotification> {
 
     @Override
-    protected void logProcessingMessage(final CamelNotification commonNotification, final String exchangeBody) throws JsonProcessingException {
-        if (Log.isDebugEnabled()) {
-            SlackNotification slackNotification = getSlackNotification(exchangeBody);
-            Log.debugf("Processing Slack notification [orgId=%s, historyId=%s, webhookUrl=%s, channel=%s]",
-                slackNotification.orgId, slackNotification.historyId, slackNotification.webhookUrl, slackNotification.channel);
-        }
+    protected Class<SlackNotification> getNotificationClass() {
+        return SlackNotification.class;
     }
 
     @Override
-    protected void addExtraProperties(final Exchange exchange, final String exchangeBody) throws JsonProcessingException {
-        SlackNotification slackNotification = getSlackNotification(exchangeBody);
-        exchange.setProperty("channel", slackNotification.channel);
-    }
-
-    @Override
-    public String getSource() {
+    public String getConnectorName() {
         return "slack";
     }
 
-    private SlackNotification getSlackNotification(final String exchangeBody) throws JsonProcessingException {
-        return objectMapper.readValue(exchangeBody, SlackNotification.class);
+    @Override
+    protected void addExtraProperties(final Exchange exchange, SlackNotification notification) {
+        exchange.setProperty("channel", notification.channel);
     }
 }

@@ -22,9 +22,9 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.MESSAGES_ERROR_COUNTER_NAME;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.MESSAGES_PROCESSED_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.MESSAGES_ERROR_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.MESSAGES_PROCESSED_COUNTER_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class FromCamelHistoryFillerTest {
+public class ConnectorReceiverTest {
 
     @Inject
     @Any
