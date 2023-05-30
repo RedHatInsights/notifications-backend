@@ -31,7 +31,7 @@ public class ExportEventListener {
 
     public static final String APPLICATION_NAME = "urn:redhat:application:notifications";
     public static final String CE_EXPORT_REQUEST_TYPE = "com.redhat.console.export-service.request";
-    public static final String EXPORT_CHANNEL = "export-requests";
+    public static final String EXPORT_CHANNEL = "exportrequests";
     public static final String EXPORT_SERVICE_URN = "urn:redhat:source:console:app:export-service";
     public static final String RESOURCE_TYPE_EVENTS = "urn:redhat:application:notifications:export:events";
 
@@ -77,7 +77,7 @@ public class ExportEventListener {
             try {
                 receivedEvent = this.consoleCloudEventParser.fromJsonString(payload);
             } catch (final ConsoleCloudEventParsingException e) {
-                Log.error("the received payload from the 'export-requests' topic is not a parseable Cloud Event", e);
+                Log.error("the received payload from the 'exportrequests' topic is not a parseable Cloud Event", e);
 
                 this.failuresCounter.increment();
 
@@ -86,7 +86,7 @@ public class ExportEventListener {
 
             // Make sure that we are attempting to handle an export request.
             if (!this.isAnExportRequest(receivedEvent)) {
-                Log.debugf("ignoring received event from the 'export-requests' topic since either it doesn't come from the 'export-service' or it is not of the 'request-export' type: %s", payload);
+                Log.debugf("ignoring received event from the 'exportrequests' topic since either it doesn't come from the 'export-service' or it is not of the 'request-export' type: %s", payload);
                 return;
             }
 
