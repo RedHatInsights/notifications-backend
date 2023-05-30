@@ -153,7 +153,11 @@ public class ExportEventListenerMockServerTest {
 
         // Save all the counters to later assert that only the expected ones
         // were increased.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_CLIENT_ERROR
+        );
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         // Generate the expected event.
@@ -175,7 +179,11 @@ public class ExportEventListenerMockServerTest {
         exportIn.send(consoleCloudEventParser.toJson(cce));
 
         // Assert that only the failures counter increased their value.
-        this.micrometerAssertionHelper.awaitAndAssertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.awaitAndAssertCounterIncrementFilteredByTags(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_CLIENT_ERROR,
+            1);
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 
@@ -189,7 +197,11 @@ public class ExportEventListenerMockServerTest {
 
         // Save all the counters to later assert that only the expected ones
         // were increased.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_SERVER_ERROR
+        );
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         // Generate the expected event.
@@ -216,7 +228,11 @@ public class ExportEventListenerMockServerTest {
             .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload")).length != 0);
 
         // Assert that only the failures counter increased their value.
-        this.micrometerAssertionHelper.awaitAndAssertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.awaitAndAssertCounterIncrementFilteredByTags(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_SERVER_ERROR,
+            1);
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 }

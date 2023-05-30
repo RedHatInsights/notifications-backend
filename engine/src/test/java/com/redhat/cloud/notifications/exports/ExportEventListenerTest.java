@@ -18,7 +18,9 @@ import io.smallrye.reactive.messaging.providers.connectors.InMemorySource;
 import io.vertx.core.json.JsonArray;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -62,6 +64,46 @@ public class ExportEventListenerTest {
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
+    @BeforeEach
+    void resetC() {
+        this.micrometerAssertionHelper.clearSavedValues();
+    }
+
+    @AfterEach
+    void resetCounterValues() {
+        this.micrometerAssertionHelper.clearSavedValues();
+    }
+
+    /**
+     * Tests that when an export request contains a payload which isn't a valid
+     * Cloud Event, then the corresponding error counter is increased.
+     */
+    @Test
+    void testNonParseableCloudEventIncrementsErrorCounter() {
+        // Save the counter values to assert the "errors count" change later.
+        // Also save the successes counter, to make sure that it doesn't get
+        // accidentally incremented.
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_NON_PARSEABLE_CE
+        );
+        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
+
+        final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
+        exportIn.send("Hello, World!");
+
+        // Assert that the errors counter was incremented, and that the
+        // successes counter did not increment.
+        this.micrometerAssertionHelper.awaitAndAssertCounterIncrementFilteredByTags(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_NON_PARSEABLE_CE,
+            1
+        );
+        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
+    }
+
     /**
      * Tests that when an export request is received with an invalid resource
      * type, then an error is sent to the export service.
@@ -71,7 +113,11 @@ public class ExportEventListenerTest {
         // Save the counter values to assert the "errors count" change later.
         // Also save the successes counter, to make sure that it doesn't get
         // accidentally incremented.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_UNSUPPORTED_RESOURCE_TYPE
+        );
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
@@ -91,7 +137,12 @@ public class ExportEventListenerTest {
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            1,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_UNSUPPORTED_RESOURCE_TYPE
+        );
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 
@@ -104,7 +155,11 @@ public class ExportEventListenerTest {
         // Save the counter values to assert the "errors count" change later.
         // Also save the successes counter, to make sure that it doesn't get
         // accidentally incremented.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+        );
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
@@ -123,7 +178,12 @@ public class ExportEventListenerTest {
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            1,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+        );
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 
@@ -136,7 +196,11 @@ public class ExportEventListenerTest {
         // Save the counter values to assert the "errors count" change later.
         // Also save the successes counter, to make sure that it doesn't get
         // accidentally incremented.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+        );
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
@@ -155,7 +219,12 @@ public class ExportEventListenerTest {
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, 1);
+        this.micrometerAssertionHelper.assertCounterIncrement(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            1,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+        );
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 
@@ -168,7 +237,11 @@ public class ExportEventListenerTest {
         // Save the counter values to assert the "errors count" change later.
         // Also save the successes counter, to make sure that it doesn't get
         // accidentally incremented.
-        this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+        );
         this.micrometerAssertionHelper.saveCounterValuesBeforeTest(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER);
 
         record TestCase(LocalDate from, LocalDate to, String expectedErrorMessage) { }
@@ -254,7 +327,12 @@ public class ExportEventListenerTest {
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
-        this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER, testCases.size());
+        this.micrometerAssertionHelper.assertCounterIncrement(
+            ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
+            testCases.size(),
+            ExportEventListener.FAILURE_KEY,
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+        );
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
 

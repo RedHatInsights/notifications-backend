@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.exports.transformers.TransformationExcepti
 import com.redhat.cloud.notifications.exports.transformers.UnsupportedFormatException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.Blocking;
 import org.apache.http.HttpStatus;
@@ -39,12 +40,72 @@ public class ExportEventListener {
     public static final String EXPORT_SERVICE_URN = "urn:redhat:source:console:app:export-service";
     public static final String RESOURCE_TYPE_EVENTS = "urn:redhat:application:notifications:export:events";
 
+    /**
+     * The main counter for tracking failures in the integration.
+     */
     protected static final String EXPORTS_SERVICE_FAILURES_COUNTER = "exports.service.failures";
+    /**
+     * The main counter for tracking successful interactions with the export
+     * service.
+     */
     protected static final String EXPORTS_SERVICE_SUCCESSES_COUNTER = "exports.service.successes";
+    /**
+     * Represents a failure caused by the export service responding with a 4xx
+     * status code.
+     */
+    protected static final String FAILURE_CLIENT_ERROR = "client.error";
+    /**
+     * The key used for specifying the reason of the failure.
+     */
+    protected static final String FAILURE_KEY = "error";
+    /**
+     * Represents that a Cloud Event didn't come with the expected body.
+     */
+    protected static final String FAILURE_EMPTY_BODY = "empty.body";
+    /**
+     * Represents that the incoming payload wasn't a parseable or valid
+     * "resource request" Cloud Event.
+     */
+    protected static final String FAILURE_NON_PARSEABLE_CE = "non.parseable.cloud.event";
+    /**
+     * Represents a failure caused by the export service responding with a 5xx
+     * status code.
+     */
+    protected static final String FAILURE_SERVER_ERROR = "server.error";
+    /**
+     * Represents that the incoming filters in the Cloud Event are not properly
+     * specified.
+     */
+    protected static final String FAILURE_UNABLE_EXTRACT_FILTERS = "unable.extract.filters";
+    /**
+     * Represents that the data from Notifications could not be transformed to
+     * the requested format.
+     */
+    protected static final String FAILURE_UNABLE_TRANSFORM_DATA = "unable.transform.data";
+    /**
+     * Represents that the requested export format is not supported by
+     * Notifications.
+     */
+    protected static final String FAILURE_UNSUPPORTED_FORMAT = "unsupported.format";
+    /**
+     * Represents that the specified resource type to be exported is not
+     * supported by Notifications.
+     */
+    protected static final String FAILURE_UNSUPPORTED_RESOURCE_TYPE = "unsupported.resource.type";
 
     private final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
-    Counter failuresCounter;
+    // Failure counters.
+    Counter clientErrorFailuresCounter;
+    Counter emptyBodyFailuresCounter;
+    Counter nonParseableFailuresCounter;
+    Counter serverErrorFailuresCounter;
+    Counter unableExtractFiltersFailuresCounter;
+    Counter unableTransformDataFailuresCounter;
+    Counter unsupportedFormatFailuresCounter;
+    Counter unsupportedResourceTypeFailuresCounter;
+
+    // Success counter.
     Counter successesCounter;
 
     @Inject
@@ -61,7 +122,17 @@ public class ExportEventListener {
 
     @PostConstruct
     void postConstruct() {
-        this.failuresCounter = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER);
+        // Different failures counters.
+        this.clientErrorFailuresCounter             = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER, Tags.of(FAILURE_KEY, FAILURE_CLIENT_ERROR));
+        this.emptyBodyFailuresCounter               = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER, Tags.of(FAILURE_KEY, FAILURE_EMPTY_BODY));
+        this.unsupportedFormatFailuresCounter       = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER, Tags.of(FAILURE_KEY, FAILURE_UNSUPPORTED_FORMAT));
+        this.nonParseableFailuresCounter            = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER, Tags.of(FAILURE_KEY, FAILURE_NON_PARSEABLE_CE));
+        this.serverErrorFailuresCounter             = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER, Tags.of(FAILURE_KEY, FAILURE_SERVER_ERROR));
+        this.unableExtractFiltersFailuresCounter    = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER, Tags.of(FAILURE_KEY, FAILURE_UNABLE_EXTRACT_FILTERS));
+        this.unableTransformDataFailuresCounter     = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER, Tags.of(FAILURE_KEY, FAILURE_UNABLE_TRANSFORM_DATA));
+        this.unsupportedResourceTypeFailuresCounter = this.meterRegistry.counter(EXPORTS_SERVICE_FAILURES_COUNTER, Tags.of(FAILURE_KEY, FAILURE_UNSUPPORTED_RESOURCE_TYPE));
+
+        // Success counter.
         this.successesCounter = this.meterRegistry.counter(EXPORTS_SERVICE_SUCCESSES_COUNTER);
     }
 
@@ -84,7 +155,7 @@ public class ExportEventListener {
             } catch (final ConsoleCloudEventParsingException e) {
                 Log.error("the received payload from the 'exportrequests' topic is not a parseable Cloud Event", e);
 
-                this.failuresCounter.increment();
+                this.nonParseableFailuresCounter.increment();
 
                 return;
             }
@@ -100,7 +171,7 @@ public class ExportEventListener {
             if (requestMaybe.isEmpty()) {
                 Log.errorf("unable to process the export request: the cloud event's data is empty. Original cloud event: %s", payload);
 
-                this.failuresCounter.increment();
+                this.emptyBodyFailuresCounter.increment();
 
                 return;
             }
@@ -125,7 +196,7 @@ public class ExportEventListener {
             if (!this.isValidResourceType(resource)) {
                 Log.errorf("[export_request_uuid: %s][resource_uuid: %s] export request could not be fulfilled: the requested resource type '%s' is not handled. Original cloud event: %s", exportRequestUuid, resourceUuid, resource, payload);
 
-                this.failuresCounter.increment();
+                this.unsupportedResourceTypeFailuresCounter.increment();
 
                 final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
                 this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
@@ -141,7 +212,7 @@ public class ExportEventListener {
             try {
                 exportedContents = this.eventExporterService.exportEvents(resourceRequest, orgId);
             } catch (FilterExtractionException e) {
-                this.failuresCounter.increment();
+                this.unableExtractFiltersFailuresCounter.increment();
 
                 final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, e.getMessage());
                 this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
@@ -150,7 +221,7 @@ public class ExportEventListener {
             } catch (TransformationException e) {
                 Log.errorf(e, "[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unable to transform events to the requested format: %s", exportRequestUuid, resourceUuid, format, e.getCause().getMessage());
 
-                this.failuresCounter.increment();
+                this.unableTransformDataFailuresCounter.increment();
 
                 final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
                 this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
@@ -158,6 +229,8 @@ public class ExportEventListener {
                 return;
             } catch (UnsupportedFormatException e) {
                 Log.debugf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unsupported format", exportRequestUuid, resourceUuid, format);
+
+                this.unsupportedFormatFailuresCounter.increment();
 
                 final ExportError exportError = new ExportError(
                     HttpStatus.SC_BAD_REQUEST,
@@ -195,11 +268,11 @@ public class ExportEventListener {
                 final Response.Status.Family responseFamily = Response.Status.Family.familyOf(statusCode);
 
                 if (responseFamily == Response.Status.Family.CLIENT_ERROR) {
-                    this.failuresCounter.increment();
+                    this.clientErrorFailuresCounter.increment();
                 }
 
                 if (responseFamily == Response.Status.Family.SERVER_ERROR) {
-                    this.failuresCounter.increment();
+                    this.serverErrorFailuresCounter.increment();
                 }
             }
 
