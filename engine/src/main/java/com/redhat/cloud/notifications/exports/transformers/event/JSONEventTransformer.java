@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.exports.transformers.event;
 
-import com.redhat.cloud.notifications.exports.ResultsTransformer;
+import com.redhat.cloud.notifications.exports.transformers.ResultsTransformer;
 import com.redhat.cloud.notifications.models.Event;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

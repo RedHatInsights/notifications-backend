@@ -129,6 +129,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.send-single-email-for-multiple-recipients.enabled", defaultValue = "false")
     boolean sendSingleEmailForMultipleRecipientsEnabled;
 
+    @ConfigProperty(name = "mp.messaging.incoming.export-requests.enabled", defaultValue = "false")
+    boolean exportServiceIntegrationEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -161,6 +164,7 @@ public class FeatureFlipper {
         Log.infof("The Rhel Advisor daily digest is %s", rhelAdvisorDailyDigestEnabled ? "enabled" : "disabled");
         Log.infof("Instant emails are %s", instantEmailsEnabled ? "enabled" : "disabled");
         Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
+        Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
