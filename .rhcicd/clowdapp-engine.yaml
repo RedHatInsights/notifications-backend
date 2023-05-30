@@ -258,6 +258,12 @@ objects:
           value: ${MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_RECORDS
           value: ${MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_RECORDS}
+        - name: EXPORT_SERVICE_PSK
+          valueFrom:
+            secretKeyRef:
+              name: export-service-psk
+              key: psk
+              optional: true
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
