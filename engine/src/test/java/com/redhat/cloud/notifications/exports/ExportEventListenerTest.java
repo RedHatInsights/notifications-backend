@@ -49,9 +49,6 @@ public class ExportEventListenerTest {
     @InjectMock
     EventRepository eventRepository;
 
-    @Inject
-    ExportEventListener exportEventListener;
-
     @InjectMock
     @RestClient
     ExportService exportService;
