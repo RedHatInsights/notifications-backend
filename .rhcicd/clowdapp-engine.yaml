@@ -440,7 +440,7 @@ parameters:
   value: INFO
 - name: KAFKA_CLIENT_LOG_LEVEL
   value: INFO
-- name: NOTIFICATIONS_EXPORTS_SERVICE_ENABLED
+- name: NOTIFICATIONS_EXPORT_SERVICE_ENABLED
   description: Enables the integration with the export service.
   value: "false"
 - name: MP_MESSAGING_INCOMING_EXPORT_REQUESTS_MAX_POLL_INTERVAL_MS
