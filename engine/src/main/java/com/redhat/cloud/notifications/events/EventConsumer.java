@@ -18,7 +18,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
-import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
@@ -37,7 +36,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
-import static org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy.PRE_PROCESSING;
 
 @ApplicationScoped
 public class EventConsumer {
@@ -95,7 +93,6 @@ public class EventConsumer {
     }
 
     @Incoming(INGRESS_CHANNEL)
-    @Acknowledgment(PRE_PROCESSING)
     @Blocking
     @ActivateRequestContext
     public CompletionStage<Void> process(Message<String> message) {
