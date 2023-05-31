@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
@@ -96,13 +95,11 @@ public class EventConsumer {
     @Incoming(INGRESS_CHANNEL)
     @Blocking
     @ActivateRequestContext
-    public CompletionStage<Void> process(Message<String> message) {
+    public void process(String payload) {
         Log.debug("Processing Kafka message - start");
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
         Log.debug("Timer started");
-        String payload = message.getPayload();
-        Log.debug("Payload retrieved");
         Map<String, String> tags = new HashMap<>();
         // The two following variables have to be final or effectively final. That why their type is String[] instead of String.
         /*
@@ -127,7 +124,8 @@ public class EventConsumer {
              * apps time to change their integration and start sending the new header. The message ID will become
              * mandatory with cloud events. We may want to throw an exception when it is null.
              */
-            final UUID messageId = getMessageId(eventWrapper, message);
+            //final UUID messageId = getMessageId(eventWrapper, message); TODO Commented for testing purposes in stage
+            final UUID messageId = getMessageId(eventWrapper);
 
             String msgId = messageId == null ? "null" : messageId.toString();
             Log.infof("Processing received event [id=%s, %s=%s, orgId=%s, %s]",
@@ -230,7 +228,6 @@ public class EventConsumer {
             ));
             Log.debug("Processing Kafka message - end");
         }
-        return message.ack();
     }
 
     @Timeout(5000)
@@ -266,5 +263,9 @@ public class EventConsumer {
         }
 
         return messageId;
+    }
+
+    private UUID getMessageId(EventWrapper<?, ?> eventWrapper) {
+        return eventWrapper.getId();
     }
 }
