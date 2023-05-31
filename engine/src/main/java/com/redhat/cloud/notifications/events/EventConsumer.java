@@ -18,6 +18,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
+import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -112,7 +113,9 @@ public class EventConsumer {
         AtomicReference<UUID> eventId = new AtomicReference<>(); // TODO Temp, remove ASAP
         try {
 
+            Log.debug("Parsing payload - start");
             final EventWrapper<?, ?> eventWrapper = parsePayload(payload, tags);
+            Log.debug("Parsing payload - end");
             /*
              * The event data was successfully parsed (either as an action or a cloud event). Depending on the situation
              * we now have a bundle/app/eventType triplet or a fully qualified name for the event type.
@@ -231,7 +234,8 @@ public class EventConsumer {
         return message.ack();
     }
 
-    private EventWrapper<?, ?> parsePayload(String payload, Map<String, String> tags) {
+    @Timeout(5000)
+    EventWrapper<?, ?> parsePayload(String payload, Map<String, String> tags) {
         try {
             Action action = actionParser.fromJsonString(payload);
             tags.put(TAG_KEY_BUNDLE, action.getBundle());
