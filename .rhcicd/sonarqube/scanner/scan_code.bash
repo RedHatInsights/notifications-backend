@@ -13,15 +13,16 @@ set -euxo pipefail
 # On the master branch there is no need to give the pull request details.
 #
 if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "master" ]; then
-  ./mvnw sonar:sonar \
+  ./mvnw clean compile sonar:sonar \
     -Dsonar.host.url="${SONARQUBE_HOST_URL}" \
     -Dsonar.exclusions="**/*.sql" \
     -Dsonar.projectKey="com.redhat.console.notifications.backend" \
     -Dsonar.projectVersion="${COMMIT_SHORT}" \
     -Dsonar.sourceEncoding="UTF-8" \
-    -Dsonar.token="${SONARQUBE_TOKEN}"
+    -Dsonar.token="${SONARQUBE_TOKEN}" \
+    --no-transfer-progress
 else
-  ./mvnw sonar:sonar \
+  ./mvnw clean compile sonar:sonar \
     -Dsonar.host.url="${SONARQUBE_HOST_URL}" \
     -Dsonar.exclusions="**/*.sql" \
     -Dsonar.projectKey="com.redhat.console.notifications.backend" \
@@ -30,5 +31,6 @@ else
     -Dsonar.pullrequest.branch="${GIT_BRANCH}" \
     -Dsonar.pullrequest.key="${GITHUB_PULL_REQUEST_ID}" \
     -Dsonar.sourceEncoding="UTF-8" \
-    -Dsonar.token="${SONARQUBE_TOKEN}"
+    -Dsonar.token="${SONARQUBE_TOKEN}" \
+    --no-transfer-progress
 fi
