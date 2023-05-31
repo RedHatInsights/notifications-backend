@@ -24,7 +24,6 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -116,7 +115,6 @@ public class EventConsumerTest {
     }
 
     @Test
-    @Disabled
     void testValidPayloadWithMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction(true);
@@ -145,7 +143,6 @@ public class EventConsumerTest {
     }
 
     @Test
-    @Disabled
     void testValidPayloadWithoutMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction(false);
@@ -172,7 +169,6 @@ public class EventConsumerTest {
     }
 
     @Test
-    @Disabled
     void testInvalidPayloadWithMessageId() {
         Message<String> message = buildMessageWithId(UUID.randomUUID().toString().getBytes(UTF_8), "I am not a valid payload!");
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
@@ -197,7 +193,6 @@ public class EventConsumerTest {
     }
 
     @Test
-    @Disabled
     void testUnknownEventTypeWithoutMessageId() {
         mockGetUnknownEventType();
         Action action = buildValidAction(false);
@@ -224,7 +219,6 @@ public class EventConsumerTest {
     }
 
     @Test
-    @Disabled
     void testProcessingErrorWithoutMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         mockProcessingFailure();
@@ -251,7 +245,6 @@ public class EventConsumerTest {
     }
 
     @Test
-    @Disabled
     void testDuplicatePayload() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction(false);
@@ -281,7 +274,6 @@ public class EventConsumerTest {
     }
 
     @Test
-    @Disabled
     void testNullMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction(false);
@@ -309,7 +301,6 @@ public class EventConsumerTest {
     }
 
     @Test
-    @Disabled
     void testInvalidMessageId() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction(false);

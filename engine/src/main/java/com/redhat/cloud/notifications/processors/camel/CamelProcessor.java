@@ -87,9 +87,6 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
             history.setDetails(Map.of("failure", e.getMessage()));
             notificationHistoryRepository.updateHistoryItem(history);
             Log.infof(e, "Sending %s notification through Camel failed [eventId=%s, historyId=%s]", getIntegrationName(), event.getId(), historyId);
-        } finally {
-            Log.debugf("Done sending %s notification through Camel [orgId=%s, eventId=%s, historyId=%s]",
-                    getIntegrationName(), endpoint.getOrgId(), event.getId(), historyId);
         }
     }
 

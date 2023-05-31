@@ -18,7 +18,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
-import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
@@ -33,7 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CompletionStage;
 
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 
@@ -95,23 +94,19 @@ public class EventConsumer {
     @Incoming(INGRESS_CHANNEL)
     @Blocking
     @ActivateRequestContext
-    public void process(String payload) {
-        Log.debug("Processing Kafka message - start");
+    public CompletionStage<Void> process(Message<String> message) {
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
-        Log.debug("Timer started");
+        String payload = message.getPayload();
         Map<String, String> tags = new HashMap<>();
         // The two following variables have to be final or effectively final. That why their type is String[] instead of String.
         /*
          * Step 1
          * The payload (JSON) is parsed into an Action.
          */
-        AtomicReference<UUID> eventId = new AtomicReference<>(); // TODO Temp, remove ASAP
         try {
 
-            Log.debug("Parsing payload - start");
             final EventWrapper<?, ?> eventWrapper = parsePayload(payload, tags);
-            Log.debug("Parsing payload - end");
             /*
              * The event data was successfully parsed (either as an action or a cloud event). Depending on the situation
              * we now have a bundle/app/eventType triplet or a fully qualified name for the event type.
@@ -124,8 +119,7 @@ public class EventConsumer {
              * apps time to change their integration and start sending the new header. The message ID will become
              * mandatory with cloud events. We may want to throw an exception when it is null.
              */
-            //final UUID messageId = getMessageId(eventWrapper, message); TODO Commented for testing purposes in stage
-            final UUID messageId = getMessageId(eventWrapper);
+            final UUID messageId = getMessageId(eventWrapper, message);
 
             String msgId = messageId == null ? "null" : messageId.toString();
             Log.infof("Processing received event [id=%s, %s=%s, orgId=%s, %s]",
@@ -195,7 +189,6 @@ public class EventConsumer {
                         // NOTIF-499 If there is no ID provided whatsoever we create one.
                         event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
                     }
-                    eventId.set(event.getId());
                     eventRepository.create(event);
                     /*
                      * Step 7
@@ -226,12 +219,11 @@ public class EventConsumer {
                     TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
                     TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, "")
             ));
-            Log.debug("Processing Kafka message - end");
         }
+        return message.ack();
     }
 
-    @Timeout(5000)
-    EventWrapper<?, ?> parsePayload(String payload, Map<String, String> tags) {
+    private EventWrapper<?, ?> parsePayload(String payload, Map<String, String> tags) {
         try {
             Action action = actionParser.fromJsonString(payload);
             tags.put(TAG_KEY_BUNDLE, action.getBundle());
@@ -263,9 +255,5 @@ public class EventConsumer {
         }
 
         return messageId;
-    }
-
-    private UUID getMessageId(EventWrapper<?, ?> eventWrapper) {
-        return eventWrapper.getId();
     }
 }
