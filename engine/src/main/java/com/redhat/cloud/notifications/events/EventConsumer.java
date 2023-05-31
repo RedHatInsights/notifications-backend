@@ -99,6 +99,7 @@ public class EventConsumer {
     @Blocking
     @ActivateRequestContext
     public CompletionStage<Void> process(Message<String> message) {
+        Log.debug("Processing Kafka message - start");
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
         String payload = message.getPayload();
@@ -195,7 +196,6 @@ public class EventConsumer {
                         event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
                     }
                     eventId.set(event.getId());
-                    Log.infof("Event id is %s", event.getId());
                     eventRepository.create(event);
                     /*
                      * Step 7
@@ -226,7 +226,7 @@ public class EventConsumer {
                     TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
                     TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, "")
             ));
-            Log.infof("Done processing event with id %s", eventId.get());
+            Log.debug("Processing Kafka message - end");
         }
         return message.ack();
     }
