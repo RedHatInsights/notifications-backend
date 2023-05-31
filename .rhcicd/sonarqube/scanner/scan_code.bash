@@ -12,7 +12,7 @@ set -euxo pipefail
 #
 # On the master branch there is no need to give the pull request details.
 #
-if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "master" ]; then
+if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
   ./mvnw clean compile sonar:sonar \
     -Dsonar.host.url="${SONARQUBE_HOST_URL}" \
     -Dsonar.exclusions="**/*.sql" \

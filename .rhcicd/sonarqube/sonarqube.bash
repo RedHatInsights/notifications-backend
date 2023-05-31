@@ -28,7 +28,7 @@ docker build \
 # Should we be running on master, then skip passing the information regarding
 # the pull request.
 #
-if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "master" ]; then
+if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
   docker run \
     --env COMMIT_SHORT="${COMMIT_SHORT}" \
     --env GIT_BRANCH="${GIT_BRANCH}" \
