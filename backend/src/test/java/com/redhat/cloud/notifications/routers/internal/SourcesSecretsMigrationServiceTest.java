@@ -237,8 +237,9 @@ public class SourcesSecretsMigrationServiceTest {
 
     /**
      * Tests that when exceptions are raised during the migration, the
-     * execution continues. Also checks that when an exception occurs, then
-     * the created Sources secrets are deleted from there too.
+     * execution continues. Also checks that when a Constraint Violation
+     * Exception occurs, then the created Sources secrets are deleted from
+     * there too.
      */
     @Deprecated(forRemoval = true)
     @Test

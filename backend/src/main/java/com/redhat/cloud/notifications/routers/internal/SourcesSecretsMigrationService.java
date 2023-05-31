@@ -65,6 +65,20 @@ public class SourcesSecretsMigrationService {
             } catch (final Exception e) {
                 if (this.extractConstraintViolationException(e) instanceof ConstraintViolationException cve) {
                     Log.errorf("[endpoint_id: %s] error when migrating the endpoint secrets: a constraint violation exception was raised: %s. Constraints list: %s", eligibleEndpoint.getKey(), cve.getMessage(), cve.getConstraintViolations());
+
+                    // Delete the secrets for the processed endpoint, since an
+                    // error occurred.
+                    final Endpoint endpoint = this.processedEndpoints.get(eligibleEndpoint.getKey());
+                    final EndpointProperties endpointProperties = endpoint.getProperties();
+                    if (endpointProperties instanceof SourcesSecretable properties) {
+                        try {
+                            this.secretUtils.deleteSecretsForEndpoint(endpoint);
+                        } catch (final Exception deleteException) {
+                            Log.errorf("[endpoint_id: %s][basic_auth_sources_secret_id: %s][secret_token_sources_secret_id: %s] unable to remove the endpoint secrets from Sources after hitting an error while updating the endpoint: %s", endpoint.getId(), properties.getBasicAuthenticationSourcesId(), properties.getSecretTokenSourcesId(), e.getMessage());
+                        }
+                    } else {
+                        Log.errorf("[endpoint_id: %s] the properties for the endpoint don't seem to be Sources secretable", endpoint.getId());
+                    }
                 } else if (e instanceof NotFoundException) {
                     Log.errorf("[endpoint_id: %s] error when migrating the endpoint secrets: unable to find endpoint in the database", eligibleEndpoint.getKey());
                     // The endpoint was not found, so we need to continue the
@@ -74,20 +88,6 @@ public class SourcesSecretsMigrationService {
                     Log.errorf("[endpoint_id: %s] error when migrating the endpoint secrets: unable to create the secrets for the endpoint: %s", eligibleEndpoint.getKey(), wae.getResponse().getEntity());
                 } else {
                     Log.errorf("[endpoint_id: %s] error when migrating the endpoint secrets: unable to create the secrets for the endpoint: %s", eligibleEndpoint.getKey(), e.getMessage());
-                }
-
-                // Delete the secrets for the processed endpoint, since an
-                // error occurred.
-                final Endpoint endpoint = this.processedEndpoints.get(eligibleEndpoint.getKey());
-                final EndpointProperties endpointProperties = endpoint.getProperties();
-                if (endpointProperties instanceof SourcesSecretable properties) {
-                    try {
-                        this.secretUtils.deleteSecretsForEndpoint(endpoint);
-                    } catch (final Exception deleteException) {
-                        Log.errorf("[endpoint_id: %s][basic_auth_sources_secret_id: %s][secret_token_sources_secret_id: %s] unable to remove the endpoint secrets from Sources after hitting an error while updating the endpoint: %s", endpoint.getId(), properties.getBasicAuthenticationSourcesId(), properties.getSecretTokenSourcesId(), e.getMessage());
-                    }
-                } else {
-                    Log.errorf("[endpoint_id: %s] the properties for the endpoint don't seem to be Sources secretable", endpoint.getId());
                 }
 
                 errorCounter++;
