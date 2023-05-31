@@ -19,7 +19,6 @@ import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import org.eclipse.microprofile.faulttolerance.Timeout;
-import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
@@ -38,7 +37,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
-import static org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy.PRE_PROCESSING;
 
 @ApplicationScoped
 public class EventConsumer {
@@ -96,14 +94,15 @@ public class EventConsumer {
     }
 
     @Incoming(INGRESS_CHANNEL)
-    @Acknowledgment(PRE_PROCESSING)
     @Blocking
     @ActivateRequestContext
     public CompletionStage<Void> process(Message<String> message) {
         Log.debug("Processing Kafka message - start");
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
+        Log.debug("Timer started");
         String payload = message.getPayload();
+        Log.debug("Payload retrieved");
         Map<String, String> tags = new HashMap<>();
         // The two following variables have to be final or effectively final. That why their type is String[] instead of String.
         /*
