@@ -19,7 +19,8 @@ if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "master" ]; then
     -Dsonar.projectKey="com.redhat.console.notifications.backend" \
     -Dsonar.projectVersion="${COMMIT_SHORT}" \
     -Dsonar.sourceEncoding="UTF-8" \
-    -Dsonar.token="${SONARQUBE_TOKEN}"
+    -Dsonar.token="${SONARQUBE_TOKEN}" \
+    --no-transfer-progress
 else
   ./mvnw clean compile sonar:sonar \
     -Dsonar.host.url="${SONARQUBE_HOST_URL}" \
@@ -30,5 +31,6 @@ else
     -Dsonar.pullrequest.branch="${GIT_BRANCH}" \
     -Dsonar.pullrequest.key="${GITHUB_PULL_REQUEST_ID}" \
     -Dsonar.sourceEncoding="UTF-8" \
-    -Dsonar.token="${SONARQUBE_TOKEN}"
+    -Dsonar.token="${SONARQUBE_TOKEN}" \
+    --no-transfer-progress
 fi
