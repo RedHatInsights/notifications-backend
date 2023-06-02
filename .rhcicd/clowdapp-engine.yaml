@@ -34,6 +34,9 @@ objects:
     - topicName: platform.notifications.aggregation
       partitions: 2
       replicas: 3
+    - topicName: platform.export.requests
+      partitions: 3
+      replicas: 3
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
