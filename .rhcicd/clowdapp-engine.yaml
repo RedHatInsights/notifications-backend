@@ -267,6 +267,8 @@ objects:
               name: export-service-psk
               key: psk
               optional: true
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS_EXPORTS_EXPORTEVENTLISTENER__LEVEL
+          value: ${EXPORT_EVENT_LISTENER_LOG_LEVEL}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -458,3 +460,6 @@ parameters:
 - name: MP_MESSAGING_INCOMING_EXPORTREQUESTS_MAX_POLL_RECORDS
   description: Maximum number of records returned in a single call to poll()
   value: "500"
+- name: EXPORT_EVENT_LISTENER_LOG_LEVEL
+  description: The log level for the export service's event listener.
+  value: "INFO"
