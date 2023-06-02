@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -281,7 +282,8 @@ public class EmailTemplateMigrationServiceTest {
                 .when().delete("/template-engine/migrate")
                 .then()
                 .statusCode(204);
-        assertDbEmpty(Template.class, InstantEmailTemplate.class, AggregationEmailTemplate.class);
+        assertDbEmpty(InstantEmailTemplate.class, AggregationEmailTemplate.class);
+        assertDbEquals(Template.class, IntegrationTemplate.class);
     }
 
     private void assertDbEmpty(Class<?>... entityClasses) {
@@ -290,6 +292,14 @@ public class EmailTemplateMigrationServiceTest {
                     .getSingleResult();
             assertEquals(0, count);
         }
+    }
+
+    private void assertDbEquals(Class entityClass, Class otherEntityClass) {
+        long count = entityManager.createQuery("SELECT COUNT(*) FROM " + entityClass.getSimpleName(), Long.class)
+                .getSingleResult();
+        long countOtherClass = entityManager.createQuery("SELECT COUNT(*) FROM " + otherEntityClass.getSimpleName(), Long.class)
+            .getSingleResult();
+        assertEquals(count, countOtherClass);
     }
 
     private void findAndCompileInstantEmailTemplate(UUID eventTypeId) {

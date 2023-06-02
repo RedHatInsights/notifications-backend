@@ -55,7 +55,7 @@ public class EmailTemplateMigrationService {
     public void deleteAllTemplates() {
         entityManager.createQuery("DELETE FROM InstantEmailTemplate").executeUpdate();
         entityManager.createQuery("DELETE FROM AggregationEmailTemplate").executeUpdate();
-        entityManager.createQuery("DELETE FROM Template").executeUpdate();
+        entityManager.createQuery("DELETE FROM Template where id not in (select theTemplate.id from IntegrationTemplate)").executeUpdate();
     }
 
     @PUT
