@@ -10,19 +10,13 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.opentelemetry.context.Context;
 import io.quarkus.logging.Log;
-import io.smallrye.reactive.messaging.TracingMetadata;
-import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
-import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
-import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.eclipse.microprofile.reactive.messaging.Emitter;
-import org.eclipse.microprofile.reactive.messaging.Message;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -36,11 +30,9 @@ import static com.redhat.cloud.notifications.models.NotificationHistory.getHisto
 @ApplicationScoped
 public class EventingProcessor extends EndpointTypeProcessor {
 
-    public static final String TOCAMEL_CHANNEL = "tocamel";
     public static final String PROCESSED_COUNTER_NAME = "processor.camel.processed";
     public static final String TOKEN_HEADER = "X-Insight-Token";
     public static final String NOTIF_METADATA_KEY = "notif-metadata";
-    public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -49,14 +41,13 @@ public class EventingProcessor extends EndpointTypeProcessor {
     BaseTransformer baseTransformer;
 
     @Inject
-    @Channel(TOCAMEL_CHANNEL)
-    Emitter<String> emitter;
-
-    @Inject
     MeterRegistry registry;
 
     @Inject
     SecretUtils secretUtils;
+
+    @Inject
+    ConnectorSender connectorSender;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
@@ -84,12 +75,10 @@ public class EventingProcessor extends EndpointTypeProcessor {
         Log.infof("Sending CloudEvent [orgId=%s, integration=%s, historyId=%s, originalEventId=%s]",
                 endpoint.getOrgId(), endpoint.getName(), historyId, originalEventId);
 
-        long startTime = System.currentTimeMillis();
-        Message<String> message = buildMessage(event, endpoint, originalEventId, historyId);
-        emitter.send(message);
-        long invocationTime = System.currentTimeMillis() - startTime;
+        JsonObject payload = buildPayload(event, endpoint, originalEventId);
+        connectorSender.send(payload, historyId, endpoint.getSubType());
 
-        createHistoryEntry(event, endpoint, historyId, invocationTime);
+        createHistoryEntry(event, endpoint, historyId, 0L);
     }
 
     private static String getOriginalEventId(Event event) {
@@ -98,17 +87,6 @@ public class EventingProcessor extends EndpointTypeProcessor {
             originalEventId = event.getId().toString();
         }
         return originalEventId;
-    }
-
-    private Message<String> buildMessage(Event event, Endpoint endpoint, String originalEventId, UUID historyId) {
-        JsonObject payload = buildPayload(event, endpoint, originalEventId);
-
-        CloudEventMetadata<String> cloudEventMetadata = buildCloudEventMetadata(endpoint, historyId);
-        TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
-
-        return Message.of(payload.encode())
-                .addMetadata(cloudEventMetadata)
-                .addMetadata(tracingMetadata);
     }
 
     private JsonObject buildPayload(Event event, Endpoint endpoint, String originalEventId) {
@@ -150,13 +128,6 @@ public class EventingProcessor extends EndpointTypeProcessor {
             String credentials = basicAuthentication.getUsername() + ":" + basicAuthentication.getPassword();
             return Optional.of(Base64Utils.encode(credentials));
         }
-    }
-
-    private static OutgoingCloudEventMetadata<String> buildCloudEventMetadata(Endpoint endpoint, UUID historyId) {
-        return OutgoingCloudEventMetadata.<String>builder()
-                .withId(historyId.toString())
-                .withType(CLOUD_EVENT_TYPE_PREFIX + endpoint.getSubType())
-                .build();
     }
 
     private void createHistoryEntry(Event event, Endpoint endpoint, UUID historyId, long invocationTime) {

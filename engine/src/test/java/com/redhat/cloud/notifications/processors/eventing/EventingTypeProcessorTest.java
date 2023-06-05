@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
@@ -41,9 +42,9 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
-import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.CLOUD_EVENT_TYPE_PREFIX;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.NOTIF_METADATA_KEY;
-import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.TOKEN_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -111,8 +112,16 @@ class EventingTypeProcessorTest {
     @Inject
     FeatureFlipper featureFlipper;
 
+    private InMemorySink<String> inMemorySink;
+
+    @PostConstruct
+    void postConstruct() {
+        inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
+    }
+
     @BeforeEach
     void beforeEach() {
+        inMemorySink.clear();
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(EventingProcessor.PROCESSED_COUNTER_NAME, SUB_TYPE_KEY);
     }
 
@@ -153,7 +162,6 @@ class EventingTypeProcessorTest {
         assertEquals(NotificationStatus.PROCESSING, result.get(0).getStatus());
 
         // Now let's check the Kafka messages sent to the outgoing channel.
-        InMemorySink<String> inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
         // The channel should have received two messages.
         assertEquals(2, inMemorySink.received().size());
 

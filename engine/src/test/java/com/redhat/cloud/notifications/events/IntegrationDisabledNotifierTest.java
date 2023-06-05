@@ -18,7 +18,7 @@ import javax.inject.Inject;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.EGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CLIENT_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CONSOLE_BUNDLE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ENDPOINT_ID_PROPERTY;

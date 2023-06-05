@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.events.FromCamelHistoryFiller;
+import com.redhat.cloud.notifications.events.ConnectorReceiver;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -61,7 +61,7 @@ public class EndpointTestResourceTest {
             .statusCode(204);
 
         // We should receive the action triggered by the REST call.
-        InMemorySink<String> actionsOut = this.inMemoryConnector.sink(FromCamelHistoryFiller.EGRESS_CHANNEL);
+        InMemorySink<String> actionsOut = this.inMemoryConnector.sink(ConnectorReceiver.EGRESS_CHANNEL);
 
         // Make sure that the message was received before continuing.
         Awaitility.await().until(

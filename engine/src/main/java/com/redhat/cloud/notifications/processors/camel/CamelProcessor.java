@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
@@ -52,6 +53,9 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
     @Inject
     NotificationHistoryRepository notificationHistoryRepository;
 
+    @Inject
+    ConnectorSender connectorSender;
+
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (featureFlipper.isEmailsOnlyMode()) {
@@ -80,8 +84,11 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         history.setStatus(PROCESSING);
         persistNotificationHistory(history);
 
+        CamelNotification notification = getCamelNotification(event, endpoint);
+        JsonObject payload = JsonObject.mapFrom(notification);
+
         try {
-            sendNotification(event, endpoint, historyId);
+            connectorSender.send(payload, historyId, endpoint.getSubType());
         } catch (Exception e) {
             history.setStatus(FAILED_INTERNAL);
             history.setDetails(Map.of("failure", e.getMessage()));
@@ -115,13 +122,12 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
     }
 
-    protected CamelNotification getCamelNotification(Event event, Endpoint endpoint, UUID historyId) {
+    protected CamelNotification getCamelNotification(Event event, Endpoint endpoint) {
         String message = buildNotificationMessage(event);
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
         CamelNotification notification = new CamelNotification();
         notification.orgId = endpoint.getOrgId();
-        notification.historyId = historyId;
         notification.webhookUrl = properties.getUrl();
         notification.message = message;
         return notification;
@@ -130,7 +136,4 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
     protected abstract String getIntegrationName();
 
     protected abstract String getIntegrationType();
-
-    protected abstract void sendNotification(Event event, Endpoint endpoint, UUID historyId) throws Exception;
-
 }

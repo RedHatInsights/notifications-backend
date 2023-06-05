@@ -36,7 +36,7 @@ import java.util.UUID;
  * which we need to put into the notifications history.
  */
 @ApplicationScoped
-public class FromCamelHistoryFiller {
+public class ConnectorReceiver {
 
     public static final String FROMCAMEL_CHANNEL = "fromcamel";
     public static final String MESSAGES_ERROR_COUNTER_NAME = "camel.messages.error";

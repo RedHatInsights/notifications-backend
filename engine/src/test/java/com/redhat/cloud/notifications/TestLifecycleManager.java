@@ -12,12 +12,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.EGRESS_CHANNEL;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
-import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
@@ -90,7 +90,5 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         props.put("quarkus.rest-client.export-service.url", getMockServerUrl());
         props.put("quarkus.rest-client.rbac-s2s.url", getMockServerUrl());
         props.put("quarkus.rest-client.it-s2s.url", getMockServerUrl());
-        props.put("quarkus.rest-client.internal-slack.url", "http://localhost:9087");
-        props.put("quarkus.rest-client.internal-google-spaces.url", "http://localhost:9087");
     }
 }

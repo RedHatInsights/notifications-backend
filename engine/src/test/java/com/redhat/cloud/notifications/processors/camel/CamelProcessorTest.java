@@ -14,8 +14,18 @@ import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
+import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+
+import javax.annotation.PostConstruct;
+import javax.enterprise.inject.Any;
+import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,10 +33,11 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static java.time.ZoneOffset.UTC;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -42,6 +53,23 @@ public abstract class CamelProcessorTest {
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
 
+    @Inject
+    @Any
+    InMemoryConnector inMemoryConnector;
+
+    protected InMemorySink<String> inMemorySink;
+
+    @PostConstruct
+    void postConstruct() {
+        inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
+    }
+
+    @BeforeEach
+    @AfterEach
+    void clearInMemorySink() {
+        inMemorySink.clear();
+    }
+
     protected abstract String getQuteTemplate();
 
     protected abstract String getExpectedMessage();
@@ -49,7 +77,6 @@ public abstract class CamelProcessorTest {
     protected abstract String getSubType();
 
     protected abstract CamelProcessor getCamelProcessor();
-
 
     @Test
     void testProcess() {
@@ -60,21 +87,23 @@ public abstract class CamelProcessorTest {
 
         verify(templateRepository, times(1)).findIntegrationTemplate(any(), any(), any(), any());
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
-        argumentCaptorChecks();
+        verifyKafkaMessage();
     }
 
-    protected void argumentCaptorChecks() {
-        ArgumentCaptor<CamelNotification> argumentCaptor = ArgumentCaptor.forClass(CamelNotification.class);
-        verify(getInternalClient(), times(1)).send(argumentCaptor.capture());
-        assertEquals(DEFAULT_ORG_ID, argumentCaptor.getValue().orgId);
-        assertNotNull(argumentCaptor.getValue().historyId);
-        assertEquals(WEBHOOK_URL, argumentCaptor.getValue().webhookUrl);
-        assertEquals(getExpectedMessage(), argumentCaptor.getValue().message);
-    }
+    protected void verifyKafkaMessage() {
 
-    protected InternalCamelTemporaryService getInternalClient() {
-        fail("Client must be checked");
-        return null;
+        await().until(() -> inMemorySink.received().size() == 1);
+        Message<String> message = inMemorySink.received().get(0);
+
+        CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
+        assertNotNull(cloudEventMetadata.getId());
+
+        JsonObject payload = new JsonObject(message.getPayload());
+        CamelNotification notification = payload.mapTo(CamelNotification.class);
+
+        assertEquals(DEFAULT_ORG_ID, notification.orgId);
+        assertEquals(WEBHOOK_URL, notification.webhookUrl);
+        assertEquals(getExpectedMessage(), notification.message);
     }
 
     protected void mockTemplate() {

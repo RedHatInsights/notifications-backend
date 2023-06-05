@@ -8,48 +8,76 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.model.HttpResponse;
+
 import javax.inject.Inject;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
+import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_ID_HEADER;
+import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_TYPE_HEADER;
 import static com.redhat.cloud.notifications.processors.camel.OutgoingCloudEventBuilder.CE_SPEC_VERSION;
 import static com.redhat.cloud.notifications.processors.camel.OutgoingCloudEventBuilder.CE_TYPE;
 import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder.RETURN_ROUTE_NAME;
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpError.error;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.verify.VerificationTimes.atLeast;
 
 public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
 
-    @ConfigProperty(name = "mp.messaging.fromcamel.topic")
-    protected String kafkaReturnTopic;
+    private static final String KAFKA_SOURCE_MOCK = "direct:kafka-source-mock";
+    private static final String REMOTE_SERVER_PATH = "/some/path";
 
-    protected String restPath;
-    protected String mockPath;
-    protected String mockPathKo;
     protected String routeEndpoint;
     protected String mockRouteEndpoint;
-    protected String camelIncomingRouteName;
-    protected String camelOutgoingRouteName;
-    protected String retryCounterName;
-    protected String mockPathRetries = RandomStringUtils.randomAlphabetic(20);
+
+    @ConfigProperty(name = "mp.messaging.fromcamel.topic")
+    String kafkaReturnTopic;
 
     @Inject
-    protected MicrometerAssertionHelper micrometerAssertionHelper;
+    MicrometerAssertionHelper micrometerAssertionHelper;
+
+    protected abstract String getIncomingRoute();
+
+    protected abstract String getEndpointSubtype();
+
+    protected abstract String getRetryCounterName();
+
+    @BeforeEach
+    protected void beforeEach() {
+        getClient().reset();
+
+        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesFailuresHandled", "routeId", getIncomingRoute());
+        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesSucceeded", "routeId", getIncomingRoute());
+        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesTotal", "routeId", getIncomingRoute());
+
+        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesFailuresHandled", "routeId", RETURN_ROUTE_NAME);
+        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesSucceeded", "routeId", RETURN_ROUTE_NAME);
+        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesTotal", "routeId", RETURN_ROUTE_NAME);
+
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(getRetryCounterName());
+    }
+
+    @AfterEach
+    void afterEach() {
+        getClient().reset();
+
+        micrometerAssertionHelper.clearSavedValues();
+    }
 
     @Override
     public boolean isUseRouteBuilder() {
@@ -58,18 +86,16 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
 
     @Test
     void testCallOk() throws Exception {
-        saveMetrics();
-        mockServerOk();
-        MockEndpoint kafkaEndpoint = mockKafkaEndpoint();
-        CamelNotification notification = (CamelNotification) buildNotification(getMockServerUrl() + mockPath);
-        given()
-            .contentType(JSON)
-            .body(Json.encode(notification))
-            .when().post(restPath)
-            .then().statusCode(200);
 
+        mockServerOk();
+        mockKafkaSourceEndpoint();
+        MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint();
+
+        CamelNotification notification = (CamelNotification) buildNotification(getMockServerUrl() + REMOTE_SERVER_PATH);
+        String cloudEventId = sendMessageToKafkaSource(notification, getEndpointSubtype());
+
+        assertKafkaSinkIsSatisfied(cloudEventId, notification, kafkaSinkMockEndpoint, true, "Event " + cloudEventId + " sent successfully");
         verifyMetricsCallOk();
-        assertKafkaIsSatisfied(notification, kafkaEndpoint, true, "Event " + notification.historyId + " sent successfully");
     }
 
     protected Object buildNotification(String webhookUrl) {
@@ -78,41 +104,36 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
 
     @Test
     void testCallFailure() throws Exception {
-        saveMetrics();
-        mockServerKo();
-        MockEndpoint kafkaEndpoint = mockKafkaEndpoint();
-        CamelNotification notification = (CamelNotification) buildNotification(getMockServerUrl() + mockPathKo);
-        given()
-            .contentType(JSON)
-            .body(Json.encode(notification))
-            .when().post(restPath)
-            .then().statusCode(200);
 
+        mockServerKo();
+        mockKafkaSourceEndpoint();
+        MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint();
+
+        CamelNotification notification = (CamelNotification) buildNotification(getMockServerUrl() + REMOTE_SERVER_PATH);
+        String cloudEventId = sendMessageToKafkaSource(notification, getEndpointSubtype());
+
+        assertKafkaSinkIsSatisfied(cloudEventId, notification, kafkaSinkMockEndpoint, false, "HTTP operation failed", "Error POSTing to Slack API");
         verifyMetricsCallKo();
-        assertKafkaIsSatisfied(notification, kafkaEndpoint, false, "HTTP operation failed", "Error POSTing to Slack API");
     }
 
     @Test
     void testRetriesFailure() throws Exception {
-        saveMetrics();
 
         mockServerFailure();
-        MockEndpoint kafkaEndpoint = mockKafkaEndpoint();
-        CamelNotification notification = (CamelNotification) buildNotification(getMockServerUrl() + mockPathRetries);
-        given()
-            .contentType(JSON)
-            .body(Json.encode(notification))
-            .when().post(restPath)
-            .then().statusCode(200);
-        verifyRedeliveries();
+        mockKafkaSourceEndpoint();
+        MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint();
 
+        CamelNotification notification = (CamelNotification) buildNotification(getMockServerUrl() + REMOTE_SERVER_PATH);
+        String cloudEventId = sendMessageToKafkaSource(notification, getEndpointSubtype());
+
+        assertKafkaSinkIsSatisfied(cloudEventId, notification, kafkaSinkMockEndpoint, false, "unexpected end of stream", "localhost:" + MockServerLifecycleManager.getClient().getPort() + " failed to respond");
+        verifyRedeliveries();
         verifyMetricsCallRetries();
-        assertKafkaIsSatisfied(notification, kafkaEndpoint, false, "unexpected end of stream", "localhost:" + MockServerLifecycleManager.getClient().getPort() + " failed to respond");
     }
 
     @Test
     protected void testRoutes() throws Exception {
-        adviceWith(camelOutgoingRouteName, context(), new AdviceWithRouteBuilder() {
+        adviceWith(getIncomingRoute(), context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
                 mockEndpointsAndSkip(routeEndpoint + "*");
@@ -124,93 +145,95 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
         MockEndpoint testedEndpoint = getMockEndpoint(mockRouteEndpoint);
         testedEndpoint.expectedBodiesReceived(notification.message);
 
-        MockEndpoint kafkaEndpoint = mockKafkaEndpoint();
+        mockKafkaSourceEndpoint();
+        MockEndpoint kafkaEndpoint = mockKafkaSinkEndpoint();
 
-        given()
-            .contentType(JSON)
-            .body(Json.encode(notification))
-            .when().post(restPath)
-            .then().statusCode(200);
+        String cloudEventId = sendMessageToKafkaSource(notification, getEndpointSubtype());
 
         testedEndpoint.assertIsSatisfied();
-        assertKafkaIsSatisfied(notification, kafkaEndpoint, true, "Event " + notification.historyId + " sent successfully");
+        assertKafkaSinkIsSatisfied(cloudEventId, notification, kafkaEndpoint, true, "Event " + cloudEventId + " sent successfully");
     }
 
     private void verifyMetricsCallOk() {
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", camelIncomingRouteName, 0);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", camelOutgoingRouteName, 0);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", camelIncomingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", camelOutgoingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", camelIncomingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", camelOutgoingRouteName, 1);
-        micrometerAssertionHelper.assertCounterIncrement(retryCounterName, 0);
+
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled",  "routeId", getIncomingRoute(), 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", getIncomingRoute(), 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", getIncomingRoute(), 1);
+
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", RETURN_ROUTE_NAME, 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", RETURN_ROUTE_NAME, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", RETURN_ROUTE_NAME, 1);
+
+        micrometerAssertionHelper.assertCounterIncrement(getRetryCounterName(), 0);
     }
 
     private void verifyMetricsCallKo() {
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", camelIncomingRouteName, 1);
-        // The following metric has a different value depending on the integration type (Slack, Teams...)
-        // TODO Uncomment and fix later!
-        //micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", camelOutgoingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", camelIncomingRouteName, 1);
-        // The following metric has a different value depending on the integration type (Slack, Teams...)
-        // TODO Uncomment and fix later!
-        //micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", camelOutgoingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", camelIncomingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", camelOutgoingRouteName, 1);
-        micrometerAssertionHelper.assertCounterIncrement(retryCounterName, 0);
+
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled",  "routeId", getIncomingRoute(), 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", getIncomingRoute(), 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", getIncomingRoute(), 1);
+
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", RETURN_ROUTE_NAME, 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", RETURN_ROUTE_NAME, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", RETURN_ROUTE_NAME, 1);
+
+        micrometerAssertionHelper.assertCounterIncrement(getRetryCounterName(), 0);
     }
 
     private void verifyMetricsCallRetries() {
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", camelIncomingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", camelOutgoingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", camelIncomingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", camelOutgoingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", camelIncomingRouteName, 1);
-        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", camelOutgoingRouteName, 1);
-        micrometerAssertionHelper.assertCounterIncrement(retryCounterName, 2);
-    }
 
-    private void saveMetrics() {
-        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesFailuresHandled", "routeId", camelIncomingRouteName);
-        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesSucceeded", "routeId", camelIncomingRouteName);
-        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesTotal", "routeId", camelIncomingRouteName);
-        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesFailuresHandled", "routeId", camelOutgoingRouteName);
-        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesSucceeded", "routeId", camelOutgoingRouteName);
-        micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesTotal", "routeId", camelOutgoingRouteName);
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(retryCounterName);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled",  "routeId", getIncomingRoute(), 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", getIncomingRoute(), 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", getIncomingRoute(), 1);
+
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesFailuresHandled", "routeId", RETURN_ROUTE_NAME, 0);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesSucceeded", "routeId", RETURN_ROUTE_NAME, 1);
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement("CamelExchangesTotal", "routeId", RETURN_ROUTE_NAME, 1);
+
+        micrometerAssertionHelper.assertCounterIncrement(getRetryCounterName(), 2);
     }
 
     private void mockServerOk() {
         getClient()
-                .when(request().withMethod(POST.name()).withPath(mockPath)).respond(new HttpResponse().withStatusCode(200));
+                .when(request().withMethod(POST.name()).withPath(REMOTE_SERVER_PATH))
+                .respond(new HttpResponse().withStatusCode(200));
     }
 
     private void mockServerKo() {
         getClient()
-            .when(request().withMethod(POST.name()).withPath(mockPathKo)).respond(new HttpResponse().withStatusCode(500).withBody("My custom internal error"));
+                .when(request().withMethod(POST.name()).withPath(REMOTE_SERVER_PATH))
+                .respond(new HttpResponse().withStatusCode(500).withBody("My custom internal error"));
     }
 
     private void mockServerFailure() {
         getClient()
-            .when(request().withMethod(POST.name()).withPath(mockPathRetries))
+            .when(request().withMethod(POST.name()).withPath(REMOTE_SERVER_PATH))
             .error(error().withDropConnection(true));
     }
 
     private void verifyRedeliveries() {
         getClient()
-            .verify(request().withMethod(POST.name()).withPath(mockPathRetries), atLeast(3));
+            .verify(request().withMethod(POST.name()).withPath(REMOTE_SERVER_PATH), atLeast(3));
     }
 
     public static CamelNotification buildCamelNotification(String webhookUrl) {
         CamelNotification notification = new CamelNotification();
         notification.orgId = DEFAULT_ORG_ID;
-        notification.historyId = UUID.randomUUID();
         notification.webhookUrl = webhookUrl;
         notification.message = "This is a test!";
         return notification;
     }
 
-    protected MockEndpoint mockKafkaEndpoint() throws Exception {
+    protected void mockKafkaSourceEndpoint() throws Exception {
+        adviceWith(getIncomingRoute(), context(), new AdviceWithRouteBuilder() {
+            @Override
+            public void configure() {
+                replaceFromWith(KAFKA_SOURCE_MOCK);
+            }
+        });
+    }
+
+    protected MockEndpoint mockKafkaSinkEndpoint() throws Exception {
         adviceWith(RETURN_ROUTE_NAME, context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
@@ -224,7 +247,22 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
         return kafkaEndpoint;
     }
 
-    protected static void assertKafkaIsSatisfied(CamelNotification notification, MockEndpoint mockEndpoint, boolean expectedSuccessful, String... expectedOutcomeStarts) throws InterruptedException {
+    protected String sendMessageToKafkaSource(CamelNotification notification, String endpointSubtype) {
+
+        String cloudEventId = UUID.randomUUID().toString();
+
+        Map<String, Object> kafkaHeaders = Map.of(
+                CLOUD_EVENT_ID_HEADER, cloudEventId,
+                CLOUD_EVENT_TYPE_HEADER, CLOUD_EVENT_TYPE_PREFIX + endpointSubtype
+        );
+        String kafkaPayload = Json.encode(notification);
+
+        template.sendBodyAndHeaders(KAFKA_SOURCE_MOCK, kafkaPayload, kafkaHeaders);
+
+        return cloudEventId;
+    }
+
+    protected static void assertKafkaSinkIsSatisfied(String cloudEventId, CamelNotification notification, MockEndpoint mockEndpoint, boolean expectedSuccessful, String... expectedOutcomeStarts) throws InterruptedException {
 
         mockEndpoint.assertIsSatisfied();
 
@@ -233,8 +271,8 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
 
         assertEquals(CE_TYPE, payload.getString("type"));
         assertEquals(CE_SPEC_VERSION, payload.getString("specversion"));
+        assertEquals(cloudEventId, payload.getString("id"));
         assertNotNull(payload.getString("source"));
-        assertEquals(notification.historyId.toString(), payload.getString("id"));
         assertNotNull(payload.getString("time"));
 
         JsonObject data = new JsonObject(payload.getString("data"));
@@ -247,7 +285,7 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
         String outcome = data.getJsonObject("details").getString("outcome");
 
         if (Arrays.stream(expectedOutcomeStarts).noneMatch(outcome::startsWith)) {
-            Assertions.fail(String.format("Expected outcome starts: %s - Actual outcome: %s", Arrays.toString(expectedOutcomeStarts), outcome));
+            fail(String.format("Expected outcome starts: %s - Actual outcome: %s", Arrays.toString(expectedOutcomeStarts), outcome));
         }
     }
 }
