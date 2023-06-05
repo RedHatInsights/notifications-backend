@@ -19,10 +19,10 @@ public class OApiResource {
     OApiFilter oApiFilter;
 
     @GET
-    @Path("/{what}/v1.0/openapi.json")
+    @Path("/{what}/{version}/openapi.json")
     @Produces(MediaType.APPLICATION_JSON)
-    public String serveOpenAPI(@PathParam("what") String what) {
-        return oApiFilter.serveOpenApi(what);
+    public String serveOpenAPI(@PathParam("what") String what, @PathParam("version") String version) {
+        return oApiFilter.serveOpenApi(what, version);
     }
 
 }

@@ -74,7 +74,6 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgI
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
-@Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
 // Email endpoints are not added at this point
 // TODO Needs documentation annotations
 public class EndpointResource {
@@ -112,6 +111,16 @@ public class EndpointResource {
      */
     @Inject
     SecretUtils secretUtils;
+
+    @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
+    static class V1 extends EndpointResource {
+
+    }
+
+    @Path(Constants.API_INTEGRATIONS_V_2_0 + "/endpoints")
+    static class V2 extends EndpointResource {
+
+    }
 
     @GET
     @Produces(APPLICATION_JSON)

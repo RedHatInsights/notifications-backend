@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -12,12 +13,12 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.Header;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.inject.Inject;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.Constants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -39,8 +40,9 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
     @InjectMock
     EndpointRepository endpointRepository;
 
-    @Test
-    void testCreateUnsupportedEndpointType() {
+    @ParameterizedTest
+    @ValueSource(strings = {Constants.API_INTEGRATIONS_V_1_0, Constants.API_INTEGRATIONS_V_2_0})
+    void testCreateUnsupportedEndpointType(String apiPath) {
         featureFlipper.setEmailsOnlyMode(true);
         try {
 
@@ -54,7 +56,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
             endpoint.setDescription("description");
 
             String responseBody = given()
-                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .basePath(apiPath)
                     .header(identityHeader)
                     .when()
                     .contentType(JSON)
@@ -70,8 +72,9 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
         }
     }
 
-    @Test
-    void testUpdateUnsupportedEndpointType() {
+    @ParameterizedTest
+    @ValueSource(strings = {Constants.API_INTEGRATIONS_V_1_0, Constants.API_INTEGRATIONS_V_2_0})
+    void testUpdateUnsupportedEndpointType(String apiPath) {
         featureFlipper.setEmailsOnlyMode(true);
         try {
 
@@ -85,7 +88,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
             endpoint.setDescription("description");
 
             String responseBody = given()
-                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .basePath(apiPath)
                     .header(identityHeader)
                     .pathParam("id", UUID.randomUUID().toString())
                     .when()
@@ -102,8 +105,9 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
         }
     }
 
-    @Test
-    void testDeleteUnsupportedEndpointType() {
+    @ParameterizedTest
+    @ValueSource(strings = {Constants.API_INTEGRATIONS_V_1_0, Constants.API_INTEGRATIONS_V_2_0})
+    void testDeleteUnsupportedEndpointType(String apiPath) {
         featureFlipper.setEmailsOnlyMode(true);
         try {
 
@@ -114,7 +118,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
             when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
 
             String responseBody = given()
-                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .basePath(apiPath)
                     .header(identityHeader)
                     .pathParam("id", UUID.randomUUID().toString())
                     .when()
@@ -129,8 +133,9 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
         }
     }
 
-    @Test
-    void testEnableUnsupportedEndpointType() {
+    @ParameterizedTest
+    @ValueSource(strings = {Constants.API_INTEGRATIONS_V_1_0, Constants.API_INTEGRATIONS_V_2_0})
+    void testEnableUnsupportedEndpointType(String apiPath) {
         featureFlipper.setEmailsOnlyMode(true);
         try {
 
@@ -141,7 +146,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
             when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
 
             String responseBody = given()
-                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .basePath(apiPath)
                     .header(identityHeader)
                     .pathParam("id", UUID.randomUUID().toString())
                     .when()
@@ -156,8 +161,9 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
         }
     }
 
-    @Test
-    void testDisableUnsupportedEndpointType() {
+    @ParameterizedTest
+    @ValueSource(strings = {Constants.API_INTEGRATIONS_V_1_0, Constants.API_INTEGRATIONS_V_2_0})
+    void testDisableUnsupportedEndpointType(String apiPath) {
         featureFlipper.setEmailsOnlyMode(true);
         try {
 
@@ -168,7 +174,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
             when(endpointRepository.getEndpointTypeById(anyString(), any(UUID.class))).thenReturn(CAMEL);
 
             String responseBody = given()
-                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .basePath(apiPath)
                     .header(identityHeader)
                     .pathParam("id", UUID.randomUUID().toString())
                     .when()

@@ -48,22 +48,14 @@ jobs:
       - name: Pushes coverage
         run: bash <(curl -s https://codecov.io/bash)
       - uses: actions/upload-artifact@v3
-        name: Upload notifications openapi.json
+        name: Upload openapi.json
         with:
-          name: openapi.notifications.json
-          path: backend/target/openapi.notifications.json
-      - uses: actions/upload-artifact@v3
-        name: Upload integrations openapi.json
-        with:
-          name: openapi.integrations.json
-          path: backend/target/openapi.integrations.json
-      - uses: actions/upload-artifact@v3
-        name: Upload private openapi.json
-        with:
-          name: openapi.private.json
-          path: backend/target/openapi.private.json
-      - uses: actions/upload-artifact@v3
-        name: Upload internal openapi.json
-        with:
-          name: openapi.internal.json
-          path: backend/target/openapi.internal.json
+          name: openapi
+          path: |
+            backend/target/api/notifications/v1/openapi.json
+            backend/target/api/notifications/v2/openapi.json
+            backend/target/api/integrations/v1/openapi.json
+            backend/target/api/integrations/v2/openapi.json
+            backend/target/api/private/v1/openapi.json
+            backend/target/api/private/v2/openapi.json
+            backend/target/internal/openapi.json

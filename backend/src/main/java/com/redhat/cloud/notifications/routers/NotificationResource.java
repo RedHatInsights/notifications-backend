@@ -63,7 +63,6 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgI
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
-@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
 public class NotificationResource {
 
     @Inject
@@ -77,6 +76,16 @@ public class NotificationResource {
 
     @Inject
     EndpointRepository endpointRepository;
+
+    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
+    public static class V1 extends NotificationResource {
+
+    }
+
+    @Path(Constants.API_NOTIFICATIONS_V_2_0 + "/notifications")
+    public static class V2 extends NotificationResource {
+
+    }
 
     @GET
     @Path("/eventTypes")

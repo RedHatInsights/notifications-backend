@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NOTIFICATIONS_ACCESS_ONLY;
@@ -47,7 +48,6 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
-import static com.redhat.cloud.notifications.routers.EventResource.PATH;
 import static com.redhat.cloud.notifications.routers.EventResource.toNotificationStatus;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -68,6 +68,7 @@ public class EventResourceTest extends DbIsolatedTest {
     private static final String OTHER_ORG_ID = "other-org-id";
     private static final LocalDateTime NOW = LocalDateTime.now(UTC);
     private static final String PAYLOAD = "payload";
+    private static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
 
     @Inject
     EntityManager entityManager;

@@ -52,7 +52,6 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgI
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
-@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
 public class UserConfigResource {
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -74,6 +73,16 @@ public class UserConfigResource {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
+    public static class V1 extends UserConfigResource {
+
+    }
+
+    @Path(Constants.API_NOTIFICATIONS_V_2_0 + "/user-config")
+    public static class V2 extends UserConfigResource {
+
+    }
 
     @POST
     @Path("/notification-preference")
