@@ -13,6 +13,8 @@ import java.util.Map;
 
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.events.EndpointProcessor.SLACK_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -46,7 +48,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
 
     @Override
     protected String getSubType() {
-        return "slack";
+        return SLACK_ENDPOINT_SUBTYPE;
     }
 
     @Override
@@ -60,8 +62,11 @@ public class SlackProcessorTest extends CamelProcessorTest {
         await().until(() -> inMemorySink.received().size() == 1);
         Message<String> message = inMemorySink.received().get(0);
 
+        assertCloudEventTypeHeader(message);
+
         CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
         assertNotNull(cloudEventMetadata.getId());
+        assertEquals(getExpectedCloudEventType(), cloudEventMetadata.getType());
 
         JsonObject payload = new JsonObject(message.getPayload());
         SlackNotification notification = payload.mapTo(SlackNotification.class);
@@ -75,5 +80,10 @@ public class SlackProcessorTest extends CamelProcessorTest {
     @Override
     protected void addExtraEndpointProperties(CamelProperties properties) {
         properties.setExtras(Map.of("channel", CHANNEL));
+    }
+
+    @Override
+    protected String getExpectedCloudEventType() {
+        return CLOUD_EVENT_TYPE_PREFIX + SLACK_ENDPOINT_SUBTYPE;
     }
 }
