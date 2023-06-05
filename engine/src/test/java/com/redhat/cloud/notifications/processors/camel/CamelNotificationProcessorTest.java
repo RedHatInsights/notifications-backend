@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_DATA;
 import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_ID;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.ORG_ID;
@@ -25,12 +26,16 @@ public abstract class CamelNotificationProcessorTest extends CamelQuarkusTestSup
 
     @Test
     protected void testProcess() throws Exception {
-        String cloudEventId = UUID.randomUUID().toString();
+
         CamelNotification notification = CamelRoutesTest.buildCamelNotification("https://redhat.com");
 
-        JsonObject notificationAsString = JsonObject.mapFrom(notification);
-        notificationAsString.put(CLOUD_EVENT_ID, cloudEventId);
-        Exchange exchange = createExchangeWithBody(notificationAsString.encode());
+        String cloudEventId = UUID.randomUUID().toString();
+
+        JsonObject cloudEvent = new JsonObject();
+        cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
+        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification));
+
+        Exchange exchange = createExchangeWithBody(cloudEvent.encode());
 
         getProcessor().process(exchange);
         verifyCommonFields(cloudEventId, notification, exchange);

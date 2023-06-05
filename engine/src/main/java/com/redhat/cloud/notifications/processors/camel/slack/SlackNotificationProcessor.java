@@ -20,7 +20,7 @@ public class SlackNotificationProcessor extends CamelNotificationProcessor {
     }
 
     @Override
-    protected void addExtraProperties(final Exchange exchange, JsonObject notification) {
-        exchange.setProperty("channel", notification.getString("channel"));
+    protected void addExtraProperties(final Exchange exchange, JsonObject data) {
+        exchange.setProperty("channel", data.getString("channel"));
     }
 }

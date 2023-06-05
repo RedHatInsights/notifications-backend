@@ -10,6 +10,7 @@ import javax.inject.Inject;
 
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_DATA;
 import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -27,11 +28,14 @@ public class SlackNotificationProcessorTest extends CamelNotificationProcessorTe
     @Test
     protected void testProcess() throws Exception {
         String cloudEventId = UUID.randomUUID().toString();
+
         SlackNotification notification = SlackRoutesTest.buildCamelSlackNotification("https://redhat.com");
 
-        JsonObject notificationAsString = JsonObject.mapFrom(notification);
-        notificationAsString.put(CLOUD_EVENT_ID, cloudEventId);
-        Exchange exchange = createExchangeWithBody(notificationAsString.encode());
+        JsonObject cloudEvent = new JsonObject();
+        cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
+        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification));
+
+        Exchange exchange = createExchangeWithBody(cloudEvent.encode());
 
         getProcessor().process(exchange);
 
