@@ -8,7 +8,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDPOINT_SUBTYPE;
-import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -48,7 +47,7 @@ public class TeamsProcessorTest extends CamelProcessorTest {
     }
 
     @Override
-    protected String getExpectedCloudEventType() {
-        return CLOUD_EVENT_TYPE_PREFIX + TEAMS_ENDPOINT_SUBTYPE;
+    protected String getExpectedConnectorHeader() {
+        return TEAMS_ENDPOINT_SUBTYPE;
     }
 }

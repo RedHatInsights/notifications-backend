@@ -16,7 +16,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_TYPE_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
@@ -25,6 +24,7 @@ public class ConnectorSender {
     public static final String TOCAMEL_CHANNEL = "tocamel";
     // TODO notification should end with a s but eventing-integrations does not expect it...
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
+    public static final String X_RH_NOTIFICATIONS_CONNECTOR_HEADER = "x-rh-notifications-connector";
 
     @Inject
     @Channel(TOCAMEL_CHANNEL)
@@ -37,10 +37,12 @@ public class ConnectorSender {
 
     private static Message<String> buildMessage(JsonObject payload, UUID historyId, String endpointSubType) {
 
+        OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(endpointSubType);
+
         String cloudEventId = historyId.toString();
         String cloudEventType = CLOUD_EVENT_TYPE_PREFIX + endpointSubType;
-        OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(cloudEventType);
         CloudEventMetadata<String> cloudEventMetadata = buildCloudEventMetadata(cloudEventId, cloudEventType);
+
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
 
         return Message.of(payload.encode())
@@ -49,9 +51,9 @@ public class ConnectorSender {
                 .addMetadata(tracingMetadata);
     }
 
-    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(String cloudEventType) {
+    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(String connectorHeader) {
         Headers headers = new RecordHeaders()
-                .add(CLOUD_EVENT_TYPE_HEADER, cloudEventType.getBytes(UTF_8));
+                .add(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connectorHeader.getBytes(UTF_8));
         return OutgoingKafkaRecordMetadata.<String>builder()
                 .withHeaders(headers)
                 .build();

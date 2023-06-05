@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.camel.google.chat;
 
-import com.redhat.cloud.notifications.processors.camel.CamelNotification;
 import com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -11,7 +10,7 @@ import javax.enterprise.context.ApplicationScoped;
  * the desired Google Chat space.
  */
 @ApplicationScoped
-public class GoogleChatNotificationProcessor extends CamelNotificationProcessor<CamelNotification> {
+public class GoogleChatNotificationProcessor extends CamelNotificationProcessor {
 
     @Override
     public String getConnectorName() {

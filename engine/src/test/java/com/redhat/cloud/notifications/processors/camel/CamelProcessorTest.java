@@ -34,8 +34,9 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
-import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_TYPE_HEADER;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.ZoneOffset.UTC;
 import static org.awaitility.Awaitility.await;
@@ -98,7 +99,7 @@ public abstract class CamelProcessorTest {
         await().until(() -> inMemorySink.received().size() == 1);
         Message<String> message = inMemorySink.received().get(0);
 
-        assertCloudEventTypeHeader(message);
+        assertNotificationsConnectorHeader(message);
 
         CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
         assertNotNull(cloudEventMetadata.getId());
@@ -112,12 +113,12 @@ public abstract class CamelProcessorTest {
         assertEquals(getExpectedMessage(), notification.message);
     }
 
-    protected void assertCloudEventTypeHeader(Message<String> message) {
-        byte[] actualCloudEventType = message.getMetadata(KafkaMessageMetadata.class)
+    protected void assertNotificationsConnectorHeader(Message<String> message) {
+        byte[] actualConnectorHeader = message.getMetadata(KafkaMessageMetadata.class)
                 .get()
-                .getHeaders().headers(CLOUD_EVENT_TYPE_HEADER)
+                .getHeaders().headers(X_RH_NOTIFICATIONS_CONNECTOR_HEADER)
                 .iterator().next().value();
-        assertEquals(getExpectedCloudEventType(), new String(actualCloudEventType, UTF_8));
+        assertEquals(getExpectedConnectorHeader(), new String(actualConnectorHeader, UTF_8));
     }
 
     protected void mockTemplate() {
@@ -178,5 +179,9 @@ public abstract class CamelProcessorTest {
     protected void addExtraEndpointProperties(CamelProperties properties) {
     }
 
-    protected abstract String getExpectedCloudEventType();
+    protected abstract String getExpectedConnectorHeader();
+
+    protected String getExpectedCloudEventType() {
+        return CLOUD_EVENT_TYPE_PREFIX + getExpectedConnectorHeader();
+    }
 }

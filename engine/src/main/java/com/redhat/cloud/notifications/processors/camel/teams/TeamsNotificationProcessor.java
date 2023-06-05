@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.camel.teams;
 
-import com.redhat.cloud.notifications.processors.camel.CamelNotification;
 import com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -11,7 +10,7 @@ import javax.enterprise.context.ApplicationScoped;
  * the desired Teams channel.
  */
 @ApplicationScoped
-public class TeamsNotificationProcessor extends CamelNotificationProcessor<CamelNotification> {
+public class TeamsNotificationProcessor extends CamelNotificationProcessor {
 
     @Override
     public String getConnectorName() {

@@ -7,12 +7,12 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.SLACK_ENDPOINT_SUBTYPE;
-import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.WEBHOOK_URL;
 import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder.RETURN_ROUTE_NAME;
+import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
 public class SlackRouteBuilder extends CamelRouteBuilder {
@@ -31,7 +31,8 @@ public class SlackRouteBuilder extends CamelRouteBuilder {
 
         from(kafka(toCamelTopic).groupId(KAFKA_GROUP_ID))
                 .routeId(SLACK_ROUTE)
-                .filter(new IncomingCloudEventFilter(CLOUD_EVENT_TYPE_PREFIX + SLACK_ENDPOINT_SUBTYPE))
+                .filter(new IncomingCloudEventFilter(SLACK_ENDPOINT_SUBTYPE))
+                .log(INFO, "Received ${body}")
                 .process(slackNotificationProcessor)
                 .toD(slack("${exchangeProperty.channel}").webhookUrl("${exchangeProperty." + WEBHOOK_URL + "}"), maxEndpointCacheSize)
                 .setProperty(SUCCESSFUL, constant(true))
