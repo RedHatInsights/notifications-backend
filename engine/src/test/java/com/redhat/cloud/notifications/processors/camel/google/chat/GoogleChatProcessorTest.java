@@ -7,6 +7,9 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import javax.inject.Inject;
 
+import static com.redhat.cloud.notifications.events.EndpointProcessor.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
+
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class GoogleChatProcessorTest extends CamelProcessorTest {
@@ -36,11 +39,16 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
 
     @Override
     protected String getSubType() {
-        return "google-chat";
+        return GOOGLE_CHAT_ENDPOINT_SUBTYPE;
     }
 
     @Override
     protected CamelProcessor getCamelProcessor() {
         return googleSpacesProcessor;
+    }
+
+    @Override
+    protected String getExpectedCloudEventType() {
+        return CLOUD_EVENT_TYPE_PREFIX + GOOGLE_CHAT_ENDPOINT_SUBTYPE;
     }
 }
