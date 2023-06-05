@@ -14,7 +14,7 @@ public enum EndpointType {
     @JsonProperty("ansible")
     ANSIBLE(false, false),
     @JsonProperty("drawer")
-    DRAWER(false, false);
+    DRAWER(false, true);
 
     public final boolean requiresSubType;
     public final boolean isSystemEndpointType;
