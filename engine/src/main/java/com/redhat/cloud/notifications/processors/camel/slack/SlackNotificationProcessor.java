@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.camel.slack;
 
 import com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor;
+import io.vertx.core.json.JsonObject;
 import org.apache.camel.Exchange;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -11,12 +12,7 @@ import javax.enterprise.context.ApplicationScoped;
  * the desired Slack channel.
  */
 @ApplicationScoped
-public class SlackNotificationProcessor extends CamelNotificationProcessor<SlackNotification> {
-
-    @Override
-    protected Class<SlackNotification> getNotificationClass() {
-        return SlackNotification.class;
-    }
+public class SlackNotificationProcessor extends CamelNotificationProcessor {
 
     @Override
     public String getConnectorName() {
@@ -24,7 +20,7 @@ public class SlackNotificationProcessor extends CamelNotificationProcessor<Slack
     }
 
     @Override
-    protected void addExtraProperties(final Exchange exchange, SlackNotification notification) {
-        exchange.setProperty("channel", notification.channel);
+    protected void addExtraProperties(final Exchange exchange, JsonObject notification) {
+        exchange.setProperty("channel", notification.getString("channel"));
     }
 }

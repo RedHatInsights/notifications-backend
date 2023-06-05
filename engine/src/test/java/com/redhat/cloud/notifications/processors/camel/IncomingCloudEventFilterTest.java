@@ -5,7 +5,7 @@ import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Test;
 
-import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_TYPE_HEADER;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static com.redhat.cloud.notifications.processors.camel.IncomingCloudEventFilter.EXCEPTION_MSG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class IncomingCloudEventFilterTest extends CamelQuarkusTestSupport {
 
     @Test
-    void shouldThrowWhenAllowedCloudEventTypeIsNull() {
+    void shouldThrowWhenAllowedConnectorHeaderIsNull() {
         Exception e = assertThrows(NullPointerException.class, () -> {
             new IncomingCloudEventFilter(null);
         });
@@ -24,18 +24,18 @@ public class IncomingCloudEventFilterTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void shouldAcceptValidCloudEventType() {
+    void shouldAcceptValidConnectorHeader() {
         assertTrue(new IncomingCloudEventFilter("alpha").matches(buildExchange()));
     }
 
     @Test
-    void shouldRejectInvalidCloudEventType() {
+    void shouldRejectInvalidConnectorHeader() {
         assertFalse(new IncomingCloudEventFilter("bravo").matches(buildExchange()));
     }
 
     private Exchange buildExchange() {
         Exchange exchange = createExchangeWithBody(null);
-        exchange.getIn().setHeader(CLOUD_EVENT_TYPE_HEADER, "alpha");
+        exchange.getIn().setHeader(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, "alpha");
         return exchange;
     }
 }

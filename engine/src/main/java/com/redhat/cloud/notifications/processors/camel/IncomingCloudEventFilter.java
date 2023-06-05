@@ -1,27 +1,25 @@
 package com.redhat.cloud.notifications.processors.camel;
 
-import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 
 import java.util.Objects;
 
-import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_TYPE_HEADER;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 
 public class IncomingCloudEventFilter implements Predicate {
 
-    public static final String EXCEPTION_MSG = "The 'allowedCeType' argument cannot be null";
+    public static final String EXCEPTION_MSG = "The 'allowedConnectorHeader' argument cannot be null";
 
-    private final String allowedCeType;
+    private final String allowedConnectorHeader;
 
-    public IncomingCloudEventFilter(String allowedCeType) {
-        this.allowedCeType = Objects.requireNonNull(allowedCeType, EXCEPTION_MSG);
+    public IncomingCloudEventFilter(String allowedConnectorHeader) {
+        this.allowedConnectorHeader = Objects.requireNonNull(allowedConnectorHeader, EXCEPTION_MSG);
     }
 
     @Override
     public boolean matches(Exchange exchange) {
-        String actualCeType = exchange.getIn().getHeader(CLOUD_EVENT_TYPE_HEADER, String.class);
-        Log.debugf("allowedCeType=%s, actualCeType=%s", allowedCeType, actualCeType);
-        return allowedCeType.equals(actualCeType);
+        String actualConnectorHeader = exchange.getIn().getHeader(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, String.class);
+        return allowedConnectorHeader.equals(actualConnectorHeader);
     }
 }

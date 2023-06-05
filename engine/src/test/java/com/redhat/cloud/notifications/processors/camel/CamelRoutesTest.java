@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.camel;
 
-import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import io.vertx.core.json.JsonObject;
@@ -16,7 +15,6 @@ import org.mockserver.model.HttpResponse;
 
 import javax.inject.Inject;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
@@ -24,8 +22,9 @@ import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockS
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
-import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_ID_HEADER;
-import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_TYPE_HEADER;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
+import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_ID;
+import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_TYPE;
 import static com.redhat.cloud.notifications.processors.camel.OutgoingCloudEventBuilder.CE_SPEC_VERSION;
 import static com.redhat.cloud.notifications.processors.camel.OutgoingCloudEventBuilder.CE_TYPE;
 import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder.RETURN_ROUTE_NAME;
@@ -251,13 +250,11 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
 
         String cloudEventId = UUID.randomUUID().toString();
 
-        Map<String, Object> kafkaHeaders = Map.of(
-                CLOUD_EVENT_ID_HEADER, cloudEventId,
-                CLOUD_EVENT_TYPE_HEADER, CLOUD_EVENT_TYPE_PREFIX + endpointSubtype
-        );
-        String kafkaPayload = Json.encode(notification);
+        JsonObject kafkaPayload = JsonObject.mapFrom(notification);
+        kafkaPayload.put(CLOUD_EVENT_ID, cloudEventId);
+        kafkaPayload.put(CLOUD_EVENT_TYPE, CLOUD_EVENT_TYPE_PREFIX + endpointSubtype);
 
-        template.sendBodyAndHeaders(KAFKA_SOURCE_MOCK, kafkaPayload, kafkaHeaders);
+        template.sendBodyAndHeader(KAFKA_SOURCE_MOCK, kafkaPayload.encode(), X_RH_NOTIFICATIONS_CONNECTOR_HEADER, endpointSubtype);
 
         return cloudEventId;
     }

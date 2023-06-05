@@ -8,7 +8,6 @@ import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDPOINT_SUBTYPE;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
-import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
@@ -17,6 +16,7 @@ import static com.redhat.cloud.notifications.processors.camel.ReturnRouteBuilder
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_METHOD;
+import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
 public class TeamsRouteBuilder extends CamelRouteBuilder {
@@ -35,7 +35,8 @@ public class TeamsRouteBuilder extends CamelRouteBuilder {
 
         from(kafka(toCamelTopic).groupId(KAFKA_GROUP_ID))
                 .routeId(TEAMS_ROUTE)
-                .filter(new IncomingCloudEventFilter(CLOUD_EVENT_TYPE_PREFIX + TEAMS_ENDPOINT_SUBTYPE))
+                .filter(new IncomingCloudEventFilter(TEAMS_ENDPOINT_SUBTYPE))
+                .log(INFO, "Received ${body}")
                 .process(teamsNotificationProcessor)
                 .removeHeaders(CAMEL_HTTP_HEADERS_PATTERN)
                 .setHeader(HTTP_METHOD, constant(POST))

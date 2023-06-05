@@ -9,7 +9,6 @@ import java.net.URLDecoder;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
-import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.SUCCESSFUL;
@@ -19,6 +18,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.Exchange.HTTP_METHOD;
+import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
 public class GoogleChatRouteBuilder extends CamelRouteBuilder {
@@ -37,7 +37,8 @@ public class GoogleChatRouteBuilder extends CamelRouteBuilder {
 
         from(kafka(toCamelTopic).groupId(KAFKA_GROUP_ID))
                 .routeId(GOOGLE_CHAT_ROUTE)
-                .filter(new IncomingCloudEventFilter(CLOUD_EVENT_TYPE_PREFIX + GOOGLE_CHAT_ENDPOINT_SUBTYPE))
+                .filter(new IncomingCloudEventFilter(GOOGLE_CHAT_ENDPOINT_SUBTYPE))
+                .log(INFO, "Received ${body}")
                 .process(googleChatNotificationProcessor)
                 .removeHeaders(CAMEL_HTTP_HEADERS_PATTERN)
                 .setHeader(HTTP_METHOD, constant(POST))
