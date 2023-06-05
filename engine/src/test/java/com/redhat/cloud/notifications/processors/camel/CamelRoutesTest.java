@@ -254,7 +254,8 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
         JsonObject cloudEvent = new JsonObject();
         cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
         cloudEvent.put(CLOUD_EVENT_TYPE, CLOUD_EVENT_TYPE_PREFIX + endpointSubtype);
-        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification));
+        // The 'data' field is sent as a String from SmallRye Reactive Messaging.
+        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification).encode());
 
         template.sendBodyAndHeader(KAFKA_SOURCE_MOCK, cloudEvent.encode(), X_RH_NOTIFICATIONS_CONNECTOR_HEADER, endpointSubtype);
 
