@@ -19,8 +19,9 @@ import static com.redhat.cloud.notifications.processors.camel.ExchangeProperty.W
  */
 public abstract class CamelNotificationProcessor implements Processor {
 
-    public static final String CLOUD_EVENT_ID = "ce-id";
-    public static final String CLOUD_EVENT_TYPE = "ce-type";
+    public static final String CLOUD_EVENT_ID = "id";
+    public static final String CLOUD_EVENT_TYPE = "type";
+    public static final String CLOUD_EVENT_DATA = "data";
 
     @Override
     public void process(Exchange exchange) throws Exception {
@@ -33,16 +34,19 @@ public abstract class CamelNotificationProcessor implements Processor {
 
         // The incoming JSON data is parsed and its fields are used to build the outgoing data.
         Message in = exchange.getIn();
-        JsonObject notification = new JsonObject(in.getBody(String.class));
-        exchange.setProperty(ID, notification.getString(CLOUD_EVENT_ID));
-        exchange.setProperty(TYPE, notification.getString(CLOUD_EVENT_TYPE));
-        exchange.setProperty(ORG_ID, notification.getString("orgId"));
-        exchange.setProperty(WEBHOOK_URL, notification.getString("webhookUrl"));
-        addExtraProperties(exchange, notification);
-        in.setBody(notification.getString("message"));
+
+        JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
+        exchange.setProperty(ID, cloudEvent.getString(CLOUD_EVENT_ID));
+        exchange.setProperty(TYPE, cloudEvent.getString(CLOUD_EVENT_TYPE));
+
+        JsonObject data = cloudEvent.getJsonObject(CLOUD_EVENT_DATA);
+        exchange.setProperty(ORG_ID, data.getString("orgId"));
+        exchange.setProperty(WEBHOOK_URL, data.getString("webhookUrl"));
+        addExtraProperties(exchange, data);
+        in.setBody(data.getString("message"));
 
         Log.debugf("Processing %s [connector=%s, historyId=%s]",
-                notification, getConnectorName(), exchange.getProperty(ID, String.class));
+                cloudEvent, getConnectorName(), exchange.getProperty(ID, String.class));
     }
 
     protected abstract String getConnectorName();

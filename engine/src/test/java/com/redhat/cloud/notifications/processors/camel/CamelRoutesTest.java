@@ -23,6 +23,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
+import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_DATA;
 import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_ID;
 import static com.redhat.cloud.notifications.processors.camel.CamelNotificationProcessor.CLOUD_EVENT_TYPE;
 import static com.redhat.cloud.notifications.processors.camel.OutgoingCloudEventBuilder.CE_SPEC_VERSION;
@@ -250,11 +251,12 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
 
         String cloudEventId = UUID.randomUUID().toString();
 
-        JsonObject kafkaPayload = JsonObject.mapFrom(notification);
-        kafkaPayload.put(CLOUD_EVENT_ID, cloudEventId);
-        kafkaPayload.put(CLOUD_EVENT_TYPE, CLOUD_EVENT_TYPE_PREFIX + endpointSubtype);
+        JsonObject cloudEvent = new JsonObject();
+        cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
+        cloudEvent.put(CLOUD_EVENT_TYPE, CLOUD_EVENT_TYPE_PREFIX + endpointSubtype);
+        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification));
 
-        template.sendBodyAndHeader(KAFKA_SOURCE_MOCK, kafkaPayload.encode(), X_RH_NOTIFICATIONS_CONNECTOR_HEADER, endpointSubtype);
+        template.sendBodyAndHeader(KAFKA_SOURCE_MOCK, cloudEvent.encode(), X_RH_NOTIFICATIONS_CONNECTOR_HEADER, endpointSubtype);
 
         return cloudEventId;
     }
