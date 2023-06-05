@@ -96,6 +96,13 @@ public class UserConfigResource {
             throw new BadRequestException("Subscribing to or unsubscribing from instant emails is not supported");
         }
 
+        if (values.bundles.values().stream()
+            .flatMap(bundleSettings -> bundleSettings.applications.values().stream())
+            .flatMap(appSettings -> appSettings.notifications.keySet().stream())
+            .anyMatch(subscriptionType -> subscriptionType == DRAWER)) {
+            throw new BadRequestException("Subscribing to or unsubscribing from drawer is not supported by this API");
+        }
+
         final List<Boolean> subscriptionRequests = new ArrayList<>();
 
         values.bundles.forEach((bundleName, bundleSettingsValue) ->

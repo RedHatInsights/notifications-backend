@@ -527,7 +527,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, true);
 
         if (featureFlipper.isDrawerEnabled()) {
-            // Daily and Instant to false
+            // Daily, Instant and drawer to false
             updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false, false);
 
             // Daily to true
@@ -536,8 +536,20 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             // Instant to true
             updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true, false);
 
-            // Both to true
+            // Daily and instant to true
             updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, false);
+
+            // Daily and Instant to false, drawer to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false, true);
+
+            // Daily to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, false, true);
+
+            // Instant to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true, true);
+
+            // Daily and instant to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, true);
         }
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database

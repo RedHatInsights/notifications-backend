@@ -8,8 +8,8 @@ public enum EmailSubscriptionType {
     DRAWER(null, false);
 
 
-    private Duration duration;
-    private Boolean optIn;
+    Duration duration;
+    Boolean optIn;
 
     EmailSubscriptionType(Duration duration, boolean optIn) {
         this.duration = duration;
