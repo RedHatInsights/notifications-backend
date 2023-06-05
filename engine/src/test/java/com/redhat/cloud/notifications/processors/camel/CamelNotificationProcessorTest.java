@@ -33,7 +33,8 @@ public abstract class CamelNotificationProcessorTest extends CamelQuarkusTestSup
 
         JsonObject cloudEvent = new JsonObject();
         cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
-        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification));
+        // The 'data' field is sent as a String from SmallRye Reactive Messaging.
+        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification).encode());
 
         Exchange exchange = createExchangeWithBody(cloudEvent.encode());
 
