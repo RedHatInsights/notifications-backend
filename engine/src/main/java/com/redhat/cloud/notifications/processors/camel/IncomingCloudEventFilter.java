@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.camel;
 
+import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 
@@ -20,6 +21,7 @@ public class IncomingCloudEventFilter implements Predicate {
     @Override
     public boolean matches(Exchange exchange) {
         String actualCeType = exchange.getIn().getHeader(CLOUD_EVENT_TYPE_HEADER, String.class);
+        Log.debugf("allowedCeType=%s, actualCeType=%s", allowedCeType, actualCeType);
         return allowedCeType.equals(actualCeType);
     }
 }
