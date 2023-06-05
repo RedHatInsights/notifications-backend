@@ -90,7 +90,5 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         props.put("quarkus.rest-client.export-service.url", getMockServerUrl());
         props.put("quarkus.rest-client.rbac-s2s.url", getMockServerUrl());
         props.put("quarkus.rest-client.it-s2s.url", getMockServerUrl());
-        props.put("quarkus.rest-client.internal-slack.url", "http://localhost:9087");
-        props.put("quarkus.rest-client.internal-google-spaces.url", "http://localhost:9087");
     }
 }
