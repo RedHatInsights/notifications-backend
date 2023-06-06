@@ -31,6 +31,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -50,6 +51,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static io.quarkus.runtime.LaunchMode.NORMAL;
 
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
@@ -164,8 +167,10 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
                 .getEmailSubscribersUserId(event.getOrgId(), bundleName, applicationName, eventTypeName, emailSubscriptionType));
 
         Set<User> userList = recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers);
-        if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-            emailSender.sendEmail(userList, event, subject, body, true);
+        if (isSendSingleEmailForMultipleRecipientsEnabled(userList)) {
+            if (!userList.isEmpty()) {
+                emailSender.sendEmail(userList, event, subject, body, true);
+            }
         } else {
             for (User user : userList) {
                 emailSender.sendEmail(user, event, subject, body, true);
@@ -222,7 +227,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
         if (subject != null && body != null) {
             Map<User, Map<String, Object>> aggregationsByUsers = emailAggregator.getAggregated(aggregationKey, emailSubscriptionType, startTime, endTime);
 
-            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
+            if (isSendSingleEmailForMultipleRecipientsEnabled(aggregationsByUsers.keySet())) {
                 Map<Map<String, Object>, Set<User>> aggregationsEmailContext = aggregationsByUsers.keySet().stream()
                     .collect(Collectors.groupingBy(aggregationsByUsers::get, Collectors.toSet()));
 
@@ -278,5 +283,13 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
         if (delete) {
             emailAggregationRepository.purgeOldAggregation(aggregationKey, endTime);
         }
+    }
+
+    private boolean isSendSingleEmailForMultipleRecipientsEnabled(Set<User> users) {
+        if (ProfileManager.getLaunchMode() == NORMAL && featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
+            Set<String> strUsers = users.stream().map(User::getUsername).collect(Collectors.toSet());
+            return (strUsers.contains("gduval-prod") || strUsers.contains("gduval-stage"));
+        }
+        return featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled();
     }
 }

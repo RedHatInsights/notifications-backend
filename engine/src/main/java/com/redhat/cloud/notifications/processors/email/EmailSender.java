@@ -56,6 +56,9 @@ public class EmailSender {
     @ConfigProperty(name = "processor.email.bop_env")
     String bopEnv;
 
+    @ConfigProperty(name = "processor.email.no_reply")
+    String noReplyEmail;
+
     @Inject
     WebhookTypeProcessor webhookSender;
 
@@ -233,6 +236,7 @@ public class EmailSender {
         Set<String> usersEmail = recipients.stream().map(User::getUsername).collect(Collectors.toSet());
         Email email = new Email();
         email.setBodyType(BODY_TYPE_HTML);
+        email.setRecipients(Set.of(noReplyEmail));
         email.setBccList(usersEmail);
         email.setSubject(subject);
         email.setBody(body);
