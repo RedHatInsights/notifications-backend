@@ -26,4 +26,7 @@ function buildAndDeploy() {
 
 buildAndDeploy "notifications-aggregator"
 buildAndDeploy "notifications-backend"
+buildAndDeploy "notifications-connector-google-chat"
+buildAndDeploy "notifications-connector-microsoft-teams"
+buildAndDeploy "notifications-connector-slack"
 buildAndDeploy "notifications-engine"

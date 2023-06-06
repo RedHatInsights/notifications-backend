@@ -1,0 +1,143 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: notifications-connector-microsoft-teams
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
+  metadata:
+  name: notifications-connector-microsoft-teams
+  spec:
+    envName: ${ENV_NAME}
+    kafkaTopics:
+    - topicName: platform.notifications.tocamel
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.fromcamel
+      partitions: 3
+      replicas: 3
+    deployments:
+    - name: service
+      minReplicas: ${{MIN_REPLICAS}}
+      webServices:
+        private:
+          enabled: true
+      podSpec:
+        image: ${IMAGE}:${IMAGE_TAG}
+        resources:
+          requests:
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+        readinessProbe:
+          httpGet:
+            path: /q/health/ready
+            port: ${{QUARKUS_HTTP_PORT}}
+            scheme: HTTP
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /q/health/live
+            port: ${{QUARKUS_HTTP_PORT}}
+            scheme: HTTP
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        env:
+        - name: CAMEL_COMPONENT_KAFKA_MAX_POLL_RECORDS
+          value: ${CAMEL_COMPONENT_KAFKA_MAX_POLL_RECORDS}
+        - name: ENV_NAME
+          value: ${ENV_NAME}
+        - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
+          value: ${NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE}
+        - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
+          value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY}
+        - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
+          value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS}
+        - name: QUARKUS_HTTP_PORT
+          value: ${QUARKUS_HTTP_PORT}
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+          value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CATEGORY__ORG_APACHE_KAFKA_CLIENTS__LEVEL
+          value: ${KAFKA_CLIENT_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+          value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
+        - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
+          value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD}
+        - name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
+          value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${QUARKUS_LOG_CLOUDWATCH_ENABLED}
+        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
+          value: ${HOSTNAME}
+        - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
+          value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
+        - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
+          value: ${ENV_NAME}
+parameters:
+- name: CAMEL_COMPONENT_KAFKA_MAX_POLL_RECORDS
+  description: Maximum number of records returned in a single call to poll(). Defaults to 500.
+  value: "500"
+- name: CPU_LIMIT
+  description: CPU limit
+  value: 500m
+- name: CPU_REQUEST
+  description: CPU request
+  value: 250m
+- name: ENV_NAME
+  description: ClowdEnvironment name (ephemeral, stage, prod)
+  required: true
+- name: IMAGE
+  description: Image URL
+  value: quay.io/cloudservices/notifications-connector-microsoft-teams
+- name: IMAGE_TAG
+  value: latest
+- name: KAFKA_CLIENT_LOG_LEVEL
+  description: Log level of the Kafka client library
+  value: INFO
+- name: MEMORY_LIMIT
+  description: Memory limit
+  value: 500Mi
+- name: MEMORY_REQUEST
+  description: Memory request
+  value: 250Mi
+- name: MIN_REPLICAS
+  value: "3"
+- name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
+  description: Maximum size of the Camel endpoints cache
+  value: "100"
+- name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
+  description: Delay in milliseconds between two redelivery attempts
+  value: "1000"
+- name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
+  description: Maximum number of redelivery attempts (initial call not included)
+  value: "2"
+- name: NOTIFICATIONS_LOG_LEVEL
+  description: Log level of Notifications
+  value: INFO
+- name: QUARKUS_HTTP_PORT
+  description: Quarkus HTTP server port, defaulting to the default Clowder private port
+  value: "9000"
+- name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+  description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT30S
+- name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
+  description: Period between two batch executions. Defaults to 5s.
+  value: 5s
+- name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
+  description: Number of log events sent to CloudWatch per batch. Defaults to 10,000 which is the maximum number of log events per batch allowed by CloudWatch.
+  value: "10000"
+- name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+  value: "false"
+- name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
+  description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
+  value: "100000"
