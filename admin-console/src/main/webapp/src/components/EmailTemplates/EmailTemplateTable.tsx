@@ -12,8 +12,8 @@ import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
 import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
 import { Application, Template } from '../../types/Notifications';
-import { useDeleteApplication } from '../../services/Applications/DeleteApplication';
 import { DeleteTemplateModal } from './DeleteTemplateModal';
+import { useDeleteTemplate } from '../../services/EmailTemplates/DeleteTemplate';
 
 interface EmailTemplateTableProps {
     application: Application;
@@ -22,28 +22,28 @@ interface EmailTemplateTableProps {
 export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps> = props => {
     const { hasPermission } = useUserPermissions();
     const getAllTemplates = useGetTemplates();
-    const deleteTemplates = useDeleteApplication();
+    const deleteTemplates = useDeleteTemplate();
 
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ template, setTemplate ] = React.useState<Partial<Template>>({});
 
     const columns = [ 'Email Templates' ];
 
-    const deleteApplicationModal = (t: Template) => {
+    const deleteTemplateModal = (t: Template) => {
         setShowDeleteModal(true);
         setTemplate(t);
     };
 
     const handleDelete = React.useCallback(async () => {
         setShowDeleteModal(false);
-        const deleteEventType = deleteTemplates.mutate;
-        const response = await deleteEventType(template.id);
+        const deleteTemplate = deleteTemplates.mutate;
+        const response = await deleteTemplate(template.id);
         if (response.error) {
             return false;
         }
 
         return true;
-    }, [ deleteTemplates.mutate, template.id ]);
+    }, [deleteTemplates.mutate, template.id]);
 
     const onDeleteClose = () => {
         setShowDeleteModal(false);
@@ -99,7 +99,7 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                                         <Link { ...props } to={ linkTo.emailTemplates(e.id) } /> }
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
-                                    <Button className='delete' type='button' variant='plain' onClick={ () => deleteApplicationModal(e) }
+                                    <Button className='delete' type='button' variant='plain' onClick={ () => deleteTemplateModal(e) }
                                     >{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         ))}
