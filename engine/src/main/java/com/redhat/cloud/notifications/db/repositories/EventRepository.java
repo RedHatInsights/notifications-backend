@@ -85,4 +85,8 @@ public class EventRepository {
 
         return findEventsRanged.getResultList();
     }
+
+    public void updateDrawerNotification(Event event) {
+        statelessSessionFactory.getCurrentSession().update(event);
+    }
 }

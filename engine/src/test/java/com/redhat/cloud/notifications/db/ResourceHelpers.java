@@ -117,6 +117,19 @@ public class ResourceHelpers {
     }
 
     @Transactional
+    public Event createEvent(Event event) {
+        event.setOrgId(DEFAULT_ORG_ID);
+        event.setAccountId("account-id");
+        event.setEventTypeDisplayName(event.getEventType().getDisplayName());
+        event.setApplicationId(event.getEventType().getApplication().getId());
+        event.setApplicationDisplayName(event.getEventType().getApplication().getDisplayName());
+        event.setBundleId(event.getEventType().getApplication().getBundle().getId());
+        event.setBundleDisplayName(event.getEventType().getApplication().getBundle().getDisplayName());
+        entityManager.persist(event);
+        return event;
+    }
+
+    @Transactional
     public Endpoint createEndpoint(EndpointType type, String subType, boolean enabled, int serverErrors) {
         Endpoint endpoint = new Endpoint();
         endpoint.setType(type);

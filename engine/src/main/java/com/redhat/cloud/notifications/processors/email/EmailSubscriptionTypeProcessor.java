@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -19,12 +18,8 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
-import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.recipients.RecipientResolver;
-import com.redhat.cloud.notifications.recipients.RecipientSettings;
+import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
-import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
@@ -51,12 +46,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.quarkus.runtime.LaunchMode.NORMAL;
 
 @ApplicationScoped
-public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
+public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
     public static final String AGGREGATION_COMMAND_REJECTED_COUNTER_NAME = "aggregation.command.rejected";
@@ -66,12 +60,6 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     private static final List<EmailSubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(EmailSubscriptionType.values())
             .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
             .collect(Collectors.toList());
-
-    @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
-
-    @Inject
-    RecipientResolver recipientResolver;
 
     @Inject
     EmailAggregationRepository emailAggregationRepository;
@@ -142,12 +130,6 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     }
 
     private void sendEmail(Event event, Set<Endpoint> endpoints) {
-        EmailSubscriptionType emailSubscriptionType = EmailSubscriptionType.INSTANT;
-        EventType eventType = event.getEventType();
-        String bundleName = eventType.getApplication().getBundle().getName();
-        String applicationName = eventType.getApplication().getName();
-        String eventTypeName = eventType.getName();
-
         final TemplateInstance subject;
         final TemplateInstance body;
 
@@ -162,15 +144,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
             body = templateService.compileTemplate(bodyData, "body");
         }
 
-        Set<RecipientSettings> requests = Stream.concat(
-                endpoints.stream().map(EndpointRecipientSettings::new),
-                ActionRecipientSettings.fromEventWrapper(event.getEventWrapper()).stream()
-        ).collect(Collectors.toSet());
-
-        Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(event.getOrgId(), bundleName, applicationName, eventTypeName, emailSubscriptionType));
-
-        Set<User> userList = recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers);
+        Set<User> userList = getRecipientList(event, endpoints.stream().toList(), EmailSubscriptionType.INSTANT);
         if (isSendSingleEmailForMultipleRecipientsEnabled(userList)) {
             emailSender.sendEmail(userList, event, subject, body, true);
         } else {

@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.event.TestEventHelper;
 import com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatProcessor;
 import com.redhat.cloud.notifications.processors.camel.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.camel.teams.TeamsProcessor;
+import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
@@ -53,6 +54,9 @@ public class EndpointProcessor {
 
     @Inject
     GoogleChatProcessor googleChatProcessor;
+
+    @Inject
+    DrawerProcessor drawerProcessor;
 
     @Inject
     MeterRegistry registry;
@@ -114,6 +118,9 @@ public class EndpointProcessor {
                         case WEBHOOK:
                         case ANSIBLE:
                             webhookProcessor.process(event, endpointsByTypeEntry.getValue());
+                            break;
+                        case DRAWER:
+                            drawerProcessor.process(event, endpointsByTypeEntry.getValue());
                             break;
                         default:
                             throw new IllegalArgumentException("Unexpected endpoint type: " + endpointsByTypeEntry.getKey());

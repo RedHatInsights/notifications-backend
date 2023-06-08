@@ -250,7 +250,7 @@ class EmailSubscriptionTypeProcessorTest {
 
             when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any(), any()))
                 .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
-            when(recipientResolver.recipientUsers(any(), any(), any()))
+            when(recipientResolver.recipientUsers(any(), any(), any(), eq(true)))
                 .thenReturn(Set.of(user1, user2));
 
             Bundle bundle = new Bundle();
