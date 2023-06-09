@@ -219,7 +219,7 @@ public class EndpointRepository {
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
         if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
-            throw new RuntimeException("Unable to update an system endpoint of type");
+            throw new RuntimeException("Unable to update an system endpoint of type " + endpoint.getType());
         }
 
         int endpointRowCount = entityManager.createQuery(endpointQuery)
