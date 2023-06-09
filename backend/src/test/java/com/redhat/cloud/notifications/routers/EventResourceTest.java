@@ -488,7 +488,7 @@ public class EventResourceTest extends DbIsolatedTest {
         /*
          * Test #30
          * Account: DEFAULT_ACCOUNT_ID
-         * Request: DRAWER endpoints and invocation failed
+         * Request: DRAWER endpoint and invocation failed
          */
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(DRAWER.name()), Set.of(FALSE), null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
