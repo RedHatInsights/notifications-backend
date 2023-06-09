@@ -1317,7 +1317,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        // EmailSubscription can't be created
+        // Drawer endpoints can't be created from the general endpoint
         SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
