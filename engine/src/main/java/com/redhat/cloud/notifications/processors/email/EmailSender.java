@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
@@ -99,7 +100,7 @@ public class EmailSender {
 
         // uses canonical EmailSubscription
         try {
-            Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(event.getAccountId(), event.getOrgId());
+            Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
             // TODO Add recipients processing from policies-notifications processing (failed recipients)
             //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
@@ -142,7 +143,7 @@ public class EmailSender {
 
         // uses canonical EmailSubscription
         try {
-            Endpoint endpoint = endpointRepository.getOrCreateDefaultEmailSubscription(event.getAccountId(), event.getOrgId());
+            Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
             // TODO Add recipients processing from policies-notifications processing (failed recipients)
             //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)

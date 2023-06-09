@@ -497,6 +497,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         List<UUID> endpoints = Stream.of(
                 helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
                 helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
+                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL)
         ).map(Endpoint::getId).collect(Collectors.toList());
@@ -565,6 +567,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         List<UUID> endpoints = Stream.of(
                 helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
                 helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
+                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL)
         ).map(Endpoint::getId).collect(Collectors.toList());

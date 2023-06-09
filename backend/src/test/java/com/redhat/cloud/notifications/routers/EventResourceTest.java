@@ -46,6 +46,7 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCE
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
+import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.routers.EventResource.toNotificationStatus;
@@ -113,14 +114,18 @@ public class EventResourceTest extends DbIsolatedTest {
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EMAIL_SUBSCRIPTION);
         Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, CAMEL, "SlAcK");
+        Endpoint endpoint4 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DRAWER);
         NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS);
         NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_INTERNAL);
         NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, NotificationStatus.SUCCESS);
         NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, NotificationStatus.SUCCESS);
         NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, NotificationStatus.SUCCESS);
+        NotificationHistory history6 = resourceHelpers.createNotificationHistory(event1, endpoint4, NotificationStatus.FAILED_INTERNAL);
+        NotificationHistory history7 = resourceHelpers.createNotificationHistory(event3, endpoint4, NotificationStatus.SUCCESS);
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint1.getId());
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint2.getId());
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint3.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint4.getId());
 
         /*
          * Test #1
@@ -132,8 +137,8 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4, history5);
-        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7);
+        assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -168,7 +173,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId()), null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -180,9 +185,9 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, Set.of(bundle1.getId(), bundle2.getId()), null, null, null, null, null, null, null, null, null, "bundle:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertSameEvent(page.getData().get(1), event2, history3);
-        assertSameEvent(page.getData().get(2), event3, history4, history5);
+        assertSameEvent(page.getData().get(2), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -205,7 +210,7 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4, history5);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -217,9 +222,9 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, Set.of(app1.getId(), app2.getId()), null, null, null, null, null, null, null, null, "application:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertSameEvent(page.getData().get(1), event2, history3);
-        assertSameEvent(page.getData().get(2), event3, history4, history5);
+        assertSameEvent(page.getData().get(2), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -241,7 +246,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, eventType1.getDisplayName().substring(2).toUpperCase(), null, null, null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -254,7 +259,7 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4, history5);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -266,7 +271,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, NOW.minusDays(3L), null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -278,7 +283,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, NOW.minusDays(3L), NOW.minusDays(1L), null, null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event3, history4, history5);
+        assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -290,7 +295,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION.name()), Set.of(TRUE), null, 10, 0, "created:desc", true, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event3, history4, history5);
+        assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
         assertEquals(PAYLOAD, page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -303,7 +308,7 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(3, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4, history5);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last", "next");
 
@@ -315,7 +320,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, 1, 2, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last", "prev");
 
@@ -327,9 +332,9 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, "event:asc", false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertSameEvent(page.getData().get(1), event2, history3);
-        assertSameEvent(page.getData().get(2), event3, history4, history5);
+        assertSameEvent(page.getData().get(2), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -342,7 +347,7 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -355,8 +360,8 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4, history5);
-        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7);
+        assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -368,7 +373,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(EMAIL_SUBSCRIPTION.name()), Set.of(FALSE), null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -395,7 +400,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(CAMEL.name()), null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event3, history4, history5);
+        assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -417,7 +422,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:slack"), null, null, null, null, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event3, history4, history5);
+        assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -429,8 +434,8 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:SLACK", EMAIL_SUBSCRIPTION.name()), null, null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
-        assertSameEvent(page.getData().get(0), event3, history4, history5);
-        assertSameEvent(page.getData().get(1), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
+        assertSameEvent(page.getData().get(1), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
@@ -443,8 +448,8 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4, history5);
-        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7);
+        assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
         assertLinks(page.getLinks(), "first", "last");
 
         /*
@@ -455,9 +460,9 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.SUCCESS), 10, 0, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
-        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
         assertSameEvent(page.getData().get(0), event2, history3);
-        assertSameEvent(page.getData().get(1), event3, history4, history5);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7);
         assertLinks(page.getLinks(), "first", "last");
 
         /*
@@ -468,7 +473,7 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.FAILED), 10, 0, null, false, true);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
-        assertSameEvent(page.getData().get(0), event1, history1, history2);
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
         assertLinks(page.getLinks(), "first", "last");
 
         /*
@@ -479,6 +484,31 @@ public class EventResourceTest extends DbIsolatedTest {
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, Set.of(EventLogEntryActionStatus.PROCESSING), 10, 0, null, false, true);
         assertEquals(0, page.getMeta().getCount());
         assertEquals(0, page.getData().size());
+        assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #30
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: DRAWER endpoint and invocation failed
+         */
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of(DRAWER.name()), Set.of(FALSE), null, null, null, null, false, true);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event1, history1, history2, history6);
+        assertNull(page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #31
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: CAMEL:GOOGLE CHAT and DRAWER endpoints
+         */
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:GOOGLE_CHAT", DRAWER.name()), null, null, null, null, null, false, true);
+        assertEquals(2, page.getMeta().getCount());
+        assertEquals(2, page.getData().size());
+        assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
+        assertSameEvent(page.getData().get(1), event1, history1, history2, history6);
+        assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
     }
 

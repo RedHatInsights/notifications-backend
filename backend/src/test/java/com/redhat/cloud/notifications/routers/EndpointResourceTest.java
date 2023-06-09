@@ -12,20 +12,20 @@ import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepositor
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
-import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
 import io.quarkus.runtime.LaunchMode;
@@ -456,6 +456,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Type and attributes don't match
         properties.setMethod(POST);
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        expectReturn400(identityHeader, ep);
+
+        ep.setType(EndpointType.DRAWER);
         expectReturn400(identityHeader, ep);
 
         ep.setName("endpoint with subtype too long");
@@ -1149,7 +1152,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // EmailSubscription can't be created
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
@@ -1170,7 +1173,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
-        RequestEmailSubscriptionProperties requestProps = new RequestEmailSubscriptionProperties();
+        RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
         // EmailSubscription can be fetch from the properties
         Response response = given()
@@ -1305,6 +1308,172 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testAddEndpointDrawerSubscription() {
+        String accountId = "adding-drawer-subscription";
+        String orgId = "adding-drawer-subscription2";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Drawer endpoints can't be created from the general endpoint
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.DRAWER);
+        ep.setName("Endpoint: Drawer");
+        ep.setDescription("Subscribe!");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+
+        String stringResponse = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .post("/endpoints")
+            .then()
+            .statusCode(400)
+            .extract().asString();
+
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
+
+        // Drawer endpoints can be created from the dedicated endpoint
+        Response response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(requestProps))
+            .post("/endpoints/system/drawer_subscription")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().response();
+
+        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertNotNull(responsePoint.getString("id"));
+
+        // It is always enabled
+        assertEquals(true, responsePoint.getBoolean("enabled"));
+
+        // Calling again yields the same endpoint id
+        String defaultEndpointId = responsePoint.getString("id");
+
+        response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(requestProps))
+            .post("/endpoints/system/drawer_subscription")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertEquals(defaultEndpointId, responsePoint.getString("id"));
+
+        // Different properties are different endpoints
+        Set<String> endpointIds = new HashSet<>();
+        endpointIds.add(defaultEndpointId);
+
+        requestProps.setOnlyAdmins(true);
+
+        response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(requestProps))
+            .post("/endpoints/system/drawer_subscription")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertFalse(endpointIds.contains(responsePoint.getString("id")));
+        endpointIds.add(responsePoint.getString("id"));
+
+        response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(requestProps))
+            .post("/endpoints/system/drawer_subscription")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(Endpoint.class);
+        assertTrue(endpointIds.contains(responsePoint.getString("id")));
+
+        // It is not possible to delete it
+        stringResponse = given()
+            .header(identityHeader)
+            .when().delete("/endpoints/" + defaultEndpointId)
+            .then()
+            .statusCode(400)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        // It is not possible to disable or enable it
+        stringResponse = given()
+            .header(identityHeader)
+            .when().delete("/endpoints/" + defaultEndpointId + "/enable")
+            .then()
+            .statusCode(400)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        stringResponse = given()
+            .header(identityHeader)
+            .when().put("/endpoints/" + defaultEndpointId + "/enable")
+            .then()
+            .statusCode(400)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        // It is not possible to update it
+        stringResponse = given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .when().put("/endpoints/" + defaultEndpointId)
+            .then()
+            .statusCode(400)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        // It is not possible to update it to other type
+        ep.setType(EndpointType.WEBHOOK);
+
+        WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setMethod(POST);
+        webhookProperties.setDisableSslVerification(false);
+        webhookProperties.setSecretToken("my-super-secret-token");
+        webhookProperties.setUrl(getMockServerUrl());
+        ep.setProperties(webhookProperties);
+
+        stringResponse = given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .when().put("/endpoints/" + defaultEndpointId)
+            .then()
+            .statusCode(400)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+    }
+
+    @Test
     void testAddEndpointEmailSubscriptionRbac() {
         String accountId = "adding-email-subscription";
         String orgId = "adding-email-subscription2";
@@ -1320,7 +1489,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, 404);
 
         // valid group id
-        RequestEmailSubscriptionProperties requestProps = new RequestEmailSubscriptionProperties();
+        RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
         requestProps.setGroupId(UUID.fromString(validGroupId));
 
         Response response = given()

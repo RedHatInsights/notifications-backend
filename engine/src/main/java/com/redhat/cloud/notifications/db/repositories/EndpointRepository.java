@@ -2,11 +2,11 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.logging.Log;
 
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
+import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
@@ -37,37 +38,41 @@ public class EndpointRepository {
     StatelessSessionFactory statelessSessionFactory;
 
     /**
-     * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION endpoint with empty properties. This
-     * endpoint is used to aggregate and store in the DB the email actions outcome, which will be used later by the
-     * event log. The recipients of the current email action have already been resolved before this step, possibly from
+     * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION or DRAWER endpoint with empty properties. This
+     * endpoint is used to aggregate and store in the DB the email or drawer actions outcome, which will be used later by the
+     * event log. The recipients of the current email or drawer action have already been resolved before this step, possibly from
      * multiple endpoints and recipients settings. The properties created below have no impact on the resolution of the
      * action recipients.
      */
-    public Endpoint getOrCreateDefaultEmailSubscription(String accountId, String orgId) {
+    public Endpoint getOrCreateDefaultSystemSubscription(String accountId, String orgId, EndpointType endpointType) {
         String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
-        List<Endpoint> emailEndpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                .setParameter("orgId", orgId)
-                .setParameter("endpointType", EMAIL_SUBSCRIPTION)
-                .getResultList();
-        loadProperties(emailEndpoints);
+        List<Endpoint> systemEndpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+            .setParameter("orgId", orgId)
+            .setParameter("endpointType", endpointType)
+            .getResultList();
+        loadProperties(systemEndpoints);
 
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
-        Optional<Endpoint> endpointOptional = emailEndpoints
-                .stream()
-                .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
-                .findFirst();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
+        Optional<Endpoint> endpointOptional = systemEndpoints
+            .stream()
+            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
+            .findFirst();
         if (endpointOptional.isPresent()) {
             return endpointOptional.get();
         }
 
+        String label = "Email";
+        if (DRAWER == endpointType) {
+            label = "Drawer";
+        }
         Endpoint endpoint = new Endpoint();
         endpoint.setProperties(properties);
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
         endpoint.setEnabled(true);
-        endpoint.setDescription("System email endpoint");
-        endpoint.setName("Email endpoint");
-        endpoint.setType(EMAIL_SUBSCRIPTION);
+        endpoint.setDescription(String.format("System %s endpoint", label.toLowerCase()));
+        endpoint.setName(String.format("%s endpoint", label));
+        endpoint.setType(endpointType);
         endpoint.setStatus(READY);
         endpoint.prePersist();
         properties.setEndpoint(endpoint);
@@ -90,7 +95,7 @@ public class EndpointRepository {
         loadProperties(endpoints);
         for (Endpoint endpoint : endpoints) {
             if (endpoint.getOrgId() == null) {
-                if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
+                if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
                     endpoint.setOrgId(orgId);
                 } else {
                     Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
@@ -255,7 +260,8 @@ public class EndpointRepository {
             loadTypedProperties(WebhookProperties.class, endpointSet, ANSIBLE);
             loadTypedProperties(WebhookProperties.class, endpointSet, WEBHOOK);
             loadTypedProperties(CamelProperties.class, endpointSet, CAMEL);
-            loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EMAIL_SUBSCRIPTION);
+            loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EMAIL_SUBSCRIPTION);
+            loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, DRAWER);
         }
     }
 

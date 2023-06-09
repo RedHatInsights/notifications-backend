@@ -8,10 +8,10 @@ import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.test.junit.QuarkusTest;
@@ -90,7 +90,7 @@ class EmailAggregatorTest {
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType2, DAILY);
 
         Endpoint endpoint = new Endpoint();
-        endpoint.setProperties(new EmailSubscriptionProperties());
+        endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
         when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), anyString(), anyString(), anyString())).thenReturn(List.of(endpoint));

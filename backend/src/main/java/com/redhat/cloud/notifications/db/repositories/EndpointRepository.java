@@ -6,10 +6,10 @@ import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.logging.Log;
 
@@ -49,7 +49,7 @@ public class EndpointRepository {
             return;
         }
 
-        if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
+        if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
             // This check does not apply for email subscriptions - as these are managed by us.
             return;
         }
@@ -89,6 +89,7 @@ public class EndpointRepository {
                 case CAMEL:
                 case WEBHOOK:
                 case EMAIL_SUBSCRIPTION:
+                case DRAWER:
                     entityManager.persist(endpoint.getProperties());
                 default:
                     // Do nothing.
@@ -127,13 +128,17 @@ public class EndpointRepository {
     }
 
     @Transactional
-    public Endpoint getOrCreateEmailSubscriptionEndpoint(String accountId, String orgId, EmailSubscriptionProperties properties) {
-        List<Endpoint> emailEndpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null);
-        loadProperties(emailEndpoints);
-        Optional<Endpoint> endpointOptional = emailEndpoints
-                .stream()
-                .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
-                .findFirst();
+    public Endpoint getOrCreateSystemSubscriptionEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
+        String label = "Email";
+        if (EndpointType.DRAWER == endpointType) {
+            label = "Drawer";
+        }
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        loadProperties(endpoints);
+        Optional<Endpoint> endpointOptional = endpoints
+            .stream()
+            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
+            .findFirst();
         if (endpointOptional.isPresent()) {
             return endpointOptional.get();
         }
@@ -142,9 +147,9 @@ public class EndpointRepository {
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
         endpoint.setEnabled(true);
-        endpoint.setDescription("System email endpoint");
-        endpoint.setName("Email endpoint");
-        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        endpoint.setDescription(String.format("System %s endpoint", label.toLowerCase()));
+        endpoint.setName(String.format("%s endpoint", label));
+        endpoint.setType(endpointType);
         endpoint.setStatus(READY);
 
         return createEndpoint(endpoint);
@@ -213,8 +218,8 @@ public class EndpointRepository {
                 "basicAuthentication = :basicAuthentication, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
-        if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
-            throw new RuntimeException("Unable to update an endpoint of type EMAIL_SUBSCRIPTION");
+        if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
+            throw new RuntimeException("Unable to update a system endpoint of type " + endpoint.getType());
         }
 
         int endpointRowCount = entityManager.createQuery(endpointQuery)
@@ -268,7 +273,8 @@ public class EndpointRepository {
         loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.ANSIBLE);
         loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK);
         loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL);
-        loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION);
+        loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION);
+        loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EndpointType.DRAWER);
     }
 
     private <T extends EndpointProperties> void loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {

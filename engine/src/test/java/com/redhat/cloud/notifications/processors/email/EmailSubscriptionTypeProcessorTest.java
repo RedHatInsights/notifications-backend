@@ -18,11 +18,11 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
@@ -287,7 +287,7 @@ class EmailSubscriptionTypeProcessorTest {
             ));
 
             Endpoint endpoint = new Endpoint();
-            endpoint.setProperties(new EmailSubscriptionProperties());
+            endpoint.setProperties(new SystemSubscriptionProperties());
             endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
             testee.process(event, List.of(endpoint));
