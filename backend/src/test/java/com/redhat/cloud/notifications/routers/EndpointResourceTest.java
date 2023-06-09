@@ -1341,7 +1341,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
-        // EmailSubscription can be fetch from the properties
+        // Drawer endpoints can be created from the dedicated endpoint
         Response response = given()
             .header(identityHeader)
             .when()
