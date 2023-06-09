@@ -500,7 +500,7 @@ public class EventResourceTest extends DbIsolatedTest {
         /*
          * Test #31
          * Account: DEFAULT_ACCOUNT_ID
-         * Request: CAMEL:GOOGLE CHAT and EMAIL endpoints
+         * Request: CAMEL:GOOGLE CHAT and DRAWER endpoints
          */
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, Set.of("camel:GOOGLE_CHAT", DRAWER.name()), null, null, null, null, null, false, true);
         assertEquals(2, page.getMeta().getCount());
