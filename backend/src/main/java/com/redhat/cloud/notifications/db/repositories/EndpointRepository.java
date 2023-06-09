@@ -133,9 +133,9 @@ public class EndpointRepository {
         if (EndpointType.DRAWER == endpointType) {
             label = "Drawer";
         }
-        List<Endpoint> drawerEndpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
-        loadProperties(drawerEndpoints);
-        Optional<Endpoint> endpointOptional = drawerEndpoints
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        loadProperties(endpoints);
+        Optional<Endpoint> endpointOptional = endpoints
             .stream()
             .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
             .findFirst();
