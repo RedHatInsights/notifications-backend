@@ -59,7 +59,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.net.URI;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -69,7 +68,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
@@ -405,22 +403,19 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Response updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
         if (propertiesList == null) {
-            throw new BadRequestException("The request body must contain a list of RequestDefaultBehaviorGroupPropertyList");
+            throw new BadRequestException("The request body must contain a list of EmailSubscriptionProperties");
         }
 
         if (propertiesList.size() != propertiesList.stream().distinct().count()) {
-            throw new BadRequestException("The list of RequestDefaultBehaviorGroupPropertyList should not contain duplicates");
+            throw new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates");
         }
 
-        List<Endpoint> endpoints = new ArrayList<>();
-        for (RequestDefaultBehaviorGroupPropertyList p : propertiesList) {
+        List<Endpoint> endpoints = propertiesList.stream().map(p -> {
             SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
             properties.setOnlyAdmins(p.isOnlyAdmins());
             properties.setIgnorePreferences(p.isIgnorePreferences());
-            endpoints.add(endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, EMAIL_SUBSCRIPTION));
-            endpoints.add(endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, DRAWER));
-        }
-
+            return endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, EMAIL_SUBSCRIPTION);
+        }).collect(Collectors.toList());
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,
                 endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())

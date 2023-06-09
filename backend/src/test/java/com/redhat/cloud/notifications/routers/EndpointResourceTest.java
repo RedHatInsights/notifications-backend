@@ -25,7 +25,7 @@ import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValida
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
-import com.redhat.cloud.notifications.routers.models.RequestSystemEmailSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
 import io.quarkus.runtime.LaunchMode;
@@ -1173,7 +1173,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
-        RequestSystemEmailSubscriptionProperties requestProps = new RequestSystemEmailSubscriptionProperties();
+        RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
         // EmailSubscription can be fetch from the properties
         Response response = given()
@@ -1339,7 +1339,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
 
-        RequestSystemEmailSubscriptionProperties requestProps = new RequestSystemEmailSubscriptionProperties();
+        RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
         // EmailSubscription can be fetch from the properties
         Response response = given()
@@ -1489,7 +1489,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, 404);
 
         // valid group id
-        RequestSystemEmailSubscriptionProperties requestProps = new RequestSystemEmailSubscriptionProperties();
+        RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
         requestProps.setGroupId(UUID.fromString(validGroupId));
 
         Response response = given()

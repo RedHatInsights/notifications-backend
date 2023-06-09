@@ -24,7 +24,7 @@ import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
-import com.redhat.cloud.notifications.routers.models.RequestSystemEmailSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -81,9 +81,6 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 // TODO Needs documentation annotations
 public class EndpointResource {
 
-    private static final List<EndpointType> systemEndpointType = List.of(
-            EndpointType.EMAIL_SUBSCRIPTION, EndpointType.DRAWER
-    );
     public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
 
@@ -235,7 +232,7 @@ public class EndpointResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec,
-                     @RequestBody(required = true) @NotNull @Valid RequestSystemEmailSubscriptionProperties requestProps) {
+                     @RequestBody(required = true) @NotNull @Valid RequestSystemSubscriptionProperties requestProps) {
         return getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION);
     }
 
@@ -246,11 +243,11 @@ public class EndpointResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec,
-                                                         @RequestBody(required = true) @NotNull @Valid RequestSystemEmailSubscriptionProperties requestProps) {
+                                                         @RequestBody(required = true) @NotNull @Valid RequestSystemSubscriptionProperties requestProps) {
         return getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER);
     }
 
-    private Endpoint getOrCreateSystemSubscriptionEndpoint(SecurityContext sec, RequestSystemEmailSubscriptionProperties requestProps, EndpointType endpointType) {
+    private Endpoint getOrCreateSystemSubscriptionEndpoint(SecurityContext sec, RequestSystemSubscriptionProperties requestProps, EndpointType endpointType) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
@@ -265,7 +262,7 @@ public class EndpointResource {
         return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
     }
 
-    private void getOrCreateInternalEndpointCommonChecks(RequestSystemEmailSubscriptionProperties requestProps, RhIdPrincipal principal) {
+    private void getOrCreateInternalEndpointCommonChecks(RequestSystemSubscriptionProperties requestProps, RhIdPrincipal principal) {
         if (requestProps.getGroupId() != null && requestProps.isOnlyAdmins()) {
             throw new BadRequestException("Cannot use RBAC groups and only admins in the same endpoint");
         }
@@ -549,7 +546,7 @@ public class EndpointResource {
     }
 
     private static void checkSystemEndpoint(EndpointType endpointType) {
-        if (systemEndpointType.contains(endpointType)) {
+        if (endpointType.isSystemEndpointType) {
             throw new BadRequestException(String.format(
                     "Is not possible to create or alter endpoint with type %s, check API for alternatives",
                     endpointType
@@ -558,6 +555,6 @@ public class EndpointResource {
     }
 
     private boolean isEndpointTypeAllowed(EndpointType endpointType) {
-        return !featureFlipper.isEmailsOnlyMode() || systemEndpointType.contains(endpointType);
+        return !featureFlipper.isEmailsOnlyMode() || endpointType.isSystemEndpointType;
     }
 }

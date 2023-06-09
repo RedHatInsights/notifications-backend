@@ -7,7 +7,7 @@ import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class RequestSystemEmailSubscriptionProperties {
+public class RequestSystemSubscriptionProperties {
     @NotNull
     private boolean onlyAdmins;
     private UUID groupId;
