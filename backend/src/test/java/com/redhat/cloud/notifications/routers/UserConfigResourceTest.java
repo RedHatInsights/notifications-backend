@@ -53,6 +53,7 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.createTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteInstantEmailTemplate;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -149,7 +150,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return result;
     }
 
-    private SettingsValues createSettingsValue(String bundle, String application, Boolean daily, Boolean instant) {
+    private SettingsValues createSettingsValue(String bundle, String application, boolean daily, boolean instant) {
         ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
         applicationSettingsValue.notifications.put(DAILY, daily);
         applicationSettingsValue.notifications.put(INSTANT, instant);
@@ -163,11 +164,14 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return settingsValues;
     }
 
-    private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, Boolean daily, Boolean instant) {
+    private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
 
         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
         eventTypeSettingsValue.emailSubscriptionTypes.put(DAILY, daily);
         eventTypeSettingsValue.emailSubscriptionTypes.put(INSTANT, instant);
+        if (featureFlipper.isDrawerEnabled()) {
+            eventTypeSettingsValue.emailSubscriptionTypes.put(DRAWER, drawer);
+        }
 
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
         applicationSettingsValue.eventTypes.put(eventType, eventTypeSettingsValue);
@@ -182,6 +186,20 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testLegacySettings() {
+        testSettings();
+    }
+
+    @Test
+    void testLegacySettingsWithDrawerEnabled() {
+        try {
+            featureFlipper.setDrawerEnabled(true);
+            testSettings();
+        } finally {
+            featureFlipper.setDrawerEnabled(false);
+        }
+    }
+
     void testSettings() {
         String accountId = "empty";
         String orgId = "empty";
@@ -413,6 +431,20 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testLegacySettingsByEventType() {
+        testSettingsByEventType();
+    }
+
+    @Test
+    void testSettingsByEventTypeWithDrawerEnabled() {
+        try {
+            featureFlipper.setDrawerEnabled(true);
+            testSettingsByEventType();
+        } finally {
+            featureFlipper.setDrawerEnabled(false);
+        }
+    }
+
     void testSettingsByEventType() {
         String path = "/user-config/notification-event-type-preference";
         String accountId = "empty";
@@ -467,7 +499,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertNotNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
         featureFlipper.setInstantEmailsEnabled(false);
-        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, true, true);
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, true, true, false);
         postPreferencesByEventType(path, identityHeader, settingsValues, 400);
 
         featureFlipper.setInstantEmailsEnabled(true);
@@ -483,16 +515,42 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         featureFlipper.setInstantEmailsEnabled(true);
 
         // Daily and Instant to false
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false);
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false, true);
 
         // Daily to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, false);
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, false, true);
 
         // Instant to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true);
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true, true);
 
         // Both to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true);
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, true);
+
+        if (featureFlipper.isDrawerEnabled()) {
+            // Daily, Instant and drawer to false
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false, false);
+
+            // Daily to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, false, false);
+
+            // Instant to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true, false);
+
+            // Daily and instant to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, false);
+
+            // Daily and Instant to false, drawer to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false, true);
+
+            // Daily to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, false, true);
+
+            // Instant to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true, true);
+
+            // Daily and instant to true
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, true);
+        }
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database
         assertThrows(PersistenceException.class, () -> {
@@ -503,7 +561,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals(0, emailSubscriptionRepository.unsubscribeEventType(orgId, username, UUID.randomUUID(), DAILY));
 
         // does not add if we try to create unknown bundle/apps
-        settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", eventType, true, true);
+        settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", eventType, true, true, true);
         given()
             .header(identityHeader)
             .when()
@@ -539,7 +597,12 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         Map<EmailSubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
 
-        assertEquals(1, notificationPreferenes.size());
+        if (featureFlipper.isDrawerEnabled()) {
+            assertEquals(2, notificationPreferenes.size());
+            assertTrue(notificationPreferenes.containsKey(DRAWER));
+        } else {
+            assertEquals(1, notificationPreferenes.size());
+        }
         assertTrue(notificationPreferenes.containsKey(INSTANT));
 
         // Skip the application if there are no supported types
@@ -552,12 +615,20 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
         rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
-        assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
-        assertEquals(0, settingsValueJsonForm.bundles.size());
+        if (featureFlipper.isDrawerEnabled()) {
+            // drawer type will be always supported
+            assertNotNull(rhelPolicy);
+            assertEquals(1, settingsValueJsonForm.bundles.size());
+            notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
+            assertTrue(notificationPreferenes.containsKey(DRAWER));
+        } else {
+            assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
+            assertEquals(0, settingsValueJsonForm.bundles.size());
+        }
     }
 
-    private void updateAndCheckUserPreference(String path, Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant) {
-        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant);
+    private void updateAndCheckUserPreference(String path, Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer);
         postPreferencesByEventType(path, identityHeader, settingsValues, 200);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(path, identityHeader);
         SettingsValueByEventTypeJsonForm.EventTypes rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
@@ -577,6 +648,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         Map<EmailSubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
         assertEquals(daily, notificationPreferenes.get(DAILY));
         assertEquals(instant, notificationPreferenes.get(INSTANT));
+        if (featureFlipper.isDrawerEnabled()) {
+            assertEquals(drawer, notificationPreferenes.get(DRAWER));
+        }
     }
 
     private void postPreferencesByEventType(String path, Header identityHeader, SettingsValuesByEventType settingsValues, int expectedStatusCode) {

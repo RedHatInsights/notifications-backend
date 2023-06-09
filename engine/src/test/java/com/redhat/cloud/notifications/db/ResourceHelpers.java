@@ -173,6 +173,7 @@ public class ResourceHelpers {
             new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)
         );
         eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
+        eventTypeEmailSubscription.setSubscribed(true);
         entityManager.persist(eventTypeEmailSubscription);
         return eventTypeEmailSubscription;
     }

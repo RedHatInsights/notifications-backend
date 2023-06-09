@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
@@ -12,11 +13,18 @@ import javax.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DRAWER;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+
 @ApplicationScoped
 public class EmailSubscriptionRepository {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Transactional
     public boolean subscribe(String accountId, String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
@@ -57,8 +65,8 @@ public class EmailSubscriptionRepository {
 
     @Transactional
     protected int replicateSubscribeToEventTypeLevel(String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
-        String query = "INSERT INTO email_subscriptions (user_id, org_id, event_type_id, subscription_type) " +
-            "SELECT :userId, :orgId, et.id, :subscriptionType FROM applications app " +
+        String query = "INSERT INTO email_subscriptions (user_id, org_id, event_type_id, subscription_type, subscribed) " +
+            "SELECT :userId, :orgId, et.id, :subscriptionType, :subscribed FROM applications app " +
             "JOIN bundles bun ON app.bundle_id = bun.id " +
             "JOIN event_type et ON app.id = et.application_id  " +
             "WHERE app.name = :applicationName AND bun.name = :bundleName " +
@@ -70,6 +78,7 @@ public class EmailSubscriptionRepository {
             .setParameter("applicationName", applicationName)
             .setParameter("bundleName", bundleName)
             .setParameter("subscriptionType", subscriptionType.name())
+            .setParameter("subscribed", true) // only email subscription replication is supported
             .executeUpdate();
     }
 
@@ -87,10 +96,20 @@ public class EmailSubscriptionRepository {
             .executeUpdate();
     }
 
-    @Transactional
     public int subscribeEventType(String orgId, String username, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
-        String query = "INSERT INTO email_subscriptions(org_id, user_id, event_type_id, subscription_type) " +
-            "VALUES (:orgId, :userId, :eventTypeId, :subscriptionType ) " +
+        // Opt-in: only subscriptions are stored on database
+        // Opt-on: only un-subscriptions are stored on database
+        if (subscriptionType.isOptIn()) {
+            return addEventTypeSubscription(orgId, username, eventTypeId, subscriptionType, true);
+        } else {
+            return deleteEventTypeSubscription(orgId, username, eventTypeId, subscriptionType);
+        }
+    }
+
+    @Transactional
+    public int addEventTypeSubscription(String orgId, String username, UUID eventTypeId, EmailSubscriptionType subscriptionType, boolean subscribed) {
+        String query = "INSERT INTO email_subscriptions(org_id, user_id, event_type_id, subscription_type, subscribed) " +
+            "VALUES (:orgId, :userId, :eventTypeId, :subscriptionType, :subscribed) " +
             "ON CONFLICT (org_id, user_id, event_type_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
 
         // HQL does not support the ON CONFLICT clause so we need a native query here
@@ -99,11 +118,22 @@ public class EmailSubscriptionRepository {
             .setParameter("userId", username)
             .setParameter("eventTypeId", eventTypeId)
             .setParameter("subscriptionType", subscriptionType.name())
+            .setParameter("subscribed", subscribed)
             .executeUpdate();
     }
 
-    @Transactional
     public int unsubscribeEventType(String orgId, String userId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
+        // Opt-in: only subscriptions are stored on database
+        // Opt-on: only un-subscriptions are stored on database
+        if (subscriptionType.isOptIn()) {
+            return deleteEventTypeSubscription(orgId, userId, eventTypeId, subscriptionType);
+        } else {
+            return addEventTypeSubscription(orgId, userId, eventTypeId, subscriptionType, false);
+        }
+    }
+
+    @Transactional
+    public int deleteEventTypeSubscription(String orgId, String userId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
         String query = "DELETE FROM EventTypeEmailSubscription WHERE id = :Id";
         return entityManager.createQuery(query)
             .setParameter("Id", new EventTypeEmailSubscriptionId(orgId, userId, eventTypeId, subscriptionType))
@@ -112,7 +142,7 @@ public class EmailSubscriptionRepository {
 
     public List<EventTypeEmailSubscription> getEmailSubscriptionByEventType(String orgId, String username, String bundleName, String applicationName) {
         String query = "SELECT es FROM EventTypeEmailSubscription es LEFT JOIN FETCH es.eventType ev LEFT JOIN FETCH ev.application a LEFT JOIN FETCH a.bundle b " +
-            "WHERE es.id.orgId = :orgId AND es.id.userId = :userId " +
+            "WHERE es.id.orgId = :orgId AND es.id.userId = :userId and es.id.subscriptionType in (:subscriptionTypes) " +
             "AND b.name = :bundleName AND a.name = :applicationName";
 
         return entityManager.createQuery(query, EventTypeEmailSubscription.class)
@@ -120,6 +150,7 @@ public class EmailSubscriptionRepository {
             .setParameter("userId", username)
             .setParameter("bundleName", bundleName)
             .setParameter("applicationName", applicationName)
+            .setParameter("subscriptionTypes", getAvailableTypes())
             .getResultList();
     }
 
@@ -142,19 +173,29 @@ public class EmailSubscriptionRepository {
 
     public List<EmailSubscription> getEmailSubscriptionsForUser(String orgId, String username) {
         String query = "SELECT es FROM EmailSubscription es LEFT JOIN FETCH es.application a LEFT JOIN FETCH a.bundle b " +
-                "WHERE es.id.orgId = :orgId AND es.id.userId = :userId";
+                "WHERE es.id.orgId = :orgId AND es.id.userId = :userId and es.id.subscriptionType in (:subscriptionTypes)";
         return entityManager.createQuery(query, EmailSubscription.class)
                 .setParameter("orgId", orgId)
                 .setParameter("userId", username)
+                .setParameter("subscriptionTypes", getAvailableTypes())
                 .getResultList();
     }
 
     public List<EventTypeEmailSubscription> getEmailSubscriptionsPerEventTypeForUser(String orgId, String username) {
         String query = "SELECT es FROM EventTypeEmailSubscription es LEFT JOIN FETCH es.eventType ev LEFT JOIN FETCH ev.application a LEFT JOIN FETCH a.bundle b " +
-            "WHERE es.id.orgId = :orgId AND es.id.userId = :userId";
+            "WHERE es.id.orgId = :orgId AND es.id.userId = :userId and es.id.subscriptionType in (:subscriptionTypes)";
         return entityManager.createQuery(query, EventTypeEmailSubscription.class)
             .setParameter("orgId", orgId)
             .setParameter("userId", username)
+            .setParameter("subscriptionTypes", getAvailableTypes())
             .getResultList();
+    }
+
+    private List<EmailSubscriptionType> getAvailableTypes() {
+        if (featureFlipper.isDrawerEnabled()) {
+            return List.of(INSTANT, DAILY, DRAWER);
+        } else {
+            return List.of(INSTANT, DAILY);
+        }
     }
 }

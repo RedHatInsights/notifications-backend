@@ -132,6 +132,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "mp.messaging.incoming.exportrequests.enabled", defaultValue = "false")
     boolean exportServiceIntegrationEnabled;
 
+    @ConfigProperty(name = "notifications.drawer.enabled", defaultValue = "false")
+    boolean drawerEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -165,6 +168,8 @@ public class FeatureFlipper {
         Log.infof("Instant emails are %s", instantEmailsEnabled ? "enabled" : "disabled");
         Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
         Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
+        Log.infof("Drawer feature is %s", drawerEnabled ? "enabled" : "disabled");
+
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -440,6 +445,15 @@ public class FeatureFlipper {
     public void setSendSingleEmailForMultipleRecipientsEnabled(boolean sendSingleEmailForMultipleRecipientsEnabled) {
         checkTestLaunchMode();
         this.sendSingleEmailForMultipleRecipientsEnabled = sendSingleEmailForMultipleRecipientsEnabled;
+    }
+
+    public boolean isDrawerEnabled() {
+        return drawerEnabled;
+    }
+
+    public void setDrawerEnabled(boolean drawerEnabled) {
+        checkTestLaunchMode();
+        this.drawerEnabled = drawerEnabled;
     }
 
     /**

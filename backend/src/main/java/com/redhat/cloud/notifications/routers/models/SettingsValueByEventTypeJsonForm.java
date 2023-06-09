@@ -96,6 +96,10 @@ public class SettingsValueByEventTypeJsonForm {
                         field.description = "Immediate email for each triggered application event.";
                         field.checkedWarning = "Opting into this notification may result in a large number of emails";
                         break;
+                    case DRAWER:
+                        field.label = "Drawer notification";
+                        field.description = "Drawer notification for each triggered application event.";
+                        break;
                     default:
                         return;
                 }
