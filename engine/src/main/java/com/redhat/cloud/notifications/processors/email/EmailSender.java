@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -56,6 +57,12 @@ public class EmailSender {
     @ConfigProperty(name = "processor.email.bop_env")
     String bopEnv;
 
+    @ConfigProperty(name = "processor.email.no_reply")
+    String noReplyEmail;
+
+    @Inject
+    FeatureFlipper featureFlipper;
+
     @Inject
     WebhookTypeProcessor webhookSender;
 
@@ -82,6 +89,10 @@ public class EmailSender {
     }
 
     public void sendEmail(Set<User> users, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory) {
+        if (users.isEmpty()) {
+            Log.debug("No recipient found for this email");
+            return;
+        }
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
@@ -233,6 +244,9 @@ public class EmailSender {
         Set<String> usersEmail = recipients.stream().map(User::getUsername).collect(Collectors.toSet());
         Email email = new Email();
         email.setBodyType(BODY_TYPE_HTML);
+        if (featureFlipper.isAddDefaultRecipientOnSingleEmail()) {
+            email.setRecipients(Set.of(noReplyEmail));
+        }
         email.setBccList(usersEmail);
         email.setSubject(subject);
         email.setBody(body);
