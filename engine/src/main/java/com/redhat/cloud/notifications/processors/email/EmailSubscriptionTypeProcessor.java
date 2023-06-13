@@ -168,9 +168,7 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
 
         Set<User> userList = recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers);
         if (isSendSingleEmailForMultipleRecipientsEnabled(userList)) {
-            if (!userList.isEmpty()) {
-                emailSender.sendEmail(userList, event, subject, body, true);
-            }
+            emailSender.sendEmail(userList, event, subject, body, true);
         } else {
             for (User user : userList) {
                 emailSender.sendEmail(user, event, subject, body, true);
