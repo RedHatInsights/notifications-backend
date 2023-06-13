@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.drawer;
 
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
@@ -24,9 +25,7 @@ import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
-import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import org.junit.jupiter.api.Test;
-import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -47,10 +46,6 @@ class DrawerProcessorTest {
     @Inject
     DrawerProcessor testee;
 
-    @Inject
-    @Any
-    InMemoryConnector inMemoryConnector;
-
     @InjectSpy
     DrawerNotificationRepository drawerNotificationRepository;
 
@@ -69,6 +64,9 @@ class DrawerProcessorTest {
 
     @InjectSpy
     NotificationHistoryRepository notificationHistoryRepository;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
@@ -102,7 +100,12 @@ class DrawerProcessorTest {
         endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.DRAWER);
         statelessSessionFactory.withSession(statelessSession -> {
-            testee.process(createdEvent, List.of(endpoint));
+            try {
+                featureFlipper.setDrawerEnabled(true);
+                testee.process(createdEvent, List.of(endpoint));
+            } finally {
+                featureFlipper.setDrawerEnabled(false);
+            }
         });
         verify(drawerNotificationRepository, times(1)).create(any(Event.class), any(String.class));
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));

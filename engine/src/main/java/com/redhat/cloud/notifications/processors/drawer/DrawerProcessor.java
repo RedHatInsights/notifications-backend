@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.drawer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -18,10 +19,10 @@ import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonObject;
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
@@ -57,7 +58,8 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     @Inject
     EventRepository eventRepository;
 
-    private TemplateInstance templateInstance;
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
@@ -71,6 +73,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     }
 
     private void process(Event event, Set<User> userList) {
+        if (!featureFlipper.isDrawerEnabled()) {
+            return;
+        }
         UUID historyId = UUID.randomUUID();
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
         Log.infof("Processing drawer notification [orgId=%s, eventId=%s, historyId=%s]",
@@ -116,19 +121,18 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             throw new RuntimeException("Drawer notification data transformation failed", e);
         }
 
-        String message = templateInstance
+        String message = getTemplate()
             .data("data", dataAsMap)
             .render();
 
         return message;
     }
 
-    @PostConstruct
-    private void loadTemplate() {
+    @CacheResult(cacheName = "drawer-template")
+    TemplateInstance getTemplate() {
         IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, null, DEFAULT, "drawer")
             .orElseThrow(() -> new IllegalStateException("No default template defined for drawer"));
         String template = integrationTemplate.getTheTemplate().getData();
-        templateInstance = templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
+        return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
     }
-
 }
