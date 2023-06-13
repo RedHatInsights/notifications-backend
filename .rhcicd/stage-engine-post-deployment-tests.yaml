@@ -7,7 +7,7 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdJobInvocation
   metadata:
-    name: notifications-engine-post-deployment-tests-${IMAGE_TAG}-${UID}
+    name: notifications-engine-iqe-tests-${IMAGE_TAG}-${UID}
   spec:
     appName: notifications-backend
     testing:
