@@ -273,6 +273,8 @@ objects:
               optional: true
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS_EXPORTS_EXPORTEVENTLISTENER__LEVEL
           value: ${EXPORT_EVENT_LISTENER_LOG_LEVEL}
+        - name: CAMEL_COMPONENT_KAFKA_ENABLED
+          value: ${CAMEL_COMPONENT_KAFKA_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -471,3 +473,5 @@ parameters:
 - name: EXPORT_EVENT_LISTENER_LOG_LEVEL
   description: The log level for the export service's event listener.
   value: "INFO"
+- name: CAMEL_COMPONENT_KAFKA_ENABLED
+  value: "true"

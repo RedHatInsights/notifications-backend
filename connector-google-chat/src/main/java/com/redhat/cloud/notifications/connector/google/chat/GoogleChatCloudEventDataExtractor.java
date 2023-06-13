@@ -1,0 +1,19 @@
+package com.redhat.cloud.notifications.connector.google.chat;
+
+import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
+import io.vertx.core.json.JsonObject;
+import org.apache.camel.Exchange;
+
+import javax.enterprise.context.ApplicationScoped;
+
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
+
+@ApplicationScoped
+public class GoogleChatCloudEventDataExtractor extends CloudEventDataExtractor {
+
+    @Override
+    public void extract(Exchange exchange, JsonObject cloudEventData) {
+        exchange.setProperty(TARGET_URL, cloudEventData.getString("webhookUrl"));
+        exchange.getIn().setBody(cloudEventData.getString("message"));
+    }
+}
