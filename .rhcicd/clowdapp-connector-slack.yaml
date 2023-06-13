@@ -7,7 +7,7 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
   metadata:
-  name: notifications-connector-slack
+    name: notifications-connector-slack
   spec:
     envName: ${ENV_NAME}
     kafkaTopics:

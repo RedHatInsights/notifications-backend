@@ -7,7 +7,7 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
   metadata:
-  name: notifications-connector-microsoft-teams
+    name: notifications-connector-microsoft-teams
   spec:
     envName: ${ENV_NAME}
     kafkaTopics:
