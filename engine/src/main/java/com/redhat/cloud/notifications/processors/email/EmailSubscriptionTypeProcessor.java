@@ -34,6 +34,7 @@ import io.quarkus.qute.TemplateInstance;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 
@@ -105,6 +106,9 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
     private Counter failedAggregationCommandCount;
+
+    @ConfigProperty(name = "notifications.single.email.test.user")
+    String singleEmailTestUser;
 
     @PostConstruct
     void postConstruct() {
@@ -286,7 +290,8 @@ public class EmailSubscriptionTypeProcessor extends EndpointTypeProcessor {
     private boolean isSendSingleEmailForMultipleRecipientsEnabled(Set<User> users) {
         if (ProfileManager.getLaunchMode() == NORMAL && featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
             Set<String> strUsers = users.stream().map(User::getUsername).collect(Collectors.toSet());
-            return (strUsers.contains("gduval-prod") || strUsers.contains("gduval-stage"));
+            Log.infof("Email test username is %s", singleEmailTestUser);
+            return (strUsers.contains(singleEmailTestUser));
         }
         return featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled();
     }
