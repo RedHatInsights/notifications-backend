@@ -53,8 +53,8 @@ objects:
           successThreshold: 1
           failureThreshold: 5
         env:
-        - name: CAMEL_COMPONENT_KAFKA_MAX_POLL_RECORDS
-          value: ${CAMEL_COMPONENT_KAFKA_MAX_POLL_RECORDS}
+        - name: CAMEL_COMPONENT_KAFKA_MAXPOLLRECORDS
+          value: ${CAMEL_COMPONENT_KAFKA_MAXPOLLRECORDS}
         - name: ENV_NAME
           value: ${ENV_NAME}
         - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
@@ -84,7 +84,7 @@ objects:
         - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
           value: ${ENV_NAME}
 parameters:
-- name: CAMEL_COMPONENT_KAFKA_MAX_POLL_RECORDS
+- name: CAMEL_COMPONENT_KAFKA_MAXPOLLRECORDS
   description: Maximum number of records returned in a single call to poll(). Defaults to 500.
   value: "500"
 - name: CPU_LIMIT
