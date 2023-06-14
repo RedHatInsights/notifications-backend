@@ -15,7 +15,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.UUID;
 
-@Path("/app/export/v1")
+@Path("/api/export/v1")
 @RegisterRestClient(configKey = "export-service")
 public interface ExportService {
 
