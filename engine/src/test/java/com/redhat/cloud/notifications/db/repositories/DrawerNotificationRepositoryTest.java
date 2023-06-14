@@ -70,33 +70,37 @@ public class DrawerNotificationRepositoryTest {
         entityManager.createQuery("DELETE FROM DrawerNotification").executeUpdate();
     }
 
+    private void createDrawerNotification(DrawerNotification drawerNotification) {
+        entityManager.persist(drawerNotification);
+    }
+
     @Test
     @Transactional
     void testSimpleCreateGetCascadeDelete() {
-        this.statelessSessionFactory.withSession(session -> {
-            DrawerNotification notificationDrawer1 = new DrawerNotification();
-            notificationDrawer1.setUserId("user-1");
-            notificationDrawer1.setEvent(createdEvent);
-            notificationDrawer1.setOrgId(DEFAULT_ORG_ID);
-            drawerNotificationsRepository.create(notificationDrawer1);
+        DrawerNotification notificationDrawer1 = new DrawerNotification();
+        notificationDrawer1.setUserId("user-1");
+        notificationDrawer1.setEvent(createdEvent);
+        notificationDrawer1.setEventId(createdEvent.getId());
+        notificationDrawer1.setOrgId(DEFAULT_ORG_ID);
+        createDrawerNotification(notificationDrawer1);
 
-            DrawerNotification notificationDrawer2 = new DrawerNotification();
-            notificationDrawer2.setUserId("user-2");
-            notificationDrawer2.setEvent(createdEvent);
-            notificationDrawer2.setOrgId(DEFAULT_ORG_ID);
-            drawerNotificationsRepository.create(notificationDrawer2);
+        DrawerNotification notificationDrawer2 = new DrawerNotification();
+        notificationDrawer2.setUserId("user-2");
+        notificationDrawer2.setEvent(createdEvent);
+        notificationDrawer2.setEventId(createdEvent.getId());
+        notificationDrawer2.setOrgId(DEFAULT_ORG_ID);
+        createDrawerNotification(notificationDrawer2);
 
-            List<DrawerNotification> drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
-            List<DrawerNotification> drawerNotificationUser3 = getDrawerNotificationsByUserId("user-3");
+        List<DrawerNotification> drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
+        List<DrawerNotification> drawerNotificationUser3 = getDrawerNotificationsByUserId("user-3");
 
-            assertEquals(1, drawerNotificationUser1.size());
-            assertNotNull(drawerNotificationUser1.get(0).getCreated());
-            assertEquals(0, drawerNotificationUser3.size());
+        assertEquals(1, drawerNotificationUser1.size());
+        assertNotNull(drawerNotificationUser1.get(0).getCreated());
+        assertEquals(0, drawerNotificationUser3.size());
 
-            entityManager.createQuery("DELETE FROM Event WHERE id = :uuid").setParameter("uuid", createdEvent.getId()).executeUpdate();
-            drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
-            assertEquals(0, drawerNotificationUser1.size());
-        });
+        entityManager.createQuery("DELETE FROM Event WHERE id = :uuid").setParameter("uuid", createdEvent.getId()).executeUpdate();
+        drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
+        assertEquals(0, drawerNotificationUser1.size());
     }
 
     @Test

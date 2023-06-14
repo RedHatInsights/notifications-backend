@@ -4,7 +4,6 @@ CREATE OR REPLACE FUNCTION insert_drawer_notifications(pUserIdList text, pOrgId 
     RETURNS SETOF drawer_notification AS
 $BODY$
 DECLARE
-    createdNotifications REFCURSOR;
     userId text;
     userArray text[]=string_to_array(pUserIdList,',');
 BEGIN

@@ -63,6 +63,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
+        if (!featureFlipper.isDrawerEnabled()) {
+            return;
+        }
         if (endpoints != null && !endpoints.isEmpty()) {
             Set<User> userList = getRecipientList(event, endpoints, EmailSubscriptionType.DRAWER);
             if (null != userList && !userList.isEmpty()) {
@@ -73,9 +76,6 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     }
 
     private void process(Event event, Set<User> userList) {
-        if (!featureFlipper.isDrawerEnabled()) {
-            return;
-        }
         UUID historyId = UUID.randomUUID();
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
         Log.infof("Processing drawer notification [orgId=%s, eventId=%s, historyId=%s]",

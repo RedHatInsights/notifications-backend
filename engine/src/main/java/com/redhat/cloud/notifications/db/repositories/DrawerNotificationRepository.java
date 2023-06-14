@@ -16,12 +16,6 @@ public class DrawerNotificationRepository {
     @Inject
     StatelessSessionFactory statelessSessionFactory;
 
-    public DrawerNotification create(DrawerNotification drawerNotification) {
-        drawerNotification.prePersist(); // This method must be called manually while using a StatelessSession.
-        statelessSessionFactory.getCurrentSession().insert(drawerNotification);
-        return drawerNotification;
-    }
-
     public List<DrawerNotification> create(Event event, String users) {
         StoredProcedureQuery query = statelessSessionFactory.getCurrentSession().createStoredProcedureCall("insert_drawer_notifications", DrawerNotification.class)
             .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
