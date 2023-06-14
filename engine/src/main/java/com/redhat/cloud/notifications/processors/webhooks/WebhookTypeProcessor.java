@@ -211,6 +211,9 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                             int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
                             details.put("total_recipients", totalRecipients);
                             history.setDetails(details);
+                            if (totalRecipients > 0) {
+                                Log.infof("Payload sent to bop = %s", payload);
+                            }
                         } catch (Exception ex) {
                             Log.error("Could not set the total_recipients field in the history details", ex);
                         }
