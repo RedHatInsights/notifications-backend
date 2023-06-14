@@ -194,8 +194,6 @@ public class ExportEventListener {
                 if (responseFamily == Response.Status.Family.SERVER_ERROR) {
                     this.failuresCounter.increment();
                 }
-
-                return;
             }
 
             Log.errorf(e, "something went wrong when handling a resource request from the export service. Received payload: %s", payload);
