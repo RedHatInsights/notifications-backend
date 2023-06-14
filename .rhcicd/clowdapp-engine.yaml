@@ -275,6 +275,10 @@ objects:
           value: ${EXPORT_EVENT_LISTENER_LOG_LEVEL}
         - name: CAMEL_COMPONENT_KAFKA_ENABLED
           value: ${CAMEL_COMPONENT_KAFKA_ENABLED}
+        - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
+          value: ${QUARKUS_REST_CLIENT_LOGGING_SCOPE}
+        - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
+          value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -475,3 +479,9 @@ parameters:
   value: "INFO"
 - name: CAMEL_COMPONENT_KAFKA_ENABLED
   value: "true"
+- name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
+  description: When set to 'request-response', rest-client will log the request and response contents
+  value: ""
+- name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
+  description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
+  value: INFO
