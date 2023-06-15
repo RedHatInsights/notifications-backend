@@ -279,6 +279,8 @@ objects:
           value: ${QUARKUS_REST_CLIENT_LOGGING_SCOPE}
         - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
           value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
+        - name: NOTIFICATIONS_DRAWER_ENABLED
+          value: ${NOTIFICATIONS_DRAWER_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -486,3 +488,5 @@ parameters:
 - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
   description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
   value: INFO
+- name: NOTIFICATIONS_DRAWER_ENABLED
+  value: "false"
