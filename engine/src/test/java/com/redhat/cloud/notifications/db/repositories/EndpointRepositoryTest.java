@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
@@ -17,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.transaction.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -34,9 +34,6 @@ public class EndpointRepositoryTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     @Inject
     EndpointRepository endpointRepository;
@@ -63,81 +60,66 @@ public class EndpointRepositoryTest {
         assertTrue(endpoint.isEnabled());
         assertEquals(0, endpoint.getServerErrors());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            for (int i = 1; i <= MAX_SERVER_ERRORS + 1; i++) {
-                assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS));
-                Endpoint ep = getEndpoint(endpoint.getId());
-                assertEquals(i <= MAX_SERVER_ERRORS, ep.isEnabled());
-                // The server errors counter is not incremented on the last iteration. The endpoint is disabled instead.
-                assertEquals(i <= MAX_SERVER_ERRORS ? i : i - 1, ep.getServerErrors());
-            }
-        });
+        for (int i = 1; i <= MAX_SERVER_ERRORS + 1; i++) {
+            assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS));
+            entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+            Endpoint ep = getEndpoint(endpoint.getId());
+            assertEquals(i <= MAX_SERVER_ERRORS, ep.isEnabled());
+            // The server errors counter is not incremented on the last iteration. The endpoint is disabled instead.
+            assertEquals(i <= MAX_SERVER_ERRORS ? i : i - 1, ep.getServerErrors());
+        }
     }
 
     @Test
     void testIncrementEndpointServerErrorsWithUnknownId() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 10));
-        });
+        assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 10));
     }
 
     @Test
     void testResetEndpointServerErrorsWithExistingErrors() {
         Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 3);
         assertEquals(3, endpoint.getServerErrors());
-        statelessSessionFactory.withSession(statelessSession -> {
-            assertTrue(endpointRepository.resetEndpointServerErrors(endpoint.getId()), "Endpoints with serverErrors > 0 SHOULD be updated");
-            assertEquals(0, getEndpoint(endpoint.getId()).getServerErrors());
-        });
+        assertTrue(endpointRepository.resetEndpointServerErrors(endpoint.getId()), "Endpoints with serverErrors > 0 SHOULD be updated");
+        assertEquals(0, getEndpoint(endpoint.getId()).getServerErrors());
     }
 
     @Test
     void testResetEndpointServerErrorsWithoutExistingErrors() {
         Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 0);
         assertEquals(0, endpoint.getServerErrors());
-        statelessSessionFactory.withSession(statelessSession -> {
-            assertFalse(endpointRepository.resetEndpointServerErrors(endpoint.getId()), "Endpoints with serverErrors == 0 SHOULD NOT be updated");
-            assertEquals(0, getEndpoint(endpoint.getId()).getServerErrors());
-        });
+        assertFalse(endpointRepository.resetEndpointServerErrors(endpoint.getId()), "Endpoints with serverErrors == 0 SHOULD NOT be updated");
+        assertEquals(0, getEndpoint(endpoint.getId()).getServerErrors());
     }
 
     @Test
     void testResetEndpointServerErrorsWithUnknownId() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            assertFalse(endpointRepository.resetEndpointServerErrors(UUID.randomUUID()));
-        });
+        assertFalse(endpointRepository.resetEndpointServerErrors(UUID.randomUUID()));
     }
 
     @Test
     void testDisableEndpointWithEnabledEndpoint() {
         Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 3);
         assertTrue(endpoint.isEnabled());
-        statelessSessionFactory.withSession(statelessSession -> {
-            assertTrue(endpointRepository.disableEndpoint(endpoint.getId()), "Enabled endpoints SHOULD be updated");
-            assertFalse(getEndpoint(endpoint.getId()).isEnabled());
-        });
+        assertTrue(endpointRepository.disableEndpoint(endpoint.getId()), "Enabled endpoints SHOULD be updated");
+        assertFalse(getEndpoint(endpoint.getId()).isEnabled());
     }
 
     @Test
     void testDisableEndpointWithDisabledEndpoint() {
         Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, false, 0);
         assertFalse(endpoint.isEnabled());
-        statelessSessionFactory.withSession(statelessSession -> {
-            assertFalse(endpointRepository.disableEndpoint(endpoint.getId()), "Disabled endpoints SHOULD NOT be updated");
-            assertFalse(getEndpoint(endpoint.getId()).isEnabled());
-        });
+        assertFalse(endpointRepository.disableEndpoint(endpoint.getId()), "Disabled endpoints SHOULD NOT be updated");
+        assertFalse(getEndpoint(endpoint.getId()).isEnabled());
     }
 
     @Test
     void testDisableEndpointWithUnknownId() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            assertFalse(endpointRepository.disableEndpoint(UUID.randomUUID()));
-        });
+        assertFalse(endpointRepository.disableEndpoint(UUID.randomUUID()));
     }
 
     Endpoint getEndpoint(UUID id) {
         String hql = "FROM Endpoint WHERE id = :id";
-        return statelessSessionFactory.getCurrentSession().createQuery(hql, Endpoint.class)
+        return entityManager.createQuery(hql, Endpoint.class)
                 .setParameter("id", id)
                 .getSingleResult();
     }
@@ -172,17 +154,12 @@ public class EndpointRepositoryTest {
         // Since we are not using a repository to create the associated
         // properties, we do it manually by first storing the endpoint and then
         // its properties.
-        this.statelessSessionFactory.withSession(statelessSession -> {
-            statelessSession.insert(endpoint);
-            statelessSession.insert(webhookProperties);
-        });
+        persist(endpoint, webhookProperties);
 
         final Endpoint[] dbEndpoints = new Endpoint[1];
 
         // Call the function under test.
-        this.statelessSessionFactory.withSession(statelessSession -> {
-            dbEndpoints[0] = this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), orgId);
-        });
+        dbEndpoints[0] = this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), orgId);
 
         Assertions.assertEquals(1, dbEndpoints.length, "only one endpoint should have been fetched");
 
@@ -214,15 +191,13 @@ public class EndpointRepositoryTest {
         final String randomOrgId = "random-org-id";
 
         // Call the function under test.
-        this.statelessSessionFactory.withSession(statelessSession -> {
-            final NoResultException exception = Assertions.assertThrows(NoResultException.class, () ->
-                this.endpointRepository.findByUuidAndOrgId(randomEndpointUuid, randomOrgId)
-            );
+        final NoResultException exception = Assertions.assertThrows(NoResultException.class, () ->
+            this.endpointRepository.findByUuidAndOrgId(randomEndpointUuid, randomOrgId)
+        );
 
-            final String expectedErrorMessage = String.format("Endpoint with id=%s and orgId=%s not found", randomEndpointUuid, randomOrgId);
+        final String expectedErrorMessage = String.format("Endpoint with id=%s and orgId=%s not found", randomEndpointUuid, randomOrgId);
 
-            Assertions.assertEquals(expectedErrorMessage, exception.getMessage(), "unexpected error message received");
-        });
+        Assertions.assertEquals(expectedErrorMessage, exception.getMessage(), "unexpected error message received");
     }
 
     /**
@@ -243,21 +218,28 @@ public class EndpointRepositoryTest {
         endpoint.setServerErrors(123);
         endpoint.setType(WEBHOOK);
 
-        this.statelessSessionFactory.withSession(statelessSession -> {
-            statelessSession.insert(endpoint);
-        });
+        persist(endpoint);
 
         // Call the function under test.
-        this.statelessSessionFactory.withSession(statelessSession -> {
-            final String randomOrgId = "random-org-id";
+        final String randomOrgId = "random-org-id";
 
-            final NoResultException exception = Assertions.assertThrows(NoResultException.class, () ->
-                    this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), randomOrgId)
-            );
+        final NoResultException exception = Assertions.assertThrows(NoResultException.class, () ->
+                this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), randomOrgId)
+        );
 
-            final String expectedErrorMessage = String.format("Endpoint with id=%s and orgId=%s not found", endpointUuid, randomOrgId);
+        final String expectedErrorMessage = String.format("Endpoint with id=%s and orgId=%s not found", endpointUuid, randomOrgId);
 
-            Assertions.assertEquals(expectedErrorMessage, exception.getMessage(), "unexpected error message received");
-        });
+        Assertions.assertEquals(expectedErrorMessage, exception.getMessage(), "unexpected error message received");
+    }
+
+    @Transactional
+    void persist(Endpoint endpoint) {
+        entityManager.persist(endpoint);
+    }
+
+    @Transactional
+    void persist(Endpoint endpoint, WebhookProperties webhookProperties) {
+        entityManager.persist(endpoint);
+        entityManager.persist(webhookProperties);
     }
 }

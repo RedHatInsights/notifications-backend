@@ -57,28 +57,25 @@ public class TestAdvisorDailyDigest extends EmailTemplatesInDbHelper {
         context.put("start_time", LocalDateTime.now().toString());
         context.put("end_time", LocalDateTime.now().toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
+        String resultSubject = generateAggregatedEmailSubject(context);
+        assertEquals("Daily digest - Advisor - Red Hat Enterprise Linux", resultSubject);
 
-            String resultSubject = generateAggregatedEmailSubject(context);
-            assertEquals("Daily digest - Advisor - Red Hat Enterprise Linux", resultSubject);
-
-            String resultBody = generateAggregatedEmailBody(context);
-            assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
-            assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-            assertTrue(resultBody.contains("New Recommendations"));
-            assertTrue(resultBody.contains("/insights/advisor/recommendations/test|Active_rule_1"));
-            assertTrue(resultBody.contains("Active rule 1</a>"));
-            assertTrue(resultBody.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
-            assertTrue(resultBody.contains("/apps/frontend-assets/email-assets/img_important.png"));
-            assertTrue(resultBody.contains("Resolved Recommendation"));
-            assertTrue(resultBody.contains("/insights/advisor/recommendations/test|Active_rule_2"));
-            assertTrue(resultBody.contains("Active rule 2</a>"));
-            assertTrue(resultBody.contains("/apps/frontend-assets/email-assets/img_low.png"));
-            assertTrue(resultBody.contains("Deactivated Recommendations"));
-            assertTrue(resultBody.contains("/insights/advisor/recommendations/test|Active_rule_3"));
-            assertTrue(resultBody.contains("Active rule 3</a>"));
-            assertTrue(resultBody.contains("/apps/frontend-assets/email-assets/img_critical.png"));
-        });
+        String resultBody = generateAggregatedEmailBody(context);
+        assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
+        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(resultBody.contains("New Recommendations"));
+        assertTrue(resultBody.contains("/insights/advisor/recommendations/test|Active_rule_1"));
+        assertTrue(resultBody.contains("Active rule 1</a>"));
+        assertTrue(resultBody.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
+        assertTrue(resultBody.contains("/apps/frontend-assets/email-assets/img_important.png"));
+        assertTrue(resultBody.contains("Resolved Recommendation"));
+        assertTrue(resultBody.contains("/insights/advisor/recommendations/test|Active_rule_2"));
+        assertTrue(resultBody.contains("Active rule 2</a>"));
+        assertTrue(resultBody.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        assertTrue(resultBody.contains("Deactivated Recommendations"));
+        assertTrue(resultBody.contains("/insights/advisor/recommendations/test|Active_rule_3"));
+        assertTrue(resultBody.contains("Active rule 3</a>"));
+        assertTrue(resultBody.contains("/apps/frontend-assets/email-assets/img_critical.png"));
     }
 
     @Override

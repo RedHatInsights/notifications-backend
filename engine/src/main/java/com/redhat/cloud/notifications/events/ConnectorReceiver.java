@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -48,9 +47,6 @@ public class ConnectorReceiver {
     NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
     MeterRegistry meterRegistry;
 
     @Inject
@@ -79,13 +75,11 @@ public class ConnectorReceiver {
         try {
             Log.infof("Processing return from camel: %s", payload);
             Map<String, Object> decodedPayload = decodeItem(payload);
-            statelessSessionFactory.withSession(statelessSession -> {
-                reinjectIfNeeded(decodedPayload);
-                boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
-                if (!updated) {
-                    Log.infof("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
-                }
-            });
+            reinjectIfNeeded(decodedPayload);
+            boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
+            if (!updated) {
+                Log.infof("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
+            }
         } catch (Exception e) {
             messagesErrorCounter.increment();
             Log.error("|  Failure to update the history", e);

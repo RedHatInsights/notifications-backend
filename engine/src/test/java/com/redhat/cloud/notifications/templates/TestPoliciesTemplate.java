@@ -8,6 +8,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +24,9 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @AfterEach
     void afterEach() {
@@ -44,45 +48,45 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
     public void testInstantEmailTitle() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains("2"), "Title contains the number of policies triggered");
-            assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
+        String result = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains("2"), "Title contains the number of policies triggered");
+        assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
 
-            featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(EVENT_TYPE_NAME, action);
-            assertEquals("Instant notification - Policies - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertEquals("Instant notification - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testInstantEmailBody() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
-            assertTrue(result.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
+        String result = generateEmailBody(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
+        assertTrue(result.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
 
-            assertTrue(result.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
-            assertTrue(result.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
+        assertTrue(result.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
+        assertTrue(result.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
 
-            // Display name
-            assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
+        // Display name
+        assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
 
-            featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
-            assertTrue(result.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
 
-            assertTrue(result.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
-            assertTrue(result.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
+        featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
+        assertTrue(result.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
 
-            // Display name
-            assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        assertTrue(result.contains(TestHelpers.policyId2), "Body should contain policy id" + TestHelpers.policyId2);
+        assertTrue(result.contains(TestHelpers.policyName2), "Body should contain policy name" + TestHelpers.policyName2);
+
+        // Display name
+        assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -114,15 +118,15 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
         payload.put("policies", policies);
         payload.put("unique_system_count", 3);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailSubject(payload);
-            assertEquals("22 Apr 2021 - 3 policies triggered on 3 unique systems", result);
+        String result = generateAggregatedEmailSubject(payload);
+        assertEquals("22 Apr 2021 - 3 policies triggered on 3 unique systems", result);
 
-            featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailSubject(payload);
-            assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailSubject(payload);
+        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -145,15 +149,15 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
         payload.put("policies", policies);
         payload.put("unique_system_count", 1);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailSubject(payload);
-            assertEquals("22 Apr 2021 - 1 policy triggered on 1 system", result);
+        String result = generateAggregatedEmailSubject(payload);
+        assertEquals("22 Apr 2021 - 1 policy triggered on 1 system", result);
 
-            featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailSubject(payload);
-            assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailSubject(payload);
+        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -188,16 +192,16 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
         payload.put("policies", policies);
         payload.put("unique_system_count", 3);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(payload);
-            assertTrue(result.contains("<b>3 policies</b> triggered on <b>3 unique systems</b>"));
+        String result = generateAggregatedEmailBody(payload);
+        assertTrue(result.contains("<b>3 policies</b> triggered on <b>3 unique systems</b>"));
 
-            featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(payload);
-            assertTrue(result.contains("Review the 3 policies that triggered 3 unique systems"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(payload);
+        assertTrue(result.contains("Review the 3 policies that triggered 3 unique systems"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -219,16 +223,16 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
         payload.put("policies", policies);
         payload.put("unique_system_count", 1);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(payload);
-            assertTrue(result.contains("<b>1 policy</b> triggered on <b>1 system</b>"));
+        String result = generateAggregatedEmailBody(payload);
+        assertTrue(result.contains("<b>1 policy</b> triggered on <b>1 system</b>"));
 
-            featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(payload);
-            assertTrue(result.contains("Review the 1 policy that triggered 1 system"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPoliciesEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(payload);
+        assertTrue(result.contains("Review the 1 policy that triggered 1 system"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
 }

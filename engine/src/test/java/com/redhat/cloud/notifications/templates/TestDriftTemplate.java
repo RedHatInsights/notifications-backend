@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,6 +36,9 @@ public class TestDriftTemplate extends EmailTemplatesInDbHelper  {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @Inject
+    EntityManager entityManager;
+
     @AfterEach
     void afterEach() {
         featureFlipper.setDriftEmailTemplatesV2Enabled(false);
@@ -54,32 +58,32 @@ public class TestDriftTemplate extends EmailTemplatesInDbHelper  {
     @Test
     public void testInstantEmailTitle() {
         Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains("2 drifts from baseline detected on 'Machine 1'"));
+        String result = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains("2 drifts from baseline detected on 'Machine 1'"));
 
-            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(EVENT_TYPE_NAME, action);
-            assertEquals("Instant notification - Drift - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertEquals("Instant notification - Drift - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testInstantEmailBody() {
         Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains("baseline_01"));
-            assertTrue(result.contains("Machine 1"));
+        String result = generateEmailBody(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains("baseline_01"));
+        assertTrue(result.contains("Machine 1"));
 
-            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains("baseline_01"));
-            assertTrue(result.contains("Machine 1"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains("baseline_01"));
+        assertTrue(result.contains("Machine 1"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -96,15 +100,15 @@ public class TestDriftTemplate extends EmailTemplatesInDbHelper  {
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailSubject(drift);
-            assertTrue(result.contains("3 drifts from baseline detected on 2 unique system"));
+        String result = generateAggregatedEmailSubject(drift);
+        assertTrue(result.contains("3 drifts from baseline detected on 2 unique system"));
 
-            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailSubject(drift);
-            assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailSubject(drift);
+        assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -118,16 +122,16 @@ public class TestDriftTemplate extends EmailTemplatesInDbHelper  {
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(drift);
-            assertTrue(result.contains("baseline_01"));
+        String result = generateAggregatedEmailBody(drift);
+        assertTrue(result.contains("baseline_01"));
 
-            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(drift);
-            assertTrue(result.contains("baseline_01"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(drift);
+        assertTrue(result.contains("baseline_01"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -143,20 +147,20 @@ public class TestDriftTemplate extends EmailTemplatesInDbHelper  {
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(drift);
-            assertTrue(result.contains("baseline_01"));
-            assertTrue(result.contains("baseline_02"));
-            assertTrue(result.contains("baseline_03"));
+        String result = generateAggregatedEmailBody(drift);
+        assertTrue(result.contains("baseline_01"));
+        assertTrue(result.contains("baseline_02"));
+        assertTrue(result.contains("baseline_03"));
 
-            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(drift);
-            assertTrue(result.contains("baseline_01"));
-            assertTrue(result.contains("baseline_02"));
-            assertTrue(result.contains("baseline_03"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(drift);
+        assertTrue(result.contains("baseline_01"));
+        assertTrue(result.contains("baseline_02"));
+        assertTrue(result.contains("baseline_03"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -172,16 +176,16 @@ public class TestDriftTemplate extends EmailTemplatesInDbHelper  {
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(drift);
-            assertTrue(result.contains("baseline_01"));
+        String result = generateAggregatedEmailBody(drift);
+        assertTrue(result.contains("baseline_01"));
 
-            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(drift);
-            assertTrue(result.contains("baseline_01"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(drift);
+        assertTrue(result.contains("baseline_01"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -199,19 +203,19 @@ public class TestDriftTemplate extends EmailTemplatesInDbHelper  {
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(drift);
-            assertTrue(result.contains("baseline_01"));
-            assertTrue(result.contains("baseline_02"));
-            assertTrue(result.contains("baseline_03"));
+        String result = generateAggregatedEmailBody(drift);
+        assertTrue(result.contains("baseline_01"));
+        assertTrue(result.contains("baseline_02"));
+        assertTrue(result.contains("baseline_03"));
 
-            featureFlipper.setDriftEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(drift);
-            assertTrue(result.contains("baseline_01"));
-            assertTrue(result.contains("baseline_02"));
-            assertTrue(result.contains("baseline_03"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setDriftEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(drift);
+        assertTrue(result.contains("baseline_01"));
+        assertTrue(result.contains("baseline_02"));
+        assertTrue(result.contains("baseline_03"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

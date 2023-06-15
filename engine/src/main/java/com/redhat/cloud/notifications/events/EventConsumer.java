@@ -4,7 +4,6 @@ import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformer;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformerFactory;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -71,9 +70,6 @@ public class EventConsumer {
     KafkaMessageDeduplicator kafkaMessageDeduplicator;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
     CloudEventTransformerFactory cloudEventTransformerFactory;
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
@@ -125,86 +121,84 @@ public class EventConsumer {
             Log.infof("Processing received event [id=%s, %s=%s, orgId=%s, %s]",
                     eventWrapper.getId(), MESSAGE_ID_HEADER, msgId, eventWrapper.getOrgId(), eventWrapper.getKey());
 
-            statelessSessionFactory.withSession(statelessSession -> {
+            /*
+             * Step 3
+             * It's time to check if the message ID is already known. For now, messages without an ID
+             * (messageId == null) are always considered new.
+             */
+            if (kafkaMessageDeduplicator.isDuplicate(messageId)) {
                 /*
-                 * Step 3
-                 * It's time to check if the message ID is already known. For now, messages without an ID
-                 * (messageId == null) are always considered new.
+                 * The message ID is already known which means we already processed the current
+                 * message and sent notifications. The message is therefore ignored.
                  */
-                if (kafkaMessageDeduplicator.isDuplicate(messageId)) {
-                    /*
-                     * The message ID is already known which means we already processed the current
-                     * message and sent notifications. The message is therefore ignored.
-                     */
-                    duplicateCounter.increment();
-                } else {
-                    /*
-                     * Step 4
-                     * The message ID is new. Let's persist it. The current message will never be processed again as
-                     * long as its ID stays in the DB.
-                     */
-                    kafkaMessageDeduplicator.registerMessageId(messageId);
-                    /*
-                     * Step 5
-                     * We need to retrieve an EventType from the DB using the bundle/app/eventType triplet from the
-                     * parsed Action.
-                     */
-                    EventType eventType;
-                    EventWrapper<?, ?> eventWrapperToProcess = eventWrapper;
-                    try {
-                        eventType = eventTypeRepository.getEventType(eventWrapperToProcess.getKey());
+                duplicateCounter.increment();
+            } else {
+                /*
+                 * Step 4
+                 * The message ID is new. Let's persist it. The current message will never be processed again as
+                 * long as its ID stays in the DB.
+                 */
+                kafkaMessageDeduplicator.registerMessageId(messageId);
+                /*
+                 * Step 5
+                 * We need to retrieve an EventType from the DB using the bundle/app/eventType triplet from the
+                 * parsed Action.
+                 */
+                EventType eventType;
+                EventWrapper<?, ?> eventWrapperToProcess = eventWrapper;
+                try {
+                    eventType = eventTypeRepository.getEventType(eventWrapperToProcess.getKey());
 
-                        if (eventWrapperToProcess instanceof EventWrapperCloudEvent) {
-                            // We loaded a cloud event and identified the event-type it belongs to
-                            // At this point, lets check if we have a transformation available for this event
-                            // If we do, transform the event - Later this will be done on a by-integration basis
-                            Optional<CloudEventTransformer> transformer = cloudEventTransformerFactory.getTransformerIfSupported((EventWrapperCloudEvent) eventWrapperToProcess);
-                            if (transformer.isPresent()) {
-                                eventWrapperToProcess = new EventWrapperAction(
-                                        transformer.get().toAction(
-                                                (EventWrapperCloudEvent) eventWrapperToProcess,
-                                                eventType.getApplication().getBundle().getName(),
-                                                eventType.getApplication().getName(),
-                                                eventType.getName()
-                                ));
-                            }
+                    if (eventWrapperToProcess instanceof EventWrapperCloudEvent) {
+                        // We loaded a cloud event and identified the event-type it belongs to
+                        // At this point, lets check if we have a transformation available for this event
+                        // If we do, transform the event - Later this will be done on a by-integration basis
+                        Optional<CloudEventTransformer> transformer = cloudEventTransformerFactory.getTransformerIfSupported((EventWrapperCloudEvent) eventWrapperToProcess);
+                        if (transformer.isPresent()) {
+                            eventWrapperToProcess = new EventWrapperAction(
+                                    transformer.get().toAction(
+                                            (EventWrapperCloudEvent) eventWrapperToProcess,
+                                            eventType.getApplication().getBundle().getName(),
+                                            eventType.getApplication().getName(),
+                                            eventType.getName()
+                            ));
                         }
+                    }
 
-                        tags.computeIfAbsent(TAG_KEY_BUNDLE, key -> eventType.getApplication().getBundle().getName());
-                        tags.computeIfAbsent(TAG_KEY_APPLICATION, key -> eventType.getApplication().getName());
-                    } catch (NoResultException | IllegalArgumentException e) {
-                        /*
-                         * A NoResultException was thrown because no EventType was found. The message is therefore
-                         * considered rejected.
-                         */
-                        rejectedCounter.increment();
-                        throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventWrapperToProcess.getKey()));
-                    }
+                    tags.computeIfAbsent(TAG_KEY_BUNDLE, key -> eventType.getApplication().getBundle().getName());
+                    tags.computeIfAbsent(TAG_KEY_APPLICATION, key -> eventType.getApplication().getName());
+                } catch (NoResultException | IllegalArgumentException e) {
                     /*
-                     * Step 6
-                     * The EventType was found. It's time to create an Event from the current message and persist it.
+                     * A NoResultException was thrown because no EventType was found. The message is therefore
+                     * considered rejected.
                      */
-                    Event event = new Event(eventType, payload, eventWrapperToProcess);
-                    if (event.getId() == null) {
-                        // NOTIF-499 If there is no ID provided whatsoever we create one.
-                        event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
-                    }
-                    eventRepository.create(event);
-                    /*
-                     * Step 7
-                     * The Event and the Action it contains are processed by all relevant endpoint processors.
-                     */
-                    try {
-                        endpointProcessor.process(event);
-                    } catch (Exception e) {
-                        /*
-                         * The Event processing failed.
-                         */
-                        processingErrorCounter.increment();
-                        throw e;
-                    }
+                    rejectedCounter.increment();
+                    throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventWrapperToProcess.getKey()));
                 }
-            });
+                /*
+                 * Step 6
+                 * The EventType was found. It's time to create an Event from the current message and persist it.
+                 */
+                Event event = new Event(eventType, payload, eventWrapperToProcess);
+                if (event.getId() == null) {
+                    // NOTIF-499 If there is no ID provided whatsoever we create one.
+                    event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
+                }
+                eventRepository.create(event);
+                /*
+                 * Step 7
+                 * The Event and the Action it contains are processed by all relevant endpoint processors.
+                 */
+                try {
+                    endpointProcessor.process(event);
+                } catch (Exception e) {
+                    /*
+                     * The Event processing failed.
+                     */
+                    processingErrorCounter.increment();
+                    throw e;
+                }
+            }
         } catch (Exception e) {
             /*
              * An exception was thrown at some point during the Kafka message processing,

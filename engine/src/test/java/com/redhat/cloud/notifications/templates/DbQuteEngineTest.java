@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -43,49 +42,42 @@ public class DbQuteEngineTest {
     TemplateService templateService;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
     FeatureFlipper featureFlipper;
 
     @Test
     void testIncludeExistingTemplate() {
         Template outerTemplate = createTemplate("outer-template", "Hello, {#include inner-template /}");
         Template innerTemplate = createTemplate("inner-template", "World!");
-        statelessSessionFactory.withSession(statelessSession -> {
-            String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
-            assertEquals("Hello, World!", renderedOuterTemplate);
-        });
+        String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+        assertEquals("Hello, World!", renderedOuterTemplate);
 
         /*
          * Any change to the inner template should be reflected when the outer template is rendered as long as the old
          * version of the inner template was removed from the Qute internal cache.
          */
         updateTemplateData(innerTemplate.getId(), "Red Hat!");
-        statelessSessionFactory.withSession(statelessSession -> {
-            String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
-            assertEquals("Hello, World!", renderedOuterTemplate);
-        });
+        renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+        assertEquals("Hello, World!", renderedOuterTemplate);
         templateService.clearTemplates();
-        statelessSessionFactory.withSession(statelessSession -> {
-            String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
-            assertEquals("Hello, Red Hat!", renderedOuterTemplate);
-        });
+
+        entityManager.clear(); // The Hibernate L1 cache still contains the old version of the template and needs to be cleared.
+
+        renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+        assertEquals("Hello, Red Hat!", renderedOuterTemplate);
 
         /*
          * If the inner template is deleted, the outer template rendering should fail as long as the old version of the
          * inner template was removed from the Qute internal cache.
          */
         deleteTemplate(innerTemplate.getId());
-        statelessSessionFactory.withSession(statelessSession -> {
-            String renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
-            assertEquals("Hello, Red Hat!", renderedOuterTemplate);
-        });
+        renderedOuterTemplate = templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
+        assertEquals("Hello, Red Hat!", renderedOuterTemplate);
         templateService.clearTemplates();
+
+        entityManager.clear(); // The Hibernate L1 cache still contains the old version of the template and needs to be cleared.
+
         TemplateException e = assertThrows(TemplateException.class, () -> {
-            statelessSessionFactory.withSession(statelessSession -> {
-                templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
-            });
+            templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
         });
         assertEquals("Rendering error in template [outer-template] line 1: included template [inner-template] not found", e.getMessage());
     }
@@ -94,9 +86,7 @@ public class DbQuteEngineTest {
     void testIncludeUnknownTemplate() {
         Template outerTemplate = createTemplate("other-outer-template", "Hello, {#include unknown-inner-template /}");
         TemplateException e = assertThrows(TemplateException.class, () -> {
-            statelessSessionFactory.withSession(statelessSession -> {
-                templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
-            });
+            templateService.compileTemplate(outerTemplate.getData(), outerTemplate.getName()).render();
         });
         assertEquals("Rendering error in template [other-outer-template] line 1: included template [unknown-inner-template] not found", e.getMessage());
     }

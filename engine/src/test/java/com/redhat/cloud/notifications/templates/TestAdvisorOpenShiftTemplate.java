@@ -10,6 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +28,9 @@ public class TestAdvisorOpenShiftTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @Override
     protected String getApp() {
@@ -53,35 +57,35 @@ public class TestAdvisorOpenShiftTemplate extends EmailTemplatesInDbHelper {
     public void testInstantEmailTitleForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(NEW_RECOMMENDATION, action);
+        String result = generateEmailSubject(NEW_RECOMMENDATION, action);
 
-            // The date formatting is sensitive to the locale
-            String date = DateTimeFormatter.ofPattern("d MMM uuuu").format(action.getTimestamp());
-            assertEquals("OpenShift - Advisor Instant Notification - " + date, result);
+        // The date formatting is sensitive to the locale
+        String date = DateTimeFormatter.ofPattern("d MMM uuuu").format(action.getTimestamp());
+        assertEquals("OpenShift - Advisor Instant Notification - " + date, result);
 
-            featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(NEW_RECOMMENDATION, action);
-            assertEquals("Instant notification - New recommendation - Advisor - OpenShift", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(NEW_RECOMMENDATION, action);
+        assertEquals("Instant notification - New recommendation - Advisor - OpenShift", result);
     }
 
     @Test
     public void testInstantEmailBodyForNewRecommendation() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
+        Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
-            String result = generateEmailBody(NEW_RECOMMENDATION, action);
-            checkNewRecommendationsBodyResults(action, result);
+        String result = generateEmailBody(NEW_RECOMMENDATION, action);
+        checkNewRecommendationsBodyResults(action, result);
 
-            featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
-            action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
-            migrate();
-            result = generateEmailBody(NEW_RECOMMENDATION, action);
-            checkNewRecommendationsBodyResults(action, result);
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorOpenShiftEmailTemplatesV2Enabled(true);
+        action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
+        migrate();
+        result = generateEmailBody(NEW_RECOMMENDATION, action);
+        checkNewRecommendationsBodyResults(action, result);
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     private void checkNewRecommendationsBodyResults(Action action, final String result) {

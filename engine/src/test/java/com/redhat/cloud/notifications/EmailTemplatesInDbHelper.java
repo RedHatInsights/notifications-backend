@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
@@ -48,9 +47,6 @@ public abstract class EmailTemplatesInDbHelper {
 
     @Inject
     protected ResourceHelpers resourceHelpers;
-
-    @Inject
-    protected StatelessSessionFactory statelessSessionFactory;
 
     @InjectSpy
     protected TemplateRepository templateRepository;

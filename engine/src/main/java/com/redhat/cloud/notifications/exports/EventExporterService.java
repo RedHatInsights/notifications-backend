@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.exports;
 
 import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
 import com.redhat.cloud.notifications.exports.filters.events.EventFilters;
@@ -15,7 +14,6 @@ import com.redhat.cloud.notifications.models.Event;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @ApplicationScoped
 public class EventExporterService {
@@ -25,9 +23,6 @@ public class EventExporterService {
 
     @Inject
     EventRepository eventRepository;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     /**
      * Exports the events to the format specified in the request.
@@ -50,17 +45,14 @@ public class EventExporterService {
         final EventFilters eventFilters = this.eventFiltersExtractor.extract(resourceRequest);
 
         // Fetch the events from the database.
-        final AtomicReference<List<Event>> events = new AtomicReference<>();
-        this.statelessSessionFactory.withSession(session -> {
-            events.set(this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to()));
-        });
+        List<Event> events = this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to());
 
         switch (resourceRequest.getFormat()) {
             case CSV -> {
-                return new CSVEventTransformer().transform(events.get());
+                return new CSVEventTransformer().transform(events);
             }
             case JSON -> {
-                return new JSONEventTransformer().transform(events.get());
+                return new JSONEventTransformer().transform(events);
             }
             default -> throw new UnsupportedFormatException();
         }

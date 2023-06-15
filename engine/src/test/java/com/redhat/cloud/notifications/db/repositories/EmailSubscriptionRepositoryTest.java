@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -24,10 +23,6 @@ public class EmailSubscriptionRepositoryTest {
     private static final String BUNDLE_NAME = "best-bundle";
     private static final String APP_NAME = "awesome-app";
 
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
     @Inject
     ResourceHelpers resourceHelpers;
 
@@ -36,25 +31,23 @@ public class EmailSubscriptionRepositoryTest {
 
     @Test
     void testEmailSubscribersUserIdGroupedByEventType() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
-            Application application = resourceHelpers.createApp(bundle.getId(), APP_NAME);
+        Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
+        Application application = resourceHelpers.createApp(bundle.getId(), APP_NAME);
 
-            EventType eventTypeA = resourceHelpers.createEventType(application.getId(), "event-type-a");
-            EventType eventTypeB = resourceHelpers.createEventType(application.getId(), "event-type-b");
-            EventType eventTypeC = resourceHelpers.createEventType(application.getId(), "event-type-c");
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-01", eventTypeA, EmailSubscriptionType.DAILY);
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-01", eventTypeB, EmailSubscriptionType.DAILY);
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", eventTypeC, EmailSubscriptionType.DAILY);
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", eventTypeA, EmailSubscriptionType.DAILY);
-            resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-03", eventTypeC, EmailSubscriptionType.DAILY);
+        EventType eventTypeA = resourceHelpers.createEventType(application.getId(), "event-type-a");
+        EventType eventTypeB = resourceHelpers.createEventType(application.getId(), "event-type-b");
+        EventType eventTypeC = resourceHelpers.createEventType(application.getId(), "event-type-c");
+        resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-01", eventTypeA, EmailSubscriptionType.DAILY);
+        resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-01", eventTypeB, EmailSubscriptionType.DAILY);
+        resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", eventTypeC, EmailSubscriptionType.DAILY);
+        resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", eventTypeA, EmailSubscriptionType.DAILY);
+        resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-03", eventTypeC, EmailSubscriptionType.DAILY);
 
-            Map<String, Set<String>> mapUsersByEventType = emailSubscriptionRepository.getEmailSubscribersUserIdGroupedByEventType(ORG_ID, BUNDLE_NAME, APP_NAME, EmailSubscriptionType.DAILY);
-            assertEquals(3, mapUsersByEventType.size());
-            assertEquals(2, mapUsersByEventType.get("event-type-a").size());
-            assertTrue(mapUsersByEventType.get("event-type-a").contains("User-01"));
-            assertTrue(mapUsersByEventType.get("event-type-a").contains("User-02"));
-            assertFalse(mapUsersByEventType.get("event-type-a").contains("User-03"));
-        });
+        Map<String, Set<String>> mapUsersByEventType = emailSubscriptionRepository.getEmailSubscribersUserIdGroupedByEventType(ORG_ID, BUNDLE_NAME, APP_NAME, EmailSubscriptionType.DAILY);
+        assertEquals(3, mapUsersByEventType.size());
+        assertEquals(2, mapUsersByEventType.get("event-type-a").size());
+        assertTrue(mapUsersByEventType.get("event-type-a").contains("User-01"));
+        assertTrue(mapUsersByEventType.get("event-type-a").contains("User-02"));
+        assertFalse(mapUsersByEventType.get("event-type-a").contains("User-03"));
     }
 }

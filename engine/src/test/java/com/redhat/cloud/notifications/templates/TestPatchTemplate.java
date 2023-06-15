@@ -10,6 +10,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,6 +26,9 @@ public class TestPatchTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @AfterEach
     void afterEach() {
@@ -44,42 +48,42 @@ public class TestPatchTemplate extends EmailTemplatesInDbHelper {
 
     @Test
     public void testNewAdvisoryEmailTitle() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(NEW_ADVISORY, ACTION);
-            assertTrue(result.contains("Red Hat has recently released new advisories affecting your systems"));
+        String result = generateEmailSubject(NEW_ADVISORY, ACTION);
+        assertTrue(result.contains("Red Hat has recently released new advisories affecting your systems"));
 
-            featureFlipper.setPatchEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(NEW_ADVISORY, ACTION);
-            assertEquals("Instant notification - New advisories affecting your systems - Patch - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPatchEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(NEW_ADVISORY, ACTION);
+        assertEquals("Instant notification - New advisories affecting your systems - Patch - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testNewAdvisoryEmailBody() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(NEW_ADVISORY, ACTION);
-            assertTrue(result.contains("Red Hat Insights has just released new Advisories for your organization"));
+        String result = generateEmailBody(NEW_ADVISORY, ACTION);
+        assertTrue(result.contains("Red Hat Insights has just released new Advisories for your organization"));
 
-            featureFlipper.setPatchEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(NEW_ADVISORY, ACTION);
-            assertTrue(result.contains("Red Hat Insights has just released new Advisories for your organization"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPatchEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(NEW_ADVISORY, ACTION);
+        assertTrue(result.contains("Red Hat Insights has just released new Advisories for your organization"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testDailyDigestEmailTitle() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailSubject(ACTION);
-            assertTrue(result.contains("Insights Patch advisories daily summary"));
+        String result = generateAggregatedEmailSubject(ACTION);
+        assertTrue(result.contains("Insights Patch advisories daily summary"));
 
-            featureFlipper.setPatchEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailSubject(ACTION);
-            assertEquals("Daily digest - Patch - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPatchEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailSubject(ACTION);
+        assertEquals("Daily digest - Patch - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -97,15 +101,15 @@ public class TestPatchTemplate extends EmailTemplatesInDbHelper {
         aggregator.setStartTime(LocalDateTime.now());
         aggregator.setEndTimeKey(LocalDateTime.now());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(aggregator.getContext());
-            assertTrue(result.contains("Here is your Patch advisories summary affecting your systems"));
+        String result = generateAggregatedEmailBody(aggregator.getContext());
+        assertTrue(result.contains("Here is your Patch advisories summary affecting your systems"));
 
-            featureFlipper.setPatchEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(aggregator.getContext());
-            assertTrue(result.contains("There are 4 new advisories affecting your systems."));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setPatchEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(aggregator.getContext());
+        assertTrue(result.contains("There are 4 new advisories affecting your systems."));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

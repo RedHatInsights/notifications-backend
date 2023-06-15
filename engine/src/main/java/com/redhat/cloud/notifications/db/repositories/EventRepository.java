@@ -1,11 +1,12 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Event;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import javax.transaction.Transactional;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,12 +16,13 @@ import java.util.Map;
 
 @ApplicationScoped
 public class EventRepository {
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
+    @Inject
+    EntityManager entityManager;
+
+    @Transactional
     public Event create(Event event) {
-        event.prePersist(); // This method must be called manually while using a StatelessSession.
-        statelessSessionFactory.getCurrentSession().insert(event);
+        entityManager.persist(event);
         return event;
     }
 
@@ -75,8 +77,7 @@ public class EventRepository {
             );
         }
 
-        final TypedQuery<Event> findEventsRanged = this.statelessSessionFactory
-            .getCurrentSession()
+        final TypedQuery<Event> findEventsRanged = entityManager
             .createQuery(findEventsQuery.toString(), Event.class);
 
         for (final Map.Entry<String, Object> entry : parameters.entrySet()) {
@@ -86,7 +87,12 @@ public class EventRepository {
         return findEventsRanged.getResultList();
     }
 
+    @Transactional
     public void updateDrawerNotification(Event event) {
-        statelessSessionFactory.getCurrentSession().update(event);
+        String hql = "UPDATE Event SET renderedDrawerNotification = :renderedDrawerNotification WHERE id = :id";
+        entityManager.createQuery(hql)
+                .setParameter("renderedDrawerNotification", event.getRenderedDrawerNotification())
+                .setParameter("id", event.getId())
+                .executeUpdate();
     }
 }

@@ -8,6 +8,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,9 @@ public class TestComplianceTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @AfterEach
     void afterEach() {
@@ -42,82 +46,82 @@ public class TestComplianceTemplate extends EmailTemplatesInDbHelper {
 
     @Test
     public void testInstantComplianceBelowThresholdEmailBody() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(COMPLIANCE_BELOW_THRESHOLD, ACTION);
-            assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("policy_id").toString()));
+        String result = generateEmailBody(COMPLIANCE_BELOW_THRESHOLD, ACTION);
+        assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("policy_id").toString()));
 
-            featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(COMPLIANCE_BELOW_THRESHOLD, ACTION);
-            assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("policy_id").toString()));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(COMPLIANCE_BELOW_THRESHOLD, ACTION);
+        assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("policy_id").toString()));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testInstantComplianceBelowThresholdEmailTitle() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(COMPLIANCE_BELOW_THRESHOLD, ACTION);
-            assertTrue(result.contains("is non-compliant with policy"));
+        String result = generateEmailSubject(COMPLIANCE_BELOW_THRESHOLD, ACTION);
+        assertTrue(result.contains("is non-compliant with policy"));
 
-            featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(COMPLIANCE_BELOW_THRESHOLD, ACTION);
-            assertEquals("Instant notification - Compliance - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(COMPLIANCE_BELOW_THRESHOLD, ACTION);
+        assertEquals("Instant notification - Compliance - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testInstantReportUploadFailedEmailBody() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(REPORT_UPLOAD_FAILED, ACTION);
-            assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("error").toString()));
+        String result = generateEmailBody(REPORT_UPLOAD_FAILED, ACTION);
+        assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("error").toString()));
 
-            featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(REPORT_UPLOAD_FAILED, ACTION);
-            assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("error").toString()));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(REPORT_UPLOAD_FAILED, ACTION);
+        assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("error").toString()));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testInstantReportUploadFailedEmailTitle() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(REPORT_UPLOAD_FAILED, ACTION);
-            assertTrue(result.contains("Failed to upload report from system"));
+        String result = generateEmailSubject(REPORT_UPLOAD_FAILED, ACTION);
+        assertTrue(result.contains("Failed to upload report from system"));
 
-            featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(REPORT_UPLOAD_FAILED, ACTION);
-            assertEquals("Instant notification - Compliance - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(REPORT_UPLOAD_FAILED, ACTION);
+        assertEquals("Instant notification - Compliance - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testDailyReportEmailBody() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(Map.of());
-            assertTrue(result.contains("Red Hat Insights has identified one or more systems"));
+        String result = generateAggregatedEmailBody(Map.of());
+        assertTrue(result.contains("Red Hat Insights has identified one or more systems"));
 
-            featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(Map.of());
-            assertTrue(result.contains("Red Hat Insights has identified one or more systems"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(Map.of());
+        assertTrue(result.contains("Red Hat Insights has identified one or more systems"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testDailyReportEmailTitle() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailSubject(Map.of());
-            assertTrue(result.contains("Insights Compliance findings that require your attention"));
+        String result = generateAggregatedEmailSubject(Map.of());
+        assertTrue(result.contains("Insights Compliance findings that require your attention"));
 
-            featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailSubject(Map.of());
-            assertEquals("Daily digest - Compliance - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setComplianceEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailSubject(Map.of());
+        assertEquals("Daily digest - Compliance - Red Hat Enterprise Linux", result);
     }
 }

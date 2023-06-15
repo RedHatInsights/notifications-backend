@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -63,9 +62,6 @@ public class EmailTest {
 
     @Inject
     EntityManager entityManager;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     @InjectMock
     @RestClient
@@ -144,9 +140,7 @@ public class EmailTest {
         ep.setProperties(properties);
 
         try {
-            statelessSessionFactory.withSession(statelessSession -> {
-                emailProcessor.process(event, List.of(ep));
-            });
+            emailProcessor.process(event, List.of(ep));
             ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
             verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
             List<NotificationHistory> historyEntries = historyArgumentCaptor.getAllValues();
@@ -257,9 +251,7 @@ public class EmailTest {
         ep.setProperties(properties);
 
         try {
-            statelessSessionFactory.withSession(statelessSession -> {
-                emailProcessor.process(event, List.of(ep));
-            });
+            emailProcessor.process(event, List.of(ep));
             ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
             verify(notificationHistoryRepository, times(0)).createNotificationHistory(historyArgumentCaptor.capture());
             List<NotificationHistory> historyEntries = historyArgumentCaptor.getAllValues();
