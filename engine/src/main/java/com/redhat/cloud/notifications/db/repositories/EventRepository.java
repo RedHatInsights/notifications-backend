@@ -87,6 +87,10 @@ public class EventRepository {
     }
 
     public void updateDrawerNotification(Event event) {
-        statelessSessionFactory.getCurrentSession().update(event);
+        String hql = "UPDATE Event SET renderedDrawerNotification = :renderedDrawerNotification WHERE id = :id";
+        statelessSessionFactory.getCurrentSession().createQuery(hql)
+                .setParameter("id", event.getId())
+                .setParameter("renderedDrawerNotification", event.getRenderedDrawerNotification())
+                .executeUpdate();
     }
 }
