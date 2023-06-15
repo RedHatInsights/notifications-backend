@@ -77,9 +77,8 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     private void process(Event event, Set<User> userList) {
         UUID historyId = UUID.randomUUID();
-        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
         Log.infof("Processing drawer notification [orgId=%s, eventId=%s, historyId=%s]",
-            endpoint.getOrgId(), event.getId(), historyId);
+            event.getOrgId(), event.getId(), historyId);
 
         long startTime = System.currentTimeMillis();
 
@@ -93,13 +92,14 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             // store it on event table
             event.setRenderedDrawerNotification(renderedData);
             eventRepository.updateDrawerNotification(event);
-            endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
 
             // TODO push created drawerNotifications through kafta: RHCLOUD-25999
 
+            Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
             history = getHistoryStub(endpoint, event, 0L, historyId);
             history.setStatus(NotificationStatus.SUCCESS);
         } catch (Exception e) {
+            Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
             history = getHistoryStub(endpoint, event, 0L, historyId);
             history.setStatus(NotificationStatus.FAILED_INTERNAL);
             history.setDetails(Map.of("failure", e.getMessage()));
