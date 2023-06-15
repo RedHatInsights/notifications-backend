@@ -23,8 +23,11 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.net.URLEncoder;
 import java.util.Optional;
 import java.util.UUID;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
 public class ExportEventListener {
@@ -163,10 +166,12 @@ public class ExportEventListener {
                 return;
             }
 
+            String encodedAppName = URLEncoder.encode(APPLICATION_NAME, UTF_8);
+
             // Send the contents to the export service.
             switch (format) {
-                case CSV -> this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportedContents);
-                case JSON -> this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportedContents);
+                case CSV -> this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, encodedAppName, resourceUuid, exportedContents);
+                case JSON -> this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, encodedAppName, resourceUuid, exportedContents);
                 default -> {
                     Log.debugf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unsupported format", exportRequestUuid, resourceUuid, format);
 

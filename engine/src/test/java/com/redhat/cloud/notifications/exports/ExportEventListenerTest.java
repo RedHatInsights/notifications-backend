@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -39,6 +40,7 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -301,7 +303,7 @@ public class ExportEventListenerTest {
         Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_EXPORT_UUID, capturedExportUuid.getValue(), "unexpected export request UUID sent to the export service");
 
         // Assert that the export request's application is correct.
-        Assertions.assertEquals(ExportEventListener.APPLICATION_NAME, capturedApplication.getValue(), "unexpected application's name sent to the export service");
+        Assertions.assertEquals(URLEncoder.encode(ExportEventListener.APPLICATION_NAME, UTF_8), capturedApplication.getValue(), "unexpected application's name sent to the export service");
 
         // Assert that the export request's resource UUID is correct.
         Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_RESOURCE_UUID, capturedResourceUuid.getValue(), "unexpected resource UUID sent to the export service");
@@ -374,7 +376,7 @@ public class ExportEventListenerTest {
         Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_EXPORT_UUID, capturedExportUuid.getValue(), "unexpected export request UUID sent to the export service");
 
         // Assert that the export request's application is correct.
-        Assertions.assertEquals(ExportEventListener.APPLICATION_NAME, capturedApplication.getValue(), "unexpected application's name sent to the export service");
+        Assertions.assertEquals(URLEncoder.encode(ExportEventListener.APPLICATION_NAME, UTF_8), capturedApplication.getValue(), "unexpected application's name sent to the export service");
 
         // Assert that the export request's resource UUID is correct.
         Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_RESOURCE_UUID, capturedResourceUuid.getValue(), "unexpected resource UUID sent to the export service");
