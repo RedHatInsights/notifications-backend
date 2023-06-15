@@ -72,6 +72,8 @@ public class Event {
 
     private String payload;
 
+    private String renderedDrawerNotification;
+
     @Transient
     private EventWrapper<?, ?> eventWrapper;
 
@@ -224,6 +226,14 @@ public class Event {
 
     public void setEventWrapper(EventWrapper<?, ?> eventWrapper) {
         this.eventWrapper = eventWrapper;
+    }
+
+    public String getRenderedDrawerNotification() {
+        return renderedDrawerNotification;
+    }
+
+    public void setRenderedDrawerNotification(String renderedDrawerNotification) {
+        this.renderedDrawerNotification = renderedDrawerNotification;
     }
 
     @Override
