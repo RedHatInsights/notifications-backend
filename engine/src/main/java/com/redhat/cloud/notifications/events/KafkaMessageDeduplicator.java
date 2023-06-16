@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EventTypeKey;
 import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.micrometer.core.instrument.Counter;
@@ -13,7 +12,9 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.transaction.Transactional;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,7 +32,7 @@ public class KafkaMessageDeduplicator {
     private static final String ACCEPTED_UUID_VERSION = "4";
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -112,7 +113,7 @@ public class KafkaMessageDeduplicator {
         } else {
             String hql = "SELECT TRUE FROM KafkaMessage WHERE id = :messageId";
             try {
-                return statelessSessionFactory.getCurrentSession().createQuery(hql, Boolean.class)
+                return entityManager.createQuery(hql, Boolean.class)
                         .setParameter("messageId", messageId)
                         .getSingleResult();
             } catch (NoResultException e) {
@@ -121,11 +122,11 @@ public class KafkaMessageDeduplicator {
         }
     }
 
+    @Transactional
     public void registerMessageId(UUID messageId) {
         if (messageId != null) {
             KafkaMessage kafkaMessage = new KafkaMessage(messageId);
-            kafkaMessage.prePersist(); // This method must be called manually while using a StatelessSession.
-            statelessSessionFactory.getCurrentSession().insert(kafkaMessage);
+            entityManager.persist(kafkaMessage);
         }
     }
 }

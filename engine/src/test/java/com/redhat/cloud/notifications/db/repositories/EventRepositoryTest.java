@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
@@ -46,9 +45,6 @@ public class EventRepositoryTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     /**
      * Inserts five event fixtures in the database. The fixtures then get
@@ -104,12 +100,10 @@ public class EventRepositoryTest {
      */
     @Test
     void testGetAll() {
-        this.statelessSessionFactory.withSession(session -> {
-            final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null);
+        final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null);
 
-            Assertions.assertEquals(this.createdEvents.size(), result.size(), "unexpected number of fetched events");
-            Assertions.assertIterableEquals(this.createdEvents, result, "the fetched events are not the same as the created ones");
-        });
+        Assertions.assertEquals(this.createdEvents.size(), result.size(), "unexpected number of fetched events");
+        Assertions.assertIterableEquals(this.createdEvents, result, "the fetched events are not the same as the created ones");
     }
 
     /**
@@ -120,24 +114,22 @@ public class EventRepositoryTest {
     void testGetJustFrom() {
         final LocalDate fourDaysAgo = TODAY.minusDays(4);
 
-        this.statelessSessionFactory.withSession(session -> {
-            final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, null);
+        final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, null);
 
-            Assertions.assertEquals(4, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago");
+        Assertions.assertEquals(4, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago");
 
-            for (final Event event : result) {
-                final LocalDate eventDate = event.getCreated().toLocalDate();
+        for (final Event event : result) {
+            final LocalDate eventDate = event.getCreated().toLocalDate();
 
-                Assertions.assertTrue(
-                    eventDate.compareTo(fourDaysAgo) >= 0,
-                    String.format(
-                        "the event doesn't have a date greater or equal than the specified \"from\" filter. \"from\" filter date: %s. Event date: %s",
-                        fourDaysAgo,
-                        eventDate
-                    )
-                );
-            }
-        });
+            Assertions.assertTrue(
+                eventDate.compareTo(fourDaysAgo) >= 0,
+                String.format(
+                    "the event doesn't have a date greater or equal than the specified \"from\" filter. \"from\" filter date: %s. Event date: %s",
+                    fourDaysAgo,
+                    eventDate
+                )
+            );
+        }
     }
 
 
@@ -149,24 +141,22 @@ public class EventRepositoryTest {
     void testGetJustTo() {
         final LocalDate threeDaysAgo = TODAY.minusDays(3);
 
-        this.statelessSessionFactory.withSession(session -> {
-            final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, threeDaysAgo);
+        final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, threeDaysAgo);
 
-            Assertions.assertEquals(3, result.size(), "unexpected number of events received when applying the 'to' filter to three days ago");
+        Assertions.assertEquals(3, result.size(), "unexpected number of events received when applying the 'to' filter to three days ago");
 
-            for (final Event event : result) {
-                final LocalDate eventDate = event.getCreated().toLocalDate();
+        for (final Event event : result) {
+            final LocalDate eventDate = event.getCreated().toLocalDate();
 
-                Assertions.assertTrue(
-                    eventDate.compareTo(threeDaysAgo) <= 0,
-                    String.format(
-                        "the event doesn't have a date less or equal than the specified \"to\" filter. \"to\" filter date: %s. Event date: %s",
-                        threeDaysAgo,
-                        eventDate
-                    )
-                );
-            }
-        });
+            Assertions.assertTrue(
+                eventDate.compareTo(threeDaysAgo) <= 0,
+                String.format(
+                    "the event doesn't have a date less or equal than the specified \"to\" filter. \"to\" filter date: %s. Event date: %s",
+                    threeDaysAgo,
+                    eventDate
+                )
+            );
+        }
     }
 
     /**
@@ -178,32 +168,30 @@ public class EventRepositoryTest {
         final LocalDate fourDaysAgo = TODAY.minusDays(4);
         final LocalDate threeDaysAgo = TODAY.minusDays(3);
 
-        this.statelessSessionFactory.withSession(session -> {
-            final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, threeDaysAgo);
+        final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, threeDaysAgo);
 
-            Assertions.assertEquals(2, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago, and the 'to' filter to three days ago");
+        Assertions.assertEquals(2, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago, and the 'to' filter to three days ago");
 
-            for (final Event event : result) {
-                final LocalDate eventDate = event.getCreated().toLocalDate();
+        for (final Event event : result) {
+            final LocalDate eventDate = event.getCreated().toLocalDate();
 
-                Assertions.assertTrue(
-                    eventDate.compareTo(fourDaysAgo) >= 0,
-                    String.format(
-                        "the event doesn't have a date greater or equal than the specified \"from\" filter. \"from\" filter date: %s. Event date: %s",
-                        threeDaysAgo,
-                        eventDate
-                    )
-                );
+            Assertions.assertTrue(
+                eventDate.compareTo(fourDaysAgo) >= 0,
+                String.format(
+                    "the event doesn't have a date greater or equal than the specified \"from\" filter. \"from\" filter date: %s. Event date: %s",
+                    threeDaysAgo,
+                    eventDate
+                )
+            );
 
-                Assertions.assertTrue(
-                    eventDate.compareTo(threeDaysAgo) <= 0,
-                    String.format(
-                        "the event doesn't have a date less or equal than the specified \"to\" filter. \"to\" filter date: %s. Event date: %s",
-                        threeDaysAgo,
-                        eventDate
-                    )
-                );
-            }
-        });
+            Assertions.assertTrue(
+                eventDate.compareTo(threeDaysAgo) <= 0,
+                String.format(
+                    "the event doesn't have a date less or equal than the specified \"to\" filter. \"to\" filter date: %s. Event date: %s",
+                    threeDaysAgo,
+                    eventDate
+                )
+            );
+        }
     }
 }

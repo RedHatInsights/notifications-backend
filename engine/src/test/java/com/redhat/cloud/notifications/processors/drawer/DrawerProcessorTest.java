@@ -1,9 +1,7 @@
 package com.redhat.cloud.notifications.processors.drawer;
 
-
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
@@ -56,10 +54,6 @@ class DrawerProcessorTest {
     EntityManager entityManager;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-
-    @Inject
     protected ResourceHelpers resourceHelpers;
 
     @InjectSpy
@@ -70,17 +64,13 @@ class DrawerProcessorTest {
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            testee.process(new Event(), null);
-        });
+        testee.process(new Event(), null);
         verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
     }
 
     @Test
     void shouldNotProcessWhenEndpointsAreEmpty() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            testee.process(new Event(), List.of());
-        });
+        testee.process(new Event(), List.of());
         verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
     }
 
@@ -99,14 +89,12 @@ class DrawerProcessorTest {
         Endpoint endpoint = new Endpoint();
         endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.DRAWER);
-        statelessSessionFactory.withSession(statelessSession -> {
-            try {
-                featureFlipper.setDrawerEnabled(true);
-                testee.process(createdEvent, List.of(endpoint));
-            } finally {
-                featureFlipper.setDrawerEnabled(false);
-            }
-        });
+        try {
+            featureFlipper.setDrawerEnabled(true);
+            testee.process(createdEvent, List.of(endpoint));
+        } finally {
+            featureFlipper.setDrawerEnabled(false);
+        }
         verify(drawerNotificationRepository, times(1)).create(any(Event.class), any(String.class));
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
         List<DrawerNotification> drawerList = entityManager.createQuery("SELECT d FROM DrawerNotification d WHERE d.event.id = :eventId", DrawerNotification.class).setParameter("eventId", createdEvent.getId()).getResultList();

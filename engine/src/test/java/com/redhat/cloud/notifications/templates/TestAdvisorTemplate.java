@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,9 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @Override
     protected String getApp() {
@@ -71,15 +75,15 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
         context.put("start_time", LocalDateTime.now().toString());
         context.put("end_time", LocalDateTime.now().toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailSubject(context);
-            assertTrue(result.startsWith("Insights Advisor daily summary report"));
+        String result = generateAggregatedEmailSubject(context);
+        assertTrue(result.startsWith("Insights Advisor daily summary report"));
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailSubject(context);
-            assertEquals("Daily digest - Advisor - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailSubject(context);
+        assertEquals("Daily digest - Advisor - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -95,41 +99,41 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
         context.put("start_time", LocalDateTime.now().toString());
         context.put("end_time", LocalDateTime.now().toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(context);
-            assertTrue(result.contains("Hi John,"));
-            assertTrue(result.contains("New recommendations"));
-            assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
-            assertTrue(result.contains("Active rule 1</a>"));
-            assertTrue(result.contains("<span class=\"rh-incident\">Incident</span>"));
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
-            assertTrue(result.contains("Resolved recommendations"));
-            assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
-            assertTrue(result.contains("Active rule 2</a>"));
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
-            assertTrue(result.contains("Deactivated recommendations"));
-            assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
-            assertTrue(result.contains("Active rule 3</a>"));
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        String result = generateAggregatedEmailBody(context);
+        assertTrue(result.contains("Hi John,"));
+        assertTrue(result.contains("New recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
+        assertTrue(result.contains("Active rule 1</a>"));
+        assertTrue(result.contains("<span class=\"rh-incident\">Incident</span>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
+        assertTrue(result.contains("Resolved recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
+        assertTrue(result.contains("Active rule 2</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        assertTrue(result.contains("Deactivated recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
+        assertTrue(result.contains("Active rule 3</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(context);
-            assertTrue(result.contains("New Recommendations"));
-            assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
-            assertTrue(result.contains("Active rule 1</a>"));
-            assertTrue(result.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
-            assertTrue(result.contains("Resolved Recommendation"));
-            assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
-            assertTrue(result.contains("Active rule 2</a>"));
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
-            assertTrue(result.contains("Deactivated Recommendations"));
-            assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
-            assertTrue(result.contains("Active rule 3</a>"));
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(context);
+        assertTrue(result.contains("New Recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
+        assertTrue(result.contains("Active rule 1</a>"));
+        assertTrue(result.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
+        assertTrue(result.contains("Resolved Recommendation"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
+        assertTrue(result.contains("Active rule 2</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        assertTrue(result.contains("Deactivated Recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
+        assertTrue(result.contains("Active rule 3</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -141,85 +145,85 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
         context.put("start_time", LocalDateTime.now().toString());
         context.put("end_time", LocalDateTime.now().toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(context);
-            assertTrue(result.contains("Hi John,"));
-            assertTrue(result.contains("Resolved recommendations"));
-            assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
-            assertTrue(result.contains("Active rule 2</a>"));
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
-            assertFalse(result.contains("New recommendations"));
-            assertFalse(result.contains("Deactivated recommendations"));
-            assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        String result = generateAggregatedEmailBody(context);
+        assertTrue(result.contains("Hi John,"));
+        assertTrue(result.contains("Resolved recommendations"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
+        assertTrue(result.contains("Active rule 2</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        assertFalse(result.contains("New recommendations"));
+        assertFalse(result.contains("Deactivated recommendations"));
+        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(context);
-            assertTrue(result.contains("Resolved Recommendation"));
-            assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
-            assertTrue(result.contains("Active rule 2</a>"));
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
-            assertFalse(result.contains("New Recommendation"));
-            assertFalse(result.contains("Deactivated Recommendation"));
-            assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(context);
+        assertTrue(result.contains("Resolved Recommendation"));
+        assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
+        assertTrue(result.contains("Active rule 2</a>"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        assertFalse(result.contains("New Recommendation"));
+        assertFalse(result.contains("Deactivated Recommendation"));
+        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     void testInstantEmailTitleForResolvedRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(RESOLVED_RECOMMENDATION, action);
-            assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 4 resolved recommendations\n", result, "Title contains the number of reports created");
+        String result = generateEmailSubject(RESOLVED_RECOMMENDATION, action);
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 4 resolved recommendations\n", result, "Title contains the number of reports created");
 
-            // Action with only 1 event
-            action.setEvents(List.of(action.getEvents().get(0)));
-            result = generateEmailSubject(RESOLVED_RECOMMENDATION, action);
-            assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 resolved recommendation\n", result, "Title contains the number of reports created");
+        // Action with only 1 event
+        action.setEvents(List.of(action.getEvents().get(0)));
+        result = generateEmailSubject(RESOLVED_RECOMMENDATION, action);
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 resolved recommendation\n", result, "Title contains the number of reports created");
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(RESOLVED_RECOMMENDATION, action);
-            assertEquals("Instant notification - Resolved recommendation - Advisor - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(RESOLVED_RECOMMENDATION, action);
+        assertEquals("Instant notification - Resolved recommendation - Advisor - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testInstantEmailTitleForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(NEW_RECOMMENDATION, action);
-            assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 4 new recommendations\n", result, "Title contains the number of reports created");
+        String result = generateEmailSubject(NEW_RECOMMENDATION, action);
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 4 new recommendations\n", result, "Title contains the number of reports created");
 
-            // Action with only 1 event
-            action.setEvents(List.of(action.getEvents().get(0)));
-            result = generateEmailSubject(NEW_RECOMMENDATION, action);
-            assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 new recommendation\n", result, "Title contains the number of reports created");
+        // Action with only 1 event
+        action.setEvents(List.of(action.getEvents().get(0)));
+        result = generateEmailSubject(NEW_RECOMMENDATION, action);
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 new recommendation\n", result, "Title contains the number of reports created");
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(NEW_RECOMMENDATION, action);
-            assertEquals("Instant notification - New recommendation - Advisor - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(NEW_RECOMMENDATION, action);
+        assertEquals("Instant notification - New recommendation - Advisor - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testInstantEmailBodyForNewRecommendation() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
+        Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
-            String result = generateEmailBody(NEW_RECOMMENDATION, action);
-            checkNewRecommendationsBodyResults(action, result);
+        String result = generateEmailBody(NEW_RECOMMENDATION, action);
+        checkNewRecommendationsBodyResults(action, result);
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
-            migrate();
-            result = generateEmailBody(NEW_RECOMMENDATION, action);
-            checkNewRecommendationsBodyResults(action, result);
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
+        migrate();
+        result = generateEmailBody(NEW_RECOMMENDATION, action);
+        checkNewRecommendationsBodyResults(action, result);
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     private void checkNewRecommendationsBodyResults(Action action, final String result) {
@@ -248,55 +252,55 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testInstantEmailTitleForDeactivatedRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(DEACTIVATED_RECOMMENDATION, action);
-            assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 2 deactivated recommendations\n", result, "Title contains the number of reports created");
+        String result = generateEmailSubject(DEACTIVATED_RECOMMENDATION, action);
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 2 deactivated recommendations\n", result, "Title contains the number of reports created");
 
-            // Action with only 1 event
-            action.setEvents(List.of(action.getEvents().get(0)));
-            result = generateEmailSubject(DEACTIVATED_RECOMMENDATION, action);
-            assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 deactivated recommendation\n", result, "Title contains the number of reports created");
+        // Action with only 1 event
+        action.setEvents(List.of(action.getEvents().get(0)));
+        result = generateEmailSubject(DEACTIVATED_RECOMMENDATION, action);
+        assertEquals("Red Hat Enterprise Linux - Advisor Instant Notification - 03 Oct 2020 15:22 UTC - 1 deactivated recommendation\n", result, "Title contains the number of reports created");
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(DEACTIVATED_RECOMMENDATION, action);
-            assertEquals("Instant notification - Deactivated recommendation - Advisor - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(DEACTIVATED_RECOMMENDATION, action);
+        assertEquals("Instant notification - Deactivated recommendation - Advisor - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testInstantEmailBodyForDeactivatedRecommendation() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
-            String result = generateEmailBody(DEACTIVATED_RECOMMENDATION, action);
-            checkDeactivatedRecommendationResults(action, result);
-            assertTrue(result.contains("<span class=\"rh-metric__count\">2</span>"),
-                "Body should contain the number of deactivated recommendations");
-            assertTrue(result.contains("Hi John,"), "Body should contain user's first name");
+        Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
+        String result = generateEmailBody(DEACTIVATED_RECOMMENDATION, action);
+        checkDeactivatedRecommendationResults(action, result);
+        assertTrue(result.contains("<span class=\"rh-metric__count\">2</span>"),
+            "Body should contain the number of deactivated recommendations");
+        assertTrue(result.contains("Hi John,"), "Body should contain user's first name");
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
-            migrate();
-            result = generateEmailBody(DEACTIVATED_RECOMMENDATION, action);
-            checkDeactivatedRecommendationResults(action, result);
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
+        migrate();
+        result = generateEmailBody(DEACTIVATED_RECOMMENDATION, action);
+        checkDeactivatedRecommendationResults(action, result);
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testInstantEmailBodyForResolvedRecommendation() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            Action action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
-            String result = generateEmailBody(RESOLVED_RECOMMENDATION, action);
-            checkNewRecommendationsBodyResults(action, result);
+        Action action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
+        String result = generateEmailBody(RESOLVED_RECOMMENDATION, action);
+        checkNewRecommendationsBodyResults(action, result);
 
-            featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
-            action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
-            migrate();
-            result = generateEmailBody(RESOLVED_RECOMMENDATION, action);
-            checkNewRecommendationsBodyResults(action, result);
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
+        migrate();
+        result = generateEmailBody(RESOLVED_RECOMMENDATION, action);
+        checkNewRecommendationsBodyResults(action, result);
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     private void checkDeactivatedRecommendationResults(Action action, final String result) {

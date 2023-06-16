@@ -1,11 +1,11 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class EmailSubscriptionRepository {
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -26,7 +26,7 @@ public class EmailSubscriptionRepository {
         }
         String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
                 "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
-        return statelessSessionFactory.getCurrentSession().createQuery(query, String.class)
+        return entityManager.createQuery(query, String.class)
                 .setParameter("orgId", orgId)
                 .setParameter("bundleName", bundleName)
                 .setParameter("applicationName", applicationName)
@@ -39,7 +39,7 @@ public class EmailSubscriptionRepository {
         String query = "SELECT es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
             "AND eventType.application.name = :applicationName AND eventType.name = : eventTypeName AND id.subscriptionType = :subscriptionType";
 
-        return statelessSessionFactory.getCurrentSession().createQuery(query, String.class)
+        return entityManager.createQuery(query, String.class)
             .setParameter("orgId", orgId)
             .setParameter("bundleName", bundleName)
             .setParameter("applicationName", applicationName)
@@ -52,7 +52,7 @@ public class EmailSubscriptionRepository {
         String query = "SELECT eventType.name, es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
             "AND eventType.application.name = :applicationName AND id.subscriptionType = :subscriptionType";
 
-        List<Object[]> records =  statelessSessionFactory.getCurrentSession().createQuery(query)
+        List<Object[]> records = entityManager.createQuery(query)
             .setParameter("orgId", orgId)
             .setParameter("bundleName", bundleName)
             .setParameter("applicationName", applicationName)

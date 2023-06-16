@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -36,9 +35,6 @@ public class NotificationHistoryRepositoryTest {
     NotificationHistoryRepository repository;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
     ResourceHelpers resourceHelpers;
 
     @Inject
@@ -49,9 +45,7 @@ public class NotificationHistoryRepositoryTest {
         Map<String, Object> details = Map.of("alpha", "bravo", "charlie", Map.of("delta", "echo"));
         NotificationHistory history = initData(123L, NotificationStatus.FAILED_INTERNAL, WEBHOOK, null, details);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            repository.createNotificationHistory(history);
-        });
+        repository.createNotificationHistory(history);
 
         NotificationHistory persistedHistory = entityManager.find(NotificationHistory.class, history.getId());
         assertEquals(history.getId(), persistedHistory.getId());
@@ -70,9 +64,7 @@ public class NotificationHistoryRepositoryTest {
         NotificationHistory history = initData(456L, NotificationStatus.SUCCESS, CAMEL, "slack", null);
         deleteEndpoint(history.getEndpoint().getId());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            repository.createNotificationHistory(history);
-        });
+        repository.createNotificationHistory(history);
 
         NotificationHistory persistedHistory = entityManager.find(NotificationHistory.class, history.getId());
         assertEquals(history.getId(), persistedHistory.getId());

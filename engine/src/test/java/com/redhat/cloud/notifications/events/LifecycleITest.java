@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -111,9 +110,6 @@ public class LifecycleITest {
     EndpointRepository endpointRepository;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
     ResourceHelpers resourceHelpers;
 
     @Test
@@ -152,9 +148,7 @@ public class LifecycleITest {
         addEventTypeBehavior(eventType.getId(), behaviorGroup1.getId());
 
         // Get the account canonical email endpoint
-        Endpoint emailEndpoint = statelessSessionFactory.withSession(statelessSession -> {
-            return getAccountCanonicalEmailEndpoint(accountId, DEFAULT_ORG_ID);
-        });
+        Endpoint emailEndpoint = getAccountCanonicalEmailEndpoint(accountId, DEFAULT_ORG_ID);
 
         // Pushing a new message should trigger two webhook calls.
         pushMessage(2, 0, 0, 0);
@@ -306,6 +300,8 @@ public class LifecycleITest {
      * Depending on the event type, behavior groups and endpoints configuration, it will trigger zero or more webhook calls.
      */
     private void pushMessage(int expectedWebhookCalls, int expectedEmailEndpoints, int expectedSentEmails, int expectedExceptionCount) {
+        entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+
         micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSING_EXCEPTION_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
 
         Runnable waitForWebhooks = setupCountdownCalls(

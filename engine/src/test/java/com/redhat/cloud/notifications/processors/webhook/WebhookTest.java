@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.events.IntegrationDisabledNotifier;
@@ -35,6 +34,8 @@ import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +79,7 @@ public class WebhookTest {
     WebhookTypeProcessor webhookTypeProcessor;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
@@ -275,12 +276,10 @@ public class WebhookTest {
             Endpoint ep = buildWebhookEndpoint(getMockServerUrl() + "/client-error");
             persistEndpoint(ep);
             assertTrue(ep.isEnabled());
-            statelessSessionFactory.withSession(statelessSession -> {
-                webhookTypeProcessor.process(event, List.of(ep));
-                micrometerAssertionHelper.assertCounterIncrement(DISABLED_WEBHOOKS_COUNTER, 1, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
-                verify(integrationDisabledNotifier, times(1)).clientError(eq(ep), eq(401));
-                assertFalse(getEndpoint(ep.getId()).isEnabled());
-            });
+            webhookTypeProcessor.process(event, List.of(ep));
+            micrometerAssertionHelper.assertCounterIncrement(DISABLED_WEBHOOKS_COUNTER, 1, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
+            verify(integrationDisabledNotifier, times(1)).clientError(eq(ep), eq(401));
+            assertFalse(getEndpoint(ep.getId()).isEnabled());
         } finally {
             // Remove expectations
             MockServerLifecycleManager.getClient().clear(mockServerRequest);
@@ -301,18 +300,16 @@ public class WebhookTest {
             Endpoint ep = buildWebhookEndpoint(getMockServerUrl() + "/server-error");
             persistEndpoint(ep);
             assertTrue(ep.isEnabled());
-            statelessSessionFactory.withSession(statelessSession -> {
-                for (int i = 0; i < 4; i++) {
-                    /*
-                     * The processor retries 3 times in case of server error,
-                     * so the endpoint will actually be called 16 times in this test.
-                     */
-                    webhookTypeProcessor.process(event, List.of(ep));
-                }
-                micrometerAssertionHelper.assertCounterIncrement(DISABLED_WEBHOOKS_COUNTER, 1, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
-                verify(integrationDisabledNotifier, times(1)).tooManyServerErrors(eq(ep), eq(10));
-                assertFalse(getEndpoint(ep.getId()).isEnabled());
-            });
+            for (int i = 0; i < 4; i++) {
+                /*
+                 * The processor retries 3 times in case of server error,
+                 * so the endpoint will actually be called 16 times in this test.
+                 */
+                webhookTypeProcessor.process(event, List.of(ep));
+            }
+            micrometerAssertionHelper.assertCounterIncrement(DISABLED_WEBHOOKS_COUNTER, 1, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
+            verify(integrationDisabledNotifier, times(1)).tooManyServerErrors(eq(ep), eq(10));
+            assertFalse(getEndpoint(ep.getId()).isEnabled());
         } finally {
             // Remove expectations
             MockServerLifecycleManager.getClient().clear(mockServerRequest);
@@ -338,16 +335,14 @@ public class WebhookTest {
         validateCounters(0, 0, 0, 0, 0, 0, 0, 0);
     }
 
+    @Transactional
     void persistEndpoint(Endpoint endpoint) {
-        endpoint.prePersist();
-        statelessSessionFactory.withSession(statelessSession -> {
-            return statelessSession.insert(endpoint);
-        });
+        entityManager.persist(endpoint);
     }
 
     Endpoint getEndpoint(UUID id) {
         String hql = "FROM Endpoint WHERE id = :id";
-        return statelessSessionFactory.getCurrentSession().createQuery(hql, Endpoint.class)
+        return entityManager.createQuery(hql, Endpoint.class)
                 .setParameter("id", id)
                 .getSingleResult();
     }

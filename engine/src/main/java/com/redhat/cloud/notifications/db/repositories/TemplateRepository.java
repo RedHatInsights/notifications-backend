@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
@@ -11,6 +10,7 @@ import io.quarkus.logging.Log;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +24,7 @@ import java.util.UUID;
 public class TemplateRepository {
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -35,7 +35,7 @@ public class TemplateRepository {
     public boolean isEmailAggregationSupported(String bundleName, String appName, List<EmailSubscriptionType> subscriptionTypes) {
         String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.bundle.name = :bundleName " +
                 "AND application.name = :appName AND subscriptionType IN (:subscriptionTypes)";
-        return statelessSessionFactory.getCurrentSession().createQuery(hql, Long.class)
+        return entityManager.createQuery(hql, Long.class)
                 .setParameter("bundleName", bundleName)
                 .setParameter("appName", appName)
                 .setParameter("subscriptionTypes", subscriptionTypes)
@@ -46,7 +46,7 @@ public class TemplateRepository {
         String hql = "FROM InstantEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
                 "WHERE t.eventType.id = :eventTypeId";
         try {
-            InstantEmailTemplate emailTemplate = statelessSessionFactory.getCurrentSession().createQuery(hql, InstantEmailTemplate.class)
+            InstantEmailTemplate emailTemplate = entityManager.createQuery(hql, InstantEmailTemplate.class)
                     .setParameter("eventTypeId", eventTypeId)
                     .getSingleResult();
             return Optional.of(emailTemplate);
@@ -64,7 +64,7 @@ public class TemplateRepository {
                 "WHERE t.application.bundle.name = :bundleName AND t.application.name = :appName " +
                 "AND t.subscriptionType = :subscriptionType";
         try {
-            AggregationEmailTemplate emailTemplate = statelessSessionFactory.getCurrentSession().createQuery(hql, AggregationEmailTemplate.class)
+            AggregationEmailTemplate emailTemplate = entityManager.createQuery(hql, AggregationEmailTemplate.class)
                     .setParameter("bundleName", bundleName)
                     .setParameter("appName", appName)
                     .setParameter("subscriptionType", subscriptionType)
@@ -140,7 +140,7 @@ public class TemplateRepository {
                 "AND (it.orgId IS NULL" + (orgId != null ? " OR it.orgId = :orgId " : "") + ") " +
                 (appName != null ? "AND it.application.name = :appName " : " ") +
                 "ORDER BY it.templateKind DESC, it.orgId ASC "; // nulls in orgId go last. See https://www.postgresql.org/docs/current/queries-order.html
-        TypedQuery<IntegrationTemplate> query = statelessSessionFactory.getCurrentSession().createQuery(hql, IntegrationTemplate.class)
+        TypedQuery<IntegrationTemplate> query = entityManager.createQuery(hql, IntegrationTemplate.class)
                 .setParameter("templateKind", templateKind)
                 .setParameter("iType", integrationType)
                 .setMaxResults(1);

@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
@@ -80,9 +79,6 @@ class EmailSubscriptionTypeProcessorTest {
 
     @InjectMock
     EmailSender sender;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
@@ -166,10 +162,8 @@ class EmailSubscriptionTypeProcessorTest {
 
         AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
         try {
-            statelessSessionFactory.withSession(statelessSession -> {
-                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
-            });
+            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
 
             inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
             inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
@@ -222,18 +216,14 @@ class EmailSubscriptionTypeProcessorTest {
 
     @Test
     void shouldSendDefaultEmailTemplatesFromDatabase() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            shouldSendDefaultEmail();
-        });
+        shouldSendDefaultEmail();
     }
 
     @Test
     void shouldSendSingleEmailWithTwoRecieversUsingTemplatesFromDatabase() {
         try {
             featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(true);
-            statelessSessionFactory.withSession(statelessSession -> {
-                shouldSendDefaultEmail();
-            });
+            shouldSendDefaultEmail();
         } finally {
             featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(false);
         }

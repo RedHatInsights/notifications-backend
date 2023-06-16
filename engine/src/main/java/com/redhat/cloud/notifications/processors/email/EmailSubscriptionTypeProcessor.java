@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.processors.email;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
@@ -77,9 +76,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     ObjectMapper objectMapper;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
     MeterRegistry registry;
 
     @Inject
@@ -122,7 +118,12 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
                 final JsonObject transformedEvent = this.baseTransformer.toJsonObject(event);
                 aggregation.setPayload(transformedEvent);
-                emailAggregationRepository.addEmailAggregation(aggregation);
+                try {
+                    emailAggregationRepository.addEmailAggregation(aggregation);
+                } catch (Exception e) {
+                    // ConstraintViolationException may be thrown here and it must not interrupt the email that is being sent.
+                    Log.warn("Email aggregation persisting failed", e);
+                }
             }
 
             sendEmail(event, Set.copyOf(endpoints));
@@ -172,15 +173,13 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         processedAggregationCommandCount.increment();
 
         try {
-            statelessSessionFactory.withSession(statelessSession -> {
-                processAggregateEmailsByAggregationKey(
-                        aggregationCommand.getAggregationKey(),
-                        aggregationCommand.getStart(),
-                        aggregationCommand.getEnd(),
-                        aggregationCommand.getSubscriptionType(),
-                        // Delete on daily
-                        aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY));
-            });
+            processAggregateEmailsByAggregationKey(
+                    aggregationCommand.getAggregationKey(),
+                    aggregationCommand.getStart(),
+                    aggregationCommand.getEnd(),
+                    aggregationCommand.getSubscriptionType(),
+                    // Delete on daily
+                    aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY));
         } catch (Exception e) {
             Log.warn("Error while processing aggregation", e);
             failedAggregationCommandCount.increment();

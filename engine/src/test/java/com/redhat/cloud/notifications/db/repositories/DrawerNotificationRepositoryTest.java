@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.DrawerNotification;
@@ -47,9 +46,6 @@ public class DrawerNotificationRepositoryTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     @BeforeEach
     @Transactional
@@ -113,25 +109,21 @@ public class DrawerNotificationRepositoryTest {
         }
         String usrList = users.stream().collect(Collectors.joining(","));
         List<UUID> uuidList = new ArrayList<>();
-        this.statelessSessionFactory.withSession(session -> {
-            Instant before = Instant.now();
-            List<DrawerNotification> drawerNotifications = drawerNotificationsRepository.create(createdEvent, usrList);
-            Instant after = Instant.now();
-            long duration = Duration.between(before, after).toMillis();
-            assertTrue(duration < 1500, String.format("Injection duration should be lower than 1.5 sec but was %s mills", duration));
-            Log.infof("data injection ended after %s Millis ", Duration.between(before, after).toMillis());
-            assertEquals(LIMIT, drawerNotifications.size());
-            assertNotNull(drawerNotifications.get(0).getId());
-            uuidList.addAll(drawerNotifications.stream().map(e -> e.getId()).collect(Collectors.toList()));
-        });
+        Instant before = Instant.now();
+        List<DrawerNotification> drawerNotifications = drawerNotificationsRepository.create(createdEvent, usrList);
+        Instant after = Instant.now();
+        long duration = Duration.between(before, after).toMillis();
+        assertTrue(duration < 1500, String.format("Injection duration should be lower than 1.5 sec but was %s mills", duration));
+        Log.infof("data injection ended after %s Millis ", Duration.between(before, after).toMillis());
+        assertEquals(LIMIT, drawerNotifications.size());
+        assertNotNull(drawerNotifications.get(0).getId());
+        uuidList.addAll(drawerNotifications.stream().map(e -> e.getId()).collect(Collectors.toList()));
 
         Log.info("Try to insert twice same records");
-        this.statelessSessionFactory.withSession(session -> {
-            List<DrawerNotification> drawerNotifications = drawerNotificationsRepository.create(createdEvent, usrList);
-            assertEquals(LIMIT, drawerNotifications.size());
-            List<UUID> newUuidList = drawerNotifications.stream().map(e -> e.getId()).collect(Collectors.toList());
-            assertEquals(uuidList, newUuidList, "Uuid list must be the same");
-        });
+        drawerNotifications = drawerNotificationsRepository.create(createdEvent, usrList);
+        assertEquals(LIMIT, drawerNotifications.size());
+        List<UUID> newUuidList = drawerNotifications.stream().map(e -> e.getId()).collect(Collectors.toList());
+        assertEquals(uuidList, newUuidList, "Uuid list must be the same");
     }
 
     public List<DrawerNotification> getDrawerNotificationsByUserId(String userId) {

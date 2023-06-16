@@ -20,16 +20,14 @@ public class TestResourceOptimizationDailyDigest extends EmailTemplatesInDbHelpe
     @Test
     void testSecureTemplate() {
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String resultSubject = generateAggregatedEmailSubject(ACTION);
-            assertEquals("Daily digest - Resource Optimization - Red Hat Enterprise Linux", resultSubject);
+        String resultSubject = generateAggregatedEmailSubject(ACTION);
+        assertEquals("Daily digest - Resource Optimization - Red Hat Enterprise Linux", resultSubject);
 
-            String resultBody = generateAggregatedEmailBody(ACTION);
-            assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
-            assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-            assertTrue(resultBody.contains("Today, rules triggered on"));
-            assertTrue(resultBody.contains("IDLING"));
-        });
+        String resultBody = generateAggregatedEmailBody(ACTION);
+        assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
+        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(resultBody.contains("Today, rules triggered on"));
+        assertTrue(resultBody.contains("IDLING"));
     }
 
     @Override

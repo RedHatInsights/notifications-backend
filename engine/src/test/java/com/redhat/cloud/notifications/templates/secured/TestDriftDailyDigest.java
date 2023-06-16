@@ -32,18 +32,16 @@ public class TestDriftDailyDigest extends EmailTemplatesInDbHelper {
         drift.put("start_time", startTime.toString());
         drift.put("end_time", endTime.toString());
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String resultSubject = generateAggregatedEmailSubject(drift);
-            assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", resultSubject);
+        String resultSubject = generateAggregatedEmailSubject(drift);
+        assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", resultSubject);
 
-            String resultBody = generateAggregatedEmailBody(drift);
-            assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
-            assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-            assertTrue(resultBody.contains("baseline_01"));
-            assertTrue(resultBody.contains("baseline_02"));
-            assertTrue(resultBody.contains("baseline_03"));
-            assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        String resultBody = generateAggregatedEmailBody(drift);
+        assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
+        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(resultBody.contains("baseline_01"));
+        assertTrue(resultBody.contains("baseline_02"));
+        assertTrue(resultBody.contains("baseline_03"));
+        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Override

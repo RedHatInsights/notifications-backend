@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,6 +27,9 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @AfterEach
     void afterEach() {
@@ -46,48 +50,48 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testInstantEmailTitle() {
         Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains(LocalDateTime.now().getYear() + " "));
-            assertTrue(result.contains("- Host Validation Error triggered on Inventory"));
+        String result = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains(LocalDateTime.now().getYear() + " "));
+        assertTrue(result.contains("- Host Validation Error triggered on Inventory"));
 
-            featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(EVENT_TYPE_NAME, action);
-            assertEquals("Instant notification - Validation error - Inventory - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertEquals("Instant notification - Validation error - Inventory - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testDailyEmailTitle() {
         Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailSubject(action);
-            assertEquals("Insights Inventory daily summary", result);
+        String result = generateAggregatedEmailSubject(action);
+        assertEquals("Insights Inventory daily summary", result);
 
-            featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailSubject(action);
-            assertEquals("Daily digest - Inventory - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailSubject(action);
+        assertEquals("Daily digest - Inventory - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testInstantEmailBody() {
         Action action = InventoryTestHelpers.createInventoryAction("", "", "", "FooEvent");
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains(InventoryTestHelpers.displayName1), "Body should contain host display name" + InventoryTestHelpers.displayName1);
-            assertTrue(result.contains(InventoryTestHelpers.errorMessage1), "Body should contain error message" + InventoryTestHelpers.errorMessage1);
-            assertTrue(result.contains("FooEvent"), "Body should contain the event_name");
+        String result = generateEmailBody(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains(InventoryTestHelpers.displayName1), "Body should contain host display name" + InventoryTestHelpers.displayName1);
+        assertTrue(result.contains(InventoryTestHelpers.errorMessage1), "Body should contain error message" + InventoryTestHelpers.errorMessage1);
+        assertTrue(result.contains("FooEvent"), "Body should contain the event_name");
 
-            featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(EVENT_TYPE_NAME, action);
-            assertTrue(result.contains(InventoryTestHelpers.displayName1), "Body should contain host display name" + InventoryTestHelpers.displayName1);
-            assertTrue(result.contains(InventoryTestHelpers.errorMessage1), "Body should contain error message" + InventoryTestHelpers.errorMessage1);
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(EVENT_TYPE_NAME, action);
+        assertTrue(result.contains(InventoryTestHelpers.displayName1), "Body should contain host display name" + InventoryTestHelpers.displayName1);
+        assertTrue(result.contains(InventoryTestHelpers.errorMessage1), "Body should contain error message" + InventoryTestHelpers.errorMessage1);
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
@@ -95,22 +99,22 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         InventoryEmailAggregator aggregator = new InventoryEmailAggregator();
         aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateAggregatedEmailBody(aggregator.getContext());
-            JsonObject context = new JsonObject(aggregator.getContext());
-            assertTrue(context.getJsonObject("inventory").getJsonArray("errors").size() < 10);
-            assertTrue(result.contains("Daily Inventory Summary"), "Body should contain 'Daily Inventory Summary'");
-            assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
-            assertTrue(result.contains("Error"), "Body should contain 'Error' header");
+        String result = generateAggregatedEmailBody(aggregator.getContext());
+        JsonObject context = new JsonObject(aggregator.getContext());
+        assertTrue(context.getJsonObject("inventory").getJsonArray("errors").size() < 10);
+        assertTrue(result.contains("Daily Inventory Summary"), "Body should contain 'Daily Inventory Summary'");
+        assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
+        assertTrue(result.contains("Error"), "Body should contain 'Error' header");
 
-            featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateAggregatedEmailBody(aggregator.getContext());
-            context = new JsonObject(aggregator.getContext());
-            assertTrue(context.getJsonObject("inventory").getJsonArray("errors").size() < 10);
-            assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
-            assertTrue(result.contains("Error"), "Body should contain 'Error' header");
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setInventoryEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateAggregatedEmailBody(aggregator.getContext());
+        context = new JsonObject(aggregator.getContext());
+        assertTrue(context.getJsonObject("inventory").getJsonArray("errors").size() < 10);
+        assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
+        assertTrue(result.contains("Error"), "Body should contain 'Error' header");
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

@@ -8,6 +8,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.util.List;
 
 
@@ -21,6 +22,9 @@ public class TestAnsibleTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @AfterEach
     void afterEach() {
@@ -46,31 +50,31 @@ public class TestAnsibleTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testInstantEmailTitle() {
         Action action = TestHelpers.createAnsibleAction(null);
-        statelessSessionFactory.withSession(statelessSession -> {
 
-            String result = generateEmailSubject(REPORT_AVAILABLE_EVENT, action);
-            assertTrue(result.contains("Ansible"));
+        String result = generateEmailSubject(REPORT_AVAILABLE_EVENT, action);
+        assertTrue(result.contains("Ansible"));
 
-            featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(REPORT_AVAILABLE_EVENT, action);
-            assertEquals("Instant notification - Ansible", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(REPORT_AVAILABLE_EVENT, action);
+        assertEquals("Instant notification - Ansible", result);
     }
 
     @Test
     public void testInstantEmailBody() {
         Action action = TestHelpers.createAnsibleAction("reportUrl");
-        statelessSessionFactory.withSession(statelessSession -> {
 
-            String result = generateEmailBody(REPORT_AVAILABLE_EVENT, action);
-            assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
+        String result = generateEmailBody(REPORT_AVAILABLE_EVENT, action);
+        assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
 
-            featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(REPORT_AVAILABLE_EVENT, action);
-            assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setAnsibleEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(REPORT_AVAILABLE_EVENT, action);
+        assertTrue(result.contains("/ansible/insights/reports/reportUrl"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

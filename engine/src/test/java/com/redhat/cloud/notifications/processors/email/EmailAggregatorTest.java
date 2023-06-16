@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
@@ -50,9 +49,6 @@ class EmailAggregatorTest {
 
     @InjectMock
     RecipientResolver recipientResolver;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -113,9 +109,7 @@ class EmailAggregatorTest {
         assertEquals(4, ((LinkedHashMap) result.get(user).get("policies")).size());
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
-        statelessSessionFactory.withSession(statelessSession -> {
-            emailAggregationRepository.purgeOldAggregation(aggregationKey, LocalDateTime.now(ZoneOffset.UTC));
-        });
+        emailAggregationRepository.purgeOldAggregation(aggregationKey, LocalDateTime.now(ZoneOffset.UTC));
         reset(emailAggregationRepository); // just reset mockito counter
 
         // Test user subscription based on event type
@@ -143,16 +137,14 @@ class EmailAggregatorTest {
 
     private Map<User, Map<String, Object>> aggregate() {
         Map<User, Map<String, Object>> result = new HashMap<>();
-        statelessSessionFactory.withSession(statelessSession -> {
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
 
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
 
-            result.putAll(emailAggregator.getAggregated(aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
-        });
+        result.putAll(emailAggregator.getAggregated(aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
         return result;
     }
 }

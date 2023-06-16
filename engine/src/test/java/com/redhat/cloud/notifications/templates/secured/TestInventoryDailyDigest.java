@@ -22,17 +22,15 @@ public class TestInventoryDailyDigest extends EmailTemplatesInDbHelper {
         InventoryEmailAggregator aggregator = new InventoryEmailAggregator();
         aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String resultSubject = generateAggregatedEmailSubject(aggregator.getContext());
-            assertEquals("Daily digest - Inventory - Red Hat Enterprise Linux", resultSubject);
+        String resultSubject = generateAggregatedEmailSubject(aggregator.getContext());
+        assertEquals("Daily digest - Inventory - Red Hat Enterprise Linux", resultSubject);
 
-            String resultBody = generateAggregatedEmailBody(aggregator.getContext());
-            assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
-            assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
+        String resultBody = generateAggregatedEmailBody(aggregator.getContext());
+        assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
+        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
 
-            assertFalse(resultBody.contains(InventoryTestHelpers.displayName1), "Body should not contain host display name" + InventoryTestHelpers.displayName1);
-            assertFalse(resultBody.contains(InventoryTestHelpers.errorMessage1), "Body should not contain error message" + InventoryTestHelpers.errorMessage1);
-        });
+        assertFalse(resultBody.contains(InventoryTestHelpers.displayName1), "Body should not contain host display name" + InventoryTestHelpers.displayName1);
+        assertFalse(resultBody.contains(InventoryTestHelpers.errorMessage1), "Body should not contain error message" + InventoryTestHelpers.errorMessage1);
     }
 
     @Override

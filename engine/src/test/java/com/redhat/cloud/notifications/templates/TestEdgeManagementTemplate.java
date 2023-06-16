@@ -8,6 +8,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +23,9 @@ public class TestEdgeManagementTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @Override
     protected String getApp() {
@@ -41,56 +45,55 @@ public class TestEdgeManagementTemplate extends EmailTemplatesInDbHelper {
 
     @Test
     public void testImageCreationEmailTitle() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(IMAGE_CREATION, ACTION);
-            assertTrue(result.startsWith("Edge Management - Image Creation Started"));
+        String result = generateEmailSubject(IMAGE_CREATION, ACTION);
+        assertTrue(result.startsWith("Edge Management - Image Creation Started"));
 
-            featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(IMAGE_CREATION, ACTION);
-            assertEquals("Instant notification - Image creation started - Edge Management - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(IMAGE_CREATION, ACTION);
+        assertEquals("Instant notification - Image creation started - Edge Management - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testImageCreationEmailBody() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(IMAGE_CREATION, ACTION);
-            assertTrue(result.contains("A new image was created"));
+        String result = generateEmailBody(IMAGE_CREATION, ACTION);
+        assertTrue(result.contains("A new image was created"));
 
-            featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(IMAGE_CREATION, ACTION);
-            assertTrue(result.contains("A new image named"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(IMAGE_CREATION, ACTION);
+        assertTrue(result.contains("A new image named"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testUpdateDeviceEmailTitle() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(UPDATE_DEVICES, ACTION);
-            assertTrue(result.startsWith("Update Device Started"));
+        String result = generateEmailSubject(UPDATE_DEVICES, ACTION);
+        assertTrue(result.startsWith("Update Device Started"));
 
-            featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(UPDATE_DEVICES, ACTION);
-            assertEquals("Instant notification - Update device started - Edge Management - Red Hat Enterprise Linux", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(UPDATE_DEVICES, ACTION);
+        assertEquals("Instant notification - Update device started - Edge Management - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testUpdateDeviceEmailBody() {
+        String result = generateEmailBody(UPDATE_DEVICES, ACTION);
+        assertTrue(result.contains("An Update for the device"));
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(UPDATE_DEVICES, ACTION);
-            assertTrue(result.contains("An Update for the device"));
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
 
-            featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(UPDATE_DEVICES, ACTION);
-            assertTrue(result.contains("An Update for the device"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        featureFlipper.setEdgeManagementEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(UPDATE_DEVICES, ACTION);
+        assertTrue(result.contains("An Update for the device"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

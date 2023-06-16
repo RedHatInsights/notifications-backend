@@ -8,6 +8,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,6 +22,9 @@ public class TestSourcesTemplate extends EmailTemplatesInDbHelper {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EntityManager entityManager;
 
     @AfterEach
     void afterEach() {
@@ -45,28 +49,28 @@ public class TestSourcesTemplate extends EmailTemplatesInDbHelper {
 
     @Test
     public void testAvailabilityStatusEmailBody() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(AVAILABILITY_STATUS, ACTION);
-            assertTrue(result.contains("availability status was changed"));
+        String result = generateEmailBody(AVAILABILITY_STATUS, ACTION);
+        assertTrue(result.contains("availability status was changed"));
 
-            featureFlipper.setSourcesEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(AVAILABILITY_STATUS, ACTION);
-            assertTrue(result.contains("availability status was changed"));
-            assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setSourcesEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(AVAILABILITY_STATUS, ACTION);
+        assertTrue(result.contains("availability status was changed"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testAvailabilityStatusEmailTitle() {
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(AVAILABILITY_STATUS, ACTION);
-            assertTrue(result.startsWith("Availability Status Change"));
+        String result = generateEmailSubject(AVAILABILITY_STATUS, ACTION);
+        assertTrue(result.startsWith("Availability Status Change"));
 
-            featureFlipper.setSourcesEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(AVAILABILITY_STATUS, ACTION);
-            assertEquals("Instant notification - Availability Status Change - Sources - Console", result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setSourcesEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(AVAILABILITY_STATUS, ACTION);
+        assertEquals("Instant notification - Availability Status Change - Sources - Console", result);
     }
 }

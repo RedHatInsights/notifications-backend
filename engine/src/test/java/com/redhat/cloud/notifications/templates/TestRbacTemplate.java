@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,6 +41,9 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @Inject
+    EntityManager entityManager;
+
     @AfterEach
     void afterEach() {
         featureFlipper.setRbacEmailTemplatesV2Enabled(false);
@@ -66,30 +70,30 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
     void shouldTestAllEventTypeTemplateTitles(String eventType) {
         Action action = RbacTestHelpers.createRbacAction();
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailSubject(eventType, action);
-            testTitle(eventType, result);
+        String result = generateEmailSubject(eventType, action);
+        testTitle(eventType, result);
 
-            featureFlipper.setRbacEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailSubject(eventType, action);
-            testTitle(eventType, result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setRbacEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(eventType, action);
+        testTitle(eventType, result);
     }
 
     @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM })
     @ParameterizedTest
     void shouldTestAllEventTypeTemplateBodies(String eventType) {
         Action action = RbacTestHelpers.createRbacAction();
-        statelessSessionFactory.withSession(statelessSession -> {
-            String result = generateEmailBody(eventType, action);
-            testBody(eventType, result);
+        String result = generateEmailBody(eventType, action);
+        testBody(eventType, result);
 
-            featureFlipper.setRbacEmailTemplatesV2Enabled(true);
-            migrate();
-            result = generateEmailBody(eventType, action);
-            testBody(eventType, result);
-        });
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setRbacEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailBody(eventType, action);
+        testBody(eventType, result);
     }
 
 

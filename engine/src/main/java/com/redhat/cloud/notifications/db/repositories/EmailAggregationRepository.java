@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import io.quarkus.logging.Log;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,12 +15,12 @@ import java.util.List;
 public class EmailAggregationRepository {
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
+    @Transactional
     public boolean addEmailAggregation(EmailAggregation aggregation) {
-        aggregation.prePersist(); // This method must be called manually while using a StatelessSession.
         try {
-            statelessSessionFactory.getCurrentSession().insert(aggregation);
+            entityManager.persist(aggregation);
             return true;
         } catch (Exception e) {
             Log.warn("Email aggregation persisting failed", e);
@@ -30,7 +30,7 @@ public class EmailAggregationRepository {
 
     public List<EmailAggregation> getEmailAggregation(EmailAggregationKey key, LocalDateTime start, LocalDateTime end, int firstResultIndex, int maxResults) {
         String query = "FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
-        return statelessSessionFactory.getCurrentSession().createQuery(query, EmailAggregation.class)
+        return entityManager.createQuery(query, EmailAggregation.class)
                 .setParameter("orgId", key.getOrgId())
                 .setParameter("bundleName", key.getBundle())
                 .setParameter("applicationName", key.getApplication())
@@ -44,7 +44,7 @@ public class EmailAggregationRepository {
     @Transactional
     public int purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
         String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        return statelessSessionFactory.getCurrentSession().createQuery(query)
+        return entityManager.createQuery(query)
                 .setParameter("orgId", key.getOrgId())
                 .setParameter("bundleName", key.getBundle())
                 .setParameter("applicationName", key.getApplication())

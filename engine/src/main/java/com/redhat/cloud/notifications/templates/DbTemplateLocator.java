@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.templates;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.Locate;
@@ -8,6 +7,7 @@ import io.quarkus.qute.TemplateLocator;
 import io.quarkus.qute.Variant;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -17,13 +17,13 @@ import java.util.Optional;
 public class DbTemplateLocator implements TemplateLocator {
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
     @Override
     public Optional<TemplateLocation> locate(String name) {
         String hql = "FROM Template WHERE name = :name";
         try {
-            Template template = statelessSessionFactory.getCurrentSession().createQuery(hql, Template.class)
+            Template template = entityManager.createQuery(hql, Template.class)
                     .setParameter("name", name)
                     .getSingleResult();
             Log.tracef("Template with [name=%s] found in the database", name);

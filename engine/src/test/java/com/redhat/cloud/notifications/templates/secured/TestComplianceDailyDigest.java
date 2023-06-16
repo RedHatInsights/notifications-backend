@@ -21,15 +21,13 @@ public class TestComplianceDailyDigest extends EmailTemplatesInDbHelper {
     @Test
     void testSecureTemplate() {
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String resultSubject = generateAggregatedEmailSubject(ACTION);
-            assertEquals("Daily digest - Compliance - Red Hat Enterprise Linux", resultSubject);
+        String resultSubject = generateAggregatedEmailSubject(ACTION);
+        assertEquals("Daily digest - Compliance - Red Hat Enterprise Linux", resultSubject);
 
-            String resultBody = generateAggregatedEmailBody(ACTION);
-            assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
-            assertTrue(resultBody.contains("Red Hat Insights has identified one or more systems"));
-            assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-        });
+        String resultBody = generateAggregatedEmailBody(ACTION);
+        assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
+        assertTrue(resultBody.contains("Red Hat Insights has identified one or more systems"));
+        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Override

@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -48,9 +47,6 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
 
     @Inject
     EntityManager entityManager;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     @InjectMock
     @RestClient
@@ -98,9 +94,7 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            emailProcessor.process(event, List.of(ep));
-        });
+        emailProcessor.process(event, List.of(ep));
 
         assertEquals(1, bodyRequests.size());
         JsonObject email = new JsonObject(bodyRequests.get(0));

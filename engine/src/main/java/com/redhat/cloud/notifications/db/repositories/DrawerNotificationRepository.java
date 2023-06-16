@@ -1,23 +1,26 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.DrawerNotification;
 import com.redhat.cloud.notifications.models.Event;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.persistence.ParameterMode;
 import javax.persistence.StoredProcedureQuery;
+import javax.transaction.Transactional;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
 public class DrawerNotificationRepository {
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
+    @Inject
+    EntityManager entityManager;
+
+    @Transactional
     public List<DrawerNotification> create(Event event, String users) {
-        StoredProcedureQuery query = statelessSessionFactory.getCurrentSession().createStoredProcedureCall("insert_drawer_notifications", DrawerNotification.class)
+        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("insert_drawer_notifications", DrawerNotification.class)
             .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
             .registerStoredProcedureParameter(2, String.class, ParameterMode.IN)
             .registerStoredProcedureParameter(3, UUID.class, ParameterMode.IN)
@@ -30,5 +33,4 @@ public class DrawerNotificationRepository {
 
         return query.getResultList();
     }
-
 }

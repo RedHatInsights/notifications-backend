@@ -37,15 +37,13 @@ public class TestPoliciesDailyDigest extends EmailTemplatesInDbHelper {
         payload.put("policies", policies);
         payload.put("unique_system_count", 1);
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String resultSubject = generateAggregatedEmailSubject(payload);
-            assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", resultSubject);
+        String resultSubject = generateAggregatedEmailSubject(payload);
+        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", resultSubject);
 
-            String resultBody = generateAggregatedEmailBody(payload);
-            assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
-            assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-            assertTrue(resultBody.contains("Review the 1 policy that triggered 1 system"));
-        });
+        String resultBody = generateAggregatedEmailBody(payload);
+        assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
+        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(resultBody.contains("Review the 1 policy that triggered 1 system"));
     }
 
     @Override

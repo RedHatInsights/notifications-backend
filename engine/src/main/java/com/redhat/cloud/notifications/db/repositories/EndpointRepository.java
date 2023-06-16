@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -12,6 +11,7 @@ import io.quarkus.logging.Log;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import java.util.HashSet;
@@ -35,7 +35,7 @@ import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
 public class EndpointRepository {
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
     /**
      * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION or DRAWER endpoint with empty properties. This
@@ -44,9 +44,10 @@ public class EndpointRepository {
      * multiple endpoints and recipients settings. The properties created below have no impact on the resolution of the
      * action recipients.
      */
+    @Transactional
     public Endpoint getOrCreateDefaultSystemSubscription(String accountId, String orgId, EndpointType endpointType) {
         String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
-        List<Endpoint> systemEndpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+        List<Endpoint> systemEndpoints = entityManager.createQuery(query, Endpoint.class)
             .setParameter("orgId", orgId)
             .setParameter("endpointType", endpointType)
             .getResultList();
@@ -74,11 +75,10 @@ public class EndpointRepository {
         endpoint.setName(String.format("%s endpoint", label));
         endpoint.setType(endpointType);
         endpoint.setStatus(READY);
-        endpoint.prePersist();
         properties.setEndpoint(endpoint);
 
-        statelessSessionFactory.getCurrentSession().insert(endpoint);
-        statelessSessionFactory.getCurrentSession().insert(endpoint.getProperties());
+        entityManager.persist(endpoint);
+        entityManager.persist(endpoint.getProperties());
         return endpoint;
     }
 
@@ -87,7 +87,7 @@ public class EndpointRepository {
                 "WHERE e.enabled IS TRUE AND e.status = :status AND b.eventType = :eventType " +
                 "AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
 
-        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+        List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
                 .setParameter("status", READY)
                 .setParameter("eventType", eventType)
                 .setParameter("orgId", orgId)
@@ -111,7 +111,7 @@ public class EndpointRepository {
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
                 "AND e.compositeType.type = :endpointType";
 
-        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+        List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("orgId", orgId)
@@ -146,7 +146,7 @@ public class EndpointRepository {
                  * It is therefore disabled.
                  */
                 String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
-                int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+                int updated = entityManager.createQuery(hql)
                         .setParameter("id", endpointId)
                         .executeUpdate();
                 return updated > 0;
@@ -156,7 +156,7 @@ public class EndpointRepository {
                  * The errors counter is therefore incremented.
                  */
                 String hql = "UPDATE Endpoint SET serverErrors = serverErrors + 1 WHERE id = :id";
-                statelessSessionFactory.getCurrentSession().createQuery(hql)
+                entityManager.createQuery(hql)
                         .setParameter("id", endpointId)
                         .executeUpdate();
                 return false;
@@ -183,22 +183,20 @@ public class EndpointRepository {
                 "AND " +
                     "e.orgId = :orgId";
 
-        final Endpoint endpoint = this.statelessSessionFactory
-            .getCurrentSession()
-            .createQuery(query, Endpoint.class)
-            .setParameter("uuid", endpointUuid)
-            .setParameter("orgId", orgId)
-            .uniqueResult();
-
-        // Throw a no result exception to avoid a null pointer exception from
-        // the "List.of".
-        if (endpoint == null) {
+        Endpoint endpoint;
+        try {
+            endpoint = entityManager
+                    .createQuery(query, Endpoint.class)
+                    .setParameter("uuid", endpointUuid)
+                    .setParameter("orgId", orgId)
+                    .getSingleResult();
+        } catch (NoResultException e) {
             throw new NoResultException(
-                String.format(
-                    "Endpoint with id=%s and orgId=%s not found",
-                    endpointUuid,
-                    orgId
-                )
+                    String.format(
+                            "Endpoint with id=%s and orgId=%s not found",
+                            endpointUuid,
+                            orgId
+                    )
             );
         }
 
@@ -210,7 +208,7 @@ public class EndpointRepository {
     private Optional<Endpoint> lockEndpoint(UUID endpointId) {
         String hql = "FROM Endpoint WHERE id = :id";
         try {
-            Endpoint endpoint = statelessSessionFactory.getCurrentSession().createQuery(hql, Endpoint.class)
+            Endpoint endpoint = entityManager.createQuery(hql, Endpoint.class)
                     .setParameter("id", endpointId)
                     /*
                      * The endpoint will be locked by a "SELECT FOR UPDATE", preventing other threads or pods
@@ -232,7 +230,7 @@ public class EndpointRepository {
     @Transactional
     public boolean resetEndpointServerErrors(UUID endpointId) {
         String hql = "UPDATE Endpoint SET serverErrors = 0 WHERE id = :id AND serverErrors > 0";
-        int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+        int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();
         return updated > 0;
@@ -246,7 +244,7 @@ public class EndpointRepository {
     @Transactional
     public boolean disableEndpoint(UUID endpointId) {
         String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
-        int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+        int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();
         return updated > 0;
@@ -273,7 +271,7 @@ public class EndpointRepository {
 
         if (endpointsMap.size() > 0) {
             String hql = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:endpointIds)";
-            List<T> propList = statelessSessionFactory.getCurrentSession().createQuery(hql, typedEndpointClass)
+            List<T> propList = entityManager.createQuery(hql, typedEndpointClass)
                     .setParameter("endpointIds", endpointsMap.keySet())
                     .getResultList();
             for (T props : propList) {

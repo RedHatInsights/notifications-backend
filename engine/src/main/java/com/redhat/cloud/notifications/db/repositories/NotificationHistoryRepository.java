@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsConverter;
 import com.redhat.cloud.notifications.events.ConnectorReceiver;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -8,6 +7,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import java.util.UUID;
@@ -16,7 +16,7 @@ import java.util.UUID;
 public class NotificationHistoryRepository {
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
     @Transactional
     public void createNotificationHistory(NotificationHistory history) {
@@ -29,7 +29,7 @@ public class NotificationHistoryRepository {
                 "VALUES (:id, :invocationTime, :invocationResult, :status, :details, :eventId, :endpointType, :endpointSubType, :created, " +
                 "(SELECT id FROM endpoints WHERE id = :endpointId))";
         history.prePersist();
-        statelessSessionFactory.getCurrentSession().createNativeQuery(hql)
+        entityManager.createNativeQuery(hql)
                 .setParameter("id", history.getId())
                 .setParameter("invocationTime", history.getInvocationTime())
                 .setParameter("invocationResult", history.isInvocationResult())
@@ -53,7 +53,7 @@ public class NotificationHistoryRepository {
         String hql = "UPDATE NotificationHistory " +
                 "SET details = :details, invocationResult = :result, status = :status, invocationTime = :invocationTime " +
                 "WHERE id = :id";
-        int count = statelessSessionFactory.getCurrentSession().createQuery(hql)
+        int count = entityManager.createQuery(hql)
                 .setParameter("details", notificationHistory.getDetails())
                 .setParameter("result", notificationHistory.isInvocationResult())
                 .setParameter("status", notificationHistory.getStatus())
@@ -69,7 +69,7 @@ public class NotificationHistoryRepository {
         UUID hid = UUID.fromString(historyId);
 
         try {
-            return statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+            return entityManager.createQuery(query, Endpoint.class)
                     .setParameter("id", hid)
                     .getSingleResult();
         } catch (NoResultException e) {

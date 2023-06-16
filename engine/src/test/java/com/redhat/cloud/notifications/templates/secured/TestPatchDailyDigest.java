@@ -28,15 +28,13 @@ public class TestPatchDailyDigest extends EmailTemplatesInDbHelper {
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_4", "synopsis", bugfix, "host-03"));
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation(getBundle(), getApp(), "advisory_5", "synopsis", bugfix, "host-04"));
 
-        statelessSessionFactory.withSession(statelessSession -> {
-            String resultSubject = generateAggregatedEmailSubject(aggregator.getContext());
-            assertEquals("Daily digest - Patch - Red Hat Enterprise Linux", resultSubject);
+        String resultSubject = generateAggregatedEmailSubject(aggregator.getContext());
+        assertEquals("Daily digest - Patch - Red Hat Enterprise Linux", resultSubject);
 
-            String resultBody = generateAggregatedEmailBody(aggregator.getContext());
-            assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
-            assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-            assertTrue(resultBody.contains("new advisories affecting your systems"));
-        });
+        String resultBody = generateAggregatedEmailBody(aggregator.getContext());
+        assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
+        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(resultBody.contains("new advisories affecting your systems"));
     }
 
     @Override
