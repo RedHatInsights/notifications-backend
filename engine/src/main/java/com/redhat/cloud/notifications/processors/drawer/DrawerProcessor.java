@@ -95,7 +95,6 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     private void process(Event event, Set<User> userList) {
         UUID historyId = UUID.randomUUID();
-        // TODO: fetching the endpoint here is just a temporary workaround to avoid "Deferred enlistment not supported" when saving the history
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
         Log.infof("Processing drawer notification [orgId=%s, eventId=%s, historyId=%s]",
             event.getOrgId(), event.getId(), historyId);
@@ -124,11 +123,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
                 }
             });
 
-            endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
             history = getHistoryStub(endpoint, event, 0L, historyId);
             history.setStatus(NotificationStatus.SUCCESS);
         } catch (Exception e) {
-            endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
             history = getHistoryStub(endpoint, event, 0L, historyId);
             history.setStatus(NotificationStatus.FAILED_INTERNAL);
             history.setDetails(Map.of("failure", e.getMessage()));
