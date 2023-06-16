@@ -37,6 +37,9 @@ objects:
     - topicName: platform.export.requests
       partitions: 3
       replicas: 3
+    - topicName: platform.chrome
+      partitions: 3
+      replicas: 3
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
@@ -108,6 +111,8 @@ objects:
           value: ${MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS}
         - name: MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED
           value: ${MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED}
+        - name: MP_MESSAGING_OUTGOING_DRAWER_ENABLED
+          value: ${MP_MESSAGING_OUTGOING_DRAWER_ENABLED}
         - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
           value: ${NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE}
         - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
@@ -349,6 +354,8 @@ parameters:
   value: "60000"
 - name: MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED
   value: "true"
+- name: MP_MESSAGING_OUTGOING_DRAWER_ENABLED
+  value: "false"
 - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
   value: "false"
 - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED

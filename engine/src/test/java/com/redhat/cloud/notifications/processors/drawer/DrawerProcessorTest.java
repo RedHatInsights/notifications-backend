@@ -23,7 +23,15 @@ import com.redhat.cloud.notifications.recipients.User;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
+import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import javax.annotation.PostConstruct;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -33,7 +41,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.processors.drawer.DrawerProcessor.DRAWER_CHANNEL;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -61,6 +72,24 @@ class DrawerProcessorTest {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    @Any
+    InMemoryConnector inMemoryConnector;
+
+    protected InMemorySink<String> inMemorySink;
+
+    @PostConstruct
+    void postConstruct() {
+        inMemorySink = inMemoryConnector.sink(DRAWER_CHANNEL);
+    }
+
+    @BeforeEach
+    @AfterEach
+    void clearInMemorySink() {
+        inMemorySink.clear();
+    }
+
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
@@ -103,6 +132,16 @@ class DrawerProcessorTest {
         Event event = entityManager.createQuery("SELECT e FROM Event e WHERE e.id = :eventId", Event.class).setParameter("eventId", createdEvent.getId()).getSingleResult();
         assertNotNull(event);
         assertEquals(createdEvent.getRenderedDrawerNotification(), event.getRenderedDrawerNotification());
+
+        await().until(() -> inMemorySink.received().size() == 2);
+        Message<String> message = inMemorySink.received().get(0);
+        assertNotNull(message);
+        assertFalse(message.getPayload().isEmpty());
+
+        CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
+        assertNotNull(cloudEventMetadata);
+        assertFalse(cloudEventMetadata.getId().isEmpty());
+        assertFalse(cloudEventMetadata.getType().isEmpty());
 
         deleteEvent(createdEvent);
     }
