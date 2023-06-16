@@ -31,9 +31,6 @@ public class DrawerEntry {
     @NotNull
     private boolean read;
 
-    @NotNull
-    private boolean broadcast = false;
-
     private List<String> organizations;
 
     private List<String> users;
@@ -97,14 +94,6 @@ public class DrawerEntry {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public boolean isBroadcast() {
-        return broadcast;
-    }
-
-    public void setBroadcast(boolean broadcast) {
-        this.broadcast = broadcast;
     }
 
     public List<String> getOrganizations() {

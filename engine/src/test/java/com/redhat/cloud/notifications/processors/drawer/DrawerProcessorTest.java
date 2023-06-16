@@ -20,7 +20,6 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
-import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -45,6 +44,7 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.processors.drawer.DrawerProcessor.DRAWER_CHANNEL;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -136,11 +136,13 @@ class DrawerProcessorTest {
         await().until(() -> inMemorySink.received().size() == 2);
         Message<String> message = inMemorySink.received().get(0);
         assertNotNull(message);
-        CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
+        assertFalse(message.getPayload().isEmpty());
 
-        Log.info(cloudEventMetadata.getId());
-        Log.info(cloudEventMetadata.getType());
-        Log.info(message.getPayload());
+        CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
+        assertNotNull(cloudEventMetadata);
+        assertFalse(cloudEventMetadata.getId().isEmpty());
+        assertFalse(cloudEventMetadata.getType().isEmpty());
+
         deleteEvent(createdEvent);
     }
 

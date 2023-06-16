@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.drawer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -20,11 +21,9 @@ import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import io.opentelemetry.context.Context;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
-import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
@@ -40,13 +39,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.DEFAULT;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 
 @ApplicationScoped
 public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
-    public static final String DRAWER_CHANNEL = "todrawer";
+    public static final String DRAWER_CHANNEL = "drawer";
 
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notifications.drawer";
 
@@ -159,10 +159,10 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             .withDataContentType(MediaType.APPLICATION_JSON)
             .withSpecVersion("1.0.2")
             .build();
-        TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
+
         Message<String> message = Message.of(payload.encode())
-            .addMetadata(cloudEventMetadata)
-            .addMetadata(tracingMetadata);
+            .addMetadata(cloudEventMetadata);
+
         emitter.send(message);
     }
 
