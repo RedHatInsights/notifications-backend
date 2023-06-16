@@ -113,10 +113,16 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             event.setRenderedDrawerNotification(renderedData);
             eventRepository.updateDrawerNotification(event);
 
-            for (DrawerNotification drawer : drawerNotifications) {
-                JsonObject payload = buildJsonPayload(drawer, event);
-                sendIt(payload);
-            }
+            DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
+                for (DrawerNotification drawer : drawerNotifications) {
+                    try {
+                        JsonObject payload = buildJsonPayload(drawer, event);
+                        sendIt(payload);
+                    } catch (Exception e) {
+                        accumulator.add(e);
+                    }
+                }
+            });
 
             endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
             history = getHistoryStub(endpoint, event, 0L, historyId);
