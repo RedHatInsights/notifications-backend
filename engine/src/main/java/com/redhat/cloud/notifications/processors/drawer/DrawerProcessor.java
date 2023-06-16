@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.db.repositories.DrawerNotificationReposito
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
+import com.redhat.cloud.notifications.models.DrawerEntry;
 import com.redhat.cloud.notifications.models.DrawerNotification;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -19,12 +20,20 @@ import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import io.opentelemetry.context.Context;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
+import io.smallrye.reactive.messaging.TracingMetadata;
+import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
+import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +45,10 @@ import static com.redhat.cloud.notifications.models.NotificationHistory.getHisto
 
 @ApplicationScoped
 public class DrawerProcessor extends SystemEndpointTypeProcessor {
+
+    public static final String DRAWER_CHANNEL = "todrawer";
+
+    public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notifications.drawer";
 
     @Inject
     TemplateRepository templateRepository;
@@ -60,6 +73,11 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    @Channel(DRAWER_CHANNEL)
+    Emitter<String> emitter;
+
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
@@ -95,7 +113,10 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             event.setRenderedDrawerNotification(renderedData);
             eventRepository.updateDrawerNotification(event);
 
-            // TODO push created drawerNotifications through kafta: RHCLOUD-25999
+            for (DrawerNotification drawer : drawerNotifications) {
+                JsonObject payload = buildJsonPayload(drawer, event);
+                sendIt(payload);
+            }
 
             endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
             history = getHistoryStub(endpoint, event, 0L, historyId);
@@ -111,6 +132,32 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             history.setInvocationTime(invocationTime);
             persistNotificationHistory(history);
         }
+    }
+
+    private JsonObject buildJsonPayload(DrawerNotification notif, Event event) {
+        DrawerEntry drawerEntry = new DrawerEntry();
+        drawerEntry.setId(notif.getId());
+        drawerEntry.setDescription(event.getRenderedDrawerNotification());
+        drawerEntry.setTitle(event.getEventTypeDisplayName());
+        drawerEntry.setRead(notif.isRead());
+        drawerEntry.setOrganizations(List.of(notif.getOrgId()));
+        drawerEntry.setUsers(List.of(notif.getUserId()));
+        drawerEntry.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
+        return JsonObject.mapFrom(drawerEntry);
+    }
+
+    private void sendIt(JsonObject payload) {
+        CloudEventMetadata<String> cloudEventMetadata = OutgoingCloudEventMetadata.<String>builder()
+            .withId(UUID.randomUUID().toString())
+            .withType(CLOUD_EVENT_TYPE_PREFIX)
+            .withDataContentType(MediaType.APPLICATION_JSON)
+            .withSpecVersion("1.0.2")
+            .build();
+        TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
+        Message<String> message = Message.of(payload.encode())
+            .addMetadata(cloudEventMetadata)
+            .addMetadata(tracingMetadata);
+        emitter.send(message);
     }
 
     public String buildNotificationMessage(Event event) {
