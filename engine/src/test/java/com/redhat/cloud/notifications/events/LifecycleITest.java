@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -18,7 +17,6 @@ import com.redhat.cloud.notifications.models.BehaviorGroupActionId;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionId;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -27,12 +25,11 @@ import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.EventTypeBehaviorId;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.email.EmailSender;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
-import com.redhat.cloud.notifications.templates.Blank;
-import com.redhat.cloud.notifications.templates.EmailTemplateFactory;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
@@ -71,7 +68,6 @@ import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPT
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -101,9 +97,6 @@ public class LifecycleITest {
     MicrometerAssertionHelper micrometerAssertionHelper;
 
     @InjectMock
-    EmailTemplateFactory emailTemplateFactory;
-
-    @InjectMock
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
 
     // InjectSpy allows us to update the fields via reflection (Inject does not)
@@ -117,21 +110,18 @@ public class LifecycleITest {
     EndpointRepository endpointRepository;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
     ResourceHelpers resourceHelpers;
 
     @Test
     void test() {
         final String accountId = "tenant";
         final String username = "user";
-        setupEmailMock(accountId, username);
 
         // First, we need a bundle, an app and an event type. Let's create them!
         Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
         Application app = resourceHelpers.createApp(bundle.getId(), APP_NAME);
         EventType eventType = resourceHelpers.createEventType(app.getId(), EVENT_TYPE_NAME);
+        setupEmailMock(accountId, username);
 
         // We also need behavior groups.
         BehaviorGroup behaviorGroup1 = createBehaviorGroup(accountId, bundle);
@@ -158,9 +148,7 @@ public class LifecycleITest {
         addEventTypeBehavior(eventType.getId(), behaviorGroup1.getId());
 
         // Get the account canonical email endpoint
-        Endpoint emailEndpoint = statelessSessionFactory.withSession(statelessSession -> {
-            return getAccountCanonicalEmailEndpoint(accountId, DEFAULT_ORG_ID);
-        });
+        Endpoint emailEndpoint = getAccountCanonicalEmailEndpoint(accountId, DEFAULT_ORG_ID);
 
         // Pushing a new message should trigger two webhook calls.
         pushMessage(2, 0, 0, 0);
@@ -259,7 +247,7 @@ public class LifecycleITest {
     }
 
     Endpoint getAccountCanonicalEmailEndpoint(String accountId, String orgId) {
-        return endpointRepository.getOrCreateDefaultEmailSubscription(accountId, orgId);
+        return endpointRepository.getOrCreateDefaultSystemSubscription(accountId, orgId, EMAIL_SUBSCRIPTION);
     }
 
     private Endpoint createWebhookEndpoint(String accountId, String secretToken) {
@@ -272,7 +260,7 @@ public class LifecycleITest {
     }
 
     private void addDefaultBehaviorGroupAction(BehaviorGroup behaviorGroup) {
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
         properties.setOnlyAdmins(true);
         Endpoint endpoint = createEndpoint(null, EMAIL_SUBSCRIPTION, "Email endpoint", "System email endpoint", properties);
         addBehaviorGroupAction(behaviorGroup.getId(), endpoint.getId());
@@ -312,6 +300,8 @@ public class LifecycleITest {
      * Depending on the event type, behavior groups and endpoints configuration, it will trigger zero or more webhook calls.
      */
     private void pushMessage(int expectedWebhookCalls, int expectedEmailEndpoints, int expectedSentEmails, int expectedExceptionCount) {
+        entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+
         micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSING_EXCEPTION_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
 
         Runnable waitForWebhooks = setupCountdownCalls(
@@ -389,7 +379,7 @@ public class LifecycleITest {
     }
 
     private void setupEmailMock(String accountId, String username) {
-        Mockito.when(emailTemplateFactory.get(anyString(), anyString())).thenReturn(new Blank());
+        resourceHelpers.createBlankInstantEmailTemplate(BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
 
         User user = new User();
         user.setUsername(username);

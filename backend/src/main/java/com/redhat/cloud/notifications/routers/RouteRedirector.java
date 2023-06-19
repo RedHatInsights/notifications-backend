@@ -17,7 +17,7 @@ public class RouteRedirector {
     // Prevents the injection of characters that would break the log file pattern and lead to log forging or log poisoning.
     private static final Pattern ANTI_INJECTION_PATTERN = Pattern.compile("[\n|\r|\t]");
 
-    Pattern p = Pattern.compile("/api/(integrations|notifications)/v1/(.*)");
+    Pattern p = Pattern.compile("/api/(integrations|notifications)/v(\\d+)/(.*)");
 
     /**
      * If the requested route is the one with major version only,
@@ -36,7 +36,7 @@ public class RouteRedirector {
         }
         Matcher m = p.matcher(uri);
         if (m.matches()) {
-            String newTarget = "/api/" + m.group(1) + "/v1.0/" + m.group(2);
+            String newTarget = "/api/" + m.group(1) + "/v" + m.group(2) + ".0/" + m.group(3);
             Log.tracef("Rerouting to: %s", newTarget);
 
             rc.reroute(newTarget);

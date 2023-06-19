@@ -1,21 +1,16 @@
 package com.redhat.cloud.notifications.templates;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.quarkus.qute.TemplateInstance;
-import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -33,26 +28,6 @@ public class TemplateEngineResource {
     @Inject
     TemplateService templateService;
 
-    @Inject
-    EmailTemplateFactory emailTemplateFactory;
-
-    @Inject
-    TemplateRepository templateRepository;
-
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    @GET
-    @Path("/subscription_type_supported")
-    @Produces(APPLICATION_JSON)
-    public Boolean isSubscriptionTypeSupported(@NotNull @RestQuery String bundleName, @NotNull @RestQuery String applicationName, @NotNull @RestQuery EmailSubscriptionType subscriptionType) {
-        if (featureFlipper.isUseTemplatesFromDb()) {
-            return templateRepository.isEmailSubscriptionSupported(bundleName, applicationName, subscriptionType);
-        } else {
-            return emailTemplateFactory.get(bundleName, applicationName).isEmailSubscriptionSupported(subscriptionType);
-        }
-    }
-
     @PUT
     @Path("/render")
     @Consumes(APPLICATION_JSON)
@@ -64,15 +39,15 @@ public class TemplateEngineResource {
         try {
             Action action = actionParser.fromJsonString(payload);
 
-            TemplateInstance subjectTemplate = templateService
-                    .compileTemplate(renderEmailTemplateRequest.getSubjectTemplate(), "subject");
-            String subject = templateService.renderTemplate(user, action, subjectTemplate);
+            String[] templateContent = renderEmailTemplateRequest.getTemplate();
+            String[] renderedTemplate = new String[templateContent.length];
 
-            TemplateInstance bodyTemplate = templateService
-                    .compileTemplate(renderEmailTemplateRequest.getBodyTemplate(), "body");
-            String body = templateService.renderTemplate(user, action, bodyTemplate);
+            for (int i = 0; i < templateContent.length; i++) {
+                TemplateInstance template = templateService.compileTemplate(templateContent[i], String.format("rendered-template-%d", i));
+                renderedTemplate[i] = templateService.renderTemplate(user, action, template);
+            }
 
-            return Response.ok(new RenderEmailTemplateResponse.Success(subject, body)).build();
+            return Response.ok(new RenderEmailTemplateResponse.Success(renderedTemplate)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(e.getMessage())).build();
         }

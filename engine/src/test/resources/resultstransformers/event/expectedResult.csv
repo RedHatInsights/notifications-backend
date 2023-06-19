@@ -1,0 +1,6 @@
+uuid,bundle,application,eventType,created
+29e7b3b3-7019-4995-8336-b67b89876e89,"bundle a with a comma "",""",application a,event type a,2000-01-01T00:00:00.000012345Z
+64f5b04d-e939-44fa-a10d-ad1c13197919,bundle b,application b,event type b,2001-01-01T01:00:00.000012345Z
+4192b1f4-a8c5-4a22-bb66-cb5ec5965d3e,bundle c,application c,event type c,2002-01-01T02:00:00.000012345Z
+1166745b-163b-481a-9723-1b580f8e6d25,bundle d,application d,event type d,2003-01-01T03:00:00.000012345Z
+a6da4a14-b7cd-409b-82fc-904971cfa5d0,bundle e,application e,event type e,2004-01-01T04:00:00.000012345Z

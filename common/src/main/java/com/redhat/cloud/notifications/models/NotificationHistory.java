@@ -31,11 +31,7 @@ public class NotificationHistory extends CreationTimestamped {
             "created", "nh.created",
             "invocation_time", "nh.invocationTime",
             "invocation_result", "nh.invocationResult",
-            "status", "nh.status",
-            // NOTIF-674 Delete after the frontend has been updated
-            "nh.created", "nh.created",
-            "invocationtime", "nh.invocationTime",
-            "invocationresult", "nh.invocationResult"
+            "status", "nh.status"
     );
 
     @Id

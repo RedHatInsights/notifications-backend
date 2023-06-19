@@ -1,17 +1,17 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.models.CamelProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.logging.Log;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import java.util.HashSet;
@@ -24,7 +24,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
+import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
+import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
@@ -33,46 +35,50 @@ import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
 public class EndpointRepository {
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
+    EntityManager entityManager;
 
     /**
-     * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION endpoint with empty properties. This
-     * endpoint is used to aggregate and store in the DB the email actions outcome, which will be used later by the
-     * event log. The recipients of the current email action have already been resolved before this step, possibly from
+     * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION or DRAWER endpoint with empty properties. This
+     * endpoint is used to aggregate and store in the DB the email or drawer actions outcome, which will be used later by the
+     * event log. The recipients of the current email or drawer action have already been resolved before this step, possibly from
      * multiple endpoints and recipients settings. The properties created below have no impact on the resolution of the
      * action recipients.
      */
-    public Endpoint getOrCreateDefaultEmailSubscription(String accountId, String orgId) {
+    @Transactional
+    public Endpoint getOrCreateDefaultSystemSubscription(String accountId, String orgId, EndpointType endpointType) {
         String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
-        List<Endpoint> emailEndpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
-                .setParameter("orgId", orgId)
-                .setParameter("endpointType", EMAIL_SUBSCRIPTION)
-                .getResultList();
-        loadProperties(emailEndpoints);
+        List<Endpoint> systemEndpoints = entityManager.createQuery(query, Endpoint.class)
+            .setParameter("orgId", orgId)
+            .setParameter("endpointType", endpointType)
+            .getResultList();
+        loadProperties(systemEndpoints);
 
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
-        Optional<Endpoint> endpointOptional = emailEndpoints
-                .stream()
-                .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
-                .findFirst();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
+        Optional<Endpoint> endpointOptional = systemEndpoints
+            .stream()
+            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
+            .findFirst();
         if (endpointOptional.isPresent()) {
             return endpointOptional.get();
         }
 
+        String label = "Email";
+        if (DRAWER == endpointType) {
+            label = "Drawer";
+        }
         Endpoint endpoint = new Endpoint();
         endpoint.setProperties(properties);
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
         endpoint.setEnabled(true);
-        endpoint.setDescription("System email endpoint");
-        endpoint.setName("Email endpoint");
-        endpoint.setType(EMAIL_SUBSCRIPTION);
+        endpoint.setDescription(String.format("System %s endpoint", label.toLowerCase()));
+        endpoint.setName(String.format("%s endpoint", label));
+        endpoint.setType(endpointType);
         endpoint.setStatus(READY);
-        endpoint.prePersist();
         properties.setEndpoint(endpoint);
 
-        statelessSessionFactory.getCurrentSession().insert(endpoint);
-        statelessSessionFactory.getCurrentSession().insert(endpoint.getProperties());
+        entityManager.persist(endpoint);
+        entityManager.persist(endpoint.getProperties());
         return endpoint;
     }
 
@@ -81,7 +87,7 @@ public class EndpointRepository {
                 "WHERE e.enabled IS TRUE AND e.status = :status AND b.eventType = :eventType " +
                 "AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
 
-        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+        List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
                 .setParameter("status", READY)
                 .setParameter("eventType", eventType)
                 .setParameter("orgId", orgId)
@@ -89,7 +95,7 @@ public class EndpointRepository {
         loadProperties(endpoints);
         for (Endpoint endpoint : endpoints) {
             if (endpoint.getOrgId() == null) {
-                if (endpoint.getType() == EMAIL_SUBSCRIPTION) {
+                if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
                     endpoint.setOrgId(orgId);
                 } else {
                     Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
@@ -105,7 +111,7 @@ public class EndpointRepository {
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
                 "AND e.compositeType.type = :endpointType";
 
-        List<Endpoint> endpoints = statelessSessionFactory.getCurrentSession().createQuery(query, Endpoint.class)
+        List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
                 .setParameter("applicationName", applicationName)
                 .setParameter("eventTypeName", eventTypeName)
                 .setParameter("orgId", orgId)
@@ -140,7 +146,7 @@ public class EndpointRepository {
                  * It is therefore disabled.
                  */
                 String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
-                int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+                int updated = entityManager.createQuery(hql)
                         .setParameter("id", endpointId)
                         .executeUpdate();
                 return updated > 0;
@@ -150,7 +156,7 @@ public class EndpointRepository {
                  * The errors counter is therefore incremented.
                  */
                 String hql = "UPDATE Endpoint SET serverErrors = serverErrors + 1 WHERE id = :id";
-                statelessSessionFactory.getCurrentSession().createQuery(hql)
+                entityManager.createQuery(hql)
                         .setParameter("id", endpointId)
                         .executeUpdate();
                 return false;
@@ -160,10 +166,49 @@ public class EndpointRepository {
         }
     }
 
+    /**
+     * Gets the endpoint by its UUID and OrgId along with its associated properties.
+     * @param endpointUuid the UUID of the endpoint.
+     * @param orgId the OrgId of the tenant.
+     * @return the endpoint found.
+     */
+    public Endpoint findByUuidAndOrgId(final UUID endpointUuid, final String orgId) {
+        final String query =
+                "SELECT " +
+                    "e " +
+                "FROM " +
+                    "Endpoint AS e " +
+                "WHERE " +
+                    "e.id = :uuid " +
+                "AND " +
+                    "e.orgId = :orgId";
+
+        Endpoint endpoint;
+        try {
+            endpoint = entityManager
+                    .createQuery(query, Endpoint.class)
+                    .setParameter("uuid", endpointUuid)
+                    .setParameter("orgId", orgId)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new NoResultException(
+                    String.format(
+                            "Endpoint with id=%s and orgId=%s not found",
+                            endpointUuid,
+                            orgId
+                    )
+            );
+        }
+
+        this.loadProperties(List.of(endpoint));
+
+        return endpoint;
+    }
+
     private Optional<Endpoint> lockEndpoint(UUID endpointId) {
         String hql = "FROM Endpoint WHERE id = :id";
         try {
-            Endpoint endpoint = statelessSessionFactory.getCurrentSession().createQuery(hql, Endpoint.class)
+            Endpoint endpoint = entityManager.createQuery(hql, Endpoint.class)
                     .setParameter("id", endpointId)
                     /*
                      * The endpoint will be locked by a "SELECT FOR UPDATE", preventing other threads or pods
@@ -185,7 +230,7 @@ public class EndpointRepository {
     @Transactional
     public boolean resetEndpointServerErrors(UUID endpointId) {
         String hql = "UPDATE Endpoint SET serverErrors = 0 WHERE id = :id AND serverErrors > 0";
-        int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+        int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();
         return updated > 0;
@@ -199,7 +244,7 @@ public class EndpointRepository {
     @Transactional
     public boolean disableEndpoint(UUID endpointId) {
         String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
-        int updated = statelessSessionFactory.getCurrentSession().createQuery(hql)
+        int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();
         return updated > 0;
@@ -210,9 +255,11 @@ public class EndpointRepository {
             // Group endpoints in types and load in batches for each type.
             Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
+            loadTypedProperties(WebhookProperties.class, endpointSet, ANSIBLE);
             loadTypedProperties(WebhookProperties.class, endpointSet, WEBHOOK);
             loadTypedProperties(CamelProperties.class, endpointSet, CAMEL);
-            loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EMAIL_SUBSCRIPTION);
+            loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EMAIL_SUBSCRIPTION);
+            loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, DRAWER);
         }
     }
 
@@ -224,7 +271,7 @@ public class EndpointRepository {
 
         if (endpointsMap.size() > 0) {
             String hql = "FROM " + typedEndpointClass.getSimpleName() + " WHERE id IN (:endpointIds)";
-            List<T> propList = statelessSessionFactory.getCurrentSession().createQuery(hql, typedEndpointClass)
+            List<T> propList = entityManager.createQuery(hql, typedEndpointClass)
                     .setParameter("endpointIds", endpointsMap.keySet())
                     .getResultList();
             for (T props : propList) {

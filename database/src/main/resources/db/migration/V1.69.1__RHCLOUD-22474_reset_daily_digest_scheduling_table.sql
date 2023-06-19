@@ -1,0 +1,1 @@
+DELETE FROM aggregation_org_config;

@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnabled;
+import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
@@ -33,7 +34,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
@@ -43,11 +46,18 @@ import static com.redhat.cloud.notifications.models.NotificationHistory.getHisto
 @ApplicationScoped
 public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
+    public static final String PROCESSED_WEBHOOK_COUNTER = "processor.webhook.processed";
+    public static final String PROCESSED_EMAIL_COUNTER = "processor.email.processed";
+    public static final String FAILED_WEBHOOK_COUNTER = "processor.webhook.failed";
+    public static final String SUCCESSFUL_WEBHOOK_COUNTER = "processor.webhook.successful";
+    public static final String FAILED_EMAIL_COUNTER = "processor.email.failed";
+    public static final String RETRIED_WEBHOOK_COUNTER = "processor.webhook.retried";
+    public static final String RETRIED_EMAIL_COUNTER = "processor.email.retried";
+    public static final String SUCCESSFUL_EMAIL_COUNTER = "processor.email.successful";
     public static final String DISABLED_WEBHOOKS_COUNTER = "processor.webhook.disabled.endpoints";
     public static final String ERROR_TYPE_TAG_KEY = "error_type";
     public static final String CLIENT_TAG_VALUE = "client";
     public static final String SERVER_TAG_VALUE = "server";
-
     private static final String TOKEN_HEADER = "X-Insight-Token";
     private static final String CONNECTION_CLOSED_MSG = "Connection was closed";
 
@@ -89,14 +99,33 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     @Inject
     MeterRegistry registry;
 
-    private Counter processedCount;
+    @Inject
+    SecretUtils secretUtils;
+
+    private Counter processedWebhookCount;
+    private Counter failedWebhookCount;
+    private Counter retriedWebhookCount;
+    private Counter successWebhookCount;
+    private Counter processedEmailCount;
+    private Counter failedEmailCount;
+    private Counter retriedEmailCount;
+    private Counter successEmailCount;
     private Counter disabledWebhooksClientErrorCount;
     private Counter disabledWebhooksServerErrorCount;
     private RetryPolicy<Object> retryPolicy;
 
     @PostConstruct
     void postConstruct() {
-        processedCount = registry.counter("processor.webhook.processed");
+        processedWebhookCount = registry.counter(PROCESSED_WEBHOOK_COUNTER);
+        failedWebhookCount = registry.counter(FAILED_WEBHOOK_COUNTER);
+        retriedWebhookCount = registry.counter(RETRIED_WEBHOOK_COUNTER);
+        successWebhookCount = registry.counter(SUCCESSFUL_WEBHOOK_COUNTER);
+
+        processedEmailCount = registry.counter(PROCESSED_EMAIL_COUNTER);
+        failedEmailCount = registry.counter(FAILED_EMAIL_COUNTER);
+        retriedEmailCount = registry.counter(RETRIED_EMAIL_COUNTER);
+        successEmailCount = registry.counter(SUCCESSFUL_EMAIL_COUNTER);
+
         disabledWebhooksClientErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
         disabledWebhooksServerErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, SERVER_TAG_VALUE);
         retryPolicy = RetryPolicy.builder()
@@ -108,6 +137,10 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
+        if (featureFlipper.isEmailsOnlyMode()) {
+            Log.warn("Skipping event processing because Notifications is running in emails only mode");
+            return;
+        }
         DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
             for (Endpoint endpoint : endpoints) {
                 try {
@@ -120,11 +153,18 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     }
 
     private void process(Event event, Endpoint endpoint) {
-        processedCount.increment();
+
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
         final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
                 .requestAbs(HttpMethod.valueOf(properties.getMethod().name()), properties.getUrl());
+
+        /*
+         * Get the basic authentication and secret token secrets from Sources.
+         */
+        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            this.secretUtils.loadSecretsForEndpoint(endpoint);
+        }
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
             req.putHeader(TOKEN_HEADER, properties.getSecretToken());
@@ -134,7 +174,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
             req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
         }
 
-        JsonObject payload = transformer.toJsonObject(event.getAction());
+        final JsonObject payload = transformer.toJsonObject(event);
 
         doHttpRequest(event, endpoint, req, payload, properties.getMethod().name(), properties.getUrl(), true);
     }
@@ -149,17 +189,36 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     public void doHttpRequest(Event event, Endpoint endpoint, HttpRequest<Buffer> req, JsonObject payload, String method, String url, boolean persistHistory) {
         final long startTime = System.currentTimeMillis();
+        boolean isEmailEndpoint = endpoint.getType() == EMAIL_SUBSCRIPTION;
+        final NotificationHistory history = buildNotificationHistory(event, endpoint, startTime);
+        incrementProcessedMetrics(isEmailEndpoint);
 
         try {
-            Failsafe.with(retryPolicy).run(() -> {
+            Failsafe.with(retryPolicy).run((context) -> {
+                if (context.isRetry()) {
+                    updateRetryMetrics(isEmailEndpoint);
+                }
 
                 // TODO NOTIF-488 We may want to move to a non-reactive HTTP client in the future.
                 HttpResponse<Buffer> resp = req.sendJsonObject(payload).await().atMost(awaitTimeout);
-                NotificationHistory history = buildNotificationHistory(event, endpoint, startTime);
 
                 boolean serverError = false;
-                boolean isEmailEndpoint = endpoint.getType() == EMAIL_SUBSCRIPTION;
                 boolean shouldResetEndpointServerErrors = false;
+                Map<String, Object> details = new HashMap<>();
+                if (isEmailEndpoint) {
+                    if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
+                        try {
+                            int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
+                            details.put("total_recipients", totalRecipients);
+                            history.setDetails(details);
+                            if (totalRecipients > 0) {
+                                Log.infof("Payload sent to bop = %s", payload);
+                            }
+                        } catch (Exception ex) {
+                            Log.error("Could not set the total_recipients field in the history details", ex);
+                        }
+                    }
+                }
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
                     // Accepted
                     Log.debugf("Webhook request to %s was successful: %d", url, resp.statusCode());
@@ -229,40 +288,66 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 }
 
                 if (history.getStatus() == NotificationStatus.FAILED_INTERNAL) {
-                    JsonObject details = new JsonObject();
                     details.put("url", url);
                     details.put("method", method);
                     details.put("code", resp.statusCode());
                     details.put("response_body", resp.bodyAsString());
-                    history.setDetails(details.getMap());
+                    history.setDetails(details);
                 }
 
                 if (serverError) {
-                    throw new ServerErrorException(history);
-                }
-                if (persistHistory) {
-                    persistNotificationHistory(history);
+                    throw new ServerErrorException();
                 }
             });
         } catch (Exception e) {
-            NotificationHistory history;
-            if (e instanceof ServerErrorException) {
-                history = ((ServerErrorException) e).getNotificationHistory();
-            } else {
-                history = buildNotificationHistory(event, endpoint, startTime);
+            if (!(e instanceof ServerErrorException)) {
                 history.setStatus(NotificationStatus.FAILED_INTERNAL);
 
                 Log.debugf("Failed: %s", e.getMessage());
 
-                JsonObject details = new JsonObject();
+                Map<String, Object> details = new HashMap<>();
                 details.put("url", url);
                 details.put("method", method);
                 details.put("error_message", e.getMessage()); // TODO This message isn't always the most descriptive..
-                history.setDetails(details.getMap());
+                history.setDetails(details);
             }
+        } finally {
+            updateMetrics(history.getStatus(), isEmailEndpoint);
             if (persistHistory) {
                 persistNotificationHistory(history);
             }
+        }
+    }
+
+    private void updateMetrics(NotificationStatus status, boolean isEmailEndpoint) {
+        if (NotificationStatus.FAILED_INTERNAL == status || NotificationStatus.FAILED_EXTERNAL == status) {
+            if (isEmailEndpoint) {
+                failedEmailCount.increment();
+            } else {
+                failedWebhookCount.increment();
+            }
+        } else {
+            if (isEmailEndpoint) {
+                successEmailCount.increment();
+            } else {
+                successWebhookCount.increment();
+            }
+        }
+    }
+
+    private void updateRetryMetrics(boolean isEmailEndpoint) {
+        if (isEmailEndpoint) {
+            retriedEmailCount.increment();
+        } else {
+            retriedWebhookCount.increment();
+        }
+    }
+
+    private void incrementProcessedMetrics(boolean isEmailEndpoint) {
+        if (isEmailEndpoint) {
+            processedEmailCount.increment();
+        } else {
+            processedWebhookCount.increment();
         }
     }
 

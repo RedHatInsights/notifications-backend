@@ -29,10 +29,15 @@ import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.validation.constraints.Size;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,6 +48,8 @@ import java.util.stream.Stream;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME_2;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_2_NAME;
@@ -87,6 +94,11 @@ public class NotificationResourceTest extends DbIsolatedTest {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.clearRbac();
         featureFlipper.setEnforceBehaviorGroupNameUnicity(true);
+    }
+
+    @AfterEach
+    void afterEach() {
+        featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
     }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
@@ -485,6 +497,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         List<UUID> endpoints = Stream.of(
                 helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
                 helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
+                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL)
         ).map(Endpoint::getId).collect(Collectors.toList());
@@ -553,6 +567,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         List<UUID> endpoints = Stream.of(
                 helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
                 helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
+                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
+                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL)
         ).map(Endpoint::getId).collect(Collectors.toList());
@@ -963,6 +979,479 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         } finally {
             featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
+        }
+    }
+
+    /**
+     * Tests that a successful status code is returned when a behavior group is
+     * created by using the bundle's name instead of its UUID.
+     */
+    @Test
+    void testBehaviorGroupUsingBundleName() {
+        final Bundle bundle = helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+
+        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.displayName = "behavior-group-display-name";
+        createBehaviorGroupRequest.bundleName =  bundle.getName();
+
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(createBehaviorGroupRequest))
+            .post("/notifications/behaviorGroups")
+            .then()
+            .statusCode(200);
+    }
+
+    /**
+     * Tests that a bad request response is returned when attempting to create
+     * a behavior group without specifying a bundle ID or its name.
+     */
+    @Test
+    void testBadRequestBehaviorGroupInvalidBundle() {
+        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.displayName = "behavior-group-display-name";
+
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        final String response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(createBehaviorGroupRequest))
+            .post("/notifications/behaviorGroups")
+            .then()
+            .statusCode(400)
+            .extract()
+            .body()
+            .asString();
+
+        final JsonObject responseJson = new JsonObject(response);
+        final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+        Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+        Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+        final JsonObject error = constraintViolations.getJsonObject(0);
+        final String errorMessage = error.getString("message");
+
+        Assertions.assertNotNull(errorMessage, "the error message is null");
+        Assertions.assertEquals("either the bundle name or the bundle UUID are required", errorMessage, "unexpected error message received");
+    }
+
+    /**
+     * Tests that a "not found" response is returned from the handler when the
+     * bundle ID or its name don't correspond to any existing bundle in the
+     * database.
+     */
+    @Test
+    void testNotFoundBehaviorGroupNotExists() {
+        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+
+        final var bgNoBundleId = new CreateBehaviorGroupRequest();
+        bgNoBundleId.bundleId = UUID.randomUUID();
+        bgNoBundleId.displayName = "test not found behavior group not exists";
+
+        final var bgNoBundleName = new CreateBehaviorGroupRequest();
+        bgNoBundleName.bundleName = "test not found bundle name";
+        bgNoBundleName.displayName = "test not found behavior group not exists";
+
+        final CreateBehaviorGroupRequest[] bgs = {bgNoBundleId, bgNoBundleName};
+        for (final var bg : bgs) {
+            final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(bg))
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(404)
+                .extract()
+                .body()
+                .asString();
+
+            // The handler returns an error when fetching the bundle by its
+            // name...
+            final String handlerError = "the specified bundle was not found in the database";
+            // ... but when the user provides the bundle ID, then the
+            // persistence layer returns another error.
+            final String persistenceLayerError = "bundle_id not found";
+            final boolean responseIsWhatWeExpected = response.equals(handlerError) || response.equals(persistenceLayerError);
+
+            Assertions.assertTrue(responseIsWhatWeExpected, String.format(
+                "unexpected response. Expecting \"%s\" or \"%s\", got \"%s\"",
+                handlerError,
+                persistenceLayerError,
+                response
+            ));
+        }
+    }
+
+    /**
+     * Tests that when creating a behavior group, if the display name exceeds
+     * the limit set, then a corresponding error message is returned.
+     * @throws NoSuchFieldException if the field in the request class to grab
+     * the maximum value for the display name does not exist.
+     */
+    @Test
+    void testBehaviorGroupDisplayNameTooLong() throws NoSuchFieldException {
+        final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+
+        // Get the value of the "max" property for the "Size" annotation.
+        final Field classField = CreateBehaviorGroupRequest.class.getDeclaredField("displayName");
+        final Size sizeClassAnnotation = classField.getAnnotation(Size.class);
+
+        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.bundleId = bundle.getId();
+        createBehaviorGroupRequest.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
+
+        final Header identityHeader = initRbacMock("behavior-group-display-name-too-long-account-number", "behavior-group-display-name-too-long-org-id", "user", FULL_ACCESS);
+
+        final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(createBehaviorGroupRequest))
+                .post("/notifications/behaviorGroups")
+                .then()
+                .statusCode(400)
+                .extract()
+                .body()
+                .asString();
+
+        final JsonObject responseJson = new JsonObject(response);
+        final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+        Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+        Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+        final JsonObject error = constraintViolations.getJsonObject(0);
+        final String errorMessage = error.getString("message");
+
+        Assertions.assertNotNull(errorMessage, "the error message is null");
+
+        final String expectedError = String.format("the display name cannot exceed %s characters", sizeClassAnnotation.max());
+        Assertions.assertEquals(expectedError, errorMessage, "unexpected error message received");
+    }
+
+    /**
+     * Tests that when updating a behavior group, if the display name exceeds
+     * the limit set, then a corresponding error message is returned.
+     * @throws NoSuchFieldException if the field in the request class to grab
+     * the maximum value for the display name does not exist.
+     */
+    @Test
+    void testUpdateBehaviorGroupDisplayNameTooLong() throws NoSuchFieldException {
+        // The tenant's identification elements will be reused below.
+        final String accountId = "update-bg-display-name-too-long-account-id";
+        final String orgId = "update-bg-display-name-too-long-org-id";
+
+        // Create the fixtures in the database.
+        final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(accountId, orgId, "valid display name", bundle.getId());
+
+        // Get the value of the "max" property for the "Size" annotation.
+        final Field classField = UpdateBehaviorGroupRequest.class.getDeclaredField("displayName");
+        final Size sizeClassAnnotation = classField.getAnnotation(Size.class);
+
+        final UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
+        updateBehaviorGroupRequest.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
+
+        final Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+        final String url = String.format("/notifications/behaviorGroups/%s", behaviorGroup.getId());
+
+        final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(updateBehaviorGroupRequest))
+                .put(url)
+                .then()
+                .statusCode(400)
+                .extract()
+                .asString();
+
+        final JsonObject responseJson = new JsonObject(response);
+        final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+        Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+        Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+        final JsonObject error = constraintViolations.getJsonObject(0);
+        final String errorMessage = error.getString("message");
+
+        Assertions.assertNotNull(errorMessage, "the error message is null");
+
+        final String expectedError = String.format("the display name cannot exceed %s characters", sizeClassAnnotation.max());
+        Assertions.assertEquals(expectedError, errorMessage, "unexpected error message received");
+    }
+
+    /**
+     * Tests that when updating a behavior group, if the specified display name
+     * is blank, a bad request response is returned.
+     */
+    @Test
+    void testUpdateBehaviorGroupDisplayNameBlank() {
+        // The tenant's identification elements will be reused below.
+        final String accountId = "update-bg-blank-display-name-account-id";
+        final String orgId = "update-bg-blank-display-name-org-id";
+
+        // Create the fixtures in the database.
+        final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(accountId, orgId, "valid display name", bundle.getId());
+
+        final String[] blankDisplayNames = {"", "     "};
+        for (final String blankDisplayName : blankDisplayNames) {
+
+            final UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
+            updateBehaviorGroupRequest.displayName = blankDisplayName;
+
+            final Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+            final String url = String.format("/notifications/behaviorGroups/%s", behaviorGroup.getId());
+
+            final String response = given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(updateBehaviorGroupRequest))
+                    .put(url)
+                    .then()
+                    .statusCode(400)
+                    .extract()
+                    .asString();
+
+            final JsonObject responseJson = new JsonObject(response);
+            final JsonArray constraintViolations = responseJson.getJsonArray("violations");
+
+            Assertions.assertNotNull(constraintViolations, "the constraint violations key is not present");
+            Assertions.assertEquals(1, constraintViolations.size(), "only one error message was expected, but more were found");
+
+            final JsonObject error = constraintViolations.getJsonObject(0);
+            final String errorMessage = error.getString("message");
+
+            Assertions.assertNotNull(errorMessage, "the error message is null");
+            Assertions.assertEquals("the display name cannot be empty", errorMessage, "unexpected error message received");
+        }
+    }
+
+    /**
+     * Tests that a behavior group can be successfully appended to an event type.
+     */
+    @Test
+    void testAppendBehaviorEventType() {
+        final Bundle bundle = this.helpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        final Header identityHeader = initRbacMock("tenant", DEFAULT_ORG_ID, "user", FULL_ACCESS);
+        RestAssured.given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("behaviorGroupUuid", behaviorGroup.getId())
+            .when()
+            .put("/notifications/eventTypes/{eventTypeUuid}/behaviorGroups/{behaviorGroupUuid}")
+            .then()
+            .statusCode(204);
+    }
+
+    /**
+     * Tests that a not found response is returned when the behavior group does
+     * not exist.
+     */
+    @Test
+    void testAppendBehaviorEventBehaviorGroupNotFound() {
+        final Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+
+        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", UUID.randomUUID(), UUID.randomUUID());
+
+        final String response = RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .put(url)
+            .then()
+            .statusCode(404)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", response, "unexpected error message received when specifying a non-existent behavior group");
+    }
+
+    /**
+     * Tests that a not found response is returned when the behavior group
+     * exists, but the tenant that is performing the operation is a different
+     * one.
+     */
+    @Test
+    void testAppendBehaviorEventBehaviorGroupWrongTenantNotFound() {
+        final Bundle bundle = this.helpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, "different-tenant-org-id", "user", FULL_ACCESS);
+
+        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+
+        final String response = RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .put(url)
+            .then()
+            .statusCode(404)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", response, "unexpected error message received when specifying a valid behavior group but from a different tenant");
+    }
+
+    /**
+     * Tests that a "not found" response is returned when the event type and
+     * the behavior group are of incompatible types.
+     */
+    @Test
+    void testAppendBehaviorEventBehaviorGroupIncompatibleEventTypeBehaviorGroup() {
+        // Create a bundle and a set of fixtures...
+        final Bundle bundle = this.helpers.createBundle();
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // ... and create a second bundle for the behavior group.
+        final Bundle differentBundle = this.helpers.createBundle("bundle-name-different", "bundle-display-name-different");
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", differentBundle.getId());
+
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+
+        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+
+        final String response = RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .put(url)
+            .then()
+            .statusCode(404)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group", response, "unexpected error message received when specifying an incompatible event type with a behavior group");
+    }
+
+    /**
+     * Test that deleting an existing behavior group from an event type works as expected.
+     */
+    @Test
+    void testDeleteBehaviorEventType() {
+        // Create the fixtures.
+        final Bundle bundle = this.helpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // Generate the identity header.
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+
+        // Construct the URL we are going to send the request to.
+        final String createUrl = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+
+        // First add the behavior group to the event type.
+        RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .put(createUrl)
+            .then()
+            .statusCode(204);
+
+        final String deleteUrl = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+
+        // Call the "delete" endpoint and expect a proper deletion.
+        RestAssured.given()
+            .header(identityHeader)
+            .when()
+            .delete(deleteUrl)
+            .then()
+            .statusCode(204);
+    }
+
+    /**
+     * Test that when a non-existent event type or a non-existent behavior group is specified, a bad request is
+     * returned. The same thing when the user tries to delete the behavior group - event type relation that doesn't
+     * exist.
+     */
+    @Test
+    void testDeleteBehaviorEventTypeError() {
+        // Create the fixtures.
+        final Bundle bundle = this.helpers.createBundle();
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
+
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // Generate the identity header.
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+
+        // Create a small test class to help structure the inputs and outputs.
+        class TestCase {
+            public final String expectedErrorMessage;
+            public final int expectedStatusCode;
+            public final String url;
+
+            TestCase(final String expectedErrorMessage, final int expectedStatusCode, final String url) {
+                this.expectedErrorMessage = expectedErrorMessage;
+                this.expectedStatusCode = expectedStatusCode;
+                this.url = url;
+            }
+        }
+
+        // Use a base URL to construct the final URLs we will be sending requests to.
+        final String baseUrlFormat = "/notifications/eventTypes/%s/behaviorGroups/%s";
+
+        final var testCases = new ArrayList<TestCase>(3);
+
+        // Test a bad request response when the event type does not exist.
+        testCases.add(
+            new TestCase(
+                "the specified behavior group was not found for the given event type",
+                404,
+                String.format(baseUrlFormat, UUID.randomUUID(), behaviorGroup.getId())
+            )
+        );
+
+        // Test a bad request response when the behavior group does not exist.
+        testCases.add(
+            new TestCase(
+                "the specified behavior group was not found for the given event type",
+                404,
+                String.format(baseUrlFormat, eventType.getId(), UUID.randomUUID())
+            )
+        );
+
+        //  Test a not found response when the behavior group - event type relation does not exist.
+        testCases.add(
+            new TestCase(
+                "the specified behavior group was not found for the given event type",
+                404,
+                String.format(baseUrlFormat, eventType.getId(), behaviorGroup.getId())
+            )
+        );
+
+        for (final var testCase : testCases) {
+            final String response = RestAssured.given()
+                .header(identityHeader)
+                .when()
+                .delete(testCase.url)
+                .then()
+                .statusCode(testCase.expectedStatusCode)
+                .extract()
+                .body()
+                .asString();
+
+            Assertions.assertEquals(testCase.expectedErrorMessage, response, "unexpected error message received");
         }
     }
 

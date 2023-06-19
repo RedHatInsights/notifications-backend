@@ -1,104 +1,132 @@
 package com.redhat.cloud.notifications.templates;
 
+import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.templates.models.Environment;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
 import javax.inject.Inject;
-
+import javax.persistence.EntityManager;
+import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.INTEGRATION_FAILED_EVENT_TYPE;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.INTEGRATION_FAILED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CLIENT_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.SERVER_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.buildIntegrationDisabledAction;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-public class IntegrationsTemplatesTest {
+public class IntegrationsTemplatesTest extends EmailTemplatesInDbHelper {
 
     @Inject
-    Environment environment;
+    FeatureFlipper featureFlipper;
 
-    private final Integrations integrations = new Integrations();
+    @Inject
+    EntityManager entityManager;
 
-    @Test
-    void shouldSupportAllEventTypesWithInstantSubscriptionType() {
-        assertTrue(integrations.isSupported(INTEGRATION_DISABLED_EVENT_TYPE, INSTANT));
-        assertTrue(integrations.isSupported(INTEGRATION_FAILED_EVENT_TYPE, INSTANT));
+    @AfterEach
+    void afterEach() {
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(false);
+        migrate();
     }
 
-    @Test
-    void shouldNotSupportAnyEventTypeWithDailySubscriptionType() {
-        assertFalse(integrations.isSupported(INTEGRATION_DISABLED_EVENT_TYPE, DAILY));
-        assertFalse(integrations.isSupported(INTEGRATION_FAILED_EVENT_TYPE, DAILY));
+    @Override
+    protected String getBundle() {
+        return "console";
     }
 
-    @Test
-    void shouldNotSupportAnyEmailSubscriptionType() {
-        assertFalse(integrations.isEmailSubscriptionSupported(INSTANT));
-        assertFalse(integrations.isEmailSubscriptionSupported(DAILY));
+    @Override
+    protected String getApp() {
+        return "integrations";
     }
 
-    @Test
-    void shouldThrowWhenEmailSubscriptionTypeIsDailyOnGetTitle() {
-        assertThrows(UnsupportedOperationException.class, () -> {
-            integrations.getTitle(INTEGRATION_DISABLED_EVENT_TYPE, DAILY);
-        });
-        assertThrows(UnsupportedOperationException.class, () -> {
-            integrations.getTitle(INTEGRATION_FAILED_EVENT_TYPE, DAILY);
-        });
-    }
-
-    @Test
-    void shouldThrowWhenEmailSubscriptionTypeIsDailyOnGetBody() {
-        assertThrows(UnsupportedOperationException.class, () -> {
-            integrations.getBody(INTEGRATION_DISABLED_EVENT_TYPE, DAILY);
-        });
-        assertThrows(UnsupportedOperationException.class, () -> {
-            integrations.getBody(INTEGRATION_FAILED_EVENT_TYPE, DAILY);
-        });
+    @Override
+    protected List<String> getUsedEventTypeNames() {
+        return List.of(INTEGRATION_DISABLED_EVENT_TYPE, INTEGRATION_FAILED_EVENT_TYPE);
     }
 
     @Test
     void testIntegrationDisabledTitle() {
         Endpoint endpoint = buildEndpoint();
         Action action = buildIntegrationDisabledAction(endpoint, CLIENT_ERROR_TYPE, 401, 1);
-        String rendered = Integrations.Templates.integrationDisabledTitle()
-                .data("action", action)
-                .data("environment", environment)
-                .render();
-        assertTrue(rendered.endsWith("Integration '" + endpoint.getName() + "' was disabled"));
+
+        String result = generateEmailSubject(INTEGRATION_DISABLED_EVENT_TYPE, action);
+        assertTrue(result.endsWith("Integration '" + endpoint.getName() + "' was disabled"));
+
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        migrate();
+        result = generateEmailSubject(INTEGRATION_DISABLED_EVENT_TYPE, action);
+        assertEquals("Instant notification - Integrations - Console", result);
+    }
+
+    @Test
+    void testIntegrationFailedTitle() {
+        Action action = TestHelpers.createIntegrationsFailedAction();
+        String rendered = generateEmailSubject(INTEGRATION_FAILED_EVENT_TYPE, action);
+        assertEquals("Integration 'Failed integration' failed", rendered);
+
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        migrate();
+        rendered = generateEmailSubject(INTEGRATION_FAILED_EVENT_TYPE, action);
+        assertEquals("Instant notification - Integrations - Console", rendered);
+    }
+
+    @Test
+    void testIntegrationFailedBody() {
+        Action action = TestHelpers.createIntegrationsFailedAction();
+        String rendered = generateEmailBody(INTEGRATION_FAILED_EVENT_TYPE, action);
+        assertTrue(rendered.contains("Integration 'Failed integration' failed with outcome"));
+
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        migrate();
+        rendered = generateEmailBody(INTEGRATION_FAILED_EVENT_TYPE, action);
+        assertTrue(rendered.contains("Integration 'Failed integration' failed with outcome"));
+        assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     void testIntegrationDisabledBodyWithClientError() {
         Endpoint endpoint = buildEndpoint();
         Action action = buildIntegrationDisabledAction(endpoint, CLIENT_ERROR_TYPE, 401, 1);
-        String rendered = Integrations.Templates.integrationDisabledBody()
-                .data("action", action)
-                .data("environment", environment)
-                .render();
+        String rendered = generateEmailBody(INTEGRATION_DISABLED_EVENT_TYPE, action);
         assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
+
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        migrate();
+        rendered = generateEmailBody(INTEGRATION_DISABLED_EVENT_TYPE, action);
+        assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
+        assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     void testIntegrationDisabledBodyWithServerError() {
         Endpoint endpoint = buildEndpoint();
         Action action = buildIntegrationDisabledAction(endpoint, SERVER_ERROR_TYPE, -1, 2048);
-        String rendered = Integrations.Templates.integrationDisabledBody()
-                .data("action", action)
-                .data("environment", environment)
-                .render();
+        String rendered = generateEmailBody(INTEGRATION_DISABLED_EVENT_TYPE, action);
         assertTrue(rendered.contains("disabled because the remote endpoint responded 2048 times with a server error"));
+
+        entityManager.clear(); // The Hibernate L1 cache has to be cleared to remove V1 template that are still in there.
+
+        featureFlipper.setIntegrationsEmailTemplatesV2Enabled(true);
+        migrate();
+        rendered = generateEmailBody(INTEGRATION_DISABLED_EVENT_TYPE, action);
+        assertTrue(rendered.contains("disabled because the remote endpoint responded 2048 times with a server error"));
+        assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     private static Endpoint buildEndpoint() {
@@ -108,4 +136,5 @@ public class IntegrationsTemplatesTest {
         endpoint.setOrgId(DEFAULT_ORG_ID);
         return endpoint;
     }
+
 }

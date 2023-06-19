@@ -5,17 +5,24 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.EmailSubscription;
+import com.redhat.cloud.notifications.models.EmailSubscriptionId;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 
 import java.security.SecureRandom;
@@ -32,6 +39,19 @@ public class ResourceHelpers {
 
     @Inject
     EntityManager entityManager;
+
+    public Bundle findBundle(String name) {
+        return entityManager.createQuery("FROM Bundle WHERE name = :name", Bundle.class)
+            .setParameter("name", name)
+            .getSingleResult();
+    }
+
+    public Application findApp(String bundleName, String appName) {
+        return entityManager.createQuery("FROM Application WHERE name = :appName AND bundle.name = :bundleName", Application.class)
+            .setParameter("appName", appName)
+            .setParameter("bundleName", bundleName)
+            .getSingleResult();
+    }
 
     public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
@@ -97,6 +117,19 @@ public class ResourceHelpers {
     }
 
     @Transactional
+    public Event createEvent(Event event) {
+        event.setOrgId(DEFAULT_ORG_ID);
+        event.setAccountId("account-id");
+        event.setEventTypeDisplayName(event.getEventType().getDisplayName());
+        event.setApplicationId(event.getEventType().getApplication().getId());
+        event.setApplicationDisplayName(event.getEventType().getApplication().getDisplayName());
+        event.setBundleId(event.getEventType().getApplication().getBundle().getId());
+        event.setBundleDisplayName(event.getEventType().getApplication().getBundle().getDisplayName());
+        entityManager.persist(event);
+        return event;
+    }
+
+    @Transactional
     public Endpoint createEndpoint(EndpointType type, String subType, boolean enabled, int serverErrors) {
         Endpoint endpoint = new Endpoint();
         endpoint.setType(type);
@@ -147,9 +180,36 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public void deleteAllEmailTemplates() {
-        entityManager.createQuery("DELETE FROM InstantEmailTemplate").executeUpdate();
-        entityManager.createQuery("DELETE FROM AggregationEmailTemplate").executeUpdate();
+    public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, EmailSubscriptionType subscriptionType) {
+        EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
+        eventTypeEmailSubscription.setId(
+            new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)
+        );
+        eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
+        eventTypeEmailSubscription.setSubscribed(true);
+        entityManager.persist(eventTypeEmailSubscription);
+        return eventTypeEmailSubscription;
+    }
+
+    @Transactional
+    public EmailSubscription createEmailSubscription(String orgId, String userId, Application application, EmailSubscriptionType subscriptionType) {
+        EmailSubscription emailSubscription = new EmailSubscription();
+        EmailSubscriptionId emailSubscriptionId = new EmailSubscriptionId();
+        emailSubscriptionId.orgId = orgId;
+        emailSubscriptionId.applicationId = application.getId();
+        emailSubscriptionId.userId = userId;
+        emailSubscriptionId.subscriptionType = subscriptionType;
+        emailSubscription.setId(emailSubscriptionId);
+
+        emailSubscription.setApplication(entityManager.find(Application.class, application.getId()));
+        entityManager.persist(emailSubscription);
+        return emailSubscription;
+    }
+
+    @Transactional
+    public void deleteEmailTemplatesById(UUID templateId) {
+        entityManager.createQuery("DELETE FROM InstantEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregationEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
     }
 
     @Transactional
@@ -157,5 +217,54 @@ public class ResourceHelpers {
         entityManager.createQuery("DELETE FROM Endpoint WHERE id = :id")
                 .setParameter("id", id)
                 .executeUpdate();
+    }
+
+    public AggregationEmailTemplate createBlankAggregationEmailTemplate(String bundleName, String appName) {
+
+        Bundle bundle = null;
+        try {
+            bundle = findBundle(bundleName);
+        } catch (NoResultException nre) {
+            bundle = createBundle(bundleName);
+        }
+
+        Application app = null;
+        try {
+            app = findApp(bundleName, appName);
+        } catch (NoResultException nre) {
+            app = createApp(bundle.getId(), appName);
+        }
+
+        Template blankTemplate = createTemplate("blank_" + UUID.randomUUID(), "test blank template", StringUtils.EMPTY);
+
+        return createAggregationEmailTemplate(app.getId(), blankTemplate.getId(), blankTemplate.getId(), true);
+    }
+
+    public InstantEmailTemplate createBlankInstantEmailTemplate(String bundleName, String appName, String eventTypeName) {
+
+        Bundle bundle = null;
+        try {
+            bundle = findBundle(bundleName);
+        } catch (NoResultException nre) {
+            bundle = createBundle(bundleName);
+        }
+
+        Application app = null;
+        try {
+            app = findApp(bundleName, appName);
+        } catch (NoResultException nre) {
+            app = createApp(bundle.getId(), appName);
+        }
+
+        EventType eventType = null;
+        try {
+            eventType = findEventType(app.getId(), eventTypeName);
+        } catch (NoResultException nre) {
+            eventType = createEventType(app.getId(), eventTypeName);
+        }
+
+        Template blankTemplate = createTemplate("blank_" + UUID.randomUUID(), "test blank template", StringUtils.EMPTY);
+
+        return createInstantEmailTemplate(eventType.getId(), blankTemplate.getId(), blankTemplate.getId(), true);
     }
 }

@@ -1,0 +1,44 @@
+{@boolean renderSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Patch - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Advisories
+{/content-title-section1}
+{#content-title-right-part-section1}
+    {action.events.size()}
+{/content-title-right-part-section1}
+{#content-body-section1}
+    <p>
+        Red Hat Insights has just released new Advisories for your organization. Please review the
+        systems affected and all the details of each errata below.
+    </p>
+
+    {#if action.events.size() > 0}
+        <table class="rh-data-table-bordered">
+            <thead>
+                <tr>
+                    <th style="width: 30%">Advisory</th>
+                    <th style="width: 70%">Synopsis</th>
+                </tr>
+            </thead>
+            <tbody>
+            {#each action.events}
+                {#if it.payload != null}
+                    <tr>
+                        <td style="width: 30%">
+                            <a class="rh-url"
+                              href="{environment.url}/insights/patch/advisories/{it.payload.advisory_name}">{it.payload.advisory_name}</a>
+                        </td>
+                        <td style="width: 70%">
+                            {it.payload.synopsis}
+                        </td>
+                    </tr>
+                {/if}
+                {/each}
+          </tbody>
+        </table>
+    {/if}
+{/content-body-section1}
+{/include}

@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -978,5 +979,34 @@ public abstract class CrudTestHelpers {
 
         // Let's check that the aggregation email template fields have been correctly updated.
         getAggregationEmailTemplate(header, templateId, updatedEmailTemplate, 200);
+    }
+
+    public static Template buildTemplate(String name, String data) {
+        Template template = new Template();
+        template.setName(name);
+        template.setDescription("My template");
+        template.setData(data);
+        return template;
+    }
+
+    public static InstantEmailTemplate buildInstantEmailTemplate(String eventTypeId, String subjectTemplateId, String bodyTemplateId) {
+        InstantEmailTemplate emailTemplate = new InstantEmailTemplate();
+        if (eventTypeId != null) {
+            emailTemplate.setEventTypeId(UUID.fromString(eventTypeId));
+        }
+        emailTemplate.setSubjectTemplateId(UUID.fromString(subjectTemplateId));
+        emailTemplate.setBodyTemplateId(UUID.fromString(bodyTemplateId));
+        return emailTemplate;
+    }
+
+    public static AggregationEmailTemplate buildAggregationEmailTemplate(String appId, String subjectTemplateId, String bodyTemplateId) {
+        AggregationEmailTemplate emailTemplate = new AggregationEmailTemplate();
+        emailTemplate.setSubscriptionType(DAILY);
+        if (appId != null) {
+            emailTemplate.setApplicationId(UUID.fromString(appId));
+        }
+        emailTemplate.setSubjectTemplateId(UUID.fromString(subjectTemplateId));
+        emailTemplate.setBodyTemplateId(UUID.fromString(bodyTemplateId));
+        return emailTemplate;
     }
 }

@@ -3,15 +3,14 @@ import { useMutation } from 'react-fetching-library';
 import { Operations } from '../generated/OpenapiInternal';
 
 export type RenderEmailRequest = {
+    payload: string;
     subject: string;
     body: string;
-    payload: string;
 }
 
 const actionCreator = (params: RenderEmailRequest) => Operations.TemplateResourceRenderEmailTemplate.actionCreator({
     body: {
-        subject_template: params.subject,
-        body_template: params.body,
+        template: [ params.subject, params.body ],
         payload: params.payload
     }
 });

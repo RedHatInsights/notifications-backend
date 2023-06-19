@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.jboss.resteasy.reactive.RestPath;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -52,6 +53,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -61,7 +63,6 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgI
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
-@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
 public class NotificationResource {
 
     @Inject
@@ -76,6 +77,15 @@ public class NotificationResource {
     @Inject
     EndpointRepository endpointRepository;
 
+    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
+    public static class V1 extends NotificationResource {
+
+    }
+
+    @Path(Constants.API_NOTIFICATIONS_V_2_0 + "/notifications")
+    public static class V2 extends NotificationResource {
+
+    }
 
     @GET
     @Path("/eventTypes")
@@ -83,7 +93,7 @@ public class NotificationResource {
     @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Page<EventType> getEventTypes(
-            @Context UriInfo uriInfo, @BeanParam Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId,
+            @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId,
             @QueryParam("eventTypeName") String eventTypeName
     ) {
         List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId, eventTypeName);
@@ -179,7 +189,7 @@ public class NotificationResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the behavior groups linked to an event type.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam Query query) {
+    public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam @Valid Query query) {
         String orgId = getOrgId(sec);
         return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
     }
@@ -215,6 +225,17 @@ public class NotificationResource {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Creates a new behavior group. The payload requires to either specify the
+     * related bundle ID, or its name. This is due to a feature request coming
+     * from the frontend team, which was forced to fetch all bundles in order
+     * to grab their UUID, when apparently they could simply send the bundle
+     * name instead. More information in the related Jira ticket
+     * <a href="https://issues.redhat.com/browse/RHCLOUD-22513">RHCLOUD-22513</a>.
+     * @param sec the security context needed to get the account ID and the Org ID.
+     * @param request the incoming valid {@link CreateBehaviorGroupRequest}.
+     * @return the created behavior group to the client.
+     */
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
@@ -225,13 +246,29 @@ public class NotificationResource {
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
-    public CreateBehaviorGroupResponse createBehaviorGroup(@Context SecurityContext sec,
-                              @RequestBody(required = true) @Valid @NotNull CreateBehaviorGroupRequest request) {
+    public CreateBehaviorGroupResponse createBehaviorGroup(
+        @Context final SecurityContext sec,
+        @RequestBody(required = true) @Valid @NotNull final CreateBehaviorGroupRequest request
+    ) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
+        // We know that either the ID or the name are present because the
+        // request gets validated before reaching this point, and therefore it
+        // is safe to assume that either the bundle ID or the bundle name will
+        // be present.
+        UUID bundleId = request.bundleId;
+        if (bundleId == null) {
+            final Optional<Bundle> bundle = this.bundleRepository.findByName(request.bundleName);
+            if (bundle.isEmpty()) {
+                throw new NotFoundException("the specified bundle was not found in the database");
+            }
+
+            bundleId = bundle.get().getId();
+        }
+
         BehaviorGroup behaviorGroup = new BehaviorGroup();
-        behaviorGroup.setBundleId(request.bundleId);
+        behaviorGroup.setBundleId(bundleId);
         behaviorGroup.setDisplayName(request.displayName);
 
         behaviorGroup = behaviorGroupRepository.createFull(
@@ -271,7 +308,7 @@ public class NotificationResource {
     @Transactional
     public Response updateBehaviorGroup(@Context SecurityContext sec,
                                         @Parameter(description = "The UUID of the behavior group to update") @PathParam("id") UUID id,
-                                        @RequestBody(description = "New parameters", required = true) @NotNull UpdateBehaviorGroupRequest request) {
+                                        @RequestBody(description = "New parameters", required = true) @NotNull @Valid UpdateBehaviorGroupRequest request) {
         String orgId = getOrgId(sec);
 
         if (request.displayName != null) {
@@ -354,6 +391,42 @@ public class NotificationResource {
         String orgId = getOrgId(sec);
         behaviorGroupRepository.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
         return Response.ok().build();
+    }
+
+    /**
+     * Appends the given behavior group to the specified event type.
+     * @param securityContext the security context to get the org id from.
+     * @param behaviorGroupUuid the UUID of the behavior group that, supposedly, they just created.
+     * @param eventTypeUuid the UUID of the event type.
+     */
+    @PUT
+    @Path("/eventTypes/{eventTypeUuid}/behaviorGroups/{behaviorGroupUuid}")
+    @Operation(summary = "Add a behavior group to the given event type.")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponse(responseCode = "204")
+    public void appendBehaviorGroupToEventType(
+            @Context final SecurityContext securityContext,
+            @RestPath final UUID behaviorGroupUuid,
+            @RestPath final UUID eventTypeUuid
+    ) {
+        final String orgId = getOrgId(securityContext);
+
+        this.behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, behaviorGroupUuid, eventTypeUuid);
+    }
+
+    @DELETE
+    @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+    @Operation(summary = "Delete a behavior group from the given event type.")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponse(responseCode = "204")
+    public void deleteBehaviorGroupFromEventType(
+            @Context final SecurityContext securityContext,
+            @RestPath final UUID eventTypeId,
+            @RestPath final UUID behaviorGroupId
+    ) {
+        final String orgId = getOrgId(securityContext);
+
+        this.behaviorGroupRepository.deleteBehaviorGroupFromEventType(eventTypeId, behaviorGroupId, orgId);
     }
 
     @GET

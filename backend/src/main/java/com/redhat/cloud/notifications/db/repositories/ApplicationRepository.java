@@ -90,6 +90,7 @@ public class ApplicationRepository {
         if (bundleName != null) {
             sql += " WHERE bundle.name = :bundleName";
         }
+        sql += " ORDER BY displayName ASC";
         TypedQuery<Application> query = entityManager.createQuery(sql, Application.class);
         if (bundleName != null) {
             query = query.setParameter("bundleName", bundleName);
@@ -119,6 +120,25 @@ public class ApplicationRepository {
         } catch (NoResultException e) {
             return null;
         }
+    }
+
+    /**
+     * Returns applications that have at least 1 forced email notification in a given bundle
+     */
+    public List<Application> getApplicationsWithForcedEmail(UUID bundleId, String orgId) {
+        String query = "SELECT a FROM Application a " +
+                "JOIN a.eventTypes et " +
+                "JOIN et.behaviors etb " +
+                "JOIN etb.behaviorGroup.actions action " +
+                "WHERE a.bundle.id = :bundleId AND (etb.behaviorGroup.orgId is NULL OR etb.behaviorGroup.orgId = :orgId) " +
+                "AND EXISTS (" +
+                    "SELECT 1 FROM SystemSubscriptionProperties props " +
+                    "WHERE action.id.endpointId = props.id AND props.ignorePreferences = true" +
+                ")";
+        return entityManager.createQuery(query, Application.class)
+                .setParameter("bundleId", bundleId)
+                .setParameter("orgId", orgId)
+                .getResultList();
     }
 
     public UUID getApplicationIdOfEventType(UUID eventTypeId) {
@@ -160,9 +180,10 @@ public class ApplicationRepository {
 
     @Transactional
     public int updateEventType(UUID id, EventType eventType) {
-        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description WHERE id = :id";
+        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName WHERE id = :id";
         int rowCount = entityManager.createQuery(eventTypeQuery)
                 .setParameter("name", eventType.getName())
+                .setParameter("fullyQualifiedName", eventType.getFullyQualifiedName())
                 .setParameter("displayName", eventType.getDisplayName())
                 .setParameter("description", eventType.getDescription())
                 .setParameter("id", id)
@@ -201,6 +222,39 @@ public class ApplicationRepository {
         return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
+    }
+
+    /**
+     * Checks whether the "application" — "bundle" combination specified exists.
+     * @param applicationName the name of the application.
+     * @param bundleName the name of the bundle.
+     * @return true if the combination exists, false otherwise.
+     */
+    public boolean applicationBundleExists(final String applicationName, final String bundleName) {
+        final String applicationBundleExistsQuery =
+            "SELECT " +
+                "1 " +
+            "FROM " +
+                "Application AS a " +
+            "INNER JOIN " +
+                "Bundle AS b" +
+                    " ON b = a.bundle " +
+            "WHERE " +
+                "a.name = :application_name " +
+            "AND " +
+                "b.name = :bundle_name";
+
+        try {
+            this.entityManager
+                    .createQuery(applicationBundleExistsQuery)
+                    .setParameter("application_name", applicationName)
+                    .setParameter("bundle_name", bundleName)
+                    .getSingleResult();
+
+            return true;
+        } catch (final NoResultException e) {
+            return false;
+        }
     }
 
     private QueryBuilder<EventType> getEventTypesQueryBuilder(Set<UUID> appIds, UUID bundleId, String eventTypeName) {

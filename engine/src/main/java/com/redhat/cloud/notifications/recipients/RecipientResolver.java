@@ -29,11 +29,17 @@ public class RecipientResolver {
 
     public Set<User> recipientUsers(String orgId, Set<RecipientSettings> requests, Set<String> subscribers) {
         return requests.stream()
-                .flatMap(r -> recipientUsers(orgId, r, subscribers).stream())
+            .flatMap(r -> recipientUsers(orgId, r, subscribers, true).stream())
+            .collect(Collectors.toSet());
+    }
+
+    public Set<User> recipientUsers(String orgId, Set<RecipientSettings> requests, Set<String> subscribers, boolean isOptIn) {
+        return requests.stream()
+                .flatMap(r -> recipientUsers(orgId, r, subscribers, isOptIn).stream())
                 .collect(Collectors.toSet());
     }
 
-    private Set<User> recipientUsers(String orgId, RecipientSettings request, Set<String> subscribers) {
+    private Set<User> recipientUsers(String orgId, RecipientSettings request, Set<String> subscribers, boolean isOptIn) {
         List<User> rbacUsers;
         if (request.getGroupId() == null) {
             rbacUsers = rbacRecipientUsersProvider.getUsers(orgId, request.isOnlyAdmins());
@@ -56,8 +62,12 @@ public class RecipientResolver {
         if (request.isIgnoreUserPreferences()) {
             users = Set.copyOf(users);
         } else {
-            // Otherwise, the recipients from RBAC who didn't subscribe to the event type are filtered out.
-            users = filterUsers(users, subscribers);
+            if (isOptIn) {
+                // Otherwise, the recipients from RBAC who didn't subscribe to the event type are filtered out.
+                users = filterUsers(users, subscribers);
+            } else {
+                users = filterUnsubscribedUsers(users, subscribers);
+            }
         }
 
         updateUsersUsedGauge(users.size());
@@ -73,6 +83,16 @@ public class RecipientResolver {
                             .anyMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
                 )
                 .collect(Collectors.toSet());
+    }
+
+    private Set<User> filterUnsubscribedUsers(Set<User> users, Set<String> target) {
+        return users.stream()
+            .filter(
+                user -> target
+                    .stream()
+                    .noneMatch(requested -> requested.equalsIgnoreCase(user.getUsername()))
+            )
+            .collect(Collectors.toSet());
     }
 
     private void updateUsersUsedGauge(int users) {

@@ -29,6 +29,11 @@ import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
 @ApplicationScoped
 public class BehaviorGroupRepository {
 
+    /**
+     * Represents the maximum number of behavior groups that can be created for
+     * a tenant. Comes from ticket <a href="https://issues.redhat.com/browse/RHCLOUD-21842">RHCLOUD-21842</a>.
+     */
+    public static final long MAXIMUM_NUMBER_BEHAVIOR_GROUPS = 64;
     private static final ZoneId UTC = ZoneId.of("UTC");
 
     @Inject
@@ -76,6 +81,12 @@ public class BehaviorGroupRepository {
 
     @Transactional
     BehaviorGroup create(String accountId, String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
+        // The organization ID might be null if a system behavior group is being
+        // created, that is why the check is only forced for actual tenants.
+        if (orgId != null && !orgId.isBlank() && !this.isAllowedToCreateMoreBehaviorGroups(orgId)) {
+            throw new BadRequestException("behavior group creation limit reached. Please consider deleting unused behavior groups before creating more.");
+        }
+
         checkBehaviorGroupDisplayNameDuplicate(orgId, behaviorGroup, isDefaultBehaviorGroup);
 
         behaviorGroup.setAccountId(accountId);
@@ -395,6 +406,92 @@ public class BehaviorGroupRepository {
         }
     }
 
+    /**
+     * Appends the behavior group to the event type. It checks that the
+     * behavior group exists in the tenant, and it makes sure that the behavior
+     * group is in the same bundle as the event type, since otherwise we would
+     * be appending behavior groups to event types when those associations are,
+     * in essence, incompatible.
+     * @param orgId the tenant to run the checks against.
+     * @param behaviorGroupUuid the UUID of the behavior group to be appended.
+     * @param eventTypeUuid the UUID the event type the behavior group will be
+     *                      appended to.
+     */
+    @Transactional
+    public void appendBehaviorGroupToEventType(final String orgId, final UUID behaviorGroupUuid, final UUID eventTypeUuid) {
+        final String appendBehaviorGroupQuery =
+            "INSERT INTO " +
+                "event_type_behavior(behavior_group_id, event_type_id, created) " +
+            "SELECT " +
+                "bg.id, et.id, :created " +
+            "FROM " +
+                "event_type AS et " +
+                "INNER JOIN " +
+                    "applications AS a " +
+                    "ON a.id = et.application_id " +
+                "INNER JOIN " +
+                    "behavior_group AS bg " +
+                        "ON bg.bundle_id = a.bundle_id " +
+            "WHERE " +
+                "et.id = :eventTypeUuid " +
+            "AND " +
+                "bg.id = :behaviorGroupUuid " +
+            "AND " +
+                "bg.org_id = :orgId " +
+            "ON CONFLICT " +
+                "(behavior_group_id, event_type_id) DO NOTHING";
+
+        final javax.persistence.Query query = this.entityManager.createNativeQuery(appendBehaviorGroupQuery)
+            .setParameter("behaviorGroupUuid", behaviorGroupUuid)
+            .setParameter("eventTypeUuid", eventTypeUuid)
+            .setParameter("created", LocalDateTime.now(UTC))
+            .setParameter("orgId", orgId);
+
+        final int affectedRows = query.executeUpdate();
+        if (affectedRows == 0) {
+            throw new NotFoundException("the specified behavior group doesn't exist or the specified event type doesn't belong to the same bundle as the behavior group");
+        }
+    }
+
+    /**
+     * Deletes the specified behavior group from the event type, by deleting the relation in the "event_type_behavior"
+     * table.
+     * @param eventTypeUuid the event type to remove the behavior group from.
+     * @param behaviorGroupUuid the behavior group to remove.
+     * @param orgId the org id to make sure that the caller has visibility on that behavior group, so that they don't
+     *              delete unowned relations.
+     */
+    @Transactional
+    public void deleteBehaviorGroupFromEventType(final UUID eventTypeUuid, final UUID behaviorGroupUuid, final String orgId) {
+        final var deleteFromEventTypeQuery =
+            "DELETE FROM " +
+                "EventTypeBehavior AS etb " +
+            "WHERE " +
+                "etb.behaviorGroup.id = :behaviorGroupUuid " +
+            "AND " +
+                "etb.eventType.id = :eventTypeUuid " +
+            "AND EXISTS (" +
+                "SELECT " +
+                    "1 " +
+                "FROM " +
+                    "BehaviorGroup AS bg " +
+                "WHERE " +
+                    "bg.id = :behaviorGroupUuid " +
+                "AND " +
+                    "bg.orgId = :orgId" +
+                ")";
+
+        final javax.persistence.Query query = this.entityManager.createQuery(deleteFromEventTypeQuery);
+        query.setParameter("behaviorGroupUuid", behaviorGroupUuid)
+            .setParameter("eventTypeUuid", eventTypeUuid)
+            .setParameter("orgId", orgId);
+
+        final int affectedRows = query.executeUpdate();
+        if (affectedRows == 0) {
+            throw new NotFoundException("the specified behavior group was not found for the given event type");
+        }
+    }
+
     public List<EventType> findEventTypesByBehaviorGroupId(String orgId, UUID behaviorGroupId) {
         BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
         if (behaviorGroup == null) {
@@ -554,5 +651,28 @@ public class BehaviorGroupRepository {
                 }
             }
         }
+    }
+
+    /**
+     * Checks if it is allowed to create more behavior groups for the given tenant.
+     *
+     * @param orgId the account number to filter the behavior groups by.
+     * @return true if the number of behavior groups of the tenant is lower than the allowed
+     * {@link BehaviorGroupRepository#MAXIMUM_NUMBER_BEHAVIOR_GROUPS}.
+     */
+    private boolean isAllowedToCreateMoreBehaviorGroups(final String orgId) {
+        final String countQuery =
+            "SELECT " +
+                "COUNT(bg) " +
+            "FROM " +
+                "BehaviorGroup AS bg " +
+            "WHERE " +
+                "bg.orgId = :org_id";
+
+        final long count = this.entityManager.createQuery(countQuery, Long.class)
+            .setParameter("org_id", orgId)
+            .getSingleResult();
+
+        return count < MAXIMUM_NUMBER_BEHAVIOR_GROUPS;
     }
 }

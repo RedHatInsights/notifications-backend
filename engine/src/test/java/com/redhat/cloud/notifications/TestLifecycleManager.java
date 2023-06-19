@@ -12,11 +12,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.EGRESS_CHANNEL;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.FROMCAMEL_CHANNEL;
-import static com.redhat.cloud.notifications.processors.camel.CamelTypeProcessor.TOCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.processors.drawer.DrawerProcessor.DRAWER_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
+import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
@@ -39,9 +42,12 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
          */
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(INGRESS_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(AGGREGATION_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(AGGREGATION_OUT_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(TOCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(EXPORT_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DRAWER_CHANNEL));
 
         properties.put("reinject.enabled", "true");
 
@@ -60,18 +66,20 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         postgreSQLContainer = new PostgreSQLContainer<>("postgres:11");
         postgreSQLContainer.start();
         // Now that postgres is started, we need to get its URL and tell Quarkus
-        // quarkus.datasource.driver=io.opentracing.contrib.jdbc.TracingDriver
-        // Driver needs a 'tracing' in the middle like jdbc:tracing:postgresql://localhost:5432/postgres
+        // quarkus.datasource.driver=io.opentelemetry.instrumentation.jdbc.OpenTelemetryDriver
+        // Driver needs a 'otel' in the middle like jdbc:otel:postgresql://localhost:5432/postgres
         String jdbcUrl = postgreSQLContainer.getJdbcUrl();
+        jdbcUrl = "jdbc:otel:" + jdbcUrl.substring(5);
         props.put("quarkus.datasource.jdbc.url", jdbcUrl);
         props.put("quarkus.datasource.username", "test");
         props.put("quarkus.datasource.password", "test");
         props.put("quarkus.datasource.db-kind", "postgresql");
 
         // Install the pgcrypto extension
-        // Could perhas be done by a migration with a lower number than the 'live' ones.
+        // Could perhaps be done by a migration with a lower number than the 'live' ones.
         PGSimpleDataSource ds = new PGSimpleDataSource();
-        ds.setURL(jdbcUrl);
+        // We need the simple url, not the otel one, as PG driver does not understand the otel one.
+        ds.setURL(postgreSQLContainer.getJdbcUrl());
         Connection connection = ds.getConnection("test", "test");
         Statement statement = connection.createStatement();
         statement.execute("CREATE EXTENSION pgcrypto;");
@@ -81,9 +89,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     void setupMockEngine(Map<String, String> props) {
         MockServerLifecycleManager.start();
+        props.put("quarkus.rest-client.export-service.url", getMockServerUrl());
         props.put("quarkus.rest-client.rbac-s2s.url", getMockServerUrl());
         props.put("quarkus.rest-client.it-s2s.url", getMockServerUrl());
-        props.put("quarkus.rest-client.ob.url", getMockServerUrl());
-        props.put("quarkus.rest-client.kc.url", getMockServerUrl());
     }
 }

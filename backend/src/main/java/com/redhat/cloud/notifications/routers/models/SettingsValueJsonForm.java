@@ -31,6 +31,8 @@ public class SettingsValueJsonForm {
         public List<Field> fields;
         @JsonInclude(Include.NON_NULL)
         public String checkedWarning;
+        @JsonInclude(Include.NON_NULL)
+        public String infoMessage;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
@@ -80,12 +82,15 @@ public class SettingsValueJsonForm {
                     switch (emailSubscriptionType) {
                         case DAILY:
                             field.label = "Daily digest";
-                            field.description =  "Daily summary of triggered application events in 24 hours span. See notification settings for configuration.";
+                            field.description =  "Daily summary of triggered application events in 24 hours span.";
                             break;
                         case INSTANT:
                             field.label = "Instant notification";
-                            field.description = "Immediate email for each triggered application event. See notification settings for configuration.";
+                            field.description = "Immediate email for each triggered application event.";
                             field.checkedWarning = "Opting into this notification may result in a large number of emails";
+                            if (applicationSettingsValue.hasForcedEmail) {
+                                field.infoMessage = "You may still receive forced notifications for this service";
+                            }
                             break;
                         default:
                             return;

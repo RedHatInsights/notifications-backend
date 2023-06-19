@@ -1,24 +1,25 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 
 @ApplicationScoped
 public class TemplateRepository {
@@ -28,6 +29,9 @@ public class TemplateRepository {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Transactional
     public Template createTemplate(Template template) {
@@ -312,47 +316,35 @@ public class TemplateRepository {
         return template;
     }
 
+    public boolean isEmailSubscriptionSupported(String bundleName, String appName, EmailSubscriptionType subscriptionType) {
+        switch (subscriptionType) {
+            case INSTANT:
+                if (featureFlipper.isUseDefaultTemplate()) {
+                    return true;
+                }
 
-    /**
-     * Integration templates are more generic templates directly targeted at Integrations
-     * other than email, like Splunk or Slack via Camel and OpenBridge. See {@link IntegrationTemplate}
-     * for more details.
-     * @param appName Application name the template applies to. Can be null.
-     * @param orgId The organization id for templates that are organization specific. Need to be of Kind ORG
-     * @param templateKind Kind of template requested. If it does not exist, Kind DEFAULT is returned or Optional.empty()
-     * @param integrationType Type of integration requested. E.g. 'slack' or 'splunk'
-     * @return IntegrationTemplate with potential fallback or Optional.empty() if there is not even a default template.
-     */
-    public Optional<IntegrationTemplate> findIntegrationTemplate(String appName,
-                                                                 String orgId,
-                                                                 IntegrationTemplate.TemplateKind templateKind,
-                                                                 String integrationType) {
-        String hql = "FROM IntegrationTemplate it JOIN FETCH it.theTemplate " +
-                "WHERE it.templateKind <= :templateKind " +
-                "AND it.integrationType = :iType " +
-                "AND (it.orgId IS NULL" + (orgId != null ? " OR it.orgId = :orgId " : "") + ") " +
-                (appName != null ? "AND it.application.name = :appName " : " ") +
-                "ORDER BY it.templateKind DESC, it.orgId ASC "; // nulls in orgId go last. See https://www.postgresql.org/docs/current/queries-order.html
-        Query query = entityManager.createQuery(hql, IntegrationTemplate.class)
-                .setParameter("templateKind", templateKind)
-                .setParameter("iType", integrationType)
-                .setMaxResults(1);
-
-        if (appName != null) {
-            query.setParameter("appName", appName);
+                String hql = "SELECT COUNT(*) FROM InstantEmailTemplate " +
+                    "WHERE eventType.application.bundle.name = :bundleName AND eventType.application.name = :appName";
+                return entityManager.createQuery(hql, Long.class)
+                    .setParameter("bundleName", bundleName)
+                    .setParameter("appName", appName)
+                    .getSingleResult() > 0;
+            case DAILY:
+                return isEmailAggregationSupported(bundleName, appName, List.of(subscriptionType));
+            case DRAWER:
+                return featureFlipper.isDrawerEnabled();
+            default:
+                return false;
         }
-        if (orgId != null) {
-            query.setParameter("orgId", orgId);
-        }
-
-        List<IntegrationTemplate> templates = query.getResultList();
-
-        if (templates.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(templates.get(0));
-
     }
 
+    private boolean isEmailAggregationSupported(String bundleName, String appName, List<EmailSubscriptionType> subscriptionTypes) {
+        String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.bundle.name = :bundleName " +
+            "AND application.name = :appName AND subscriptionType IN (:subscriptionTypes)";
+        return entityManager.createQuery(hql, Long.class)
+            .setParameter("bundleName", bundleName)
+            .setParameter("appName", appName)
+            .setParameter("subscriptionTypes", subscriptionTypes)
+            .getSingleResult() > 0;
+    }
 }

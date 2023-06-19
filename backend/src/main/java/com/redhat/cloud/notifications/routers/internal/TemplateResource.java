@@ -56,7 +56,7 @@ public class TemplateResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public Template createTemplate(@NotNull @Valid Template template) {
         return templateRepository.createTemplate(template);
     }
@@ -81,7 +81,7 @@ public class TemplateResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public Response updateTemplate(@RestPath UUID templateId, Template template) {
         boolean updated = templateRepository.updateTemplate(templateId, template);
         if (updated) {
@@ -94,7 +94,7 @@ public class TemplateResource {
     @DELETE
     @Path("/{templateId}")
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public boolean deleteTemplate(@RestPath UUID templateId) {
         return templateRepository.deleteTemplate(templateId);
     }
@@ -104,7 +104,7 @@ public class TemplateResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public InstantEmailTemplate createInstantEmailTemplate(@NotNull @Valid InstantEmailTemplate template) {
         return templateRepository.createInstantEmailTemplate(template);
     }
@@ -141,7 +141,7 @@ public class TemplateResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public Response updateInstantEmailTemplate(@RestPath UUID templateId, @NotNull @Valid InstantEmailTemplate template) {
         boolean updated = templateRepository.updateInstantEmailTemplate(templateId, template);
         if (updated) {
@@ -154,7 +154,7 @@ public class TemplateResource {
     @DELETE
     @Path("/email/instant/{templateId}")
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public boolean deleteInstantEmailTemplate(@RestPath UUID templateId) {
         return templateRepository.deleteInstantEmailTemplate(templateId);
     }
@@ -164,7 +164,7 @@ public class TemplateResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public AggregationEmailTemplate createAggregationEmailTemplate(@NotNull @Valid AggregationEmailTemplate template) {
         return templateRepository.createAggregationEmailTemplate(template);
     }
@@ -198,7 +198,7 @@ public class TemplateResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public Response updateAggregationEmailTemplate(@RestPath UUID templateId, @NotNull @Valid AggregationEmailTemplate template) {
         boolean updated = templateRepository.updateAggregationEmailTemplate(templateId, template);
         if (updated) {
@@ -211,7 +211,7 @@ public class TemplateResource {
     @DELETE
     @Path("/email/aggregation/{templateId}")
     @Transactional
-    @RolesAllowed(RBAC_INTERNAL_USER)
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public boolean deleteAggregationEmailTemplate(@RestPath UUID templateId) {
         return templateRepository.deleteAggregationEmailTemplate(templateId);
     }

@@ -12,12 +12,13 @@ import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,6 +45,7 @@ class DailyEmailAggregationJobTest {
     @AfterEach
     void tearDown() {
         helpers.purgeEmailAggregations();
+        connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
     }
 
     @Test

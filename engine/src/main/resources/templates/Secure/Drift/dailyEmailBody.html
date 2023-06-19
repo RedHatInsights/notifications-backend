@@ -1,0 +1,37 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Secure/Common/insightsEmailBody}
+{#content-title}
+    Daily digest - Drift - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Baseline drifts
+{/content-title-section1}
+{#content-subtitle-section1}
+    {action.context.drift.size()} {#if action.context.drift.size() == 1}drift{#else}drifts{/if} from associated baselines on your {action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}systems{/if}
+{/content-subtitle-section1}
+{#content-title-right-part-section1}
+    <a target="_blank" href="{environment.url}/insights/drift/baselines">{action.context.drift.size()}</a>
+{/content-title-right-part-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/insights/drift/baselines">Open Baselines in Insights</a>
+{/content-button-section1}
+{#content-body-section1}
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+                <th>Baseline</th>
+                <th>Systems</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#for key in action.context.drift.keySet()}
+                <tr>
+                    <td> <a href="{environment.url}/insights/drift/baselines/{action.context.drift.get(key).baseline_id}">{action.context.drift.get(key).baseline_name}</a></td>
+                    <td>{action.context.drift.get(key).unique_system_count}</td>
+                </tr>
+            {/for}
+        </tbody>
+    </table>
+{/content-body-section1}
+{/include}

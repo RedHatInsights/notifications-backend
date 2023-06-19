@@ -15,6 +15,7 @@ import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -154,15 +155,25 @@ public class StatusServiceTest extends DbIsolatedTest {
         if (expectedStartTime == null) {
             assertNull(jsonCurrentStatus.getString("start_time"));
         } else {
-            // Jackson serializes LocalDateTime with a precision slightly smaller than LocalDateTime.toString().
-            assertTrue(expectedStartTime.startsWith(jsonCurrentStatus.getString("start_time")));
+            assertTrue(areCloseEnough(expectedStartTime, jsonCurrentStatus.getString("start_time")));
         }
         if (expectedEndTime == null) {
             assertNull(jsonCurrentStatus.getString("end_time"));
         } else {
-            // Jackson serializes LocalDateTime with a precision slightly smaller than LocalDateTime.toString().
-            assertTrue(expectedEndTime.startsWith(jsonCurrentStatus.getString("end_time")));
+            assertTrue(areCloseEnough(expectedEndTime, jsonCurrentStatus.getString("end_time")));
         }
+    }
+
+    private boolean areCloseEnough(String date1, String date2) {
+        // The precision LocalDateTime has is bigger than what is currently saved to the database
+        // We can't use `startsWith` because the time is rounded. i.e. 2023-03-08T12:58:14.865737681 is transformed to 2023-03-08T12:58:14.865738
+        // Instead check that the time between the 2 is small enough
+
+        LocalDateTime localDateTime1 = LocalDateTime.parse(date1);
+        LocalDateTime localDateTime2 = LocalDateTime.parse(date2);
+
+        Duration duration = Duration.between(localDateTime1, localDateTime2).abs();
+        return duration.getNano() < 1000;
     }
 
     private void putCurrentStatus(Status status, LocalDateTime startTime, LocalDateTime endTime, int expectedStatusCode) {

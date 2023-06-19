@@ -20,7 +20,7 @@ import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
-import com.redhat.cloud.notifications.routers.models.RequestEmailSubscriptionProperties;
+import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -28,6 +28,8 @@ import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -44,6 +46,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
+import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_2_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static io.restassured.RestAssured.given;
@@ -83,6 +86,16 @@ public class LifecycleITest extends DbIsolatedTest {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @BeforeEach
+    void beforeEach() {
+        featureFlipper.setInstantEmailsEnabled(true);
+    }
+
+    @AfterEach
+    void afterEach() {
+        featureFlipper.setInstantEmailsEnabled(false);
+    }
+
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
@@ -97,7 +110,7 @@ public class LifecycleITest extends DbIsolatedTest {
         }
 
         final String accountId = "tenant";
-        final String orgId = "someOrdId";
+        final String orgId = "someOrgId";
         final String username = "user";
 
         // Identity header used for all public APIs calls. Internal APIs calls don't need that.
@@ -139,14 +152,14 @@ public class LifecycleITest extends DbIsolatedTest {
          */
 
         final String accountId = "tenant";
-        final String orgId = "someOrdId";
+        final String orgId = "someOrgId";
         final String username = "user";
 
         RequestDefaultBehaviorGroupPropertyList defaultBehaviorGroupProperties = new RequestDefaultBehaviorGroupPropertyList();
         defaultBehaviorGroupProperties.setOnlyAdmins(true);
 
         // All events are stored in the canonical email endpoint
-        RequestEmailSubscriptionProperties userEmailEndpointRequest = new RequestEmailSubscriptionProperties();
+        RequestSystemSubscriptionProperties userEmailEndpointRequest = new RequestSystemSubscriptionProperties();
 
         // Identity header used for all public APIs calls. Internal APIs calls need a different token.
         Header identityHeader = initRbacMock(accountId, orgId, username, RbacAccess.FULL_ACCESS);
@@ -481,7 +494,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(JSON);
     }
 
-    private String getEmailEndpoint(Header identityHeader, RequestEmailSubscriptionProperties properties) {
+    private String getEmailEndpoint(Header identityHeader, RequestSystemSubscriptionProperties properties) {
         return given()
                 .basePath(API_INTEGRATIONS_V_1_0)
                 .header(identityHeader)
@@ -664,10 +677,41 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private boolean checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
-        try {
+        return checkEndpointHistoryV1(identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus) &&
+                checkEndpointHistoryV2(identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus);
+    }
 
-            String rawResponseBody = given()
+
+    private boolean checkEndpointHistoryV1(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+        try {
+            String responseBody = given()
                     .basePath(API_INTEGRATIONS_V_1_0)
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId)
+                    .when()
+                    .get("/endpoints/{endpointId}/history")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().body().asString();
+
+            // The response body contains the meta information about the history collection. We need to access the
+            // "data" array to access the elements.
+            final JsonArray jsonEndpointHistory = new JsonArray(responseBody);
+            assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
+
+            checkEndpointHistoryDetails(identityHeader, endpointId, expectedInvocationResult, expectedHttpStatus, jsonEndpointHistory);
+            return true;
+        } catch (AssertionError e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private boolean checkEndpointHistoryV2(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+        try {
+            String rawResponseBody = given()
+                    .basePath(API_INTEGRATIONS_V_2_0)
                     .header(identityHeader)
                     .pathParam("endpointId", endpointId)
                     .when()
@@ -683,36 +727,39 @@ public class LifecycleITest extends DbIsolatedTest {
             final JsonArray jsonEndpointHistory = responseBodyJson.getJsonArray("data");
             assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
 
-            for (int i = 0; i < jsonEndpointHistory.size(); i++) {
-                JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
-                jsonNotificationHistory.mapTo(NotificationHistory.class);
-                assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
-
-                if (!expectedInvocationResult) {
-                    rawResponseBody = given()
-                            .basePath(API_INTEGRATIONS_V_1_0)
-                            .header(identityHeader)
-                            .pathParam("endpointId", endpointId)
-                            .pathParam("historyId", jsonNotificationHistory.getString("id"))
-                            .when()
-                            .get("/endpoints/{endpointId}/history/{historyId}/details")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().body().asString();
-
-                    JsonObject jsonDetails = new JsonObject(rawResponseBody);
-                    assertFalse(jsonDetails.isEmpty());
-                    assertEquals(expectedHttpStatus, jsonDetails.getInteger("code"));
-                    assertNotNull(jsonDetails.getString("url"));
-                    assertNotNull(jsonDetails.getString("method"));
-                }
-            }
-
+            checkEndpointHistoryDetails(identityHeader, endpointId, expectedInvocationResult, expectedHttpStatus, jsonEndpointHistory);
             return true;
         } catch (AssertionError e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private void checkEndpointHistoryDetails(Header identityHeader, String endpointId, boolean expectedInvocationResult, int expectedHttpStatus, JsonArray jsonEndpointHistory) {
+        for (int i = 0; i < jsonEndpointHistory.size(); i++) {
+            JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
+            jsonNotificationHistory.mapTo(NotificationHistory.class);
+            assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
+
+            if (!expectedInvocationResult) {
+                String responseBody = given()
+                        .basePath(API_INTEGRATIONS_V_2_0)
+                        .header(identityHeader)
+                        .pathParam("endpointId", endpointId)
+                        .pathParam("historyId", jsonNotificationHistory.getString("id"))
+                        .when()
+                        .get("/endpoints/{endpointId}/history/{historyId}/details")
+                        .then()
+                        .statusCode(200)
+                        .contentType(JSON)
+                        .extract().body().asString();
+
+                JsonObject jsonDetails = new JsonObject(responseBody);
+                assertFalse(jsonDetails.isEmpty());
+                assertEquals(expectedHttpStatus, jsonDetails.getInteger("code"));
+                assertNotNull(jsonDetails.getString("url"));
+                assertNotNull(jsonDetails.getString("method"));
+            }
         }
     }
 

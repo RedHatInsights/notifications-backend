@@ -17,38 +17,6 @@
       ]
     },
     {
-      "name": "application-services",
-      "display_name": "Application Services",
-      "applications": [
-        {
-          "name": "rhosak",
-          "display_name": "Streams for Apache Kafka",
-          "event_types": [
-            {
-              "name": "action-required",
-              "display_name": "Action required"
-            },
-            {
-              "name": "disruption",
-              "display_name": "Service Disruption"
-            },
-            {
-              "name": "instance-created",
-              "display_name": "Instance created"
-            },
-            {
-              "name": "instance-deleted",
-              "display_name": "Instance deleted"
-            },
-            {
-              "name": "scheduled-upgrade",
-              "display_name": "Scheduled Upgrade"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "openshift",
       "display_name": "OpenShift",
       "applications": [

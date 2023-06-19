@@ -2,23 +2,28 @@ package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.db.repositories.StatusRepository;
+import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CurrentStatus;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
+import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
+import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
@@ -28,6 +33,8 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.resteasy.reactive.RestPath;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -51,6 +58,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.net.URI;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -60,9 +68,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL)
@@ -80,7 +90,14 @@ public class InternalResource {
     BehaviorGroupRepository behaviorGroupRepository;
 
     @Inject
+    @RestClient
+    DailyDigestService dailyDigestService;
+
+    @Inject
     EndpointRepository endpointRepository;
+
+    @Inject
+    Environment environment;
 
     @Inject
     StatusRepository statusRepository;
@@ -96,6 +113,9 @@ public class InternalResource {
 
     @Inject
     StartupUtils startupUtils;
+
+    @Inject
+    AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
     @GET
@@ -137,7 +157,7 @@ public class InternalResource {
     @Produces(MediaType.APPLICATION_JSON)
     @PermitAll
     public String serveInternalOpenAPI() {
-        return oApiFilter.serveOpenApi(OApiFilter.INTERNAL);
+        return oApiFilter.serveOpenApi(OApiFilter.INTERNAL, null);
     }
 
     @POST
@@ -391,10 +411,10 @@ public class InternalResource {
         }
 
         List<Endpoint> endpoints = propertiesList.stream().map(p -> {
-            EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+            SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
             properties.setOnlyAdmins(p.isOnlyAdmins());
             properties.setIgnorePreferences(p.isIgnorePreferences());
-            return endpointRepository.getOrCreateEmailSubscriptionEndpoint(null, null, properties);
+            return endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, EMAIL_SUBSCRIPTION);
         }).collect(Collectors.toList());
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,
@@ -435,5 +455,56 @@ public class InternalResource {
         } else {
             return Response.status(BAD_REQUEST).build();
         }
+    }
+
+    @PUT
+    @Path("/daily-digest/time-preference/{orgId}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public Response saveDailyDigestTimePreference(@NotNull LocalTime expectedTime, @RestPath String orgId) {
+        Log.infof("Update daily digest time preference form internal API, for orgId %s at %s", orgId, expectedTime);
+        aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/daily-digest/time-preference/{orgId}")
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+    public Response getDailyDigestTimePreference(@PathParam("orgId") String orgId) {
+        Log.infof("Get daily digest time preference form internal API, for orgId %s", orgId);
+        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
+        if (null != storedParameters) {
+            return Response.ok(storedParameters.getScheduledExecutionTime()).build();
+        } else {
+            return Response.status(NOT_FOUND).build();
+        }
+    }
+
+    /**
+     * Sends a daily digest command to the engine via a REST request.
+     * @param triggerDailyDigestRequest the settings of the digest.
+     */
+    @Consumes(APPLICATION_JSON)
+    @POST
+    @Path("/daily-digest/trigger")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+    public void triggerDailyDigest(@NotNull @Valid final TriggerDailyDigestRequest triggerDailyDigestRequest) {
+        if (!this.environment.isLocal() && !this.environment.isStage()) {
+            throw new BadRequestException("the daily digests can only be triggered in the stage environment");
+        }
+
+        if (
+            !this.applicationRepository.applicationBundleExists(
+                triggerDailyDigestRequest.getApplicationName(),
+                triggerDailyDigestRequest.getBundleName()
+            )
+        ) {
+            throw new BadRequestException("unable to find the specified application — bundle combination");
+        }
+
+        this.dailyDigestService.triggerDailyDigest(triggerDailyDigestRequest);
     }
 }

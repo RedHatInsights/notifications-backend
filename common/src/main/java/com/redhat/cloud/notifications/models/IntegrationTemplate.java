@@ -18,7 +18,7 @@ import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 
 /**
  * Integration templates are more generic templates directly targeted at Integrations
- * other than email, like Splunk or Slack via Camel and OpenBridge.
+ * other than email, like Splunk or Slack via Camel.
  * As integrations can be added quite dynamically, a discriminator
  * column #integrationType is used.
  *

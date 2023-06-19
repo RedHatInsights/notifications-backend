@@ -6,8 +6,6 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,8 +13,6 @@ import java.util.List;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class DriftTestHelpers {
-
-    public static BaseTransformer baseTransformer = new BaseTransformer();
 
     public static EmailAggregation createEmailAggregation(String bundle, String application, String baselineId, String baselineName, String inventory_id, String inventory_name) {
         EmailAggregation aggregation = new EmailAggregation();
@@ -51,9 +47,7 @@ public class DriftTestHelpers {
         ));
 
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
-        JsonObject payload = baseTransformer.toJsonObject(emailActionMessage);
-        aggregation.setPayload(payload);
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 
         return aggregation;
     }

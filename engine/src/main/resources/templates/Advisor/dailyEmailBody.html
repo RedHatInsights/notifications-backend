@@ -1,0 +1,243 @@
+{#include Advisor/insightsEmailBody}
+{#content-title}Red Hat Enterprise Linux - Advisor Daily Report - {action.timestamp.toStringFormat()}{/content-title}
+{#content-body}
+{#let new_recs=action.context.advisor.new_recommendations.orEmpty.size
+      resolved_recs=action.context.advisor.resolved_recommendations.orEmpty.size
+      deact_recs=action.context.advisor.deactivated_recommendations.orEmpty.size
+}
+<!-- Cards/metrics section -->
+<tr>
+  <td>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0"
+     style="width: {#if (new_recs && resolved_recs) || (new_recs && deact_recs) || (resolved_recs && deact_recs)}100{#else}50{/if}%; table-layout: fixed;">
+      <tr>
+        {#if new_recs}
+        <td class="rh-pad-sm rh-pad-left">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+            <tr>
+              <td class="rh-card">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="rh-card-metrics">
+                  <tr>
+                    <td class="rh-card__header"><h2>New recommendations</h2></td>
+                  </tr>
+                  <tr>
+                    <td><span class="rh-metric__count">{new_recs}</span></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+        {/if}
+        {#if resolved_recs}
+        {#if new_recs }<td class="rh-pad-sm rh-pad-right">{#else}<td class="rh-pad-sm rh-pad-left">{/if}
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+            <tr>
+              <td class="rh-card">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="rh-card-metrics">
+                  <tr>
+                    <td class="rh-card__header"><h2>Resolved recommendations</h2></td>
+                  </tr>
+                  <tr>
+                    <td><span class="rh-metric__count">{resolved_recs}</span></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+        {/if}
+        {#if deact_recs}
+          <!-- Determine where to place the deactivated recommendations card -->
+          {#if (new_recs && resolved_recs)}</tr><tr><td class="rh-pad-sm rh-pad-left" style="padding-top: 12px;">
+          {#else if !(new_recs || resolved_recs)}<td class="rh-pad-sm rh-pad-left">
+          {#else}<td class="rh-pad-sm rh-pad-right">
+          {/if}
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+            <tr>
+              <td class="rh-card">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="rh-card-metrics">
+                  <tr>
+                    <td class="rh-card__header"><h2>Deactivated recommendations</h2></td>
+                  </tr>
+                  <tr>
+                    <td><span class="rh-metric__count">{deact_recs}</span></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+        {/if}
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<!-- User message section -->
+<tr>
+  <td class="rh-body" style="padding-top: 24px;">
+    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td class="rh-content__block">
+          Hi {user.firstName},
+          <br>
+          <br>
+          If you want to see more details, go to Insights Advisor for Red Hat Enterprise Linux.
+        </td>
+      </tr>
+      <tr>
+        <td class="rh-content__block">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" class="rh-button-table">
+            <tr>
+              <td class="rh-cta-link" align="center">
+                <a target="_blank" class="rh-url" href="{environment.url}/insights/advisor">
+                  <span>Go to Advisor recommendations</span>
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<!-- List of new recommendations section -->
+{#if new_recs}
+<tr>
+  <td class="rh-body">
+    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td style="padding: 1em 0.5em; font-weight: bolder;">New recommendations</td>
+      </tr>
+      <tr>
+        <td>
+          <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <thead style="background-color: #c5e6f1; text-align: left">
+            <tr>
+              <th style="padding: 0.5em; width: 60%">Recommendation</th>
+              <th style="padding: 0.5em; width: 20%">Total Risk</th>
+              <th style="padding: 0.5em; width: 20%">Systems</th>
+            </tr>
+            </thead>
+            <tbody style="background-color: white;">
+            {#for rec in action.context.advisor.new_recommendations.keySet()}
+              <tr style="border-bottom: thin lightgrey solid">
+                <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.new_recommendations.get(rec).rule_description}</a>
+                  {#if action.context.advisor.new_recommendations.get(rec).has_incident}
+                    <span class="rh-incident">Incident</span>
+                  {/if}
+                </td>
+                <td class="rh-severity" style="padding: 0.5em; width: 20%">
+                  {#switch action.context.advisor.new_recommendations.get(rec).total_risk}
+                    {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
+                    {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
+                    {#case "3"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
+                    {#case "4"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
+                  {/switch}
+                </td>
+                <td style="padding: 0.5em; width: 20%">{action.context.advisor.new_recommendations.get(rec).systems}</td>
+              </tr>
+            {/for}
+            </tbody>
+          </table>
+      </tr>
+    </table>
+  </td>
+</tr>
+{/if}
+
+<!-- List of resolved recommendations section -->
+{#if resolved_recs}
+<tr>
+  <td class="rh-body">
+    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td style="padding: 1em 0.5em; font-weight: bolder;">Resolved recommendations</td>
+      </tr>
+      <tr>
+        <td>
+          <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <thead style="background-color: #c5e6f1; text-align: left">
+            <tr>
+              <th style="padding: 0.5em; width: 60%">Recommendation</th>
+              <th style="padding: 0.5em; width: 20%">Total Risk</th>
+              <th style="padding: 0.5em; width: 20%">Systems</th>
+            </tr>
+            </thead>
+            <tbody style="background-color: white;">
+            {#for rec in action.context.advisor.resolved_recommendations.keySet()}
+              <tr style="border-bottom: thin lightgrey solid">
+                <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.resolved_recommendations.get(rec).rule_description}</a>
+                  {#if action.context.advisor.resolved_recommendations.get(rec).has_incident}
+                    <span class="rh-incident">Incident</span>
+                  {/if}
+                </td>
+                <td class="rh-severity" style="padding: 0.5em; width: 20%">
+                  {#switch action.context.advisor.resolved_recommendations.get(rec).total_risk}
+                    {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
+                    {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
+                    {#case "3"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
+                    {#case "4"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
+                  {/switch}
+                </td>
+                <td style="padding: 0.5em; width: 20%">{action.context.advisor.resolved_recommendations.get(rec).systems}</td>
+              </tr>
+            {/for}
+            </tbody>
+          </table>
+      </tr>
+    </table>
+  </td>
+</tr>
+{/if}
+
+<!-- List of deactivated recommendations section -->
+{#if deact_recs}
+<tr>
+  <td class="rh-body">
+    <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td style="padding: 1em 0.5em; font-weight: bolder;">Deactivated recommendations</td>
+      </tr>
+      <tr>
+        <td>
+          <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" width="100%">
+            <thead style="background-color: #c5e6f1; text-align: left">
+            <tr>
+              <th style="padding: 0.5em; width: 60%">Recommendation</th>
+              <th style="padding: 0.5em; width: 40%">Total Risk</th>
+            </tr>
+            </thead>
+            <tbody style="background-color: white;">
+            {#for rec in action.context.advisor.deactivated_recommendations.keySet()}
+              <tr style="border-bottom: thin lightgrey solid">
+                <td style="padding: 0.5em; width: 60%; word-wrap: anywhere;">
+                  <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.deactivated_recommendations.get(rec).rule_description}</a>
+                  {#if action.context.advisor.deactivated_recommendations.get(rec).has_incident}
+                    <span class="rh-incident">Incident</span>
+                  {/if}
+                </td>
+                <td class="rh-severity" style="padding: 0.5em; width: 40%">
+                  {#switch action.context.advisor.deactivated_recommendations.get(rec).total_risk}
+                    {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
+                    {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
+                    {#case "3"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
+                    {#case "4"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
+                  {/switch}
+                </td>
+              </tr>
+            {/for}
+            </tbody>
+          </table>
+      </tr>
+    </table>
+  </td>
+</tr>
+{/if}
+{/let}
+{/content-body}
+{/include}

@@ -6,10 +6,10 @@ import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.logging.Log;
 
@@ -49,7 +49,7 @@ public class EndpointRepository {
             return;
         }
 
-        if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
+        if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
             // This check does not apply for email subscriptions - as these are managed by us.
             return;
         }
@@ -85,9 +85,11 @@ public class EndpointRepository {
              */
             endpoint.getProperties().setEndpoint(endpoint);
             switch (endpoint.getType()) {
+                case ANSIBLE:
                 case CAMEL:
                 case WEBHOOK:
                 case EMAIL_SUBSCRIPTION:
+                case DRAWER:
                     entityManager.persist(endpoint.getProperties());
                 default:
                     // Do nothing.
@@ -126,13 +128,17 @@ public class EndpointRepository {
     }
 
     @Transactional
-    public Endpoint getOrCreateEmailSubscriptionEndpoint(String accountId, String orgId, EmailSubscriptionProperties properties) {
-        List<Endpoint> emailEndpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(EndpointType.EMAIL_SUBSCRIPTION)), null, null);
-        loadProperties(emailEndpoints);
-        Optional<Endpoint> endpointOptional = emailEndpoints
-                .stream()
-                .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(EmailSubscriptionProperties.class)))
-                .findFirst();
+    public Endpoint getOrCreateSystemSubscriptionEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
+        String label = "Email";
+        if (EndpointType.DRAWER == endpointType) {
+            label = "Drawer";
+        }
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        loadProperties(endpoints);
+        Optional<Endpoint> endpointOptional = endpoints
+            .stream()
+            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
+            .findFirst();
         if (endpointOptional.isPresent()) {
             return endpointOptional.get();
         }
@@ -141,9 +147,9 @@ public class EndpointRepository {
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
         endpoint.setEnabled(true);
-        endpoint.setDescription("System email endpoint");
-        endpoint.setName("Email endpoint");
-        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        endpoint.setDescription(String.format("System %s endpoint", label.toLowerCase()));
+        endpoint.setName(String.format("%s endpoint", label));
+        endpoint.setType(endpointType);
         endpoint.setStatus(READY);
 
         return createEndpoint(endpoint);
@@ -212,8 +218,8 @@ public class EndpointRepository {
                 "basicAuthentication = :basicAuthentication, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
 
-        if (endpoint.getType() == EndpointType.EMAIL_SUBSCRIPTION) {
-            throw new RuntimeException("Unable to update an endpoint of type EMAIL_SUBSCRIPTION");
+        if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
+            throw new RuntimeException("Unable to update a system endpoint of type " + endpoint.getType());
         }
 
         int endpointRowCount = entityManager.createQuery(endpointQuery)
@@ -230,6 +236,7 @@ public class EndpointRepository {
             return true;
         } else {
             switch (endpoint.getType()) {
+                case ANSIBLE:
                 case WEBHOOK:
                     WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
                     return entityManager.createQuery(webhookQuery)
@@ -263,9 +270,11 @@ public class EndpointRepository {
         // Group endpoints in types and load in batches for each type.
         Set<Endpoint> endpointSet = new HashSet<>(endpoints);
 
+        loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.ANSIBLE);
         loadTypedProperties(WebhookProperties.class, endpointSet, EndpointType.WEBHOOK);
         loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL);
-        loadTypedProperties(EmailSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION);
+        loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION);
+        loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EndpointType.DRAWER);
     }
 
     private <T extends EndpointProperties> void loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {
@@ -322,5 +331,65 @@ public class EndpointRepository {
         }
         loadProperties(Collections.singletonList(endpoint));
         return endpoint;
+    }
+
+    /**
+     * Checks if an endpoint exists in the database.
+     * @param endpointUuid the UUID to look by.
+     * @param orgId the OrgID to filter the endpoints with.
+     * @return true if it exists, false otherwise.
+     */
+    public boolean existsByUuidAndOrgId(final UUID endpointUuid, final String orgId) {
+        final String existsEndpointByUuid =
+            "SELECT " +
+                "1 " +
+            "FROM " +
+                "Endpoint AS e " +
+            "WHERE " +
+                "e.id = :endpointUuid " +
+            "AND " +
+                "e.orgId = :orgId";
+
+        try {
+            this.entityManager.createQuery(existsEndpointByUuid)
+                .setParameter("endpointUuid", endpointUuid)
+                .setParameter("orgId", orgId)
+                .getSingleResult();
+
+            return true;
+        } catch (final NoResultException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns a list of endpoints with its properties loaded, which have been
+     * identified as having "basic authentication" and "secret token" secrets
+     * stored in the database, but no references to those secrets in sources.
+     * This signals that the endpoints' secrets need to be migrated to Sources.
+     *
+     * @return a list of endpoints with their properties loaded.
+     */
+    @Deprecated(forRemoval = true)
+    public List<Endpoint> findEndpointWithPropertiesWithStoredSecrets() {
+        final String query =
+            "SELECT e FROM Endpoint e " +
+                "WHERE EXISTS ( " +
+                    "SELECT cp FROM CamelProperties cp " +
+                    "WHERE cp.id = e.id AND cp.basicAuthenticationSourcesId IS NULL AND cp.secretTokenSourcesId IS NULL " +
+                "AND (cp.basicAuthentication IS NOT NULL OR cp.secretToken IS NOT NULL) " +
+                ") OR EXISTS ( " +
+                    "SELECT wp FROM WebhookProperties wp " +
+                    "WHERE wp.id = e.id AND wp.basicAuthenticationSourcesId IS NULL AND wp.secretTokenSourcesId IS NULL " +
+                    "AND (wp.basicAuthentication IS NOT NULL OR wp.secretToken IS NOT NULL) " +
+                ")";
+
+        final List<Endpoint> endpoints =  this.entityManager
+            .createQuery(query, Endpoint.class)
+            .getResultList();
+
+        loadProperties(endpoints);
+
+        return endpoints;
     }
 }

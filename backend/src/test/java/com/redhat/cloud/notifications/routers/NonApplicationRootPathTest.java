@@ -8,7 +8,6 @@ import static io.restassured.RestAssured.config;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static io.restassured.http.ContentType.JSON;
-import static io.restassured.http.ContentType.TEXT;
 
 @QuarkusTest
 public class NonApplicationRootPathTest {
@@ -33,7 +32,7 @@ public class NonApplicationRootPathTest {
                 .when().get("/metrics")
                 .then()
                 .statusCode(200)
-                .contentType(TEXT);
+                .contentType("application/openmetrics-text; version=1.0.0; charset=utf-8");
     }
 
     @Test

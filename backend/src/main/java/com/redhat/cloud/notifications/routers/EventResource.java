@@ -18,6 +18,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.validation.Valid;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
@@ -25,6 +26,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,18 +38,26 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
-import static com.redhat.cloud.notifications.routers.EventResource.PATH;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path(PATH)
 public class EventResource {
-
-    public static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
 
     @Inject
     EventRepository eventRepository;
+
+
+    @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
+    public static class V1 extends EventResource {
+
+    }
+
+    @Path(API_NOTIFICATIONS_V_2_0 + "/notifications/events")
+    public static class V2 extends EventResource {
+
+    }
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -55,16 +65,13 @@ public class EventResource {
     @Operation(summary = "Retrieve the event log entries.", description =
             "Allowed `sort_by` fields are `bundle`, `application`, `event` and `created`. The ordering can be optionally specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. Defaults to `desc` for the `created` field and to `asc` for all other fields."
     )
-    public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
+    public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
+                                         @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                          @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                          @RestQuery Set<EventLogEntryActionStatus> status,
-                                         @BeanParam Query query,
+                                         @BeanParam @Valid Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
-        if (query.getLimit().getLimit() < 1 || query.getLimit().getLimit() > 200) {
-            throw new BadRequestException("Invalid 'limit' query parameter, its value must be between 1 and 200");
-        }
-
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
         Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);
@@ -126,7 +133,7 @@ public class EventResource {
         Meta meta = new Meta();
         meta.setCount(count);
 
-        Map<String, String> links = PageLinksBuilder.build(PATH, count, query);
+        Map<String, String> links = PageLinksBuilder.build(uriInfo.getPath(), count, query);
 
         Page<EventLogEntry> page = new Page<>();
         page.setData(eventLogEntries);

@@ -4,27 +4,38 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -113,12 +124,16 @@ public class ResourceHelpers {
         return bundle.getId();
     }
 
+    public Endpoint getEndpoint(String orgId, UUID id) {
+        return endpointRepository.getEndpoint(orgId, id);
+    }
+
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type) {
-        return createEndpoint(accountId, orgId, type, "null");
+        return createEndpoint(accountId, orgId, type, type.requiresSubType ? "null" : null);
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType) {
-        return createEndpoint(accountId, orgId, type, subType, "name", "description", null, FALSE);
+        return createEndpoint(accountId, orgId, type, subType, "name", "description", null, FALSE, null);
     }
 
     public UUID createWebhookEndpoint(String accountId, String orgId) {
@@ -126,11 +141,15 @@ public class ResourceHelpers {
         properties.setMethod(HttpType.POST);
         properties.setUrl("https://localhost");
         String name = "Endpoint " + UUID.randomUUID();
-        return createEndpoint(accountId, orgId, WEBHOOK, null, name, "Automatically generated", properties, TRUE)
+        return createEndpoint(accountId, orgId, WEBHOOK, null, name, "Automatically generated", properties, TRUE, null)
                 .getId();
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {
+        return createEndpoint(accountId, orgId, type, subType, name, description, properties, enabled, null);
+    }
+
+    public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled, LocalDateTime created) {
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
@@ -140,6 +159,7 @@ public class ResourceHelpers {
         endpoint.setDescription(description);
         endpoint.setProperties(properties);
         endpoint.setEnabled(enabled);
+        endpoint.setCreated(created);
         return endpointRepository.createEndpoint(endpoint);
     }
 
@@ -192,9 +212,14 @@ public class ResourceHelpers {
     }
 
     public BehaviorGroup createBehaviorGroup(String accountId, String orgId, String displayName, UUID bundleId) {
+        return createBehaviorGroup(accountId, orgId, displayName, bundleId, null);
+    }
+
+    public BehaviorGroup createBehaviorGroup(String accountId, String orgId, String displayName, UUID bundleId, LocalDateTime created) {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName(displayName);
         behaviorGroup.setBundleId(bundleId);
+        behaviorGroup.setCreated(created);
         return behaviorGroupRepository.create(accountId, orgId, behaviorGroup);
     }
 
@@ -243,5 +268,265 @@ public class ResourceHelpers {
 
     public Boolean deleteDefaultBehaviorGroup(UUID behaviorGroupId) {
         return behaviorGroupRepository.deleteDefault(behaviorGroupId);
+    }
+
+    @Transactional
+    public Template createTemplate(String name, String description, String data) {
+        Template template = new Template();
+        template.setName(name);
+        template.setDescription(description);
+        template.setData(data);
+        entityManager.persist(template);
+        return template;
+    }
+
+    @Transactional
+    public InstantEmailTemplate createInstantEmailTemplate(UUID eventTypeId, UUID subjectTemplateId, UUID bodyTemplateId) {
+        InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
+        instantEmailTemplate.setEventType(entityManager.find(EventType.class, eventTypeId));
+        instantEmailTemplate.setEventTypeId(eventTypeId);
+        instantEmailTemplate.setSubjectTemplate(entityManager.find(Template.class, subjectTemplateId));
+        instantEmailTemplate.setSubjectTemplateId(subjectTemplateId);
+        instantEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
+        instantEmailTemplate.setBodyTemplateId(bodyTemplateId);
+        entityManager.persist(instantEmailTemplate);
+        return instantEmailTemplate;
+    }
+
+    @Transactional
+    public AggregationEmailTemplate createAggregationEmailTemplate(UUID appId, UUID subjectTemplateId, UUID bodyTemplateId) {
+        AggregationEmailTemplate aggregationEmailTemplate = new AggregationEmailTemplate();
+        aggregationEmailTemplate.setApplication(entityManager.find(Application.class, appId));
+        aggregationEmailTemplate.setApplicationId(appId);
+        aggregationEmailTemplate.setSubjectTemplate(entityManager.find(Template.class, subjectTemplateId));
+        aggregationEmailTemplate.setSubjectTemplateId(subjectTemplateId);
+        aggregationEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
+        aggregationEmailTemplate.setBodyTemplateId(bodyTemplateId);
+        aggregationEmailTemplate.setSubscriptionType(DAILY);
+        entityManager.persist(aggregationEmailTemplate);
+        return aggregationEmailTemplate;
+    }
+
+    @Transactional
+    public void deleteEmailTemplatesById(UUID templateId) {
+        entityManager.createQuery("DELETE FROM InstantEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregationEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
+    }
+
+
+    /**
+     * Generates twelve endpoints with either {@link CamelProperties} or
+     * {@link WebhookProperties} that shouldn't be picked up by
+     * {@link EndpointRepository#findEndpointWithPropertiesWithStoredSecrets()},
+     * because even though the properties have credentials stored in the
+     * database, they also contain the references to Sources secrets.
+     */
+    @Deprecated(forRemoval = true)
+    @Transactional
+    public void createTwelveEndpointFixtures() {
+        final Random random = new Random();
+
+        // Create a few endpoints that shouldn't be picked by the function
+        // under test, because they contain references to Sources secrets.
+        for (int i = 0; i < 12; i++) {
+            final Endpoint endpoint = new Endpoint();
+            endpoint.setDescription(UUID.randomUUID().toString());
+            endpoint.setName(UUID.randomUUID().toString());
+            endpoint.setOrgId(DEFAULT_ORG_ID);
+
+            // Should it be a camel, or a webhook endpoint?
+            if (i % 2 == 0) {
+                endpoint.setType(EndpointType.CAMEL);
+                endpoint.setSubType("dromedary");
+
+                final CamelProperties camelProperties = new CamelProperties();
+                camelProperties.setDisableSslVerification(random.nextBoolean());
+                camelProperties.setUrl("https://example.org");
+
+                // Maybe set a basic authentication, maybe not...
+                if (i % 3 == 0) {
+                    camelProperties.setBasicAuthentication(
+                        new BasicAuthentication(
+                            UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString()
+                        )
+                    );
+                }
+
+                // Maybe set a secret token, maybe not...
+                if (i % 3 == 0) {
+                    camelProperties.setSecretToken(UUID.randomUUID().toString());
+                }
+
+                camelProperties.setBasicAuthenticationSourcesId(random.nextLong());
+                camelProperties.setSecretTokenSourcesId(random.nextLong());
+
+                endpoint.setProperties(camelProperties);
+            } else {
+                endpoint.setType(EndpointType.WEBHOOK);
+
+                final WebhookProperties webhookProperties = new WebhookProperties();
+                webhookProperties.setDisableSslVerification(random.nextBoolean());
+                webhookProperties.setMethod(HttpType.GET);
+                webhookProperties.setUrl("https://example.org");
+
+                // Maybe set a basic authentication, maybe not...
+                if (i % 3 == 0) {
+                    webhookProperties.setBasicAuthentication(
+                        new BasicAuthentication(
+                            UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString()
+                        )
+                    );
+                }
+
+                // Maybe set a secret token, maybe not...
+                if (i % 3 == 0) {
+                    webhookProperties.setSecretToken(UUID.randomUUID().toString());
+                }
+
+                webhookProperties.setBasicAuthenticationSourcesId(random.nextLong());
+                webhookProperties.setSecretTokenSourcesId(random.nextLong());
+
+                endpoint.setProperties(webhookProperties);
+            }
+
+            this.endpointRepository.createEndpoint(endpoint);
+        }
+    }
+
+    /**
+     * Creates ten {@link Endpoint} fixtures: five containing
+     * {@link CamelProperties} and five containing {@link WebhookProperties}.
+     * They are specifically prepared so that the
+     * {@link EndpointRepository#findEndpointWithPropertiesWithStoredSecrets()}
+     * function picks them up, because the basic authentication and secret
+     * token secrets are set, but no reference ID for a Source secret gets set.
+     *
+     * @return the map of the created endpoints.
+     */
+    @Deprecated(forRemoval = true)
+    @Transactional
+    public Map<UUID, Endpoint> createTenEndpointFixtures() {
+        final Random random = new Random();
+
+        final Map<UUID, Endpoint> createdEndpoints = new HashMap<>();
+
+        // Create five endpoints with camel properties.
+        for (int i = 0; i < 5; i++) {
+            final CamelProperties camelProperties = new CamelProperties();
+            camelProperties.setDisableSslVerification(random.nextBoolean());
+            camelProperties.setUrl("https://example.org");
+
+            camelProperties.setBasicAuthentication(
+                new BasicAuthentication(UUID.randomUUID().toString(), UUID.randomUUID().toString())
+            );
+            camelProperties.setSecretToken(UUID.randomUUID().toString());
+
+            final Endpoint endpoint = new Endpoint();
+            endpoint.setDescription(UUID.randomUUID().toString());
+            endpoint.setName(UUID.randomUUID().toString());
+            endpoint.setProperties(camelProperties);
+            endpoint.setType(EndpointType.CAMEL);
+            endpoint.setSubType("dromedary");
+            endpoint.setOrgId(DEFAULT_ORG_ID);
+
+            this.endpointRepository.createEndpoint(endpoint);
+
+            createdEndpoints.put(endpoint.getId(), endpoint);
+        }
+
+        // Create another five endpoints with webhook properties.
+        for (int i = 0; i < 5; i++) {
+            final WebhookProperties webhookProperties = new WebhookProperties();
+            webhookProperties.setDisableSslVerification(random.nextBoolean());
+            webhookProperties.setMethod(HttpType.GET);
+            webhookProperties.setUrl("https://example.org");
+
+            webhookProperties.setBasicAuthentication(
+                new BasicAuthentication(UUID.randomUUID().toString(), UUID.randomUUID().toString())
+            );
+            webhookProperties.setSecretToken(UUID.randomUUID().toString());
+
+            final Endpoint endpoint = new Endpoint();
+            endpoint.setDescription(UUID.randomUUID().toString());
+            endpoint.setName(UUID.randomUUID().toString());
+            endpoint.setProperties(webhookProperties);
+            endpoint.setType(EndpointType.WEBHOOK);
+            endpoint.setOrgId(DEFAULT_ORG_ID);
+
+            this.endpointRepository.createEndpoint(endpoint);
+
+            createdEndpoints.put(endpoint.getId(), endpoint);
+        }
+
+        return  createdEndpoints;
+    }
+
+    /**
+     * Generates five endpoints which contain either {@link CamelProperties} or
+     * {@link WebhookProperties} properties, but that have either a null
+     * or empty {@link BasicAuthentication}, mimicking what current basic
+     * authentications look like right now in the database. The properties
+     * always contain a secret token. They should be fetchable by
+     * {@link EndpointRepository#findEndpointWithPropertiesWithStoredSecrets()}
+     * because there are no Source ID secret references set.
+     *
+     * @return the map of the created endpoints.
+     */
+    @Deprecated(forRemoval = true)
+    @Transactional
+    public Map<UUID, Endpoint> createFiveEndpointsNullEmptyBasicAuths() {
+        final Random random = new Random();
+
+        final Map<UUID, Endpoint> createdEndpoints = new HashMap<>();
+
+        // Generates an empty basic authentication or a null one, replicating
+        // what we currently have in the database.
+        final Supplier<BasicAuthentication> getRandomBasicAuth = () -> {
+            if (random.nextBoolean()) {
+                return new BasicAuthentication("", "");
+            } else {
+                return new BasicAuthentication(null, null);
+            }
+        };
+
+        for (int i = 0; i < 5; i++) {
+            final Endpoint endpoint = new Endpoint();
+            endpoint.setDescription(UUID.randomUUID().toString());
+            endpoint.setName(UUID.randomUUID().toString());
+            endpoint.setOrgId(DEFAULT_ORG_ID);
+
+            // Should it be a camel, or a webhook endpoint?
+            if (i % 3 == 0) {
+                endpoint.setType(EndpointType.CAMEL);
+                endpoint.setSubType("dromedary");
+
+                final CamelProperties camelProperties = new CamelProperties();
+                camelProperties.setBasicAuthentication(getRandomBasicAuth.get());
+                camelProperties.setDisableSslVerification(random.nextBoolean());
+                camelProperties.setSecretToken(UUID.randomUUID().toString());
+                camelProperties.setUrl("https://example.org");
+
+                endpoint.setProperties(camelProperties);
+            } else {
+                endpoint.setType(EndpointType.WEBHOOK);
+
+                final WebhookProperties webhookProperties = new WebhookProperties();
+                webhookProperties.setBasicAuthentication(getRandomBasicAuth.get());
+                webhookProperties.setDisableSslVerification(random.nextBoolean());
+                webhookProperties.setMethod(HttpType.GET);
+                webhookProperties.setSecretToken(UUID.randomUUID().toString());
+                webhookProperties.setUrl("https://example.org");
+
+                endpoint.setProperties(webhookProperties);
+            }
+
+            this.endpointRepository.createEndpoint(endpoint);
+
+            createdEndpoints.put(endpoint.getId(), endpoint);
+        }
+
+        return createdEndpoints;
     }
 }

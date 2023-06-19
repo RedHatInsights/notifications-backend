@@ -76,14 +76,16 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Min(0)
     private int serverErrors;
 
-    @Schema(oneOf = { WebhookProperties.class, EmailSubscriptionProperties.class, CamelProperties.class })
+    @Schema(oneOf = { WebhookProperties.class, SystemSubscriptionProperties.class, CamelProperties.class })
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             property = "type",
             include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @JsonSubTypes({
         @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
-        @JsonSubTypes.Type(value = EmailSubscriptionProperties.class, name = "email_subscription"),
+        @JsonSubTypes.Type(value = WebhookProperties.class, name = "ansible"),
+        @JsonSubTypes.Type(value = SystemSubscriptionProperties.class, name = "email_subscription"),
+        @JsonSubTypes.Type(value = SystemSubscriptionProperties.class, name = "drawer"),
         @JsonSubTypes.Type(value = CamelProperties.class, name = "camel")
     })
     @Valid
@@ -99,17 +101,22 @@ public class Endpoint extends CreationUpdateTimestamped {
     private Set<NotificationHistory> notificationHistories;
 
     @JsonIgnore
-    @AssertTrue(message = "This type requires a subtype")
-    private boolean isSubtypeOK() {
+    @AssertTrue(message = "This type requires a sub_type")
+    private boolean isSubTypePresentWhenRequired() {
         return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;
+    }
+
+    @JsonIgnore
+    @AssertTrue(message = "This type does not support sub_type")
+    private boolean isSubTypeNotPresentWhenNotRequired() {
+        return compositeType.getType().requiresSubType || compositeType.getSubType() == null;
     }
 
     @Override
     protected void additionalPrePersist() {
         /*
          * Depending on the endpoint type, the id field may or may not already contain a value when the entity
-         * is first persisted. In particular, RHOSE endpoints will already contain an id value because we need
-         * to know that value when the RHOSE processor is created, before the endpoint is persisted on our side.
+         * is first persisted.
          */
         if (id == null) {
             id = UUID.randomUUID();

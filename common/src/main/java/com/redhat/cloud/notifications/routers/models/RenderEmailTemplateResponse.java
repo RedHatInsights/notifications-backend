@@ -15,20 +15,14 @@ public class RenderEmailTemplateResponse {
     }
 
     public static class Success {
-        private final String subject;
-        private final String body;
+        private final String[] result;
 
-        public Success(String subject, String body) {
-            this.subject = subject;
-            this.body = body;
+        public Success(String[] result) {
+            this.result = result;
         }
 
-        public String getSubject() {
-            return subject;
-        }
-
-        public String getBody() {
-            return body;
+        public String[] getResult() {
+            return result;
         }
     }
 

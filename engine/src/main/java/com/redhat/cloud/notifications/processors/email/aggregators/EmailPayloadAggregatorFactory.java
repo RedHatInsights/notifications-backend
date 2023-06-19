@@ -6,10 +6,10 @@ public class EmailPayloadAggregatorFactory {
 
     private static final String RHEL = "rhel";
     private static final String APPLICATION_SERVICES = "application-services";
+    private static final String ADVISOR = "advisor";
     private static final String POLICIES = "policies";
     private static final String COMPLIANCE = "compliance";
     private static final String DRIFT = "drift";
-    private static final String RHOSAK = "rhosak";
     private static final String ANSIBLE = "ansible";
     private static final String PATCH = "patch";
     private static final String VULNERABILITY = "vulnerability";
@@ -29,8 +29,6 @@ public class EmailPayloadAggregatorFactory {
                 switch (application.toLowerCase()) { // TODO Remove toLowerCase if possible
                     case ANSIBLE:
                         return new AnsibleEmailAggregator();
-                    case RHOSAK:
-                        return new RhosakEmailAggregator();
                     default:
                         // Do nothing.
                         break;
@@ -38,6 +36,8 @@ public class EmailPayloadAggregatorFactory {
                 break;
             case RHEL:
                 switch (application) {
+                    case ADVISOR:
+                        return new AdvisorEmailAggregator();
                     case COMPLIANCE:
                         return new ComplianceEmailAggregator();
                     case DRIFT:

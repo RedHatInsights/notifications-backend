@@ -15,6 +15,8 @@ objects:
     dependencies:
     - notifications-engine
     - rbac
+    optionalDependencies:
+    - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
     database:
       name: notifications-backend
       version: 13
@@ -156,6 +158,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
+          value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
         - name: NOTIFICATIONS_EPHEMERAL_DATA
           valueFrom:
             configMapKeyRef:
@@ -168,10 +172,14 @@ objects:
           value: ${INTERNAL_RBAC_ENABLED}
         - name: INTERNAL_ADMIN_ROLE
           value: ${INTERNAL_RBAC_ADMIN}
+        - name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
+          value: ${NOTIFICATIONS_INSTANT_EMAILS_ENABLED}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+          value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
           value: ${CLOUDWATCH_ENABLED}
         - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
@@ -179,29 +187,27 @@ objects:
         - name: QUARKUS_LOG_SENTRY
           value: ${SENTRY_ENABLED}
         - name: QUARKUS_LOG_SENTRY_DSN
-          value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
+          value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
-        - name: OB_ENABLED
-          value: ${OB_ENABLED}
-        - name: OB_BRIDGE_NAME
-          value: ${OB_BRIDGE_NAME}
-        - name: OB_READY_CHECK_PERIOD
-          value: ${OB_READY_CHECK_PERIOD}
-        - name: OB_TOKEN_CLIENT_ID
+        - name: QUARKUS_OPENTELEMETRY_ENABLED
+          value: ${QUARKUS_OPENTELEMETRY_ENABLED}
+        - name: QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT
+          value: ${QUARKUS_OPENTELEMETRY_ENDPOINT}
+        - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
+          value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
+        - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
+          value: ${SOURCES_ENABLED}
+        - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
+          value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
+        - name: NOTIFICATIONS_DRAWER_ENABLED
+          value: ${NOTIFICATIONS_DRAWER_ENABLED}
+        - name: SOURCES_PSK
           valueFrom:
             secretKeyRef:
-              name: rhose
-              key: token_client_id
-        - name: OB_TOKEN_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: rhose
-              key: token_client_secret
-        - name: QUARKUS_REST_CLIENT_OB_URL
-          value: ${QUARKUS_REST_CLIENT_OB_URL}
-        - name: QUARKUS_REST_CLIENT_KC_URL
-          value: ${QUARKUS_REST_CLIENT_KC_URL}
+              name: sources-api-psk
+              key: psk
+              optional: true
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -227,7 +233,7 @@ objects:
           SELECT 
             DISTINCT "account_id" 
             FROM "endpoints"
-            WHERE "endpoint_type"=3 AND "endpoint_sub_type"='splunk';
+            WHERE "endpoint_type_v2"='CAMEL' AND "endpoint_sub_type"='splunk';
       - prefix: insights/notifications/accounts
         query: >-
           SELECT
@@ -240,7 +246,7 @@ objects:
           SELECT
           COUNT(distinct account_id) 
           FROM endpoints
-          WHERE endpoint_type = 3 AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
+          WHERE endpoint_type_v2 = 'CAMEL' AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -285,24 +291,17 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: "1"
+- name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
+  value: "false"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
-- name: OB_ENABLED
-  description: Is the OpenBridge integration enabled
-  value: "false"
-- name: OB_BRIDGE_NAME
-  description: The name of the bridge to use.
-  value: "notifications-bridge"
-- name: OB_READY_CHECK_PERIOD
-  description: Period between two executions of the EndpointReadyChecker
-  value: "off"
-- name: QUARKUS_REST_CLIENT_OB_URL
-  description: URL of the OpenBridge fleet manager
-  value: "http://addMe"
-- name: QUARKUS_REST_CLIENT_KC_URL
-  description: URL of the SSO server
-  value: "https://addMe"
+- name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
+  description: When this is true, all integration types except emails are disabled
+  value: "true"
+- name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+  description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT30S
 - name: RBAC_AUTHENTICATION_READ_TIMEOUT
   description: Delay in milliseconds before an RBAC authentication query is interrupted
   value: "2000"
@@ -312,9 +311,15 @@ parameters:
 - name: INTERNAL_RBAC_ADMIN
   description: Internal admin group
   value: "crc-notifications-team"
+- name: SENTRY_DSN
+  description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
+- name: QUARKUS_OPENTELEMETRY_ENABLED
+  value: "false"
+- name: QUARKUS_OPENTELEMETRY_ENDPOINT
+  value: "http://localhost:4317"
 - name: FLOORIST_SCHEDULE
   description: Cronjob schedule definition
   required: true
@@ -336,3 +341,12 @@ parameters:
 - name: FLOORIST_LOGLEVEL
   description: Floorist loglevel config
   value: 'INFO'
+- name: SOURCES_ENABLED
+  description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
+  value: "false"
+- name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
+  value: "false"
+- name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_DRAWER_ENABLED
+  value: "false"

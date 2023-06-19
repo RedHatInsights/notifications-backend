@@ -12,7 +12,7 @@ public class ActionParser {
         try {
             return Parser.decode(actionJson);
         } catch (Exception e) {
-            throw new RuntimeException("Action parsing failed for payload: " + actionJson, e);
+            throw new ActionParsingException("Action parsing failed for payload: " + actionJson, e);
         }
     }
 }

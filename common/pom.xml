@@ -43,12 +43,23 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-fault-tolerance</artifactId>
+        </dependency>
 
         <!-- Insights -->
         <dependency>
             <groupId>com.redhat.cloud.common</groupId>
             <artifactId>insights-notification-schemas-java</artifactId>
             <version>${insights-notification-schemas-java.version}</version>
+        </dependency>
+
+        <!-- events-schemas -->
+        <dependency>
+            <groupId>com.redhat.cloud.event</groupId>
+            <artifactId>event-schemas</artifactId>
+            <version>${redhat.event-schemas.version}</version>
         </dependency>
 
         <!-- Test -->
@@ -68,6 +79,15 @@
             <artifactId>mockserver-netty-no-dependencies</artifactId>
             <version>${mockserver-netty-no-dependencies.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
         </dependency>
 
     </dependencies>

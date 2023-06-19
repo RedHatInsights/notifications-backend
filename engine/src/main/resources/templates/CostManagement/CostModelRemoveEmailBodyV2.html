@@ -1,0 +1,17 @@
+{@boolean renderSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Cost Management - OpenShift
+{/content-title}
+{#content-title-section1}
+    Cost model removal
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Cost model {action.context.cost_model_name} has been removed.
+    </p>
+    <p>
+        To review changes visits: <a href="{environment.url}/openshift/cost-management/cost-models/">cost models</a>
+    </p>
+{/content-body-section1}
+{/include}

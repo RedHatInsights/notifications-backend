@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.request;
 
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
 import java.util.Set;
@@ -17,17 +17,17 @@ public class EndpointRecipientSettings extends RecipientSettings {
 
     @Override
     public boolean isOnlyAdmins() {
-        return endpoint.getProperties(EmailSubscriptionProperties.class).isOnlyAdmins();
+        return endpoint.getProperties(SystemSubscriptionProperties.class).isOnlyAdmins();
     }
 
     @Override
     public boolean isIgnoreUserPreferences() {
-        return endpoint.getProperties(EmailSubscriptionProperties.class).isIgnorePreferences();
+        return endpoint.getProperties(SystemSubscriptionProperties.class).isIgnorePreferences();
     }
 
     @Override
     public UUID getGroupId() {
-        return endpoint.getProperties(EmailSubscriptionProperties.class).getGroupId();
+        return endpoint.getProperties(SystemSubscriptionProperties.class).getGroupId();
     }
 
     @Override

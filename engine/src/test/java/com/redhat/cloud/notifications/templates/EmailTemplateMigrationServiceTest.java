@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.templates;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
@@ -11,11 +10,10 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -24,7 +22,7 @@ import javax.persistence.EntityManager;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.events.FromCamelHistoryFiller.INTEGRATION_FAILED_EVENT_TYPE;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.INTEGRATION_FAILED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
@@ -49,20 +47,7 @@ public class EmailTemplateMigrationServiceTest {
     TemplateService templateService;
 
     @Inject
-    StatelessSessionFactory statelessSessionFactory;
-
-    @Inject
     FeatureFlipper featureFlipper;
-
-    @BeforeEach
-    void beforeEach() {
-        featureFlipper.setUseTemplatesFromDb(true);
-    }
-
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setUseTemplatesFromDb(false);
-    }
 
     @Test
     void testMigration() {
@@ -86,6 +71,9 @@ public class EmailTemplateMigrationServiceTest {
         Application edgeManagement = resourceHelpers.createApp(rhel.getId(), "edge-management");
         EventType imageCreation = resourceHelpers.createEventType(edgeManagement.getId(), "image-creation");
         EventType updateDevices = resourceHelpers.createEventType(edgeManagement.getId(), "update-devices");
+        // App: inventory
+        Application inventory = resourceHelpers.createApp(rhel.getId(), "inventory");
+        EventType inventoryValidationError = resourceHelpers.createEventType(inventory.getId(), "validation-error");
         // App: malware-detection
         Application malwareDetection = resourceHelpers.createApp(rhel.getId(), "malware-detection");
         EventType detectedMalware = resourceHelpers.createEventType(malwareDetection.getId(), "detected-malware");
@@ -120,18 +108,6 @@ public class EmailTemplateMigrationServiceTest {
         EventType operatorStale = resourceHelpers.createEventType(costManagement.getId(), "cm-operator-stale");
         EventType operatorDataProcessed = resourceHelpers.createEventType(costManagement.getId(), "cm-operator-data-processed");
         EventType operatorDataReceived = resourceHelpers.createEventType(costManagement.getId(), "cm-operator-data-received");
-
-        /*
-         * Bundle: application-services
-         */
-        Bundle applicationServices = resourceHelpers.createBundle("application-services");
-        // App: rhosak
-        Application rhosak = resourceHelpers.createApp(applicationServices.getId(), "rhosak");
-        EventType scheduledUpgrade = resourceHelpers.createEventType(rhosak.getId(), "scheduled-upgrade");
-        EventType disruption = resourceHelpers.createEventType(rhosak.getId(), "disruption");
-        EventType instanceCreated = resourceHelpers.createEventType(rhosak.getId(), "instance-created");
-        EventType instanceDeleted = resourceHelpers.createEventType(rhosak.getId(), "instance-deleted");
-        EventType actionRequired = resourceHelpers.createEventType(rhosak.getId(), "action-required");
 
         /*
          * Bundle: ansible
@@ -178,105 +154,95 @@ public class EmailTemplateMigrationServiceTest {
                 .statusCode(200)
                 .contentType(JSON);
 
-        statelessSessionFactory.withSession(statelessSession -> {
+        /*
+         * Bundle: rhel
+         */
+        // App: advisor
+        findAndCompileInstantEmailTemplate(newRecommendation.getId());
+        findAndCompileInstantEmailTemplate(resolvedRecommendation.getId());
+        findAndCompileInstantEmailTemplate(deactivatedRecommendation.getId());
+        if (featureFlipper.isRhelAdvisorDailyDigestEnabled()) {
+            findAndCompileAggregationEmailTemplate(rhel.getName(), advisor.getName(), DAILY);
+        }
+        // App: compliance
+        findAndCompileInstantEmailTemplate(complianceBelowThreshold.getId());
+        findAndCompileInstantEmailTemplate(reportUploadFailed.getId());
+        findAndCompileAggregationEmailTemplate(rhel.getName(), compliance.getName(), DAILY);
+        // App: drift
+        findAndCompileInstantEmailTemplate(driftBaselineDetected.getId());
+        findAndCompileAggregationEmailTemplate(rhel.getName(), drift.getName(), DAILY);
+        // App: edge-management
+        findAndCompileInstantEmailTemplate(imageCreation.getId());
+        findAndCompileInstantEmailTemplate(updateDevices.getId());
+        // App: inventory
+        findAndCompileInstantEmailTemplate(inventoryValidationError.getId());
+        findAndCompileAggregationEmailTemplate(rhel.getName(), inventory.getName(), DAILY);
+        // App: malware-detection
+        findAndCompileInstantEmailTemplate(detectedMalware.getId());
+        assertTrue(templateRepository.findAggregationEmailTemplate(rhel.getName(), malwareDetection.getName(), DAILY).isEmpty());
+        // App: patch
+        findAndCompileInstantEmailTemplate(newAdvisories.getId());
+        findAndCompileAggregationEmailTemplate(rhel.getName(), patch.getName(), DAILY);
+        // App: policies
+        findAndCompileInstantEmailTemplate(policyTriggered.getId());
+        findAndCompileAggregationEmailTemplate(rhel.getName(), policies.getName(), DAILY);
+        // App: resource-optimization
+        findAndCompileAggregationEmailTemplate(rhel.getName(), resourceOptimization.getName(), DAILY);
+        // App: vulnerability
+        findAndCompileInstantEmailTemplate(newCveCvss.getId());
+        findAndCompileInstantEmailTemplate(newCveSecurityRule.getId());
+        findAndCompileInstantEmailTemplate(newCveSeverity.getId());
+        findAndCompileInstantEmailTemplate(anyCveKnownExploit.getId());
+        findAndCompileAggregationEmailTemplate(rhel.getName(), vulnerability.getName(), DAILY);
 
-            /*
-             * Bundle: rhel
-             */
-            // App: advisor
-            findAndCompileInstantEmailTemplate(newRecommendation.getId());
-            findAndCompileInstantEmailTemplate(resolvedRecommendation.getId());
-            findAndCompileInstantEmailTemplate(deactivatedRecommendation.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(rhel.getName(), advisor.getName(), DAILY).isEmpty());
-            // App: compliance
-            findAndCompileInstantEmailTemplate(complianceBelowThreshold.getId());
-            findAndCompileInstantEmailTemplate(reportUploadFailed.getId());
-            findAndCompileAggregationEmailTemplate(rhel.getName(), compliance.getName(), DAILY);
-            // App: drift
-            findAndCompileInstantEmailTemplate(driftBaselineDetected.getId());
-            findAndCompileAggregationEmailTemplate(rhel.getName(), drift.getName(), DAILY);
-            // App: edge-management
-            findAndCompileInstantEmailTemplate(imageCreation.getId());
-            findAndCompileInstantEmailTemplate(updateDevices.getId());
-            // App: malware-detection
-            findAndCompileInstantEmailTemplate(detectedMalware.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(rhel.getName(), malwareDetection.getName(), DAILY).isEmpty());
-            // App: patch
-            findAndCompileInstantEmailTemplate(newAdvisories.getId());
-            findAndCompileAggregationEmailTemplate(rhel.getName(), patch.getName(), DAILY);
-            // App: policies
-            findAndCompileInstantEmailTemplate(policyTriggered.getId());
-            findAndCompileAggregationEmailTemplate(rhel.getName(), policies.getName(), DAILY);
-            // App: resource-optimization
-            findAndCompileAggregationEmailTemplate(rhel.getName(), resourceOptimization.getName(), DAILY);
-            // App: vulnerability
-            findAndCompileInstantEmailTemplate(newCveCvss.getId());
-            findAndCompileInstantEmailTemplate(newCveSecurityRule.getId());
-            findAndCompileInstantEmailTemplate(newCveSeverity.getId());
-            findAndCompileInstantEmailTemplate(anyCveKnownExploit.getId());
-            findAndCompileAggregationEmailTemplate(rhel.getName(), vulnerability.getName(), DAILY);
+        /*
+         * Bundle: openshift
+         */
+        // App: advisor
+        findAndCompileInstantEmailTemplate(newRecommendationOpenshift.getId());
+        assertTrue(templateRepository.findAggregationEmailTemplate(openshift.getName(), advisorOpenshift.getName(), DAILY).isEmpty());
+        // App: cost-management
+        findAndCompileInstantEmailTemplate(missingCostModel.getId());
+        findAndCompileInstantEmailTemplate(costModelCreate.getId());
+        findAndCompileInstantEmailTemplate(costModelUpdate.getId());
+        findAndCompileInstantEmailTemplate(costModelRemove.getId());
+        findAndCompileInstantEmailTemplate(operatorStale.getId());
+        findAndCompileInstantEmailTemplate(operatorDataProcessed.getId());
+        findAndCompileInstantEmailTemplate(operatorDataReceived.getId());
+        assertTrue(templateRepository.findAggregationEmailTemplate(openshift.getName(), costManagement.getName(), DAILY).isEmpty());
 
-            /*
-             * Bundle: openshift
-             */
-            // App: advisor
-            findAndCompileInstantEmailTemplate(newRecommendationOpenshift.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(openshift.getName(), advisorOpenshift.getName(), DAILY).isEmpty());
-            // App: cost-management
-            findAndCompileInstantEmailTemplate(missingCostModel.getId());
-            findAndCompileInstantEmailTemplate(costModelCreate.getId());
-            findAndCompileInstantEmailTemplate(costModelUpdate.getId());
-            findAndCompileInstantEmailTemplate(costModelRemove.getId());
-            findAndCompileInstantEmailTemplate(operatorStale.getId());
-            findAndCompileInstantEmailTemplate(operatorDataProcessed.getId());
-            findAndCompileInstantEmailTemplate(operatorDataReceived.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(openshift.getName(), costManagement.getName(), DAILY).isEmpty());
+        /*
+         * Bundle: ansible
+         */
+        // App: reports
+        findAndCompileInstantEmailTemplate(reportAvailable.getId());
+        assertTrue(templateRepository.findAggregationEmailTemplate(ansible.getName(), reports.getName(), DAILY).isEmpty());
 
-            /*
-             * Bundle: application-services
-             */
-            // App: rhosak
-            findAndCompileInstantEmailTemplate(scheduledUpgrade.getId());
-            findAndCompileInstantEmailTemplate(disruption.getId());
-            findAndCompileInstantEmailTemplate(instanceCreated.getId());
-            findAndCompileInstantEmailTemplate(instanceDeleted.getId());
-            findAndCompileInstantEmailTemplate(actionRequired.getId());
-            findAndCompileAggregationEmailTemplate(applicationServices.getName(), rhosak.getName(), DAILY);
-
-            /*
-             * Bundle: ansible
-             */
-            // App: reports
-            findAndCompileInstantEmailTemplate(reportAvailable.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(ansible.getName(), reports.getName(), DAILY).isEmpty());
-
-            /*
-             * Bundle: console
-             */
-            // App: integrations
-            findAndCompileInstantEmailTemplate(integrationFailed.getId());
-            findAndCompileInstantEmailTemplate(integrationDisabled.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), integrations.getName(), DAILY).isEmpty());
-            // App: sources
-            findAndCompileInstantEmailTemplate(availabilityStatus.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), sources.getName(), DAILY).isEmpty());
-            // App: rbac
-            findAndCompileInstantEmailTemplate(rhNewRoleAvailable.getId());
-            findAndCompileInstantEmailTemplate(rhPlatformDefaultRoleUpdated.getId());
-            findAndCompileInstantEmailTemplate(rhNonPlatformDefaultRoleUpdated.getId());
-            findAndCompileInstantEmailTemplate(customRoleCreated.getId());
-            findAndCompileInstantEmailTemplate(customRoleUpdated.getId());
-            findAndCompileInstantEmailTemplate(customRoleDeleted.getId());
-            findAndCompileInstantEmailTemplate(rhNewRoleAddedToDefaultAccess.getId());
-            findAndCompileInstantEmailTemplate(rhRoleRemovedFromDefaultAccess.getId());
-            findAndCompileInstantEmailTemplate(customDefaultAccessUpdated.getId());
-            findAndCompileInstantEmailTemplate(groupCreated.getId());
-            findAndCompileInstantEmailTemplate(groupUpdated.getId());
-            findAndCompileInstantEmailTemplate(groupDeleted.getId());
-            findAndCompileInstantEmailTemplate(platformDefaultGroupTurnedIntoCustom.getId());
-            assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), rbac.getName(), DAILY).isEmpty());
-
-        });
+        /*
+         * Bundle: console
+         */
+        // App: integrations
+        findAndCompileInstantEmailTemplate(integrationFailed.getId());
+        findAndCompileInstantEmailTemplate(integrationDisabled.getId());
+        assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), integrations.getName(), DAILY).isEmpty());
+        // App: sources
+        findAndCompileInstantEmailTemplate(availabilityStatus.getId());
+        assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), sources.getName(), DAILY).isEmpty());
+        // App: rbac
+        findAndCompileInstantEmailTemplate(rhNewRoleAvailable.getId());
+        findAndCompileInstantEmailTemplate(rhPlatformDefaultRoleUpdated.getId());
+        findAndCompileInstantEmailTemplate(rhNonPlatformDefaultRoleUpdated.getId());
+        findAndCompileInstantEmailTemplate(customRoleCreated.getId());
+        findAndCompileInstantEmailTemplate(customRoleUpdated.getId());
+        findAndCompileInstantEmailTemplate(customRoleDeleted.getId());
+        findAndCompileInstantEmailTemplate(rhNewRoleAddedToDefaultAccess.getId());
+        findAndCompileInstantEmailTemplate(rhRoleRemovedFromDefaultAccess.getId());
+        findAndCompileInstantEmailTemplate(customDefaultAccessUpdated.getId());
+        findAndCompileInstantEmailTemplate(groupCreated.getId());
+        findAndCompileInstantEmailTemplate(groupUpdated.getId());
+        findAndCompileInstantEmailTemplate(groupDeleted.getId());
+        findAndCompileInstantEmailTemplate(platformDefaultGroupTurnedIntoCustom.getId());
+        assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), rbac.getName(), DAILY).isEmpty());
 
         clearDbTemplates();
     }
@@ -308,7 +274,8 @@ public class EmailTemplateMigrationServiceTest {
                 .when().delete("/template-engine/migrate")
                 .then()
                 .statusCode(204);
-        assertDbEmpty(Template.class, InstantEmailTemplate.class, AggregationEmailTemplate.class);
+        assertDbEmpty(InstantEmailTemplate.class, AggregationEmailTemplate.class);
+        assertDbEquals(Template.class, IntegrationTemplate.class);
     }
 
     private void assertDbEmpty(Class<?>... entityClasses) {
@@ -317,6 +284,14 @@ public class EmailTemplateMigrationServiceTest {
                     .getSingleResult();
             assertEquals(0, count);
         }
+    }
+
+    private void assertDbEquals(Class entityClass, Class otherEntityClass) {
+        long count = entityManager.createQuery("SELECT COUNT(*) FROM " + entityClass.getSimpleName(), Long.class)
+                .getSingleResult();
+        long countOtherClass = entityManager.createQuery("SELECT COUNT(*) FROM " + otherEntityClass.getSimpleName(), Long.class)
+            .getSingleResult();
+        assertEquals(count, countOtherClass);
     }
 
     private void findAndCompileInstantEmailTemplate(UUID eventTypeId) {

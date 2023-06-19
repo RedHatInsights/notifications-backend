@@ -20,9 +20,9 @@ public class CamelHistoryFillerHelper {
      *
      * @param jo Map containing the returned data
      * @return Nothing
-     * @see com.redhat.cloud.notifications.events.FromCamelHistoryFiller for the source of data
+     * @see ConnectorReceiver
      */
-    public void updateHistoryItem(Map<String, Object> jo) {
+    public boolean updateHistoryItem(Map<String, Object> jo) {
         String historyId = (String) jo.get("historyId");
 
         if (historyId == null || historyId.isBlank()) {
@@ -40,15 +40,26 @@ public class CamelHistoryFillerHelper {
 
         NotificationStatus status = result ? NotificationStatus.SUCCESS : NotificationStatus.FAILED_EXTERNAL;
 
-        Integer duration = (Integer) jo.getOrDefault("duration", 0);
+        // The duration may be an Integer or a Long depending on its value.
+        long duration = ((Number) jo.getOrDefault("duration", 0)).longValue();
+        /*
+         * The duration is currently stored as an integer in Postgres. Any value bigger than Integer.MAX_VALUE will
+         * cause a PSQLException because the value will be out of the integer range. We need to change the DB column
+         * type from integer to bigint but this is an expensive and tricky update because it will lock the table and
+         * shut down some parts of the app for a while. Until we've figured out how to best deal with the SQL schema
+         * migration, the following line will be used as a workaround to make sure the history is persisted even if
+         * the actual duration is bigger than an integer.
+         * TODO Remove the following line ASAP.
+         */
+        duration = Math.min(duration, Integer.MAX_VALUE);
 
         NotificationHistory history = new NotificationHistory();
 
         history.setId(UUID.fromString(historyId));
         history.setStatus(status);
         history.setDetails(details);
-        history.setInvocationTime(duration.longValue());
+        history.setInvocationTime(duration);
 
-        notificationHistoryRepository.updateHistoryItem(history);
+        return notificationHistoryRepository.updateHistoryItem(history);
     }
 }

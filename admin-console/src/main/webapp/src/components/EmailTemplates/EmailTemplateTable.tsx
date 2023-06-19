@@ -11,7 +11,9 @@ import { Link } from 'react-router-dom';
 import { useUserPermissions } from '../../app/PermissionContext';
 import { linkTo } from '../../Routes';
 import { useGetTemplates } from '../../services/EmailTemplates/GetTemplates';
-import { Application } from '../../types/Notifications';
+import { Application, Template } from '../../types/Notifications';
+import { DeleteTemplateModal } from './DeleteTemplateModal';
+import { useDeleteTemplate } from '../../services/EmailTemplates/DeleteTemplate';
 
 interface EmailTemplateTableProps {
     application: Application;
@@ -20,8 +22,33 @@ interface EmailTemplateTableProps {
 export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps> = props => {
     const { hasPermission } = useUserPermissions();
     const getAllTemplates = useGetTemplates();
+    const deleteTemplates = useDeleteTemplate();
+
+    const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
+    const [ template, setTemplate ] = React.useState<Partial<Template>>({});
 
     const columns = [ 'Email Templates' ];
+
+    const deleteTemplateModal = (t: Template) => {
+        setShowDeleteModal(true);
+        setTemplate(t);
+    };
+
+    const handleDelete = React.useCallback(async () => {
+        setShowDeleteModal(false);
+        const deleteTemplate = deleteTemplates.mutate;
+        const response = await deleteTemplate(template.id);
+        if (response.error) {
+            return false;
+        }
+
+        return true;
+    }, [deleteTemplates.mutate, template.id]);
+
+    const onDeleteClose = () => {
+        setShowDeleteModal(false);
+        getAllTemplates.query();
+    };
 
     if (getAllTemplates.loading) {
         return <Spinner />;
@@ -44,8 +71,14 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                                 <ToolbarItem>
                                     <Button variant="primary" isDisabled={ !hasPermission(props.application.id) }
                                         component={ (props: any) =>
-                                            <Link { ...props } to={ linkTo.emailTemplates } /> }>Create Email Template</Button>
+                                            <Link { ...props } to={ linkTo.newEmailTemplate() } /> }>Create Email Template</Button>
                                 </ToolbarItem>
+                                <DeleteTemplateModal 
+                                    onDelete={ handleDelete }
+                                    templateName={ template.name }
+                                    isOpen={ showDeleteModal }
+                                    onClose={ onDeleteClose }
+                                />
                             </ToolbarContent>
                         </Toolbar>
                         <Tr>
@@ -66,8 +99,8 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                                         <Link { ...props } to={ linkTo.emailTemplates(e.id) } /> }
                                     > { <PencilAltIcon /> } </Button></Td>
                                 <Td>
-                                    <Button className='delete' type='button' variant='plain'
-                                        isDisabled>{ <TrashIcon /> } </Button></Td>
+                                    <Button className='delete' type='button' variant='plain' onClick={ () => deleteTemplateModal(e) }
+                                    >{ <TrashIcon /> } </Button></Td>
                             </Tr>
                         ))}
                     </Tbody>

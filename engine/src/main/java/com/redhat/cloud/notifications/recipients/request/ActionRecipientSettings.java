@@ -1,32 +1,40 @@
 package com.redhat.cloud.notifications.recipients.request;
 
+import com.redhat.cloud.event.core.v1.Recipients;
+import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Recipient;
+import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ActionRecipientSettings extends RecipientSettings {
 
-    private final Recipient recipient;
+    private final boolean adminsOnly;
+    private final boolean ignorePreferences;
     private final Set<String> users;
 
-    public ActionRecipientSettings(Recipient recipient) {
-        this.recipient = recipient;
-        this.users = Set.copyOf(this.recipient.getUsers());
+    public ActionRecipientSettings(boolean adminsOnly, boolean ignorePreferences, Collection<String> users) {
+        this.adminsOnly = adminsOnly;
+        this.ignorePreferences = ignorePreferences;
+        this.users = Set.copyOf(users);
     }
 
     @Override
     public boolean isOnlyAdmins() {
-        return this.recipient.getOnlyAdmins();
+        return this.adminsOnly;
     }
 
     @Override
     public boolean isIgnoreUserPreferences() {
-        return this.recipient.getIgnoreUserPreferences();
+        return this.ignorePreferences;
     }
 
     @Override
@@ -39,11 +47,24 @@ public class ActionRecipientSettings extends RecipientSettings {
         return users;
     }
 
-    public static List<ActionRecipientSettings> fromAction(Action action) {
-        return action
-                .getRecipients()
-                .stream()
-                .map(ActionRecipientSettings::new)
-                .collect(Collectors.toList());
+    public static List<ActionRecipientSettings> fromEventWrapper(EventWrapper<?, ?> eventWrapper) {
+        if (eventWrapper.getEvent() instanceof Action) {
+            return ((Action) eventWrapper.getEvent())
+                    .getRecipients()
+                    .stream()
+                    .map(r -> new ActionRecipientSettings(r.getOnlyAdmins(), r.getIgnoreUserPreferences(), r.getUsers()))
+                    .collect(Collectors.toList());
+        } else if (eventWrapper.getEvent() instanceof NotificationsConsoleCloudEvent cloudEvent) {
+            Optional<Recipients> recipients = cloudEvent.getRecipients();
+            if (recipients.isPresent()) {
+                return List.of(new ActionRecipientSettings(
+                        recipients.get().getOnlyAdmins(),
+                        recipients.get().getIgnoreUserPreferences(),
+                        Arrays.asList(recipients.get().getUsers())
+                ));
+            }
+        }
+
+        return Collections.emptyList();
     }
 }

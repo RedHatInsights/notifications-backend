@@ -2,18 +2,18 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.db.StatelessSessionFactory;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
-import com.redhat.cloud.notifications.models.EmailSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.AccountRelationship;
@@ -62,9 +62,6 @@ public class EmailTest {
 
     @Inject
     EntityManager entityManager;
-
-    @Inject
-    StatelessSessionFactory statelessSessionFactory;
 
     @InjectMock
     @RestClient
@@ -131,9 +128,9 @@ public class EmailTest {
         Action emailActionMessage = TestHelpers.createPoliciesAction(tenant, bundle, application, "My test machine");
 
         Event event = new Event();
-        event.setAction(emailActionMessage);
+        event.setEventWrapper(new EventWrapperAction(emailActionMessage));
 
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
@@ -143,9 +140,7 @@ public class EmailTest {
         ep.setProperties(properties);
 
         try {
-            statelessSessionFactory.withSession(statelessSession -> {
-                emailProcessor.process(event, List.of(ep));
-            });
+            emailProcessor.process(event, List.of(ep));
             ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
             verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
             List<NotificationHistory> historyEntries = historyArgumentCaptor.getAllValues();
@@ -244,9 +239,9 @@ public class EmailTest {
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         Event event = new Event();
-        event.setAction(emailActionMessage);
+        event.setEventWrapper(new EventWrapperAction(emailActionMessage));
 
-        EmailSubscriptionProperties properties = new EmailSubscriptionProperties();
+        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
@@ -256,9 +251,7 @@ public class EmailTest {
         ep.setProperties(properties);
 
         try {
-            statelessSessionFactory.withSession(statelessSession -> {
-                emailProcessor.process(event, List.of(ep));
-            });
+            emailProcessor.process(event, List.of(ep));
             ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
             verify(notificationHistoryRepository, times(0)).createNotificationHistory(historyArgumentCaptor.capture());
             List<NotificationHistory> historyEntries = historyArgumentCaptor.getAllValues();

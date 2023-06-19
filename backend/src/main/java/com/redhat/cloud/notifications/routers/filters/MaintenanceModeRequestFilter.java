@@ -14,6 +14,7 @@ import java.util.List;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.models.Status.MAINTENANCE;
 import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 
@@ -25,7 +26,8 @@ public class MaintenanceModeRequestFilter {
             API_INTERNAL,
             "/health",
             "/metrics",
-            API_NOTIFICATIONS_V_1_0 + "/status"
+            API_NOTIFICATIONS_V_1_0 + "/status",
+            API_NOTIFICATIONS_V_2_0 + "/status"
     );
 
     private static final Response MAINTENANCE_IN_PROGRESS = Response.status(SERVICE_UNAVAILABLE).entity("Maintenance in progress").build();

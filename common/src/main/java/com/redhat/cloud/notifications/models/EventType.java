@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -36,14 +37,9 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 public class EventType {
 
     public static final Map<String, String> SORT_FIELDS = Map.of(
-            "name", "name",
+            "name", "e.name",
             "display_name", "e.displayName",
-            "application", "e.application.displayName",
-            // NOTIF-674 Remove these entries after the frontend has been updated
-            "e.application.displayname", "e.application.displayName",
-            "e.displayname", "e.displayName",
-            // NOTIF-674 Remove after IQE tests are updated
-            "e.name", "e.name"
+            "application", "e.application.displayName"
     );
 
     @Id
@@ -61,6 +57,10 @@ public class EventType {
 
     @JsonInclude(NON_NULL)
     private String description;
+
+    @JsonInclude(NON_NULL)
+    @Column(name = "fqn")
+    private String fullyQualifiedName;
 
     @NotNull
     @Transient
@@ -109,6 +109,14 @@ public class EventType {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setFullyQualifiedName(String fullyQualifiedName) {
+        this.fullyQualifiedName = fullyQualifiedName;
+    }
+
+    public String getFullyQualifiedName() {
+        return fullyQualifiedName;
     }
 
     public UUID getApplicationId() {

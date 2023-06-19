@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -84,7 +84,7 @@ public class ResourceOptimizationPayloadAggregatorTest {
         aggregation.setBundleName("rhel");
         aggregation.setApplicationName("resource-optimization");
         aggregation.setOrgId(DEFAULT_ORG_ID);
-        aggregation.setPayload(new BaseTransformer().toJsonObject(action));
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(action));
         return aggregation;
     }
 

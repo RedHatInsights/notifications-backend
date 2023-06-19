@@ -16,6 +16,9 @@ objects:
     - ingress
     - notifications-backend
     - rbac
+    optionalDependencies:
+    - export-service
+    - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
     database:
       sharedDbAppName: notifications-backend
     kafkaTopics:
@@ -30,6 +33,12 @@ objects:
       replicas: 3
     - topicName: platform.notifications.aggregation
       partitions: 2
+      replicas: 3
+    - topicName: platform.export.requests
+      partitions: 3
+      replicas: 3
+    - topicName: platform.chrome
+      partitions: 3
       replicas: 3
     deployments:
     - name: service
@@ -56,6 +65,7 @@ objects:
               - key: keystore.jks
                 path: clientkeystore.jks
             defaultMode: 420
+            optional: true
         volumeMounts:
         - name: rds-client-ca
           mountPath: /tmp
@@ -67,26 +77,30 @@ objects:
             path: /health/ready
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 40
+          initialDelaySeconds: 60
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
-          failureThreshold: 3
+          failureThreshold: 5
         livenessProbe:
           httpGet:
             path: /health/live
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 40
+          initialDelaySeconds: 60
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
-          failureThreshold: 3
+          failureThreshold: 5
         env:
+        - name: ENV_BASE_URL
+          value: ${ENV_BASE_URL}
         - name: ENV_NAME
           value: ${ENV_NAME}
         - name: MP_MESSAGING_INCOMING_AGGREGATION_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
           value: ${MP_MESSAGING_INCOMING_AGGREGATION_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS}
+        - name: MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED
+          value: ${MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED}
         - name: MP_MESSAGING_INCOMING_INGRESS_ENABLED
           value: ${MP_MESSAGING_INCOMING_INGRESS_ENABLED}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
@@ -95,31 +109,47 @@ objects:
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS}
         - name: MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
           value: ${MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS}
+        - name: MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED
+          value: ${MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED}
+        - name: MP_MESSAGING_OUTGOING_DRAWER_ENABLED
+          value: ${MP_MESSAGING_OUTGOING_DRAWER_ENABLED}
         - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
           value: ${NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE}
+        - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
+          value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
+        - name: NOTIFICATIONS_CAMEL_MAXIMUM_REDELIVERIES
+          value: ${NOTIFICATIONS_CAMEL_MAXIMUM_REDELIVERIES}
+        - name: NOTIFICATIONS_CAMEL_REDELIVERY_DELAY
+          value: ${NOTIFICATIONS_CAMEL_REDELIVERY_DELAY}
+        - name: NOTIFICATIONS_CAMEL_MAX_ENDPOINT_CACHE_SIZE
+          value: ${NOTIFICATIONS_CAMEL_MAX_ENDPOINT_CACHE_SIZE}
+        - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
+          value: ${NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS}
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
           valueFrom:
             secretKeyRef:
               name: backoffice
               key: token
-        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_FILE
-          value: /mnt/secrets/clientkeystore.jks
-        - name: QUARKUS_HTTP_SSL_CERTIFICATE_KEY_STORE_PASSWORD
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: it-services
               key: it-services-keystorepassword
+              optional: true
         - name: QUARKUS_REST_CLIENT_IT_S2S_URL
           valueFrom:
             secretKeyRef:
               name: it-services
               key: url
+              optional: true
         - name: PROCESSOR_EMAIL_BOP_CLIENT_ID
           valueFrom:
             secretKeyRef:
@@ -128,7 +158,7 @@ objects:
         - name: PROCESSOR_EMAIL_BOP_ENV
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: PROCESSOR_EMAIL_BOP_URL
-          value: https://${BACKOFFICE_HOST}/v1/sendEmails
+          value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}:${BACKOFFICE_PORT}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
           value: ${PROCESSOR_EMAIL_NO_REPLY}
         - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
@@ -146,14 +176,24 @@ objects:
           value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
         - name: RECIPIENT_PROVIDER_USE_IT_IMPL
           value: ${RECIPIENT_PROVIDER_USE_IT_IMPL}
+        - name: RHEL_ADVISOR_DAILY_DIGEST_ENABLED
+          value: ${RHEL_ADVISOR_DAILY_DIGEST_ENABLED}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
+        - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
+          value: ${QUARKUS_HIBERNATE_ORM_LOG_SQL}
         - name: QUARKUS_HTTP_PORT
           value: "8000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CATEGORY__IO_SMALLRYE_REACTIVE_MESSAGING__LEVEL
+          value: ${IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL}
+        - name: QUARKUS_LOG_CATEGORY__ORG_APACHE_KAFKA_CLIENTS__LEVEL
+          value: ${KAFKA_CLIENT_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+          value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
         - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
           value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD}
         - name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
@@ -169,31 +209,81 @@ objects:
         - name: QUARKUS_LOG_SENTRY
           value: ${SENTRY_ENABLED}
         - name: QUARKUS_LOG_SENTRY_DSN
-          value: https://3ff0dbd8017a4750a1d92055a1685263@o271843.ingest.sentry.io/5440905?environment=${ENV_NAME}
+          value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
-        - name: OB_ENABLED
-          value: ${OB_ENABLED}
-        - name: OB_BACKCHANNEL_FILLER_ENABLED
-          value: ${OB_BACKCHANNEL_FILLER_ENABLED}
-        - name: OB_BRIDGE_NAME
-          value: ${OB_BRIDGE_NAME}
-        - name: OB_TOKEN_CLIENT_ID
+        - name: SOURCES_PSK
           valueFrom:
             secretKeyRef:
-              name: rhose
-              key: token_client_id
-        - name: OB_TOKEN_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: rhose
-              key: token_client_secret
-        - name: QUARKUS_REST_CLIENT_OB_URL
-          value: ${QUARKUS_REST_CLIENT_OB_URL}
-        - name: QUARKUS_REST_CLIENT_KC_URL
-          value: ${QUARKUS_REST_CLIENT_KC_URL}
+              name: sources-api-psk
+              key: psk
+              optional: true
         - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
+        - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
+          value: ${SOURCES_ENABLED}
+        - name: NOTIFICATIONS_USE_POLICIES_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_POLICIES_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_COMPLIANCE_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_COMPLIANCE_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_ANSIBLE_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_ANSIBLE_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_COST_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_COST_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_PATCH_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_PATCH_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_INTEGRATIONS_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_INTEGRATIONS_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_DRIFT_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_DRIFT_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_SOURCES_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_SOURCES_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_INVENTORY_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_INVENTORY_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_MALWARE_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_MALWARE_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_EDGE_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_EDGE_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_RESOURCE_OPTIMIZATION_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_RESOURCE_OPTIMIZATION_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_VULNERABILITY_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_VULNERABILITY_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_RBAC_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_RBAC_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_ADVISOR_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_ADVISOR_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_ADVISOR_OPENSHIFT_EMAIL_TEMPLATES_V2_ENABLED
+          value: ${NOTIFICATIONS_USE_ADVISOR_OPENSHIFT_EMAIL_TEMPLATES_V2_ENABLED}
+        - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
+          value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
+        - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
+          value: ${NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED}
+        - name: NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED
+          value: ${NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED}
+        - name: NOTIFICATIONS_ADD_DEFAULT_RECIPIENT_ON_SINGLE_EMAIL_ENABLED
+          value: ${NOTIFICATIONS_ADD_DEFAULT_RECIPIENT_ON_SINGLE_EMAIL_ENABLED}
+        - name: NOTIFICATIONS_SINGLE_EMAIL_TEST_USER
+          value: ${NOTIFICATIONS_SINGLE_EMAIL_TEST_USER}
+        - name: MP_MESSAGING_INCOMING_EXPORTREQUESTS_ENABLED
+          value: ${NOTIFICATIONS_EXPORT_SERVICE_ENABLED}
+        - name: MP_MESSAGING_INCOMING_EXPORTREQUESTS_MAX_POLL_INTERVAL_MS
+          value: ${MP_MESSAGING_INCOMING_EXPORTREQUESTS_MAX_POLL_INTERVAL_MS}
+        - name: MP_MESSAGING_INCOMING_EXPORTREQUESTS_MAX_POLL_RECORDS
+          value: ${MP_MESSAGING_INCOMING_EXPORTREQUESTS_MAX_POLL_RECORDS}
+        - name: EXPORT_SERVICE_PSK
+          valueFrom:
+            secretKeyRef:
+              name: export-service-psk
+              key: psk
+              optional: true
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS_EXPORTS_EXPORTEVENTLISTENER__LEVEL
+          value: ${EXPORT_EVENT_LISTENER_LOG_LEVEL}
+        - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
+          value: ${QUARKUS_REST_CLIENT_LOGGING_SCOPE}
+        - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
+          value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
+        - name: NOTIFICATIONS_DRAWER_ENABLED
+          value: ${NOTIFICATIONS_DRAWER_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -201,6 +291,12 @@ parameters:
 - name: BACKOFFICE_HOST
   description: backoffice URL
   value: backoffice-proxy.apps.ext.spoke.preprod.us-west-2.aws.paas.redhat.com
+- name: BACKOFFICE_SCHEME
+  description: The scheme for the backoffice host's URL
+  value: https
+- name: BACKOFFICE_PORT
+  description: The port for the backoffice host's URL
+  value: "443"
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"
@@ -210,6 +306,9 @@ parameters:
 - name: CPU_REQUEST
   description: CPU request
   value: 500m
+- name: ENV_BASE_URL
+  value: https://console.redhat.com
+  description: The environment's base URL
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
@@ -238,6 +337,8 @@ parameters:
 - name: MP_MESSAGING_INCOMING_AGGREGATION_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
   description: Max age in milliseconds that an unprocessed message can be before the connector is marked as unhealthy
   value: "60000"
+- name: MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED
+  value: "true"
 - name: MP_MESSAGING_INCOMING_INGRESS_ENABLED
   value: "true"
 - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS
@@ -249,20 +350,30 @@ parameters:
 - name: MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
   description: Max age in milliseconds that an unprocessed message can be before the connector is marked as unhealthy
   value: "60000"
+- name: MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED
+  value: "true"
+- name: MP_MESSAGING_OUTGOING_DRAWER_ENABLED
+  value: "false"
 - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
   value: "false"
+- name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
+  description: When this is true, all integration types except emails are disabled
+  value: "true"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
-- name: OB_ENABLED
-  description: Is the OpenBridge integration enabled
+- name: NOTIFICATIONS_CAMEL_MAXIMUM_REDELIVERIES
+  description: Maximum number of redelivery attempts, which does not include the initial attempt.
+  value: "2"
+- name: NOTIFICATIONS_CAMEL_REDELIVERY_DELAY
+  value: "1000"
+- name: NOTIFICATIONS_CAMEL_MAX_ENDPOINT_CACHE_SIZE
+  value: "100"
+- name: QUARKUS_HIBERNATE_ORM_LOG_SQL
   value: "false"
-- name: OB_BACKCHANNEL_FILLER_ENABLED
-  description: Is the OpenBridge backchannel filler enabled?
-  value: "false"
-- name: OB_BRIDGE_NAME
-  description: The name of the bridge to use.
-  value: "notifications-bridge"
+- name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+  description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT30S
 - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
   description: Period between two batch executions. Defaults to 5s.
   value: 5s
@@ -272,12 +383,6 @@ parameters:
 - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
-- name: QUARKUS_REST_CLIENT_OB_URL
-  description: URL of the OpenBridge fleet manager
-  value: "http://addMe"
-- name: QUARKUS_REST_CLIENT_KC_URL
-  description: URL of the SSO server
-  value: "https://addMe"
 - name: PROCESSOR_EMAIL_NO_REPLY
   description: Email address
   value: no-reply@redhat.com
@@ -302,8 +407,88 @@ parameters:
 - name: RECIPIENT_PROVIDER_USE_IT_IMPL
   description: Temporary recipients retrieval switch between RBAC and IT
   value: "false"
+- name: RHEL_ADVISOR_DAILY_DIGEST_ENABLED
+  description: Is the daily digest enabled for the rhel/advisor app?
+  value: "false"
+- name: SENTRY_DSN
+  description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
 - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
+  value: "false"
+- name: SOURCES_ENABLED
+  description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
+  value: "false"
+- name: NOTIFICATIONS_USE_POLICIES_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_COMPLIANCE_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_ANSIBLE_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_COST_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
+  description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
+  value: "true"
+- name: NOTIFICATIONS_USE_PATCH_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_INTEGRATIONS_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_DRIFT_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_SOURCES_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_INVENTORY_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_MALWARE_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_EDGE_MANAGEMENT_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_RESOURCE_OPTIMIZATION_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_VULNERABILITY_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_RBAC_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_ADVISOR_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_ADVISOR_OPENSHIFT_EMAIL_TEMPLATES_V2_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
+  value: "false"
+- name: IT_SERVICE_TO_SERVICE_KEY_STORE
+  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
+  value: ""
+- name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
+  value: "true"
+- name: NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_ADD_DEFAULT_RECIPIENT_ON_SINGLE_EMAIL_ENABLED
+  value: "true"
+- name: NOTIFICATIONS_SINGLE_EMAIL_TEST_USER
+  value: "replace_me"
+- name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
+  value: INFO
+- name: KAFKA_CLIENT_LOG_LEVEL
+  value: INFO
+- name: NOTIFICATIONS_EXPORT_SERVICE_ENABLED
+  description: Enables the integration with the export service.
+  value: "false"
+- name: MP_MESSAGING_INCOMING_EXPORTREQUESTS_MAX_POLL_INTERVAL_MS
+  description: Maximum delay between invocations of poll()
+  value: "300000"
+- name: MP_MESSAGING_INCOMING_EXPORTREQUESTS_MAX_POLL_RECORDS
+  description: Maximum number of records returned in a single call to poll()
+  value: "500"
+- name: EXPORT_EVENT_LISTENER_LOG_LEVEL
+  description: The log level for the export service's event listener.
+  value: "INFO"
+- name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
+  description: When set to 'request-response', rest-client will log the request and response contents
+  value: ""
+- name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
+  description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
+  value: INFO
+- name: NOTIFICATIONS_DRAWER_ENABLED
   value: "false"

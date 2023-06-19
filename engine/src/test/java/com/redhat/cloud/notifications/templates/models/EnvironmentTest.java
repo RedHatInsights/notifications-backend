@@ -1,29 +1,37 @@
 package com.redhat.cloud.notifications.templates.models;
 
+import com.redhat.cloud.notifications.models.Environment;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import javax.inject.Inject;
 
+@QuarkusTest
 public class EnvironmentTest {
 
+    @Inject
+    Environment environment;
+
+    /**
+     * Tests that the default value for the "Environment" is "local-dev".
+     */
     @Test
-    public void url() {
-        Environment environment = new Environment();
+    void testEnvironmentDefaultValue() {
+        Assertions.assertEquals(
+            Environment.LOCAL_ENV,
+            this.environment.name(),
+            "unexpected default value for the environment's name"
+        );
+    }
 
-        environment.environment = "prod";
-        assertEquals("https://console.redhat.com", environment.url());
-        assertEquals("prod", environment.name());
+    /**
+     * Tests that the default value for the "URL" is "/".
+     */
+    @Test
+    void testUrlDefaultValue() {
+        final String expectedValue = "/";
 
-        environment.environment = "stage";
-        assertEquals("https://console.stage.redhat.com", environment.url());
-        assertEquals("stage", environment.name());
-
-        environment.environment = "ephemeral";
-        assertEquals("/", environment.url());
-        assertEquals("ephemeral", environment.name());
-
-        environment.environment = "anything-else";
-        assertEquals("/", environment.url());
-        assertEquals("anything-else", environment.name());
+        Assertions.assertEquals(expectedValue, this.environment.url(), "unexpected default value for the environment's URL");
     }
 }
