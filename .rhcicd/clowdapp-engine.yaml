@@ -37,7 +37,7 @@ objects:
     - topicName: platform.export.requests
       partitions: 3
       replicas: 3
-    - topicName: platform.chrome
+    - topicName: platform-chrome
       partitions: 3
       replicas: 3
     deployments:
