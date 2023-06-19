@@ -42,6 +42,12 @@
             <artifactId>camel-quarkus-microprofile-health</artifactId>
         </dependency>
 
+        <!-- Quarkus -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- Quarkiverse -->
         <dependency>
             <groupId>io.quarkiverse.logging.cloudwatch</groupId>
