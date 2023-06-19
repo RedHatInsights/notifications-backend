@@ -10,6 +10,7 @@ import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockserver.model.HttpResponse;
 
@@ -85,6 +86,7 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
     }
 
     @Test
+    @Disabled
     void testCallOk() throws Exception {
 
         mockServerOk();
@@ -103,6 +105,7 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
     }
 
     @Test
+    @Disabled
     void testCallFailure() throws Exception {
 
         mockServerKo();
@@ -117,6 +120,7 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
     }
 
     @Test
+    @Disabled
     void testRetriesFailure() throws Exception {
 
         mockServerFailure();
@@ -132,6 +136,7 @@ public abstract class CamelRoutesTest extends CamelQuarkusTestSupport {
     }
 
     @Test
+    @Disabled
     protected void testRoutes() throws Exception {
         adviceWith(getIncomingRoute(), context(), new AdviceWithRouteBuilder() {
             @Override

@@ -278,8 +278,6 @@ objects:
               optional: true
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS_EXPORTS_EXPORTEVENTLISTENER__LEVEL
           value: ${EXPORT_EVENT_LISTENER_LOG_LEVEL}
-        - name: QUARKUS_CAMEL_ROUTES_DISCOVERY_ENABLED
-          value: ${QUARKUS_CAMEL_ROUTES_DISCOVERY_ENABLED}
         - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
           value: ${QUARKUS_REST_CLIENT_LOGGING_SCOPE}
         - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
@@ -486,9 +484,6 @@ parameters:
 - name: EXPORT_EVENT_LISTENER_LOG_LEVEL
   description: The log level for the export service's event listener.
   value: "INFO"
-- name: QUARKUS_CAMEL_ROUTES_DISCOVERY_ENABLED
-  description: When set to 'false', the Camel routes discovery will be disabled in the engine, preventing any Google Chat, Teams or Slack notification from being sent
-  value: "true"
 - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
   description: When set to 'request-response', rest-client will log the request and response contents
   value: ""
