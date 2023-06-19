@@ -20,6 +20,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -71,6 +72,7 @@ public class ExportEventListener {
      * service.
      * @param payload the incoming payload from the channel.
      */
+    @ActivateRequestContext
     @Blocking
     @Incoming(EXPORT_CHANNEL)
     public void eventListener(final String payload) {
