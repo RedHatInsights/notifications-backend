@@ -83,6 +83,12 @@ objects:
           value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY
+          value: ${SENTRY_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_DSN
+          value: ${SENTRY_DSN}${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+          value: ${ENV_NAME}
 parameters:
 - name: CAMEL_COMPONENT_KAFKA_MAXPOLLRECORDS
   description: Maximum number of records returned in a single call to poll(). Defaults to 500.
@@ -141,3 +147,7 @@ parameters:
 - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
+- name: SENTRY_DSN
+  description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
+- name: SENTRY_ENABLED
+  value: "false"
