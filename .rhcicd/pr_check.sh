@@ -17,33 +17,26 @@ export DOCKERFILE=docker/Dockerfile.notifications-engine.jvm
 source $CICD_ROOT/build.sh
 
 # Build the notifications-connector-google-chat image and push it to Quay
-# TODO Uncomment the lines below when the ClowdApp is declared in app-interface
-#export IMAGE="quay.io/cloudservices/notifications-connector-google-chat"
-#export DOCKERFILE=docker/Dockerfile.notifications-connector-google-chat.jvm
-#source $CICD_ROOT/build.sh
+export IMAGE="quay.io/cloudservices/notifications-connector-google-chat"
+export DOCKERFILE=docker/Dockerfile.notifications-connector-google-chat.jvm
+source $CICD_ROOT/build.sh
 
 # Build the notifications-connector-microsoft-teams image and push it to Quay
-# TODO Uncomment the lines below when the ClowdApp is declared in app-interface
-#export IMAGE="quay.io/cloudservices/notifications-connector-microsoft-teams"
-#export DOCKERFILE=docker/Dockerfile.notifications-connector-microsoft-teams.jvm
-#source $CICD_ROOT/build.sh
+export IMAGE="quay.io/cloudservices/notifications-connector-microsoft-teams"
+export DOCKERFILE=docker/Dockerfile.notifications-connector-microsoft-teams.jvm
+source $CICD_ROOT/build.sh
 
 # Build the notifications-connector-slack image and push it to Quay
-# TODO Uncomment the lines below when the ClowdApp is declared in app-interface
-#export IMAGE="quay.io/cloudservices/notifications-connector-slack"
-#export DOCKERFILE=docker/Dockerfile.notifications-connector-slack.jvm
-#source $CICD_ROOT/build.sh
+export IMAGE="quay.io/cloudservices/notifications-connector-slack"
+export DOCKERFILE=docker/Dockerfile.notifications-connector-slack.jvm
+source $CICD_ROOT/build.sh
 
 # Deploy both images on ephemeral
 export APP_NAME="notifications"
 export COMPONENT_NAME="notifications-backend"
 export IMAGE="quay.io/cloudservices/notifications-backend"
 export DEPLOY_TIMEOUT="900"
-export EXTRA_DEPLOY_ARGS="--set-parameter notifications-engine/IMAGE_TAG=${IMAGE_TAG}"
-# TODO Uncomment the lines below when the ClowdApps are declared in app-interface
-#export EXTRA_DEPLOY_ARGS="--set-parameter notifications-connector-google-chat/IMAGE_TAG=${IMAGE_TAG}"
-#export EXTRA_DEPLOY_ARGS="--set-parameter notifications-connector-microsoft-teams/IMAGE_TAG=${IMAGE_TAG}"
-#export EXTRA_DEPLOY_ARGS="--set-parameter notifications-connector-slack/IMAGE_TAG=${IMAGE_TAG}"
+export EXTRA_DEPLOY_ARGS="--set-parameter notifications-engine/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-google-chat/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-microsoft-teams/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-slack/IMAGE_TAG=${IMAGE_TAG}"
 source $CICD_ROOT/deploy_ephemeral_env.sh
 
 # Run IQE tests
