@@ -24,13 +24,20 @@ public class PageLinksBuilder {
         if (limit >= count) {
             lastOffset = 0;
         } else {
-            lastOffset = count - (limit == 1 ? 1 : count % limit);
+            long modulo = count % limit;
+            if (modulo == 0) {
+                modulo = limit;
+            }
+            lastOffset = count - (limit == 1 ? 1 : modulo);
         }
         links.put("last", baseLink + lastOffset);
 
         // prev
         if (currentOffset > 0) {
             long prevOffset = currentOffset - limit;
+            if (prevOffset < 0) {
+                prevOffset = 0;
+            }
             links.put("prev", baseLink + prevOffset);
         }
 

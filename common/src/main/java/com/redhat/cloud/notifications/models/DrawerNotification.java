@@ -12,6 +12,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
@@ -22,6 +23,13 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @Table(name = "drawer_notification")
 @JsonNaming(SnakeCaseStrategy.class)
 public class DrawerNotification extends CreationTimestamped {
+
+    public static final Map<String, String> SORT_FIELDS = Map.of(
+        "bundle", "dn.event.bundleDisplayName",
+        "application", "dn.event.applicationDisplayName",
+        "event", "dn.event.eventTypeDisplayName",
+        "created", "dn.event.created"
+    );
 
     @Id
     @GeneratedValue

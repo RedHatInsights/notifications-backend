@@ -69,6 +69,11 @@ public class ResourceHelpers {
         return createBundle("name", "displayName");
     }
 
+    public Bundle createBundle(String name) {
+        Bundle bundle = new Bundle(name, "displayName");
+        return bundleRepository.createBundle(bundle);
+    }
+
     public Bundle createBundle(String name, String displayName) {
         Bundle bundle = new Bundle(name, displayName);
         return bundleRepository.createBundle(bundle);
@@ -81,6 +86,10 @@ public class ResourceHelpers {
 
     public Application createApplication(UUID bundleId) {
         return createApplication(bundleId, "name", "displayName");
+    }
+
+    public Application createApplication(UUID bundleId, String name) {
+        return createApplication(bundleId, name, "displayName");
     }
 
     public Application createApplication(UUID bundleId, String name, String displayName) {
@@ -104,6 +113,25 @@ public class ResourceHelpers {
         eventType.setDescription(description);
         eventType.setApplicationId(applicationId);
         return applicationRepository.createEventType(eventType);
+    }
+
+    public EventType createEventType(UUID applicationId, String name) {
+        return createEventType(applicationId, name, "displayName", "description");
+    }
+
+    public Event createEvent(EventType eventType) {
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setAccountId("account-id");
+        event.setOrgId(DEFAULT_ORG_ID);
+        event.setEventType(eventType);
+        event.setEventTypeDisplayName(eventType.getDisplayName());
+        event.setApplicationId(eventType.getApplication().getId());
+        event.setApplicationDisplayName(eventType.getApplication().getDisplayName());
+        event.setBundleId(eventType.getApplication().getBundle().getId());
+        event.setBundleDisplayName(eventType.getApplication().getBundle().getDisplayName());
+        entityManager.persist(event);
+        return event;
     }
 
     public UUID createTestAppAndEventTypes() {
