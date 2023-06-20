@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
@@ -157,8 +158,17 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             .withSpecVersion("1.0.2")
             .build();
 
+        Log.infof("Encoded Payload: %s", payload.encode());
         Message<String> message = Message.of(payload.encode())
-            .addMetadata(cloudEventMetadata);
+            .addMetadata(cloudEventMetadata)
+            .withAck(() -> {
+                Log.info("ACK received");
+                return CompletableFuture.completedFuture(null);
+            })
+            .withNack(throwable -> {
+                Log.info("NACK received");
+                return CompletableFuture.completedFuture(null);
+            });
 
         emitter.send(message);
     }
