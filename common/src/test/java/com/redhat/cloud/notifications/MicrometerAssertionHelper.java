@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -96,6 +97,15 @@ public class MicrometerAssertionHelper {
     public void awaitAndAssertCounterIncrement(String counterName, double expectedIncrement) {
         await().atMost(Duration.ofSeconds(30L)).until(() -> {
             double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0D);
+            return expectedIncrement == actualIncrement;
+        });
+    }
+
+    public void awaitAndAssertCounterIncrementFilteredByTags(final String counterName, final String tagKey, final String tagValue, final double expectedIncrement) {
+        await().atMost(Duration.ofSeconds(30L)).until(() -> {
+            double actualIncrement = this.registry.counter(counterName, Tags.of(tagKey, tagValue)).count() - counterValuesBeforeTest.getOrDefault(
+                counterName + tagKey + tagValue, 0D);
+
             return expectedIncrement == actualIncrement;
         });
     }
