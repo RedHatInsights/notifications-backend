@@ -20,7 +20,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -63,11 +62,6 @@ public class ExportEventListenerTest {
 
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
-
-    @BeforeEach
-    void resetC() {
-        this.micrometerAssertionHelper.clearSavedValues();
-    }
 
     @AfterEach
     void resetCounterValues() {
@@ -137,11 +131,11 @@ public class ExportEventListenerTest {
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
-        this.micrometerAssertionHelper.assertCounterIncrement(
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(
             ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
-            1,
             ExportEventListener.FAILURE_KEY,
-            ExportEventListener.FAILURE_UNSUPPORTED_RESOURCE_TYPE
+            ExportEventListener.FAILURE_UNSUPPORTED_RESOURCE_TYPE,
+            1
         );
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
@@ -178,11 +172,11 @@ public class ExportEventListenerTest {
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
-        this.micrometerAssertionHelper.assertCounterIncrement(
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(
             ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
-            1,
             ExportEventListener.FAILURE_KEY,
-            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS,
+            1
         );
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
@@ -219,11 +213,11 @@ public class ExportEventListenerTest {
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
-        this.micrometerAssertionHelper.assertCounterIncrement(
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(
             ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
-            1,
             ExportEventListener.FAILURE_KEY,
-            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS,
+            1
         );
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
@@ -327,11 +321,11 @@ public class ExportEventListenerTest {
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
-        this.micrometerAssertionHelper.assertCounterIncrement(
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(
             ExportEventListener.EXPORTS_SERVICE_FAILURES_COUNTER,
-            testCases.size(),
             ExportEventListener.FAILURE_KEY,
-            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS
+            ExportEventListener.FAILURE_UNABLE_EXTRACT_FILTERS,
+            testCases.size()
         );
         this.micrometerAssertionHelper.assertCounterIncrement(ExportEventListener.EXPORTS_SERVICE_SUCCESSES_COUNTER, 0);
     }
