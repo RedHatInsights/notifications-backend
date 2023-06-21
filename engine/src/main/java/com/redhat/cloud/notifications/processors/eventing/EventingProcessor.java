@@ -4,12 +4,12 @@ import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
@@ -21,11 +21,14 @@ import io.vertx.core.json.JsonObject;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
+import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_INTERNAL;
+import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
 
 @ApplicationScoped
 public class EventingProcessor extends EndpointTypeProcessor {
@@ -48,6 +51,9 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
     @Inject
     ConnectorSender connectorSender;
+
+    @Inject
+    NotificationHistoryRepository notificationHistoryRepository;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
@@ -75,10 +81,21 @@ public class EventingProcessor extends EndpointTypeProcessor {
         Log.infof("Sending CloudEvent [orgId=%s, integration=%s, historyId=%s, originalEventId=%s]",
                 endpoint.getOrgId(), endpoint.getName(), historyId, originalEventId);
 
-        JsonObject payload = buildPayload(event, endpoint, originalEventId);
-        connectorSender.send(payload, historyId, endpoint.getSubType());
+        NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
+        history.setStatus(PROCESSING);
+        persistNotificationHistory(history);
 
-        createHistoryEntry(event, endpoint, historyId, 0L);
+        JsonObject payload = buildPayload(event, endpoint, originalEventId);
+
+        try {
+            connectorSender.send(payload, historyId, endpoint.getSubType());
+        } catch (Exception e) {
+            history.setStatus(FAILED_INTERNAL);
+            history.setDetails(Map.of("failure", e.getMessage()));
+            notificationHistoryRepository.updateHistoryItem(history);
+            Log.infof(e, "Sending CloudEvent failed [orgId=%s, integration=%s, historyId=%s, originalEventId=%s]",
+                    endpoint.getOrgId(), endpoint.getName(), historyId, originalEventId);
+        }
     }
 
     private static String getOriginalEventId(Event event) {
@@ -128,12 +145,5 @@ public class EventingProcessor extends EndpointTypeProcessor {
             String credentials = basicAuthentication.getUsername() + ":" + basicAuthentication.getPassword();
             return Optional.of(Base64Utils.encode(credentials));
         }
-    }
-
-    private void createHistoryEntry(Event event, Endpoint endpoint, UUID historyId, long invocationTime) {
-        // We only create a basic stub. The FromCamel filler will update it later
-        NotificationHistory history = getHistoryStub(endpoint, event, invocationTime, historyId);
-        history.setStatus(NotificationStatus.PROCESSING);
-        persistNotificationHistory(history);
     }
 }

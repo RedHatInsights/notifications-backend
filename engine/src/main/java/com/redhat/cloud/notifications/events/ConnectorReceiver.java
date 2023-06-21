@@ -78,7 +78,7 @@ public class ConnectorReceiver {
             reinjectIfNeeded(decodedPayload);
             boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
             if (!updated) {
-                Log.infof("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
+                Log.warnf("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
             }
         } catch (Exception e) {
             messagesErrorCounter.increment();
