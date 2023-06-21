@@ -16,6 +16,7 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySource;
 import io.vertx.core.json.JsonArray;
+import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
@@ -127,7 +128,7 @@ public class ExportEventListenerTest {
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
         // Assert that the export service was called as expected.
-        this.assertErrorNotificationIsCorrect("400", "the specified resource type is unsupported by this application");
+        this.assertErrorNotificationIsCorrect(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
@@ -168,7 +169,7 @@ public class ExportEventListenerTest {
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
         // Assert that the export service was called as expected.
-        this.assertErrorNotificationIsCorrect("400", "unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
+        this.assertErrorNotificationIsCorrect(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'from' date filter with the 'yyyy-mm-dd' format");
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
@@ -209,7 +210,7 @@ public class ExportEventListenerTest {
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
         // Assert that the export service was called as expected.
-        this.assertErrorNotificationIsCorrect("400", "unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
+        this.assertErrorNotificationIsCorrect(HttpStatus.SC_BAD_REQUEST, "unable to parse the 'to' date filter with the 'yyyy-mm-dd' format");
 
         // Assert that the errors counter was incremented, and that the
         // successes counter did not increment.
@@ -313,7 +314,7 @@ public class ExportEventListenerTest {
             exportIn.send(consoleCloudEventParser.toJson(cee));
 
             // Assert that the export service was called as expected.
-            this.assertErrorNotificationIsCorrect("400", testCase.expectedErrorMessage());
+            this.assertErrorNotificationIsCorrect(HttpStatus.SC_BAD_REQUEST, testCase.expectedErrorMessage());
 
             // Clear the invocations to the mock.
             Mockito.clearInvocations(this.exportService);
@@ -475,7 +476,7 @@ public class ExportEventListenerTest {
      * @param expectedStatusCode the expected status code to check.
      * @param expectedErrorMessage the expected error message to check.
      */
-    void assertErrorNotificationIsCorrect(final String expectedStatusCode, final String expectedErrorMessage) {
+    void assertErrorNotificationIsCorrect(final int expectedStatusCode, final String expectedErrorMessage) {
         // Assert that the export service was called as expected.
         final ArgumentCaptor<String> capturedPsk = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<UUID> capturedExportUuid = ArgumentCaptor.forClass(UUID.class);
@@ -501,7 +502,7 @@ public class ExportEventListenerTest {
         // Assert that the sent error has the expected payload.
         final ExportError capturedPayload = capturedError.getValue();
 
-        Assertions.assertEquals(expectedStatusCode, capturedPayload.getCode(), "unexpected status code sent to the export service");
-        Assertions.assertEquals(expectedErrorMessage, capturedPayload.getMessage(), "unexpected error message sent to the export service");
+        Assertions.assertEquals(expectedStatusCode, capturedPayload.error(), "unexpected status code sent to the export service");
+        Assertions.assertEquals(expectedErrorMessage, capturedPayload.message(), "unexpected error message sent to the export service");
     }
 }
