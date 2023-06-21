@@ -26,6 +26,7 @@ import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,7 +78,7 @@ class DrawerProcessorTest {
     @Any
     InMemoryConnector inMemoryConnector;
 
-    protected InMemorySink<String> inMemorySink;
+    protected InMemorySink<JsonObject> inMemorySink;
 
     @PostConstruct
     void postConstruct() {
@@ -134,7 +135,7 @@ class DrawerProcessorTest {
         assertEquals(createdEvent.getRenderedDrawerNotification(), event.getRenderedDrawerNotification());
 
         await().until(() -> inMemorySink.received().size() == 2);
-        Message<String> message = inMemorySink.received().get(0);
+        Message<JsonObject> message = inMemorySink.received().get(0);
         assertNotNull(message);
         assertFalse(message.getPayload().isEmpty());
 
