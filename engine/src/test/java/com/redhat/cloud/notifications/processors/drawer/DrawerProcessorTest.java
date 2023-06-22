@@ -107,8 +107,10 @@ class DrawerProcessorTest {
     @Test
     void shouldCreateTwoDrawerNotifications() {
         User user1 = new User();
+        user1.setId("foo");
         user1.setUsername("foo");
         User user2 = new User();
+        user1.setId("bar");
         user2.setUsername("bar");
 
         when(recipientResolver.recipientUsers(any(), any(), any(), eq(false)))
