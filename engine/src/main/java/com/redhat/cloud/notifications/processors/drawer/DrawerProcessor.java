@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.DrawerEntry;
+import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.DrawerNotification;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -138,14 +139,16 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     }
 
     private JsonObject buildJsonPayload(DrawerNotification notif, Event event) {
+        DrawerEntryPayload drawerEntryPayload = new DrawerEntryPayload();
+        drawerEntryPayload.setId(notif.getId());
+        drawerEntryPayload.setDescription(event.getRenderedDrawerNotification());
+        drawerEntryPayload.setTitle(event.getEventTypeDisplayName());
+        drawerEntryPayload.setRead(notif.isRead());
+        drawerEntryPayload.setUsers(List.of(notif.getUserId()));
+        drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
         DrawerEntry drawerEntry = new DrawerEntry();
-        drawerEntry.setId(notif.getId());
-        drawerEntry.setDescription(event.getRenderedDrawerNotification());
-        drawerEntry.setTitle(event.getEventTypeDisplayName());
-        drawerEntry.setRead(notif.isRead());
         drawerEntry.setOrganizations(List.of(notif.getOrgId()));
-        drawerEntry.setUsers(List.of(notif.getUserId()));
-        drawerEntry.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
+        drawerEntry.setPayload(drawerEntryPayload);
         return JsonObject.mapFrom(drawerEntry);
     }
 
