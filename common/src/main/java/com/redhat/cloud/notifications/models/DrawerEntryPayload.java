@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
@@ -30,8 +29,6 @@ public class DrawerEntryPayload {
 
     @NotNull
     private boolean read;
-
-    private List<String> users;
 
     private String source;
 
@@ -92,14 +89,6 @@ public class DrawerEntryPayload {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public List<String> getUsers() {
-        return users;
-    }
-
-    public void setUsers(List<String> users) {
-        this.users = users;
     }
 
     public String getSource() {

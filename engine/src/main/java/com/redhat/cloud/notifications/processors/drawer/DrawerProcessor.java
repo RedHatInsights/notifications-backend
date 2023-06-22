@@ -104,7 +104,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
         NotificationHistory history = null;
         try {
-            String userNameListAsStr = userList.stream().map(usr -> usr.getUsername()).collect(Collectors.joining(","));
+            String userNameListAsStr = userList.stream().map(usr -> usr.getId()).collect(Collectors.joining(","));
             List<DrawerNotification> drawerNotifications = drawerNotificationRepository.create(event, userNameListAsStr);
 
             // build event thought qute template
@@ -144,10 +144,10 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         drawerEntryPayload.setDescription(event.getRenderedDrawerNotification());
         drawerEntryPayload.setTitle(event.getEventTypeDisplayName());
         drawerEntryPayload.setRead(notif.isRead());
-        drawerEntryPayload.setUsers(List.of(notif.getUserId()));
         drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
         DrawerEntry drawerEntry = new DrawerEntry();
         drawerEntry.setOrganizations(List.of(notif.getOrgId()));
+        drawerEntry.setUsers(List.of(notif.getUserId()));
         drawerEntry.setPayload(drawerEntryPayload);
         return JsonObject.mapFrom(drawerEntry);
     }

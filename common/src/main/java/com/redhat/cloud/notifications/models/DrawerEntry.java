@@ -12,6 +12,8 @@ public class DrawerEntry {
 
     private List<String> organizations;
 
+    private List<String> users;
+
     private DrawerEntryPayload payload;
 
     public DrawerEntry() {
@@ -19,6 +21,18 @@ public class DrawerEntry {
 
     public void setOrganizations(List<String> organizations) {
         this.organizations = organizations;
+    }
+
+    public List<String> getOrganizations() {
+        return organizations;
+    }
+
+    public void setUsers(List<String> users) {
+        this.users = users;
+    }
+
+    public List<String> getUsers() {
+        return users;
     }
 
     public DrawerEntryPayload getPayload() {

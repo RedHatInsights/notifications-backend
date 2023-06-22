@@ -235,6 +235,7 @@ public class RbacRecipientUsersProvider {
         List<User> users = new ArrayList<>();
         for (ITUserResponse itUserResponse : itUserResponses) {
             User user = new User();
+            user.setId(itUserResponse.id);
             user.setUsername(itUserResponse.authentications.get(0).principal);
 
             final List<Email> emails = itUserResponse.accountRelationships.get(0).emails;
