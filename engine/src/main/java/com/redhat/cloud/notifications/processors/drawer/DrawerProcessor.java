@@ -104,7 +104,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
         NotificationHistory history = null;
         try {
-            String userNameListAsStr = userList.stream().map(usr -> usr.getUsername()).collect(Collectors.joining(","));
+            String userNameListAsStr = userList.stream().map(usr -> usr.getId()).collect(Collectors.joining(","));
             List<DrawerNotification> drawerNotifications = drawerNotificationRepository.create(event, userNameListAsStr);
 
             // build event thought qute template

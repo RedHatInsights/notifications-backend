@@ -4,12 +4,21 @@ import java.util.Objects;
 
 public class User {
 
+    private String id;
     private String username;
     private String email;
     private String firstName;
     private String lastName;
     private Boolean isActive;
     private Boolean isAdmin;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getUsername() {
         return username;

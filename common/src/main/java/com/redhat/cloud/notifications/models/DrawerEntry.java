@@ -23,8 +23,16 @@ public class DrawerEntry {
         this.organizations = organizations;
     }
 
+    public List<String> getOrganizations() {
+        return organizations;
+    }
+
     public void setUsers(List<String> users) {
         this.users = users;
+    }
+
+    public List<String> getUsers() {
+        return users;
     }
 
     public DrawerEntryPayload getPayload() {
