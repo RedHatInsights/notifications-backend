@@ -39,8 +39,13 @@ public abstract class CamelNotificationProcessor implements Processor {
         exchange.setProperty(ID, cloudEvent.getString(CLOUD_EVENT_ID));
         exchange.setProperty(TYPE, cloudEvent.getString(CLOUD_EVENT_TYPE));
 
-        // The 'data' field is sent as a String from SmallRye Reactive Messaging.
-        JsonObject data = new JsonObject(cloudEvent.getString(CLOUD_EVENT_DATA));
+        JsonObject data;
+        try {
+            data = cloudEvent.getJsonObject(CLOUD_EVENT_DATA);
+        } catch (ClassCastException e) {
+            // TODO Remove this temporary compatibility mode after its deployment in production.
+            data = new JsonObject(cloudEvent.getString(CLOUD_EVENT_DATA));
+        }
         exchange.setProperty(ORG_ID, data.getString("orgId"));
         exchange.setProperty(WEBHOOK_URL, data.getString("webhookUrl"));
         addExtraProperties(exchange, data);

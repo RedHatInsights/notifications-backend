@@ -61,7 +61,7 @@ public abstract class CamelProcessorTest {
     @Any
     InMemoryConnector inMemoryConnector;
 
-    protected InMemorySink<String> inMemorySink;
+    protected InMemorySink<JsonObject> inMemorySink;
 
     @PostConstruct
     void postConstruct() {
@@ -97,7 +97,7 @@ public abstract class CamelProcessorTest {
     protected void verifyKafkaMessage() {
 
         await().until(() -> inMemorySink.received().size() == 1);
-        Message<String> message = inMemorySink.received().get(0);
+        Message<JsonObject> message = inMemorySink.received().get(0);
 
         assertNotificationsConnectorHeader(message);
 
@@ -105,15 +105,14 @@ public abstract class CamelProcessorTest {
         assertNotNull(cloudEventMetadata.getId());
         assertEquals(getExpectedCloudEventType(), cloudEventMetadata.getType());
 
-        JsonObject payload = new JsonObject(message.getPayload());
-        CamelNotification notification = payload.mapTo(CamelNotification.class);
+        CamelNotification notification = message.getPayload().mapTo(CamelNotification.class);
 
         assertEquals(DEFAULT_ORG_ID, notification.orgId);
         assertEquals(WEBHOOK_URL, notification.webhookUrl);
         assertEquals(getExpectedMessage(), notification.message);
     }
 
-    protected void assertNotificationsConnectorHeader(Message<String> message) {
+    protected void assertNotificationsConnectorHeader(Message<JsonObject> message) {
         byte[] actualConnectorHeader = message.getMetadata(KafkaMessageMetadata.class)
                 .get()
                 .getHeaders().headers(X_RH_NOTIFICATIONS_CONNECTOR_HEADER)

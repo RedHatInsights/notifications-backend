@@ -28,14 +28,14 @@ public class ConnectorSender {
 
     @Inject
     @Channel(TOCAMEL_CHANNEL)
-    Emitter<String> emitter;
+    Emitter<JsonObject> emitter;
 
     public void send(JsonObject payload, UUID historyId, String endpointSubType) {
-        Message<String> message = buildMessage(payload, historyId, endpointSubType);
+        Message<JsonObject> message = buildMessage(payload, historyId, endpointSubType);
         emitter.send(message);
     }
 
-    private static Message<String> buildMessage(JsonObject payload, UUID historyId, String endpointSubType) {
+    private static Message<JsonObject> buildMessage(JsonObject payload, UUID historyId, String endpointSubType) {
 
         OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(endpointSubType);
 
@@ -45,7 +45,7 @@ public class ConnectorSender {
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
 
-        return Message.of(payload.encode())
+        return Message.of(payload)
                 .addMetadata(kafkaMetadata)
                 .addMetadata(cloudEventMetadata)
                 .addMetadata(tracingMetadata);
@@ -63,6 +63,7 @@ public class ConnectorSender {
         return OutgoingCloudEventMetadata.<String>builder()
                 .withId(id)
                 .withType(type)
+                .withDataContentType("application/json")
                 .build();
     }
 }

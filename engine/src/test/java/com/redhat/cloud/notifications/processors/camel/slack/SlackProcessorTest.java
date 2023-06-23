@@ -58,7 +58,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
     protected void verifyKafkaMessage() {
 
         await().until(() -> inMemorySink.received().size() == 1);
-        Message<String> message = inMemorySink.received().get(0);
+        Message<JsonObject> message = inMemorySink.received().get(0);
 
         assertNotificationsConnectorHeader(message);
 
@@ -66,8 +66,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
         assertNotNull(cloudEventMetadata.getId());
         assertEquals(getExpectedCloudEventType(), cloudEventMetadata.getType());
 
-        JsonObject payload = new JsonObject(message.getPayload());
-        SlackNotification notification = payload.mapTo(SlackNotification.class);
+        SlackNotification notification = message.getPayload().mapTo(SlackNotification.class);
 
         assertEquals(DEFAULT_ORG_ID, notification.orgId);
         assertEquals(WEBHOOK_URL, notification.webhookUrl);
