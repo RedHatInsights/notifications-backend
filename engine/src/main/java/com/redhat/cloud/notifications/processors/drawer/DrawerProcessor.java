@@ -144,6 +144,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         drawerEntryPayload.setDescription(event.getRenderedDrawerNotification());
         drawerEntryPayload.setTitle(event.getEventTypeDisplayName());
         drawerEntryPayload.setRead(notif.isRead());
+        drawerEntryPayload.setCreated(event.getCreated());
         drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
         DrawerEntry drawerEntry = new DrawerEntry();
         drawerEntry.setOrganizations(List.of(notif.getOrgId()));

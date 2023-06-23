@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
-import com.redhat.cloud.notifications.models.DrawerEntry;
+import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
@@ -45,7 +45,7 @@ public class DrawerResource {
     @Operation(summary = "Retrieve drawer notifications entries.", description =
             "Allowed `sort_by` fields are `bundle`, `application`, `event`, `created` and read. The ordering can be optionally specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. Defaults to `desc` for the `created` field and to `asc` for all other fields."
     )
-    public Page<DrawerEntry> getDrawerEntries(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
+    public Page<DrawerEntryPayload> getDrawerEntries(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
                                          @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                          @RestQuery Set<UUID> eventTypeIds, @RestQuery LocalDateTime startDate, @RestQuery LocalDateTime endDate,
                                          @RestQuery Boolean readStatus,
@@ -54,7 +54,7 @@ public class DrawerResource {
         String orgId = getOrgId(securityContext);
         String username = getUsername(securityContext);
 
-        List<DrawerEntry> drawerEntries = drawerRepository.getNotifications(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus,  query);
+        List<DrawerEntryPayload> drawerEntries = drawerRepository.getNotifications(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus,  query);
 
         Long count = drawerRepository.count(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
 
@@ -63,7 +63,7 @@ public class DrawerResource {
 
         Map<String, String> links = PageLinksBuilder.build(uriInfo.getPath(), count, query);
 
-        Page<DrawerEntry> page = new Page<>();
+        Page<DrawerEntryPayload> page = new Page<>();
         page.setData(drawerEntries);
         page.setMeta(meta);
         page.setLinks(links);

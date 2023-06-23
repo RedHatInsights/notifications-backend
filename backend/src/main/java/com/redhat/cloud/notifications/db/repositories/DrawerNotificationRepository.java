@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.models.DrawerEntry;
+import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.DrawerNotification;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -35,14 +35,14 @@ public class DrawerNotificationRepository {
             .executeUpdate();
     }
 
-    public List<DrawerEntry> getNotifications(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
+    public List<DrawerEntryPayload> getNotifications(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                                               LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus, Query query) {
         query.setSortFields(DrawerNotification.SORT_FIELDS);
         query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
 
-        String hql = "SELECT dn.id, dn.orgId, dn.userId, dn.read, " +
-            "dn.event.bundleDisplayName, dn.event.applicationDisplayName, dn.event.eventTypeDisplayName, dn.event.created "
+        String hql = "SELECT dn.id, dn.read, " +
+            "dn.event.bundleDisplayName, dn.event.applicationDisplayName, dn.event.eventTypeDisplayName, dn.created, dn.event.renderedDrawerNotification "
             + "FROM DrawerNotification dn where dn.orgId = :orgId and dn.userId = :userid";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
@@ -59,7 +59,7 @@ public class DrawerNotificationRepository {
         typedQuery.setFirstResult(limit.getOffset());
 
         List<Object[]> results = typedQuery.getResultList();
-        return  results.stream().map(e -> new DrawerEntry(e)).collect(Collectors.toList());
+        return  results.stream().map(e -> new DrawerEntryPayload(e)).collect(Collectors.toList());
     }
 
     public Long count(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,

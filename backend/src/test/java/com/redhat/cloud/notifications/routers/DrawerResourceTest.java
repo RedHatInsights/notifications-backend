@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.DrawerEntry;
+import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.DrawerNotification;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
@@ -67,7 +67,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
         }
 
         // check default limit
-        Page<DrawerEntry> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null);
+        Page<DrawerEntryPayload> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null);
         assertEquals(30, page.getMeta().getCount());
         assertEquals(20, page.getData().size());
         assertLinks(page.getLinks(), "first", "next", "last");
@@ -120,7 +120,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
         Header identityHeaderUser2 = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME2, FULL_ACCESS);
 
         // should return 3 results
-        Page<DrawerEntry> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null);
+        Page<DrawerEntryPayload> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null);
         assertEquals(3, page.getData().size());
 
         // should return 3 results
@@ -230,7 +230,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
-    private static Page<DrawerEntry> getDrawerEntries(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
+    private static Page<DrawerEntryPayload> getDrawerEntries(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                                                       LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
                                                       Boolean readStatus, Integer limit,
                                                       Integer offset, String sortBy) {
