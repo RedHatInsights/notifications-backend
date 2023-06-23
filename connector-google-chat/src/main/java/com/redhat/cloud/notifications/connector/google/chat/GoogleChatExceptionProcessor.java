@@ -15,8 +15,7 @@ public class GoogleChatExceptionProcessor extends ExceptionProcessor {
 
     @Override
     protected void process(Throwable t, Exchange exchange) {
-        if (t instanceof HttpOperationFailedException) {
-            HttpOperationFailedException e = (HttpOperationFailedException) t;
+        if (t instanceof HttpOperationFailedException e) {
             Log.errorf(
                     HTTP_LOG_MSG,
                     getRouteId(exchange),

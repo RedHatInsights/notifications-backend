@@ -23,8 +23,7 @@ public class SlackExceptionProcessor extends ExceptionProcessor {
 
     @Override
     protected void process(Throwable t, Exchange exchange) {
-        if (t instanceof CamelExchangeException) {
-            CamelExchangeException e = (CamelExchangeException) t;
+        if (t instanceof CamelExchangeException e) {
             Matcher matcher = CHANNEL_NOT_FOUND_PATTERN.matcher(e.getMessage());
             if (matcher.matches()) {
                 // TODO Disable the integration using the 'integration-disabled' event type.
