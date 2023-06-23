@@ -44,7 +44,8 @@ public class DrawerResource {
     @GET
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve drawer notifications entries.", description =
-            "Allowed `sort_by` fields are `bundle`, `application`, `event`, `created` and `read`. The ordering can be optionally specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. Defaults to `desc` for the `created` field and to `asc` for all other fields."
+            "Allowed `sort_by` fields are `bundle`, `application`, `event`, `created` and `read`. The ordering can be optionally specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. Defaults to `desc` for the `created` field and to `asc` for all other fields.",
+            hidden = true
     )
     public Page<DrawerEntryPayload> getDrawerEntries(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
                                          @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
@@ -76,6 +77,7 @@ public class DrawerResource {
     @PUT
     @Path("/read")
     @Produces(APPLICATION_JSON)
+    @Operation(hidden = true)
     public Integer updateNotificationReadStatus(@Context SecurityContext securityContext, UpdateNotificationDrawerStatus drawerStatus) {
         String orgId = getOrgId(securityContext);
         String username = getUsername(securityContext);
