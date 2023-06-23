@@ -7,6 +7,10 @@ import org.apache.camel.http.base.HttpOperationFailedException;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import static org.jboss.logging.Logger.Level;
+import static org.jboss.logging.Logger.Level.DEBUG;
+import static org.jboss.logging.Logger.Level.ERROR;
+
 @ApplicationScoped
 public class GoogleChatExceptionProcessor extends ExceptionProcessor {
 
@@ -16,17 +20,27 @@ public class GoogleChatExceptionProcessor extends ExceptionProcessor {
     @Override
     protected void process(Throwable t, Exchange exchange) {
         if (t instanceof HttpOperationFailedException e) {
-            Log.errorf(
-                    HTTP_LOG_MSG,
-                    getRouteId(exchange),
-                    getOrgId(exchange),
-                    getExchangeId(exchange),
-                    getTargetUrl(exchange),
-                    e.getStatusCode(),
-                    e.getResponseBody()
-            );
+            if (e.getStatusCode() >= 400 && e.getStatusCode() < 500) {
+                // TODO Disable the integration using the 'integration-disabled' event type.
+                log(DEBUG, e, exchange);
+            } else {
+                log(ERROR, e, exchange);
+            }
         } else {
             logDefault(t, exchange);
         }
+    }
+
+    private void log(Level level, HttpOperationFailedException e, Exchange exchange) {
+        Log.logf(
+                level,
+                HTTP_LOG_MSG,
+                getRouteId(exchange),
+                getOrgId(exchange),
+                getExchangeId(exchange),
+                getTargetUrl(exchange),
+                e.getStatusCode(),
+                e.getResponseBody()
+        );
     }
 }
