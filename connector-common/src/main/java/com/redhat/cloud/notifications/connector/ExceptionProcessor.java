@@ -39,7 +39,7 @@ public class ExceptionProcessor implements Processor {
         exchange.setProperty(SUCCESSFUL, false);
         exchange.setProperty(OUTCOME, t.getMessage());
 
-        log(t, exchange);
+        process(t, exchange);
 
         producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchange);
     }
@@ -71,7 +71,7 @@ public class ExceptionProcessor implements Processor {
         return exchange.getProperty(TARGET_URL, String.class);
     }
 
-    protected void log(Throwable t, Exchange exchange) {
+    protected void process(Throwable t, Exchange exchange) {
         logDefault(t, exchange);
     }
 }
