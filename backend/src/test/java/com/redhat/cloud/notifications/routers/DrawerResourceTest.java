@@ -287,7 +287,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
         return request
             .contentType(JSON)
             .body(Json.encode(updateNotificationDrawerStatus))
-            .when().put(PATH + "/update-read-status")
+            .when().put(PATH + "/read")
             .then()
             .statusCode(200)
             .contentType(JSON)

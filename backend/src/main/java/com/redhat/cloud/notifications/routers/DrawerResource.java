@@ -20,6 +20,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +44,7 @@ public class DrawerResource {
     @GET
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve drawer notifications entries.", description =
-            "Allowed `sort_by` fields are `bundle`, `application`, `event`, `created` and read. The ordering can be optionally specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. Defaults to `desc` for the `created` field and to `asc` for all other fields."
+            "Allowed `sort_by` fields are `bundle`, `application`, `event`, `created` and `read`. The ordering can be optionally specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. Defaults to `desc` for the `created` field and to `asc` for all other fields."
     )
     public Page<DrawerEntryPayload> getDrawerEntries(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
                                          @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
@@ -54,9 +55,11 @@ public class DrawerResource {
         String orgId = getOrgId(securityContext);
         String username = getUsername(securityContext);
 
-        List<DrawerEntryPayload> drawerEntries = drawerRepository.getNotifications(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus,  query);
-
         Long count = drawerRepository.count(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
+        List<DrawerEntryPayload> drawerEntries = new ArrayList<>();
+        if (count > 0) {
+            drawerEntries = drawerRepository.getNotifications(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus, query);
+        }
 
         Meta meta = new Meta();
         meta.setCount(count);
@@ -71,7 +74,7 @@ public class DrawerResource {
     }
 
     @PUT
-    @Path("/update-read-status")
+    @Path("/read")
     @Produces(APPLICATION_JSON)
     public Integer updateNotificationReadStatus(@Context SecurityContext securityContext, UpdateNotificationDrawerStatus drawerStatus) {
         String orgId = getOrgId(securityContext);
