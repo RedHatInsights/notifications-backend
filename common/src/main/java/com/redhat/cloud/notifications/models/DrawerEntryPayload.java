@@ -18,10 +18,6 @@ public class DrawerEntryPayload {
 
     private String description;
 
-    private String bundleName;
-
-    private String applicationName;
-
     private String title;
 
     @JsonFormat(shape = STRING)
@@ -33,6 +29,15 @@ public class DrawerEntryPayload {
     private String source;
 
     public DrawerEntryPayload() {
+    }
+
+    public DrawerEntryPayload(Object[] rawDrawerEntry) {
+        id = (UUID) rawDrawerEntry[0];
+        read = (boolean) rawDrawerEntry[1];
+        source = String.format("%s - %s", rawDrawerEntry[2], rawDrawerEntry[3]);
+        title = (String) rawDrawerEntry[4];
+        created = (LocalDateTime) rawDrawerEntry[5];
+        description = (String) rawDrawerEntry[6];
     }
 
     public UUID getId() {
@@ -65,22 +70,6 @@ public class DrawerEntryPayload {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getBundleName() {
-        return bundleName;
-    }
-
-    public void setBundleName(String bundleName) {
-        this.bundleName = bundleName;
-    }
-
-    public String getApplicationName() {
-        return applicationName;
-    }
-
-    public void setApplicationName(String applicationName) {
-        this.applicationName = applicationName;
     }
 
     public String getTitle() {
