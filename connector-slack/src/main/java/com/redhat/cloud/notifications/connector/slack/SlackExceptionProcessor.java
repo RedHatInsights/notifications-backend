@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import io.quarkus.logging.Log;
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.Exchange;
-import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -12,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.redhat.cloud.notifications.connector.slack.ExchangeProperty.CHANNEL;
+import static org.jboss.logging.Logger.Level;
 import static org.jboss.logging.Logger.Level.DEBUG;
 import static org.jboss.logging.Logger.Level.ERROR;
 
@@ -36,7 +36,7 @@ public class SlackExceptionProcessor extends ExceptionProcessor {
         }
     }
 
-    private void log(Logger.Level level, Throwable t, Exchange exchange) {
+    private void log(Level level, Throwable t, Exchange exchange) {
         Log.logf(
                 level,
                 t,
