@@ -119,21 +119,6 @@ public class ResourceHelpers {
         return createEventType(applicationId, name, "displayName", "description");
     }
 
-    public Event createEvent(EventType eventType) {
-        Event event = new Event();
-        event.setId(UUID.randomUUID());
-        event.setAccountId("account-id");
-        event.setOrgId(DEFAULT_ORG_ID);
-        event.setEventType(eventType);
-        event.setEventTypeDisplayName(eventType.getDisplayName());
-        event.setApplicationId(eventType.getApplication().getId());
-        event.setApplicationDisplayName(eventType.getApplication().getDisplayName());
-        event.setBundleId(eventType.getApplication().getBundle().getId());
-        event.setBundleDisplayName(eventType.getApplication().getBundle().getDisplayName());
-        entityManager.persist(event);
-        return event;
-    }
-
     public UUID createTestAppAndEventTypes() {
         Bundle bundle = createBundle(TEST_BUNDLE_NAME, "...");
         Application app1 = createApplication(bundle.getId(), TEST_APP_NAME, "...");

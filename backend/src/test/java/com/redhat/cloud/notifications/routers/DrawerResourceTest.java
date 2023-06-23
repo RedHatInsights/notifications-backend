@@ -67,24 +67,24 @@ public class DrawerResourceTest extends DbIsolatedTest {
         }
 
         // check default limit
-        Page<DrawerEntryPayload> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null);
+        Page<DrawerEntryPayload> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null);
         assertEquals(30, page.getMeta().getCount());
         assertEquals(20, page.getData().size());
         assertLinks(page.getLinks(), "first", "next", "last");
 
         // check forced limit
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, 6, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, 6, null, null);
         assertEquals(30, page.getMeta().getCount());
         assertEquals(6, page.getData().size());
         assertLinks(page.getLinks(), "first", "next", "last");
 
         // check offset
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, 7, 28, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, 7, 28, null);
         assertEquals(30, page.getMeta().getCount());
         assertEquals(2, page.getData().size());
 
         // check offset on links
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, 3, 1, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, 3, 1, null);
         assertEquals(30, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertLinks(page.getLinks(), "first", "prev", "next", "last");
@@ -120,63 +120,63 @@ public class DrawerResourceTest extends DbIsolatedTest {
         Header identityHeaderUser2 = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME2, FULL_ACCESS);
 
         // should return 3 results
-        Page<DrawerEntryPayload> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null);
+        Page<DrawerEntryPayload> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null);
         assertEquals(3, page.getData().size());
 
         // should return 3 results
-        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId(), createdBundle.getId()), null, null, null, null, null, null, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId(), createdBundle.getId()), null, null, null, null, null, null, null, null);
         assertEquals(3, page.getData().size());
 
         // should return 1 result
-        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId()), null, null, null, null, null, null, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId()), null, null, null, null, null, null, null, null);
         assertEquals(1, page.getData().size());
 
         // should return 3 results, bundle parameter should be ignored
-        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId()), Set.of(createdApplication.getId(), createdApplication2.getId()), null, null, null, null, null, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId()), Set.of(createdApplication.getId(), createdApplication2.getId()), null, null, null, null, null, null, null);
         assertEquals(3, page.getData().size());
 
         // should return 1 result
-        page = getDrawerEntries(defaultIdentityHeader, null, Set.of(createdApplication2.getId()), null, null, null, null, null, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, Set.of(createdApplication2.getId()), null, null, null, null, null, null, null);
         assertEquals(1, page.getData().size());
 
         // should return 3 results
-        page = getDrawerEntries(defaultIdentityHeader, null, null, Set.of(createdEventType.getId(), createdEventType2.getId(), createdEventType3.getId()), null, null, null, null, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, null, Set.of(createdEventType.getId(), createdEventType2.getId(), createdEventType3.getId()), null, null, null, null, null, null);
         assertEquals(3, page.getData().size());
 
         // should return 1 result
-        page = getDrawerEntries(defaultIdentityHeader, null, null, Set.of(createdEventType3.getId()), null, null, null, null, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, null, Set.of(createdEventType3.getId()), null, null, null, null, null, null);
         assertEquals(1, page.getData().size());
 
         // should return 1 result, application parameter should be ignored
-        page = getDrawerEntries(defaultIdentityHeader, null, Set.of(createdApplication.getId()), Set.of(createdEventType3.getId()), null, null, null, null, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, Set.of(createdApplication.getId()), Set.of(createdEventType3.getId()), null, null, null, null, null, null);
         assertEquals(1, page.getData().size());
 
         // should return 3 results
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, LocalDateTime.now(UTC), null, null, null, null, null);
+        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, LocalDateTime.now(UTC), null, null, null, null);
         assertEquals(3, page.getData().size());
 
         // should return 2 results
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, LocalDateTime.now(UTC).minusDays(1), null, null, null, null, null);
+        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, LocalDateTime.now(UTC).minusDays(1), null, null, null, null);
         assertEquals(2, page.getData().size());
 
         // should return 1 result
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusHours(1), null, null, null, null, null, null);
+        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusHours(1), null, null, null, null, null);
         assertEquals(1, page.getData().size());
 
         // should return 1 result
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusDays(1), null, null, null, null, null, null);
+        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusDays(1), null, null, null, null, null);
         assertEquals(1, page.getData().size());
 
         // should return 1 result
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusDays(3), LocalDateTime.now(UTC).minusDays(1), null, null, null, null, null);
+        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusDays(3), LocalDateTime.now(UTC).minusDays(1), null, null, null, null);
         assertEquals(1, page.getData().size());
 
         // should return 0 result
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, true, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, true, null, null, null);
         assertEquals(0, page.getData().size());
 
         // should return 3 results
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, false, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, false, null, null, null);
         assertEquals(3, page.getData().size());
 
         // only notification recipient can update read status
@@ -187,18 +187,18 @@ public class DrawerResourceTest extends DbIsolatedTest {
         assertEquals(1, nbUpdates);
 
         // should return 1 result
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, true, null, null, null);
+        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, true, null, null, null);
         assertEquals(1, page.getData().size());
 
         // User-2 can't access to this read notification
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, null, null, true, null, null, null);
+        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, null, true, null, null, null);
         assertEquals(0, page.getData().size());
     }
 
     @Transactional
-    void createDrawerNotification(String USERNAME, Event createdEvent) {
+    void createDrawerNotification(String userId, Event createdEvent) {
         DrawerNotification notificationDrawer1 = new DrawerNotification();
-        notificationDrawer1.setUserId(USERNAME);
+        notificationDrawer1.setUserId(userId);
         notificationDrawer1.setEventId(createdEvent.getId());
         notificationDrawer1.setEvent(createdEvent);
         notificationDrawer1.setOrgId(DEFAULT_ORG_ID);
@@ -231,7 +231,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
     }
 
     private static Page<DrawerEntryPayload> getDrawerEntries(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
-                                                      LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
+                                                      LocalDateTime startDate, LocalDateTime endDate,
                                                       Boolean readStatus, Integer limit,
                                                       Integer offset, String sortBy) {
         RequestSpecification request = given()
@@ -250,9 +250,6 @@ public class DrawerResourceTest extends DbIsolatedTest {
         }
         if (endDate != null) {
             request.param("endDate", endDate.toString());
-        }
-        if (endpointTypes != null) {
-            request.param("endpointTypes", endpointTypes);
         }
         if (readStatus != null) {
             request.param("readStatus", readStatus);
