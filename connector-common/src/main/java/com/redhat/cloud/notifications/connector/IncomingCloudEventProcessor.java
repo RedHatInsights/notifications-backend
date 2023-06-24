@@ -43,7 +43,13 @@ public class IncomingCloudEventProcessor implements Processor {
         // Source of the Cloud Event returned to the Notifications engine.
         exchange.setProperty(RETURN_SOURCE, connectorConfig.getConnectorName());
 
-        JsonObject data = new JsonObject(cloudEvent.getString(CLOUD_EVENT_DATA));
+        JsonObject data;
+        try {
+            data = cloudEvent.getJsonObject(CLOUD_EVENT_DATA);
+        } catch (ClassCastException e) {
+            // TODO Remove this temporary compatibility mode after its deployment in production.
+            data = new JsonObject(cloudEvent.getString(CLOUD_EVENT_DATA));
+        }
         exchange.setProperty(ORG_ID, data.getString("orgId"));
 
         cloudEventDataExtractor.extract(exchange, data);

@@ -112,7 +112,7 @@ class EventingTypeProcessorTest {
     @Inject
     FeatureFlipper featureFlipper;
 
-    private InMemorySink<String> inMemorySink;
+    private InMemorySink<JsonObject> inMemorySink;
 
     @PostConstruct
     void postConstruct() {
@@ -166,10 +166,10 @@ class EventingTypeProcessorTest {
         assertEquals(2, inMemorySink.received().size());
 
         // We'll only check the payload and metadata of the first Kafka message.
-        Message<String> message = inMemorySink.received().get(0);
+        Message<JsonObject> message = inMemorySink.received().get(0);
 
         // The payload should contain the action events.
-        JsonObject payload = new JsonObject(message.getPayload());
+        JsonObject payload = message.getPayload();
         assertNotNull(payload.getJsonArray("events").getJsonObject(0).getString("payload"));
 
         // The processor added a 'notif-metadata' field to the payload, let's have a look at it.
@@ -266,13 +266,13 @@ class EventingTypeProcessorTest {
         assertEquals(expectedBase64Credentials, notifMetadata.getString("basicAuth"));
     }
 
-    private void checkCloudEventMetadata(Message<String> message, UUID expectedId, String expectedAccountId, String expectedOrgId, String expectedSubType) {
+    private void checkCloudEventMetadata(Message<JsonObject> message, UUID expectedId, String expectedAccountId, String expectedOrgId, String expectedSubType) {
         CloudEventMetadata metadata = message.getMetadata(CloudEventMetadata.class).get();
         assertEquals(expectedId.toString(), metadata.getId());
         assertEquals(CLOUD_EVENT_TYPE_PREFIX + expectedSubType, metadata.getType());
     }
 
-    private static void checkTracingMetadata(Message<String> message) {
+    private static void checkTracingMetadata(Message<JsonObject> message) {
         TracingMetadata metadata = message.getMetadata(TracingMetadata.class).get();
         assertNotNull(metadata.getPreviousContext());
     }

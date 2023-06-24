@@ -219,8 +219,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         JsonObject cloudEvent = new JsonObject();
         cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
         cloudEvent.put(CLOUD_EVENT_TYPE, "com.redhat.console.notification.toCamel." + connectorConfig.getConnectorName());
-        // The 'data' field is sent as a String from SmallRye Reactive Messaging.
-        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification).encode());
+        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification));
 
         template.sendBodyAndHeader(KAFKA_SOURCE_MOCK, cloudEvent.encode(), X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connectorConfig.getConnectorName());
 
