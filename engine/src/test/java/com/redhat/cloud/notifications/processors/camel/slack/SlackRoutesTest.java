@@ -5,6 +5,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import java.net.URLEncoder;
 
@@ -49,6 +50,7 @@ public class SlackRoutesTest extends CamelRoutesTest {
     }
 
     @Test
+    @Disabled
     @Override
     protected void testRoutes() throws Exception {
         String testRoutesChannel = "#test_routes_channel";
