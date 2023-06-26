@@ -282,8 +282,6 @@ objects:
           value: ${QUARKUS_REST_CLIENT_LOGGING_SCOPE}
         - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
           value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
-        - name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_URL
-          value: ${QUARKUS_REST_CLIENT_EXPORT_SERVICE_URL}
         - name: NOTIFICATIONS_DRAWER_ENABLED
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
 parameters:
@@ -494,6 +492,3 @@ parameters:
   value: INFO
 - name: NOTIFICATIONS_DRAWER_ENABLED
   value: "false"
-- name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_URL
-  description: The URL of the Export service.
-  value: "replaceme"
