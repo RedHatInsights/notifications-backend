@@ -473,7 +473,7 @@ parameters:
 - name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
   value: INFO
 - name: KAFKA_CLIENT_LOG_LEVEL
-  value: INFO
+  value: WARN
 - name: NOTIFICATIONS_EXPORT_SERVICE_ENABLED
   description: Enables the integration with the export service.
   value: "false"
