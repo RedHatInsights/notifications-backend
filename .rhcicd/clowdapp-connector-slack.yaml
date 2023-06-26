@@ -109,7 +109,7 @@ parameters:
   value: latest
 - name: KAFKA_CLIENT_LOG_LEVEL
   description: Log level of the Kafka client library
-  value: INFO
+  value: WARN
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
