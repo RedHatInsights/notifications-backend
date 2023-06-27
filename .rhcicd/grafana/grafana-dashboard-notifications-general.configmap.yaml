@@ -4522,7 +4522,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "PDD8BE47D10408F45"
+            "uid": "$datasource"
           },
           "description": "Information about the health of the integration.",
           "fieldConfig": {
@@ -4607,7 +4607,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_successes_total[5m]))",
@@ -4618,7 +4618,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_failures_total{error=\"client.error\"}[5m]))",
@@ -4630,7 +4630,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_failures_total{error=\"empty.body\"}[5m]))",
@@ -4642,7 +4642,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_failures_total{error=\"non.parseable.cloud.event\"}[5m]))",
@@ -4654,7 +4654,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_failures_total{error=\"server.error\"}[5m]))",
@@ -4666,7 +4666,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_failures_total{error=\"unable.extract.filters\"}[5m]))",
@@ -4678,7 +4678,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_failures_total{error=\"unable.transform.data\"}[5m]))",
@@ -4690,7 +4690,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_failures_total{error=\"unsupported.format\"}[5m]))",
@@ -4702,7 +4702,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "sum(rate(exports_service_failures_total{error=\"unsupported.resource.type\"}[5m]))",
