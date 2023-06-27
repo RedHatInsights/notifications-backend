@@ -52,6 +52,7 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -230,6 +231,8 @@ public class EndpointResource {
                 this.secretUtils.createSecretsForEndpoint(endpoint);
             } catch (final SourcesException e) {
                 Log.error(e.getMessage(), e);
+
+                throw new InternalServerErrorException("Unable to create the integration due to an internal error");
             }
         }
 

@@ -27,6 +27,7 @@ import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
+import com.redhat.cloud.notifications.routers.sources.SourcesRuntimeException;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
@@ -2153,6 +2154,79 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .post("/endpoints")
                 .then()
                 .statusCode(200);
+        }
+    }
+
+    /**
+     * Tests that if Sources returns an error when creating the credentials for
+     * the endpoint, then an internal server error is returned to the user,
+     * signaling that the endpoint was not created.
+     *
+     * @throws NoSuchMethodException if this method's name is changed, since we
+     * use it in a {@link SourcesRuntimeException} mock.
+     */
+    @Test
+    void testCreateEndpointReturnsInternalServerError() throws NoSuchMethodException {
+        // Set up the RBAC access for the test.
+        final String orgId = "endpoint-invalid-urls";
+        final String userName = "user";
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, orgId, userName);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Set up the fixture data.
+        final boolean disableSslVerification = false;
+        final String password = "endpoint-invalid-urls-basic-authentication-password";
+        final String username = "endpoint-invalid-urls-basic-authentication-username";
+        final String secretToken = "endpoint-invalid-urls-secret-token";
+
+        // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
+        final CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setBasicAuthentication(new BasicAuthentication(username, password));
+        camelProperties.setDisableSslVerification(disableSslVerification);
+        camelProperties.setExtras(Map.of("channel", "notifications"));
+        camelProperties.setSecretToken(secretToken);
+        camelProperties.setUrl(ValidNonPrivateUrlValidatorTest.validUrls[0]);
+
+        // Create an endpoint without the type and the properties set.
+        final String name = "endpoint-invalid-urls-name";
+        final String description = "endpoint-invalid-urls-description";
+        final boolean enabled = true;
+        final int serverErrors = 0;
+        final String subType = "slack";
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setDescription(description);
+        endpoint.setEnabled(enabled);
+        endpoint.setName(name);
+        endpoint.setProperties(camelProperties);
+        endpoint.setServerErrors(serverErrors);
+        endpoint.setSubType(subType);
+        endpoint.setType(EndpointType.CAMEL);
+
+        Mockito
+            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+            .thenThrow(new SourcesRuntimeException(EndpointResourceTest.class.getDeclaredMethod("testCreateEndpointReturnsInternalServerError"), Mockito.mock(javax.ws.rs.core.Response.class)));
+
+        this.featureFlipper.setSourcesSecretsBackend(true);
+
+        try {
+            final String responseBody = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(500)
+                .extract()
+                .asString();
+
+            Assertions.assertEquals("Unable to create the integration due to an internal error", responseBody, "unexpected error message received from the endpoint");
+        } finally {
+            this.featureFlipper.setSourcesSecretsBackend(false);
         }
     }
 
