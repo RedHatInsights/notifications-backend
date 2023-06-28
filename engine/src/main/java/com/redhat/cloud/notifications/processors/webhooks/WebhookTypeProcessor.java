@@ -153,7 +153,14 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         });
     }
 
-    private void process(Event event, Endpoint endpoint) {
+    /**
+     * Sends the given event to the specified endpoint via an HTTP request.
+     * @param event the event to be sent.
+     * @param endpoint the endpoint to send the event to.
+     * @throws SourcesException if the endpoint's credentials cannot be fetched
+     * from Sources.
+     */
+    private void process(Event event, Endpoint endpoint) throws SourcesException {
 
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
@@ -164,11 +171,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
          * Get the basic authentication and secret token secrets from Sources.
          */
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            try {
-                this.secretUtils.loadSecretsForEndpoint(endpoint);
-            } catch (final SourcesException e) {
-                Log.error(e.getMessage(), e);
-            }
+            this.secretUtils.loadSecretsForEndpoint(endpoint);
         }
 
         if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {

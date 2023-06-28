@@ -73,7 +73,15 @@ public class EventingProcessor extends EndpointTypeProcessor {
         });
     }
 
-    private void process(Event event, Endpoint endpoint) {
+    /**
+     * Sends the given Service now or Splunk event to the eventing backend.
+     * @param event the event to be sent.
+     * @param endpoint the "Service Now" or "Splunk" endpoint related to this
+     *                 event.
+     * @throws SourcesException if the endpoint's credentials cannot be fetched
+     * from Sources.
+     */
+    private void process(Event event, Endpoint endpoint) throws SourcesException {
         registry.counter(PROCESSED_COUNTER_NAME, "subType", endpoint.getSubType()).increment();
 
         String originalEventId = getOriginalEventId(event);
@@ -107,7 +115,16 @@ public class EventingProcessor extends EndpointTypeProcessor {
         return originalEventId;
     }
 
-    private JsonObject buildPayload(Event event, Endpoint endpoint, String originalEventId) {
+    /**
+     * Builds the payload to be sent to the camel processor.
+     * @param event the event to be sent.
+     * @param endpoint the endpoint
+     * @param originalEventId the original event's UUID.
+     * @return the built JSON payload.
+     * @throws SourcesException if the endpoint's credentials cannot be fetched
+     * from Sources.
+     */
+    private JsonObject buildPayload(Event event, Endpoint endpoint, String originalEventId) throws SourcesException {
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
         JsonObject metaData = new JsonObject();
@@ -119,11 +136,7 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
         if (featureFlipper.isSourcesUsedAsSecretsBackend()) {
             // Get the basic authentication and secret token secrets from Sources.
-            try {
-                this.secretUtils.loadSecretsForEndpoint(endpoint);
-            } catch (final SourcesException e) {
-                Log.error(e.getMessage(), e);
-            }
+            this.secretUtils.loadSecretsForEndpoint(endpoint);
         }
         getSecretToken(properties).ifPresent(secretToken -> metaData.put(TOKEN_HEADER, secretToken));
         getBasicAuth(properties).ifPresent(basicAuth -> metaData.put("basicAuth", basicAuth));
