@@ -36,14 +36,14 @@ public class IntegrationTemplateRepositoryTest {
         Template genericTemplate = createTemplate(GENERIC_TEMPLATE, "The default", "The default");
         createIntegrationTemplate(genericTemplate, IntegrationTemplate.TemplateKind.DEFAULT, INTEGRATION_TYPE);
 
-        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.APPLICATION, INTEGRATION_TYPE);
+        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.APPLICATION, INTEGRATION_TYPE);
         assertTrue(ito.isPresent());
         IntegrationTemplate it = ito.get();
         assertEquals(it.getTemplateKind(), IntegrationTemplate.TemplateKind.APPLICATION);
         assertEquals(specificTemplate.getName(), it.getTheTemplate().getName());
 
         // This should be the default
-        ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.DEFAULT, INTEGRATION_TYPE);
+        ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.DEFAULT, INTEGRATION_TYPE);
         assertTrue(ito.isPresent());
         it = ito.get();
         assertEquals(it.getTemplateKind(), IntegrationTemplate.TemplateKind.DEFAULT);
@@ -59,7 +59,7 @@ public class IntegrationTemplateRepositoryTest {
         Template genericTemplate = createTemplate(GENERIC_TEMPLATE, "The default", "The default");
         createIntegrationTemplate(genericTemplate, IntegrationTemplate.TemplateKind.DEFAULT, INTEGRATION_TYPE);
 
-        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null,
+        Optional<IntegrationTemplate> ito = templateRepository.findIntegrationTemplate(null, null,
                 "org-id-123", IntegrationTemplate.TemplateKind.ORG, INTEGRATION_TYPE);
         assertTrue(ito.isPresent());
         IntegrationTemplate it = ito.get();
@@ -67,14 +67,14 @@ public class IntegrationTemplateRepositoryTest {
         assertEquals(specificTemplate.getName(), it.getTheTemplate().getName());
 
         // This should be the default
-        ito = templateRepository.findIntegrationTemplate(null, null, IntegrationTemplate.TemplateKind.DEFAULT, INTEGRATION_TYPE);
+        ito = templateRepository.findIntegrationTemplate(null, null, null, IntegrationTemplate.TemplateKind.DEFAULT, INTEGRATION_TYPE);
         assertTrue(ito.isPresent());
         it = ito.get();
         assertEquals(IntegrationTemplate.TemplateKind.DEFAULT, it.getTemplateKind());
         assertEquals(genericTemplate.getName(), it.getTheTemplate().getName());
 
         // Now see if we fall back to default if the user has no template
-        ito = templateRepository.findIntegrationTemplate(null,
+        ito = templateRepository.findIntegrationTemplate(null, null,
                 "unknown-org-id", IntegrationTemplate.TemplateKind.ORG, INTEGRATION_TYPE);
         assertTrue(ito.isPresent());
         it = ito.get();
