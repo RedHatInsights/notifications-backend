@@ -431,6 +431,8 @@ public class EndpointResource {
                     this.secretUtils.updateSecretsForEndpoint(dbEndpoint);
                 } catch (final SourcesException e) {
                     Log.error(e.getMessage(), e);
+
+                    throw new InternalServerErrorException("Unable to update the integration due to an internal error");
                 }
             }
         }
