@@ -135,7 +135,6 @@ public abstract class EmailTemplatesInDbHelper {
         return generateEmail(bodyTemplate, action);
     }
 
-    @Deprecated
     protected String generateEmail(TemplateInstance template, Object actionOrEvent) {
 
         String result = templateService.renderTemplate(createUser(), actionOrEvent, template);
@@ -144,7 +143,6 @@ public abstract class EmailTemplatesInDbHelper {
         return result;
     }
 
-    @Deprecated
     protected String generateEmail(TemplateInstance templateInstance, Map<String, Object> context) {
         Map<String, Object> action =  Map.of("context", context, "bundle", getBundle(), "timestamp", LocalDateTime.now());
 
