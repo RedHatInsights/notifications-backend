@@ -7,9 +7,9 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import io.quarkus.mailer.Mail;
@@ -41,9 +41,6 @@ public abstract class EmailTemplatesInDbHelper {
 
     @Inject
     Mailer mailer;
-
-    @Inject
-    Environment environment;
 
     @Inject
     protected ResourceHelpers resourceHelpers;
@@ -138,25 +135,18 @@ public abstract class EmailTemplatesInDbHelper {
         return generateEmail(bodyTemplate, action);
     }
 
-    protected String generateEmail(TemplateInstance template, Action action) {
-        String result = template
-            .data("action", action)
-            .data("environment", environment)
-            .data("user", Map.of("firstName", "John", "lastName", "Doe"))
-            .render();
+    protected String generateEmail(TemplateInstance template, Object actionOrEvent) {
 
+        String result = templateService.renderTemplate(createUser(), actionOrEvent, template);
         writeOrSendEmailTemplate(result, template.getTemplate().getId() + ".html");
 
         return result;
     }
 
     protected String generateEmail(TemplateInstance templateInstance, Map<String, Object> context) {
-        String result = templateInstance
-            .data("action", Map.of("context", context, "bundle", getBundle(), "timestamp", LocalDateTime.now()))
-            .data("environment", environment)
-            .data("user", Map.of("firstName", "John", "lastName", "Doe"))
-            .render();
+        Map<String, Object> action =  Map.of("context", context, "bundle", getBundle(), "timestamp", LocalDateTime.now());
 
+        String result = templateService.renderTemplate(createUser(), action, templateInstance);
         writeOrSendEmailTemplate(result, templateInstance.getTemplate().getId() + ".html");
 
         return result;
@@ -190,5 +180,13 @@ public abstract class EmailTemplatesInDbHelper {
 
     protected List<String> getUsedEventTypeNames() {
         return List.of();
+    }
+
+    private User createUser() {
+        User user = new User();
+        user.setFirstName("John");
+        user.setLastName("Doe");
+
+        return user;
     }
 }
