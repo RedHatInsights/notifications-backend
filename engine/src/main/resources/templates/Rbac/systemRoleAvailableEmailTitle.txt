@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - Red Hat now provides a new role {action.events[0].payload.name}.

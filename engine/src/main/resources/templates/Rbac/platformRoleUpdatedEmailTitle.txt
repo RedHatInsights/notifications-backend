@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - Red Hat has updated the platform default role {action.events[0].payload.name}.

@@ -1,1 +1,0 @@
-OpenShift cluster data processed by Cost Management

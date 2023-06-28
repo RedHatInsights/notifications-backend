@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - Failed to upload report from system '{action.events[0].payload.host_name}'

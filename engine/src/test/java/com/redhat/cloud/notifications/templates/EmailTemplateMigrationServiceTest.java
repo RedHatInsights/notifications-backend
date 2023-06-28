@@ -161,9 +161,8 @@ public class EmailTemplateMigrationServiceTest {
         findAndCompileInstantEmailTemplate(newRecommendation.getId());
         findAndCompileInstantEmailTemplate(resolvedRecommendation.getId());
         findAndCompileInstantEmailTemplate(deactivatedRecommendation.getId());
-        if (featureFlipper.isRhelAdvisorDailyDigestEnabled()) {
-            findAndCompileAggregationEmailTemplate(rhel.getName(), advisor.getName(), DAILY);
-        }
+        findAndCompileAggregationEmailTemplate(rhel.getName(), advisor.getName(), DAILY);
+
         // App: compliance
         findAndCompileInstantEmailTemplate(complianceBelowThreshold.getId());
         findAndCompileInstantEmailTemplate(reportUploadFailed.getId());

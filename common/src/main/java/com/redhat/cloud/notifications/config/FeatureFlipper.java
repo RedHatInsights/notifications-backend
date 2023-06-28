@@ -63,65 +63,14 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-rbac-for-fetching-users", defaultValue = "false")
     boolean useRbacForFetchingUsers;
 
-    @ConfigProperty(name = "notifications.use-policies-email-templates-v2.enabled", defaultValue = "false")
-    boolean policiesEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-compliance-email-templates-v2.enabled", defaultValue = "false")
-    boolean complianceEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-ansible-email-templates-v2.enabled", defaultValue = "false")
-    boolean ansibleEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-cost-management-email-templates-v2.enabled", defaultValue = "false")
-    boolean costManagementEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-rbac-email-templates-v2.enabled", defaultValue = "false")
-    boolean rbacEmailTemplatesV2Enabled;
-
     @ConfigProperty(name = "notifications.emails-only-mode.enabled", defaultValue = "false")
     boolean emailsOnlyMode;
-
-    @ConfigProperty(name = "notifications.use-patch-email-templates-v2.enabled", defaultValue = "false")
-    boolean patchEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-integrations-email-templates-v2.enabled", defaultValue = "false")
-    boolean integrationsEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-drift-email-templates-v2.enabled", defaultValue = "false")
-    boolean driftEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-sources-email-templates-v2.enabled", defaultValue = "false")
-    boolean sourcesEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-inventory-email-templates-v2.enabled", defaultValue = "false")
-    boolean inventoryEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-malware-email-templates-v2.enabled", defaultValue = "false")
-    boolean malwareEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-edge-management-email-templates-v2.enabled", defaultValue = "false")
-    boolean edgeManagementEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-resource-optimization-email-templates-v2.enabled", defaultValue = "false")
-    boolean resourceOptimizationManagementEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-vulnerability-email-templates-v2.enabled", defaultValue = "false")
-    boolean vulnerabilityEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-advisor-email-templates-v2.enabled", defaultValue = "false")
-    boolean advisorEmailTemplatesV2Enabled;
-
-    @ConfigProperty(name = "notifications.use-advisor-openshift-email-templates-v2.enabled", defaultValue = "false")
-    boolean advisorOpenShiftEmailTemplatesV2Enabled;
 
     @ConfigProperty(name = "notifications.use-event-type-for-subscription.enabled", defaultValue = "false")
     boolean useEventTypeForSubscriptionEnabled;
 
     @ConfigProperty(name = "notifications.use-secured-email-templates.enabled", defaultValue = "false")
     boolean useSecuredEmailTemplates;
-
-    @ConfigProperty(name = "rhel.advisor.daily-digest.enabled", defaultValue = "false")
-    boolean rhelAdvisorDailyDigestEnabled;
 
     @ConfigProperty(name = "notifications.instant-emails.enabled", defaultValue = "false")
     boolean instantEmailsEnabled;
@@ -148,26 +97,9 @@ public class FeatureFlipper {
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
         Log.infof("The use of rbac for fetching users is %s", useRbacForFetchingUsers ? "enabled" : "disabled");
-        Log.infof("The Policies' email templates V2 are %s", policiesEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Compliance's email templates V2 are %s", complianceEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Ansible's email templates V2 are %s", ansibleEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Cost management's email templates V2 are %s", costManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("Emails only mode is %s", emailsOnlyMode ? "enabled" : "disabled");
-        Log.infof("The Patch's email templates V2 are %s", patchEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Integrations' email templates V2 are %s", integrationsEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Drift's email templates V2 are %s", driftEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Sources' email templates V2 are %s", sourcesEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Inventory's email templates V2 are %s", inventoryEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Malware's email templates V2 are %s", malwareEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Edge management's email templates V2 are %s", edgeManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Resource optimization's email templates V2 are %s", resourceOptimizationManagementEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Vulnerability's email templates V2 are %s", vulnerabilityEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The use of secured email templates is %s", useSecuredEmailTemplates ? "enabled" : "disabled");
-        Log.infof("The RBAC's email templates V2 are %s", rbacEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Advisor's email templates V2 are %s", advisorEmailTemplatesV2Enabled ? "enabled" : "disabled");
-        Log.infof("The Advisor openShift email templates V2 are %s", advisorOpenShiftEmailTemplatesV2Enabled ? "enabled" : "disabled");
         Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
-        Log.infof("The Rhel Advisor daily digest is %s", rhelAdvisorDailyDigestEnabled ? "enabled" : "disabled");
         Log.infof("Instant emails are %s", instantEmailsEnabled ? "enabled" : "disabled");
         Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
         Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
@@ -252,42 +184,6 @@ public class FeatureFlipper {
         this.useRbacForFetchingUsers = useRbacForFetchingUsers;
     }
 
-    public boolean isPoliciesEmailTemplatesV2Enabled() {
-        return this.policiesEmailTemplatesV2Enabled;
-    }
-
-    public void setPoliciesEmailTemplatesV2Enabled(boolean policiesEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.policiesEmailTemplatesV2Enabled = policiesEmailTemplatesV2Enabled;
-    }
-
-    public boolean isComplianceEmailTemplatesV2Enabled() {
-        return complianceEmailTemplatesV2Enabled;
-    }
-
-    public void setComplianceEmailTemplatesV2Enabled(boolean complianceEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.complianceEmailTemplatesV2Enabled = complianceEmailTemplatesV2Enabled;
-    }
-
-    public boolean isAnsibleEmailTemplatesV2Enabled() {
-        return ansibleEmailTemplatesV2Enabled;
-    }
-
-    public void setAnsibleEmailTemplatesV2Enabled(boolean ansibleEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.ansibleEmailTemplatesV2Enabled = ansibleEmailTemplatesV2Enabled;
-    }
-
-    public boolean isCostManagementEmailTemplatesV2Enabled() {
-        return costManagementEmailTemplatesV2Enabled;
-    }
-
-    public void setCostManagementEmailTemplatesV2Enabled(boolean costManagementEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.costManagementEmailTemplatesV2Enabled = costManagementEmailTemplatesV2Enabled;
-    }
-
     public boolean isEmailsOnlyMode() {
         return emailsOnlyMode;
     }
@@ -295,114 +191,6 @@ public class FeatureFlipper {
     public void setEmailsOnlyMode(boolean emailsOnlyMode) {
         checkTestLaunchMode();
         this.emailsOnlyMode = emailsOnlyMode;
-    }
-
-    public boolean isPatchEmailTemplatesV2Enabled() {
-        return patchEmailTemplatesV2Enabled;
-    }
-
-    public void setPatchEmailTemplatesV2Enabled(boolean patchEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.patchEmailTemplatesV2Enabled = patchEmailTemplatesV2Enabled;
-    }
-
-    public boolean isIntegrationsEmailTemplatesV2Enabled() {
-        return integrationsEmailTemplatesV2Enabled;
-    }
-
-    public void setIntegrationsEmailTemplatesV2Enabled(boolean integrationsEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.integrationsEmailTemplatesV2Enabled = integrationsEmailTemplatesV2Enabled;
-    }
-
-    public boolean isDriftEmailTemplatesV2Enabled() {
-        return driftEmailTemplatesV2Enabled;
-    }
-
-    public void setDriftEmailTemplatesV2Enabled(boolean driftEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.driftEmailTemplatesV2Enabled = driftEmailTemplatesV2Enabled;
-    }
-
-    public boolean isSourcesEmailTemplatesV2Enabled() {
-        return sourcesEmailTemplatesV2Enabled;
-    }
-
-    public void setSourcesEmailTemplatesV2Enabled(boolean sourcesEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.sourcesEmailTemplatesV2Enabled = sourcesEmailTemplatesV2Enabled;
-    }
-
-    public boolean isInventoryEmailTemplatesV2Enabled() {
-        return inventoryEmailTemplatesV2Enabled;
-    }
-
-    public void setInventoryEmailTemplatesV2Enabled(boolean inventoryEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.inventoryEmailTemplatesV2Enabled = inventoryEmailTemplatesV2Enabled;
-    }
-
-    public boolean isMalwareEmailTemplatesV2Enabled() {
-        return malwareEmailTemplatesV2Enabled;
-    }
-
-    public void setMalwareEmailTemplatesV2Enabled(boolean malwareEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.malwareEmailTemplatesV2Enabled = malwareEmailTemplatesV2Enabled;
-    }
-
-    public boolean isEdgeManagementEmailTemplatesV2Enabled() {
-        return edgeManagementEmailTemplatesV2Enabled;
-    }
-
-    public void setEdgeManagementEmailTemplatesV2Enabled(boolean edgeManagementEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.edgeManagementEmailTemplatesV2Enabled = edgeManagementEmailTemplatesV2Enabled;
-    }
-
-    public boolean isResourceOptimizationManagementEmailTemplatesV2Enabled() {
-        return resourceOptimizationManagementEmailTemplatesV2Enabled;
-    }
-
-    public void setResourceOptimizationManagementEmailTemplatesV2Enabled(boolean resourceOptimizationManagementEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.resourceOptimizationManagementEmailTemplatesV2Enabled = resourceOptimizationManagementEmailTemplatesV2Enabled;
-    }
-
-    public boolean isVulnerabilityEmailTemplatesV2Enabled() {
-        return vulnerabilityEmailTemplatesV2Enabled;
-    }
-
-    public void setVulnerabilityEmailTemplatesV2Enabled(boolean vulnerabilityEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.vulnerabilityEmailTemplatesV2Enabled = vulnerabilityEmailTemplatesV2Enabled;
-    }
-
-    public boolean isRbacEmailTemplatesV2Enabled() {
-        return rbacEmailTemplatesV2Enabled;
-    }
-
-    public void setRbacEmailTemplatesV2Enabled(boolean rbacEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.rbacEmailTemplatesV2Enabled = rbacEmailTemplatesV2Enabled;
-    }
-
-    public boolean isAdvisorEmailTemplatesV2Enabled() {
-        return advisorEmailTemplatesV2Enabled;
-    }
-
-    public void setAdvisorEmailTemplatesV2Enabled(boolean advisorEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.advisorEmailTemplatesV2Enabled = advisorEmailTemplatesV2Enabled;
-    }
-
-    public boolean isAdvisorOpenShiftEmailTemplatesV2Enabled() {
-        return advisorOpenShiftEmailTemplatesV2Enabled;
-    }
-
-    public void setAdvisorOpenShiftEmailTemplatesV2Enabled(boolean advisorOpenShiftEmailTemplatesV2Enabled) {
-        checkTestLaunchMode();
-        this.advisorOpenShiftEmailTemplatesV2Enabled = advisorOpenShiftEmailTemplatesV2Enabled;
     }
 
     public boolean isUseEventTypeForSubscriptionEnabled() {
@@ -421,15 +209,6 @@ public class FeatureFlipper {
     public void setUseSecuredEmailTemplates(boolean useSecuredEmailTemplates) {
         checkTestLaunchMode();
         this.useSecuredEmailTemplates = useSecuredEmailTemplates;
-    }
-
-    public boolean isRhelAdvisorDailyDigestEnabled() {
-        return rhelAdvisorDailyDigestEnabled;
-    }
-
-    public void setRhelAdvisorDailyDigestEnabled(boolean rhelAdvisorDailyDigestEnabled) {
-        checkTestLaunchMode();
-        this.rhelAdvisorDailyDigestEnabled = rhelAdvisorDailyDigestEnabled;
     }
 
     public boolean isInstantEmailsEnabled() {

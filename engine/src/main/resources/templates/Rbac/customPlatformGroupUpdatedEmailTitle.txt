@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - Custom platform access group {action.events[0].payload.name} has been updated.

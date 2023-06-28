@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - {action.events.size()} drift{#if action.events.size() > 1}s{/if} from baseline detected on '{action.context.display_name}'
