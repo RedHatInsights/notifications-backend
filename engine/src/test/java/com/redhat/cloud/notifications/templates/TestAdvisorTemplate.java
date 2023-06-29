@@ -6,9 +6,8 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
