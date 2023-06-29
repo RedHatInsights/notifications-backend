@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -9,12 +10,15 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.processors.email.aggregators.ResourceOptimizationPayloadAggregator;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -27,6 +31,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class TestHelpers {
 
@@ -620,5 +625,13 @@ public class TestHelpers {
         event.setEventWrapper(new EventWrapperAction(action));
 
         return new BaseTransformer().toJsonObject(event);
+    }
+
+    public static NotificationsConsoleCloudEvent createConsoleCloudEvent() throws IOException {
+        InputStream policyCloudEvent = MockServerConfig.class.getClassLoader().getResourceAsStream("cloudevents/cloudevent.json");
+        return new ConsoleCloudEventParser().fromJsonString(
+                IOUtils.toString(policyCloudEvent, UTF_8),
+                NotificationsConsoleCloudEvent.class
+        );
     }
 }
