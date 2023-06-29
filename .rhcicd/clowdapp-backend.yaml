@@ -223,6 +223,24 @@ objects:
           enabled=true
         GROUP BY
           e.endpoint_type_v2
+      # Count the number of email subscriptions, and group them by application
+      # and subscription type.
+    - prefix: insights/notifications/email_subscriptions
+      query: >-
+        SELECT
+            a.display_name AS "Application",
+            es.subscription_type AS "Subscription type",
+            COUNT(es.subscription_type) AS "Count"
+        FROM
+            email_subscriptions AS es
+        INNER JOIN
+            event_type AS et ON et.id = es.event_type_id
+        INNER JOIN
+            applications AS a ON a.id = et.application_id
+        GROUP BY
+            es.subscription_type,
+            a.display_name
+
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
