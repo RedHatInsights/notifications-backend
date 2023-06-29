@@ -1,1 +1,0 @@
-Availability Status Change - {action.context.resource_display_name}

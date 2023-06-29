@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - Integration '{action.context.endpoint_name}' was disabled

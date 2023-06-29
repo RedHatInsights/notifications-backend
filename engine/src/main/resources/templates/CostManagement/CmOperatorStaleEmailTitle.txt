@@ -1,1 +1,0 @@
-Stale OpenShift cluster for Cost Management

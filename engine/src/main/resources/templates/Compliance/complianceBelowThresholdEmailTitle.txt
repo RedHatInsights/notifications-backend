@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - System '{action.events[0].payload.host_name}' is non-compliant with policy '{action.events[0].payload.policy_name}'

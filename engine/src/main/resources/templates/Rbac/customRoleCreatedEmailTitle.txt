@@ -1,1 +1,0 @@
-{action.timestamp.toUtcFormat()} - A new custom role {action.events[0].payload.name} has been created.
