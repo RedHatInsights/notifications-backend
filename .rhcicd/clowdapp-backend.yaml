@@ -183,25 +183,44 @@ objects:
       secretName: ${FLOORIST_BUCKET_SECRET_NAME}
     suspend: ${{FLOORIST_SUSPEND}}
     queries:
-    - prefix: insights/notifications/splunk
+    # Count the number of created endpoints per endpoint type. Raw total, which
+    # includes the disabled ones or the ones not assigned in a behavior group.
+    - prefix: insights/notifications/endpoint_types
       query: >-
         SELECT
-          DISTINCT "account_id"
-          FROM "endpoints"
-          WHERE "endpoint_type_v2"='CAMEL' AND "endpoint_sub_type"='splunk';
-    - prefix: insights/notifications/accounts
+          endpoint_type_v2 AS "Endpoint type",
+          count(endpoint_type_v2) AS "Count"
+        FROM
+          endpoints
+        GROUP BY
+        endpoint_type_v2;
+    # Count the number of enabled endpoints per endpoint type. Same as above,
+    # but in this case just counting the enabled ones.
+    - prefix: insights/notifications/endpoint_types
       query: >-
         SELECT
-        "applications"."id", "applications"."name", COUNT("applications"."id") AS "applications_count"
-        FROM "applications"
-        INNER JOIN "endpoint_email_subscriptions" ON "applications"."id"="endpoint_email_subscriptions"."application_id"
-        GROUP BY "applications"."id" HAVING COUNT("applications"."id") > 1;
-    - prefix: insights/notifications/accounts
+          endpoint_type_v2 AS "Enabled endpoint type",
+          count(endpoint_type_v2) AS "Count"
+        FROM
+          endpoints
+        WHERE
+          enabled=true
+        GROUP BY endpoint_type_v2;
+    # Count the number of enabled endpoints per type which are assigned to a
+    # behavior group, and therefore considered to be in active use.
+    - prefix: insights/notifications/endpoint_types
       query: >-
         SELECT
-        COUNT(distinct account_id)
-        FROM endpoints
-        WHERE endpoint_type_v2 = 'CAMEL' AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
+          e.endpoint_type_v2 AS "Endpoint type",
+          count(e.endpoint_type_v2) AS "Count"
+        FROM
+          endpoints AS e
+        INNER JOIN
+          behavior_group_action AS bga ON bga.endpoint_id = e.id
+        WHERE
+          enabled=true
+        GROUP BY
+          e.endpoint_type_v2
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
