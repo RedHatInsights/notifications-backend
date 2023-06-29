@@ -217,6 +217,8 @@ objects:
           endpoints AS e
         INNER JOIN
           behavior_group_action AS bga ON bga.endpoint_id = e.id
+        INNER JOIN
+            event_type_behavior AS etb ON etb.behavior_group_id = bga.behavior_group_id
         WHERE
           enabled=true
         GROUP BY
