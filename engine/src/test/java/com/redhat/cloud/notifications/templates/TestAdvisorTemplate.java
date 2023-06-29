@@ -10,10 +10,10 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -133,6 +133,29 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
         assertTrue(result.contains("Active rule 3</a>"));
         assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    @Test
+    public void testDailyEmailBodyWithEmptyRuleValues() {
+        AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
+        aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, new HashMap<>()));
+        aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, new HashMap<>()));
+        aggregator.aggregate(createEmailAggregation(RESOLVED_RECOMMENDATION, new HashMap<>()));
+        aggregator.aggregate(createEmailAggregation(DEACTIVATED_RECOMMENDATION, new HashMap<>()));
+        aggregator.aggregate(createEmailAggregation(DEACTIVATED_RECOMMENDATION, new HashMap<>()));
+
+        Map<String, Object> context = aggregator.getContext();
+        context.put("start_time", LocalDateTime.now().toString());
+        context.put("end_time", LocalDateTime.now().toString());
+
+        featureFlipper.setAdvisorEmailTemplatesV2Enabled(true);
+        migrate();
+        String result = generateAggregatedEmailBody(context);
+        // check that template is able to render sections, even if they are empty
+        assertTrue(result.contains("New Recommendation"));
+        assertTrue(result.contains("Resolved Recommendation"));
+        assertTrue(result.contains("Deactivated Recommendation"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 

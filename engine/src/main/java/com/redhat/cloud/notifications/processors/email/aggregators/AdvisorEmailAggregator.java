@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -161,11 +162,11 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
         notifPayload.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
             JsonObject event = (JsonObject) eventObject;
             JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
-            String ruleId = payload.getString(RULE_ID);
-            String ruleDescription = payload.getString(RULE_DESCRIPTION);
-            String ruleRisk = payload.getString(TOTAL_RISK);
-            String ruleIncident = payload.getString(HAS_INCIDENT);
-            String ruleURL = payload.getString(RULE_URL);
+            String ruleId = Optional.ofNullable(payload.getString(RULE_ID)).orElse("");
+            String ruleDescription = Optional.ofNullable(payload.getString(RULE_DESCRIPTION)).orElse("");
+            String ruleRisk = Optional.ofNullable(payload.getString(TOTAL_RISK)).orElse("");
+            String ruleIncident = Optional.ofNullable(payload.getString(HAS_INCIDENT)).orElse("");
+            String ruleURL = Optional.ofNullable(payload.getString(RULE_URL)).orElse("");
             Map<String, Object> ruleData;
 
             switch (eventType) {
