@@ -196,7 +196,7 @@ objects:
             ELSE
               LOWER(endpoint_type_v2)
           END AS "Endpoint type",
-          count(endpoint_type_v2) AS "Count"
+          COUNT(*) AS "Count"
         FROM
           endpoints
         GROUP BY
@@ -215,7 +215,7 @@ objects:
             ELSE
               LOWER(endpoint_type_v2)
           END AS "Enabled endpoint type",
-          count(endpoint_type_v2) AS "Count"
+          COUNT(*) AS "Count"
         FROM
           endpoints
         WHERE
@@ -234,7 +234,7 @@ objects:
             ELSE
               LOWER(e.endpoint_type_v2)
           END AS "Endpoint type",
-          count(e.endpoint_type_v2) AS "Count"
+          COUNT(e.*) AS "Count"
         FROM
           endpoints AS e
         INNER JOIN
@@ -254,7 +254,7 @@ objects:
           a.display_name AS "Application",
           et.display_name AS "Event type",
           es.subscription_type AS "Subscription type",
-          COUNT(es.subscription_type) AS "Count"
+          COUNT(es.*) AS "Count"
         FROM
           email_subscriptions AS es
         INNER JOIN
