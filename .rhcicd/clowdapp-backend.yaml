@@ -188,66 +188,42 @@ objects:
     - prefix: insights/notifications/endpoint_types
       query: >-
         SELECT
-          CASE
-            WHEN
-              endpoint_type_v2 = 'CAMEL'
-            THEN
-              LOWER(endpoint_sub_type)
-            ELSE
-              LOWER(endpoint_type_v2)
-          END AS "Endpoint type",
-          COUNT(*) AS "Count"
+          sub."Endpoint type",
+          COUNT(*) AS "Count",
+          sub."Enabled",
+          sub."Actively used"
         FROM
-          endpoints
+          (
+            SELECT
+            -- When the endpoint is a Camel endpoint, get its subtype instead.
+            CASE
+              WHEN
+                e.endpoint_type_v2 = 'CAMEL'
+              THEN
+                LOWER(e.endpoint_sub_type)
+              ELSE
+                LOWER(e.endpoint_type_v2)
+            END AS "Endpoint type",
+            e.enabled AS "Enabled",
+            -- If the endpoint has an associated event type and a behavior
+            -- group, then that means that it is actively being used.
+            EXISTS (
+              SELECT
+                1
+              FROM
+                behavior_group_action AS bga
+              INNER JOIN
+                event_type_behavior AS etb ON etb.behavior_group_id = bga.behavior_group_id
+              WHERE
+                bga.endpoint_id = e.id
+              ) AS "Actively used"
+            FROM
+              endpoints AS e
+          ) AS sub
         GROUP BY
-          endpoint_type_v2,
-          endpoint_sub_type;
-    # Count the number of enabled endpoints per endpoint type. Same as above,
-    # but in this case just counting the enabled ones.
-    - prefix: insights/notifications/endpoint_types
-      query: >-
-        SELECT
-          CASE
-            WHEN
-              endpoint_type_v2 = 'CAMEL'
-            THEN
-              LOWER(endpoint_sub_type)
-            ELSE
-              LOWER(endpoint_type_v2)
-          END AS "Enabled endpoint type",
-          COUNT(*) AS "Count"
-        FROM
-          endpoints
-        WHERE
-          enabled=true
-        GROUP BY
-          endpoint_type_v2,
-          endpoint_sub_type;
-    # Count the number of enabled endpoints per type which are assigned to a
-    # behavior group, and therefore considered to be in active use.
-    - prefix: insights/notifications/endpoint_types
-      query: >-
-        SELECT
-          CASE
-            WHEN
-              e.endpoint_type_v2 = 'CAMEL'
-            THEN
-              LOWER(e.endpoint_sub_type)
-            ELSE
-              LOWER(e.endpoint_type_v2)
-          END AS "Endpoint type",
-          COUNT(e.*) AS "Count"
-        FROM
-          endpoints AS e
-        INNER JOIN
-          behavior_group_action AS bga ON bga.endpoint_id = e.id
-        INNER JOIN
-            event_type_behavior AS etb ON etb.behavior_group_id = bga.behavior_group_id
-        WHERE
-          enabled=true
-        GROUP BY
-          e.endpoint_type_v2,
-          endpoint_sub_Type;
+          sub."Endpoint type",
+          sub."Enabled",
+          sub."Actively used";
       # Count the number of email subscriptions, and group them by application
       # and subscription type.
     - prefix: insights/notifications/email_subscriptions
