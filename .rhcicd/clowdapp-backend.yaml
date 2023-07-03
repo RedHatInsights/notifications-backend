@@ -220,7 +220,9 @@ objects:
           endpoints
         WHERE
           enabled=true
-        GROUP BY endpoint_type_v2;
+        GROUP BY
+          endpoint_type_v2,
+          endpoint_sub_type;
     # Count the number of enabled endpoints per type which are assigned to a
     # behavior group, and therefore considered to be in active use.
     - prefix: insights/notifications/endpoint_types
@@ -244,7 +246,8 @@ objects:
         WHERE
           enabled=true
         GROUP BY
-          e.endpoint_type_v2
+          e.endpoint_type_v2,
+          endpoint_sub_Type;
       # Count the number of email subscriptions, and group them by application
       # and subscription type.
     - prefix: insights/notifications/email_subscriptions
@@ -267,7 +270,7 @@ objects:
           b.display_name,
           a.display_name,
           et.display_name,
-          es.subscription_type
+          es.subscription_type;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
