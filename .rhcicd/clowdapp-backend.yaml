@@ -188,18 +188,33 @@ objects:
     - prefix: insights/notifications/endpoint_types
       query: >-
         SELECT
-          endpoint_type_v2 AS "Endpoint type",
+          CASE
+            WHEN
+              endpoint_type_v2 = 'CAMEL'
+            THEN
+              LOWER(endpoint_sub_type)
+            ELSE
+              LOWER(endpoint_type_v2)
+          END AS "Endpoint type",
           count(endpoint_type_v2) AS "Count"
         FROM
           endpoints
         GROUP BY
-        endpoint_type_v2;
+          endpoint_type_v2,
+          endpoint_sub_type;
     # Count the number of enabled endpoints per endpoint type. Same as above,
     # but in this case just counting the enabled ones.
     - prefix: insights/notifications/endpoint_types
       query: >-
         SELECT
-          endpoint_type_v2 AS "Enabled endpoint type",
+          CASE
+            WHEN
+              endpoint_type_v2 = 'CAMEL'
+            THEN
+              LOWER(endpoint_sub_type)
+            ELSE
+              LOWER(endpoint_type_v2)
+          END AS "Enabled endpoint type",
           count(endpoint_type_v2) AS "Count"
         FROM
           endpoints
@@ -211,7 +226,14 @@ objects:
     - prefix: insights/notifications/endpoint_types
       query: >-
         SELECT
-          e.endpoint_type_v2 AS "Endpoint type",
+          CASE
+            WHEN
+              e.endpoint_type_v2 = 'CAMEL'
+            THEN
+              LOWER(e.endpoint_sub_type)
+            ELSE
+              LOWER(e.endpoint_type_v2)
+          END AS "Endpoint type",
           count(e.endpoint_type_v2) AS "Count"
         FROM
           endpoints AS e
@@ -228,19 +250,24 @@ objects:
     - prefix: insights/notifications/email_subscriptions
       query: >-
         SELECT
-            a.display_name AS "Application",
-            es.subscription_type AS "Subscription type",
-            COUNT(es.subscription_type) AS "Count"
+          b.display_name AS "Bundle",
+          a.display_name AS "Application",
+          et.display_name AS "Event type",
+          es.subscription_type AS "Subscription type",
+          COUNT(es.subscription_type) AS "Count"
         FROM
-            email_subscriptions AS es
+          email_subscriptions AS es
         INNER JOIN
-            event_type AS et ON et.id = es.event_type_id
+          event_type AS et ON et.id = es.event_type_id
         INNER JOIN
-            applications AS a ON a.id = et.application_id
+          applications AS a ON a.id = et.application_id
+        INNER JOIN
+          bundles AS b ON b.id = a.bundle_id
         GROUP BY
-            es.subscription_type,
-            a.display_name
-
+          b.display_name,
+          a.display_name,
+          et.display_name,
+          es.subscription_type
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
