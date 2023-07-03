@@ -27,6 +27,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
+      "id": 285719,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -626,7 +627,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "/^Up$/",
               "values": false
@@ -703,7 +704,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "/^Up$/",
               "values": false
@@ -780,7 +781,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "/^Up$/",
               "values": false
@@ -1194,7 +1195,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "",
               "values": false
@@ -1263,7 +1264,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "",
               "values": false
@@ -1332,7 +1333,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                  "last"
+                "last"
               ],
               "fields": "",
               "values": false
@@ -4519,6 +4520,202 @@ data:
           }
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Information about the health of the integration.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 66
+          },
+          "id": 252,
+          "links": [
+            {
+              "targetBlank": true,
+              "title": "GitHub repository",
+              "url": "https://github.com/RedHatInsights/export-service-go﻿"
+            }
+          ],
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_successes_total[5m]))",
+              "legendFormat": "Successful exports",
+              "range": true,
+              "refId": "Successful exports"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_failures_total{error=\"client.error\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Client error responses from the exports service",
+              "range": true,
+              "refId": "Client error failures"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_failures_total{error=\"empty.body\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Empty body received in Cloud Event failure",
+              "range": true,
+              "refId": "Empty body failures"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_failures_total{error=\"non.parseable.cloud.event\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Non parseable Cloud Event received",
+              "range": true,
+              "refId": "Non parseable Cloud Event failures"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_failures_total{error=\"server.error\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Internal server error responses from the exports service",
+              "range": true,
+              "refId": "Internal server error failures"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_failures_total{error=\"unable.extract.filters\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Unable to extract the export filters from the request",
+              "range": true,
+              "refId": "Unable to extract filters failures"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_failures_total{error=\"unable.transform.data\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Unable to transform the data in the requested format",
+              "range": true,
+              "refId": "Unable to transform data failures"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_failures_total{error=\"unsupported.format\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Unsupported export format requested",
+              "range": true,
+              "refId": "Unsupported format failures"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(exports_service_failures_total{error=\"unsupported.resource.type\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Unsupported resource type requested",
+              "range": true,
+              "refId": "Unsupported resource type failures"
+            }
+          ],
+          "title": "Exports service",
+          "type": "timeseries"
+        },
+        {
           "collapsed": false,
           "datasource": {
             "type": "prometheus",
@@ -5670,7 +5867,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 2,
+      "version": 5,
       "weekStart": ""
     }
 kind: ConfigMap
