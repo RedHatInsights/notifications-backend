@@ -183,25 +183,70 @@ objects:
       secretName: ${FLOORIST_BUCKET_SECRET_NAME}
     suspend: ${{FLOORIST_SUSPEND}}
     queries:
-    - prefix: insights/notifications/splunk
+    # Count the number of created endpoints per endpoint type. Raw total, which
+    # includes the disabled ones or the ones not assigned in a behavior group.
+    - prefix: insights/notifications/endpoint_types
       query: >-
         SELECT
-          DISTINCT "account_id"
-          FROM "endpoints"
-          WHERE "endpoint_type_v2"='CAMEL' AND "endpoint_sub_type"='splunk';
-    - prefix: insights/notifications/accounts
+          sub."Endpoint type",
+          COUNT(*) AS "Count",
+          sub."Enabled",
+          sub."Actively used"
+        FROM
+          (
+            SELECT
+            -- When the endpoint is a Camel endpoint, get its subtype instead.
+            CASE
+              WHEN
+                e.endpoint_type_v2 = 'CAMEL'
+              THEN
+                LOWER(e.endpoint_sub_type)
+              ELSE
+                LOWER(e.endpoint_type_v2)
+            END AS "Endpoint type",
+            e.enabled AS "Enabled",
+            -- If the endpoint has an associated event type and a behavior
+            -- group, then that means that it is actively being used.
+            EXISTS (
+              SELECT
+                1
+              FROM
+                behavior_group_action AS bga
+              INNER JOIN
+                event_type_behavior AS etb ON etb.behavior_group_id = bga.behavior_group_id
+              WHERE
+                bga.endpoint_id = e.id
+              ) AS "Actively used"
+            FROM
+              endpoints AS e
+          ) AS sub
+        GROUP BY
+          sub."Endpoint type",
+          sub."Enabled",
+          sub."Actively used";
+      # Count the number of email subscriptions, and group them by application
+      # and subscription type.
+    - prefix: insights/notifications/email_subscriptions
       query: >-
         SELECT
-        "applications"."id", "applications"."name", COUNT("applications"."id") AS "applications_count"
-        FROM "applications"
-        INNER JOIN "endpoint_email_subscriptions" ON "applications"."id"="endpoint_email_subscriptions"."application_id"
-        GROUP BY "applications"."id" HAVING COUNT("applications"."id") > 1;
-    - prefix: insights/notifications/accounts
-      query: >-
-        SELECT
-        COUNT(distinct account_id)
-        FROM endpoints
-        WHERE endpoint_type_v2 = 'CAMEL' AND endpoint_sub_type = 'splunk' AND enabled IS FALSE;
+          b.display_name AS "Bundle",
+          a.display_name AS "Application",
+          et.display_name AS "Event type",
+          es.subscription_type AS "Subscription type",
+          COUNT(es.*) AS "Count"
+        FROM
+          email_subscriptions AS es
+        INNER JOIN
+          event_type AS et ON et.id = es.event_type_id
+        INNER JOIN
+          applications AS a ON a.id = et.application_id
+        INNER JOIN
+          bundles AS b ON b.id = a.bundle_id
+        GROUP BY
+          b.display_name,
+          a.display_name,
+          et.display_name,
+          es.subscription_type;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
