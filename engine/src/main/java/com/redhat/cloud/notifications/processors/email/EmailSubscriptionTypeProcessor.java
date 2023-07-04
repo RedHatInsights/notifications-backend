@@ -23,6 +23,7 @@ import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.runtime.configuration.ProfileManager;
@@ -55,6 +56,10 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     public static final String AGGREGATION_COMMAND_REJECTED_COUNTER_NAME = "aggregation.command.rejected";
     public static final String AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME = "aggregation.command.processed";
     public static final String AGGREGATION_COMMAND_ERROR_COUNTER_NAME = "aggregation.command.error";
+
+    public static final String AGGREGATION_CONSUMED_TIMER_NAME = "aggregation.time.consumed";
+    protected static final String TAG_KEY_BUNDLE = "bundle";
+    protected static final String TAG_KEY_APPLICATION = "application";
 
     private static final List<EmailSubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(EmailSubscriptionType.values())
             .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
@@ -160,6 +165,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     @Blocking
     @ActivateRequestContext
     public void consumeEmailAggregations(String aggregationCommandJson) {
+        Timer.Sample consumedTimer = Timer.start(registry);
         AggregationCommand aggregationCommand;
         try {
             aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
@@ -183,6 +189,12 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         } catch (Exception e) {
             Log.warn("Error while processing aggregation", e);
             failedAggregationCommandCount.increment();
+        } finally {
+            consumedTimer.stop(registry.timer(
+                AGGREGATION_CONSUMED_TIMER_NAME,
+                TAG_KEY_BUNDLE, aggregationCommand.getAggregationKey().getBundle(),
+                TAG_KEY_APPLICATION, aggregationCommand.getAggregationKey().getApplication()
+            ));
         }
     }
 
