@@ -24,6 +24,8 @@ import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
+import com.redhat.cloud.notifications.routers.models.Page;
+import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import io.vertx.core.json.JsonObject;
@@ -60,6 +62,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -114,11 +117,81 @@ public class EndpointResource {
     @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
     static class V1 extends EndpointResource {
 
+        @GET
+        @Path("/{id}/history")
+        @Produces(APPLICATION_JSON)
+        @Parameters({
+            @Parameter(
+                name = "limit",
+                in = ParameterIn.QUERY,
+                description = "Number of items per page, if not specified or 0 is used, returns a maximum of " + MAX_NOTIFICATION_HISTORY_RESULTS + " elements.",
+                schema = @Schema(type = SchemaType.INTEGER)
+                ),
+            @Parameter(
+                name = "pageNumber",
+                in = ParameterIn.QUERY,
+                description = "Page number. Starts at first page (0), if not specified starts at first page.",
+                schema = @Schema(type = SchemaType.INTEGER)
+                ),
+            @Parameter(
+                name = "includeDetail",
+                description = "Include the detail in the reply",
+                schema = @Schema(type = SchemaType.BOOLEAN)
+                )
+        })
+        @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+        public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam @Valid Query query) {
+            // TODO We need globally limitations (Paging support and limits etc)
+            String orgId = getOrgId(sec);
+            boolean doDetail = includeDetail != null && includeDetail;
+            return notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
+        }
     }
 
     @Path(Constants.API_INTEGRATIONS_V_2_0 + "/endpoints")
     static class V2 extends EndpointResource {
 
+        @GET
+        @Path("/{id}/history")
+        @Produces(APPLICATION_JSON)
+        @Parameters({
+            @Parameter(
+                name = "limit",
+                in = ParameterIn.QUERY,
+                description = "Number of items per page, if not specified or 0 is used, returns a maximum of " + MAX_NOTIFICATION_HISTORY_RESULTS + " elements.",
+                schema = @Schema(type = SchemaType.INTEGER)
+                ),
+            @Parameter(
+                name = "pageNumber",
+                in = ParameterIn.QUERY,
+                description = "Page number. Starts at first page (0), if not specified starts at first page.",
+                schema = @Schema(type = SchemaType.INTEGER)
+                ),
+            @Parameter(
+                name = "includeDetail",
+                description = "Include the detail in the reply",
+                schema = @Schema(type = SchemaType.BOOLEAN)
+                )
+        })
+        public Page<NotificationHistory> getEndpointHistory(
+                @Context SecurityContext sec,
+                @Context UriInfo uriInfo,
+                @PathParam("id") UUID id,
+                @QueryParam("includeDetail") Boolean includeDetail,
+                @BeanParam Query query
+        ) {
+            String orgId = getOrgId(sec);
+            boolean doDetail = includeDetail != null && includeDetail;
+
+            final List<NotificationHistory> notificationHistory = this.notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
+            final long notificationHistoryCount = this.notificationRepository.countNotificationHistoryElements(id, orgId);
+
+            return new Page<>(
+                    notificationHistory,
+                    PageLinksBuilder.build(uriInfo.getPath(), notificationHistoryCount, query.getLimit().getLimit(), query.getLimit().getOffset()),
+                    new Meta(notificationHistoryCount)
+            );
+        }
     }
 
     @GET
@@ -411,37 +484,6 @@ public class EndpointResource {
         }
 
         return Response.ok().build();
-    }
-
-    @GET
-    @Path("/{id}/history")
-    @Produces(APPLICATION_JSON)
-    @Parameters({
-        @Parameter(
-                    name = "limit",
-                    in = ParameterIn.QUERY,
-                    description = "Number of items per page, if not specified or 0 is used, returns a maximum of " + MAX_NOTIFICATION_HISTORY_RESULTS + " elements.",
-                    schema = @Schema(type = SchemaType.INTEGER)
-            ),
-        @Parameter(
-                    name = "pageNumber",
-                    in = ParameterIn.QUERY,
-                    description = "Page number. Starts at first page (0), if not specified starts at first page.",
-                    schema = @Schema(type = SchemaType.INTEGER)
-            ),
-        @Parameter(
-                    name = "includeDetail",
-                    description = "Include the detail in the reply",
-                    schema = @Schema(type = SchemaType.BOOLEAN)
-            )
-    })
-
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam @Valid Query query) {
-        // TODO We need globally limitations (Paging support and limits etc)
-        String orgId = getOrgId(sec);
-        boolean doDetail = includeDetail != null && includeDetail;
-        return notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
     }
 
     @GET

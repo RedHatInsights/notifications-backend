@@ -46,6 +46,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
+import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_2_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static io.restassured.RestAssured.given;
@@ -676,8 +677,13 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private boolean checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
-        try {
+        return checkEndpointHistoryV1(identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus) &&
+                checkEndpointHistoryV2(identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus);
+    }
 
+
+    private boolean checkEndpointHistoryV1(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+        try {
             String responseBody = given()
                     .basePath(API_INTEGRATIONS_V_1_0)
                     .header(identityHeader)
@@ -689,39 +695,71 @@ public class LifecycleITest extends DbIsolatedTest {
                     .contentType(JSON)
                     .extract().body().asString();
 
-            JsonArray jsonEndpointHistory = new JsonArray(responseBody);
+            // The response body contains the meta information about the history collection. We need to access the
+            // "data" array to access the elements.
+            final JsonArray jsonEndpointHistory = new JsonArray(responseBody);
             assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
 
-            for (int i = 0; i < jsonEndpointHistory.size(); i++) {
-                JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
-                jsonNotificationHistory.mapTo(NotificationHistory.class);
-                assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
-
-                if (!expectedInvocationResult) {
-                    responseBody = given()
-                            .basePath(API_INTEGRATIONS_V_1_0)
-                            .header(identityHeader)
-                            .pathParam("endpointId", endpointId)
-                            .pathParam("historyId", jsonNotificationHistory.getString("id"))
-                            .when()
-                            .get("/endpoints/{endpointId}/history/{historyId}/details")
-                            .then()
-                            .statusCode(200)
-                            .contentType(JSON)
-                            .extract().body().asString();
-
-                    JsonObject jsonDetails = new JsonObject(responseBody);
-                    assertFalse(jsonDetails.isEmpty());
-                    assertEquals(expectedHttpStatus, jsonDetails.getInteger("code"));
-                    assertNotNull(jsonDetails.getString("url"));
-                    assertNotNull(jsonDetails.getString("method"));
-                }
-            }
-
+            checkEndpointHistoryDetails(identityHeader, endpointId, expectedInvocationResult, expectedHttpStatus, jsonEndpointHistory);
             return true;
         } catch (AssertionError e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private boolean checkEndpointHistoryV2(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+        try {
+            String rawResponseBody = given()
+                    .basePath(API_INTEGRATIONS_V_2_0)
+                    .header(identityHeader)
+                    .pathParam("endpointId", endpointId)
+                    .when()
+                    .get("/endpoints/{endpointId}/history")
+                    .then()
+                    .statusCode(200)
+                    .contentType(JSON)
+                    .extract().body().asString();
+
+            // The response body contains the meta information about the history collection. We need to access the
+            // "data" array to access the elements.
+            final JsonObject responseBodyJson = new JsonObject(rawResponseBody);
+            final JsonArray jsonEndpointHistory = responseBodyJson.getJsonArray("data");
+            assertEquals(expectedHistoryEntries, jsonEndpointHistory.size());
+
+            checkEndpointHistoryDetails(identityHeader, endpointId, expectedInvocationResult, expectedHttpStatus, jsonEndpointHistory);
+            return true;
+        } catch (AssertionError e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private void checkEndpointHistoryDetails(Header identityHeader, String endpointId, boolean expectedInvocationResult, int expectedHttpStatus, JsonArray jsonEndpointHistory) {
+        for (int i = 0; i < jsonEndpointHistory.size(); i++) {
+            JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
+            jsonNotificationHistory.mapTo(NotificationHistory.class);
+            assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
+
+            if (!expectedInvocationResult) {
+                String responseBody = given()
+                        .basePath(API_INTEGRATIONS_V_2_0)
+                        .header(identityHeader)
+                        .pathParam("endpointId", endpointId)
+                        .pathParam("historyId", jsonNotificationHistory.getString("id"))
+                        .when()
+                        .get("/endpoints/{endpointId}/history/{historyId}/details")
+                        .then()
+                        .statusCode(200)
+                        .contentType(JSON)
+                        .extract().body().asString();
+
+                JsonObject jsonDetails = new JsonObject(responseBody);
+                assertFalse(jsonDetails.isEmpty());
+                assertEquals(expectedHttpStatus, jsonDetails.getInteger("code"));
+                assertNotNull(jsonDetails.getString("url"));
+                assertNotNull(jsonDetails.getString("method"));
+            }
         }
     }
 
