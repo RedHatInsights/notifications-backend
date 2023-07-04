@@ -165,6 +165,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     @Blocking
     @ActivateRequestContext
     public void consumeEmailAggregations(String aggregationCommandJson) {
+        Timer.Sample consumedTimer = Timer.start(registry);
         AggregationCommand aggregationCommand;
         try {
             aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
@@ -176,7 +177,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
         Log.infof("Processing received aggregation command: %s", aggregationCommand);
         processedAggregationCommandCount.increment();
-        Timer.Sample consumedTimer = Timer.start(registry);
 
         try {
             processAggregateEmailsByAggregationKey(
