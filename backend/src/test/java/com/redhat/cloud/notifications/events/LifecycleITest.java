@@ -43,6 +43,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
@@ -648,8 +649,35 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
+        checkEventTypeBehaviorGroupsV1(identityHeader, eventTypeId, expectedBehaviorGroupIds);
+        checkEventTypeBehaviorGroupsV2(identityHeader, eventTypeId, expectedBehaviorGroupIds);
+    }
+
+    private void checkEventTypeBehaviorGroupsV1(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
         String responseBody = given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
+                .header(identityHeader)
+                .pathParam("eventTypeId", eventTypeId)
+                .when()
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().body().asString();
+
+        JsonArray jsonBehaviorGroups = new JsonArray(responseBody);
+        assertEquals(expectedBehaviorGroupIds.length, jsonBehaviorGroups.size());
+
+        for (String behaviorGroupId : expectedBehaviorGroupIds) {
+            if (!responseBody.contains(behaviorGroupId)) {
+                fail("One of the expected behavior groups is not linked to the event type");
+            }
+        }
+    }
+
+    private void checkEventTypeBehaviorGroupsV2(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
+        String responseBody = given()
+                .basePath(API_NOTIFICATIONS_V_2_0)
                 .header(identityHeader)
                 .pathParam("eventTypeId", eventTypeId)
                 .when()
