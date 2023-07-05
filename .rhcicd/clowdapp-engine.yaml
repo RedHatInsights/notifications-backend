@@ -250,6 +250,14 @@ objects:
           value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
         - name: NOTIFICATIONS_DRAWER_ENABLED
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
+        - name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_URL
+          value: ${QUARKUS_REST_CLIENT_EXPORT_SERVICE_URL}
+        - name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE
+          value: ${QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE}
+        - name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE_PASSWORD
+          value: ${QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE_PASSWORD}
+        - name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE_TYPE
+          value: ${QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE_TYPE}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -423,3 +431,15 @@ parameters:
   value: INFO
 - name: NOTIFICATIONS_DRAWER_ENABLED
   value: "false"
+- name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_URL
+  description: Temporary workaround - Remove when the export service configuration is available in Clowder in production
+  value: "${clowder.private-endpoints.export-service-service.url:http://localhost:10010}"
+- name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE
+  description: Temporary workaround - Remove when the export service configuration is available in Clowder in production
+  value: "${clowder.private-endpoints.export-service-service.trust-store-path}"
+- name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE_PASSWORD
+  description: Temporary workaround - Remove when the export service configuration is available in Clowder in production
+  value: "${clowder.private-endpoints.export-service-service.trust-store-password}"
+- name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_TRUST_STORE_TYPE
+  description: Temporary workaround - Remove when the export service configuration is available in Clowder in production
+  value: "${clowder.private-endpoints.export-service-service.trust-store-type}"
