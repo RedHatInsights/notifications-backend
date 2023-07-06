@@ -5,36 +5,47 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Parser;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.CronJobRun;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
 import io.quarkus.logging.Log;
+import io.quarkus.runtime.configuration.ProfileManager;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.eclipse.microprofile.reactive.messaging.Message;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static io.quarkus.runtime.LaunchMode.NORMAL;
 import static java.time.ZoneOffset.UTC;
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 @ApplicationScoped
 public class DailyEmailAggregationJob {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
+    public static final String INGRESS_CHANNEL = "egress";
+    public static final String BUNDLE_NAME = "console";
+    public static final String APP_NAME = "aggregator";
+    public static final String EVENT_TYPE_NAME = "aggregation";
 
     @Inject
     EmailAggregationRepository emailAggregationResources;
@@ -56,6 +67,10 @@ public class DailyEmailAggregationJob {
     Emitter<String> emitter;
 
     @Inject
+    @Channel(INGRESS_CHANNEL)
+    Emitter<String> emitterIngress;
+
+    @Inject
     FeatureFlipper featureFlipper;
 
     private Gauge pairsProcessed;
@@ -72,18 +87,19 @@ public class DailyEmailAggregationJob {
 
         try {
             LocalDateTime now = LocalDateTime.now(UTC);
-            List<AggregationCommand> aggregationCommands = null;
-            if (featureFlipper.isAggregatorOrgPrefEnabled()) {
-                aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
-                aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
-            } else {
-                aggregationCommands = processAggregateEmails(now, registry);
-            }
+
+            aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
+            List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
+
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (AggregationCommand aggregationCommand : aggregationCommands) {
                 try {
                     final String payload = objectMapper.writeValueAsString(aggregationCommand);
-                    futures.add(emitter.send(payload).toCompletableFuture());
+                    if (featureFlipper.isAggregatorSendOnIngress()) {
+                        sendIt(aggregationCommand);
+                    } else {
+                        futures.add(emitter.send(payload).toCompletableFuture());
+                    }
                 } catch (JsonProcessingException e) {
                     Log.warn("Could not transform AggregationCommand to JSON object.", e);
                 }
@@ -97,12 +113,8 @@ public class DailyEmailAggregationJob {
                 }
             }
 
-            if (featureFlipper.isAggregatorOrgPrefEnabled()) {
-                List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
-                emailAggregationResources.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
-            } else {
-                emailAggregationResources.updateLastCronJobRun(now);
-            }
+            List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
+            emailAggregationResources.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
 
             Gauge lastSuccess = Gauge
                     .build()
@@ -115,11 +127,13 @@ public class DailyEmailAggregationJob {
             throw ex;
         } finally {
             durationTimer.setDuration();
-            PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
-            try {
-                pg.pushAdd(registry, "aggregator_job");
-            } catch (IOException e) {
-                Log.warn("Could not push metrics to Prometheus Pushgateway.", e);
+            if (ProfileManager.getLaunchMode() == NORMAL) {
+                PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
+                try {
+                    pg.pushAdd(registry, "aggregator_job");
+                } catch (IOException e) {
+                    Log.warn("Could not push metrics to Prometheus Pushgateway.", e);
+                }
             }
         }
     }
@@ -138,37 +152,29 @@ public class DailyEmailAggregationJob {
         return pendingAggregationCommands;
     }
 
-    @Deprecated(forRemoval = true)
-    List<AggregationCommand> processAggregateEmails(LocalDateTime endTime, CollectorRegistry registry) {
+    private void sendIt(AggregationCommand aggregationCommand) {
 
-        final CronJobRun lastCronJobRun = emailAggregationResources.getLastCronJobRun();
-        LocalDateTime startTime = lastCronJobRun.getLastRun();
+        Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
+        Map<String, Object> payload = JsonObject.mapFrom(aggregationCommand).getMap();
+        payload.forEach(payloadBuilder::withAdditionalProperty);
 
-        Log.infof("Collecting email aggregation for period (%s, %s) and type %s", startTime, endTime, DAILY);
+        Action action = new Action.ActionBuilder()
+            .withBundle(BUNDLE_NAME)
+            .withApplication(APP_NAME)
+            .withEventType(String.format("%s-%s-%s", EVENT_TYPE_NAME, aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication()))
+            .withOrgId(aggregationCommand.getAggregationKey().getOrgId())
+            .withTimestamp(LocalDateTime.now(UTC))
+            .withEvents(List.of(
+                    new Event.EventBuilder()
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(payloadBuilder.build())
+                        .build()))
+            .build();
 
-        final List<AggregationCommand> pendingAggregationCommands =
-                emailAggregationResources.getApplicationsWithPendingAggregation(startTime, endTime)
-                        .stream()
-                        .map(aggregationKey -> new AggregationCommand(aggregationKey, startTime, endTime, DAILY))
-                        .collect(Collectors.toList());
-
-        Log.infof(
-                "Finished collecting email aggregations for period (%s, %s) and type %s after %d seconds. %d (orgIds, applications) pairs were processed",
-                startTime,
-                endTime,
-                DAILY,
-                SECONDS.between(endTime, LocalDateTime.now(UTC)),
-                pendingAggregationCommands.size()
-        );
-
-        pairsProcessed = Gauge
-                .build()
-                .name("aggregator_job_orgid_application_pairs_processed")
-                .help("Number of orgId and application pairs processed.")
-                .register(registry);
-        pairsProcessed.set(pendingAggregationCommands.size());
-
-        return pendingAggregationCommands;
+        String encodedAction = Parser.encode(action);
+        Log.infof("Encoded Payload: %s", encodedAction);
+        Message<String> message = Message.of(encodedAction);
+        emitterIngress.send(message);
     }
 
     Gauge getPairsProcessed() {

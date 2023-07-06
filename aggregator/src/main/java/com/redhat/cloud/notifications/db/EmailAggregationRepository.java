@@ -64,14 +64,6 @@ public class EmailAggregationRepository {
     }
 
     @Transactional
-    public void updateLastCronJobRun(LocalDateTime lastRun) {
-        String query = "UPDATE CronJobRun SET lastRun = :lastRun";
-        entityManager.createQuery(query)
-                .setParameter("lastRun", lastRun)
-                .executeUpdate();
-    }
-
-    @Transactional
     public void updateLastCronJobRunAccordingOrgPref(List<String> orgIdsToUpdate, LocalDateTime end) {
 
         String hqlQuery = "UPDATE AggregationOrgConfig ac SET ac.lastRun=:end WHERE ac.orgId IN :orgIdsToUpdate";
