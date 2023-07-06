@@ -8,6 +8,8 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Account
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
+import com.redhat.cloud.notifications.recipients.mbop.MBOPService;
+import com.redhat.cloud.notifications.recipients.mbop.MBOPUser;
 import com.redhat.cloud.notifications.routers.models.Page;
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
@@ -42,6 +44,7 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class RbacRecipientUsersProvider {
 
+    public static final String MBOP_SORT_ORDER = "asc";
     public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
     @Inject
@@ -61,11 +64,17 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "recipient-provider.it.max-results-per-page", defaultValue = "1000")
     int maxResultsPerPage;
 
+    @ConfigProperty(name = "recipient-provider.mbop.max-results-per-page", defaultValue = "1000")
+    int MBOPMaxResultsPerPage;
+
     @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
     int maxRetryAttempts;
 
     @ConfigProperty(name = "it.retry.max-attempts", defaultValue = "3")
     int maxRetryAttemptsIt;
+
+    @ConfigProperty(name = "mbop.retry.max-attempts", defaultValue = "3")
+    int MBOPMaxRetryAttempts;
 
     @ConfigProperty(name = "it.retry.back-off.initial-value", defaultValue = "0.1S")
     Duration initialBackOffIt;
@@ -79,8 +88,18 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
     Duration maxBackOff;
 
+    @ConfigProperty(name = "mbop.retry.back-off.initial-value", defaultValue = "0.1S")
+    Duration MBOPInitialBackOff;
+
+    @ConfigProperty(name = "mbop.retry.back-off.max-value", defaultValue = "1S")
+    Duration MBOPMaxBackOff;
+
     @Inject
     MeterRegistry meterRegistry;
+
+    @Inject
+    @RestClient
+    MBOPService mbopService;
 
     private Counter rbacFailuresCounter;
 
@@ -88,6 +107,9 @@ public class RbacRecipientUsersProvider {
 
     private Counter itFailuresCounter;
     private RetryPolicy<Object> itRetryPolicy;
+
+    private Counter mbopFailuresCounter;
+    private RetryPolicy<Object> mbopRetryPolicy;
 
     private Map</* orgId */ String, AtomicInteger> rbacUsers = new ConcurrentHashMap<>();
 
@@ -118,6 +140,21 @@ public class RbacRecipientUsersProvider {
                     Log.warnf("IT User Service call failed", event.getException().getMessage());
                 })
                 .build();
+
+        this.mbopFailuresCounter = this.meterRegistry.counter("mbop.failures");
+
+        this.mbopRetryPolicy = RetryPolicy.builder()
+            .onRetry(ignoredEvent -> mbopFailuresCounter.increment())
+            .handle(ConnectTimeoutException.class, IOException.class)
+            .withBackoff(this.MBOPInitialBackOff, this.MBOPMaxBackOff)
+            .withMaxAttempts(this.MBOPMaxRetryAttempts)
+            .onRetriesExceeded(
+                event -> {
+                    // All retry attempts failed, let's log a warning about the failure.
+                    Log.warnf("MBOP User Service call failed", event.getException().getMessage());
+                }
+            )
+            .build();
     }
 
     @CacheResult(cacheName = "rbac-recipient-users-provider-get-users")
@@ -128,6 +165,29 @@ public class RbacRecipientUsersProvider {
         if (featureFlipper.isUseRbacForFetchingUsers()) {
             users = getWithPagination(
                     page -> retryOnRbacError(() -> rbacServiceToService.getUsers(orgId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)));
+        } else if (this.featureFlipper.isUseMBOPForFetchingUsers()) {
+            final List<MBOPUser> mbopUsers = new ArrayList<>();
+
+            // Keep the offset to ask for more users in case we need it.
+            int offset = 0;
+            // The page size of the returned call. Used to see if we should
+            // keep calling for more users!
+            int pageSize;
+            do {
+                // Required variable since lambdas are not allowed to modify
+                // the captured variables.
+                int finalOffset = offset;
+                final List<MBOPUser> receivedUsers = this.retryOnMBOPError(() ->
+                    this.mbopService.getUsersByOrgId(orgId, adminsOnly, MBOP_SORT_ORDER, this.MBOPMaxResultsPerPage, finalOffset)
+                );
+
+                mbopUsers.addAll(receivedUsers);
+
+                offset += receivedUsers.size();
+                pageSize = receivedUsers.size();
+            } while (pageSize == this.MBOPMaxResultsPerPage);
+
+            users = this.transformMBOPUserToUser(mbopUsers);
         } else {
             List<ITUserResponse> usersPaging;
             List<ITUserResponse> usersTotal = new ArrayList<>();
@@ -211,6 +271,10 @@ public class RbacRecipientUsersProvider {
         return Failsafe.with(itRetryPolicy).get(rbacCall);
     }
 
+    private <T> T retryOnMBOPError(final CheckedSupplier<T> mbopCall) {
+        return Failsafe.with(this.mbopRetryPolicy).get(mbopCall);
+    }
+
     private List<User> getWithPagination(Function<Integer, Page<RbacUser>> fetcher) {
         List<User> users = new ArrayList<>();
         int page = 0;
@@ -266,6 +330,31 @@ public class RbacRecipientUsersProvider {
 
             users.add(user);
         }
+        return users;
+    }
+
+    /**
+     * Transforms the {@link MBOPUser} DTO into a {@link User}.
+     * @param mbopUsers the users to transform.
+     * @return a list of {@link User}s.
+     */
+    List<User> transformMBOPUserToUser(final List<MBOPUser> mbopUsers) {
+        final List<User> users = new ArrayList<>(mbopUsers.size());
+
+        for (final MBOPUser mbopUser : mbopUsers) {
+            final User user = new User();
+
+            user.setId(mbopUser.id());
+            user.setUsername(mbopUser.username());
+            user.setEmail(mbopUser.email());
+            user.setFirstName(mbopUser.firstName());
+            user.setLastName(mbopUser.lastName());
+            user.setActive(mbopUser.isActive());
+            user.setAdmin(mbopUser.isOrgAdmin());
+
+            users.add(user);
+        }
+
         return users;
     }
 }

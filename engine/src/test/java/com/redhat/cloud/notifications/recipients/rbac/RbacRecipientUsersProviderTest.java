@@ -11,6 +11,8 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
+import com.redhat.cloud.notifications.recipients.mbop.MBOPService;
+import com.redhat.cloud.notifications.recipients.mbop.MBOPUser;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheInvalidateAll;
@@ -27,10 +29,12 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -44,6 +48,9 @@ public class RbacRecipientUsersProviderTest {
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     int rbacMaxResultsPerPage;
 
+    @ConfigProperty(name = "recipient-provider.mbop.max-results-per-page", defaultValue = "1000")
+    int MBOPMaxResultsPerPage;
+
     @InjectMock
     @RestClient
     RbacServiceToService rbacServiceToService;
@@ -54,6 +61,10 @@ public class RbacRecipientUsersProviderTest {
 
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    @InjectMock
+    @RestClient
+    MBOPService mbopService;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -275,6 +286,42 @@ public class RbacRecipientUsersProviderTest {
         assertEquals(updatedSize, users.size());
     }
 
+    /**
+     * Tests that calling MBOP for users works as expected.
+     */
+    @Test
+    void testGetUsersMBOP() {
+        try {
+            this.featureFlipper.setUseMBOPForFetchingUsers(true);
+
+            // Fake a REST call to MBOP.
+            final List<MBOPUser> MBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
+
+            final boolean adminsOnly = false;
+
+            // Return the mocked list first and then an empty one afterwards,
+            // since otherwise Mockito will always return the mocked list,
+            // which makes the MBOP loop go forever and hit heat space errors.
+            // In reality, an organization that has more than a 1000 users is
+            // going to be a rare case, and even if it is, the method can
+            // handle a few thousand elements.
+            Mockito
+                .when(this.mbopService.getUsersByOrgId(Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), Mockito.anyInt()))
+                .thenReturn(MBOPUsers, new ArrayList<>());
+
+            // Call the function under test.
+            final List<User> result = this.rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, adminsOnly);
+
+            // Transform the generated MBOP users in order to check that the
+            // function under test did the transformations as expected.
+            final List<User> mockUsers = this.rbacRecipientUsersProvider.transformMBOPUserToUser(MBOPUsers);
+
+            assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
+        } finally {
+            this.featureFlipper.setUseMBOPForFetchingUsers(false);
+        }
+    }
+
     private void mockGetUsers(int elements, boolean adminsOnly) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
         when(itUserService.getUsers(any(ITUserRequest.class)))
@@ -319,6 +366,37 @@ public class RbacRecipientUsersProviderTest {
             OldMockedUserAnswer answer = new OldMockedUserAnswer(elements, false);
             return answer.mockedUserAnswer(false);
         });
+    }
+
+    /**
+     * Generate mock {@link MBOPUser}s.
+     * @param elements the number of users to generate.
+     * @return a list containing the specified number of elements filled with
+     * random data.
+     */
+    private List<MBOPUser> mockGetMBOPUsers(final int elements) {
+        final List<MBOPUser> mbopUsers = new ArrayList<>(elements);
+        final Random random = new Random();
+
+        for (int i = 0; i < elements; i++) {
+            final String uuid = UUID.randomUUID().toString();
+
+            final MBOPUser mbopUser = new MBOPUser(
+                uuid,
+                String.format("username-%s", uuid),
+                String.format("%s@redhat.com", uuid),
+                String.format("firstName-%s", uuid),
+                String.format("lastName-%s", uuid),
+                random.nextBoolean(),
+                random.nextBoolean(),
+                random.nextBoolean(),
+                "en-US"
+            );
+
+            mbopUsers.add(mbopUser);
+        }
+
+        return mbopUsers;
     }
 
     /*
