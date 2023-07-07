@@ -87,8 +87,7 @@ public class NotificationResource {
         public List<BehaviorGroup> getLinkedBehaviorGroups(
                 @Context SecurityContext sec,
                 @PathParam("eventTypeId") UUID eventTypeId,
-                @BeanParam @Valid Query query,
-                @Context UriInfo uriInfo
+                @BeanParam @Valid Query query
         ) {
             String orgId = getOrgId(sec);
 
@@ -116,7 +115,7 @@ public class NotificationResource {
 
             return new Page<>(
                     behaviorGroups,
-                    PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query.getLimit().getLimit(), query.getLimit().getOffset()),
+                    PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query),
                     new Meta(behaviorGroupCount)
             );
         }
