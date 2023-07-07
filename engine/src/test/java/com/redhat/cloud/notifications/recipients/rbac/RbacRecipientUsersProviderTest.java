@@ -295,26 +295,27 @@ public class RbacRecipientUsersProviderTest {
             this.featureFlipper.setUseMBOPForFetchingUsers(true);
 
             // Fake a REST call to MBOP.
-            final List<MBOPUser> MBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
+            final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
+            final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
+            final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage / 2);
 
             final boolean adminsOnly = false;
 
-            // Return the mocked list first and then an empty one afterwards,
-            // since otherwise Mockito will always return the mocked list,
-            // which makes the MBOP loop go forever and hit heat space errors.
-            // In reality, an organization that has more than a 1000 users is
-            // going to be a rare case, and even if it is, the method can
-            // handle a few thousand elements.
+            // Return a few pages of results, with the last one being less than
+            // the configured maximum limit, so that we can test that the loop
+            // is working as expected.
             Mockito
                 .when(this.mbopService.getUsersByOrgId(Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), Mockito.anyInt()))
-                .thenReturn(MBOPUsers, new ArrayList<>());
+                .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
 
             // Call the function under test.
             final List<User> result = this.rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, adminsOnly);
 
             // Transform the generated MBOP users in order to check that the
             // function under test did the transformations as expected.
-            final List<User> mockUsers = this.rbacRecipientUsersProvider.transformMBOPUserToUser(MBOPUsers);
+            final List<User> mockUsers = this.rbacRecipientUsersProvider.transformMBOPUserToUser(firstPageMBOPUsers);
+            mockUsers.addAll(this.rbacRecipientUsersProvider.transformMBOPUserToUser(secondPageMBOPUsers));
+            mockUsers.addAll(this.rbacRecipientUsersProvider.transformMBOPUserToUser(thirdPageMBOPUsers));
 
             assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
         } finally {
