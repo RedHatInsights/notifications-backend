@@ -246,6 +246,8 @@ objects:
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
         - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
           value: ${NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS}
+        - name: QUARKUS_REST_CLIENT_MBOP_URL
+          value: ${QUARKUS_REST_CLIENT_MBOP_URL}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -414,3 +416,5 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
   value: "false"
+- name: QUARKUS_REST_CLIENT_MBOP_URL
+  required: true
