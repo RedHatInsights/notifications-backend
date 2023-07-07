@@ -23,6 +23,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import javax.inject.Inject;
@@ -310,6 +311,22 @@ public class RbacRecipientUsersProviderTest {
 
             // Call the function under test.
             final List<User> result = this.rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, adminsOnly);
+
+            // Verify that the offset argument, which is the one that changes
+            // on each iteration, has been correctly incremented.
+            final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
+            Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), capturedOffset.capture());
+
+            final List<Integer> capturedValues = capturedOffset.getAllValues();
+            assertIterableEquals(
+                List.of(
+                    0,
+                    this.MBOPMaxResultsPerPage,
+                    this.MBOPMaxResultsPerPage * 2
+                ),
+                capturedValues,
+                "unexpected offset values used when calling MBOP"
+            );
 
             // Transform the generated MBOP users in order to check that the
             // function under test did the transformations as expected.
