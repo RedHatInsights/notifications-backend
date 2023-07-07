@@ -711,6 +711,10 @@ public class LifecycleITest extends DbIsolatedTest {
         // Check the "last" link.
         final String expectedLastValue = String.format("/api/notifications/v2.0/notifications/eventTypes/%s/behaviorGroups?limit=20&offset=0", eventTypeId);
         assertEquals(expectedLastValue, links.getString("last"), "the \"last\" link element contains an unexpected value");
+
+        // Check the "meta" object.
+        final JsonObject meta = responseBodyJson.getJsonObject("meta");
+        assertEquals(expectedBehaviorGroupIds.length, meta.getNumber("count"), "the \"meta\" \"count\" element contains an unexpected number");
     }
 
     private void retry(Supplier<Boolean> checkEndpointHistoryResult) {
