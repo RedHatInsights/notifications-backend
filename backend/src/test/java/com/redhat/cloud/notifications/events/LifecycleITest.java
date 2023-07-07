@@ -687,8 +687,9 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(JSON)
                 .extract().body().asString();
 
-        // The response body contains the meta information about the history collection. We need to access the
-        // "data" array to access the elements.
+        // The response body contains the meta information about the collection
+        // of behavior groups. We need to access the "data" array to access the
+        // elements.
         final JsonObject responseBodyJson = new JsonObject(responseBody);
         final JsonArray jsonBehaviorGroups = responseBodyJson.getJsonArray("data");
         assertEquals(expectedBehaviorGroupIds.length, jsonBehaviorGroups.size());
