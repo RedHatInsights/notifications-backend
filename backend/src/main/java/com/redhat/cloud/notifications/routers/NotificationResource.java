@@ -79,12 +79,46 @@ public class NotificationResource {
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
     public static class V1 extends NotificationResource {
+        @GET
+        @Path("/eventTypes/{eventTypeId}/behaviorGroups")
+        @Produces(APPLICATION_JSON)
+        @Operation(summary = "Retrieve the behavior groups linked to an event type.")
+        @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+        public List<BehaviorGroup> getLinkedBehaviorGroups(
+                @Context SecurityContext sec,
+                @PathParam("eventTypeId") UUID eventTypeId,
+                @BeanParam @Valid Query query
+        ) {
+            String orgId = getOrgId(sec);
 
+            return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
+        }
     }
 
     @Path(Constants.API_NOTIFICATIONS_V_2_0 + "/notifications")
     public static class V2 extends NotificationResource {
+        @GET
+        @Path("/eventTypes/{eventTypeId}/behaviorGroups")
+        @Produces(APPLICATION_JSON)
+        @Operation(summary = "Retrieve the behavior groups linked to an event type.")
+        @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+        public Page<BehaviorGroup> getLinkedBehaviorGroups(
+                @Context SecurityContext sec,
+                @PathParam("eventTypeId") UUID eventTypeId,
+                @BeanParam @Valid Query query,
+                @Context UriInfo uriInfo
+        ) {
+            String orgId = getOrgId(sec);
 
+            final List<BehaviorGroup> behaviorGroups = this.behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
+            final long behaviorGroupCount = this.behaviorGroupRepository.countByEventTypeId(orgId, eventTypeId);
+
+            return new Page<>(
+                    behaviorGroups,
+                    PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query),
+                    new Meta(behaviorGroupCount)
+            );
+        }
     }
 
     @GET
@@ -182,16 +216,6 @@ public class NotificationResource {
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         String orgId = getOrgId(sec);
         return behaviorGroupRepository.findBehaviorGroupsByEndpointId(orgId, endpointId);
-    }
-
-    @GET
-    @Path("/eventTypes/{eventTypeId}/behaviorGroups")
-    @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the behavior groups linked to an event type.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public List<BehaviorGroup> getLinkedBehaviorGroups(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @BeanParam @Valid Query query) {
-        String orgId = getOrgId(sec);
-        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
     }
 
     @GET

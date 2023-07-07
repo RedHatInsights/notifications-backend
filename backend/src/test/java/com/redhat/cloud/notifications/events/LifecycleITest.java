@@ -43,6 +43,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
@@ -648,6 +649,11 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
+        checkEventTypeBehaviorGroupsV1(identityHeader, eventTypeId, expectedBehaviorGroupIds);
+        checkEventTypeBehaviorGroupsV2(identityHeader, eventTypeId, expectedBehaviorGroupIds);
+    }
+
+    private void checkEventTypeBehaviorGroupsV1(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
         String responseBody = given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
@@ -667,6 +673,48 @@ public class LifecycleITest extends DbIsolatedTest {
                 fail("One of the expected behavior groups is not linked to the event type");
             }
         }
+    }
+
+    private void checkEventTypeBehaviorGroupsV2(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
+        String responseBody = given()
+                .basePath(API_NOTIFICATIONS_V_2_0)
+                .header(identityHeader)
+                .pathParam("eventTypeId", eventTypeId)
+                .when()
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().body().asString();
+
+        // The response body contains the meta information about the collection
+        // of behavior groups. We need to access the "data" array to access the
+        // elements.
+        final JsonObject responseBodyJson = new JsonObject(responseBody);
+        final JsonArray jsonBehaviorGroups = responseBodyJson.getJsonArray("data");
+        assertEquals(expectedBehaviorGroupIds.length, jsonBehaviorGroups.size());
+
+        for (String behaviorGroupId : expectedBehaviorGroupIds) {
+            if (!responseBody.contains(behaviorGroupId)) {
+                fail("One of the expected behavior groups is not linked to the event type");
+            }
+        }
+
+        // Check the "meta" and "links" elements.
+        final JsonObject links = responseBodyJson.getJsonObject("links");
+        assertNotNull(links, "the \"links\" element is missing from the paged response");
+
+        // Check the "first" link.
+        final String expectedFirstValue = String.format("/api/notifications/v2.0/notifications/eventTypes/%s/behaviorGroups?limit=20&offset=0", eventTypeId);
+        assertEquals(expectedFirstValue, links.getString("first"), "the \"first\" link element contains an unexpected value");
+
+        // Check the "last" link.
+        final String expectedLastValue = String.format("/api/notifications/v2.0/notifications/eventTypes/%s/behaviorGroups?limit=20&offset=0", eventTypeId);
+        assertEquals(expectedLastValue, links.getString("last"), "the \"last\" link element contains an unexpected value");
+
+        // Check the "meta" object.
+        final JsonObject meta = responseBodyJson.getJsonObject("meta");
+        assertEquals(expectedBehaviorGroupIds.length, meta.getNumber("count"), "the \"meta\" \"count\" element contains an unexpected number");
     }
 
     private void retry(Supplier<Boolean> checkEndpointHistoryResult) {
