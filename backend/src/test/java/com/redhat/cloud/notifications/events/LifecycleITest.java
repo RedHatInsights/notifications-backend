@@ -699,6 +699,18 @@ public class LifecycleITest extends DbIsolatedTest {
                 fail("One of the expected behavior groups is not linked to the event type");
             }
         }
+
+        // Check the "meta" and "links" elements.
+        final JsonObject links = responseBodyJson.getJsonObject("links");
+        assertNotNull(links, "the \"links\" element is missing from the paged response");
+
+        // Check the "first" link.
+        final String expectedFirstValue = String.format("/api/notifications/v2.0/notifications/eventTypes/%s/behaviorGroups?limit=20&offset=0", eventTypeId);
+        assertEquals(expectedFirstValue, links.getString("first"), "the \"first\" link element contains an unexpected value");
+
+        // Check the "last" link.
+        final String expectedLastValue = String.format("/api/notifications/v2.0/notifications/eventTypes/%s/behaviorGroups?limit=20&offset=0", eventTypeId);
+        assertEquals(expectedLastValue, links.getString("last"), "the \"last\" link element contains an unexpected value");
     }
 
     private void retry(Supplier<Boolean> checkEndpointHistoryResult) {
