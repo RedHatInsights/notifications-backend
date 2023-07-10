@@ -7,7 +7,6 @@ import org.apache.camel.util.json.JsonObject;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
@@ -16,6 +15,7 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.START_TI
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.SUCCESSFUL;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TYPE;
+import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
 public class OutgoingCloudEventBuilder implements Processor {
@@ -26,6 +26,13 @@ public class OutgoingCloudEventBuilder implements Processor {
     public void process(Exchange exchange) throws Exception {
 
         Message in = exchange.getIn();
+
+        /*
+         * The exchange may contain headers used by a connector to perform a call to an external service.
+         * These headers shouldn't be leaked, especially if they contain authorization data, so we're
+         * removing all of them for security purposes.
+         */
+        in.removeHeaders("*");
 
         JsonObject details = new JsonObject();
         details.put("type", exchange.getProperty(TYPE, String.class));
@@ -42,7 +49,8 @@ public class OutgoingCloudEventBuilder implements Processor {
         outgoingCloudEvent.put("specversion", CE_SPEC_VERSION);
         outgoingCloudEvent.put("source", exchange.getProperty(RETURN_SOURCE, String.class));
         outgoingCloudEvent.put("id", exchange.getProperty(ID, String.class));
-        outgoingCloudEvent.put("time", LocalDateTime.now(ZoneOffset.UTC).toString());
+        outgoingCloudEvent.put("time", LocalDateTime.now(UTC).toString());
+        // TODO The serialization to JSON shouldn't be needed here. Migrate this later!
         outgoingCloudEvent.put("data", data.toJson());
 
         in.setBody(outgoingCloudEvent.toJson());

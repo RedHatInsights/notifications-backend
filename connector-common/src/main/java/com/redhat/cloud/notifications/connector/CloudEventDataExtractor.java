@@ -15,7 +15,7 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class CloudEventDataExtractor {
 
-    public void extract(Exchange exchange, JsonObject cloudEventData) {
+    public void extract(Exchange exchange, JsonObject cloudEventData) throws Exception {
         /*
          * Usage example:
          * exchange.setProperty("foo", cloudEventData.getString("bar"));

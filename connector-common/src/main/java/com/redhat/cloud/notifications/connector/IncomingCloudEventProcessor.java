@@ -28,7 +28,7 @@ public class IncomingCloudEventProcessor implements Processor {
     CloudEventDataExtractor cloudEventDataExtractor;
 
     @Override
-    public void process(Exchange exchange) {
+    public void process(Exchange exchange) throws Exception {
 
         Message in = exchange.getIn();
 

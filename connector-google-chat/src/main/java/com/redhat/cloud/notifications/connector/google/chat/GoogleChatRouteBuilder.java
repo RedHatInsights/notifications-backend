@@ -27,7 +27,6 @@ public class GoogleChatRouteBuilder extends EngineToConnectorRouteBuilder {
     public void configureRoute() {
         from(direct(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
-                .removeHeaders(CAMEL_HTTP_HEADERS_PATTERN)
                 .setHeader(HTTP_METHOD, constant("POST"))
                 .setHeader(CONTENT_TYPE, constant("application/json"))
                 /*

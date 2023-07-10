@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.connector.TestLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import org.apache.camel.Predicate;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
@@ -13,7 +14,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 public class TeamsConnectorRoutesTest extends ConnectorRoutesTest {
 
     @Override
-    protected String getOriginalEndpointPattern() {
+    protected String getMockEndpointPattern() {
         return "https://foo.bar";
     }
 
@@ -23,11 +24,19 @@ public class TeamsConnectorRoutesTest extends ConnectorRoutesTest {
     }
 
     @Override
-    protected JsonObject buildNotification(String targetUrl) {
-        JsonObject notification = new JsonObject();
-        notification.put("orgId", DEFAULT_ORG_ID);
-        notification.put("webhookUrl", targetUrl);
-        notification.put("message", "This is a test!");
-        return notification;
+    protected JsonObject buildIncomingPayload(String targetUrl) {
+        JsonObject payload = new JsonObject();
+        payload.put("orgId", DEFAULT_ORG_ID);
+        payload.put("webhookUrl", targetUrl);
+        payload.put("message", "This is a test!");
+        return payload;
+    }
+
+    @Override
+    protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
+        return exchange -> {
+            String outgoingPayload = exchange.getIn().getBody(String.class);
+            return outgoingPayload.equals(incomingPayload.getString("message"));
+        };
     }
 }

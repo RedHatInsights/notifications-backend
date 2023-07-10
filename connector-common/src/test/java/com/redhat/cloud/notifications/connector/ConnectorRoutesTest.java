@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import io.vertx.core.json.JsonObject;
 import org.apache.camel.Exchange;
+import org.apache.camel.Predicate;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
@@ -17,7 +18,6 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
-import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
@@ -38,7 +38,6 @@ import static org.mockserver.verify.VerificationTimes.atLeast;
 public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
     private static final String KAFKA_SOURCE_MOCK = "direct:kafka-source-mock";
-    protected static final String REMOTE_SERVER_PATH = "/some/path";
 
     @Inject
     protected ConnectorConfig connectorConfig;
@@ -51,11 +50,13 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return false;
     }
 
-    protected abstract String getOriginalEndpointPattern();
+    protected abstract String getMockEndpointPattern();
 
     protected abstract String getMockEndpointUri();
 
-    protected abstract JsonObject buildNotification(String targetUrl);
+    protected abstract JsonObject buildIncomingPayload(String targetUrl);
+
+    protected abstract Predicate checkOutgoingPayload(JsonObject incomingPayload);
 
     /*
      * This is a workaround for the Slack connector where metrics are incremented in a different way
@@ -64,6 +65,19 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
      */
     protected boolean isConnectorRouteFailureHandled() {
         return true;
+    }
+
+    protected boolean useHttps() {
+        return false;
+    }
+
+    protected String getMockServerUrl() {
+        String mockServerUrl = MockServerLifecycleManager.getMockServerUrl();
+        return useHttps() ? mockServerUrl.replace("http:", "https:") : mockServerUrl;
+    }
+
+    protected String getRemoteServerPath() {
+        return "";
     }
 
     @BeforeEach
@@ -91,13 +105,15 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         MockEndpoint remoteServerMockEndpoint = mockRemoteServerEndpoint(); // This is where the notification is sent.
         MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
 
-        JsonObject notification = buildNotification(getOriginalEndpointPattern());
-        remoteServerMockEndpoint.expectedBodiesReceived(notification.getString("message"));
+        String targetUrl = "https://foo.bar";
 
-        String cloudEventId = sendMessageToKafkaSource(notification);
+        JsonObject incomingPayload = buildIncomingPayload(targetUrl);
+        remoteServerMockEndpoint.expectedMessagesMatches(checkOutgoingPayload(incomingPayload));
+
+        String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 
         remoteServerMockEndpoint.assertIsSatisfied();
-        assertKafkaSinkIsSatisfied(cloudEventId, notification, kafkaSinkMockEndpoint, true, "Event " + cloudEventId + " sent successfully");
+        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, true, targetUrl + getRemoteServerPath(), "Event " + cloudEventId + " sent successfully");
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 0, 1, 1);
         checkRouteMetrics(connectorConfig.getConnectorName(), 0, 1, 1);
@@ -110,14 +126,14 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     void testFailedNotification() throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
-        String remoteServerPath = mockRemoteServer500();
+        mockRemoteServer500();
         MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
 
-        JsonObject notification = buildNotification(remoteServerPath);
+        JsonObject incomingPayload = buildIncomingPayload(getMockServerUrl());
 
-        String cloudEventId = sendMessageToKafkaSource(notification);
+        String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 
-        assertKafkaSinkIsSatisfied(cloudEventId, notification, kafkaSinkMockEndpoint, false, "HTTP operation failed", "Error POSTing to Slack API");
+        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, getMockServerUrl() + getRemoteServerPath(), "HTTP operation failed", "Error POSTing to Slack API");
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
         if (isConnectorRouteFailureHandled()) {
@@ -134,15 +150,15 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     void testRedeliveredNotification() throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
-        String remoteServerPath = mockRemoteServerNetworkFailure();
+        mockRemoteServerNetworkFailure();
         MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
 
-        JsonObject notification = buildNotification(remoteServerPath);
+        JsonObject incomingPayload = buildIncomingPayload(getMockServerUrl());
 
-        String cloudEventId = sendMessageToKafkaSource(notification);
+        String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 
-        assertKafkaSinkIsSatisfied(cloudEventId, notification, kafkaSinkMockEndpoint, false, "unexpected end of stream", "localhost:" + MockServerLifecycleManager.getClient().getPort() + " failed to respond");
-        getClient().verify(request().withMethod("POST").withPath(REMOTE_SERVER_PATH), atLeast(3));
+        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, getMockServerUrl() + getRemoteServerPath(), "unexpected end of stream", "localhost:" + MockServerLifecycleManager.getClient().getPort() + " failed to respond");
+        getClient().verify(request().withMethod("POST").withPath(getRemoteServerPath()), atLeast(3));
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
         checkRouteMetrics(connectorConfig.getConnectorName(), 1, 1, 1);
@@ -178,24 +194,24 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         adviceWith(connectorConfig.getConnectorName(), context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
-                mockEndpointsAndSkip(getOriginalEndpointPattern());
+                mockEndpointsAndSkip(getMockEndpointPattern());
             }
         });
         return getMockEndpoint(getMockEndpointUri());
     }
 
-    protected String mockRemoteServer500() {
+    protected void mockRemoteServer500() {
         getClient()
-                .when(request().withMethod("POST").withPath(REMOTE_SERVER_PATH))
+                .withSecure(useHttps())
+                .when(request().withMethod("POST").withPath(getRemoteServerPath()))
                 .respond(new HttpResponse().withStatusCode(500).withBody("My custom internal error"));
-        return getMockServerUrl() + REMOTE_SERVER_PATH;
     }
 
-    protected String mockRemoteServerNetworkFailure() {
+    protected void mockRemoteServerNetworkFailure() {
         getClient()
-                .when(request().withMethod("POST").withPath(REMOTE_SERVER_PATH))
+                .withSecure(useHttps())
+                .when(request().withMethod("POST").withPath(getRemoteServerPath()))
                 .error(error().withDropConnection(true));
-        return getMockServerUrl() + REMOTE_SERVER_PATH;
     }
 
     protected MockEndpoint mockKafkaSinkEndpoint() throws Exception {
@@ -212,21 +228,21 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return kafkaEndpoint;
     }
 
-    protected String sendMessageToKafkaSource(JsonObject notification) {
+    protected String sendMessageToKafkaSource(JsonObject incomingPayload) {
 
         String cloudEventId = UUID.randomUUID().toString();
 
         JsonObject cloudEvent = new JsonObject();
         cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
         cloudEvent.put(CLOUD_EVENT_TYPE, "com.redhat.console.notification.toCamel." + connectorConfig.getConnectorName());
-        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(notification));
+        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(incomingPayload));
 
         template.sendBodyAndHeader(KAFKA_SOURCE_MOCK, cloudEvent.encode(), X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connectorConfig.getConnectorName());
 
         return cloudEventId;
     }
 
-    protected static void assertKafkaSinkIsSatisfied(String cloudEventId, JsonObject notification, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful, String... expectedOutcomeStarts) throws InterruptedException {
+    protected static void assertKafkaSinkIsSatisfied(String cloudEventId, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful, String expectedTargetUrl, String... expectedOutcomeStarts) throws InterruptedException {
 
         kafkaSinkMockEndpoint.assertIsSatisfied();
 
@@ -244,7 +260,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         assertEquals(expectedSuccessful, data.getBoolean("successful"));
         assertNotNull(data.getString("duration"));
         assertNotNull(data.getJsonObject("details").getString("type"));
-        assertEquals(notification.getString("webhookUrl"), data.getJsonObject("details").getString("target"));
+        assertEquals(expectedTargetUrl, data.getJsonObject("details").getString("target"));
 
         String outcome = data.getJsonObject("details").getString("outcome");
 
