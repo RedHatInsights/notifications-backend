@@ -9,7 +9,6 @@ import static org.apache.camel.LoggingLevel.DEBUG;
 public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder {
 
     public static final String ENGINE_TO_CONNECTOR = "engine-to-connector";
-    public static final String CAMEL_HTTP_HEADERS_PATTERN = "CamelHttp*";
 
     @Inject
     ConnectorConfig connectorConfig;
@@ -50,6 +49,8 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .routeId(ENGINE_TO_CONNECTOR)
                 .to(log(getClass().getName()).level("DEBUG").showHeaders(true).showBody(true))
                 .filter(incomingCloudEventFilter)
+                // Headers coming from Kafka must not be forwarded to external services.
+                .removeHeaders("*")
                 .process(incomingCloudEventProcessor)
                 .to(log(getClass().getName()).level("DEBUG").showProperties(true))
                 .to(direct(ENGINE_TO_CONNECTOR));

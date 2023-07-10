@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.connector.TestLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import org.apache.camel.Predicate;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +13,6 @@ import java.net.URLEncoder;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
-import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
@@ -29,7 +29,7 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
     private String SLACK_CHANNEL = "#notifications-" + UUID.randomUUID();
 
     @Override
-    protected String getOriginalEndpointPattern() {
+    protected String getMockEndpointPattern() {
         return "slack:" + SLACK_CHANNEL + "*";
     }
 
@@ -39,13 +39,21 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
     }
 
     @Override
-    protected JsonObject buildNotification(String targetUrl) {
-        JsonObject notification = new JsonObject();
-        notification.put("orgId", DEFAULT_ORG_ID);
-        notification.put("webhookUrl", targetUrl);
-        notification.put("channel", SLACK_CHANNEL);
-        notification.put("message", "This is a test!");
-        return notification;
+    protected JsonObject buildIncomingPayload(String targetUrl) {
+        JsonObject payload = new JsonObject();
+        payload.put("orgId", DEFAULT_ORG_ID);
+        payload.put("webhookUrl", targetUrl);
+        payload.put("channel", SLACK_CHANNEL);
+        payload.put("message", "This is a test!");
+        return payload;
+    }
+
+    @Override
+    protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
+        return exchange -> {
+            String outgoingPayload = exchange.getIn().getBody(String.class);
+            return outgoingPayload.equals(incomingPayload.getString("message"));
+        };
     }
 
     // See ConnectorRoutesTest#isConnectorRouteFailureHandled().
@@ -58,14 +66,14 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
     void test404ChannelNotFound() throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
-        String remoteServerPath = mock404ChannelNotFound();
+        mock404ChannelNotFound();
         MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
 
-        JsonObject notification = buildNotification(remoteServerPath);
+        JsonObject incomingPayload = buildIncomingPayload(getMockServerUrl());
 
-        String cloudEventId = sendMessageToKafkaSource(notification);
+        String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 
-        assertKafkaSinkIsSatisfied(cloudEventId, notification, kafkaSinkMockEndpoint, false, "Error POSTing to Slack API");
+        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, getMockServerUrl(), "Error POSTing to Slack API");
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
         checkRouteMetrics(connectorConfig.getConnectorName(), 0, 0, 1);
@@ -74,10 +82,9 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
         micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 0);
     }
 
-    private String mock404ChannelNotFound() {
+    private void mock404ChannelNotFound() {
         getClient()
-                .when(request().withMethod("POST").withPath(REMOTE_SERVER_PATH))
+                .when(request().withMethod("POST"))
                 .respond(response().withStatusCode(404).withBody("channel_not_found"));
-        return getMockServerUrl() + REMOTE_SERVER_PATH;
     }
 }
