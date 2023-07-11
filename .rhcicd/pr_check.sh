@@ -31,11 +31,17 @@ export IMAGE="quay.io/cloudservices/notifications-connector-slack"
 export DOCKERFILE=docker/Dockerfile.notifications-connector-slack.jvm
 source $CICD_ROOT/build.sh
 
+# Build the notifications-connector-splunk image and push it to Quay
+export IMAGE="quay.io/cloudservices/notifications-connector-splunk"
+export DOCKERFILE=docker/Dockerfile.notifications-connector-splunk.jvm
+source $CICD_ROOT/build.sh
+
 # Deploy both images on ephemeral
 export APP_NAME="notifications"
 export COMPONENT_NAME="notifications-backend"
 export IMAGE="quay.io/cloudservices/notifications-backend"
 export DEPLOY_TIMEOUT="900"
+# TODO Add notifications-connector-splunk to the next line when the app has been declared in app-interface
 export EXTRA_DEPLOY_ARGS="--set-parameter notifications-engine/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-google-chat/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-microsoft-teams/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-slack/IMAGE_TAG=${IMAGE_TAG}"
 source $CICD_ROOT/deploy_ephemeral_env.sh
 
