@@ -114,6 +114,11 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         testExtract("https://foo.bar/services/collector/event", false);
     }
 
+    @Test
+    void testExtractWithRawTargetUrlPath() throws Exception {
+        testExtract("https://foo.bar/services/collector/raw", false);
+    }
+
     private void assertValidTargetUrl(String url) {
         Exchange exchange = createExchangeWithBody("I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, false);
@@ -138,7 +143,6 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
 
         assertEquals(exchange.getProperty(ORG_ID, String.class), cloudEventData.getString("org_id"));
         assertEquals(exchange.getProperty(ACCOUNT_ID, String.class), cloudEventData.getString("account_id"));
-        assertTrue(exchange.getProperty(TARGET_URL, String.class).contains(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("url")));
         assertTrue(exchange.getProperty(TARGET_URL, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
         // Trailing slashes should be removed before we modify the target URL path.
         assertFalse(exchange.getProperty(TARGET_URL, String.class).endsWith("/" + SERVICES_COLLECTOR_EVENT));
