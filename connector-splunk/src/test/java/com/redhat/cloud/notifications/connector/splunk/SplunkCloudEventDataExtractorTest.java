@@ -23,6 +23,7 @@ import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDa
 import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.SERVICES_COLLECTOR_EVENT;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -99,6 +100,11 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
     }
 
     @Test
+    void testExtractWithTrailingSlashInTargetUrlPath() throws Exception {
+        testExtract("https://foo.bar/", false);
+    }
+
+    @Test
     void testExtractWithAnoherWrongTargetUrlPath() throws Exception {
         testExtract("https://foo.bar/services/collector", false);
     }
@@ -134,6 +140,8 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         assertEquals(exchange.getProperty(ACCOUNT_ID, String.class), cloudEventData.getString("account_id"));
         assertTrue(exchange.getProperty(TARGET_URL, String.class).contains(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("url")));
         assertTrue(exchange.getProperty(TARGET_URL, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
+        // Trailing slashes should be removed before we modify the target URL path.
+        assertFalse(exchange.getProperty(TARGET_URL, String.class).endsWith("/" + SERVICES_COLLECTOR_EVENT));
         assertEquals(exchange.getProperty(AUTHENTICATION_TOKEN, String.class), cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("X-Insight-Token"));
         assertEquals(exchange.getProperty(TRUST_ALL, Boolean.class).toString(), cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("trustAll"));
         assertTrue(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class).endsWith(SERVICES_COLLECTOR_EVENT));

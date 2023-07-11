@@ -58,6 +58,9 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
 
     private void fixTargetUrlPathIfNeeded(Exchange exchange) {
         String targetUrl = exchange.getProperty(TARGET_URL, String.class);
+        if (targetUrl.endsWith("/")) {
+            targetUrl = targetUrl.substring(0, targetUrl.length() - 1);
+        }
         if (!targetUrl.endsWith(SERVICES_COLLECTOR_EVENT)) {
             if (targetUrl.endsWith(SERVICES_COLLECTOR)) {
                 targetUrl += EVENT;
