@@ -2887,7 +2887,7 @@ data:
                 "scaleDistribution": {
                   "type": "linear"
                 },
-                "showPoints": "never",
+                "showPoints": "auto",
                 "spanNulls": false,
                 "stacking": {
                   "group": "A",
@@ -2898,13 +2898,16 @@ data:
                 }
               },
               "mappings": [],
-              "noValue": "0",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
                   }
                 ]
               }
@@ -2920,36 +2923,6 @@ data:
                     "id": "color",
                     "value": {
                       "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Failure"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Retry"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
                       "mode": "fixed"
                     }
                   }
@@ -2963,7 +2936,7 @@ data:
             "x": 12,
             "y": 32
           },
-          "id": 213,
+          "id": 216,
           "options": {
             "legend": {
               "calcs": [],
@@ -2983,9 +2956,8 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(CamelExchangesSucceeded_total{service=\"notifications-engine-service\", routeId=\"slack\"}[5m]))",
-              "instant": false,
+              "exemplar": true,
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://success\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
               "legendFormat": "Success",
               "range": true,
               "refId": "Success"
@@ -2996,12 +2968,11 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(CamelExchangesFailuresHandled_total{service=\"notifications-engine-service\", routeId=\"slack\"}[5m]))",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://httpFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
               "hide": false,
-              "interval": "",
-              "legendFormat": "Failure",
+              "legendFormat": "Http failed",
               "range": true,
-              "refId": "Failure"
+              "refId": "Http Failed"
             },
             {
               "datasource": {
@@ -3009,183 +2980,38 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(camel_slack_retry_counter_total[5m]))",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://ioFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
               "hide": false,
-              "instant": false,
-              "interval": "",
-              "legendFormat": "Retry",
+              "legendFormat": "IO Failed",
               "range": true,
-              "refId": "Retry"
+              "refId": "IO Fail"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://targetUrlValidationFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Target validation url failed",
+              "range": true,
+              "refId": "Target validation url failed"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://secureConnectionFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
+              "hide": false,
+              "legendFormat": "Secure connection failed",
+              "range": true,
+              "refId": "Secure connection failed"
             }
           ],
-          "title": "Slack",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "noValue": "0",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Success"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Failure"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Retry"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 18,
-            "y": 32
-          },
-          "id": 248,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(CamelExchangesSucceeded_total{service=\"notifications-connector-slack-service\", routeId=\"slack\"}[5m]))",
-              "instant": false,
-              "legendFormat": "Success",
-              "range": true,
-              "refId": "Success"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "sum(increase(CamelExchangesFailuresHandled_total{service=\"notifications-connector-slack-service\", routeId=\"slack\"}[5m]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Failure",
-              "range": true,
-              "refId": "Failure"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(camel_slack_retry_counter_total[5m]))",
-              "hide": false,
-              "instant": false,
-              "interval": "",
-              "legendFormat": "Retry",
-              "range": true,
-              "refId": "Retry"
-            }
-          ],
-          "title": "Slack (connector)",
+          "title": "ServiceNow",
           "type": "timeseries"
         },
         {
@@ -3265,8 +3091,8 @@ data:
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 0,
-            "y": 40
+            "x": 18,
+            "y": 32
           },
           "id": 236,
           "options": {
@@ -3377,164 +3203,6 @@ data:
                 "scaleDistribution": {
                   "type": "linear"
                 },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Success"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 6,
-            "y": 40
-          },
-          "id": 216,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "exemplar": true,
-              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://success\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
-              "legendFormat": "Success",
-              "range": true,
-              "refId": "Success"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://httpFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
-              "hide": false,
-              "legendFormat": "Http failed",
-              "range": true,
-              "refId": "Http Failed"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://ioFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
-              "hide": false,
-              "legendFormat": "IO Failed",
-              "range": true,
-              "refId": "IO Fail"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://targetUrlValidationFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
-              "hide": false,
-              "legendFormat": "Target validation url failed",
-              "range": true,
-              "refId": "Target validation url failed"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "sum(increase(CamelExchangeEventNotifier_seconds_count{namespace=~\"eventing-.+\",endpointName=\"direct://secureConnectionFailed\",eventType=\"ExchangeSentEvent\", service=\"eventing-integrations-servicenow\"}[5m]))",
-              "hide": false,
-              "legendFormat": "Secure connection failed",
-              "range": true,
-              "refId": "Secure connection failed"
-            }
-          ],
-          "title": "Snow",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
                 "showPoints": "never",
                 "spanNulls": false,
                 "stacking": {
@@ -3608,10 +3276,10 @@ data:
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 12,
+            "x": 0,
             "y": 40
           },
-          "id": 238,
+          "id": 250,
           "options": {
             "legend": {
               "calcs": [],
@@ -3632,7 +3300,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(increase(CamelExchangesSucceeded_total{service=\"notifications-engine-service\", routeId=\"google-chat\"}[5m]))",
+              "expr": "sum(increase(CamelExchangesSucceeded_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
               "instant": false,
               "legendFormat": "Success",
               "range": true,
@@ -3644,7 +3312,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(CamelExchangesFailuresHandled_total{service=\"notifications-engine-service\", routeId=\"google-chat\"}[5m]))",
+              "expr": "sum(increase(CamelExchangesFailuresHandled_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "Failure",
@@ -3774,340 +3442,8 @@ data:
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 18,
-            "y": 40
-          },
-          "id": 250,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(CamelExchangesSucceeded_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
-              "instant": false,
-              "legendFormat": "Success",
-              "range": true,
-              "refId": "Success"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "sum(increase(CamelExchangesFailuresHandled_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Failure",
-              "range": true,
-              "refId": "Failure"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(camel_google_chat_retry_counter_total[5m]))",
-              "hide": false,
-              "instant": false,
-              "interval": "",
-              "legendFormat": "Retry",
-              "range": true,
-              "refId": "Retry"
-            }
-          ],
-          "title": "Google Chat (connector)",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "noValue": "0",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Success"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Failure"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Retry"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 0,
-            "y": 48
-          },
-          "id": 237,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(CamelExchangesSucceeded_total{service=\"notifications-engine-service\", routeId=\"microsoft-teams\"}[5m]))",
-              "instant": false,
-              "legendFormat": "Success",
-              "range": true,
-              "refId": "Success"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "sum(increase(CamelExchangesFailuresHandled_total{service=\"notifications-engine-service\", routeId=\"microsoft-teams\"}[5m]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Failure",
-              "range": true,
-              "refId": "Failure"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(camel_teams_retry_counter_total[5m]))",
-              "hide": false,
-              "instant": false,
-              "interval": "",
-              "legendFormat": "Retry",
-              "range": true,
-              "refId": "Retry"
-            }
-          ],
-          "title": "Teams",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "noValue": "0",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Success"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Failure"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Retry"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
             "x": 6,
-            "y": 48
+            "y": 40
           },
           "id": 249,
           "options": {
@@ -4165,7 +3501,173 @@ data:
               "refId": "Retry"
             }
           ],
-          "title": "Teams (connector)",
+          "title": "Microsoft Teams",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failure"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Retry"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 40
+          },
+          "id": 248,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "sum(increase(CamelExchangesSucceeded_total{service=\"notifications-connector-slack-service\", routeId=\"slack\"}[5m]))",
+              "instant": false,
+              "legendFormat": "Success",
+              "range": true,
+              "refId": "Success"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(CamelExchangesFailuresHandled_total{service=\"notifications-connector-slack-service\", routeId=\"slack\"}[5m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Failure",
+              "range": true,
+              "refId": "Failure"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "sum(increase(camel_slack_retry_counter_total[5m]))",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "Retry",
+              "range": true,
+              "refId": "Retry"
+            }
+          ],
+          "title": "Slack",
           "type": "timeseries"
         },
         {
@@ -4174,7 +3676,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 56
+            "y": 48
           },
           "id": 228,
           "panels": [],
@@ -4195,7 +3697,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 57
+            "y": 49
           },
           "hiddenSeries": false,
           "id": 201,
@@ -4327,7 +3829,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 57
+            "y": 49
           },
           "id": 254,
           "options": {
@@ -4386,7 +3888,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 57
+            "y": 49
           },
           "id": 205,
           "options": {
@@ -4396,7 +3898,7 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "calcs": [
-                "lastNotNull"
+                  "lastNotNull"
               ],
               "fields": "",
               "values": false
@@ -4428,7 +3930,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 65
+            "y": 57
           },
           "id": 188,
           "panels": [],
@@ -4449,7 +3951,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 66
+            "y": 58
           },
           "hiddenSeries": false,
           "id": 153,
@@ -4540,7 +4042,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 66
+            "y": 58
           },
           "hiddenSeries": false,
           "id": 161,
@@ -4673,7 +4175,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 66
+            "y": 58
           },
           "id": 252,
           "links": [
@@ -4817,7 +4319,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 74
+            "y": 66
           },
           "id": 179,
           "panels": [],
@@ -4870,8 +4372,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -4883,7 +4384,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 75
+            "y": 67
           },
           "id": 174,
           "options": {
@@ -4962,8 +4463,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -4975,7 +4475,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 75
+            "y": 67
           },
           "id": 208,
           "options": {
@@ -5054,8 +4554,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -5067,7 +4566,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 75
+            "y": 67
           },
           "id": 189,
           "options": {
@@ -5114,7 +4613,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 83
+            "y": 75
           },
           "hiddenSeries": false,
           "id": 113,
@@ -5199,7 +4698,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 83
+            "y": 75
           },
           "hiddenSeries": false,
           "id": 175,
@@ -5284,7 +4783,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 83
+            "y": 75
           },
           "hiddenSeries": false,
           "id": 176,
@@ -5378,7 +4877,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 83
+            "y": 75
           },
           "hiddenSeries": false,
           "id": 177,
@@ -5477,7 +4976,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 91
+            "y": 83
           },
           "id": 24,
           "panels": [],
@@ -5505,7 +5004,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 92
+            "y": 84
           },
           "hiddenSeries": false,
           "id": 22,
@@ -5639,7 +5138,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 92
+            "y": 84
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -5766,7 +5265,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 101
+            "y": 93
           },
           "hiddenSeries": false,
           "id": 85,
@@ -5959,7 +5458,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 2,
+      "version": 1,
       "weekStart": ""
     }
 kind: ConfigMap
