@@ -23,6 +23,8 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
     public static final String SERVICES_COLLECTOR = "/services/collector";
     public static final String EVENT = "/event";
     public static final String SERVICES_COLLECTOR_EVENT = SERVICES_COLLECTOR + EVENT;
+    public static final String RAW = "/raw";
+    public static final String SERVICES_COLLECTOR_RAW = SERVICES_COLLECTOR + RAW;
 
     private static final UrlValidator HTTP_URL_VALIDATOR = new UrlValidator(new String[] {"http"}, ALLOW_LOCAL_URLS);
     private static final UrlValidator HTTPS_URL_VALIDATOR = new UrlValidator(new String[] {"https"}, ALLOW_LOCAL_URLS);
@@ -62,7 +64,9 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
             targetUrl = targetUrl.substring(0, targetUrl.length() - 1);
         }
         if (!targetUrl.endsWith(SERVICES_COLLECTOR_EVENT)) {
-            if (targetUrl.endsWith(SERVICES_COLLECTOR)) {
+            if (targetUrl.endsWith(SERVICES_COLLECTOR_RAW)) {
+                targetUrl = targetUrl.substring(0, targetUrl.length() - RAW.length()) + EVENT;
+            } else if (targetUrl.endsWith(SERVICES_COLLECTOR)) {
                 targetUrl += EVENT;
             } else {
                 targetUrl += SERVICES_COLLECTOR_EVENT;
