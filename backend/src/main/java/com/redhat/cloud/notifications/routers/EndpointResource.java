@@ -586,7 +586,7 @@ public class EndpointResource {
             )
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @RequestBody EndpointTestRequest requestBody) {
+    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @RequestBody @Valid final EndpointTestRequest requestBody) {
         final String orgId = SecurityContextUtil.getOrgId(sec);
 
         if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
@@ -597,12 +597,7 @@ public class EndpointResource {
         if (requestBody == null) {
             internalEndpointTestRequest = new InternalEndpointTestRequest(uuid, null, orgId);
         } else {
-            if (requestBody.isMessageBlank()) {
-                throw new BadRequestException("the custom message cannot be empty");
-            }
-
             internalEndpointTestRequest = new InternalEndpointTestRequest(uuid, requestBody.message, orgId);
-
         }
 
         this.endpointTestService.testEndpoint(internalEndpointTestRequest);

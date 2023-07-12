@@ -38,6 +38,7 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -2350,7 +2351,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Call the endpoint under test.
         final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
-        final String response = given()
+        final String rawResponse = given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
@@ -2361,7 +2362,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .extract()
             .asString();
 
-        Assertions.assertEquals("the custom message cannot be empty", response, "unexpected response from the endpoint");
+        final JsonObject response = new JsonObject(rawResponse);
+        final JsonArray constraintViolations = response.getJsonArray("violations");
+        Assertions.assertEquals(1, constraintViolations.size(), "unexpected number of error messages received from the endpoint");
+
+        final JsonObject constraintViolation = constraintViolations.getJsonObject(0);
+
+        Assertions.assertEquals("testEndpoint.requestBody.message", constraintViolation.getString("field"), "unexpected field validated when sending a blank test message");
+        Assertions.assertEquals("must not be blank", constraintViolation.getString("message"), "unexpected error message received when sending a blank custom message for testing the endpoint");
     }
 
     /**
