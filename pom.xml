@@ -18,7 +18,7 @@
         <module>connector-common</module>
         <module>connector-google-chat</module>
         <module>connector-microsoft-teams</module>
-        <module>connector-service-now</module>
+        <module>connector-servicenow</module>
         <module>connector-slack</module>
         <module>connector-splunk</module>
         <module>database</module>

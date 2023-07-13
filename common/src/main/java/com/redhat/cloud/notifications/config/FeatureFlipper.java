@@ -90,6 +90,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.splunk-connector.kafka-processing.enabled", defaultValue = "false")
     boolean splunkConnectorKafkaProcessingEnabled;
 
+    @ConfigProperty(name = "notifications.servicenow-connector.kafka-processing.enabled", defaultValue = "false")
+    boolean servicenowConnectorKafkaProcessingEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -109,6 +112,7 @@ public class FeatureFlipper {
         Log.infof("Drawer feature is %s", drawerEnabled ? "enabled" : "disabled");
         Log.infof("The add of default recipient on single email is %s", addDefaultRecipientOnSingleEmail ? "enabled" : "disabled");
         Log.infof("The Kafka processing in the Splunk connector is %s", splunkConnectorKafkaProcessingEnabled ? "enabled" : "disabled");
+        Log.infof("The Kafka processing in the ServiceNow connector is %s", servicenowConnectorKafkaProcessingEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -253,6 +257,10 @@ public class FeatureFlipper {
 
     public boolean isSplunkConnectorKafkaProcessingEnabled() {
         return splunkConnectorKafkaProcessingEnabled;
+    }
+
+    public boolean isServicenowConnectorKafkaProcessingEnabled() {
+        return servicenowConnectorKafkaProcessingEnabled;
     }
 
     /**

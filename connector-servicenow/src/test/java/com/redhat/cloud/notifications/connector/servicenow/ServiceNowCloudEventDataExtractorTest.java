@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.splunk;
+package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -15,24 +15,22 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.AUTHENTICATION_TOKEN;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
-import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.NOTIF_METADATA;
-import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.SERVICES_COLLECTOR_EVENT;
+import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
+import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.AUTHENTICATION_TOKEN;
+import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
+import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
+import static com.redhat.cloud.notifications.connector.servicenow.ServiceNowCloudEventDataExtractor.NOTIF_METADATA;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
+public class ServiceNowCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
 
     @Inject
-    SplunkCloudEventDataExtractor splunkCloudEventDataExtractor;
+    ServiceNowCloudEventDataExtractor serviceNowCloudEventDataExtractor;
 
     @Override
     public boolean isUseRouteBuilder() {
@@ -95,40 +93,20 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testExtractWithWrongTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar", true);
-    }
-
-    @Test
-    void testExtractWithTrailingSlashInTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar/", false);
-    }
-
-    @Test
-    void testExtractWithAnoherWrongTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar/services/collector", false);
-    }
-
-    @Test
     void testExtractWithValidTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar/services/collector/event", false);
-    }
-
-    @Test
-    void testExtractWithRawTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar/services/collector/raw", false);
+        testExtract("https://foo.bar", true);
     }
 
     private void assertValidTargetUrl(String url) {
         Exchange exchange = createExchangeWithBody("I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, false);
-        assertDoesNotThrow(() -> splunkCloudEventDataExtractor.extract(exchange, cloudEventData));
+        assertDoesNotThrow(() -> serviceNowCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
         Exchange exchange = createExchangeWithBody("I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, false);
-        assertThrows(expectedException, () -> splunkCloudEventDataExtractor.extract(exchange, cloudEventData));
+        assertThrows(expectedException, () -> serviceNowCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void testExtract(String url, boolean trustAll) throws Exception {
@@ -139,16 +117,14 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
          * We need to run assertions on the original JsonObject so we're making a copy of it.
          */
         JsonObject cloudEventDataCopy = cloudEventData.copy();
-        splunkCloudEventDataExtractor.extract(exchange, cloudEventData);
+        serviceNowCloudEventDataExtractor.extract(exchange, cloudEventData);
 
         assertEquals(cloudEventDataCopy.getString("org_id"), exchange.getProperty(ORG_ID, String.class));
         assertEquals(cloudEventDataCopy.getString("account_id"), exchange.getProperty(ACCOUNT_ID, String.class));
-        assertTrue(exchange.getProperty(TARGET_URL, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
-        // Trailing slashes should be removed before we modify the target URL path.
-        assertFalse(exchange.getProperty(TARGET_URL, String.class).endsWith("/" + SERVICES_COLLECTOR_EVENT));
+        assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("url"), exchange.getProperty(TARGET_URL, String.class));
+        assertTrue(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("url").endsWith(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class)));
         assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("X-Insight-Token"), exchange.getProperty(AUTHENTICATION_TOKEN, String.class));
         assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("trustAll"), exchange.getProperty(TRUST_ALL, Boolean.class).toString());
-        assertTrue(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
     }
 
     private JsonObject createCloudEventData(String url, boolean trustAll) {
