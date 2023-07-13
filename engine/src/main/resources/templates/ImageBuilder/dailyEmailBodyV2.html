@@ -1,0 +1,74 @@
+{@boolean renderSection1AsIncident=action.context.images.errors.size}
+{@boolean renderSection1=true}
+{@boolean renderSection2=true}
+{@boolean renderSection3=true}
+{@boolean renderButtonSection3=true}
+
+{#include Common/insightsEmailBody}
+{#content-title}
+    Daily digest - Image builder - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Launch failures
+{/content-title-section1}
+{#content-subtitle-section1}
+   {action.context.images.errors.size} launch attempts failed
+{/content-subtitle-section1}
+{#content-title-right-part-section1}
+   {action.context.images.errors.size}
+{/content-title-right-part-section1}
+{#content-body-section1}
+    <table class="rh-data-table-bordered">
+        <thead>
+        <tr>
+            <th>AWS</th>
+            <th>Azure</th>
+            <th>Google cloud</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>{action.context.images.aws.failure}</td>
+            <td>{action.context.images.azure.failure}</td>
+            <td>{action.context.images.gcp.failure}</td>
+        </tr>
+        </tbody>
+    </table>
+{/content-body-section1}
+{#content-title-section2}
+    Successful launch
+{/content-title-section2}
+{#content-subtitle-section2}
+    {action.context.images.launch_success} launch attempts deployed
+     {action.context.images.aws.instances + action.context.images.gcp.instances + action.context.images.azure.instances} instances
+{/content-subtitle-section2}
+{#content-title-right-part-section2}
+   {action.context.images.launch_success}
+{/content-title-right-part-section2}
+{#content-body-section2}
+    <table class="rh-data-table-bordered">
+        <thead>
+        <tr>
+            <th>AWS</th>
+            <th>Azure</th>
+            <th>Google cloud</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td><a target="_blank" href="https://aws.amazon.com/console/">{action.context.images.aws.launch_success} ({action.context.images.aws.instances} instances)</a></td>
+            <td><a target="_blank" href="https://azure.microsoft.com">{action.context.images.azure.launch_success} ({action.context.images.azure.instances} instances)</a></td>
+            <td><a target="_blank" href="https://console.cloud.google.com">{action.context.images.gcp.launch_success} ({action.context.images.gcp.instances} instances)</a></td>
+        </tr>
+        </tbody>
+    </table>
+{/content-body-section2}
+{#content-body-section3}
+    <p>
+    For more details, go to Insights Inventory - Red Hat Enterprise Linux.
+    </p>
+{/content-body-section3}
+{#content-button-section3}
+    <a target="_blank" href="{environment.url}/insights/inventroy">Open Insights Inventory</a>
+{/content-button-section3}
+{/include}

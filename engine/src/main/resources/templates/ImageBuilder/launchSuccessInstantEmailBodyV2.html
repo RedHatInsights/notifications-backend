@@ -1,0 +1,82 @@
+{@boolean renderSection1=true}
+{@boolean renderSection2=true}
+{@boolean renderButtonSection2=true}
+{@boolean hideSubtitleSection2=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+Images builder - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+Instances launched successfully
+{/content-title-section1}
+{#content-title-right-part-section1}
+{action.events.size}
+{/content-title-right-part-section1}
+{#content-subtitle-section1}
+via {#switch action.context.provider}
+{#case "aws"}
+Amazon web services
+{#case "azure"}
+Microsoft Azure
+{#case "gcp"}
+Google cloud
+{/switch}, on {action.timestamp.toUtcFormat()}
+{/content-subtitle-section1}
+{#content-body-section1}
+<table class="rh-data-table-bordered">
+    <thead>
+        <tr>
+            <th style="width: 30%">ID</th>
+            <th style="width: 35%">Public IPv4</th>
+            <th style="width: 35%">Public DNS</th>
+        </tr>
+    </thead>
+    <tbody>
+        {#each action.events}
+        <tr>
+            <td>
+                {it.payload.instance_id}
+            </td>
+            <td>
+                {it.payload.detail.public_ipv4}
+            </td>
+            <td>{it.payload.detail.public_dns}</td>
+        </tr>
+        {/each}
+    </tbody>
+</table>
+{/content-body-section1}
+
+{#content-body-section2}
+To see more details about the instances, go to
+{#switch action.context.provider}
+{#case "aws"}
+Amazon Web Services
+{#case "azure"}
+Microsoft Azure
+{#case "gcp"}
+Google Cloud Platform
+{/switch}
+{/content-body-section2}
+{#content-button-section2}
+<a target="_blank" href="{#switch action.context.provider}
+                        {#case "aws"}
+                        https://aws.amazon.com/console/
+                        {#case "azure"}
+                        https://azure.microsoft.com
+                        {#case "gcp"}
+                        https://console.cloud.google.com
+                       {/switch}">
+    <span>
+        {#switch action.context.provider}
+        {#case "aws"}
+        Open AWS
+        {#case "azure"}
+        Open Azure Portal
+        {#case "gcp"}
+        Open GCP console
+        {/switch}
+    </span>
+</a>
+{/content-button-section2}
+{/include}
