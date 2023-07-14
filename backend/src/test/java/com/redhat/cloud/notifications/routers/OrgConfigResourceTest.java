@@ -62,10 +62,10 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
         Header testMinIdentityHeader = TestHelpers.createRHIdentityHeader(testMinIdentityHeaderValue);
 
-        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 00), Response.Status.OK.getStatusCode());
-        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 15), Response.Status.OK.getStatusCode());
-        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 30), Response.Status.OK.getStatusCode());
-        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 45), Response.Status.OK.getStatusCode());
+        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 00), Response.Status.NO_CONTENT.getStatusCode());
+        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 15), Response.Status.NO_CONTENT.getStatusCode());
+        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 30), Response.Status.NO_CONTENT.getStatusCode());
+        recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 45), Response.Status.NO_CONTENT.getStatusCode());
         assertEquals(ERROR_MESSAGE_WRONG_MINUTE_VALUE, recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 10), Response.Status.BAD_REQUEST.getStatusCode()));
         assertEquals(ERROR_MESSAGE_WRONG_MINUTE_VALUE, recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 55), Response.Status.BAD_REQUEST.getStatusCode()));
     }
@@ -97,7 +97,7 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     }
 
     private void recordDefaultDailyDigestTimePreference() {
-        recordDailyDigestTimePreference(identityHeader, TIME, Response.Status.OK.getStatusCode());
+        recordDailyDigestTimePreference(identityHeader, TIME, Response.Status.NO_CONTENT.getStatusCode());
     }
 
     private String recordDailyDigestTimePreference(Header header, LocalTime time, int expectedReturnCode) {
