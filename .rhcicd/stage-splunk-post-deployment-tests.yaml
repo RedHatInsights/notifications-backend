@@ -9,7 +9,7 @@ objects:
   metadata:
     name: notifications-splunk-iqe-tests-${IMAGE_TAG}-${UID}
   spec:
-    appName: eventing-splunk-quarkus
+    appName: notifications-connector-splunk
     testing:
       iqe:
         debug: false

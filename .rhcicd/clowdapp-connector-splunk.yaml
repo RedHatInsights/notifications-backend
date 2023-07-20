@@ -10,6 +10,8 @@ objects:
     name: notifications-connector-splunk
   spec:
     envName: ${ENV_NAME}
+    testing:
+      iqePlugin: eventing
     kafkaTopics:
     - topicName: platform.notifications.tocamel
       partitions: 3
