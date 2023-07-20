@@ -9,13 +9,13 @@ objects:
   metadata:
     name: notifications-splunk-iqe-tests-${IMAGE_TAG}-${UID}
   spec:
-    appName: notifications-backend
+    appName: eventing-splunk-quarkus
     testing:
       iqe:
         debug: false
         dynaconfEnvName: stage_post_deploy
         filter: ''
-        marker: 'notif_engine and api'
+        marker: 'splunk and smoke'
 parameters:
 - name: IMAGE_TAG
   value: ''
