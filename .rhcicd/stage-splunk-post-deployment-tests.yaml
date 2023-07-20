@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: notifications-splunk-post-deployment-tests
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdJobInvocation
+  metadata:
+    name: notifications-splunk-iqe-tests-${IMAGE_TAG}-${UID}
+  spec:
+    appName: eventing-splunk-quarkus
+    testing:
+      iqe:
+        debug: false
+        dynaconfEnvName: stage_post_deploy
+        filter: ''
+        marker: 'splunk and smoke'
+parameters:
+- name: IMAGE_TAG
+  value: ''
+  required: true
+- name: UID
+  description: "Unique CJI name suffix"
+  generate: expression
+  from: "[a-z0-9]{6}"
