@@ -53,12 +53,14 @@ objects:
           successThreshold: 1
           failureThreshold: 5
         env:
-        - name: CAMEL_COMPONENT_KAFKA_MAXPOLLRECORDS
-          value: ${CAMEL_COMPONENT_KAFKA_MAXPOLLRECORDS}
         - name: ENV_NAME
           value: ${ENV_NAME}
         - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
           value: ${NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_INTERVAL_MS
+          value: ${KAFKA_MAX_POLL_INTERVAL_MS}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_RECORDS
+          value: ${KAFKA_MAX_POLL_RECORDS}
         - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
           value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY}
         - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
@@ -90,9 +92,6 @@ objects:
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
 parameters:
-- name: CAMEL_COMPONENT_KAFKA_MAXPOLLRECORDS
-  description: Maximum number of records returned in a single call to poll(). Defaults to 500.
-  value: "500"
 - name: CPU_LIMIT
   description: CPU limit
   value: 200m
@@ -110,6 +109,12 @@ parameters:
 - name: KAFKA_CLIENT_LOG_LEVEL
   description: Log level of the Kafka client library
   value: WARN
+- name: KAFKA_MAX_POLL_INTERVAL_MS
+  description: Maximum delay in milliseconds between two calls of poll(). Defaults to 300000 (5 minutes).
+  value: "300000"
+- name: KAFKA_MAX_POLL_RECORDS
+  description: Maximum number of records returned in a single call of poll(). Defaults to 500.
+  value: "500"
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
