@@ -5,6 +5,7 @@ import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
 import javax.inject.Inject;
 
 import static org.apache.camel.LoggingLevel.DEBUG;
+import static org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory.KafkaEndpointConsumerBuilder;
 
 public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder {
 
@@ -45,7 +46,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .handled(true)
                 .process(exceptionProcessor);
 
-        from(kafka(connectorConfig.getIncomingKafkaTopic()).groupId(connectorConfig.getIncomingKafkaGroupId()))
+        from(buildKafkaEndpoint())
                 .routeId(ENGINE_TO_CONNECTOR)
                 .to(log(getClass().getName()).level("DEBUG").showHeaders(true).showBody(true))
                 .filter(incomingCloudEventFilter)
@@ -59,4 +60,11 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
     }
 
     public abstract void configureRoute();
+
+    private KafkaEndpointConsumerBuilder buildKafkaEndpoint() {
+        return kafka(connectorConfig.getIncomingKafkaTopic())
+                .groupId(connectorConfig.getIncomingKafkaGroupId())
+                .maxPollRecords(connectorConfig.getIncomingKafkaMaxPollRecords())
+                .maxPollIntervalMs(connectorConfig.getIncomingKafkaMaxPollIntervalMs());
+    }
 }

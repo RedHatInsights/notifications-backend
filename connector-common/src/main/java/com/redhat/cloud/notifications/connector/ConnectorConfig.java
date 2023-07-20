@@ -16,6 +16,14 @@ public class ConnectorConfig {
     @ConfigProperty(name = "notifications.connector.kafka.incoming.group-id")
     String incomingKafkaGroupId;
 
+    // https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html#max-poll-interval-ms
+    @ConfigProperty(name = "notifications.connector.kafka.incoming.max-poll-interval-ms", defaultValue = "300000")
+    long incomingKafkaMaxPollIntervalMs;
+
+    // https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html#max-poll-records
+    @ConfigProperty(name = "notifications.connector.kafka.incoming.max-poll-records", defaultValue = "500")
+    int incomingKafkaMaxPollRecords;
+
     @ConfigProperty(name = "notifications.connector.kafka.incoming.topic")
     String incomingKafkaTopic;
 
@@ -50,6 +58,24 @@ public class ConnectorConfig {
     public void setIncomingKafkaGroupId(String incomingKafkaGroupId) {
         checkTestLaunchMode();
         this.incomingKafkaGroupId = incomingKafkaGroupId;
+    }
+
+    public long getIncomingKafkaMaxPollIntervalMs() {
+        return incomingKafkaMaxPollIntervalMs;
+    }
+
+    public void setIncomingKafkaMaxPollIntervalMs(long incomingKafkaMaxPollIntervalMs) {
+        checkTestLaunchMode();
+        this.incomingKafkaMaxPollIntervalMs = incomingKafkaMaxPollIntervalMs;
+    }
+
+    public int getIncomingKafkaMaxPollRecords() {
+        return incomingKafkaMaxPollRecords;
+    }
+
+    public void setIncomingKafkaMaxPollRecords(int incomingKafkaMaxPollRecords) {
+        checkTestLaunchMode();
+        this.incomingKafkaMaxPollRecords = incomingKafkaMaxPollRecords;
     }
 
     public String getIncomingKafkaTopic() {
