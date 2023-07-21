@@ -29,7 +29,7 @@ public class DrawerNotification extends CreationTimestamped {
         "bundle", "dn.event.bundleDisplayName",
         "application", "dn.event.applicationDisplayName",
         "event", "dn.event.eventTypeDisplayName",
-        "created", "dn.event.created",
+        "created", "dn.created",
         "read", "dn.read"
     );
 

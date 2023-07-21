@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.UpdateNotificationDrawerStatus;
+import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
@@ -21,6 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,13 +57,17 @@ public class DrawerResource {
 
         String orgId = getOrgId(securityContext);
         String username = getUsername(securityContext);
-
+        LocalDateTime start = LocalDateTime.now();
         Long count = drawerRepository.count(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
         List<DrawerEntryPayload> drawerEntries = new ArrayList<>();
         if (count > 0) {
             drawerEntries = drawerRepository.getNotifications(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus, query);
         }
-
+        LocalDateTime now = LocalDateTime.now();
+        Log.infof("Drawer request duration %s for orgId: %s, userId: %s",
+            ChronoUnit.MILLIS.between(start, now),
+            orgId,
+            username);
         Meta meta = new Meta();
         meta.setCount(count);
 
