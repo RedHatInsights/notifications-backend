@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: notifications-servicenow-post-deployment-tests
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdJobInvocation
+  metadata:
+    name: notifications-servicenow-iqe-tests-${IMAGE_TAG}-${UID}
+  spec:
+    appName: notifications-connector-servicenow
+    testing:
+      iqe:
+        debug: false
+        dynaconfEnvName: stage_post_deploy
+        filter: ''
+        marker: 'snow and smoke'
+parameters:
+- name: IMAGE_TAG
+  value: ''
+  required: true
+- name: UID
+  description: "Unique CJI name suffix"
+  generate: expression
+  from: "[a-z0-9]{6}"
