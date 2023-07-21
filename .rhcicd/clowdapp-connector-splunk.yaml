@@ -12,6 +12,11 @@ objects:
     envName: ${ENV_NAME}
     testing:
       iqePlugin: eventing
+    optionalDependencies:
+    - advisor-backend
+    - drift
+    - notifications-backend
+    - policies-engine
     kafkaTopics:
     - topicName: platform.notifications.tocamel
       partitions: 3
