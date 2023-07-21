@@ -4,7 +4,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>notifications-connector-service-now</artifactId>
+    <artifactId>notifications-connector-servicenow</artifactId>
 
     <parent>
         <groupId>com.redhat.cloud.notifications</groupId>
@@ -27,6 +27,13 @@
         <dependency>
             <groupId>org.apache.camel.quarkus</groupId>
             <artifactId>camel-quarkus-http</artifactId>
+        </dependency>
+
+        <!-- Target URL validation -->
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+            <version>1.7</version>
         </dependency>
 
         <!-- Scope: test -->
