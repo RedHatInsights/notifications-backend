@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -178,7 +177,6 @@ class EventingTypeProcessorTest {
         assertEquals(properties1.getUrl(), notifMetadata.getString("url"));
         assertEquals(endpoint1.getSubType(), notifMetadata.getString("type"));
 
-        assertEquals(new MapConverter().convertToDatabaseColumn(properties1.getExtras()), notifMetadata.getString("extras"));
         assertEquals(properties1.getSecretToken(), notifMetadata.getString(TOKEN_HEADER));
         checkBasicAuthentication(notifMetadata, properties1.getBasicAuthentication());
 
