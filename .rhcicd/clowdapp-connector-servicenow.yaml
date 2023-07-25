@@ -13,7 +13,6 @@ objects:
     testing:
       iqePlugin: eventing
     optionalDependencies:
-    - advisor-backend
     - drift
     - notifications-backend
     - policies-engine
