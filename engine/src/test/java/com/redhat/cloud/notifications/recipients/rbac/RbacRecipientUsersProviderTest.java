@@ -52,6 +52,15 @@ public class RbacRecipientUsersProviderTest {
     @ConfigProperty(name = "recipient-provider.mbop.max-results-per-page", defaultValue = "1000")
     int MBOPMaxResultsPerPage;
 
+    @ConfigProperty(name = "processor.email.bop_apitoken")
+    String bopApiToken;
+
+    @ConfigProperty(name = "processor.email.bop_client_id")
+    String bopClientId;
+
+    @ConfigProperty(name = "processor.email.bop_env")
+    String bopEnv;
+
     @InjectMock
     @RestClient
     RbacServiceToService rbacServiceToService;
@@ -306,7 +315,7 @@ public class RbacRecipientUsersProviderTest {
             // the configured maximum limit, so that we can test that the loop
             // is working as expected.
             Mockito
-                .when(this.mbopService.getUsersByOrgId(Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), Mockito.anyInt()))
+                .when(this.mbopService.getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), Mockito.anyInt()))
                 .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
 
             // Call the function under test.
@@ -315,7 +324,7 @@ public class RbacRecipientUsersProviderTest {
             // Verify that the offset argument, which is the one that changes
             // on each iteration, has been correctly incremented.
             final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
-            Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), capturedOffset.capture());
+            Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), capturedOffset.capture());
 
             final List<Integer> capturedValues = capturedOffset.getAllValues();
             assertIterableEquals(

@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.mbop.Constants;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.utils.LineBreakCleaner;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,9 +36,6 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class EmailSender {
 
-    static final String BOP_APITOKEN_HEADER = "x-rh-apitoken";
-    static final String BOP_CLIENT_ID_HEADER = "x-rh-clientid";
-    static final String BOP_ENV_HEADER = "x-rh-insights-env";
     static final String BODY_TYPE_HTML = "html";
     static final ZoneOffset UTC = ZoneOffset.UTC;
 
@@ -225,9 +223,9 @@ public class EmailSender {
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
         return bopWebClient
                 .postAbs(bopUrl)
-                .putHeader(BOP_APITOKEN_HEADER, bopApiToken)
-                .putHeader(BOP_CLIENT_ID_HEADER, bopClientId)
-                .putHeader(BOP_ENV_HEADER, bopEnv);
+                .putHeader(Constants.MBOP_APITOKEN_HEADER, bopApiToken)
+                .putHeader(Constants.MBOP_CLIENT_ID_HEADER, bopClientId)
+                .putHeader(Constants.MBOP_ENV_HEADER, bopEnv);
     }
 
     @Deprecated(forRemoval = true)

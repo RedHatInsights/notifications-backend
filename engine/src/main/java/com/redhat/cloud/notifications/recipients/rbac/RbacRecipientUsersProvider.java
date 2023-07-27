@@ -94,6 +94,15 @@ public class RbacRecipientUsersProvider {
     @ConfigProperty(name = "mbop.retry.back-off.max-value", defaultValue = "1S")
     Duration MBOPMaxBackOff;
 
+    @ConfigProperty(name = "processor.email.bop_apitoken")
+    String bopApiToken;
+
+    @ConfigProperty(name = "processor.email.bop_client_id")
+    String bopClientId;
+
+    @ConfigProperty(name = "processor.email.bop_env")
+    String bopEnv;
+
     @Inject
     MeterRegistry meterRegistry;
 
@@ -178,7 +187,16 @@ public class RbacRecipientUsersProvider {
                 // the captured variables.
                 int finalOffset = offset;
                 final List<MBOPUser> receivedUsers = this.retryOnMBOPError(() ->
-                    this.mbopService.getUsersByOrgId(orgId, adminsOnly, MBOP_SORT_ORDER, this.MBOPMaxResultsPerPage, finalOffset)
+                    this.mbopService.getUsersByOrgId(
+                        this.bopApiToken,
+                        this.bopClientId,
+                        this.bopEnv,
+                        orgId,
+                        adminsOnly,
+                        MBOP_SORT_ORDER,
+                        this.MBOPMaxResultsPerPage,
+                        finalOffset
+                    )
                 );
 
                 mbopUsers.addAll(receivedUsers);
