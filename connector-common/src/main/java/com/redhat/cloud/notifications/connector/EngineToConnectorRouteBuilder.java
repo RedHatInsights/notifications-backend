@@ -65,6 +65,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
         return kafka(connectorConfig.getIncomingKafkaTopic())
                 .groupId(connectorConfig.getIncomingKafkaGroupId())
                 .maxPollRecords(connectorConfig.getIncomingKafkaMaxPollRecords())
-                .maxPollIntervalMs(connectorConfig.getIncomingKafkaMaxPollIntervalMs());
+                .maxPollIntervalMs(connectorConfig.getIncomingKafkaMaxPollIntervalMs())
+                .pollOnError(connectorConfig.getIncomingKafkaPollOnError());
     }
 }

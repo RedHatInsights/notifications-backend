@@ -4,6 +4,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.runtime.Startup;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,9 +14,13 @@ import java.io.UncheckedIOException;
 @Startup
 public class RunOnConnectorStartup {
 
+    @Inject
+    ConnectorConfig connectorConfig;
+
     @PostConstruct
     void postConstruct() {
         logGitProperties();
+        connectorConfig.log();
     }
 
     public void logGitProperties() {
