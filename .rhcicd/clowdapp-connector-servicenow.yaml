@@ -67,6 +67,8 @@ objects:
           value: ${KAFKA_MAX_POLL_INTERVAL_MS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_RECORDS
           value: ${KAFKA_MAX_POLL_RECORDS}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_POLL_ON_ERROR
+          value: ${KAFKA_POLL_ON_ERROR}
         - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
           value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY}
         - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
@@ -121,6 +123,9 @@ parameters:
 - name: KAFKA_MAX_POLL_RECORDS
   description: Maximum number of records returned in a single call of poll(). Defaults to 500.
   value: "500"
+- name: KAFKA_POLL_ON_ERROR
+  description: What to do if kafka threw an exception while polling for new messages. See https://camel.apache.org/components/latest/kafka-component.html for more details.
+  value: RECONNECT
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
