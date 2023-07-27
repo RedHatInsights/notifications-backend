@@ -63,6 +63,10 @@ objects:
           value: ${ENV_NAME}
         - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
           value: ${NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE}
+        - name: NOTIFICATIONS_CONNECTOR_HTTPS_CONNECT_TIMEOUT_MS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTPS_CONNECT_TIMEOUT_MS}
+        - name: NOTIFICATIONS_CONNECTOR_HTTPS_SOCKET_TIMEOUT_MS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTPS_SOCKET_TIMEOUT_MS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_INTERVAL_MS
           value: ${KAFKA_MAX_POLL_INTERVAL_MS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_RECORDS
@@ -137,6 +141,12 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
   description: Maximum size of the Camel endpoints cache
   value: "100"
+- name: NOTIFICATIONS_CONNECTOR_HTTPS_CONNECT_TIMEOUT_MS
+  description: Maximum time in milliseconds allowed to establish an HTTPS connection
+  value: "2500"
+- name: NOTIFICATIONS_CONNECTOR_HTTPS_SOCKET_TIMEOUT_MS
+  description: Maximum time in milliseconds allowed to wait for HTTPS data
+  value: "2500"
 - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
   description: Delay in milliseconds between two redelivery attempts
   value: "1000"

@@ -5,6 +5,10 @@ import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.util.Collections;
+import java.util.Map;
+
+import static java.util.Map.Entry;
 
 @ApplicationScoped
 @DefaultBean
@@ -58,6 +62,10 @@ public class ConnectorConfig {
     int redeliveryMaxAttempts;
 
     public void log() {
+        log(Collections.emptyMap());
+    }
+
+    protected void log(Map<String, Object> additionalEntries) {
         Log.info("=== Connector configuration ===");
         Log.infof("%s=%s", ENDPOINT_CACHE_MAX_SIZE, endpointCacheMaxSize);
         Log.infof("%s=%s", KAFKA_INCOMING_GROUP_ID, incomingKafkaGroupId);
@@ -70,6 +78,11 @@ public class ConnectorConfig {
         Log.infof("%s=%s", REDELIVERY_COUNTER_NAME, redeliveryCounterName);
         Log.infof("%s=%s", REDELIVERY_DELAY, redeliveryDelay);
         Log.infof("%s=%s", REDELIVERY_MAX_ATTEMPTS, redeliveryMaxAttempts);
+        if (additionalEntries != null) {
+            for (Entry<String, Object> additionalEntry : additionalEntries.entrySet()) {
+                Log.infof("%s=%s", additionalEntry.getKey(), additionalEntry.getValue());
+            }
+        }
     }
 
     public int getEndpointCacheMaxSize() {
