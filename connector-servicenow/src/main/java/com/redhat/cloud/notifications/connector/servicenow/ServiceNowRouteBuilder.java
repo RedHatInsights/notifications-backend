@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.servicenow;
 
-import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import org.apache.camel.component.http.HttpComponent;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -22,13 +22,16 @@ import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.H
 public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Inject
-    ConnectorConfig connectorConfig;
+    ServiceNowConnectorConfig connectorConfig;
 
     @Inject
     MigrationFilter migrationFilter;
 
     @Override
     public void configureRoute() {
+
+        configureHttpsComponent();
+
         from(direct(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
                 // TODO For migration purposes - Remove ASAP!
@@ -46,6 +49,12 @@ public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
                         "(orgId ${exchangeProperty." + ORG_ID + "} account ${exchangeProperty." + ACCOUNT_ID + "}) " +
                         "to ${exchangeProperty." + TARGET_URL + "}")
                 .to(direct(SUCCESS));
+    }
+
+    private void configureHttpsComponent() {
+        HttpComponent httpComponent = getCamelContext().getComponent("https", HttpComponent.class);
+        httpComponent.setConnectTimeout(connectorConfig.getHttpsConnectTimeout());
+        httpComponent.setSocketTimeout(connectorConfig.getHttpsSocketTimeout());
     }
 
     private HttpEndpointBuilder buildServiceNowEndpoint(boolean trustAll) {

@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.splunk;
+package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -7,7 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
 import java.util.Map;
 
 @ApplicationScoped
-public class SplunkConnectorConfig extends ConnectorConfig {
+public class ServiceNowConnectorConfig extends ConnectorConfig {
 
     private static final String HTTPS_CONNECT_TIMEOUT_MS = "notifications.connector.https.connect-timeout-ms";
     private static final String HTTPS_SOCKET_TIMEOUT_MS = "notifications.connector.https.socket-timeout-ms";
