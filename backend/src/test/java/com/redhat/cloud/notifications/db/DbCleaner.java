@@ -13,9 +13,9 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.Status;
-import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +42,6 @@ public class DbCleaner {
             EventType.class,
             Application.class,
             Bundle.class,
-            Template.class,
             InstantEmailTemplate.class,
             AggregationEmailTemplate.class
     );
@@ -73,7 +72,8 @@ public class DbCleaner {
         for (Class<?> entity : ENTITIES) {
             entityManager.createQuery("DELETE FROM " + entity.getSimpleName()).executeUpdate();
         }
-
+        entityManager.createQuery("DELETE FROM Template templ where templ.id not in (select it.theTemplate.id from IntegrationTemplate it where it.templateKind = :default)")
+            .setParameter("default", IntegrationTemplate.TemplateKind.DEFAULT).executeUpdate();
         Bundle bundle = new Bundle(DEFAULT_BUNDLE_NAME, DEFAULT_BUNDLE_DISPLAY_NAME);
         bundleRepository.createBundle(bundle);
 

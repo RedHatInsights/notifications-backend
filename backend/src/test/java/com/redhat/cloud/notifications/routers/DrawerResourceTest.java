@@ -95,13 +95,13 @@ public class DrawerResourceTest extends DbIsolatedTest {
     @Test
     void testFilters() {
 
-        Bundle createdBundle = resourceHelpers.createBundle("test-engine-event-repository-bundle");
-        Bundle createdBundle2 = resourceHelpers.createBundle("test-engine-event-repository-bundle2");
-        Application createdApplication = resourceHelpers.createApplication(createdBundle.getId(), "test-engine-event-repository-application");
-        Application createdApplication2 = resourceHelpers.createApplication(createdBundle2.getId(), "test-engine-event-repository-application");
-        EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-engine-event-repository-event-type");
-        EventType createdEventType2 = resourceHelpers.createEventType(createdApplication.getId(), "test-engine-event-repository-event-type2");
-        EventType createdEventType3 = resourceHelpers.createEventType(createdApplication2.getId(), "test-engine-event-repository-event-type");
+        Bundle createdBundle = resourceHelpers.createBundle("test-drawer-event-resource-bundle");
+        Bundle createdBundle2 = resourceHelpers.createBundle("test-drawer-event-resource-bundle2");
+        Application createdApplication = resourceHelpers.createApplication(createdBundle.getId(), "test-drawer-event-resource-application");
+        Application createdApplication2 = resourceHelpers.createApplication(createdBundle2.getId(), "test-drawer-event-resource-application");
+        EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-event-resource-event-type");
+        EventType createdEventType2 = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-event-resource-event-type2");
+        EventType createdEventType3 = resourceHelpers.createEventType(createdApplication2.getId(), "test-drawer-event-resource-event-type");
         Event createdEvent = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle, createdApplication, createdEventType, LocalDateTime.now(UTC));
 
         final String USERNAME = "user-1";

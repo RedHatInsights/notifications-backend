@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.templates.TemplateEngineClient;
@@ -21,6 +22,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.ws.rs.BadRequestException;
 
 import java.util.UUID;
@@ -62,23 +65,27 @@ public class TemplateResourceTest extends DbIsolatedTest {
     @RestClient
     TemplateEngineClient templateEngineClient;
 
+    @Inject
+    EntityManager entityManager;
+
     @Test
     void testAllTemplateEndpoints() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
         Template template = CrudTestHelpers.buildTemplate("template-name", "template-data");
+        int numberOfGlobalTemplates = getNumberOfDefaultTemplates();
 
         // Before we start, the DB shouldn't contain any template.
-        assertTrue(getAllTemplates(adminIdentity).isEmpty());
+        assertEquals(numberOfGlobalTemplates, getAllTemplates(adminIdentity).size());
 
         // This creates the template, retrieves it with a separate REST call and then checks the fields values.
         JsonObject jsonTemplate = createTemplate(adminIdentity, template, 200).get();
 
         // The template should now be available in the "all templates" list.
         JsonArray jsonTemplates = getAllTemplates(adminIdentity);
-        assertEquals(1, jsonTemplates.size());
-        jsonTemplates.getJsonObject(0).mapTo(Template.class);
-        assertEquals(jsonTemplate.getString("id"), jsonTemplates.getJsonObject(0).getString("id"));
+        assertEquals(numberOfGlobalTemplates + 1, jsonTemplates.size());
+        jsonTemplates.getJsonObject(numberOfGlobalTemplates).mapTo(Template.class);
+        assertEquals(jsonTemplate.getString("id"), jsonTemplates.getJsonObject(numberOfGlobalTemplates).getString("id"));
 
         // Let's update the template and check that the new fields values are correctly persisted.
         template.setName("my-new-template");
@@ -90,7 +97,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
         deleteTemplate(adminIdentity, jsonTemplate.getString("id"), 200);
 
         // We already know the template is gone, but let's check one more time.
-        assertTrue(getAllTemplates(adminIdentity).isEmpty());
+        assertEquals(numberOfGlobalTemplates, getAllTemplates(adminIdentity).size());
     }
 
     @Test
@@ -226,10 +233,11 @@ public class TemplateResourceTest extends DbIsolatedTest {
 
     @Test
     void testTemplateIncludeCheckBeforeDelete() {
+        int numberOfGlobalTemplates = getNumberOfDefaultTemplates();
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
         // First, let's make sure the DB does not contain any template.
-        assertTrue(getAllTemplates(adminIdentity).isEmpty());
+        assertEquals(numberOfGlobalTemplates, getAllTemplates(adminIdentity).size());
 
         // Then, we'll persist an outer template, which includes another template.
         Template helloTemplate = CrudTestHelpers.buildTemplate("hello-template", "Hello, {#include world-template /}");
@@ -240,20 +248,20 @@ public class TemplateResourceTest extends DbIsolatedTest {
         JsonObject jsonWorldTemplate = createTemplate(adminIdentity, worldTemplate, 200).get();
 
         // At this point, the DB should contain two templates.
-        assertEquals(2, getAllTemplates(adminIdentity).size());
+        assertEquals(numberOfGlobalTemplates + 2, getAllTemplates(adminIdentity).size());
 
         // If we try to delete the included template, it should fail.
         deleteTemplate(adminIdentity, jsonWorldTemplate.getString("id"), 400);
 
         // The DB still contains two templates.
-        assertEquals(2, getAllTemplates(adminIdentity).size());
+        assertEquals(numberOfGlobalTemplates + 2, getAllTemplates(adminIdentity).size());
 
         // If we delete the outer template before deleting the included template, both REST calls should be successful.
         deleteTemplate(adminIdentity, jsonHelloTemplate.getString("id"), 200);
         deleteTemplate(adminIdentity, jsonWorldTemplate.getString("id"), 200);
 
         // We deleted everything, the DB should not contain any template.
-        assertTrue(getAllTemplates(adminIdentity).isEmpty());
+        assertEquals(numberOfGlobalTemplates, getAllTemplates(adminIdentity).size());
     }
 
     @Test
@@ -389,4 +397,9 @@ public class TemplateResourceTest extends DbIsolatedTest {
         assertEquals("Action parsing failed for payload: I am invalid!", new JsonObject(responseBody).getString("message"));
     }
 
+    Integer getNumberOfDefaultTemplates() {
+        Long countResult = (Long) entityManager.createQuery("select count(*) from IntegrationTemplate it where it.templateKind = :default")
+            .setParameter("default", IntegrationTemplate.TemplateKind.DEFAULT).getSingleResult();
+        return countResult.intValue();
+    }
 }

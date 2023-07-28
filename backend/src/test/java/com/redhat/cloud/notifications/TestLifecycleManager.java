@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -9,10 +10,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
+
+    Boolean quarkusDevServiceEnabled = true;
 
     PostgreSQLContainer<?> postgreSQLContainer;
 
@@ -20,10 +25,18 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     public Map<String, String> start() {
         System.out.println("++++  TestLifecycleManager start +++");
         Map<String, String> properties = new HashMap<>();
-        try {
-            setupPostgres(properties);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        Optional<Boolean> quarkusDevServiceEnabledFlag = ConfigProvider.getConfig().getOptionalValue("quarkus.devservices.enabled", Boolean.class);
+        if (quarkusDevServiceEnabledFlag.isPresent()) {
+            quarkusDevServiceEnabled = quarkusDevServiceEnabledFlag.get();
+        }
+        System.out.println(" -- quarkusDevServiceEnabled is " + quarkusDevServiceEnabled);
+
+        if (quarkusDevServiceEnabled) {
+            try {
+                setupPostgres(properties);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
         setupMockEngine(properties);
 
@@ -33,7 +46,9 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     @Override
     public void stop() {
-        postgreSQLContainer.stop();
+        if (quarkusDevServiceEnabled) {
+            postgreSQLContainer.stop();
+        }
         MockServerLifecycleManager.stop();
     }
 
