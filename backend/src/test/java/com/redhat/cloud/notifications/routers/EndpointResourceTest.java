@@ -713,7 +713,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertEquals("#notifications", channel);
 
             ep.getProperties(CamelProperties.class).getExtras().put("channel", "#updated");
-            ep.getProperties(CamelProperties.class).setUrl("https://updated.com");
+            ep.getProperties(CamelProperties.class).setUrl("https://redhat.com");
 
             // Now update
             responseBody = given()
