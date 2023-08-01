@@ -151,9 +151,9 @@ class DrawerProcessorTest {
 
     @Transactional
     Event createEvent() {
-        Bundle createdBundle = resourceHelpers.createBundle("test-engine-event-repository-bundle");
-        Application createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-engine-event-repository-application");
-        EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-engine-event-repository-event-type");
+        Bundle createdBundle = resourceHelpers.createBundle("test-drawer-engine-event-bundle");
+        Application createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-drawer-engine-event-application");
+        EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-engine-event-type");
         Event createdEvent = new Event();
         createdEvent.setEventType(createdEventType);
         createdEvent.setId(UUID.randomUUID());

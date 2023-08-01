@@ -1,5 +1,5 @@
 # Image available at https://catalog.redhat.com/software/containers/ubi9/openjdk-17-runtime.
-FROM registry.access.redhat.com/ubi9/openjdk-17-runtime
+FROM registry.access.redhat.com/ubi9/openjdk-17
 
 # Switch to the root user to be able to install the required packages.
 USER root
@@ -8,6 +8,14 @@ USER root
 ARG cacerts_keystore_password
 # The argument that holds Red Hat IT's custom certificate's location.
 ARG rh_it_root_ca_cert_url
+
+# install postgresql 11
+RUN microdnf install -y dnf
+RUN dnf install -y 'dnf-command(config-manager)'
+RUN dnf install -y  https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+RUN dnf install -y postgresql11-server
+RUN dnf install -y postgresql11-contrib
+
 
 # 1. Install the UUID package which is required for the scripts.
 # 2. Change the default "cacert" keystore's password to a custom one for more
@@ -34,9 +42,6 @@ RUN mkdir --parents "/var/cache/yum/metadata" \
          -storepass "${cacerts_keystore_password}" \
          -trustcacerts \
     && rm "${rh_it_root_ca_file}"
-
-# Go back to the default, unprivileged user.
-USER default
 
 # Copy the repository contents.
 COPY --chown=default:default . /home/default

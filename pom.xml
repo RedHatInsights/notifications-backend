@@ -72,7 +72,7 @@
         <sonar.maven.plugin.version>3.9.1.2184</sonar.maven.plugin.version>
         <jacoco.output.directory>${project.build.directory}/jacoco-report</jacoco.output.directory>
         <!-- Point the Sonar Qube Plugin always to the same JaCoCo report to aggregate sub-modules reports-->
-        <sonar.coverage.jacoco.xmlReportPaths>${jacoco.output.directory}/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 
     </properties>
 

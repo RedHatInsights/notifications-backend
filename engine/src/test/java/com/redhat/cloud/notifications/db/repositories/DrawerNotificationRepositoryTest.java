@@ -50,9 +50,9 @@ public class DrawerNotificationRepositoryTest {
     @BeforeEach
     @Transactional
     void insertEventFixtures() {
-        createdBundle = resourceHelpers.createBundle("test-engine-event-repository-bundle");
-        createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-engine-event-repository-application");
-        createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-engine-event-repository-event-type");
+        createdBundle = resourceHelpers.createBundle("test-drawer-engine-event-repository-bundle");
+        createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-drawer-engine-event-repository-application");
+        createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-engine-event-repository-event-type");
         createdEvent = resourceHelpers.createEvent(createdEventType);
     }
 

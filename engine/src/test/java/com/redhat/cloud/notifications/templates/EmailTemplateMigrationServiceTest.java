@@ -15,10 +15,9 @@ import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-
+import javax.persistence.NoResultException;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -54,7 +53,7 @@ public class EmailTemplateMigrationServiceTest {
         /*
          * Bundle: rhel
          */
-        Bundle rhel = findBundle("rhel");
+        Bundle rhel = findOrCreateBundle("rhel");
         // App: advisor
         Application advisor = resourceHelpers.createApp(rhel.getId(), "advisor");
         EventType newRecommendation = resourceHelpers.createEventType(advisor.getId(), "new-recommendation");
@@ -81,8 +80,8 @@ public class EmailTemplateMigrationServiceTest {
         Application patch = resourceHelpers.createApp(rhel.getId(), "patch");
         EventType newAdvisories = resourceHelpers.createEventType(patch.getId(), "new-advisory");
         // App: policies
-        Application policies = findApp("rhel", "policies");
-        EventType policyTriggered = findEventType("rhel", "policies", "policy-triggered");
+        Application policies = findOrCreateApplication("policies", rhel);
+        EventType policyTriggered = findOrCreateEventType("policy-triggered", policies);
         // App: resource-optimization
         Application resourceOptimization = resourceHelpers.createApp(rhel.getId(), "resource-optimization");
         // App: vulnerability
@@ -120,11 +119,11 @@ public class EmailTemplateMigrationServiceTest {
         /*
          * Bundle: console
          */
-        Bundle console = findBundle("console");
+        Bundle console = findOrCreateBundle("console");
         // App: integrations
-        Application integrations = findApp("console", "integrations");
-        EventType integrationFailed = resourceHelpers.findEventType(integrations.getId(), INTEGRATION_FAILED_EVENT_TYPE);
-        EventType integrationDisabled = resourceHelpers.findEventType(integrations.getId(), INTEGRATION_DISABLED_EVENT_TYPE);
+        Application integrations = findOrCreateApplication("integrations", console);
+        EventType integrationFailed = findOrCreateEventType(INTEGRATION_FAILED_EVENT_TYPE, integrations);
+        EventType integrationDisabled = findOrCreateEventType(INTEGRATION_DISABLED_EVENT_TYPE, integrations);
         // App: sources
         Application sources = resourceHelpers.createApp(console.getId(), "sources");
         EventType availabilityStatus = resourceHelpers.createEventType(sources.getId(), "availability-status");
@@ -246,27 +245,6 @@ public class EmailTemplateMigrationServiceTest {
         clearDbTemplates();
     }
 
-    private Bundle findBundle(String name) {
-        return entityManager.createQuery("FROM Bundle WHERE name = :name", Bundle.class)
-                .setParameter("name", name)
-                .getSingleResult();
-    }
-
-    private Application findApp(String bundleName, String appName) {
-        return entityManager.createQuery("FROM Application WHERE name = :appName AND bundle.name = :bundleName", Application.class)
-                .setParameter("appName", appName)
-                .setParameter("bundleName", bundleName)
-                .getSingleResult();
-    }
-
-    private EventType findEventType(String bundleName, String appName, String eventTypeName) {
-        return entityManager.createQuery("FROM EventType WHERE name = :eventTypeName AND application.name = :appName AND application.bundle.name = :bundleName", EventType.class)
-                .setParameter("eventTypeName", eventTypeName)
-                .setParameter("appName", appName)
-                .setParameter("bundleName", bundleName)
-                .getSingleResult();
-    }
-
     private void clearDbTemplates() {
         given()
                 .basePath(API_INTERNAL)
@@ -303,5 +281,29 @@ public class EmailTemplateMigrationServiceTest {
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(bundleName, appName, subscriptionType).get();
         templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
         templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
+    }
+
+    private Bundle findOrCreateBundle(String bundleName) {
+        try {
+            return resourceHelpers.findBundle(bundleName);
+        } catch (NoResultException nre) {
+            return resourceHelpers.createBundle(bundleName);
+        }
+    }
+
+    private Application findOrCreateApplication(String applicationName, Bundle bundle) {
+        try {
+            return resourceHelpers.findApp(bundle.getName(), applicationName);
+        } catch (NoResultException nre) {
+            return resourceHelpers.createApp(bundle.getId(), applicationName);
+        }
+    }
+
+    private EventType findOrCreateEventType(String eventType, Application application) {
+        try {
+            return resourceHelpers.findEventType(application.getId(), eventType);
+        } catch (NoResultException nre) {
+            return resourceHelpers.createEventType(application.getId(), eventType);
+        }
     }
 }
