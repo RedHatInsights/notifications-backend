@@ -37,12 +37,15 @@ import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import javax.persistence.PersistenceException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -113,12 +116,49 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return null;
     }
 
-    private SettingsValueByEventTypeJsonForm.EventTypes rhelPolicyForm(SettingsValueByEventTypeJsonForm settingsValuesByEventType) {
-        for (String bundleName : settingsValuesByEventType.bundles.keySet()) {
-            if (settingsValuesByEventType.bundles.get(bundleName).applications.containsKey("policies")) {
-                return settingsValuesByEventType.bundles.get(bundleName).applications.get("policies");
+    /**
+     * Extracts the event types from the "policies" application, inside the
+     * Red Hat Enterprise Linux bundle.
+     * @param settingsValuesByEventType the settings to extract the data from.
+     * @return the event types of the "policies" application.
+     */
+    private SettingsValueByEventTypeJsonForm.EventTypes rhelPolicyForm(final JsonObject settingsValuesByEventType) {
+        // Get the bundles from the JSON object.
+        final JsonObject bundles = settingsValuesByEventType.getJsonObject("bundles");
+
+        // Browse through the bundles' keys...
+        for (final Map.Entry<String, Object> element : bundles.getMap().entrySet()) {
+
+            // ... to fetch the bundles one by one...
+            final LinkedHashMap<String, Object> bundle = (LinkedHashMap<String, Object>) element.getValue();
+            // ... and its applications.
+            final LinkedHashMap<String, Object> applications = (LinkedHashMap<String, Object>) bundle.get("applications");
+
+            Assertions.assertEquals("Red Hat Enterprise Linux", bundle.get("label"), "unexpected label set for bundle");
+
+            // If one of them is "policies"...
+            if (applications.containsKey("policies")) {
+                final LinkedHashMap<String, Object> policies = (LinkedHashMap<String, Object>) applications.get("policies");
+
+                Assertions.assertEquals("Policies", policies.get("label"), "unexpected label set for application");
+
+                // Extract the event types.
+                final ArrayList<LinkedHashMap<String, Object>> eventTypes = (ArrayList<LinkedHashMap<String, Object>>) policies.get("eventTypes");
+
+                final SettingsValueByEventTypeJsonForm.EventTypes eventTypesOut = new SettingsValueByEventTypeJsonForm.EventTypes();
+
+                // And finally map them to the class type we understand.
+                for (final LinkedHashMap<String, Object> eventType : eventTypes) {
+                    final JsonObject jsonEventType = new JsonObject(eventType);
+
+                    final SettingsValueByEventTypeJsonForm.EventType he = jsonEventType.mapTo(SettingsValueByEventTypeJsonForm.EventType.class);
+                    eventTypesOut.eventTypes.add(he);
+                }
+
+                return eventTypesOut;
             }
         }
+
         return null;
     }
 
@@ -471,16 +511,17 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
 
-        SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
+        String settingsValuesByEventType = given()
             .header(identityHeader)
             .queryParam("bundleName", bundle)
             .when().get(path)
             .then()
             .statusCode(200)
             .contentType(JSON)
-            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+            .extract()
+            .asString();
 
-        SettingsValueByEventTypeJsonForm.EventTypes rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        SettingsValueByEventTypeJsonForm.EventTypes rhelPolicy = rhelPolicyForm(new JsonObject(settingsValuesByEventType));
         assertNotNull(rhelPolicy, "RHEL policies not found");
         assertNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
@@ -494,8 +535,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(200)
             .contentType(JSON)
-            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
-        rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+            .extract()
+            .asString();
+        rhelPolicy = rhelPolicyForm(new JsonObject(settingsValuesByEventType));
         assertNotNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
         featureFlipper.setInstantEmailsEnabled(false);
@@ -506,7 +548,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         postPreferencesByEventType(path, identityHeader, settingsValues, 200);
 
         featureFlipper.setInstantEmailsEnabled(false);
-        SettingsValueByEventTypeJsonForm settingsValue = getPreferencesByEventType(path, identityHeader);
+        final JsonObject settingsValue = getPreferencesByEventType(path, identityHeader);
         rhelPolicy = rhelPolicyForm(settingsValue);
         boolean instantEmailSettingsReturned = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType)
                 .keySet().stream().anyMatch(INSTANT::equals);
@@ -577,22 +619,25 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(200)
             .contentType(JSON)
-            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
-        rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+            .extract()
+            .asString();
+
+        rhelPolicy = rhelPolicyForm(new JsonObject(settingsValuesByEventType));
         assertNotNull(rhelPolicy, "RHEL policies not found");
         Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, "not-found-bundle-2", "not-found-app-2", eventType);
         assertEquals(0, initialValues.size());
 
         // Does not add event type if is not supported by the templates
         deleteAggregationTemplate(aggregationTemplateId);
-        SettingsValueByEventTypeJsonForm settingsValueJsonForm = given()
+        String settingsValueJsonForm = given()
             .header(identityHeader)
             .when().get(path)
             .then()
             .statusCode(200)
             .contentType(JSON)
-            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
-        rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
+            .extract()
+            .asString();
+        rhelPolicy = rhelPolicyForm(new JsonObject(settingsValueJsonForm));
         assertNotNull(rhelPolicy, "RHEL policies not found");
 
         Map<EmailSubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
@@ -607,30 +652,37 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // Skip the application if there are no supported types
         deleteInstantTemplate(instantTemplateId);
-        settingsValueJsonForm = given()
+        final String response = given()
             .header(identityHeader)
             .when().get(path)
             .then()
             .statusCode(200)
             .contentType(JSON)
-            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
-        rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
+            .extract()
+            .asString();
+
+        // Extract the response in order to be able to count the number of
+        // received bundles.
+        final JsonObject jsonResponse = new JsonObject(response);
+        final JsonObject bundles = jsonResponse.getJsonObject("bundles");
+
+        rhelPolicy = rhelPolicyForm(jsonResponse);
         if (featureFlipper.isDrawerEnabled()) {
             // drawer type will be always supported
             assertNotNull(rhelPolicy);
-            assertEquals(1, settingsValueJsonForm.bundles.size());
+            assertEquals(1, bundles.getMap().size());
             notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
             assertTrue(notificationPreferenes.containsKey(DRAWER));
         } else {
             assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
-            assertEquals(0, settingsValueJsonForm.bundles.size());
+            assertEquals(0, bundles.getMap().size());
         }
     }
 
     private void updateAndCheckUserPreference(String path, Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
         SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer);
         postPreferencesByEventType(path, identityHeader, settingsValues, 200);
-        SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(path, identityHeader);
+        final JsonObject settingsValuesByEventType = getPreferencesByEventType(path, identityHeader);
         SettingsValueByEventTypeJsonForm.EventTypes rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
         Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
@@ -665,14 +717,17 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .contentType(TEXT);
     }
 
-    private SettingsValueByEventTypeJsonForm getPreferencesByEventType(String path, Header identityHeader) {
-        return given()
+    private JsonObject getPreferencesByEventType(String path, Header identityHeader) {
+        final String response = given()
                 .header(identityHeader)
                 .when().get(path)
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+                .extract()
+                .asString();
+
+        return new JsonObject(response);
     }
 
     private String createInstantTemplate(String bundle, String application, String eventTypeName) {

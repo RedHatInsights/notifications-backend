@@ -16,13 +16,13 @@ import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
-import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
+import com.redhat.cloud.notifications.routers.models.transformers.SettingsValuesByEventTypeTransformer;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import javax.inject.Inject;
@@ -74,6 +74,9 @@ public class UserConfigResource {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    SettingsValuesByEventTypeTransformer settingsValuesByEventTypeTransformer;
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
     public static class V1 extends UserConfigResource {
@@ -327,7 +330,7 @@ public class UserConfigResource {
 
         List<EventTypeEmailSubscription> emailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, name);
         SettingsValuesByEventType settingsValues = getSettingsValueForUserByEventType(emailSubscriptions, orgId);
-        String jsonFormString = settingsValuesToJsonForm(settingsValues);
+        final String jsonFormString = this.settingsValuesByEventTypeTransformer.toJson(settingsValues);
         Response.ResponseBuilder builder;
         builder = Response.ok(jsonFormString);
         EntityTag etag = new EntityTag(String.valueOf(jsonFormString.hashCode()));
@@ -347,39 +350,13 @@ public class UserConfigResource {
         String orgId = getOrgId(sec);
 
         SettingsValuesByEventType settingsValues = getSettingsValueForUserByEventType(orgId, name, bundleName, applicationName);
-        String jsonFormString = settingsValuesToJsonForm(settingsValues, bundleName, applicationName);
+        String jsonFormString = this.settingsValuesByEventTypeTransformer.toJson(settingsValues, bundleName, applicationName);
         Response.ResponseBuilder builder;
         builder = Response.ok(jsonFormString);
         EntityTag etag = new EntityTag(String.valueOf(jsonFormString.hashCode()));
         builder.header("ETag", etag);
         return builder.build();
     }
-
-
-    private String settingsValuesToJsonForm(SettingsValuesByEventType settingsValues, String bundleName, String applicationName) {
-        SettingsValueByEventTypeJsonForm.EventTypes settingsValueJsonForm = SettingsValueByEventTypeJsonForm.fromSettingsValueEventTypes(settingsValues, bundleName, applicationName);
-        try {
-            return mapper.writeValueAsString(settingsValueJsonForm);
-        } catch (JsonProcessingException jpe) {
-            throw new IllegalArgumentException(
-                String.format("Unable to convert '%s' to String", settingsValueJsonForm),
-                jpe
-            );
-        }
-    }
-
-    private String settingsValuesToJsonForm(SettingsValuesByEventType settingsValues) {
-        SettingsValueByEventTypeJsonForm settingsValueJsonForm = SettingsValueByEventTypeJsonForm.fromSettingsValue(settingsValues);
-        try {
-            return mapper.writeValueAsString(settingsValueJsonForm);
-        } catch (JsonProcessingException jpe) {
-            throw new IllegalArgumentException(
-                String.format("Unable to convert '%s' to String", settingsValueJsonForm),
-                jpe
-            );
-        }
-    }
-
 
     private SettingsValuesByEventType getSettingsValueForUserByEventType(String orgId, String username, String bundleName, String applicationName) {
         List<EventTypeEmailSubscription> eventTypeEmailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName);

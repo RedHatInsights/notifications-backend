@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,64 +53,4 @@ public class SettingsValueByEventTypeJsonForm {
     }
 
     public Map<String, Application> bundles = new HashMap<>();
-
-    public static EventTypes fromSettingsValueEventTypes(SettingsValuesByEventType eventTypeEmailSubscriptions, String bundleName, String applicationName) {
-        SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = eventTypeEmailSubscriptions.bundles.get(bundleName).applications.get(applicationName);
-        return buildEventTypes(bundleName, applicationName, applicationSettingsValue);
-    }
-
-    public static SettingsValueByEventTypeJsonForm fromSettingsValue(SettingsValuesByEventType values) {
-        SettingsValueByEventTypeJsonForm form = new SettingsValueByEventTypeJsonForm();
-        values.bundles.forEach((bundleName, bundleSettingsValue) -> {
-            Map<String, EventTypes> applicationsMap = new HashMap<>();
-            bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) -> {
-                EventTypes formEventTypes = buildEventTypes(bundleName, applicationName, applicationSettingsValue);
-                applicationsMap.put(applicationName, formEventTypes);
-            });
-            Application application = new Application();
-            application.applications.putAll(applicationsMap);
-            form.bundles.put(bundleName, application);
-        });
-        return form;
-    }
-
-    private static EventTypes buildEventTypes(String bundleName, String applicationName, SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue) {
-        EventTypes formEventTypes = new EventTypes();
-        applicationSettingsValue.eventTypes.forEach((eventTypeName, eventTypeSettingsValue) -> {
-            EventType formEventType = new EventType();
-            formEventType.name = eventTypeName;
-            formEventType.label = eventTypeSettingsValue.displayName;
-            eventTypeSettingsValue.emailSubscriptionTypes.forEach((emailSubscriptionType, isSubscribed) -> {
-
-                Field field = new Field();
-                field.name = String.format("bundles[%s].applications[%s].eventTypes[%s].emailSubscriptionTypes[%s]", bundleName, applicationName, eventTypeName, emailSubscriptionType.toString());
-                field.initialValue = isSubscribed;
-                field.validate = List.of();
-                field.component = COMPONENT_SUBSCRIPTION;
-                switch (emailSubscriptionType) {
-                    case DAILY:
-                        field.label = "Daily digest";
-                        field.description =  "Daily summary of triggered application events in 24 hours span.";
-                        break;
-                    case INSTANT:
-                        field.label = "Instant notification";
-                        field.description = "Immediate email for each triggered application event.";
-                        field.checkedWarning = "Opting into this notification may result in a large number of emails";
-                        break;
-                    case DRAWER:
-                        field.label = "Drawer notification";
-                        field.description = "Drawer notification for each triggered application event.";
-                        break;
-                    default:
-                        return;
-                }
-                if (eventTypeSettingsValue.hasForcedEmail) {
-                    field.infoMessage = "You may still receive forced notifications for this service";
-                }
-                formEventType.fields.add(field);
-            });
-            formEventTypes.eventTypes.add(formEventType);
-        });
-        return formEventTypes;
-    }
 }
