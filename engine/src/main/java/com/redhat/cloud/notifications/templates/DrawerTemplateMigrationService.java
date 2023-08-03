@@ -52,7 +52,7 @@ public class DrawerTemplateMigrationService {
         // Advisor - openShift
         createDrawerIntegrationTemplate(
             warnings, "openshift", "advisor", List.of("new-recommendation"),
-            "Advisor/newRecommendationBody", "html", "Advisor new recommendation drawer body"
+            "AdvisorOpenShift/newRecommendationBody", "html", "Advisor new recommendation drawer body"
         );
 
         // Ansible
