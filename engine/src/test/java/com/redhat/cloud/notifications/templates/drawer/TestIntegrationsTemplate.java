@@ -17,7 +17,7 @@ import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestIntegrationsTemplate extends IntegrationTemplatesInDbHelper {
+class TestIntegrationsTemplate extends IntegrationTemplatesInDbHelper {
 
     @Override
     protected String getBundle() {
@@ -43,7 +43,7 @@ public class TestIntegrationsTemplate extends IntegrationTemplatesInDbHelper {
     }
 
     @Test
-    public void testRenderedTemplateIntegrationFailed() {
+    void testRenderedTemplateIntegrationFailed() {
         Action action = TestHelpers.createIntegrationsFailedAction();
         String result = generateDrawerTemplate(INTEGRATION_FAILED_EVENT_TYPE, action);
         assertEquals("Integration 'Failed integration' failed.", result);

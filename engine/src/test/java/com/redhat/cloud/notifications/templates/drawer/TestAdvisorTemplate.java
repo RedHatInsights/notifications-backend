@@ -11,7 +11,7 @@ import static com.redhat.cloud.notifications.processors.email.aggregators.Adviso
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
-public class TestAdvisorTemplate extends IntegrationTemplatesInDbHelper {
+class TestAdvisorTemplate extends IntegrationTemplatesInDbHelper {
 
     @Override
     protected String getApp() {
@@ -31,14 +31,14 @@ public class TestAdvisorTemplate extends IntegrationTemplatesInDbHelper {
     }
 
     @Test
-    public void testRenderedTemplateForNewRecommendations() {
+    void testRenderedTemplateForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = generateDrawerTemplate(NEW_RECOMMENDATION, action);
         assertEquals("<b>My Host</b> has 4 new recommendations.", result);
     }
 
     @Test
-    public void testRenderedTemplateForDeactivatedRecommendation() {
+    void testRenderedTemplateForDeactivatedRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
         String result = generateDrawerTemplate(DEACTIVATED_RECOMMENDATION, action);
         assertEquals("2 recommendations have recently been deactivated by Red Hat Insights and are no longer affecting your systems.", result);

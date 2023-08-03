@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestAdvisorOpenShiftTemplate extends IntegrationTemplatesInDbHelper {
+class TestAdvisorOpenShiftTemplate extends IntegrationTemplatesInDbHelper {
 
     static final String NEW_RECOMMENDATION = "new-recommendation";
 
@@ -30,7 +30,7 @@ public class TestAdvisorOpenShiftTemplate extends IntegrationTemplatesInDbHelper
     }
 
     @Test
-    public void testRenderedTemplateForNewRecommendations() {
+    void testRenderedTemplateForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = generateDrawerTemplate(NEW_RECOMMENDATION, action);
         assertEquals("<b>My Host</b> has 4 new recommendations.", result);

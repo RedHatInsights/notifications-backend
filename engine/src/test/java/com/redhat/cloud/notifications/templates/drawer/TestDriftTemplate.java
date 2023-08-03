@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestDriftTemplate extends IntegrationTemplatesInDbHelper {
+class TestDriftTemplate extends IntegrationTemplatesInDbHelper {
 
     static final String EVENT_TYPE_NAME = "drift-baseline-detected";
 

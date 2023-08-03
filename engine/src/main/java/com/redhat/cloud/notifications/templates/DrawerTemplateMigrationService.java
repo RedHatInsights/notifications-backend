@@ -276,19 +276,17 @@ public class DrawerTemplateMigrationService {
             Optional<EventType> eventType = findEventType(warnings, bundleName, appName, eventTypeName);
 
             Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription, integrationType);
-            if (eventType.isPresent()) {
-                if (!integrationTemplateExists(eventType.get(), integrationType)) {
-                    Log.infof("Creating integration template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
+            if (eventType.isPresent() && !integrationTemplateExists(eventType.get(), integrationType)) {
+                Log.infof("Creating integration template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
 
-                    IntegrationTemplate integrationTemplate = new IntegrationTemplate();
-                    integrationTemplate.setTemplateKind(IntegrationTemplate.TemplateKind.EVENT_TYPE);
-                    integrationTemplate.setIntegrationType(integrationType);
-                    integrationTemplate.setCreated(LocalDateTime.now());
-                    integrationTemplate.setApplication(eventType.get().getApplication());
-                    integrationTemplate.setEventType(eventType.get());
-                    integrationTemplate.setTheTemplate(bodyTemplate);
-                    entityManager.persist(integrationTemplate);
-                }
+                IntegrationTemplate integrationTemplate = new IntegrationTemplate();
+                integrationTemplate.setTemplateKind(IntegrationTemplate.TemplateKind.EVENT_TYPE);
+                integrationTemplate.setIntegrationType(integrationType);
+                integrationTemplate.setCreated(LocalDateTime.now());
+                integrationTemplate.setApplication(eventType.get().getApplication());
+                integrationTemplate.setEventType(eventType.get());
+                integrationTemplate.setTheTemplate(bodyTemplate);
+                entityManager.persist(integrationTemplate);
             }
         }
     }

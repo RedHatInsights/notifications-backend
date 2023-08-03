@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestAnsibleTemplate extends IntegrationTemplatesInDbHelper {
+class TestAnsibleTemplate extends IntegrationTemplatesInDbHelper {
 
     static final String REPORT_AVAILABLE_EVENT = "report-available";
 

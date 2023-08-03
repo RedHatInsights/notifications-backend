@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestInventoryTemplate extends IntegrationTemplatesInDbHelper {
+class TestInventoryTemplate extends IntegrationTemplatesInDbHelper {
 
     private static final String EVENT_TYPE_NAME = "validation-error";
 

@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestSourcesTemplate extends IntegrationTemplatesInDbHelper {
+class TestSourcesTemplate extends IntegrationTemplatesInDbHelper {
 
 
     static final String AVAILABILITY_STATUS = "availability-status";

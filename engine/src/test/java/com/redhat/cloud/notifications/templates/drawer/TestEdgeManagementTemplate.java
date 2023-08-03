@@ -13,7 +13,7 @@ import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestEdgeManagementTemplate extends IntegrationTemplatesInDbHelper {
+class TestEdgeManagementTemplate extends IntegrationTemplatesInDbHelper {
 
     static final String IMAGE_CREATION = "image-creation";
     static final String UPDATE_DEVICES = "update-devices";
@@ -40,7 +40,7 @@ public class TestEdgeManagementTemplate extends IntegrationTemplatesInDbHelper {
     }
 
     @Test
-    public void testRenderedTemplateUpdateDevice() {
+    void testRenderedTemplateUpdateDevice() {
         String result = generateDrawerTemplate(UPDATE_DEVICES, ACTION);
         assertEquals("An Update for the device <b>DEVICE-9012</b> started.", result);
     }

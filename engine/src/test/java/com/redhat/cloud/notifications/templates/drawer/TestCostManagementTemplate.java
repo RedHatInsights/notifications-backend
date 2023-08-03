@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestCostManagementTemplate extends IntegrationTemplatesInDbHelper {
+class TestCostManagementTemplate extends IntegrationTemplatesInDbHelper {
 
     static final String MISSING_COST_MODEL = "missing-cost-model";
     static final String COST_MODEL_CREATE = "cost-model-create";
@@ -45,37 +45,37 @@ public class TestCostManagementTemplate extends IntegrationTemplatesInDbHelper {
     }
 
     @Test
-    public void testRenderedTemplateCostModelCreate() {
+    void testRenderedTemplateCostModelCreate() {
         String result = generateDrawerTemplate(COST_MODEL_CREATE, ACTION);
         assertEquals("Cost model <b>Sample model</b> has been created.", result);
     }
 
     @Test
-    public void testRenderedTemplateCostModelUpdate() {
+    void testRenderedTemplateCostModelUpdate() {
         String result = generateDrawerTemplate(COST_MODEL_UPDATE, ACTION);
         assertEquals("Cost model <b>Sample model</b> has been updated.", result);
     }
 
     @Test
-    public void testRenderedTemplateCostModelRemove() {
+    void testRenderedTemplateCostModelRemove() {
         String result = generateDrawerTemplate(COST_MODEL_REMOVE, ACTION);
         assertEquals("Cost model <b>Sample model</b> has been removed.", result);
     }
 
     @Test
-    public void testRenderedTemplateCostModelOperatorStale() {
+    void testRenderedTemplateCostModelOperatorStale() {
         String result = generateDrawerTemplate(CM_OPERATOR_STALE, ACTION);
         assertEquals("OpenShift source <b>Dummy source name</b> has not received any payloads in the last 3 or more days.", result);
     }
 
     @Test
-    public void testRenderedTemplateCostModelOperatorDataProcessed() {
+    void testRenderedTemplateCostModelOperatorDataProcessed() {
         String result = generateDrawerTemplate(CM_OPERATOR_DATA_PROCESSED, ACTION);
         assertEquals("Cost Management has completed processing for OpenShift source <b>Dummy source name</b>.", result);
     }
 
     @Test
-    public void testRenderedTemplateCostModelOperatorDataReceived() {
+    void testRenderedTemplateCostModelOperatorDataReceived() {
         String result = generateDrawerTemplate(CM_OPERATOR_DATA_RECEIVED, ACTION);
         assertEquals("OpenShift source <b>Dummy source name</b> has received a new payload and processing should begin shortly.", result);
     }

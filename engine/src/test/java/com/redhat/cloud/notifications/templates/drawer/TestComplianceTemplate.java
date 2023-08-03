@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestComplianceTemplate extends IntegrationTemplatesInDbHelper {
+class TestComplianceTemplate extends IntegrationTemplatesInDbHelper {
 
     static final String COMPLIANCE_BELOW_THRESHOLD = "compliance-below-threshold";
     static final String REPORT_UPLOAD_FAILED = "report-upload-failed";
@@ -34,7 +34,7 @@ public class TestComplianceTemplate extends IntegrationTemplatesInDbHelper {
     }
 
     @Test
-    public void testRenderedTemplateUploadFailed() {
+    void testRenderedTemplateUploadFailed() {
         String result = generateDrawerTemplate(REPORT_UPLOAD_FAILED, ACTION);
         assertEquals("Your system <b>My test machine</b> failed to upload a new compliance report. The error message returned by our system for the request <i>12345</i> was: <i>Kernel panic (test)</i>", result);
     }

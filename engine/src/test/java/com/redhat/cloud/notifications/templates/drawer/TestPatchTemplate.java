@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestPatchTemplate extends IntegrationTemplatesInDbHelper {
+class TestPatchTemplate extends IntegrationTemplatesInDbHelper {
 
 
     static final String NEW_ADVISORY = "new-advisory";

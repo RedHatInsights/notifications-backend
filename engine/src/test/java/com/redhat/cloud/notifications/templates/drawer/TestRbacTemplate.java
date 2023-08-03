@@ -11,7 +11,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestRbacTemplate extends IntegrationTemplatesInDbHelper {
+class TestRbacTemplate extends IntegrationTemplatesInDbHelper {
 
 
     static final String RH_NEW_ROLE_AVAILABLE = "rh-new-role-available";

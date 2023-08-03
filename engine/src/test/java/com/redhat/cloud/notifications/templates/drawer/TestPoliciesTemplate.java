@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class TestPoliciesTemplate extends IntegrationTemplatesInDbHelper {
+class TestPoliciesTemplate extends IntegrationTemplatesInDbHelper {
 
 
     private static final String EVENT_TYPE_NAME = "policy-triggered";
