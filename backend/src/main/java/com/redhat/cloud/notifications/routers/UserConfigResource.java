@@ -357,7 +357,7 @@ public class UserConfigResource {
 
 
     private String settingsValuesToJsonForm(SettingsValuesByEventType settingsValues, String bundleName, String applicationName) {
-        SettingsValueByEventTypeJsonForm.EventTypes settingsValueJsonForm = SettingsValueByEventTypeJsonForm.fromSettingsValueEventTypes(settingsValues, bundleName, applicationName);
+        final SettingsValueByEventTypeJsonForm.Application settingsValueJsonForm = SettingsValueByEventTypeJsonForm.fromSettingsValueEventTypes(settingsValues, bundleName, applicationName);
         try {
             return mapper.writeValueAsString(settingsValueJsonForm);
         } catch (JsonProcessingException jpe) {

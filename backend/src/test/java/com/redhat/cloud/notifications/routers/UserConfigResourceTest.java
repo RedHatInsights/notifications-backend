@@ -37,6 +37,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -113,9 +114,12 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return null;
     }
 
-    private SettingsValueByEventTypeJsonForm.EventTypes rhelPolicyForm(SettingsValueByEventTypeJsonForm settingsValuesByEventType) {
+    private SettingsValueByEventTypeJsonForm.Application rhelPolicyForm(SettingsValueByEventTypeJsonForm settingsValuesByEventType) {
         for (String bundleName : settingsValuesByEventType.bundles.keySet()) {
             if (settingsValuesByEventType.bundles.get(bundleName).applications.containsKey("policies")) {
+                Assertions.assertEquals("Red Hat Enterprise Linux", settingsValuesByEventType.bundles.get(bundleName).label, "unexpected label for the bundle");
+                Assertions.assertEquals("Policies", settingsValuesByEventType.bundles.get(bundleName).applications.get("policies").label, "unexpected label for the application");
+
                 return settingsValuesByEventType.bundles.get(bundleName).applications.get("policies");
             }
         }
@@ -480,7 +484,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
 
-        SettingsValueByEventTypeJsonForm.EventTypes rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
         assertNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
@@ -631,18 +635,18 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer);
         postPreferencesByEventType(path, identityHeader, settingsValues, 200);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(path, identityHeader);
-        SettingsValueByEventTypeJsonForm.EventTypes rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        final SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
         Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).eventTypes.get(eventType).emailSubscriptionTypes);
-        SettingsValueByEventTypeJsonForm.EventTypes preferences = given()
+        final SettingsValueByEventTypeJsonForm.Application preferences = given()
             .header(identityHeader)
             .when().get(String.format(path + "/%s/%s", bundle, application))
             .then()
             .statusCode(200)
             .contentType(JSON)
-            .extract().body().as(SettingsValueByEventTypeJsonForm.EventTypes.class);
+            .extract().body().as(SettingsValueByEventTypeJsonForm.Application.class);
 
         assertNotNull(preferences);
         Map<EmailSubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
