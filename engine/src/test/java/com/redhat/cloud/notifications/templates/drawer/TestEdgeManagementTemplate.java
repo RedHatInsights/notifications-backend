@@ -5,8 +5,11 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
@@ -28,9 +31,12 @@ public class TestEdgeManagementTemplate extends IntegrationTemplatesInDbHelper {
 
     @Test
     void testRenderedTemplateImageCreation() {
+        long nbMonths = ChronoUnit.MONTHS.between(
+            LocalDate.from(ACTION.getTimestamp()),
+            LocalDate.now(UTC));
 
         String result = generateDrawerTemplate(IMAGE_CREATION, ACTION);
-        assertEquals("A new image named <b>Test name</b> was created 9 months ago.", result);
+        assertEquals(String.format("A new image named <b>Test name</b> was created %d months ago.", nbMonths), result);
     }
 
     @Test
