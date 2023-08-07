@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnabled;
@@ -42,6 +43,7 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
+import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
 
 @ApplicationScoped
 public class WebhookTypeProcessor extends EndpointTypeProcessor {
@@ -114,6 +116,9 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     private Counter disabledWebhooksServerErrorCount;
     private RetryPolicy<Object> retryPolicy;
 
+    @Inject
+    ConnectorSender connectorSender;
+
     @PostConstruct
     void postConstruct() {
         processedWebhookCount = registry.counter(PROCESSED_WEBHOOK_COUNTER);
@@ -156,8 +161,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
-        final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
-                .requestAbs(HttpMethod.valueOf(properties.getMethod().name()), properties.getUrl());
+        final JsonObject payload = transformer.toJsonObject(event);
 
         /*
          * Get the basic authentication and secret token secrets from Sources.
@@ -166,17 +170,36 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
             this.secretUtils.loadSecretsForEndpoint(endpoint);
         }
 
-        if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
-            req.putHeader(TOKEN_HEADER, properties.getSecretToken());
+        if (featureFlipper.isWebhookConnectorKafkaProcessingEnabled()) {
+            UUID historyId = UUID.randomUUID();
+
+            Log.infof("Sending %s notification through Camel [orgId=%s, eventId=%s, historyId=%s]",
+                "webhook", endpoint.getOrgId(), event.getId(), historyId);
+
+            NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
+            history.setStatus(PROCESSING);
+            persistNotificationHistory(history);
+
+            final JsonObject connectorData = new JsonObject();
+
+            connectorData.put("endpoint_properties", properties);
+            connectorData.put("payload", payload);
+
+            connectorSender.send(connectorData, historyId, endpoint.getType().name().toLowerCase());
+        } else {
+            final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
+                .requestAbs(HttpMethod.valueOf(properties.getMethod().name()), properties.getUrl());
+
+            if (properties.getSecretToken() != null && !properties.getSecretToken().isBlank()) {
+                req.putHeader(TOKEN_HEADER, properties.getSecretToken());
+            }
+
+            if (properties.getBasicAuthentication() != null) {
+                req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
+            }
+
+            doHttpRequest(event, endpoint, req, payload, properties.getMethod().name(), properties.getUrl(), true);
         }
-
-        if (properties.getBasicAuthentication() != null) {
-            req.basicAuthentication(properties.getBasicAuthentication().getUsername(), properties.getBasicAuthentication().getPassword());
-        }
-
-        final JsonObject payload = transformer.toJsonObject(event);
-
-        doHttpRequest(event, endpoint, req, payload, properties.getMethod().name(), properties.getUrl(), true);
     }
 
     private WebClient getWebClient(boolean disableSSLVerification) {

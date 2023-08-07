@@ -21,6 +21,7 @@
         <module>connector-servicenow</module>
         <module>connector-slack</module>
         <module>connector-splunk</module>
+        <module>connector-webhook</module>
         <module>database</module>
         <module>engine</module>
     </modules>

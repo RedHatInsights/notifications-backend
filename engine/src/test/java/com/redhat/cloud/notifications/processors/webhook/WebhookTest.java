@@ -19,12 +19,16 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import dev.failsafe.Failsafe;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +37,8 @@ import org.mockito.MockedStatic;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 
+import javax.annotation.PostConstruct;
+import javax.enterprise.inject.Any;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -44,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.CLIENT_TAG_VALUE;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.DISABLED_WEBHOOKS_COUNTER;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.ERROR_TYPE_TAG_KEY;
@@ -93,8 +100,23 @@ public class WebhookTest {
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
 
+    @Inject
+    @Any
+    InMemoryConnector inMemoryConnector;
+
+    private InMemorySink<JsonObject> inMemorySink;
+
+    @Inject
+    BaseTransformer transformer;
+
+    @PostConstruct
+    void postConstruct() {
+        inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
+    }
+
     @BeforeEach
     void beforeEach() {
+        inMemorySink.clear();
         micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_WEBHOOK_COUNTER, PROCESSED_EMAIL_COUNTER, FAILED_WEBHOOK_COUNTER, FAILED_EMAIL_COUNTER, RETRIED_WEBHOOK_COUNTER, RETRIED_EMAIL_COUNTER, SUCCESSFUL_WEBHOOK_COUNTER, SUCCESSFUL_EMAIL_COUNTER);
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY);
     }
@@ -154,6 +176,44 @@ public class WebhookTest {
     void testEmailWebhook() {
         commonTestWebhook(true);
         validateCounters(0, 1, 0, 1, 0, 0, 0, 0);
+    }
+
+    @Test
+    void testWebhookUsingConnector() {
+        try {
+            featureFlipper.setWebhookConnectorKafkaProcessingEnabled(true);
+
+            String testUrl = "https://my.webhook.connector.com";
+            Action webhookActionMessage = buildWebhookAction();
+            Event event = new Event();
+            event.setEventWrapper(new EventWrapperAction(webhookActionMessage));
+            Endpoint ep = buildWebhookEndpoint("https://my.webhook.connector.com");
+            try {
+                webhookTypeProcessor.process(event, List.of(ep));
+                ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+                verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+                NotificationHistory history = historyArgumentCaptor.getAllValues().get(0);
+                assertFalse(history.isInvocationResult());
+                assertEquals(NotificationStatus.PROCESSING, history.getStatus());
+                // Now let's check the Kafka messages sent to the outgoing channel.
+                // The channel should have received two messages.
+                assertEquals(1, inMemorySink.received().size());
+
+                // We'll only check the payload and metadata of the first Kafka message.
+                Message<JsonObject> message = inMemorySink.received().get(0);
+                JsonObject payload = message.getPayload();
+                assertEquals(testUrl, ((WebhookProperties) payload.getValue("endpoint_properties")).getUrl());
+
+                final JsonObject payloadToSent = transformer.toJsonObject(event);
+                assertEquals(payloadToSent, payload.getJsonObject("payload"));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail(e);
+            }
+        } finally {
+            featureFlipper.setWebhookConnectorKafkaProcessingEnabled(false);
+        }
     }
 
     @Test
