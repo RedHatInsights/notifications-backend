@@ -15,6 +15,7 @@ public class EmailPayloadAggregatorFactory {
     private static final String VULNERABILITY = "vulnerability";
     private static final String INVENTORY = "inventory";
     private static final String RESOURCE_OPTIMIZATION = "resource-optimization";
+    private static final String IMAGE_BUILDER = "image-builder";
 
     private EmailPayloadAggregatorFactory() {
 
@@ -42,6 +43,8 @@ public class EmailPayloadAggregatorFactory {
                         return new ComplianceEmailAggregator();
                     case DRIFT:
                         return new DriftEmailPayloadAggregator();
+                    case IMAGE_BUILDER:
+                        return new ImageBuilderAggregator();
                     case INVENTORY:
                         return new InventoryEmailAggregator();
                     case PATCH:
