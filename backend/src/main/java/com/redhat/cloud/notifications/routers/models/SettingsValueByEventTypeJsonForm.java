@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,13 +36,15 @@ public class SettingsValueByEventTypeJsonForm {
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
-    public static class Application {
-        public Map<String, EventTypes> applications = new HashMap<>();
+    public static class Bundle {
+        public Map<String, Application> applications = new HashMap<>();
+        public String label;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
-    public static class EventTypes {
+    public static class Application {
         public List<EventType> eventTypes = new ArrayList<>();
+        public String label;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
@@ -51,9 +54,9 @@ public class SettingsValueByEventTypeJsonForm {
         public List<Field> fields = new ArrayList<>();
     }
 
-    public Map<String, Application> bundles = new HashMap<>();
+    public Map<String, Bundle> bundles = new HashMap<>();
 
-    public static EventTypes fromSettingsValueEventTypes(SettingsValuesByEventType eventTypeEmailSubscriptions, String bundleName, String applicationName) {
+    public static Application fromSettingsValueEventTypes(SettingsValuesByEventType eventTypeEmailSubscriptions, String bundleName, String applicationName) {
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = eventTypeEmailSubscriptions.bundles.get(bundleName).applications.get(applicationName);
         return buildEventTypes(bundleName, applicationName, applicationSettingsValue);
     }
@@ -61,20 +64,22 @@ public class SettingsValueByEventTypeJsonForm {
     public static SettingsValueByEventTypeJsonForm fromSettingsValue(SettingsValuesByEventType values) {
         SettingsValueByEventTypeJsonForm form = new SettingsValueByEventTypeJsonForm();
         values.bundles.forEach((bundleName, bundleSettingsValue) -> {
-            Map<String, EventTypes> applicationsMap = new HashMap<>();
+            final Map<String, Application> applicationsMap = new HashMap<>();
             bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) -> {
-                EventTypes formEventTypes = buildEventTypes(bundleName, applicationName, applicationSettingsValue);
-                applicationsMap.put(applicationName, formEventTypes);
+                final Application application = buildEventTypes(bundleName, applicationName, applicationSettingsValue);
+                applicationsMap.put(applicationName, application);
             });
-            Application application = new Application();
-            application.applications.putAll(applicationsMap);
-            form.bundles.put(bundleName, application);
+            final Bundle bundle = new Bundle();
+            bundle.applications.putAll(applicationsMap);
+            bundle.label = bundleSettingsValue.displayName;
+            form.bundles.put(bundleName, bundle);
         });
         return form;
     }
 
-    private static EventTypes buildEventTypes(String bundleName, String applicationName, SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue) {
-        EventTypes formEventTypes = new EventTypes();
+    private static Application buildEventTypes(String bundleName, String applicationName, SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue) {
+        final Application application = new Application();
+        application.label = applicationSettingsValue.displayName;
         applicationSettingsValue.eventTypes.forEach((eventTypeName, eventTypeSettingsValue) -> {
             EventType formEventType = new EventType();
             formEventType.name = eventTypeName;
@@ -108,8 +113,8 @@ public class SettingsValueByEventTypeJsonForm {
                 }
                 formEventType.fields.add(field);
             });
-            formEventTypes.eventTypes.add(formEventType);
+            application.eventTypes.add(formEventType);
         });
-        return formEventTypes;
+        return application;
     }
 }
