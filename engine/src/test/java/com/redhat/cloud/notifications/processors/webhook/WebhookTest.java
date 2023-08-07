@@ -207,7 +207,6 @@ public class WebhookTest {
                 assertEquals(payloadToSent, payload.getJsonObject("payload"));
 
             } catch (Exception e) {
-                e.printStackTrace();
                 fail(e);
             }
         } finally {
