@@ -596,7 +596,7 @@ public class TestHelpers {
                     .withAdditionalProperty("instance_id", "i-0aba12564af9faf")
                     .withAdditionalProperty("detail",
                         Map.of("public_ipv4", "91.123.32.4", "public_dns",
-                            "ec91.123.32.4.compute-1.amazonaws.com"))
+                            ""))
                     .build())
                 .build()));
         } else {

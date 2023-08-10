@@ -46,6 +46,8 @@ public class TestImageBuilderTemplate extends EmailTemplatesInDbHelper {
         String result = generateEmailBody(LAUNCH_SUCCESS, SUCCESS_ACTION);
         assertTrue(result.contains("Instances launched successfully"));
         assertTrue(result.contains("91.123.32.4"));
+        // testing empty dns value
+        assertTrue(result.contains("n/a"));
     }
 
     @Test
