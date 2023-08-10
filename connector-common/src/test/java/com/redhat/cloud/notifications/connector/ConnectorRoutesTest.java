@@ -123,19 +123,19 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testFailedNotificationError500() throws Exception {
+    protected void testFailedNotificationError500() throws Exception {
         mockRemoteServerError(500, "My custom internal error");
         testFailedNotification();
     }
 
     @Test
-    void testFailedNotificationError404() throws Exception {
+    protected void testFailedNotificationError404() throws Exception {
         mockRemoteServerError(404, "Page not found");
         testFailedNotification();
     }
 
 
-    void testFailedNotification() throws Exception {
+    protected JsonObject testFailedNotification() throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
         MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
@@ -144,7 +144,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
         String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 
-        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, getMockServerUrl() + getRemoteServerPath(), "HTTP operation failed", "Error POSTing to Slack API");
+        JsonObject outcomingPayload = assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, getMockServerUrl() + getRemoteServerPath(), "HTTP operation failed", "Error POSTing to Slack API");
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
         if (isConnectorRouteFailureHandled()) {
@@ -155,6 +155,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         checkRouteMetrics(SUCCESS, 0, 0, 0);
         checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
         micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 0);
+        return outcomingPayload;
     }
 
     @Test
@@ -253,7 +254,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return cloudEventId;
     }
 
-    protected static void assertKafkaSinkIsSatisfied(String cloudEventId, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful, String expectedTargetUrl, String... expectedOutcomeStarts) throws InterruptedException {
+    protected static JsonObject assertKafkaSinkIsSatisfied(String cloudEventId, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful, String expectedTargetUrl, String... expectedOutcomeStarts) throws InterruptedException {
 
         kafkaSinkMockEndpoint.assertIsSatisfied();
 
@@ -280,5 +281,6 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         if (Arrays.stream(expectedOutcomeStarts).noneMatch(outcome::startsWith)) {
             fail(String.format("Expected outcome starts: %s - Actual outcome: %s", Arrays.toString(expectedOutcomeStarts), outcome));
         }
+        return payload;
     }
 }

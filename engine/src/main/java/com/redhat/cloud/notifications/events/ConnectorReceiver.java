@@ -18,6 +18,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
+import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -52,6 +53,9 @@ public class ConnectorReceiver {
     @Inject
     CamelHistoryFillerHelper camelHistoryFillerHelper;
 
+    @Inject
+    EndpointErrorFromConnectorHelper endpointErrorFromConnectorHelper;
+
     private Counter messagesProcessedCounter;
     private Counter messagesErrorCounter;
 
@@ -80,6 +84,7 @@ public class ConnectorReceiver {
             if (!updated) {
                 Log.warnf("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
             }
+            endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(new JsonObject(payload));
         } catch (Exception e) {
             messagesErrorCounter.increment();
             Log.error("|  Failure to update the history", e);

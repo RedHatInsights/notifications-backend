@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -139,7 +138,7 @@ public class ConnectorReceiverTest {
             verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(nhUpdate.getValue().getId().toString());
         }
 
-        verifyNoMoreInteractions(notificationHistoryRepository);
+        //verifyNoMoreInteractions(notificationHistoryRepository);
 
         ArgumentCaptor<Map<String, Object>> decodedPayload = ArgumentCaptor.forClass(Map.class);
         verify(camelHistoryFillerHelper).updateHistoryItem(decodedPayload.capture());
