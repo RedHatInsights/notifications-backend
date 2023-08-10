@@ -1,0 +1,53 @@
+{
+  "data": [
+    {
+      "id": "4f1e5944-72b4-4e53-a2d0-5027f4728245",
+      "username": "foouser",
+      "email": "foouser@redhat.com",
+      "firstName": "foo",
+      "lastName": "user",
+      "is_active": true,
+      "is_org_admin": true
+    },
+    {
+      "id": "792b5e0c-ff8a-448f-949b-4e8185ca9b87",
+      "username": "baruser",
+      "email": "baruser@redhat.com",
+      "firstName": "bar",
+      "lastName": "user",
+      "is_active": true,
+      "is_org_admin": true
+    },
+    {
+      "id": "89a9bb76-d68b-4d22-bb3d-c14f8d604902",
+      "username": "bazuser",
+      "email": "bazuser@redhat.com",
+      "firstName": "bar",
+      "lastName": "user",
+      "is_active": true,
+      "is_org_admin": true
+    },
+    {
+      "id": "a0a99980-1495-41f8-87a5-af42c9066996",
+      "username": "johndoe",
+      "email": "johndoe@redhat.com",
+      "firstName": "john",
+      "lastName": "doe",
+      "is_active": true,
+      "is_org_admin": true
+    },
+    {
+      "id": "8b5d9bbe-8fe8-4fc3-bbb2-bd0a6c691089",
+      "username": "janedoe",
+      "email": "janedoe@redhat.com",
+      "firstName": "jane",
+      "lastName": "doe",
+      "is_active": true,
+      "is_org_admin": true
+    }
+  ],
+  "links": {},
+  "meta": {
+    "count": 5
+  }
+}

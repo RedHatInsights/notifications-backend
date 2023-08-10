@@ -16,6 +16,7 @@
         <module>common</module>
         <module>common-aggregator</module>
         <module>connector-common</module>
+        <module>connector-email</module>
         <module>connector-google-chat</module>
         <module>connector-microsoft-teams</module>
         <module>connector-servicenow</module>

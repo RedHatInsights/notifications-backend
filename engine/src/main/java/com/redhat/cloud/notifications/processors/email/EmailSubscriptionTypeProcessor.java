@@ -109,29 +109,39 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (endpoints != null && !endpoints.isEmpty()) {
-            // TODO: Check if we should be using the eventType or application's id instead of the name
-            EventType eventType = event.getEventType();
-            String bundleName = eventType.getApplication().getBundle().getName();
-            String applicationName = eventType.getApplication().getName();
-            boolean shouldSaveAggregation = templateRepository.isEmailAggregationSupported(bundleName, applicationName, NON_INSTANT_SUBSCRIPTION_TYPES);
-
-            if (shouldSaveAggregation) {
-                EmailAggregation aggregation = new EmailAggregation();
-                aggregation.setOrgId(event.getOrgId());
-                aggregation.setApplicationName(applicationName);
-                aggregation.setBundleName(bundleName);
-
-                final JsonObject transformedEvent = this.baseTransformer.toJsonObject(event);
-                aggregation.setPayload(transformedEvent);
-                try {
-                    emailAggregationRepository.addEmailAggregation(aggregation);
-                } catch (Exception e) {
-                    // ConstraintViolationException may be thrown here and it must not interrupt the email that is being sent.
-                    Log.warn("Email aggregation persisting failed", e);
-                }
-            }
+            this.generateAggregationWhereDue(event);
 
             sendEmail(event, Set.copyOf(endpoints));
+        }
+    }
+
+    /**
+     * In the case that the event and the event type support aggregations, a
+     * new one will be generated in the database. The event is left untouched.
+     * @param event the event to be included, or not, in the aggregation.
+     */
+    public void generateAggregationWhereDue(final Event event) {
+        // TODO: Check if we should be using the eventType or application's id instead of the name
+        final EventType eventType = event.getEventType();
+        final String bundleName = eventType.getApplication().getBundle().getName();
+        final String applicationName = eventType.getApplication().getName();
+
+        final boolean shouldSaveAggregation = this.templateRepository.isEmailAggregationSupported(bundleName, applicationName, NON_INSTANT_SUBSCRIPTION_TYPES);
+
+        if (shouldSaveAggregation) {
+            final EmailAggregation aggregation = new EmailAggregation();
+            aggregation.setOrgId(event.getOrgId());
+            aggregation.setApplicationName(applicationName);
+            aggregation.setBundleName(bundleName);
+
+            final JsonObject transformedEvent = this.baseTransformer.toJsonObject(event);
+            aggregation.setPayload(transformedEvent);
+            try {
+                this.emailAggregationRepository.addEmailAggregation(aggregation);
+            } catch (Exception e) {
+                // ConstraintViolationException may be thrown here and it must not interrupt the email that is being sent.
+                Log.warn("Email aggregation persisting failed", e);
+            }
         }
     }
 

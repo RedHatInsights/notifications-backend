@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.DelayedThrower;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -10,6 +11,7 @@ import com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatPro
 import com.redhat.cloud.notifications.processors.camel.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.camel.teams.TeamsProcessor;
 import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
+import com.redhat.cloud.notifications.processors.email.EmailProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
@@ -44,7 +46,13 @@ public class EndpointProcessor {
     EventingProcessor camelProcessor;
 
     @Inject
+    EmailProcessor emailConnectorProcessor;
+
+    @Inject
     EmailSubscriptionTypeProcessor emailProcessor;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Inject
     SlackProcessor slackProcessor;
@@ -113,7 +121,11 @@ public class EndpointProcessor {
                             }
                             break;
                         case EMAIL_SUBSCRIPTION:
-                            emailProcessor.process(event, endpointsByTypeEntry.getValue());
+                            if (this.featureFlipper.isEmailConnectorEnabled()) {
+                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
+                            } else {
+                                emailProcessor.process(event, endpointsByTypeEntry.getValue());
+                            }
                             break;
                         case WEBHOOK:
                         case ANSIBLE:
