@@ -20,7 +20,7 @@ Amazon web services
 Microsoft Azure
 {#case "gcp"}
 Google cloud
-{/switch}, on {action.timestamp.toUtcFormat()}
+{/switch}
 {/content-subtitle-section1}
 {#content-body-section1}
 <table class="rh-data-table-bordered">
@@ -40,7 +40,13 @@ Google cloud
             <td>
                 {it.payload.detail.public_ipv4}
             </td>
-            <td>{it.payload.detail.public_dns}</td>
+            <td>
+            {#if it.payload.detail.public_dns}
+                {it.payload.detail.public_dns}
+            {#else}
+                n/a
+            {/if}
+            </td>
         </tr>
         {/each}
     </tbody>
