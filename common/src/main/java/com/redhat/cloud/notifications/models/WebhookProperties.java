@@ -56,6 +56,13 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
     @JsonIgnore
     private Long basicAuthenticationSourcesId;
 
+    @Column(name = "bearer_authentication_id")
+    @JsonIgnore
+    private Long bearerAuthenticationSourcesId;
+
+    @Transient
+    private String bearerToken;
+
     public String getUrl() {
         return url;
     }
@@ -110,5 +117,21 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
 
     public void setBasicAuthenticationSourcesId(Long basicAuthenticationSourcesId) {
         this.basicAuthenticationSourcesId = basicAuthenticationSourcesId;
+    }
+
+    public Long getBearerAuthenticationSourcesId() {
+        return bearerAuthenticationSourcesId;
+    }
+
+    public void setBearerAuthenticationSourcesId(Long bearerAuthenticationSourcesId) {
+        this.bearerAuthenticationSourcesId = bearerAuthenticationSourcesId;
+    }
+
+    public String getBearerToken() {
+        return bearerToken;
+    }
+
+    public void setBearerToken(String bearerToken) {
+        this.bearerToken = bearerToken;
     }
 }

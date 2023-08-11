@@ -213,7 +213,7 @@ public class EndpointRepository {
         String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled, serverErrors = 0 " +
                 "WHERE orgId = :orgId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
-                "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
+                "disableSslVerification = :disableSslVerification, secretToken = :secretToken, basicAuthentication = :basicAuthentication WHERE endpoint.id = :endpointId";
         String camelQuery = "UPDATE CamelProperties SET url = :url, extras = :extras, " +
                 "basicAuthentication = :basicAuthentication, " +
                 "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
@@ -244,6 +244,7 @@ public class EndpointRepository {
                             .setParameter("method", properties.getMethod())
                             .setParameter("disableSslVerification", properties.getDisableSslVerification())
                             .setParameter("secretToken", properties.getSecretToken())
+                            .setParameter("basicAuthentication", properties.getBasicAuthentication())
                             .setParameter("endpointId", endpoint.getId())
                             .executeUpdate() > 0;
                 case CAMEL:

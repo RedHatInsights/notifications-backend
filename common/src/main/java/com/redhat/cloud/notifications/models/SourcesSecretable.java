@@ -53,4 +53,12 @@ public interface SourcesSecretable {
      * @param basicAuthenticationSourcesId the ID of the secret.
      */
     void setBasicAuthenticationSourcesId(Long basicAuthenticationSourcesId);
+
+    Long getBearerAuthenticationSourcesId();
+
+    void setBearerAuthenticationSourcesId(Long bearerAuthenticationSourcesId);
+
+    String getBearerToken();
+
+    void setBearerToken(String bearerToken);
 }
