@@ -150,7 +150,7 @@ class EmailSubscriptionTypeProcessorTest {
         User user3 = new User();
         user3.setUsername("user3");
 
-        when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any(), any()))
+        when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any()))
             .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
         when(recipientResolver.recipientUsers(any(), anySet(), any()))
             .then(invocation -> {
@@ -241,7 +241,7 @@ class EmailSubscriptionTypeProcessorTest {
             User user2 = new User();
             user2.setUsername("bar");
 
-            when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any(), any()))
+            when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any()))
                 .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
             when(recipientResolver.recipientUsers(any(), any(), any(), eq(true)))
                 .thenReturn(Set.of(user1, user2));

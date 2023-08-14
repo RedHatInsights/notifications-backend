@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -9,6 +8,7 @@ import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -17,13 +17,7 @@ public class EmailSubscriptionRepository {
     @Inject
     EntityManager entityManager;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    public List<String> getEmailSubscribersUserId(String orgId, String bundleName, String applicationName, String eventTypeName, EmailSubscriptionType subscriptionType) {
-        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
-            return getEmailSubscribersUserIdByEventType(orgId, bundleName, applicationName, eventTypeName, subscriptionType);
-        }
+    public List<String> getEmailSubscribersUserId(String orgId, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
         String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
                 "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
         return entityManager.createQuery(query, String.class)
@@ -34,18 +28,24 @@ public class EmailSubscriptionRepository {
                 .getResultList();
     }
 
-    private List<String> getEmailSubscribersUserIdByEventType(String orgId, String bundleName, String applicationName, String eventTypeName, EmailSubscriptionType subscriptionType) {
+    public List<String> getSubscribersByApplication(String orgId, UUID applicationId, EmailSubscriptionType subscriptionType) {
+        String hql = "SELECT id.userId FROM EmailSubscription WHERE id.orgId = :orgId AND id.subscriptionType = :subscriptionType " +
+                "AND application.id = :applicationId";
+        return entityManager.createQuery(hql, String.class)
+                .setParameter("orgId", orgId)
+                .setParameter("subscriptionType", subscriptionType)
+                .setParameter("applicationId", applicationId)
+                .getResultList();
+    }
 
-        String query = "SELECT es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
-            "AND eventType.application.name = :applicationName AND eventType.name = : eventTypeName AND id.subscriptionType = :subscriptionType";
-
-        return entityManager.createQuery(query, String.class)
-            .setParameter("orgId", orgId)
-            .setParameter("bundleName", bundleName)
-            .setParameter("applicationName", applicationName)
-            .setParameter("eventTypeName", eventTypeName)
-            .setParameter("subscriptionType", subscriptionType)
-            .getResultList();
+    public List<String> getSubscribersByEventType(String orgId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
+        String hql = "SELECT id.userId FROM EventTypeEmailSubscription WHERE id.orgId = :orgId AND id.subscriptionType = :subscriptionType " +
+                "AND eventType.id = :eventTypeId";
+        return entityManager.createQuery(hql, String.class)
+                .setParameter("orgId", orgId)
+                .setParameter("subscriptionType", subscriptionType)
+                .setParameter("eventTypeId", eventTypeId)
+                .getResultList();
     }
 
     public Map<String, Set<String>> getEmailSubscribersUserIdGroupedByEventType(String orgId, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
