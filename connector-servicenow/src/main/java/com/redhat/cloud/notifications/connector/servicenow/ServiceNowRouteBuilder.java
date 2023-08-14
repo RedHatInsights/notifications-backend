@@ -24,9 +24,6 @@ public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     ServiceNowConnectorConfig connectorConfig;
 
-    @Inject
-    MigrationFilter migrationFilter;
-
     @Override
     public void configureRoute() {
 
@@ -34,8 +31,6 @@ public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
 
         from(direct(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
-                // TODO For migration purposes - Remove ASAP!
-                .filter(migrationFilter)
                 .process(new BasicAuthenticationProcessor())
                 // SSL certificates may or may not be verified depending on the integration settings.
                 .choice()

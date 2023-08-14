@@ -26,9 +26,6 @@ public class SplunkRouteBuilder extends EngineToConnectorRouteBuilder {
     SplunkConnectorConfig connectorConfig;
 
     @Inject
-    MigrationFilter migrationFilter;
-
-    @Inject
     EventsSplitter eventsSplitter;
 
     @Override
@@ -38,8 +35,6 @@ public class SplunkRouteBuilder extends EngineToConnectorRouteBuilder {
 
         from(direct(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
-                // TODO For migration purposes - Remove ASAP!
-                .filter(migrationFilter)
                 // Events are split to be sent in batch to Splunk HEC.
                 .process(eventsSplitter)
                 .setHeader("Authorization", simple("Splunk ${exchangeProperty." + AUTHENTICATION_TOKEN + "}"))
