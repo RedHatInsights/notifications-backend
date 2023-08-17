@@ -19,7 +19,7 @@ objects:
     - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
     database:
       name: notifications-backend
-      version: 13
+      version: 15
     testing:
       iqePlugin: notifications
     jobs:
