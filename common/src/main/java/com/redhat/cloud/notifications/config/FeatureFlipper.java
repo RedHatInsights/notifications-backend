@@ -48,9 +48,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "reinject.enabled", defaultValue = "false")
     boolean enableReInject;
 
-    @ConfigProperty(name = "notifications.kafka-consumed-total-checker.enabled", defaultValue = "false")
-    boolean kafkaConsumedTotalCheckerEnabled;
-
     @ConfigProperty(name = "notifications.use-default-template", defaultValue = "false")
     boolean useDefaultTemplate;
 
@@ -98,7 +95,6 @@ public class FeatureFlipper {
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
         Log.infof("The integrations unique name constraint is %s", enforceIntegrationNameUnicity ? "enabled" : "disabled");
         Log.infof("The actions reinjection in case of Camel integration error is %s", enableReInject ? "enabled" : "disabled");
-        Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
         Log.infof("The use of default templates is %s", useDefaultTemplate ? "enabled" : "disabled");
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
         Log.infof("The sources back end as the secrets manager is %s", sourcesSecretsBackend ? "enabled" : "disabled");
@@ -135,15 +131,6 @@ public class FeatureFlipper {
 
     public boolean isEnableReInject() {
         return enableReInject;
-    }
-
-    public boolean isKafkaConsumedTotalCheckerEnabled() {
-        return kafkaConsumedTotalCheckerEnabled;
-    }
-
-    public void setKafkaConsumedTotalCheckerEnabled(boolean kafkaConsumedTotalCheckerEnabled) {
-        // It's ok to override this config value at runtime.
-        this.kafkaConsumedTotalCheckerEnabled = kafkaConsumedTotalCheckerEnabled;
     }
 
     public boolean isUseDefaultTemplate() {

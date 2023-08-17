@@ -117,12 +117,6 @@ objects:
           value: ${NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE}
         - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
           value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
-        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
-          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED}
-        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
-          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
-        - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
-          value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
         - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
           value: ${NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS}
         - name: PROCESSOR_EMAIL_BOP_APITOKEN
@@ -281,15 +275,6 @@ parameters:
   value: quay.io/cloudservices/notifications-engine
 - name: IMAGE_TAG
   value: latest
-- name: KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
-  description: Is the Kafka records consumed total check included in the global health check?
-  value: "false"
-- name: KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
-  description: Delay after the server startup before the first check is performed
-  value: 5m
-- name: KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
-  description: Time between two Kafka records consumed total checks
-  value: 5m
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
