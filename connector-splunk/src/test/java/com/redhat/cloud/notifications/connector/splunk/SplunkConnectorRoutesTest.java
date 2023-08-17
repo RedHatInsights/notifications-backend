@@ -43,7 +43,6 @@ public class SplunkConnectorRoutesTest extends ConnectorRoutesTest {
         metadata.put("url", targetUrl);
         metadata.put("X-Insight-Token", "super-secret-token");
         metadata.put("trustAll", "true");
-        metadata.put("kafkaProcessor", "connector");
 
         JsonObject payload = new JsonObject();
         payload.put(NOTIF_METADATA, metadata);

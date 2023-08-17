@@ -85,15 +85,6 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
         JsonObject payload = buildPayload(event, endpoint);
 
-        // TODO For migration purposes - Remove ASAP!
-        if (featureFlipper.isSplunkConnectorKafkaProcessingEnabled() && "splunk".equals(endpoint.getSubType())) {
-            payload.getJsonObject(NOTIF_METADATA_KEY).put("kafkaProcessor", "connector");
-        }
-        // TODO For migration purposes - Remove ASAP!
-        if (featureFlipper.isServicenowConnectorKafkaProcessingEnabled() && "servicenow".equals(endpoint.getSubType())) {
-            payload.getJsonObject(NOTIF_METADATA_KEY).put("kafkaProcessor", "connector");
-        }
-
         try {
             connectorSender.send(payload, historyId, endpoint.getSubType());
         } catch (Exception e) {

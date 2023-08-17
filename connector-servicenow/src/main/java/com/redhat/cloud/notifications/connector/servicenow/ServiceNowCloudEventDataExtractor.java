@@ -12,7 +12,6 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.AUTHENTICATION_TOKEN;
-import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.KAFKA_PROCESSOR;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
 import static org.apache.commons.validator.routines.UrlValidator.ALLOW_LOCAL_URLS;
@@ -36,7 +35,6 @@ public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(TARGET_URL, metadata.getString("url"));
         exchange.setProperty(AUTHENTICATION_TOKEN, metadata.getString("X-Insight-Token"));
         exchange.setProperty(TRUST_ALL, Boolean.valueOf(metadata.getString("trustAll")));
-        exchange.setProperty(KAFKA_PROCESSOR, metadata.getString("kafkaProcessor"));
         cloudEventData.remove(NOTIF_METADATA);
 
         validateTargetUrl(exchange);
