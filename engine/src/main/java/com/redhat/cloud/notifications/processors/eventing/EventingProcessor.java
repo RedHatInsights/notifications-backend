@@ -3,12 +3,10 @@ package com.redhat.cloud.notifications.processors.eventing;
 import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
@@ -20,14 +18,9 @@ import io.vertx.core.json.JsonObject;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
-import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
-import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_INTERNAL;
-import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
 
 @ApplicationScoped
 public class EventingProcessor extends EndpointTypeProcessor {
@@ -51,9 +44,6 @@ public class EventingProcessor extends EndpointTypeProcessor {
     @Inject
     ConnectorSender connectorSender;
 
-    @Inject
-    NotificationHistoryRepository notificationHistoryRepository;
-
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (featureFlipper.isEmailsOnlyMode()) {
@@ -74,26 +64,9 @@ public class EventingProcessor extends EndpointTypeProcessor {
     private void process(Event event, Endpoint endpoint) {
         registry.counter(PROCESSED_COUNTER_NAME, "subType", endpoint.getSubType()).increment();
 
-        UUID historyId = UUID.randomUUID();
-
-        Log.infof("Sending CloudEvent [orgId=%s, integration=%s, historyId=%s, eventId=%s]",
-                endpoint.getOrgId(), endpoint.getName(), historyId, event.getId());
-
-        NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
-        history.setStatus(PROCESSING);
-        persistNotificationHistory(history);
-
         JsonObject payload = buildPayload(event, endpoint);
 
-        try {
-            connectorSender.send(payload, historyId, endpoint.getSubType());
-        } catch (Exception e) {
-            history.setStatus(FAILED_INTERNAL);
-            history.setDetails(Map.of("failure", e.getMessage()));
-            notificationHistoryRepository.updateHistoryItem(history);
-            Log.infof(e, "Sending CloudEvent failed [orgId=%s, integration=%s, historyId=%s, eventId=%s]",
-                    endpoint.getOrgId(), endpoint.getName(), historyId, event.getId());
-        }
+        connectorSender.send(event, endpoint, payload);
     }
 
     private JsonObject buildPayload(Event event, Endpoint endpoint) {

@@ -4,14 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
-import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.templates.TemplateService;
@@ -22,13 +20,9 @@ import io.vertx.core.json.JsonObject;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ORG;
-import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
-import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_INTERNAL;
-import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
 
 public abstract class CamelProcessor extends EndpointTypeProcessor {
 
@@ -49,9 +43,6 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     @Inject
     ObjectMapper objectMapper;
-
-    @Inject
-    NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     ConnectorSender connectorSender;
@@ -75,26 +66,10 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     private void process(Event event, Endpoint endpoint) {
 
-        UUID historyId = UUID.randomUUID();
-
-        Log.infof("Sending %s notification through Camel [orgId=%s, eventId=%s, historyId=%s]",
-            getIntegrationName(), endpoint.getOrgId(), event.getId(), historyId);
-
-        NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
-        history.setStatus(PROCESSING);
-        persistNotificationHistory(history);
-
         CamelNotification notification = getCamelNotification(event, endpoint);
         JsonObject payload = JsonObject.mapFrom(notification);
 
-        try {
-            connectorSender.send(payload, historyId, endpoint.getSubType());
-        } catch (Exception e) {
-            history.setStatus(FAILED_INTERNAL);
-            history.setDetails(Map.of("failure", e.getMessage()));
-            notificationHistoryRepository.updateHistoryItem(history);
-            Log.infof(e, "Sending %s notification through Camel failed [eventId=%s, historyId=%s]", getIntegrationName(), event.getId(), historyId);
-        }
+        connectorSender.send(event, endpoint, payload);
     }
 
     protected String buildNotificationMessage(Event event) {
