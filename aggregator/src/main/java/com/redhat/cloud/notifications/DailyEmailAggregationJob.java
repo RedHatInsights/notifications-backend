@@ -87,7 +87,8 @@ public class DailyEmailAggregationJob {
                 } catch (JsonProcessingException e) {
                     Log.warn("Could not transform AggregationCommand to JSON object.", e);
                 }
-
+            }
+            if (!futures.isEmpty()) {
                 // resolve completable futures so the Quarkus main thread doesn't stop before everything has been sent
                 try {
                     CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
