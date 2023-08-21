@@ -1,6 +1,11 @@
 package com.redhat.cloud.notifications.processors;
 
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.opentelemetry.context.Context;
+import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.TracingMetadata;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
@@ -14,8 +19,12 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
+import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_INTERNAL;
+import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
@@ -30,9 +39,29 @@ public class ConnectorSender {
     @Channel(TOCAMEL_CHANNEL)
     Emitter<JsonObject> emitter;
 
-    public void send(JsonObject payload, UUID historyId, String endpointSubType) {
-        Message<JsonObject> message = buildMessage(payload, historyId, endpointSubType);
-        emitter.send(message);
+    @Inject
+    NotificationHistoryRepository notificationHistoryRepository;
+
+    public void send(Event event, Endpoint endpoint, JsonObject payload) {
+
+        NotificationHistory history = getHistoryStub(endpoint, event, 0L, UUID.randomUUID());
+        history.setStatus(PROCESSING);
+
+        Log.infof("Sending notification to connector [orgId=%s, eventId=%s, connector=%s, historyId=%s]",
+                endpoint.getOrgId(), event.getId(), endpoint.getSubType(), history.getId());
+
+        notificationHistoryRepository.createNotificationHistory(history);
+
+        try {
+            Message<JsonObject> message = buildMessage(payload, history.getId(), endpoint.getSubType());
+            emitter.send(message);
+        } catch (Exception e) {
+            history.setStatus(FAILED_INTERNAL);
+            history.setDetails(Map.of("failure", e.getMessage()));
+            notificationHistoryRepository.updateHistoryItem(history);
+            Log.infof(e, "Failed to send notification to connector [orgId=%s, eventId=%s, connector=%s, historyId=%s]",
+                    endpoint.getOrgId(), event.getId(), endpoint.getSubType(), history.getId());
+        }
     }
 
     private static Message<JsonObject> buildMessage(JsonObject payload, UUID historyId, String endpointSubType) {
