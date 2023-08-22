@@ -44,32 +44,34 @@ public class ConnectorSender {
 
     public void send(Event event, Endpoint endpoint, JsonObject payload) {
 
+        String connector = getConnector(endpoint);
+
         NotificationHistory history = getHistoryStub(endpoint, event, 0L, UUID.randomUUID());
         history.setStatus(PROCESSING);
 
         Log.infof("Sending notification to connector [orgId=%s, eventId=%s, connector=%s, historyId=%s]",
-                endpoint.getOrgId(), event.getId(), endpoint.getSubType(), history.getId());
+                endpoint.getOrgId(), event.getId(), connector, history.getId());
 
         notificationHistoryRepository.createNotificationHistory(history);
 
         try {
-            Message<JsonObject> message = buildMessage(payload, history.getId(), endpoint.getSubType());
+            Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
             emitter.send(message);
         } catch (Exception e) {
             history.setStatus(FAILED_INTERNAL);
             history.setDetails(Map.of("failure", e.getMessage()));
             notificationHistoryRepository.updateHistoryItem(history);
             Log.infof(e, "Failed to send notification to connector [orgId=%s, eventId=%s, connector=%s, historyId=%s]",
-                    endpoint.getOrgId(), event.getId(), endpoint.getSubType(), history.getId());
+                    endpoint.getOrgId(), event.getId(), connector, history.getId());
         }
     }
 
-    private static Message<JsonObject> buildMessage(JsonObject payload, UUID historyId, String endpointSubType) {
+    private static Message<JsonObject> buildMessage(JsonObject payload, UUID historyId, String connector) {
 
-        OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(endpointSubType);
+        OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(connector);
 
         String cloudEventId = historyId.toString();
-        String cloudEventType = CLOUD_EVENT_TYPE_PREFIX + endpointSubType;
+        String cloudEventType = CLOUD_EVENT_TYPE_PREFIX + connector;
         CloudEventMetadata<String> cloudEventMetadata = buildCloudEventMetadata(cloudEventId, cloudEventType);
 
         TracingMetadata tracingMetadata = TracingMetadata.withPrevious(Context.current());
@@ -80,9 +82,9 @@ public class ConnectorSender {
                 .addMetadata(tracingMetadata);
     }
 
-    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(String connectorHeader) {
+    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(String connector) {
         Headers headers = new RecordHeaders()
-                .add(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connectorHeader.getBytes(UTF_8));
+                .add(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connector.getBytes(UTF_8));
         return OutgoingKafkaRecordMetadata.<String>builder()
                 .withHeaders(headers)
                 .build();
@@ -94,5 +96,14 @@ public class ConnectorSender {
                 .withType(type)
                 .withDataContentType("application/json")
                 .build();
+    }
+
+    private static String getConnector(Endpoint endpoint) {
+        // TODO Endpoints types and subtypes made sense in the past but this is no longer true. We should get rid of subtypes and only use types.
+        if (endpoint.getSubType() != null) {
+            return endpoint.getSubType();
+        } else {
+            return endpoint.getType().name().toLowerCase();
+        }
     }
 }
