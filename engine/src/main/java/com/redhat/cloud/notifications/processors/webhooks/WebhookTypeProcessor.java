@@ -43,7 +43,6 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
-import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
 
 @ApplicationScoped
 public class WebhookTypeProcessor extends EndpointTypeProcessor {
@@ -171,21 +170,12 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         }
 
         if (featureFlipper.isWebhookConnectorKafkaProcessingEnabled()) {
-            UUID historyId = UUID.randomUUID();
-
-            Log.infof("Sending %s notification through Camel [orgId=%s, eventId=%s, historyId=%s]",
-                "webhook", endpoint.getOrgId(), event.getId(), historyId);
-
-            NotificationHistory history = getHistoryStub(endpoint, event, 0L, historyId);
-            history.setStatus(PROCESSING);
-            persistNotificationHistory(history);
-
             final JsonObject connectorData = new JsonObject();
 
             connectorData.put("endpoint_properties", properties);
             connectorData.put("payload", payload);
 
-            connectorSender.send(connectorData, historyId, endpoint.getType().name().toLowerCase());
+            connectorSender.send(event, endpoint, connectorData);
         } else {
             final HttpRequest<Buffer> req = getWebClient(properties.getDisableSslVerification())
                 .requestAbs(HttpMethod.valueOf(properties.getMethod().name()), properties.getUrl());
