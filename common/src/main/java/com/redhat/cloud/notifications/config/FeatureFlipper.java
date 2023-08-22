@@ -87,6 +87,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.add.default.recipient.on.single.email.enabled", defaultValue = "true")
     boolean addDefaultRecipientOnSingleEmail;
 
+    @ConfigProperty(name = "notifications.use-mbop-for-fetching-users", defaultValue = "false")
+    boolean useMBOPForFetchingUsers;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -105,6 +108,7 @@ public class FeatureFlipper {
         Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
         Log.infof("Drawer feature is %s", drawerEnabled ? "enabled" : "disabled");
         Log.infof("The add of default recipient on single email is %s", addDefaultRecipientOnSingleEmail ? "enabled" : "disabled");
+        Log.infof("The use of BOP/MBOP for fetching users is %s", useMBOPForFetchingUsers ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -245,6 +249,15 @@ public class FeatureFlipper {
     public void setAddDefaultRecipientOnSingleEmail(boolean addDefaultRecipientOnSingleEmail) {
         checkTestLaunchMode();
         this.addDefaultRecipientOnSingleEmail = addDefaultRecipientOnSingleEmail;
+    }
+
+    public boolean isUseMBOPForFetchingUsers() {
+        return this.useMBOPForFetchingUsers;
+    }
+
+    public void setUseMBOPForFetchingUsers(final boolean useMBOPForFetchingUsers) {
+        checkTestLaunchMode();
+        this.useMBOPForFetchingUsers = useMBOPForFetchingUsers;
     }
 
     /**

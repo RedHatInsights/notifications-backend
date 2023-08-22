@@ -11,6 +11,8 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
+import com.redhat.cloud.notifications.recipients.mbop.MBOPService;
+import com.redhat.cloud.notifications.recipients.mbop.MBOPUser;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheInvalidateAll;
@@ -21,16 +23,19 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -44,6 +49,18 @@ public class RbacRecipientUsersProviderTest {
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     int rbacMaxResultsPerPage;
 
+    @ConfigProperty(name = "recipient-provider.mbop.max-results-per-page", defaultValue = "1000")
+    int MBOPMaxResultsPerPage;
+
+    @ConfigProperty(name = "processor.email.bop_apitoken")
+    String bopApiToken;
+
+    @ConfigProperty(name = "processor.email.bop_client_id")
+    String bopClientId;
+
+    @ConfigProperty(name = "processor.email.bop_env")
+    String bopEnv;
+
     @InjectMock
     @RestClient
     RbacServiceToService rbacServiceToService;
@@ -54,6 +71,10 @@ public class RbacRecipientUsersProviderTest {
 
     @Inject
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
+
+    @InjectMock
+    @RestClient
+    MBOPService mbopService;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -275,6 +296,59 @@ public class RbacRecipientUsersProviderTest {
         assertEquals(updatedSize, users.size());
     }
 
+    /**
+     * Tests that calling MBOP for users works as expected.
+     */
+    @Test
+    void testGetUsersMBOP() {
+        try {
+            this.featureFlipper.setUseMBOPForFetchingUsers(true);
+
+            // Fake a REST call to MBOP.
+            final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
+            final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
+            final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage / 2);
+
+            final boolean adminsOnly = false;
+
+            // Return a few pages of results, with the last one being less than
+            // the configured maximum limit, so that we can test that the loop
+            // is working as expected.
+            Mockito
+                .when(this.mbopService.getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), Mockito.anyInt()))
+                .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
+
+            // Call the function under test.
+            final List<User> result = this.rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, adminsOnly);
+
+            // Verify that the offset argument, which is the one that changes
+            // on each iteration, has been correctly incremented.
+            final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
+            Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), capturedOffset.capture());
+
+            final List<Integer> capturedValues = capturedOffset.getAllValues();
+            assertIterableEquals(
+                List.of(
+                    0,
+                    this.MBOPMaxResultsPerPage,
+                    this.MBOPMaxResultsPerPage * 2
+                ),
+                capturedValues,
+                "unexpected offset values used when calling MBOP"
+            );
+
+            // Transform the generated MBOP users in order to check that the
+            // function under test did the transformations as expected.
+            final List<User> mockUsers = this.rbacRecipientUsersProvider.transformMBOPUserToUser(firstPageMBOPUsers);
+            mockUsers.addAll(this.rbacRecipientUsersProvider.transformMBOPUserToUser(secondPageMBOPUsers));
+            mockUsers.addAll(this.rbacRecipientUsersProvider.transformMBOPUserToUser(thirdPageMBOPUsers));
+
+            assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
+        } finally {
+            this.featureFlipper.setUseMBOPForFetchingUsers(false);
+        }
+    }
+
     private void mockGetUsers(int elements, boolean adminsOnly) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
         when(itUserService.getUsers(any(ITUserRequest.class)))
@@ -319,6 +393,37 @@ public class RbacRecipientUsersProviderTest {
             OldMockedUserAnswer answer = new OldMockedUserAnswer(elements, false);
             return answer.mockedUserAnswer(false);
         });
+    }
+
+    /**
+     * Generate mock {@link MBOPUser}s.
+     * @param elements the number of users to generate.
+     * @return a list containing the specified number of elements filled with
+     * random data.
+     */
+    private List<MBOPUser> mockGetMBOPUsers(final int elements) {
+        final List<MBOPUser> mbopUsers = new ArrayList<>(elements);
+        final Random random = new Random();
+
+        for (int i = 0; i < elements; i++) {
+            final String uuid = UUID.randomUUID().toString();
+
+            final MBOPUser mbopUser = new MBOPUser(
+                uuid,
+                String.format("username-%s", uuid),
+                String.format("%s@redhat.com", uuid),
+                String.format("firstName-%s", uuid),
+                String.format("lastName-%s", uuid),
+                random.nextBoolean(),
+                random.nextBoolean(),
+                random.nextBoolean(),
+                "en-US"
+            );
+
+            mbopUsers.add(mbopUser);
+        }
+
+        return mbopUsers;
     }
 
     /*

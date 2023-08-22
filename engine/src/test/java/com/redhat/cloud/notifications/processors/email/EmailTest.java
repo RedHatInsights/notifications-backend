@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Account
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.Authentication;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.response.PersonalInformation;
+import com.redhat.cloud.notifications.recipients.mbop.Constants;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonArray;
@@ -116,9 +117,9 @@ public class EmailTest {
         final List<String> bodyRequests = new ArrayList<>();
 
         ExpectationResponseCallback verifyEmptyRequest = req -> {
-            assertEquals(BOP_TOKEN, req.getHeader(EmailSender.BOP_APITOKEN_HEADER).get(0));
-            assertEquals(BOP_CLIENT_ID, req.getHeader(EmailSender.BOP_CLIENT_ID_HEADER).get(0));
-            assertEquals(BOP_ENV, req.getHeader(EmailSender.BOP_ENV_HEADER).get(0));
+            assertEquals(BOP_TOKEN, req.getHeader(Constants.MBOP_APITOKEN_HEADER).get(0));
+            assertEquals(BOP_CLIENT_ID, req.getHeader(Constants.MBOP_CLIENT_ID_HEADER).get(0));
+            assertEquals(BOP_ENV, req.getHeader(Constants.MBOP_ENV_HEADER).get(0));
             bodyRequests.add(req.getBodyAsString());
             return response().withStatusCode(200);
         };
@@ -205,9 +206,9 @@ public class EmailTest {
         final List<String> bodyRequests = new ArrayList<>();
 
         ExpectationResponseCallback verifyEmptyRequest = req -> {
-            assertEquals(BOP_TOKEN, req.getHeader(EmailSender.BOP_APITOKEN_HEADER).get(0));
-            assertEquals(BOP_CLIENT_ID, req.getHeader(EmailSender.BOP_CLIENT_ID_HEADER).get(0));
-            assertEquals(BOP_ENV, req.getHeader(EmailSender.BOP_ENV_HEADER).get(0));
+            assertEquals(BOP_TOKEN, req.getHeader(Constants.MBOP_APITOKEN_HEADER).get(0));
+            assertEquals(BOP_CLIENT_ID, req.getHeader(Constants.MBOP_CLIENT_ID_HEADER).get(0));
+            assertEquals(BOP_ENV, req.getHeader(Constants.MBOP_ENV_HEADER).get(0));
             bodyRequests.add(req.getBodyAsString());
             return response().withStatusCode(200);
         };
