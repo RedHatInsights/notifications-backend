@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.events.ConnectorReceiver;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -22,6 +21,7 @@ import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.enterprise.inject.Any;
@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
 import static io.restassured.RestAssured.given;
 
 @QuarkusTest
@@ -41,6 +42,11 @@ public class EndpointTestResourceTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
+
+    @BeforeEach
+    void beforeEach() {
+        inMemoryConnector.sink(EGRESS_CHANNEL).clear();
+    }
 
     /**
      * Tests that when a "Test Endpoint" request is received, a "test
@@ -65,7 +71,7 @@ public class EndpointTestResourceTest {
             .statusCode(204);
 
         // We should receive the action triggered by the REST call.
-        InMemorySink<String> actionsOut = this.inMemoryConnector.sink(ConnectorReceiver.EGRESS_CHANNEL);
+        InMemorySink<String> actionsOut = this.inMemoryConnector.sink(EGRESS_CHANNEL);
 
         // Make sure that the message was received before continuing.
         Awaitility.await().until(
@@ -146,7 +152,7 @@ public class EndpointTestResourceTest {
             .statusCode(204);
 
         // We should receive the action triggered by the REST call.
-        InMemorySink<String> actionsOut = this.inMemoryConnector.sink(ConnectorReceiver.EGRESS_CHANNEL);
+        InMemorySink<String> actionsOut = this.inMemoryConnector.sink(EGRESS_CHANNEL);
 
         // Make sure that the message was received before continuing.
         Awaitility.await().until(
