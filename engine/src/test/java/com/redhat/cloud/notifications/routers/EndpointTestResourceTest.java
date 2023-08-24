@@ -51,7 +51,9 @@ public class EndpointTestResourceTest {
         final String orgId = "test-endpoint-engine-test";
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(EndpointType.CAMEL, "slack", true, 0);
 
-        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest(createdEndpoint.getId(), orgId);
+        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest();
+        internalEndpointTestRequest.endpointUuid = createdEndpoint.getId();
+        internalEndpointTestRequest.orgId = orgId;
 
         // Call the endpoint under test.
         given()
@@ -129,7 +131,10 @@ public class EndpointTestResourceTest {
         final String customMessage = "Hello, World!";
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(EndpointType.CAMEL, "slack", true, 0);
 
-        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest(createdEndpoint.getId(), customMessage, orgId);
+        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest();
+        internalEndpointTestRequest.endpointUuid = createdEndpoint.getId();
+        internalEndpointTestRequest.message = customMessage;
+        internalEndpointTestRequest.orgId = orgId;
 
         // Call the endpoint under test.
         given()

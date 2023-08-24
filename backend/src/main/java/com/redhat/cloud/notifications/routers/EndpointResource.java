@@ -593,11 +593,11 @@ public class EndpointResource {
             throw new NotFoundException("integration not found");
         }
 
-        final InternalEndpointTestRequest internalEndpointTestRequest;
-        if (requestBody == null) {
-            internalEndpointTestRequest = new InternalEndpointTestRequest(uuid, null, orgId);
-        } else {
-            internalEndpointTestRequest = new InternalEndpointTestRequest(uuid, requestBody.message, orgId);
+        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest();
+        internalEndpointTestRequest.endpointUuid = uuid;
+        internalEndpointTestRequest.orgId = orgId;
+        if (requestBody != null) {
+            internalEndpointTestRequest.message = requestBody.message;
         }
 
         this.endpointTestService.testEndpoint(internalEndpointTestRequest);

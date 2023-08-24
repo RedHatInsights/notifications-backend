@@ -2306,7 +2306,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         final String customTestMessage = "Hello, World!";
-        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest(customTestMessage);
+        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest();
+        endpointTestRequest.message = customTestMessage;
 
         // Call the endpoint under test.
         final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
@@ -2347,7 +2348,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
         final String blankTestMessage = "";
-        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest(blankTestMessage);
+        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest();
+        endpointTestRequest.message = blankTestMessage;
 
         // Call the endpoint under test.
         final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
