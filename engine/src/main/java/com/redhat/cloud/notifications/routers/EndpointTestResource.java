@@ -5,7 +5,7 @@ import com.redhat.cloud.notifications.events.KafkaMessageWithIdBuilder;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
-import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -30,17 +30,26 @@ public class EndpointTestResource {
     /**
      * Creates a "endpoint integration test" action and sends it to the ingress
      * Kafka channel, based on the received payload.
-     * @param endpointTestRequest the payload to create the test event from.
+     * @param internalEndpointTestRequest the payload to create the test event from.
      */
     @APIResponse(responseCode = "204")
     @Consumes(APPLICATION_JSON)
     @Path("/test")
     @POST
-    public void testEndpoint(@Valid final EndpointTestRequest endpointTestRequest) {
-        final Action testAction = TestEventHelper.createTestAction(
-            endpointTestRequest.endpointUuid,
-            endpointTestRequest.orgId
-        );
+    public void testEndpoint(@Valid final InternalEndpointTestRequest internalEndpointTestRequest) {
+        final Action testAction;
+        if (internalEndpointTestRequest.isMessageBlank()) {
+            testAction = TestEventHelper.createTestAction(
+                internalEndpointTestRequest.endpointUuid,
+                internalEndpointTestRequest.orgId
+            );
+        } else {
+            testAction = TestEventHelper.createTestAction(
+                internalEndpointTestRequest.endpointUuid,
+                internalEndpointTestRequest.message,
+                internalEndpointTestRequest.orgId
+            );
+        }
 
         final String encodedAction = Parser.encode(testAction);
         final Message<String> message = KafkaMessageWithIdBuilder.build(encodedAction);

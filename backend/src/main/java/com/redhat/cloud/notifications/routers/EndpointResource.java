@@ -21,6 +21,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
@@ -573,6 +574,7 @@ public class EndpointResource {
      * @return a "no content" response on success.
      */
     @APIResponse(responseCode = "204", description = "No Content")
+    @Consumes(APPLICATION_JSON)
     @POST
     @Path("/{uuid}/test")
     @Parameters({
@@ -584,16 +586,21 @@ public class EndpointResource {
             )
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid) {
+    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @RequestBody @Valid final EndpointTestRequest requestBody) {
         final String orgId = SecurityContextUtil.getOrgId(sec);
 
         if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
             throw new NotFoundException("integration not found");
         }
 
-        final var endpointTestRequest = new EndpointTestRequest(uuid, orgId);
+        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest();
+        internalEndpointTestRequest.endpointUuid = uuid;
+        internalEndpointTestRequest.orgId = orgId;
+        if (requestBody != null) {
+            internalEndpointTestRequest.message = requestBody.message;
+        }
 
-        this.endpointTestService.testEndpoint(endpointTestRequest);
+        this.endpointTestService.testEndpoint(internalEndpointTestRequest);
     }
 
     private static void checkSystemEndpoint(EndpointType endpointType) {

@@ -23,6 +23,7 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
+import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
@@ -37,6 +38,7 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -2240,18 +2242,20 @@ public class EndpointResourceTest extends DbIsolatedTest {
         given()
             .header(identityHeader)
             .when()
+            .contentType(JSON)
             .post(path)
             .then()
             .statusCode(204);
 
         // Capture the sent payload to verify it.
-        final ArgumentCaptor<EndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(EndpointTestRequest.class);
+        final ArgumentCaptor<InternalEndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(InternalEndpointTestRequest.class);
         Mockito.verify(this.endpointTestService).testEndpoint(capturedPayload.capture());
 
-        final EndpointTestRequest sentPayload = capturedPayload.getValue();
+        final InternalEndpointTestRequest sentPayload = capturedPayload.getValue();
 
         Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
         Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
+        Assertions.assertNull(sentPayload.message, "the sent message should be null since no custom message was specified");
     }
 
     /**
@@ -2274,6 +2278,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final String responseBody = given()
             .header(identityHeader)
             .when()
+            .contentType(JSON)
             .post(path)
             .then()
             .statusCode(404)
@@ -2282,6 +2287,91 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .asString();
 
         Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
+    }
+
+    /**
+     * Tests that when a user specifies a custom message, then it gets properly
+     * sent to the engine.
+     */
+    @Test
+    void testEndpointTestCustomMessage() {
+        final String accountId = "test-endpoint-test-account-number";
+        final String orgId = "test-endpoint-test-org-id";
+
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        final String customTestMessage = "Hello, World!";
+        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest();
+        endpointTestRequest.message = customTestMessage;
+
+        // Call the endpoint under test.
+        final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(endpointTestRequest))
+            .post(path)
+            .then()
+            .statusCode(204);
+
+        // Capture the sent payload to verify it.
+        final ArgumentCaptor<InternalEndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(InternalEndpointTestRequest.class);
+        Mockito.verify(this.endpointTestService).testEndpoint(capturedPayload.capture());
+
+        final InternalEndpointTestRequest sentPayload = capturedPayload.getValue();
+
+        Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
+        Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
+        Assertions.assertEquals(customTestMessage, sentPayload.message, "the sent message does not match the one from the fixture");
+    }
+
+    /**
+     * Tests that when a user specifies a blank custom message, then a bad
+     * request response is returned.
+     */
+    @Test
+    void testEndpointTestBlankMessageReturnsBadRequest() {
+        final String accountId = "test-endpoint-test-account-number";
+        final String orgId = "test-endpoint-test-org-id";
+
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        final String blankTestMessage = "";
+        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest();
+        endpointTestRequest.message = blankTestMessage;
+
+        // Call the endpoint under test.
+        final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
+        final String rawResponse = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(endpointTestRequest))
+            .post(path)
+            .then()
+            .statusCode(400)
+            .extract()
+            .asString();
+
+        final JsonObject response = new JsonObject(rawResponse);
+        final JsonArray constraintViolations = response.getJsonArray("violations");
+        Assertions.assertEquals(1, constraintViolations.size(), "unexpected number of error messages received from the endpoint");
+
+        final JsonObject constraintViolation = constraintViolations.getJsonObject(0);
+
+        Assertions.assertEquals("testEndpoint.requestBody.message", constraintViolation.getString("field"), "unexpected field validated when sending a blank test message");
+        Assertions.assertEquals("must not be blank", constraintViolation.getString("message"), "unexpected error message received when sending a blank custom message for testing the endpoint");
     }
 
     /**
