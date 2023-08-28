@@ -15,7 +15,6 @@ import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.BeforeEach;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,19 +67,11 @@ public abstract class IntegrationTemplatesInDbHelper {
             }
             eventTypes.put(eventTypeToCreate, eventType.getId());
         }
-        migrate();
-    }
-
-    protected void migrate() {
         drawerTemplateMigrationService.migrate();
     }
 
     protected String generateDrawerTemplate(String eventTypeStr, Action action) {
         return generateIntegrationTemplate(getIntegrationType(), eventTypeStr, action);
-    }
-
-    protected String generateDrawerTemplate(String eventTypeStr, Map<String, Object> context) {
-        return generateIntegrationTemplate("drawer", eventTypeStr, context);
     }
 
     protected String generateIntegrationTemplate(String integrationType, String eventTypeStr, Action action) {
@@ -89,24 +80,9 @@ public abstract class IntegrationTemplatesInDbHelper {
         return renderTemplate(templateInstance, action);
     }
 
-    protected String generateIntegrationTemplate(String integrationType, String eventTypeStr, Map<String, Object> context) {
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(application.getId(), eventTypes.get(eventTypeStr), null, IntegrationTemplate.TemplateKind.ALL, integrationType).get();
-        TemplateInstance templateInstance = templateService.compileTemplate(integrationTemplate.getTheTemplate().getData(), integrationTemplate.getTheTemplate().getName());
-        return renderTemplate(templateInstance, context);
-    }
-
     protected String renderTemplate(TemplateInstance template, Action action) {
         String result = template
             .data("data", action)
-            .data("environment", environment)
-            .render();
-
-        return result.trim();
-    }
-
-    protected String renderTemplate(TemplateInstance templateInstance, Map<String, Object> context) {
-        String result = templateInstance
-            .data("action", Map.of("context", context, "bundle", getBundle(), "timestamp", LocalDateTime.now()))
             .data("environment", environment)
             .render();
 
