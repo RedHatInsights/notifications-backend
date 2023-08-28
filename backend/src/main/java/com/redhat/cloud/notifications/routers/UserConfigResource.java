@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
+import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValues;
@@ -23,7 +24,7 @@ import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationS
 import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
-import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -267,7 +268,7 @@ public class UserConfigResource {
     @Path("/notification-event-type-preference")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @Operation(hidden = true)
+    @Tag(name = OApiFilter.PRIVATE)
     @Transactional
     public Response saveSettingsByEventType(@Context SecurityContext sec, @NotNull @Valid SettingsValuesByEventType userSettings) {
         checkIfSubscriptionByEventTypeServiceIsAvailable();
@@ -318,7 +319,7 @@ public class UserConfigResource {
     @GET
     @Path("/notification-event-type-preference")
     @Produces(APPLICATION_JSON)
-    @Operation(hidden = true)
+    @Tag(name = OApiFilter.PRIVATE)
     public Response getSettingsSchemaByEventType(@Context SecurityContext sec) {
         checkIfSubscriptionByEventTypeServiceIsAvailable();
 
@@ -338,7 +339,7 @@ public class UserConfigResource {
     @GET
     @Path("/notification-event-type-preference/{bundleName}/{applicationName}")
     @Produces(APPLICATION_JSON)
-    @Operation(hidden = true)
+    @Tag(name = OApiFilter.PRIVATE)
     public Response getPreferencesByEventType(
         @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName) {
         checkIfSubscriptionByEventTypeServiceIsAvailable();
