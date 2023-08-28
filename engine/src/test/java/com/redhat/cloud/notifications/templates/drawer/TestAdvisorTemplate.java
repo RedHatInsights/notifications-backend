@@ -7,8 +7,10 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 class TestAdvisorTemplate extends IntegrationTemplatesInDbHelper {
