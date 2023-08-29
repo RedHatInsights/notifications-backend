@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.connector.servicenow;
 
-import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -23,7 +22,7 @@ import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.H
 public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Inject
-    ConnectorConfig connectorConfig;
+    ServiceNowConnectorConfig connectorConfig;
 
     @Override
     public void configureRoute() {
@@ -31,20 +30,20 @@ public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
         configureHttpsComponent();
 
         from(direct(ENGINE_TO_CONNECTOR))
-                .routeId(connectorConfig.getConnectorName())
-                .process(new BasicAuthenticationProcessor())
-                // SSL certificates may or may not be verified depending on the integration settings.
-                .choice()
-                .when(exchangeProperty(TRUST_ALL))
-                        .toD(buildServiceNowEndpoint(true), connectorConfig.getEndpointCacheMaxSize())
-                .endChoice()
-                .otherwise()
-                        .toD(buildServiceNowEndpoint(false), connectorConfig.getEndpointCacheMaxSize())
-                .end()
-                .log(INFO, getClass().getName(), "Delivered event ${exchangeProperty." + ID + "} " +
-                        "(orgId ${exchangeProperty." + ORG_ID + "} account ${exchangeProperty." + ACCOUNT_ID + "}) " +
-                        "to ${exchangeProperty." + TARGET_URL + "}")
-                .to(direct(SUCCESS));
+            .routeId(connectorConfig.getConnectorName())
+            .process(new BasicAuthenticationProcessor())
+            // SSL certificates may or may not be verified depending on the integration settings.
+            .choice()
+            .when(exchangeProperty(TRUST_ALL))
+            .toD(buildServiceNowEndpoint(true), connectorConfig.getEndpointCacheMaxSize())
+            .endChoice()
+            .otherwise()
+            .toD(buildServiceNowEndpoint(false), connectorConfig.getEndpointCacheMaxSize())
+            .end()
+            .log(INFO, getClass().getName(), "Delivered event ${exchangeProperty." + ID + "} " +
+                "(orgId ${exchangeProperty." + ORG_ID + "} account ${exchangeProperty." + ACCOUNT_ID + "}) " +
+                "to ${exchangeProperty." + TARGET_URL + "}")
+            .to(direct(SUCCESS));
     }
 
     private void configureHttpsComponent() {
@@ -57,8 +56,8 @@ public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
         HttpEndpointBuilder endpointBuilder = https("${exchangeProperty." + TARGET_URL_NO_SCHEME + "}").httpMethod("POST");
         if (trustAll) {
             endpointBuilder
-                    .sslContextParameters(getSslContextParameters())
-                    .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
+                .sslContextParameters(getSslContextParameters())
+                .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
         }
         return endpointBuilder;
     }

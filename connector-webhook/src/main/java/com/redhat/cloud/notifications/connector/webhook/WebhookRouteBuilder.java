@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.connector.webhook;
 
-import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.webhook.authentication.BasicAuthenticationProcessor;
 import com.redhat.cloud.notifications.connector.webhook.authentication.BearerTokenAuthenticationProcessor;
@@ -26,7 +25,7 @@ import static org.apache.camel.LoggingLevel.INFO;
 public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Inject
-    ConnectorConfig webhookConnectorConfig;
+    WebhookConnectorConfig webhookConnectorConfig;
 
     @Override
     public void configureRoute() {
