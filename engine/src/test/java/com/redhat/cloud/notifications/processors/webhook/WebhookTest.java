@@ -181,7 +181,7 @@ public class WebhookTest {
     @Test
     void testWebhookUsingConnector() {
         try {
-            featureFlipper.setWebhookConnectorKafkaProcessingEnabled(true);
+            featureFlipper.setWebhookConnectorEnabled(true);
 
             String testUrl = "https://my.webhook.connector.com";
             Action webhookActionMessage = buildWebhookAction();
@@ -212,7 +212,7 @@ public class WebhookTest {
                 fail(e);
             }
         } finally {
-            featureFlipper.setWebhookConnectorKafkaProcessingEnabled(false);
+            featureFlipper.setWebhookConnectorEnabled(false);
         }
     }
 

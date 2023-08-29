@@ -169,7 +169,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
             this.secretUtils.loadSecretsForEndpoint(endpoint);
         }
 
-        if (featureFlipper.isWebhookConnectorKafkaProcessingEnabled()) {
+        if (featureFlipper.isWebhookConnectorEnabled()) {
             final JsonObject connectorData = new JsonObject();
 
             connectorData.put("endpoint_properties", properties);
