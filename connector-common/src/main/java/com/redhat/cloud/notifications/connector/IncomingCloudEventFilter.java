@@ -1,11 +1,13 @@
 package com.redhat.cloud.notifications.connector;
 
+import io.quarkus.arc.DefaultBean;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+@DefaultBean
 @ApplicationScoped
 public class IncomingCloudEventFilter implements Predicate {
 

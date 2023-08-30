@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.webhook.authentication.BasicAuthenticationProcessor;
 import com.redhat.cloud.notifications.connector.webhook.authentication.BearerTokenAuthenticationProcessor;
 import com.redhat.cloud.notifications.connector.webhook.authentication.InsightsTokenAuthenticationProcessor;
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -24,15 +25,19 @@ import static org.apache.camel.LoggingLevel.INFO;
 @ApplicationScoped
 public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
 
+    public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
+
     @Inject
     WebhookConnectorConfig webhookConnectorConfig;
 
     @Override
     public void configureRoute() {
 
-        configureHttpsComponent();
+        configureTimeout(getContext().getComponent("http", HttpComponent.class));
+        configureTimeout(getContext().getComponent("https", HttpComponent.class));
 
         from(direct(ENGINE_TO_CONNECTOR))
+            .setHeader(Exchange.HTTP_METHOD, constant("POST"))
             .routeId(webhookConnectorConfig.getConnectorName())
             .choice()
                 .when(exchangeProperty(INSIGHT_TOKEN_HEADER))
@@ -53,21 +58,18 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
                 .otherwise()
                     .toD("${exchangeProperty." + TARGET_URL + "}", webhookConnectorConfig.getEndpointCacheMaxSize())
             .end()
-            .log(INFO, getClass().getName(), "Delivered event ${exchangeProperty." + ID + "} " +
-                "(orgId ${exchangeProperty." + ORG_ID + "}) " +
-                "to ${exchangeProperty." + TARGET_URL + "}")
+            .log(INFO, getClass().getName(), "Sent ${exchangeProperty."+TYPE+".replace('" + CLOUD_EVENT_TYPE_PREFIX + "', '')} notification " +
+                "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}, targetUrl=${exchangeProperty." + TARGET_URL + "}]")
             .to(direct(SUCCESS));
     }
 
-    private void configureHttpsComponent() {
-        HttpComponent httpComponent = getCamelContext().getComponent("https", HttpComponent.class);
+    private void configureTimeout(HttpComponent httpComponent) {
         httpComponent.setConnectTimeout(webhookConnectorConfig.getHttpsConnectTimeout());
         httpComponent.setSocketTimeout(webhookConnectorConfig.getHttpsSocketTimeout());
     }
 
     private HttpEndpointBuilderFactory.HttpEndpointBuilder buildUnsecureSslEndpoint() {
         return https("${exchangeProperty." + TARGET_URL_NO_SCHEME + "}")
-            .httpMethod("POST")
             .sslContextParameters(getSslContextParameters())
             .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
     }
