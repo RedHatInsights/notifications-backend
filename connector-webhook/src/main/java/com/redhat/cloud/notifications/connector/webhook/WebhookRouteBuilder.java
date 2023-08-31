@@ -58,7 +58,7 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
                 .otherwise()
                     .toD("${exchangeProperty." + TARGET_URL + "}", webhookConnectorConfig.getEndpointCacheMaxSize())
             .end()
-            .log(INFO, getClass().getName(), "Sent ${exchangeProperty."+TYPE+".replace('" + CLOUD_EVENT_TYPE_PREFIX + "', '')} notification " +
+            .log(INFO, getClass().getName(), "Sent ${exchangeProperty." + TYPE + ".replace('" + CLOUD_EVENT_TYPE_PREFIX + "', '')} notification " +
                 "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}, targetUrl=${exchangeProperty." + TARGET_URL + "}]")
             .to(direct(SUCCESS));
     }
