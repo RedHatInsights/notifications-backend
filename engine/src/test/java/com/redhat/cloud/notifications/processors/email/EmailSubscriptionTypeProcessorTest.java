@@ -253,7 +253,7 @@ class EmailSubscriptionTypeProcessorTest {
 
     private void createAggregatorEventTypeIfNeeded(String channel) {
         if (INGRESS_CHANNEL.equals(channel)) {
-            Application aggregatorApp = resourceHelpers.findApp(BUNDLE_NAME, APP_NAME);
+            Application aggregatorApp = resourceHelpers.findOrCreateApplication(BUNDLE_NAME, APP_NAME);
             String eventTypeName = EVENT_TYPE_NAME;
             try {
                 resourceHelpers.findEventType(aggregatorApp.getId(), eventTypeName);
