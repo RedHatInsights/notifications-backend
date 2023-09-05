@@ -18,7 +18,7 @@
 # For more information about the Anchore SBOM tool, Syft, see
 # https://github.com/anchore/syft
 
-name: ConsoleDot Platform Security Scan
+name: ConsoleDot Platform Security Scan (notifications-connector-splunk)
 
 on:
   push:
@@ -36,8 +36,8 @@ jobs:
     ## use '--build-arg', those can be define below as well.
 
     with:
-      dockerfile_path: './docker/'
-      dockerfile_name: 'Dockerfile.notifications-connector-servicenow.jvm'
+      dockerfile_path: './docker'
+      dockerfile_name: 'Dockerfile.notifications-connector-splunk.jvm'
     #   base_image_build: true
     #   base_dockerfile_path: './test'
     #   base_dockerfile_name: 'Dockerfile.base'
