@@ -163,7 +163,6 @@ public class WebhookTest {
             assertTrue(history.isInvocationResult());
             assertEquals(NotificationStatus.SUCCESS, history.getStatus());
         } catch (Exception e) {
-            e.printStackTrace();
             fail(e);
         } finally {
             // Remove expectations

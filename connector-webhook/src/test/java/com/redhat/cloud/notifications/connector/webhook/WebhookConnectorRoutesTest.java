@@ -45,6 +45,7 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
     protected JsonObject buildIncomingPayload(String targetUrl) {
         JsonObject endpointProperties = new JsonObject();
         endpointProperties.put("url", targetUrl);
+        endpointProperties.put("method", "POST");
 
         if (addInsightsToken) {
             endpointProperties.put("secret_token", "mySuperSecretInsightToken");

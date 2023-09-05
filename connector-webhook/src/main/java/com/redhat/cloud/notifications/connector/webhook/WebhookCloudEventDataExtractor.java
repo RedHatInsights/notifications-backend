@@ -3,11 +3,11 @@ package com.redhat.cloud.notifications.connector.webhook;
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import io.vertx.core.json.JsonObject;
 import org.apache.camel.Exchange;
+import org.apache.camel.component.http.HttpMethods;
 import javax.enterprise.context.ApplicationScoped;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.MissingResourceException;
-
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
@@ -23,15 +23,19 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
 
     public static final String ENDPOINT_PROPERTIES = "endpoint_properties";
     public static final String PAYLOAD = "payload";
-    public static final String APPLICATION_JSON = "application/json";
+
     public static final String BASIC_AUTHENTICATION = "basic_authentication";
 
     @Override
     public void extract(Exchange exchange, JsonObject cloudEventData) throws MalformedURLException {
         checkPayload(cloudEventData);
         JsonObject endpointProperties = cloudEventData.getJsonObject(ENDPOINT_PROPERTIES);
+        System.out.println(endpointProperties);
         exchange.setProperty(TARGET_URL, endpointProperties.getString("url"));
-        exchange.setProperty(TRUST_ALL, endpointProperties.getBoolean("disable_ssl_verification"));
+        if (Boolean.TRUE == endpointProperties.getBoolean("disable_ssl_verification") &&
+            exchange.getProperty(TARGET_URL, String.class).startsWith("https://")) {
+            exchange.setProperty(TRUST_ALL, Boolean.TRUE);
+        }
         exchange.setProperty(TARGET_URL_NO_SCHEME, exchange.getProperty(TARGET_URL, String.class).replace("https://", ""));
         exchange.setProperty(INSIGHT_TOKEN_HEADER, endpointProperties.getString("secret_token"));
         exchange.setProperty(BEARER_TOKEN, endpointProperties.getString("bearer_token"));
@@ -42,7 +46,8 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
         }
         exchange.setProperty(ORG_ID, cloudEventData.getJsonObject(PAYLOAD).getString("org_id"));
         exchange.getIn().setBody(cloudEventData.getJsonObject(PAYLOAD).encode());
-        exchange.getIn().setHeader(Exchange.CONTENT_TYPE, APPLICATION_JSON);
+        exchange.getIn().setHeader(Exchange.HTTP_METHOD, HttpMethods.valueOf(endpointProperties.getString("method")));
+
     }
 
     private void checkPayload(JsonObject cloudEventData) throws MalformedURLException {
