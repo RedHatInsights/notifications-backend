@@ -38,8 +38,8 @@ public class EndpointProcessor {
     public static final String GOOGLE_CHAT_ENDPOINT_SUBTYPE = "google_chat";
 
     public static final String AGGREGATOR_BUNDLE = "console";
-    public static final String AGGREGATOR_ACTION_APPLICATION = "aggregator";
-    public static final String AGGREGATOR_CLOUD_EVENT_TYPE = "com.redhat.console.aggregator.";
+    public static final String AGGREGATOR_ACTION_APPLICATION = "integrations";
+    public static final String AGGREGATOR_CLOUD_EVENT_TYPE = "com.redhat.console.integrations.aggregator";
 
     @Inject
     EndpointRepository endpointRepository;

@@ -78,7 +78,7 @@ import static org.mockito.Mockito.when;
 class EmailSubscriptionTypeProcessorTest {
 
     final String BUNDLE_NAME = "console";
-    final String APP_NAME = "aggregator";
+    final String APP_NAME = "integrations";
     final String EVENT_TYPE_NAME = "aggregation";
 
     @Inject
@@ -170,7 +170,7 @@ class EmailSubscriptionTypeProcessorTest {
             DAILY
         );
 
-        createAggregatorEventTypeIfNeeded(channel, aggregationCommand2);
+        createAggregatorEventTypeIfNeeded(channel);
 
         User user1 = new User();
         user1.setUsername("foo");
@@ -203,6 +203,7 @@ class EmailSubscriptionTypeProcessorTest {
                 inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand1));
                 inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand2));
             }
+
             micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
             micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
             micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
@@ -250,14 +251,10 @@ class EmailSubscriptionTypeProcessorTest {
         micrometerAssertionHelper.clearSavedValues();
     }
 
-    private void createAggregatorEventTypeIfNeeded(String channel, AggregationCommand aggregationCommand) {
+    private void createAggregatorEventTypeIfNeeded(String channel) {
         if (INGRESS_CHANNEL.equals(channel)) {
             Application aggregatorApp = resourceHelpers.findApp(BUNDLE_NAME, APP_NAME);
-            String eventTypeName = String.format("%s-%s-%s",
-                EVENT_TYPE_NAME,
-                aggregationCommand.getAggregationKey().getBundle(),
-                aggregationCommand.getAggregationKey().getApplication());
-
+            String eventTypeName = EVENT_TYPE_NAME;
             try {
                 resourceHelpers.findEventType(aggregatorApp.getId(), eventTypeName);
             } catch (NoResultException nre) {
@@ -269,7 +266,7 @@ class EmailSubscriptionTypeProcessorTest {
     @Transactional
     public void getEventHistory(String channel) {
         if (INGRESS_CHANNEL.equals(channel)) {
-            String query = "SELECT nh FROM NotificationHistory nh WHERE nh.event.eventType.application.name = 'aggregator'";
+            String query = "SELECT nh FROM NotificationHistory nh WHERE nh.event.eventType.name = 'aggregation'";
             List<NotificationHistory> histories = entityManager.createQuery(query, NotificationHistory.class).getResultList();
             assertFalse(histories.isEmpty());
             entityManager.createQuery("delete from NotificationHistory").executeUpdate();
@@ -287,7 +284,7 @@ class EmailSubscriptionTypeProcessorTest {
         Action action = new Action.ActionBuilder()
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
-            .withEventType(String.format("%s-%s-%s", EVENT_TYPE_NAME, aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication()))
+            .withEventType(EVENT_TYPE_NAME)
             .withOrgId(aggregationCommand.getAggregationKey().getOrgId())
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(List.of(
@@ -339,6 +336,7 @@ class EmailSubscriptionTypeProcessorTest {
             eventType.setId(UUID.randomUUID());
             eventType.setApplication(application);
             Event event = new Event();
+            event.setOrgId("123456");
             event.setEventType(eventType);
             event.setId(UUID.randomUUID());
             event.setEventWrapper(new EventWrapperAction(

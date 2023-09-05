@@ -3,8 +3,10 @@ package com.redhat.cloud.notifications.processors.email;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
@@ -12,6 +14,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
@@ -105,6 +108,12 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     @Inject
     NotificationHistoryRepository notificationHistoryRepository;
+
+    @Inject
+    ApplicationRepository applicationRepository;
+
+    @Inject
+    EventRepository eventRepository;
 
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
@@ -204,6 +213,16 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         processedAggregationCommandCount.increment();
 
         try {
+            Optional<Application> app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
+            if (app.isPresent()) {
+                event.setEventTypeDisplayName(
+                    String.format("%s - %s - %s",
+                        event.getEventTypeDisplayName(),
+                        app.get().getDisplayName(),
+                        app.get().getBundle().getDisplayName())
+                );
+                eventRepository.updateEventDisplayName(event);
+            }
             processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event));
         } catch (Exception e) {
             Log.warn("Error while processing aggregation", e);

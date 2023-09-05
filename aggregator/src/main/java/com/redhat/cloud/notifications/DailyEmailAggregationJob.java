@@ -44,7 +44,7 @@ public class DailyEmailAggregationJob {
     public static final String AGGREGATION_CHANNEL = "aggregation";
     public static final String INGRESS_CHANNEL = "egress";
     public static final String BUNDLE_NAME = "console";
-    public static final String APP_NAME = "aggregator";
+    public static final String APP_NAME = "integrations";
     public static final String EVENT_TYPE_NAME = "aggregation";
 
     @Inject
@@ -161,7 +161,7 @@ public class DailyEmailAggregationJob {
         Action action = new Action.ActionBuilder()
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
-            .withEventType(String.format("%s-%s-%s", EVENT_TYPE_NAME, aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication()))
+            .withEventType(EVENT_TYPE_NAME)
             .withOrgId(aggregationCommand.getAggregationKey().getOrgId())
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(List.of(
