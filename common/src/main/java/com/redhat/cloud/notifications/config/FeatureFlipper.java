@@ -90,6 +90,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-mbop-for-fetching-users", defaultValue = "false")
     boolean useMBOPForFetchingUsers;
 
+    @ConfigProperty(name = "notifications.webhook-connector.enabled", defaultValue = "false")
+    boolean webhookConnectorEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -109,6 +112,7 @@ public class FeatureFlipper {
         Log.infof("Drawer feature is %s", drawerEnabled ? "enabled" : "disabled");
         Log.infof("The add of default recipient on single email is %s", addDefaultRecipientOnSingleEmail ? "enabled" : "disabled");
         Log.infof("The use of BOP/MBOP for fetching users is %s", useMBOPForFetchingUsers ? "enabled" : "disabled");
+        Log.infof("The webhook connector is %s", webhookConnectorEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -258,6 +262,15 @@ public class FeatureFlipper {
     public void setUseMBOPForFetchingUsers(final boolean useMBOPForFetchingUsers) {
         checkTestLaunchMode();
         this.useMBOPForFetchingUsers = useMBOPForFetchingUsers;
+    }
+
+    public boolean isWebhookConnectorEnabled() {
+        return webhookConnectorEnabled;
+    }
+
+    public void setWebhookConnectorEnabled(boolean webhookConnectorEnabled) {
+        checkTestLaunchMode();
+        this.webhookConnectorEnabled = webhookConnectorEnabled;
     }
 
     /**

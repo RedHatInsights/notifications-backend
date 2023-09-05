@@ -99,7 +99,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testSuccessfulNotification() throws Exception {
+    protected void testSuccessfulNotification() throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
         MockEndpoint remoteServerMockEndpoint = mockRemoteServerEndpoint(); // This is where the notification is sent.
@@ -123,10 +123,21 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     }
 
     @Test
+    void testFailedNotificationError500() throws Exception {
+        mockRemoteServerError(500, "My custom internal error");
+        testFailedNotification();
+    }
+
+    @Test
+    void testFailedNotificationError404() throws Exception {
+        mockRemoteServerError(404, "Page not found");
+        testFailedNotification();
+    }
+
+
     void testFailedNotification() throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
-        mockRemoteServer500();
         MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
 
         JsonObject incomingPayload = buildIncomingPayload(getMockServerUrl());
@@ -200,11 +211,11 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return getMockEndpoint(getMockEndpointUri());
     }
 
-    protected void mockRemoteServer500() {
+    protected void mockRemoteServerError(int httpReturnCode, String bodyMessage) {
         getClient()
-                .withSecure(useHttps())
-                .when(request().withMethod("POST").withPath(getRemoteServerPath()))
-                .respond(new HttpResponse().withStatusCode(500).withBody("My custom internal error"));
+            .withSecure(useHttps())
+            .when(request().withMethod("POST").withPath(getRemoteServerPath()))
+            .respond(new HttpResponse().withStatusCode(httpReturnCode).withBody(bodyMessage));
     }
 
     protected void mockRemoteServerNetworkFailure() {
@@ -260,7 +271,9 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         assertEquals(expectedSuccessful, data.getBoolean("successful"));
         assertNotNull(data.getString("duration"));
         assertNotNull(data.getJsonObject("details").getString("type"));
-        assertEquals(expectedTargetUrl, data.getJsonObject("details").getString("target"));
+        if (null != expectedTargetUrl) {
+            assertEquals(expectedTargetUrl, data.getJsonObject("details").getString("target"));
+        }
 
         String outcome = data.getJsonObject("details").getString("outcome");
 
