@@ -5,8 +5,11 @@ import io.quarkus.logging.Log;
 import org.apache.camel.Exchange;
 import org.apache.camel.http.base.HttpOperationFailedException;
 
+import javax.enterprise.context.ApplicationScoped;
+
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 
+@ApplicationScoped
 public class SplunkExceptionProcessor extends ExceptionProcessor {
 
     private static final String DEFAULT_LOG_MSG = "Message sending failed on %s: [orgId=%s, accountId=%s, historyId=%s, targetUrl=%s]";
