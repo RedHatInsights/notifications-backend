@@ -41,6 +41,11 @@ export IMAGE="quay.io/cloudservices/notifications-connector-splunk"
 export DOCKERFILE=docker/Dockerfile.notifications-connector-splunk.jvm
 source $CICD_ROOT/build.sh
 
+# Build the notifications-connector-webhook image and push it to Quay
+export IMAGE="quay.io/cloudservices/notifications-connector-webhook"
+export DOCKERFILE=docker/Dockerfile.notifications-connector-webhook.jvm
+source $CICD_ROOT/build.sh
+
 # Deploy all images on ephemeral
 export APP_NAME="notifications"
 export COMPONENT_NAME="notifications-backend"
