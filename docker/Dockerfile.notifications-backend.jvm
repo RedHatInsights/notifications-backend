@@ -3,14 +3,14 @@
 ###
 
 # Build the project
-FROM registry.access.redhat.com/ubi9/openjdk-17:latest AS build
+FROM registry.access.redhat.com/ubi8/openjdk-17:latest AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
 RUN ./mvnw clean package -DskipTests --projects :checkstyle,:notifications-common,:notifications-common-aggregator,:notifications-database,:notifications-backend --no-transfer-progress
 
 # Build the container
-FROM registry.access.redhat.com/ubi9/openjdk-17-runtime:latest
+FROM registry.access.redhat.com/ubi8/openjdk-17-runtime:latest
 
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
 
