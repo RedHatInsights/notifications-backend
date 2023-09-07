@@ -93,6 +93,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.webhook-connector.enabled", defaultValue = "false")
     boolean webhookConnectorEnabled;
 
+    @ConfigProperty(name = "notifications.email-connector.enabled", defaultValue = "false")
+    boolean emailConnectorEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -113,6 +116,7 @@ public class FeatureFlipper {
         Log.infof("The add of default recipient on single email is %s", addDefaultRecipientOnSingleEmail ? "enabled" : "disabled");
         Log.infof("The use of BOP/MBOP for fetching users is %s", useMBOPForFetchingUsers ? "enabled" : "disabled");
         Log.infof("The webhook connector is %s", webhookConnectorEnabled ? "enabled" : "disabled");
+        Log.infof("The email connector is %s", emailConnectorEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -271,6 +275,15 @@ public class FeatureFlipper {
     public void setWebhookConnectorEnabled(boolean webhookConnectorEnabled) {
         checkTestLaunchMode();
         this.webhookConnectorEnabled = webhookConnectorEnabled;
+    }
+
+    public boolean isEmailConnectorEnabled() {
+        return this.emailConnectorEnabled;
+    }
+
+    public void setEmailConnectorEnabled(final boolean emailConnectorEnabled) {
+        checkTestLaunchMode();
+        this.emailConnectorEnabled = emailConnectorEnabled;
     }
 
     /**

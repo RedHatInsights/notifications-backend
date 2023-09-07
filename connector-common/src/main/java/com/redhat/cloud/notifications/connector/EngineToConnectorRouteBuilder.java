@@ -30,7 +30,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
     RedeliveryPredicate redeliveryPredicate;
 
     @Override
-    public void configure() {
+    public void configure() throws Exception {
 
         onException(Throwable.class)
                 .onWhen(redeliveryPredicate::matches)
@@ -59,7 +59,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
         configureRoute();
     }
 
-    public abstract void configureRoute();
+    public abstract void configureRoute() throws Exception;
 
     private KafkaEndpointConsumerBuilder buildKafkaEndpoint() {
         return kafka(connectorConfig.getIncomingKafkaTopic())

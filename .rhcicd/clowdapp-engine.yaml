@@ -248,6 +248,8 @@ objects:
           value: ${NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS}
         - name: NOTIFICATIONS_WEBHOOK_CONNECTOR_ENABLED
           value: ${NOTIFICATIONS_WEBHOOK_CONNECTOR_ENABLED}
+        - name: NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED
+          value: ${NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -418,3 +420,5 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_WEBHOOK_CONNECTOR_ENABLED
   value: "false"
+- name: NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED
+  description: Is the email connector enabled to process emails there instead of in the engine?
