@@ -34,6 +34,19 @@ objects:
           limits:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
+        volumes:
+          - name: keystore
+            secret:
+              secretName: it-services
+              items:
+                - key: keystore.jks
+                  path: clientkeystore.jks
+              defaultMode: 420
+              optional: true
+        volumeMounts:
+          - name: keystore
+            readOnly: true
+            mountPath: /mnt/secrets
         readinessProbe:
           httpGet:
             path: /q/health/ready
