@@ -422,3 +422,4 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED
   description: Is the email connector enabled to process emails there instead of in the engine?
+  value: "false"

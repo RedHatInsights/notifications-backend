@@ -90,7 +90,7 @@ objects:
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV
           value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION
-          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
+          value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -146,8 +146,6 @@ parameters:
   value: quay.io/cloudservices/notifications-connector-email
 - name: IMAGE_TAG
   value: latest
-- name: IT_SERVICE_TO_SERVICE_KEY_STORE
-  description: "Key store for opening a secure connection when communicating with IT. It should be set to 'file:/mnt/secrets/clientkeystore.jks'"
 
 - name: KAFKA_CLIENT_LOG_LEVEL
   description: Log level of the Kafka client library
@@ -195,6 +193,9 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV
   description: The back office proxy's environment.
   value: "qa"
+- name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION
+  description: "Key store for opening a secure connection when communicating with IT. It should be set to 'file:/mnt/secrets/clientkeystore.jks'"
+  value: ""
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
