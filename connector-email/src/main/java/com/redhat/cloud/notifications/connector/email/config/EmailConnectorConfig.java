@@ -44,7 +44,7 @@ public class EmailConnectorConfig extends ConnectorConfig {
     @ConfigProperty(name = IT_ELEMENTS_PAGE, defaultValue = "1000")
     Integer itElementsPerPage;
 
-    @ConfigProperty(name = IT_KEYSTORE_LOCATION, defaultValue = "/mnt/secrets/clientkeystore.jks")
+    @ConfigProperty(name = IT_KEYSTORE_LOCATION)
     String itKeyStoreLocation;
 
     @ConfigProperty(name = IT_KEYSTORE_PASSWORD)
