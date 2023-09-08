@@ -16,6 +16,11 @@ export IMAGE="quay.io/cloudservices/notifications-engine"
 export DOCKERFILE=docker/Dockerfile.notifications-engine.jvm
 source $CICD_ROOT/build.sh
 
+# Build the notifications-connector-email image and push it to Quay
+export IMAGE="quay.io/cloudservices/notifications-connector-email"
+export DOCKERFILE=docker/Dockerfile.notifications-connector-email.jvm
+source $CICD_ROOT/build.sh
+
 # Build the notifications-connector-google-chat image and push it to Quay
 export IMAGE="quay.io/cloudservices/notifications-connector-google-chat"
 export DOCKERFILE=docker/Dockerfile.notifications-connector-google-chat.jvm
