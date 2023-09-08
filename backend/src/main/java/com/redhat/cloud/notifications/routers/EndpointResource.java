@@ -198,7 +198,7 @@ public class EndpointResource {
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    @Operation(summary = "List endpoints", description = "Get a list of endpoints filtered down by the passed parameters.")
+    @Operation(summary = "List endpoints", description = "Provides a list of endpoints. Use this endpoint to find specific endpoints.")
     @Parameters({
         @Parameter(
                 name = "limit",
@@ -255,7 +255,7 @@ public class EndpointResource {
     @POST
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Create a new endpoint", description = "Create a new endpoint from the passed data")
+    @Operation(summary = "Create a new endpoint", description = "Creates a new endpoint by providing data such as a description, name, and properties. Use this endpoint to create endpoints for integration with third-party services such as webhooks, Slack, or Google Meet.")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Endpoint.class))),
         @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
@@ -323,6 +323,7 @@ public class EndpointResource {
     @Path("/system/drawer_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @Operation(summary = "Add a drawer endpoint", description = "Provides a list of endpoints. Use this endpoint to find specific endpoints.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec,
@@ -362,6 +363,7 @@ public class EndpointResource {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as the description name or connection.")
     public Endpoint getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
@@ -380,6 +382,7 @@ public class EndpointResource {
     @DELETE
     @Path("/{id}")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "Delete an endpoint", description = "Deletes an endpoint. Use this endpoint to delete an endpoint that is no longer needed. Deleting an endpoint that is already linked to a behavior group will unlink it from the behavior group. You cannot delete system endpoints.")
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
@@ -439,6 +442,7 @@ public class EndpointResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "Update an endpoint", description = "Updates the endpoint configuration. Use this to update an existing endpoint. Any changes to the endpoint take place immediately.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateEndpoint(@Context SecurityContext sec,
@@ -510,6 +514,7 @@ public class EndpointResource {
     @PUT
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @Produces(APPLICATION_JSON)
+    @Operation(summary = "Change the notification type", description = "Changes the subscription notification email type. Use this endpoint to subscribe to email notifications from a specific application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public boolean subscribeEmail(
