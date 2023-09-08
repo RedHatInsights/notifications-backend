@@ -137,10 +137,10 @@ parameters:
   value: "100"
 - name: NOTIFICATIONS_CONNECTOR_HTTPS_CONNECT_TIMEOUT_MS
   description: Maximum time in milliseconds allowed to establish an HTTPS connection
-  value: "2500"
+  value: "30000"
 - name: NOTIFICATIONS_CONNECTOR_HTTPS_SOCKET_TIMEOUT_MS
   description: Maximum time in milliseconds allowed to wait for HTTPS data
-  value: "2500"
+  value: "30000"
 - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
   description: Delay in milliseconds between two redelivery attempts
   value: "1000"
