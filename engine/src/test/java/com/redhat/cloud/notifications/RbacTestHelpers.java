@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import org.apache.commons.lang3.StringUtils;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;

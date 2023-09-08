@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {

@@ -1,8 +1,9 @@
 package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.ConnectorConfig;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import javax.enterprise.context.ApplicationScoped;
+
 import java.util.List;
 import java.util.Map;
 

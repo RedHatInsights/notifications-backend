@@ -2,10 +2,9 @@ package com.redhat.cloud.notifications.connector.email.processors.rbac.group;
 
 import com.redhat.cloud.notifications.connector.email.processors.rbac.RBACConstants;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-
-import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class RBACGroupProcessor implements Processor {

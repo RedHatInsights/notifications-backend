@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.cloudevent.transformers;
 
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.Locale;
 import java.util.Optional;
 

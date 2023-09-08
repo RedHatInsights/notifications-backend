@@ -3,8 +3,8 @@ package com.redhat.cloud.notifications.routers.dailydigest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import jakarta.validation.constraints.NotBlank;
 
-import javax.validation.constraints.NotBlank;
 import java.beans.ConstructorProperties;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

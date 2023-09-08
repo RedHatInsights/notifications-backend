@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.routers.dailydigest;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -38,11 +38,11 @@ public class TriggerDailyDigestRequestTest {
 
         for (final String blankAppName : blankAppNames) {
             final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
-                blankAppName,
-                "bundle-name",
-                "test-blank-application-name-org-id",
-                null,
-                null
+                    blankAppName,
+                    "bundle-name",
+                    "test-blank-application-name-org-id",
+                    null,
+                    null
             );
 
             final var constraintViolations = validator.validate(blankApplicationName);
@@ -65,11 +65,11 @@ public class TriggerDailyDigestRequestTest {
 
         for (final String blankBundleName : blankBundleNames) {
             final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
-                "application-name",
-                blankBundleName,
-                "test-blank-bundle-name-org-id",
-                null,
-                null
+                    "application-name",
+                    blankBundleName,
+                    "test-blank-bundle-name-org-id",
+                    null,
+                    null
             );
 
             final var constraintViolations = validator.validate(blankApplicationName);
@@ -113,11 +113,11 @@ public class TriggerDailyDigestRequestTest {
     @Test
     void testDefaultLocalDateTimeValues() {
         final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
-            "application-name",
-            "bundle-name",
-            "test-default-local-date-time-values-org-id",
-            null,
-            null
+                "application-name",
+                "bundle-name",
+                "test-default-local-date-time-values-org-id",
+                null,
+                null
         );
 
         // Assert that the start time is set to midnight UTC of today.

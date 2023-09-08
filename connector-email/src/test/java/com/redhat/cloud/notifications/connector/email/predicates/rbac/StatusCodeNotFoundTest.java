@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.predicates.rbac;
 
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
@@ -8,7 +9,6 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 
 @QuarkusTest

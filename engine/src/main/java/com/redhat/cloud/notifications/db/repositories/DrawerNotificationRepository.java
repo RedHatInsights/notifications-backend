@@ -2,12 +2,13 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.DrawerNotification;
 import com.redhat.cloud.notifications.models.Event;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.ParameterMode;
-import javax.persistence.StoredProcedureQuery;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureQuery;
+import jakarta.transaction.Transactional;
+
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;

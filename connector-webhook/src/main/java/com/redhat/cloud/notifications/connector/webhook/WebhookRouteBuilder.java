@@ -4,11 +4,12 @@ import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.webhook.authentication.BasicAuthenticationProcessor;
 import com.redhat.cloud.notifications.connector.webhook.authentication.BearerTokenAuthenticationProcessor;
 import com.redhat.cloud.notifications.connector.webhook.authentication.InsightsTokenAuthenticationProcessor;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.component.http.HttpComponent;
+import org.apache.hc.core5.util.Timeout;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
@@ -68,8 +69,8 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
     }
 
     private void configureTimeout(HttpComponent httpComponent) {
-        httpComponent.setConnectTimeout(webhookConnectorConfig.getHttpsConnectTimeout());
-        httpComponent.setSocketTimeout(webhookConnectorConfig.getHttpsSocketTimeout());
+        httpComponent.setConnectTimeout(Timeout.ofMilliseconds(webhookConnectorConfig.getHttpsConnectTimeout()));
+        httpComponent.setSoTimeout(Timeout.ofMilliseconds(webhookConnectorConfig.getHttpsSocketTimeout()));
     }
 
     private HttpEndpointBuilderFactory.HttpEndpointBuilder buildUnsecureSslEndpoint() {

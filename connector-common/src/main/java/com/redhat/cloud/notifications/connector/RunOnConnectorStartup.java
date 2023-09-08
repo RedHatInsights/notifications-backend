@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.connector;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.Startup;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

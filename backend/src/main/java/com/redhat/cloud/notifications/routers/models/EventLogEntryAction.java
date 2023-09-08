@@ -3,10 +3,9 @@ package com.redhat.cloud.notifications.routers.models;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.EndpointType;
+import jakarta.validation.constraints.NotNull;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-
 import java.util.Map;
 import java.util.UUID;
 

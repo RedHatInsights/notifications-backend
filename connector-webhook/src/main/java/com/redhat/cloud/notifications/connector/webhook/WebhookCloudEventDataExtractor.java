@@ -2,9 +2,10 @@ package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.component.http.HttpMethods;
-import javax.enterprise.context.ApplicationScoped;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.MissingResourceException;

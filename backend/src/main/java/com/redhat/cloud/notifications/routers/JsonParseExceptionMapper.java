@@ -1,12 +1,11 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
-
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
 /*
  * This exception mapper doesn't seem to be used anymore starting Quarkus 2.15.1.Final.

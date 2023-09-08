@@ -1,8 +1,7 @@
 package com.redhat.cloud.notifications.processors.camel.teams;
 
 import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
-
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDPOINT_SUBTYPE;
 

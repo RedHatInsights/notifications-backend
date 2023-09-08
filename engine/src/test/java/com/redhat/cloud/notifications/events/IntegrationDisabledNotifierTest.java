@@ -6,15 +6,15 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.inject.Any;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.inject.Any;
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.UUID;
 

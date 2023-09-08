@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.connector;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.model.HttpResponse;
 
-import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.UUID;
 

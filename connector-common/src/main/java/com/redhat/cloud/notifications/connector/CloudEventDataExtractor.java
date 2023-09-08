@@ -2,9 +2,8 @@ package com.redhat.cloud.notifications.connector;
 
 import io.quarkus.arc.DefaultBean;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
-
-import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Extend this class in an {@link ApplicationScoped} bean from a connector Maven module to extract the

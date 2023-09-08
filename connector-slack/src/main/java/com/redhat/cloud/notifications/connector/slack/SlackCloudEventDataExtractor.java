@@ -2,9 +2,8 @@ package com.redhat.cloud.notifications.connector.slack;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
-
-import javax.enterprise.context.ApplicationScoped;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.slack.ExchangeProperty.CHANNEL;

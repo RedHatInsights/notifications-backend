@@ -2,10 +2,9 @@ package com.redhat.cloud.notifications.connector.slack;
 
 import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.CamelExchangeException;
 import org.apache.camel.Exchange;
-
-import javax.enterprise.context.ApplicationScoped;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

@@ -2,8 +2,8 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.models.EventType;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;

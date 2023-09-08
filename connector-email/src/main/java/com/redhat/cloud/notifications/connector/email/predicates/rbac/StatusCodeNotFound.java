@@ -1,11 +1,10 @@
 package com.redhat.cloud.notifications.connector.email.predicates.rbac;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.http.HttpStatus;
-
-import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class StatusCodeNotFound implements Predicate {

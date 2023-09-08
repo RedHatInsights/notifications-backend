@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.IncomingCloudEventFilter;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 @ApplicationScoped
 public class WebhookIncomingCloudEventFilter extends IncomingCloudEventFilter {
