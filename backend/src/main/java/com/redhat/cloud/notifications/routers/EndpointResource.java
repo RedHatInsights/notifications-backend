@@ -312,7 +312,7 @@ public class EndpointResource {
     @Path("/system/email_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Create a email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the RBAC group that will receive email notifications. Use this endpoint on behavior groups to send emails when an action linked to the behavior group is triggered.")
+    @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the RBAC group that will receive email notifications. Use this endpoint on behavior groups to send emails when an action linked to the behavior group is triggered.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec,
@@ -324,7 +324,7 @@ public class EndpointResource {
     @Path("/system/drawer_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the RBAC group that will receive notifications. Use this endpoint to add an animation of a drawer as a notification in the UI.")
+    @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the RBAC group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec,
@@ -426,7 +426,7 @@ public class EndpointResource {
     @DELETE
     @Path("/{id}/enable")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    @Operation(summary = "Enable an endpoint", description = "Disables an endpoint so that the endpoint will not be executed after an operation that uses the endpoint is restarted. An operation must be restarted to disable the endpoint in that operation. Disable an endpoint when you want to stop it from running and might want to re-enable it in the future.")
+    @Operation(summary = "Disable an endpoint", description = "Disables an endpoint so that the endpoint will not be executed after an operation that uses the endpoint is restarted. An operation must be restarted to disable the endpoint in that operation. Disable an endpoint when you want to stop it from running and might want to re-enable it in the future.")
     @Operation(summary = "Disable an endpoint", description = "")
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
@@ -587,7 +587,7 @@ public class EndpointResource {
     @Consumes(APPLICATION_JSON)
     @POST
     @Path("/{uuid}/test")
-    @Operation(summary = "Generate a test notificatio", description = "Generates a test notification for a particular endpoint. Use this endpoint to test that an integration that you created works as expected. This endpoint triggers a test notification that should be received by the target recipient. For example, if you set up a webhook as the action to take upon receiving a notification, you should receive a test notification when using this endpoint.")
+    @Operation(summary = "Generate a test notification", description = "Generates a test notification for a particular endpoint. Use this endpoint to test that an integration that you created works as expected. This endpoint triggers a test notification that should be received by the target recipient. For example, if you set up a webhook as the action to take upon receiving a notification, you should receive a test notification when using this endpoint.")
     @Parameters({
         @Parameter(
                 name = "uuid",

@@ -156,7 +156,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleName}/applications/{applicationName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the application by bundle name", description = "Retrieves the application by the name of a specified bundle. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or applications.")
+    @Operation(summary = "Retrieve the application by bundle name", description = "Retrieves the application by the name of a specified bundle. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Application getApplicationByNameAndBundleName(
             @PathParam("bundleName") String bundleName,
@@ -173,7 +173,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve an event type by searching for bundle and application name", description = "Retrieves an event type’s details by specifying the bundle name, the application name and the event type name.")
+    @Operation(summary = "Retrieve an event type by searching for bundle and application name", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public EventType getEventTypesByNameAndBundleAndApplicationName(
             @PathParam("bundleName") String bundleName,
