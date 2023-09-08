@@ -82,7 +82,7 @@ public class NotificationResource {
         @GET
         @Path("/eventTypes/{eventTypeId}/behaviorGroups")
         @Produces(APPLICATION_JSON)
-        @Operation(summary = "Retrieve the behavior groups linked to an event type.")
+        @Operation(summary = "List the behavior groups linked to an event type", description = "Lists the behavior groups that are linked to an event type. Use this endpoint to see which behavior groups will be affected if you delete an event type.")
         @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
         public List<BehaviorGroup> getLinkedBehaviorGroups(
                 @Context SecurityContext sec,
@@ -124,7 +124,7 @@ public class NotificationResource {
     @GET
     @Path("/eventTypes")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve all event types. The returned list can be filtered by bundle or application.")
+    @Operation(summary = "List all event types", description = "Lists all event types. You can filter the returned list by bundle or application name.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Page<EventType> getEventTypes(
             @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds, @QueryParam("bundleId") UUID bundleId,
@@ -142,7 +142,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the bundle by name")
+    Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching for the bundle name.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Bundle getBundleByName(@PathParam("bundleName") String bundleName) {
         Bundle bundle = bundleRepository.getBundle(bundleName);
@@ -156,7 +156,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleName}/applications/{applicationName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the application by name of a given bundle name")
+    @Operation(summary = "Retrieve the application by bundle name", description = "Retrieves the application by the name of a specified bundle. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or applications.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Application getApplicationByNameAndBundleName(
             @PathParam("bundleName") String bundleName,
@@ -173,7 +173,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the event type by name of a given bundle name and application name")
+    @Operation(summary = "Retrieve an event type by searching for bundle and application name", description = "Retrieves an event type’s details by specifying the bundle name, the application name and the event type name.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public EventType getEventTypesByNameAndBundleAndApplicationName(
             @PathParam("bundleName") String bundleName,
@@ -196,7 +196,7 @@ public class NotificationResource {
     @GET
     @Path("/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the event types affected by the removal of a behavior group.")
+    @Operation(summary = "List the event types affected by the removal of a behavior group", description = "Lists the event types that will be affected by the removal of a behavior group. Use this endpoint to see which event types will be removed if you delete a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec,
                      @Parameter(description = "The UUID of the behavior group to check") @PathParam("behaviorGroupId") UUID behaviorGroupId) {
@@ -211,7 +211,7 @@ public class NotificationResource {
     @GET
     @Path("/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the behavior groups affected by the removal of an endpoint.")
+    @Operation(summary = "List the behavior groups affected by the removal of an endpoint", description = "Lists the behavior groups that are affected by the removal of an endpoint. Use this endpoint to understand how removing an endpoint affects existing behavior groups.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         String orgId = getOrgId(sec);
@@ -221,7 +221,7 @@ public class NotificationResource {
     @GET
     @Path("/facets/applications")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Return a thin list of configured applications. This can be used to configure a filter in the UI")
+    @Operation(summary = "List configured applications", description = "Returns a thin list of configured applications that includes the application name, the display name, and the ID. You can use this list to configure a filter in the UI.")
     public List<Facet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
         return applicationRepository.getApplications(bundleName)
                 .stream()
@@ -232,7 +232,7 @@ public class NotificationResource {
     @GET
     @Path("/facets/bundles")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Return a thin list of configured bundles. This can be used to configure a filter in the UI")
+    @Operation(summary = "List configured bundles", description = "Returns a thin list of configured bundles that includes the bundle name, the display name, and the ID. You can use this list to configure a filter in the UI.")
     public List<Facet> getBundleFacets(@Context SecurityContext sec, @QueryParam("includeApplications") boolean includeApplications) {
         return bundleRepository.getBundles()
                 .stream()
@@ -263,7 +263,7 @@ public class NotificationResource {
     @POST
     @Path("/behaviorGroups")
     @Consumes(APPLICATION_JSON)
-    @Operation(summary = "Create a behavior group - assigning actions and linking to event types as requested")
+    @Operation(summary = "Create a behavior group", description = "Creates a behavior group that defines which notifications will be sent to external services after an event is received. Use this endpoint to control the types of events users are notified about.")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = CreateBehaviorGroupResponse.class))),
         @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)), description = "Bad or no content passed.")
@@ -327,7 +327,7 @@ public class NotificationResource {
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
                 description = "No behavior group found with the passed id.")
     })
-    @Operation(summary = "Update a behavior group.")
+    @Operation(summary = "Update a behavior group", description = "Updates the details of a behavior group. Use this endpoint to update the list of related endpoints and event types associated with this behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public Response updateBehaviorGroup(@Context SecurityContext sec,
@@ -359,7 +359,7 @@ public class NotificationResource {
     @DELETE
     @Path("/behaviorGroups/{id}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Delete a behavior group.")
+    @Operation(summary = "Delete a behavior group", description = "Deletes a behavior group and all of its configured actions. Use this endpoint when you no longer need a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec,
@@ -372,7 +372,7 @@ public class NotificationResource {
     @Path("/behaviorGroups/{behaviorGroupId}/actions")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @Operation(summary = "Update the list of actions of a behavior group.")
+    @Operation(summary = "Update the list of behavior group actions", description = "Updates the list of actions to be executed in that particular behavior group after an event is received.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
@@ -398,7 +398,7 @@ public class NotificationResource {
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @Operation(summary = "Update the list of behavior groups of an event type.")
+    @Operation(summary = "Update the list of behavior groups for an event type", description = "Updates the list of behavior groups associated with an event type.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
@@ -440,7 +440,7 @@ public class NotificationResource {
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Operation(summary = "Delete a behavior group from the given event type.")
+    @Operation(summary = "Add a behavior group to an event type", description = "Adds a behavior group to the specified event  type.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204")
     public void deleteBehaviorGroupFromEventType(
@@ -456,7 +456,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the behavior groups of a bundle.")
+     @Operation(summary = "List behavior groups in  a bundle", description = "Lists the behavior groups associated with a bundle. Use this endpoint to see the behavior groups that are configured for a particular bundle in a particular tenant.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec,
                 @Parameter(description = "UUID of the bundle to retrieve the behavior groups for.") @PathParam("bundleId") UUID bundleId) {

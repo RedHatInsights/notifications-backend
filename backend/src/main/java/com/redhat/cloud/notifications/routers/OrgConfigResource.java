@@ -60,6 +60,7 @@ public class OrgConfigResource {
     @Path("/daily-digest/time-preference")
     @Consumes(APPLICATION_JSON)
     @Transactional
+    @Operation(summary = "Sets the daily digest time. Use this endpoint to set the time that daily emails are sent.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Operation(summary = "Save the daily digest UTC time preference. To cover all time zones conversion to UTC, the accepted minute values are 00, 15, 30 and 45.")
     public void saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
@@ -77,6 +78,7 @@ public class OrgConfigResource {
     @GET
     @Path("/daily-digest/time-preference")
     @Produces(APPLICATION_JSON)
+    @Operation(summary = "Retrieve the daily digest time preference", description = "Retrieves the daily digest time setting. Use this endpoint to check the time that daily emails are sent.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Response getDailyDigestTimePreference(@Context SecurityContext sec) {
         String orgId = getOrgId(sec);
