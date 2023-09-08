@@ -9,6 +9,8 @@ objects:
   metadata:
     name: notifications-connector-email
   spec:
+    dependencies:
+    - rbac
     envName: ${ENV_NAME}
     kafkaTopics:
     - topicName: platform.notifications.tocamel
