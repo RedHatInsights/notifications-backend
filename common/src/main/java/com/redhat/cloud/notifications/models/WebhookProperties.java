@@ -60,8 +60,8 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
     @JsonIgnore
     private Long bearerAuthenticationSourcesId;
 
-    @Transient
-    private String bearerToken;
+    @JsonProperty("bearer_authentication")
+    private String bearerAuthentication;
 
     public String getUrl() {
         return url;
@@ -127,11 +127,11 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
         this.bearerAuthenticationSourcesId = bearerAuthenticationSourcesId;
     }
 
-    public String getBearerToken() {
-        return bearerToken;
+    public String getBearerAuthentication() {
+        return bearerAuthentication;
     }
 
-    public void setBearerToken(String bearerToken) {
-        this.bearerToken = bearerToken;
+    public void setBearerAuthentication(String bearerAuthentication) {
+        this.bearerAuthentication = bearerAuthentication;
     }
 }

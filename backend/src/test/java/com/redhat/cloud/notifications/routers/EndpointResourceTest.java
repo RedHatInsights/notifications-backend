@@ -1100,6 +1100,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
         properties.setBasicAuthentication(new BasicAuthentication("myuser", "mypassword"));
+        properties.setBearerAuthentication("my-test-bearer-token");
         properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
@@ -1136,6 +1137,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         attr.mapTo(WebhookProperties.class);
         assertNotNull(attr.getJsonObject("basic_authentication"));
         assertEquals("mypassword", attr.getJsonObject("basic_authentication").getString("password"));
+        assertEquals(properties.getBearerAuthentication(), attr.getString("bearer_authentication"));
     }
 
     @Test
@@ -2424,6 +2426,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             // and the "secret token".
             properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
             properties.setSecretToken("my-super-secret-token");
+            properties.setBearerAuthentication("my-super-bearer-token");
 
             // The below two secrets will be returned when we simulate that
             // we have called sources to create these secrets.
@@ -2433,6 +2436,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
             final Secret mockedSecretTokenSecret = new Secret();
             mockedSecretTokenSecret.id = 50L;
 
+            final Secret mockedSecretBearer = new Secret();
+            mockedSecretBearer.id = 75L;
+
             Mockito.when(
                 this.sourcesServiceMock.create(
                     Mockito.eq(DEFAULT_ORG_ID),
@@ -2441,7 +2447,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 )
             ).thenReturn(
                 mockedBasicAuthenticationSecret,
-                mockedSecretTokenSecret
+                mockedSecretTokenSecret,
+                mockedSecretBearer
             );
 
             given()
@@ -2454,7 +2461,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .statusCode(200);
 
             // Verify that both secrets were created in Sources.
-            Mockito.verify(this.sourcesServiceMock, Mockito.times(2)).create(
+            Mockito.verify(this.sourcesServiceMock, Mockito.times(3)).create(
                 Mockito.eq(DEFAULT_ORG_ID),
                 Mockito.eq(this.sourcesPsk),
                 Mockito.any()
@@ -2466,6 +2473,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             Assertions.assertEquals(25L, webhookProperties.getBasicAuthenticationSourcesId(), "Sources was called to create the basic authentication secret, but the secret's ID wasn't present in the database");
             Assertions.assertEquals(50L, webhookProperties.getSecretTokenSourcesId(), "Sources was called to create the secret token secret, but the secret's ID wasn't present in the database");
+            Assertions.assertEquals(75L, webhookProperties.getBearerAuthenticationSourcesId(), "Sources was called to create the secret token secret, but the secret's ID wasn't present in the database");
+
         } finally {
             this.featureFlipper.setSourcesSecretsBackend(wasSourcesEnabled);
         }

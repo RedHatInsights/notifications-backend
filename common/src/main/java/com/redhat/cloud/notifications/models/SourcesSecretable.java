@@ -58,7 +58,7 @@ public interface SourcesSecretable {
 
     void setBearerAuthenticationSourcesId(Long bearerAuthenticationSourcesId);
 
-    String getBearerToken();
+    String getBearerAuthentication();
 
-    void setBearerToken(String bearerToken);
+    void setBearerAuthentication(String bearerAuthentication);
 }

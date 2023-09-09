@@ -486,7 +486,7 @@ public class EndpointResource {
 
                 databaseEndpointProps.setBasicAuthentication(incomingEndpointProps.getBasicAuthentication());
                 databaseEndpointProps.setSecretToken(incomingEndpointProps.getSecretToken());
-
+                databaseEndpointProps.setBearerAuthentication(incomingEndpointProps.getBearerAuthentication());
                 this.secretUtils.updateSecretsForEndpoint(dbEndpoint);
             }
         }

@@ -65,7 +65,7 @@ public class SecretUtils {
             final Long bearerSourcesId = props.getBearerAuthenticationSourcesId();
             if (bearerSourcesId != null) {
                 Secret secret = loadSecretFromSources(endpoint, props, bearerSourcesId);
-                props.setBearerToken(secret.password);
+                props.setBearerAuthentication(secret.password);
             }
         }
     }
@@ -114,7 +114,7 @@ public class SecretUtils {
                 props.setSecretTokenSourcesId(id);
             }
 
-            final String bearerToken = props.getBearerToken();
+            final String bearerToken = props.getBearerAuthentication();
             if (bearerToken != null && !bearerToken.isBlank()) {
                 final long id = this.createSecretTokenSecret(secretToken, Secret.TYPE_BEARER_TOKEN, endpoint.getOrgId());
                 Log.infof("[secret_id: %s] Secret bearer token created in Sources", id);
@@ -179,7 +179,7 @@ public class SecretUtils {
             final Long secretTokenId = props.getSecretTokenSourcesId();
             props.setSecretTokenSourcesId(updateSecretToken(endpoint, secretToken, secretTokenId, Secret.TYPE_SECRET_TOKEN, "Secret token secret"));
 
-            final String bearerToken = props.getBearerToken();
+            final String bearerToken = props.getBearerAuthentication();
             final Long bearerTokenId = props.getBearerAuthenticationSourcesId();
             props.setBearerAuthenticationSourcesId(updateSecretToken(endpoint, bearerToken, bearerTokenId, Secret.TYPE_BEARER_TOKEN, "Bearer token"));
         }

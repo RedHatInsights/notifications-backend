@@ -108,11 +108,11 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
         // do nothing here
     }
 
-    public String getBearerToken() {
+    public String getBearerAuthentication() {
         return null;
     }
 
-    public void setBearerToken(String bearerToken) {
+    public void setBearerAuthentication(String bearerAuthentication) {
         // do nothing here
     }
 
