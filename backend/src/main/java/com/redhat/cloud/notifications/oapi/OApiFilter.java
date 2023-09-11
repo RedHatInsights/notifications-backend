@@ -27,6 +27,8 @@ public class OApiFilter {
     public static final String INTERNAL = "internal";
 
     static List<String> openApiOptions = List.of(INTEGRATIONS, NOTIFICATIONS, PRIVATE, INTERNAL);
+    static String INTEGRATIONS_DESCRIPTION = "The API for Integrations provides endpoints that you can use to create and manage integrations between third-party applications and the Red Hat Hybrid Cloud Console.";
+    static String NOTIFICATIONS_DESCRIPTION = "The API for Notifications provides endpoints that you can use to create and manage event notifications between third-party applications and the Red Hat Hybrid Cloud Console.";
 
     @Inject
     Vertx vertx;
@@ -126,22 +128,27 @@ public class OApiFilter {
             throw new NotFoundException();
         }
 
-        // Add info section
-        root.put("info", new JsonObject()
-                .put("description", "The API for " + capitalize(openApiOption))
+        JsonObject info = new JsonObject()
                 .put("version", version == null ? "v1.0" : version)
-                .put("title", capitalize(openApiOption)));
+                .put("title", capitalize(openApiOption));
 
         // Add servers section
         JsonArray serversArray = new JsonArray();
+        String infoDescription = capitalize(openApiOption);
 
         if (openApiOption.equals(NOTIFICATIONS)) {
             serversArray.add(createProdServer(NOTIFICATIONS, version));
             serversArray.add(createDevServer(NOTIFICATIONS, version));
+            infoDescription = NOTIFICATIONS_DESCRIPTION;
         } else if (openApiOption.equals(INTEGRATIONS)) {
             serversArray.add(createProdServer(INTEGRATIONS, version));
             serversArray.add(createDevServer(INTEGRATIONS, version));
+            infoDescription = INTEGRATIONS_DESCRIPTION;
         }
+
+        // Add info section
+        info.put("description", infoDescription);
+        root.put("info", info);
 
         root.put("servers", serversArray);
 
