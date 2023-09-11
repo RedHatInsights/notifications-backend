@@ -325,6 +325,18 @@ public class LifecycleITest {
         waitForWebhooks.run();
         waitForEmails.run();
 
+        /*
+         * If the message isn't supposed to trigger any notification, we need to wait a bit
+         * to prevent race conditions between this test and EndpointProcessor.
+         */
+        if (expectedWebhookCalls + expectedEmailEndpoints == 0) {
+            try {
+                Thread.sleep(5000L);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(PROCESSED_MESSAGES_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 0);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, expectedExceptionCount);
