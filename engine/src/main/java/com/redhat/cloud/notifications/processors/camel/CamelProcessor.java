@@ -103,7 +103,6 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
         CamelNotification notification = new CamelNotification();
-        notification.orgId = endpoint.getOrgId();
         notification.webhookUrl = properties.getUrl();
         notification.message = message;
         return notification;
