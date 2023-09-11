@@ -83,6 +83,11 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
         final Endpoint endpoint = this.endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+
+        // The email connector is named "email", and that is what it expects
+        // in the Kafka header which specifies the target connector that should
+        // process the message. By setting the subtype to "email", we make sure
+        // that the connector sender actually sets that exact text.
         endpoint.setSubType("email");
         this.connectorSender.send(event, endpoint, payload);
     }
