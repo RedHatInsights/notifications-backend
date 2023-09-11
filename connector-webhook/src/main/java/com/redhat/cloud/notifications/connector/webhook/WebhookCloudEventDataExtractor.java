@@ -30,6 +30,7 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
     public void extract(Exchange exchange, JsonObject cloudEventData) throws MalformedURLException {
         checkPayload(cloudEventData);
         JsonObject endpointProperties = cloudEventData.getJsonObject(ENDPOINT_PROPERTIES);
+        exchange.setProperty(ORG_ID, cloudEventData.getString("org_id"));
         exchange.setProperty(TARGET_URL, endpointProperties.getString("url"));
         if (Boolean.TRUE == endpointProperties.getBoolean("disable_ssl_verification") &&
             exchange.getProperty(TARGET_URL, String.class).startsWith("https://")) {
@@ -43,7 +44,7 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
             exchange.setProperty(BASIC_AUTH_USERNAME, basicAuth.getString("username"));
             exchange.setProperty(BASIC_AUTH_PASSWORD, basicAuth.getString("password"));
         }
-        exchange.setProperty(ORG_ID, cloudEventData.getJsonObject(PAYLOAD).getString("org_id"));
+
         exchange.getIn().setBody(cloudEventData.getJsonObject(PAYLOAD).encode());
         exchange.getIn().setHeader(Exchange.HTTP_METHOD, HttpMethods.valueOf(endpointProperties.getString("method")));
 
