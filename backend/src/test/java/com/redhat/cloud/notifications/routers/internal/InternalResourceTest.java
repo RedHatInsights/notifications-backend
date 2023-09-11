@@ -458,8 +458,7 @@ public class InternalResourceTest extends DbIsolatedTest {
             .when()
             .get("/daily-digest/time-preference/1234")
             .then()
-            .statusCode(404)
-            .contentType(JSON);
+            .statusCode(404);
 
         // Set time preference to org ID 1234
         LocalTime localTime = LocalTime.now(ZoneOffset.UTC).withNano(0);

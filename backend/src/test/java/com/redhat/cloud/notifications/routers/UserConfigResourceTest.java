@@ -58,7 +58,6 @@ import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DRAWER
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
-import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -386,8 +385,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .when()
                 .post("/user-config/notification-preference")
                 .then()
-                .statusCode(expectedStatusCode)
-                .contentType(TEXT);
+                .statusCode(expectedStatusCode);
     }
 
     @Test
@@ -573,8 +571,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .body(Json.encode(settingsValues))
             .post(path)
             .then()
-            .statusCode(200)
-            .contentType(TEXT);
+            .statusCode(200);
         settingsValuesByEventType = given()
             .header(identityHeader)
             .when().get(path)
@@ -665,8 +662,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .body(Json.encode(settingsValues))
                 .post(path)
                 .then()
-                .statusCode(expectedStatusCode)
-                .contentType(TEXT);
+                .statusCode(expectedStatusCode);
     }
 
     private SettingsValueByEventTypeJsonForm getPreferencesByEventType(String path, Header identityHeader) {

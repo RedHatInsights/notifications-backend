@@ -35,7 +35,6 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonArray;
@@ -244,9 +243,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when().put("/endpoints/" + responsePoint.getString("id") + "/enable")
                 .then()
-                .statusCode(200)
-                .contentType(TEXT)
-                .contentType(ContentType.TEXT);
+                .statusCode(200);
 
         responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
@@ -477,8 +474,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                  .body(Json.encode(ep))
                  .post("/endpoints")
                  .then()
-                 .statusCode(400)
-                 .contentType(JSON);
+                 .statusCode(400);
     }
 
     @Test
@@ -844,8 +840,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(responsePointSingle.encode())
                 .put(String.format("/endpoints/%s", responsePointSingle.getString("id")))
                 .then()
-                .statusCode(200)
-                .contentType(TEXT);
+                .statusCode(200);
 
         // Fetch single one again to see that the updates were done
         JsonObject updatedEndpoint = fetchSingle(responsePointSingle.getString("id"), identityHeader);

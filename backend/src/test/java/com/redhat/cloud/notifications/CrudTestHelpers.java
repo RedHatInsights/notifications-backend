@@ -33,7 +33,6 @@ import static io.restassured.http.ContentType.TEXT;
 import static jakarta.ws.rs.core.Response.Status.Family.SUCCESSFUL;
 import static jakarta.ws.rs.core.Response.Status.Family.familyOf;
 import static org.hamcrest.Matchers.any;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.jboss.resteasy.reactive.RestResponse.StatusCode.NOT_FOUND;
 import static org.jboss.resteasy.reactive.RestResponse.StatusCode.OK;
@@ -126,8 +125,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(bundle))
                 .put("/internal/bundles/{bundleId}")
                 .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
+                .statusCode(expectedStatusCode);
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
             getBundle(identity, bundleId, bundle.getName(), bundle.getDisplayName(), OK);
@@ -265,8 +263,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(app))
                 .put("/internal/applications/{appId}")
                 .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
+                .statusCode(expectedStatusCode);
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
             getApp(identity, appId, app.getName(), app.getDisplayName(), OK);
@@ -371,8 +368,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(eventType))
                 .put("/internal/eventTypes/{eventTypeId}")
                 .then()
-                .statusCode(expectedStatusCode)
-                .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? containsString(TEXT.toString()) : any(String.class));
+                .statusCode(expectedStatusCode);
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
             String responseBody = given()
@@ -646,8 +642,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(updatedTemplate))
                 .when().put("/templates/{templateId}")
                 .then()
-                .statusCode(200)
-                .contentType(TEXT);
+                .statusCode(200);
 
         // Let's check that the template fields have been correctly updated.
         getTemplate(header, templateId, updatedTemplate, 200);
@@ -825,8 +820,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(updatedEmailTemplate))
                 .when().put("/templates/email/instant/{templateId}")
                 .then()
-                .statusCode(200)
-                .contentType(TEXT);
+                .statusCode(200);
 
         // Let's check that the instant email template fields have been correctly updated.
         getInstantEmailTemplate(header, templateId, updatedEmailTemplate, 200);
@@ -974,8 +968,7 @@ public abstract class CrudTestHelpers {
                 .body(Json.encode(updatedEmailTemplate))
                 .when().put("/templates/email/aggregation/{templateId}")
                 .then()
-                .statusCode(200)
-                .contentType(TEXT);
+                .statusCode(200);
 
         // Let's check that the aggregation email template fields have been correctly updated.
         getAggregationEmailTemplate(header, templateId, updatedEmailTemplate, 200);

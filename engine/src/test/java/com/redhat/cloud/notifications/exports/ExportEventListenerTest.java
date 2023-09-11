@@ -14,7 +14,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
-import io.smallrye.reactive.messaging.providers.connectors.InMemorySource;
+import io.smallrye.reactive.messaging.memory.InMemorySource;
 import io.vertx.core.json.JsonArray;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;

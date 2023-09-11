@@ -25,7 +25,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
-import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import io.smallrye.reactive.messaging.memory.InMemorySink;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.inject.Any;

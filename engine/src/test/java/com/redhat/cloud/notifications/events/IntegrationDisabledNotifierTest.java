@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
-import io.smallrye.reactive.messaging.providers.connectors.InMemorySink;
+import io.smallrye.reactive.messaging.memory.InMemorySink;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;

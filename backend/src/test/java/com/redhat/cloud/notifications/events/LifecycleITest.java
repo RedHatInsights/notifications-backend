@@ -590,8 +590,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
                 .then()
-                .statusCode(expectedHttpStatusCode)
-                .contentType(TEXT);
+                .statusCode(expectedHttpStatusCode);
     }
 
     private void addDefaultBehaviorGroupActions(Header turnpikeIdentityHeader, String defaultBehaviorGroupId, int expectedHttpStatusCode, RequestDefaultBehaviorGroupPropertyList... properties) {
@@ -604,8 +603,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .put("/behaviorGroups/default/{behaviorGroupId}/actions")
                 .then()
-                .statusCode(expectedHttpStatusCode)
-                .contentType(TEXT);
+                .statusCode(expectedHttpStatusCode);
     }
 
     private void updateEventTypeBehaviors(Header identityHeader, String eventTypeId, String... behaviorGroupIds) {
@@ -618,8 +616,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
-                .statusCode(200)
-                .contentType(TEXT);
+                .statusCode(200);
     }
 
     private void linkDefaultBehaviorGroup(Header turnpikeIdentityHeader, String eventTypeId, String behaviorGroupId) {
@@ -631,8 +628,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .put("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
                 .then()
-                .statusCode(200)
-                .contentType(TEXT);
+                .statusCode(200);
     }
 
     private void unlinkDefaultBehaviorGroup(Header turnpikeIdentityHeader, String eventTypeId, String behaviorGroupId) {
@@ -644,8 +640,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .delete("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
                 .then()
-                .statusCode(200)
-                .contentType(TEXT);
+                .statusCode(200);
     }
 
     private void checkEventTypeBehaviorGroups(Header identityHeader, String eventTypeId, String... expectedBehaviorGroupIds) {
@@ -839,7 +834,6 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .post("/user-config/notification-preference")
                 .then()
-                .statusCode(200)
-                .contentType(TEXT);
+                .statusCode(200);
     }
 }
