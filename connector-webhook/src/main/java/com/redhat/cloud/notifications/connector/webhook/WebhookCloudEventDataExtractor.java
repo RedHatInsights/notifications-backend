@@ -43,7 +43,13 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
             exchange.setProperty(BASIC_AUTH_USERNAME, basicAuth.getString("username"));
             exchange.setProperty(BASIC_AUTH_PASSWORD, basicAuth.getString("password"));
         }
-        exchange.setProperty(ORG_ID, cloudEventData.getJsonObject(PAYLOAD).getString("org_id"));
+
+        if (cloudEventData.getJsonObject(PAYLOAD).containsKey("org_id")) {
+            exchange.setProperty(ORG_ID, cloudEventData.getJsonObject(PAYLOAD).getString("org_id"));
+        } else if (cloudEventData.getJsonObject(PAYLOAD).containsKey("redhatorgid")) {
+            exchange.setProperty(ORG_ID, cloudEventData.getJsonObject(PAYLOAD).getString("redhatorgid"));
+        }
+
         exchange.getIn().setBody(cloudEventData.getJsonObject(PAYLOAD).encode());
         exchange.getIn().setHeader(Exchange.HTTP_METHOD, HttpMethods.valueOf(endpointProperties.getString("method")));
 
