@@ -10,8 +10,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
@@ -29,10 +29,10 @@ public class EmailAggregationRepository {
         // it covers cases when aggregation job may be run with few minutes late (ie: 05:01, 07,32)
         String query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName, acp.lastRun FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
             "ea.orgId = acp.orgId AND ea.created > acp.lastRun AND ea.created <= :now " +
-            "AND :nowTime >= acp.scheduledExecutionTime AND (:nowTime - acp.scheduledExecutionTime) < CAST(:cutoff as LocalTime)";
+            "AND :nowTime >= acp.scheduledExecutionTime AND (:nowTime - acp.scheduledExecutionTime) < :cutoff";
         Query hqlQuery = entityManager.createQuery(query)
                 .setParameter("nowTime", now.toLocalTime())
-                .setParameter("cutoff", LocalTime.of(0, 15))
+                .setParameter("cutoff", Duration.ofMinutes(15))
                .setParameter("now", now);
 
         List<Object[]> records = hqlQuery.getResultList();
