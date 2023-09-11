@@ -37,7 +37,7 @@
     </profiles>
 
     <properties>
-        <enforcer-plugin.version>3.4.0</enforcer-plugin.version>
+        <enforcer-plugin.version>3.4.1</enforcer-plugin.version>
         <maven-minimum-version>3.8.4</maven-minimum-version>
         <java-version>17</java-version>
         <compiler-plugin.version>3.11.0</compiler-plugin.version>
