@@ -84,7 +84,7 @@ public class EndpointRepository {
 
     public List<Endpoint> getTargetEndpoints(String orgId, EventType eventType) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled IS TRUE AND e.status = :status AND b.eventType = :eventType " +
+                "WHERE e.enabled AND e.status = :status AND b.eventType = :eventType " +
                 "AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
 
         List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
@@ -107,7 +107,7 @@ public class EndpointRepository {
 
     public List<Endpoint> getTargetEmailSubscriptionEndpoints(String orgId, String bundleName, String applicationName, String eventTypeName) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled IS TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
+                "WHERE e.enabled AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
                 "AND e.compositeType.type = :endpointType";
 
@@ -145,7 +145,7 @@ public class EndpointRepository {
                  * The endpoint exceeded the max server errors allowed from configuration.
                  * It is therefore disabled.
                  */
-                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled";
                 int updated = entityManager.createQuery(hql)
                         .setParameter("id", endpointId)
                         .executeUpdate();
@@ -243,7 +243,7 @@ public class EndpointRepository {
      */
     @Transactional
     public boolean disableEndpoint(UUID endpointId) {
-        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled";
         int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();
