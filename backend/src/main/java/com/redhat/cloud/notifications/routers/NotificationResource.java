@@ -221,7 +221,7 @@ public class NotificationResource {
     @GET
     @Path("/facets/applications")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List configured applications", description = "Returns a thin list of configured applications that includes the application name, the display name, and the ID. You can use this list to configure a filter in the UI.")
+    @Operation(summary = "List configured applications", description = "Returns a list of configured applications that includes the application name, the display name, and the ID. You can use this list to configure a filter in the UI.")
     public List<Facet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
         return applicationRepository.getApplications(bundleName)
                 .stream()
@@ -232,7 +232,7 @@ public class NotificationResource {
     @GET
     @Path("/facets/bundles")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List configured bundles", description = "Returns a thin list of configured bundles that includes the bundle name, the display name, and the ID. You can use this list to configure a filter in the UI.")
+    @Operation(summary = "List configured bundles", description = "Returns a list of configured bundles that includes the bundle name, the display name, and the ID. You can use this list to configure a filter in the UI.")
     public List<Facet> getBundleFacets(@Context SecurityContext sec, @QueryParam("includeApplications") boolean includeApplications) {
         return bundleRepository.getBundles()
                 .stream()

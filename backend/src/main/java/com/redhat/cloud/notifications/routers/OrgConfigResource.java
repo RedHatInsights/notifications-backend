@@ -61,7 +61,7 @@ public class OrgConfigResource {
     @Consumes(APPLICATION_JSON)
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
-    @Operation(summary = "Set the daily digest time", description = "Sets the daily digest UTC time. The accepted minute values are 00, 15, 30, and 45. Use this endpoint to set the time that daily emails are sent.")
+    @Operation(summary = "Set the daily digest time", description = "Sets the daily digest UTC time. The accepted minute values are 00, 15, 30, and 45. Use this endpoint to set the time when daily emails are sent.")
     public void saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
         String orgId = getOrgId(sec);
         if (!ALLOWED_MINUTES.contains(expectedTime.getMinute())) {
