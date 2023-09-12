@@ -312,7 +312,7 @@ public class EndpointResource {
     @Path("/system/email_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the roll-based access control (RBAC) group that will receive email notifications. Use this endpoint on behavior groups to send emails when an action linked to the behavior group is triggered.")
+    @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the role-based access control (RBAC) group that will receive email notifications. Use this endpoint on behavior groups to send emails when an action linked to the behavior group is triggered.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec,
@@ -324,7 +324,7 @@ public class EndpointResource {
     @Path("/system/drawer_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the roll-based access control (RBAC) group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
+    @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the role-based access control (RBAC) group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec,
