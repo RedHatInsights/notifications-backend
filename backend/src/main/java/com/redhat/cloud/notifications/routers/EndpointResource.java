@@ -312,7 +312,7 @@ public class EndpointResource {
     @Path("/system/email_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the RBAC group that will receive email notifications. Use this endpoint on behavior groups to send emails when an action linked to the behavior group is triggered.")
+    @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the roll-based access control (RBAC) group that will receive email notifications. Use this endpoint on behavior groups to send emails when an action linked to the behavior group is triggered.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec,
@@ -324,7 +324,7 @@ public class EndpointResource {
     @Path("/system/drawer_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the RBAC group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
+    @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the roll-based access control (RBAC) group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec,
@@ -364,7 +364,7 @@ public class EndpointResource {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as the description name or connection.")
+    @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as the description, name, or properties.")
     public Endpoint getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
@@ -408,7 +408,7 @@ public class EndpointResource {
     @PUT
     @Path("/{id}/enable")
     @Produces(TEXT_PLAIN)
-    @Operation(summary = "Enable an endpoint", description = "Enables an endpoint that is disabled so that the endpoint will be executed after an operation that uses the endpoint is restarted. An operation must be restarted to use the enabled endpoint.")
+    @Operation(summary = "Enable an endpoint", description = "Enables an endpoint that is disabled so that the endpoint will be executed on the following operations that use the endpoint is restarted. An operation must be restarted to use the enabled endpoint.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
@@ -426,8 +426,7 @@ public class EndpointResource {
     @DELETE
     @Path("/{id}/enable")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    @Operation(summary = "Disable an endpoint", description = "Disables an endpoint so that the endpoint will not be executed after an operation that uses the endpoint is restarted. An operation must be restarted to disable the endpoint in that operation. Disable an endpoint when you want to stop it from running and might want to re-enable it in the future.")
-    @Operation(summary = "Disable an endpoint", description = "")
+    @Operation(summary = "Disable an endpoint", description = "Disables an endpoint so that the endpoint will not be executed after an operation that uses the endpoint is started. An operation that is already running can still execute the endpoint. Disable an endpoint when you want to stop it from running and might want to re-enable it in the future.")
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {

@@ -142,7 +142,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleName}")
     @Produces(APPLICATION_JSON)
-    Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching for the bundle name.")
+    Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching by its name.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Bundle getBundleByName(@PathParam("bundleName") String bundleName) {
         Bundle bundle = bundleRepository.getBundle(bundleName);
