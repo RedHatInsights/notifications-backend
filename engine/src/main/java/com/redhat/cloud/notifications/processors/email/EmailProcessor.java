@@ -61,8 +61,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final TemplateInstance subjectTemplate = this.templateService.compileTemplate(subjectData, "subject");
         final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
 
-        final String subject = this.templateService.renderTemplate(event, subjectTemplate);
-        final String body = this.templateService.renderTemplate(event, bodyTemplate);
+        final String subject = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
+        final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate);
 
         // Get the set of user IDs that should receive an email notification for
         // the given event.
