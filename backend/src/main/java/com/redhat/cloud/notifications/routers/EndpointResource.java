@@ -518,7 +518,7 @@ public class EndpointResource {
     @PUT
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Change the notification type", description = "Changes the subscription notification email type. Use this endpoint to subscribe to email notifications from a specific application.")
+    @Operation(summary = "Subscribe to email notifications", description = "Use this endpoint to subscribe to email notifications from a specific application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public boolean subscribeEmail(
