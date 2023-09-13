@@ -156,7 +156,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleName}/applications/{applicationName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the application by bundle name", description = "Retrieves the application by the name of a specified bundle. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.")
+    @Operation(summary = "Retrieve an application by bundle and application names", description = "Retrieves an application by bundle and application names. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Application getApplicationByNameAndBundleName(
             @PathParam("bundleName") String bundleName,
