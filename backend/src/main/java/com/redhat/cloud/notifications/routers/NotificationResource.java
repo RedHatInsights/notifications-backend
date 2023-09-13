@@ -440,7 +440,7 @@ public class NotificationResource {
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Operation(summary = "Add a behavior group to an event type", description = "Adds a behavior group to the specified event  type.")
+    @Operation(summary = "Add a behavior group to an event type", description = "Adds a behavior group to the specified event type.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204")
     public void deleteBehaviorGroupFromEventType(
