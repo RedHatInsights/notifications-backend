@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector.email.processors.rbac.group;
 
+import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.RBACConstants;
 import io.quarkus.test.junit.QuarkusTest;
@@ -15,6 +16,9 @@ import java.util.UUID;
 
 @QuarkusTest
 public class RBACGroupRequestPreparerProcessorTest extends CamelQuarkusTestSupport {
+    @Inject
+    EmailConnectorConfig emailConnectorConfig;
+
     @Inject
     RBACGroupRequestPreparerProcessor rbacGroupRequestPreparerProcessor;
 
@@ -38,6 +42,8 @@ public class RBACGroupRequestPreparerProcessorTest extends CamelQuarkusTestSuppo
         // Assert that the correct headers were set in the processor.
         final Map<String, Object> headers = exchange.getMessage().getHeaders();
         Assertions.assertEquals("application/json", headers.get("Accept"), "the \"Accept\" header has an incorrect value");
+        Assertions.assertEquals(this.emailConnectorConfig.getRbacApplicationKey(), headers.get(RBACConstants.HEADER_X_RH_RBAC_CLIENT_ID));
+        Assertions.assertEquals(this.emailConnectorConfig.getRbacPSK(), headers.get(RBACConstants.HEADER_X_RH_RBAC_PSK));
         Assertions.assertEquals(orgId, headers.get(RBACConstants.HEADER_X_RH_RBAC_ORG_ID), "the RBAC's ORG ID header has an incorrect value");
         Assertions.assertEquals(String.format("/api/rbac/v1/groups/%s/", groupUUID), headers.get(Exchange.HTTP_PATH), "the wrong path was set in the processor");
         Assertions.assertEquals(HttpMethods.GET, headers.get(Exchange.HTTP_METHOD), "the wrong HTTP method was set in the processor");

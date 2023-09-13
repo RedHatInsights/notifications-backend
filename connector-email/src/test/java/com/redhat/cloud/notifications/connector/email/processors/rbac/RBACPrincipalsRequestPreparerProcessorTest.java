@@ -46,6 +46,8 @@ public class RBACPrincipalsRequestPreparerProcessorTest extends CamelQuarkusTest
         // Assert that the headers are correct.
         final Map<String, Object> headers = exchange.getMessage().getHeaders();
         Assertions.assertEquals("application/json", headers.get("Accept"));
+        Assertions.assertEquals(this.emailConnectorConfig.getRbacApplicationKey(), headers.get(RBACConstants.HEADER_X_RH_RBAC_CLIENT_ID));
+        Assertions.assertEquals(this.emailConnectorConfig.getRbacPSK(), headers.get(RBACConstants.HEADER_X_RH_RBAC_PSK));
         Assertions.assertEquals(orgId, headers.get(RBACConstants.HEADER_X_RH_RBAC_ORG_ID));
         Assertions.assertEquals("/api/rbac/v1/principals/", headers.get(Exchange.HTTP_PATH));
         Assertions.assertEquals(
