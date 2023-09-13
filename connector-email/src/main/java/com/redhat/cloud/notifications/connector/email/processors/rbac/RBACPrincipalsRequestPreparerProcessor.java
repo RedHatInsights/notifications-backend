@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.connector.email.processors.rbac;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
+import com.redhat.cloud.notifications.connector.email.processors.rbac.authentication.RBACAuthenticationUtilities;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
@@ -16,6 +17,9 @@ public class RBACPrincipalsRequestPreparerProcessor implements Processor {
     @Inject
     EmailConnectorConfig emailConnectorConfig;
 
+    @Inject
+    RBACAuthenticationUtilities rbacAuthenticationUtilities;
+
     @Override
     public void process(final Exchange exchange) {
         final String orgId = exchange.getProperty(ORG_ID, String.class);
@@ -28,8 +32,8 @@ public class RBACPrincipalsRequestPreparerProcessor implements Processor {
         // Set the accept header for the response's payload.
         exchange.getMessage().setHeader("Accept", "application/json");
 
-        // Set the ORG ID required by the other end.
-        exchange.getMessage().setHeader(RBACConstants.HEADER_X_RH_RBAC_ORG_ID, orgId);
+        // Set the authentication headers for RBAC.
+        this.rbacAuthenticationUtilities.setAuthenticationHeaders(exchange, orgId);
 
         // Set the path of the request's call. Beware that RBAC is expecting
         // the trailing slash.

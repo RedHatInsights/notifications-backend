@@ -9,4 +9,9 @@ public class RBACConstants {
      * RBAC's specific ORG ID header which the service is expecting.
      */
     public static final String HEADER_X_RH_RBAC_ORG_ID = "x-rh-rbac-org-id";
+    /**
+     * RBAC's PSK header which the target service requires in order to
+     * authenticate our requests and to be authorized to respond.
+     */
+    public static final String HEADER_X_RH_RBAC_PSK = "x-rh-rbac-psk";
 }
