@@ -364,7 +364,7 @@ public class EndpointResource {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as the description, name, or properties.")
+    @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
     public Endpoint getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
