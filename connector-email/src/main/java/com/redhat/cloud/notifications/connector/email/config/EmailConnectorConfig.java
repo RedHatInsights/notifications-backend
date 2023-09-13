@@ -150,6 +150,10 @@ public class EmailConnectorConfig extends ConnectorConfig {
         return this.itUserServiceURL;
     }
 
+    public String getRbacApplicationKey() {
+        return this.rbacApplicationKey;
+    }
+
     public boolean isRbacDevelopmentAuthenticationKeyPresent() {
         return this.rbacDevelopmentAuthenticationKey.isPresent()
             && !this.rbacDevelopmentAuthenticationKey.get().isBlank();

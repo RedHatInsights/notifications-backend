@@ -27,6 +27,10 @@ public class RBACAuthenticationUtilities {
             // purposes.
             exchange.getMessage().setHeader("Authorization", String.format("Basic %s", this.emailConnectorConfig.getRbacDevelopmentAuthenticationKeyAuthInfo()));
         } else {
+            // Set the client ID which RBAC expects, to discern which
+            // application is making the request.
+            exchange.getMessage().setHeader(RBACConstants.HEADER_X_RH_RBAC_CLIENT_ID, this.emailConnectorConfig.getRbacApplicationKey());
+
             // Set the PSK required for the request to be authenticated in RBAC.
             exchange.getMessage().setHeader(RBACConstants.HEADER_X_RH_RBAC_PSK, this.emailConnectorConfig.getRbacPSK());
 

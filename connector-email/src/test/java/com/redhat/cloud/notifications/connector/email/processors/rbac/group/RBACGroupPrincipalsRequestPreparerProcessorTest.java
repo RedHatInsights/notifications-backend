@@ -42,6 +42,7 @@ public class RBACGroupPrincipalsRequestPreparerProcessorTest extends CamelQuarku
         // Assert that the correct headers were set in the processor.
         final Map<String, Object> headers = exchange.getMessage().getHeaders();
         Assertions.assertEquals("application/json", headers.get("Accept"), "the \"Accept\" header has an incorrect value");
+        Assertions.assertEquals(this.emailConnectorConfig.getRbacApplicationKey(), headers.get(RBACConstants.HEADER_X_RH_RBAC_CLIENT_ID));
         Assertions.assertEquals(this.emailConnectorConfig.getRbacPSK(), headers.get(RBACConstants.HEADER_X_RH_RBAC_PSK));
         Assertions.assertEquals(orgId, headers.get(RBACConstants.HEADER_X_RH_RBAC_ORG_ID), "the RBAC's ORG ID header has an incorrect value");
         Assertions.assertEquals(String.format("/api/rbac/v1/groups/%s/principals/", groupUUID), headers.get(Exchange.HTTP_PATH), "the wrong path was set in the processor");

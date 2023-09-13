@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector.email.processors.rbac.authentication;
 
+import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.RBACConstants;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.authentication.testprofiles.PSKsTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
@@ -16,6 +17,9 @@ import java.util.UUID;
 @QuarkusTest
 @TestProfile(PSKsTestProfile.class)
 public class RBACAuthenticationUtilitiesPSKTest extends CamelQuarkusTestSupport {
+    @Inject
+    EmailConnectorConfig emailConnectorConfig;
+
     @Inject
     RBACAuthenticationUtilities rbacAuthenticationUtilities;
 
@@ -37,6 +41,7 @@ public class RBACAuthenticationUtilitiesPSKTest extends CamelQuarkusTestSupport 
         final Map<String, Object> headers = exchange.getMessage().getHeaders();
 
         Assertions.assertEquals(PSKsTestProfile.NOTIFICATIONS_PSK_SECRET, headers.get(RBACConstants.HEADER_X_RH_RBAC_PSK), "incorrect PSK header value found after calling the RBAC authentication utilities");
+        Assertions.assertEquals(this.emailConnectorConfig.getRbacApplicationKey(), headers.get(RBACConstants.HEADER_X_RH_RBAC_CLIENT_ID));
         Assertions.assertEquals(orgId, headers.get(RBACConstants.HEADER_X_RH_RBAC_ORG_ID), "incorrect organization ID header value found after calling the RBAC authentication utilities");
     }
 }
