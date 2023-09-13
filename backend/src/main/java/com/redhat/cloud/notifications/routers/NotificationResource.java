@@ -173,7 +173,7 @@ public class NotificationResource {
     @GET
     @Path("/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve an event type by searching for bundle and application name", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.")
+    @Operation(summary = "Retrieve an event type by bundle, application and event type names", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public EventType getEventTypesByNameAndBundleAndApplicationName(
             @PathParam("bundleName") String bundleName,
