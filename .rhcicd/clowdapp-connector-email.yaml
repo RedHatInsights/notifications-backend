@@ -102,6 +102,13 @@ objects:
               key: client-id
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV
           value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV}
+        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY
+          value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY}
+        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_PSKS
+          valueFrom:
+            secretKeyRef:
+              name: rbac-psks
+              key: psks.json
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION
           value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_PASSWORD
@@ -206,6 +213,9 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV
   description: The back office proxy's environment.
   value: "qa"
+- name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY
+  description: The application's key which will be used to authenticate to RBAC.
+  value: "notifications"
 - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION
   description: "Key store for opening a secure connection when communicating with IT. It should be set to 'file:/mnt/secrets/clientkeystore.jks'"
   value: ""
