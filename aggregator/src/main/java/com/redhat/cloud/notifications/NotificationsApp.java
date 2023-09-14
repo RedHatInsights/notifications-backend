@@ -3,7 +3,8 @@ package com.redhat.cloud.notifications;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

@@ -9,8 +9,9 @@ import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
-import javax.inject.Inject;
+
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ORG;

@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.processors.email.aggregators.InventoryEmai
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
+
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

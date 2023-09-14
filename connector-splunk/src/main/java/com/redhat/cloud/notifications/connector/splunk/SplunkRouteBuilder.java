@@ -1,11 +1,11 @@
 package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.component.http.HttpComponent;
+import org.apache.hc.core5.util.Timeout;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
@@ -54,8 +54,8 @@ public class SplunkRouteBuilder extends EngineToConnectorRouteBuilder {
 
     private void configureHttpsComponent() {
         HttpComponent httpComponent = getCamelContext().getComponent("https", HttpComponent.class);
-        httpComponent.setConnectTimeout(connectorConfig.getHttpsConnectTimeout());
-        httpComponent.setSocketTimeout(connectorConfig.getHttpsSocketTimeout());
+        httpComponent.setConnectTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpsConnectTimeout()));
+        httpComponent.setSoTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpsSocketTimeout()));
     }
 
     private HttpEndpointBuilder buildSplunkEndpoint(boolean trustAll) {

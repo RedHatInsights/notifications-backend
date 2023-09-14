@@ -2,12 +2,11 @@ package com.redhat.cloud.notifications.connector;
 
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;

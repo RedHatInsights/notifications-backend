@@ -2,11 +2,10 @@ package com.redhat.cloud.notifications.routers.engine;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
 
 @RegisterRestClient(configKey = "internal-engine")
 public interface EndpointTestService {

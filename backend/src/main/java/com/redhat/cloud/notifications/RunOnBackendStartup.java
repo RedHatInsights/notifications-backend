@@ -1,9 +1,8 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.runtime.Startup;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
 
 @Startup
 public class RunOnBackendStartup {

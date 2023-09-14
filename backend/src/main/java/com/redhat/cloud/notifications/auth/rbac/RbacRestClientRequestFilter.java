@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.auth.rbac;
 
 import com.redhat.cloud.notifications.Base64Utils;
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.client.ClientRequestFilter;
 
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
 import java.io.IOException;
 import java.net.URI;
 

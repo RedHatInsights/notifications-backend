@@ -10,9 +10,9 @@ import com.redhat.cloud.notifications.exports.transformers.UnsupportedFormatExce
 import com.redhat.cloud.notifications.exports.transformers.event.CSVEventTransformer;
 import com.redhat.cloud.notifications.exports.transformers.event.JSONEventTransformer;
 import com.redhat.cloud.notifications.models.Event;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.List;
 
 @ApplicationScoped

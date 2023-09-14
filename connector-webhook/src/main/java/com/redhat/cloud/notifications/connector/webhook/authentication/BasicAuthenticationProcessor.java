@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.webhook.authentication;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+
 import java.util.Base64;
 
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.BASIC_AUTH_PASSWORD;

@@ -1,12 +1,11 @@
 package com.redhat.cloud.notifications.health;
 
 import com.redhat.cloud.notifications.StuffHolder;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
-
-import javax.enterprise.context.ApplicationScoped;
 
 @Liveness
 @ApplicationScoped

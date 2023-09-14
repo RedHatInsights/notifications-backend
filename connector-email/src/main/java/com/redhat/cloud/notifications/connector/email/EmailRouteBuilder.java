@@ -18,6 +18,8 @@ import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBAC
 import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBACGroupProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBACGroupRequestPreparerProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsFilter;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Endpoint;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.component.http.HttpComponent;
@@ -25,9 +27,6 @@ import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;

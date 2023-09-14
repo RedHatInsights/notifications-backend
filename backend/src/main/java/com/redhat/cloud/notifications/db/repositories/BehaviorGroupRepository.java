@@ -6,16 +6,16 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
-import javax.transaction.Transactional;
-import javax.validation.Valid;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -23,8 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
-import static org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH;
+import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
 
 @ApplicationScoped
 public class BehaviorGroupRepository {
@@ -161,10 +160,6 @@ public class BehaviorGroupRepository {
 
         /*
          * When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
-         *
-         * When QueryHints.HINT_PASS_DISTINCT_THROUGH is set to false, Hibernate returns distinct results without passing the
-         * DISTINCT keyword to the DBMS. This is better for performances.
-         * See https://in.relation.to/2016/08/04/introducing-distinct-pass-through-query-hint/ for more details about that hint.
          */
         String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
                 "WHERE (b.orgId = :orgId OR b.orgId IS NULL) AND b.bundle.id = :bundleId " +
@@ -172,7 +167,6 @@ public class BehaviorGroupRepository {
         List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
                 .setParameter("orgId", orgId)
                 .setParameter("bundleId", bundleId)
-                .setHint(HINT_PASS_DISTINCT_THROUGH, false)
                 .getResultList();
         for (BehaviorGroup behaviorGroup : behaviorGroups) {
             behaviorGroup.filterOutBundle();
@@ -201,7 +195,7 @@ public class BehaviorGroupRepository {
             query += " AND orgId = :orgId";
         }
 
-        javax.persistence.Query q = entityManager.createQuery(query)
+        jakarta.persistence.Query q = entityManager.createQuery(query)
                 .setParameter("displayName", behaviorGroup.getDisplayName())
                 .setParameter("id", behaviorGroup.getId());
 
@@ -262,7 +256,7 @@ public class BehaviorGroupRepository {
             query += " AND orgId = :orgId";
         }
 
-        javax.persistence.Query q = entityManager.createQuery(query)
+        jakarta.persistence.Query q = entityManager.createQuery(query)
                 .setParameter("id", behaviorGroupId);
 
         if (orgId != null) {
@@ -472,7 +466,7 @@ public class BehaviorGroupRepository {
             "ON CONFLICT " +
                 "(behavior_group_id, event_type_id) DO NOTHING";
 
-        final javax.persistence.Query query = this.entityManager.createNativeQuery(appendBehaviorGroupQuery)
+        final jakarta.persistence.Query query = this.entityManager.createNativeQuery(appendBehaviorGroupQuery)
             .setParameter("behaviorGroupUuid", behaviorGroupUuid)
             .setParameter("eventTypeUuid", eventTypeUuid)
             .setParameter("created", LocalDateTime.now(UTC))
@@ -512,7 +506,7 @@ public class BehaviorGroupRepository {
                     "bg.orgId = :orgId" +
                 ")";
 
-        final javax.persistence.Query query = this.entityManager.createQuery(deleteFromEventTypeQuery);
+        final jakarta.persistence.Query query = this.entityManager.createQuery(deleteFromEventTypeQuery);
         query.setParameter("behaviorGroupUuid", behaviorGroupUuid)
             .setParameter("eventTypeUuid", eventTypeUuid)
             .setParameter("orgId", orgId);

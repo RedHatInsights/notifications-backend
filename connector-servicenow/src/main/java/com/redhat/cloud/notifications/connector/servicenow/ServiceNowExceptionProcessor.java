@@ -2,10 +2,9 @@ package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.http.base.HttpOperationFailedException;
-
-import javax.enterprise.context.ApplicationScoped;
 
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 

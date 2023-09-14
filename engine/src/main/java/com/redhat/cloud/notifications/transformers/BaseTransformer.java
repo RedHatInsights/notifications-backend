@@ -9,9 +9,9 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.stream.Collectors;
 

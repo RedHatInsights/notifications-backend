@@ -3,8 +3,9 @@ package com.redhat.cloud.notifications;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.Startup;
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
+
 import java.util.List;
 
 @Startup

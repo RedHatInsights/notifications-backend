@@ -11,13 +11,13 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -127,7 +127,7 @@ public class DailyEmailAggregationJob {
     List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
         final List<AggregationCommand> pendingAggregationCommands =
-                    emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
+                emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
         pairsProcessed = Gauge
                 .build()
                 .name("aggregator_job_orgid_application_pairs_processed")

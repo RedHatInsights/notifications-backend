@@ -5,7 +5,7 @@ import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessorTest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDPOINT_SUBTYPE;
 

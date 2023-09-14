@@ -4,9 +4,9 @@ import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;

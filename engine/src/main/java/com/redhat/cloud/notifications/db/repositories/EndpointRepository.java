@@ -8,12 +8,12 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.transaction.Transactional;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.transaction.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +29,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
-import static javax.persistence.LockModeType.PESSIMISTIC_WRITE;
+import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
 
 @ApplicationScoped
 public class EndpointRepository {
@@ -83,8 +83,9 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getTargetEndpoints(String orgId, EventType eventType) {
+        // TODO Replace `e.enabled` with `e.enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled IS TRUE AND e.status = :status AND b.eventType = :eventType " +
+                "WHERE e.enabled AND e.status = :status AND b.eventType = :eventType " +
                 "AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
 
         List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
@@ -106,8 +107,9 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getTargetEmailSubscriptionEndpoints(String orgId, String bundleName, String applicationName, String eventTypeName) {
+        // TODO Replace `e.enabled` with `e.enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled IS TRUE AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
+                "WHERE e.enabled AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
                 "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
                 "AND e.compositeType.type = :endpointType";
 
@@ -145,7 +147,8 @@ public class EndpointRepository {
                  * The endpoint exceeded the max server errors allowed from configuration.
                  * It is therefore disabled.
                  */
-                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+                // TODO Replace `enabled` with `enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
+                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled";
                 int updated = entityManager.createQuery(hql)
                         .setParameter("id", endpointId)
                         .executeUpdate();
@@ -243,7 +246,8 @@ public class EndpointRepository {
      */
     @Transactional
     public boolean disableEndpoint(UUID endpointId) {
-        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+        // TODO Replace `enabled` with `enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
+        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled";
         int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();

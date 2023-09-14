@@ -7,13 +7,16 @@ import org.apache.camel.support.DefaultExchange;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
+
 import java.util.Base64;
 
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.BASIC_AUTH_PASSWORD;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.BASIC_AUTH_USERNAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BasicAuthenticationTest {
     BasicAuthenticationProcessor testee = new BasicAuthenticationProcessor();

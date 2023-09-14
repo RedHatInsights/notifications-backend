@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.camel.google.chat;
 
 import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
 

@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPay
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;

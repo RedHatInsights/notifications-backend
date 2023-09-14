@@ -3,12 +3,11 @@ package com.redhat.cloud.notifications.connector.email.processors.rbac.group;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.RBACConstants;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import javax.inject.Inject;
 
 @QuarkusTest
 public class RBACGroupProcessorTest extends CamelQuarkusTestSupport {

@@ -2,10 +2,11 @@ package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.jboss.logging.Logger;
-import javax.enterprise.context.ApplicationScoped;
+
 import java.time.temporal.ValueRange;
 
 import static org.jboss.logging.Logger.Level.DEBUG;

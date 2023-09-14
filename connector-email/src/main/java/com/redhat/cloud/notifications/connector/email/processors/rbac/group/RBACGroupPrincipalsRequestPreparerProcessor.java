@@ -2,12 +2,11 @@ package com.redhat.cloud.notifications.connector.email.processors.rbac.group;
 
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.authentication.RBACAuthenticationUtilities;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.component.http.HttpMethods;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 

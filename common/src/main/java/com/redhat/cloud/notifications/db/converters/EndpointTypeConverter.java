@@ -1,9 +1,8 @@
 package com.redhat.cloud.notifications.db.converters;
 
 import com.redhat.cloud.notifications.models.EndpointType;
-
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 @Converter
 public class EndpointTypeConverter implements AttributeConverter<EndpointType, String> {

@@ -3,12 +3,12 @@ package com.redhat.cloud.notifications.connector.email.processors.rbac.authentic
 import com.redhat.cloud.notifications.connector.email.processors.rbac.authentication.testprofiles.DevelopmentKeyTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;

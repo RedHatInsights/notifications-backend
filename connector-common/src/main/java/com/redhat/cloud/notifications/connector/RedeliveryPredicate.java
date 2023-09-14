@@ -1,10 +1,9 @@
 package com.redhat.cloud.notifications.connector;
 
 import io.quarkus.arc.DefaultBean;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
-
-import javax.enterprise.context.ApplicationScoped;
 
 import java.io.IOException;
 

@@ -2,11 +2,10 @@ package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.ProtocolException;
-
-import javax.enterprise.context.ApplicationScoped;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;

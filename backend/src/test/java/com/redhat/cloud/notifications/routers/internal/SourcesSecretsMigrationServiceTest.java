@@ -11,9 +11,11 @@ import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hibernate.Session;
@@ -23,8 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -353,7 +353,7 @@ public class SourcesSecretsMigrationServiceTest {
 
     /**
      * Sets the given endpoint properties' URL field to an invalid URL, in
-     * order to trigger a {@link javax.validation.ConstraintViolationException}
+     * order to trigger a {@link jakarta.validation.ConstraintViolationException}
      * in the {@link SourcesSecretsMigrationService#migrateEndpointSecretsSources()}
      * function.
      * @param endpoint the endpoint which its URL will be set to an invalid

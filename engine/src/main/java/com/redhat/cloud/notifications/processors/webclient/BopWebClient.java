@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.webclient;
 
-import javax.inject.Qualifier;
+import jakarta.inject.Qualifier;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 

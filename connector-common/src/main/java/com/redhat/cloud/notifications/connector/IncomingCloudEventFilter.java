@@ -1,11 +1,10 @@
 package com.redhat.cloud.notifications.connector;
 
 import io.quarkus.arc.DefaultBean;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 @DefaultBean
 @ApplicationScoped

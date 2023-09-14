@@ -1,8 +1,7 @@
 package com.redhat.cloud.notifications.connector;
 
+import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
-
-import javax.inject.Inject;
 
 import static org.apache.camel.LoggingLevel.DEBUG;
 import static org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory.KafkaEndpointConsumerBuilder;

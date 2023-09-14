@@ -5,12 +5,12 @@ import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty
 import com.redhat.cloud.notifications.connector.email.model.bop.Email;
 import com.redhat.cloud.notifications.connector.email.model.bop.Emails;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.component.http.HttpMethods;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 

@@ -17,10 +17,11 @@ import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import jakarta.inject.Inject;
+import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import javax.inject.Inject;
-import javax.persistence.NoResultException;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;

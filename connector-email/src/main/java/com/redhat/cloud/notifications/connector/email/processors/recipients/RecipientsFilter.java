@@ -2,10 +2,10 @@ package com.redhat.cloud.notifications.connector.email.processors.recipients;
 
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.Set;
 
 @ApplicationScoped

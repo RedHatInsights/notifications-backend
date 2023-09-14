@@ -1,8 +1,7 @@
 package com.redhat.cloud.notifications.routers.endpoints;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 

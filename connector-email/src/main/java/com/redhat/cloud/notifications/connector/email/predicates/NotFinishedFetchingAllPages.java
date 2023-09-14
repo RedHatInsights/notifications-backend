@@ -1,10 +1,9 @@
 package com.redhat.cloud.notifications.connector.email.predicates;
 
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
-
-import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class NotFinishedFetchingAllPages implements Predicate {

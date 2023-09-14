@@ -1,11 +1,11 @@
 package com.redhat.cloud.notifications.connector;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.util.json.JsonObject;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;

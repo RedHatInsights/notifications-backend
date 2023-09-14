@@ -3,8 +3,8 @@ package com.redhat.cloud.notifications.exports.filters.events;
 import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
 import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;

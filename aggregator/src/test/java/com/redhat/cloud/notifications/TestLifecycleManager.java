@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import io.smallrye.reactive.messaging.providers.connectors.InMemoryConnector;
+import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 

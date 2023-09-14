@@ -1,13 +1,13 @@
 package com.redhat.cloud.notifications.db;
 
 import io.quarkus.logging.Log;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.QueryParam;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.QueryParam;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;

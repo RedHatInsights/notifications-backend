@@ -6,9 +6,9 @@ import com.redhat.cloud.notifications.processors.camel.CamelProcessorTest;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-import javax.inject.Inject;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;

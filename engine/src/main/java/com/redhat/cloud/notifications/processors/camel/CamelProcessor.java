@@ -17,7 +17,8 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonObject;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
+
 import java.util.List;
 import java.util.Map;
 

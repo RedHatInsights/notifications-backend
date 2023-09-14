@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.db.converters;
 
 import io.vertx.core.json.Json;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 import java.util.Map;
 
 @Converter

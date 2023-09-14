@@ -29,13 +29,13 @@ import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
+import jakarta.validation.constraints.Size;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
-import javax.validation.constraints.Size;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;

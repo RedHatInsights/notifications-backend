@@ -10,6 +10,7 @@ import org.apache.camel.Predicate;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
+
 import java.util.Base64;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;

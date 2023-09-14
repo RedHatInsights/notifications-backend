@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.BEARER_TOKEN;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BearerTokenAuthenticationTest {
     BearerTokenAuthenticationProcessor testee = new BearerTokenAuthenticationProcessor();

@@ -2,10 +2,9 @@ package com.redhat.cloud.notifications.connector.email.processors.rbac.authentic
 
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.RBACConstants;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 @ApplicationScoped
 public class RBACAuthenticationUtilities {

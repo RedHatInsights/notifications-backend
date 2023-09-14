@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.connector;
 
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.Collections;
 import java.util.Map;
 
@@ -34,7 +34,7 @@ public class ConnectorConfig {
 
     // https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html#max-poll-interval-ms
     @ConfigProperty(name = KAFKA_INCOMING_MAX_POLL_INTERVAL_MS, defaultValue = "300000")
-    long incomingKafkaMaxPollIntervalMs;
+    int incomingKafkaMaxPollIntervalMs;
 
     // https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html#max-poll-records
     @ConfigProperty(name = KAFKA_INCOMING_MAX_POLL_RECORDS, defaultValue = "500")
@@ -93,7 +93,7 @@ public class ConnectorConfig {
         return incomingKafkaGroupId;
     }
 
-    public long getIncomingKafkaMaxPollIntervalMs() {
+    public int getIncomingKafkaMaxPollIntervalMs() {
         return incomingKafkaMaxPollIntervalMs;
     }
 
