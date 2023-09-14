@@ -74,10 +74,11 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
-            subscribers,
-            recipientSettings,
             body,
-            subject
+            subject,
+            event.getOrgId(),
+            recipientSettings,
+            subscribers
         );
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
