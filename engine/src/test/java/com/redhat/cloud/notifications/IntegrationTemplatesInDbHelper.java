@@ -12,9 +12,10 @@ import com.redhat.cloud.notifications.templates.DrawerTemplateMigrationService;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import jakarta.inject.Inject;
+import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
-import javax.inject.Inject;
-import javax.persistence.NoResultException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
