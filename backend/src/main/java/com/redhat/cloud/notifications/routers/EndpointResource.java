@@ -198,7 +198,7 @@ public class EndpointResource {
     @GET
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    @Operation(summary = "List endpoints", description = "Get a list of endpoints filtered down by the passed parameters.")
+    @Operation(summary = "List endpoints", description = "Provides a list of endpoints. Use this endpoint to find specific endpoints.")
     @Parameters({
         @Parameter(
                 name = "limit",
@@ -255,7 +255,7 @@ public class EndpointResource {
     @POST
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Create a new endpoint", description = "Create a new endpoint from the passed data")
+    @Operation(summary = "Create a new endpoint", description = "Creates a new endpoint by providing data such as a description, a name, and the endpoint properties. Use this endpoint to create endpoints for integration with third-party services such as webhooks, Slack, or Google Chat.")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Endpoint.class))),
         @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
@@ -312,6 +312,7 @@ public class EndpointResource {
     @Path("/system/email_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the role-based access control (RBAC) group that will receive email notifications. Use this endpoint in behavior groups to send emails when an action linked to the behavior group is triggered.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec,
@@ -323,6 +324,7 @@ public class EndpointResource {
     @Path("/system/drawer_subscription")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the role-based access control (RBAC) group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public Endpoint getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec,
@@ -362,6 +364,7 @@ public class EndpointResource {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
     public Endpoint getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
@@ -380,6 +383,7 @@ public class EndpointResource {
     @DELETE
     @Path("/{id}")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "Delete an endpoint", description = "Deletes an endpoint. Use this endpoint to delete an endpoint that is no longer needed. Deleting an endpoint that is already linked to a behavior group will unlink it from the behavior group. You cannot delete system endpoints.")
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
@@ -404,6 +408,7 @@ public class EndpointResource {
     @PUT
     @Path("/{id}/enable")
     @Produces(TEXT_PLAIN)
+    @Operation(summary = "Enable an endpoint", description = "Enables an endpoint that is disabled so that the endpoint will be executed on the following operations that use the endpoint. An operation must be restarted to use the enabled endpoint.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
@@ -421,6 +426,7 @@ public class EndpointResource {
     @DELETE
     @Path("/{id}/enable")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "Disable an endpoint", description = "Disables an endpoint so that the endpoint will not be executed after an operation that uses the endpoint is started. An operation that is already running can still execute the endpoint. Disable an endpoint when you want to stop it from running and might want to re-enable it in the future.")
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
@@ -439,6 +445,7 @@ public class EndpointResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "Update an endpoint", description = "Updates the endpoint configuration. Use this to update an existing endpoint. Any changes to the endpoint take place immediately.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateEndpoint(@Context SecurityContext sec,
@@ -491,6 +498,7 @@ public class EndpointResource {
     @Path("/{id}/history/{history_id}/details")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+    @Operation(summary = "Retrieve event notification details", description = "Retrieves extended information about the outcome of an event notification related to the specified endpoint. Use this endpoint to learn why an event delivery failed.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
         String orgId = getOrgId(sec);
@@ -510,6 +518,7 @@ public class EndpointResource {
     @PUT
     @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
     @Produces(APPLICATION_JSON)
+    @Operation(summary = "Subscribe to email notifications", description = "Use this endpoint to subscribe to email notifications from a specific application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @Transactional
     public boolean subscribeEmail(
@@ -577,6 +586,7 @@ public class EndpointResource {
     @Consumes(APPLICATION_JSON)
     @POST
     @Path("/{uuid}/test")
+    @Operation(summary = "Generate a test notification", description = "Generates a test notification for a particular endpoint. Use this endpoint to test that an integration that you created works as expected. This endpoint triggers a test notification that should be received by the target recipient. For example, if you set up a webhook as the action to take upon receiving a notification, you should receive a test notification when using this endpoint.")
     @Parameters({
         @Parameter(
                 name = "uuid",
