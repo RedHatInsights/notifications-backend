@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
-import javax.enterprise.context.ApplicationScoped;
 
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.DISABLE_ENDPOINT_CLIENT_ERRORS;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.HTTP_STATUS_CODE;
