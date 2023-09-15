@@ -7,8 +7,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,13 +16,17 @@ import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+import static jakarta.persistence.GenerationType.SEQUENCE;
 
 @Entity
 @Table(name = "email_aggregation")
 public class EmailAggregation extends CreationTimestamped {
 
+    private static final String SEQUENCE_GENERATOR = "email-aggregation-sequence-generator";
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "email_aggregation_id_seq")
+    @GeneratedValue(strategy = SEQUENCE, generator = SEQUENCE_GENERATOR)
+    @SequenceGenerator(name = SEQUENCE_GENERATOR, sequenceName = "email_aggregation_id_seq")
     @JsonProperty(access = READ_ONLY)
     private Integer id;
 
