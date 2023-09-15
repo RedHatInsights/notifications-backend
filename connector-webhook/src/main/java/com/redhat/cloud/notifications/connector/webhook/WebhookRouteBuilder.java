@@ -71,6 +71,7 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
     private void configureTimeout(HttpComponent httpComponent) {
         httpComponent.setConnectTimeout(Timeout.ofMilliseconds(webhookConnectorConfig.getHttpsConnectTimeout()));
         httpComponent.setSoTimeout(Timeout.ofMilliseconds(webhookConnectorConfig.getHttpsSocketTimeout()));
+        httpComponent.setFollowRedirects(true);
     }
 
     private HttpEndpointBuilderFactory.HttpEndpointBuilder buildUnsecureSslEndpoint() {
