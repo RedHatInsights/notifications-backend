@@ -75,7 +75,7 @@ import static org.mockito.Mockito.when;
 class EmailSubscriptionTypeProcessorTest {
 
     final String BUNDLE_NAME = "console";
-    final String APP_NAME = "integrations";
+    final String APP_NAME = "notifications";
     final String EVENT_TYPE_NAME = "aggregation";
 
     @Inject

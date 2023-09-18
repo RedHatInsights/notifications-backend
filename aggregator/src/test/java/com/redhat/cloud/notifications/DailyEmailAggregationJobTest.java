@@ -74,7 +74,7 @@ class DailyEmailAggregationJobTest {
     void tearDown() {
         helpers.purgeEmailAggregations();
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
-        connector.sink(DailyEmailAggregationJob.INGRESS_CHANNEL).clear();
+        connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).clear();
         featureFlipper.setAggregatorSendOnIngress(false);
     }
 
@@ -86,7 +86,7 @@ class DailyEmailAggregationJobTest {
     List<AggregationCommand> getRecordsFromKafka() throws JsonProcessingException {
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         if (featureFlipper.isAggregatorSendOnIngress()) {
-            InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.INGRESS_CHANNEL);
+            InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
             for (Message message : results.received()) {
                 Action action = Parser.decode(String.valueOf(message.getPayload()));
                 aggregationCommands.add(objectMapper.convertValue(action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class));
@@ -147,7 +147,7 @@ class DailyEmailAggregationJobTest {
         helpers.purgeAggregationOrgConfig();
         testee.setDefaultDailyDigestTime(now.minusHours(2));
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
-        connector.sink(DailyEmailAggregationJob.INGRESS_CHANNEL).clear();
+        connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).clear();
 
         testee.processDailyEmail();
 

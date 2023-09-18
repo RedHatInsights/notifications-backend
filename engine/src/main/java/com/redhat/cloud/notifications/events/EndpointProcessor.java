@@ -37,9 +37,9 @@ public class EndpointProcessor {
     public static final String TEAMS_ENDPOINT_SUBTYPE = "teams";
     public static final String GOOGLE_CHAT_ENDPOINT_SUBTYPE = "google_chat";
 
-    public static final String AGGREGATOR_BUNDLE = "console";
-    public static final String AGGREGATOR_ACTION_APPLICATION = "integrations";
-    public static final String AGGREGATOR_CLOUD_EVENT_TYPE = "com.redhat.console.integrations.aggregator";
+    public static final String NOTIFICATIONS_APP_BUNDLE_NAME = "console";
+    public static final String NOTIFICATIONS_APP_NAME = "notifications";
+    public static final String AGGREGATION_EVENT_TYPE_NAME = "aggregation";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -158,13 +158,10 @@ public class EndpointProcessor {
         if (event.getEventWrapper() instanceof EventWrapperAction) {
             Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
 
-            return AGGREGATOR_BUNDLE.equals(action.getBundle()) &&
-                AGGREGATOR_ACTION_APPLICATION.equals(action.getApplication());
-        } else if (event.getEventWrapper() instanceof EventWrapperCloudEvent) {
-            return (((EventWrapperCloudEvent) event.getEventWrapper())
-                .getEvent().getType().startsWith(AGGREGATOR_CLOUD_EVENT_TYPE));
+            return NOTIFICATIONS_APP_BUNDLE_NAME.equals(action.getBundle()) &&
+                NOTIFICATIONS_APP_NAME.equals(action.getApplication()) &&
+                AGGREGATION_EVENT_TYPE_NAME.equals(action.getEventType());
         }
-
         return false;
     }
 }

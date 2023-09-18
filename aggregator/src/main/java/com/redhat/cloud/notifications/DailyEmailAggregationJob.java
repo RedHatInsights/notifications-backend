@@ -42,9 +42,9 @@ import static java.time.ZoneOffset.UTC;
 public class DailyEmailAggregationJob {
 
     public static final String AGGREGATION_CHANNEL = "aggregation";
-    public static final String INGRESS_CHANNEL = "egress";
+    public static final String EGRESS_CHANNEL = "egress";
     public static final String BUNDLE_NAME = "console";
-    public static final String APP_NAME = "integrations";
+    public static final String APP_NAME = "notifications";
     public static final String EVENT_TYPE_NAME = "aggregation";
 
     @Inject
@@ -67,7 +67,7 @@ public class DailyEmailAggregationJob {
     Emitter<String> emitter;
 
     @Inject
-    @Channel(INGRESS_CHANNEL)
+    @Channel(EGRESS_CHANNEL)
     Emitter<String> emitterIngress;
 
     @Inject
