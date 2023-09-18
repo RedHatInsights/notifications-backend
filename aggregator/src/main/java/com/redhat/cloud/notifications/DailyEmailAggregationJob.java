@@ -94,10 +94,10 @@ public class DailyEmailAggregationJob {
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (AggregationCommand aggregationCommand : aggregationCommands) {
                 try {
-                    final String payload = objectMapper.writeValueAsString(aggregationCommand);
                     if (featureFlipper.isAggregatorSendOnIngress()) {
                         sendIt(aggregationCommand);
                     } else {
+                        final String payload = objectMapper.writeValueAsString(aggregationCommand);
                         futures.add(emitter.send(payload).toCompletableFuture());
                     }
                 } catch (JsonProcessingException e) {
