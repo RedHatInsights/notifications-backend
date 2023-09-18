@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.connector.email.constants.Routes;
 import com.redhat.cloud.notifications.connector.email.predicates.NotFinishedFetchingAllPages;
 import com.redhat.cloud.notifications.connector.email.predicates.rbac.StatusCodeNotFound;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
+import com.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager;
 import com.redhat.cloud.notifications.connector.email.processors.dispatcher.DispatcherProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.it.ITResponseProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.it.ITUserRequestPreparer;
@@ -22,11 +23,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Endpoint;
 import org.apache.camel.builder.PredicateBuilder;
+import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
@@ -257,12 +260,14 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * Prepares the payload accepted by BOP and sends the request to
          * the service.
          */
+        final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpoint = this.setUpBOPEndpoint();
+
         from(direct(Routes.SEND_EMAIL_BOP))
             .routeId(Routes.SEND_EMAIL_BOP)
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
             .process(this.BOPRequestPreparer)
-            .to(this.emailConnectorConfig.getBopURL())
+            .to(bopEndpoint)
             .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .to(direct(SUCCESS));
 
@@ -302,5 +307,30 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         httpComponent.setSslContextParameters(scp);
 
         return httpComponent.createEndpoint(String.format("https:%s", this.emailConnectorConfig.getItUserServiceURL()));
+    }
+
+    /**
+     * Creates the endpoint for the BOP service. It makes Apache Camel trust
+     * BOP service's certificate.
+     * @return the created endpoint.
+     */
+    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpBOPEndpoint() {
+        // Remove the schema from the url to avoid the
+        // "ResolveEndpointFailedException", which complaints about specifying
+        // the schema twice.
+        final String fullURL = this.emailConnectorConfig.getBopURL();
+        if (fullURL.startsWith("https")) {
+            final TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
+            trustManagersParameters.setTrustManager(new BOPTrustManager());
+
+            final SSLContextParameters sslContextParameters = new SSLContextParameters();
+            sslContextParameters.setTrustManagers(trustManagersParameters);
+
+            return https(fullURL.replace("https://", ""))
+                .sslContextParameters(sslContextParameters)
+                .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
+        } else {
+            return http(fullURL.replace("http://", ""));
+        }
     }
 }
