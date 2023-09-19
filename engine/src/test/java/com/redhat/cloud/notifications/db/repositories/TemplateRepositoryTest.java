@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
+import io.quarkus.cache.CacheInvalidate;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -60,6 +61,7 @@ public class TemplateRepositoryTest {
 
         // Then we link an aggregation (DAILY) email template with app-1.
         AggregationEmailTemplate createdTemplate = resourceHelpers.createAggregationEmailTemplate(app1.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
+        invalidateIsEmailAggregationSupportedCache(app1.getId());
 
         /*
          * Expectations:
@@ -68,6 +70,10 @@ public class TemplateRepositoryTest {
          */
         assertIsEmailAggregationSupported(true, false);
         resourceHelpers.deleteEmailTemplatesById(createdTemplate.getId());
+    }
+
+    @CacheInvalidate(cacheName = "is-email-aggregation-supported")
+    void invalidateIsEmailAggregationSupportedCache(UUID appId) {
     }
 
     private void assertIsEmailAggregationSupported(boolean app1, boolean app2) {
@@ -83,6 +89,7 @@ public class TemplateRepositoryTest {
 
         // Then we link an instant email template with event-type-1...
         InstantEmailTemplate createdTemplate = resourceHelpers.createInstantEmailTemplate(eventType1.getId(), subjectTemplate.getId(), bodyTemplate.getId(), true);
+        invalidateInstantEmailTemplatesCache(eventType1.getId());
         // ... and retrieve it from the DB using the repository.
         Optional<InstantEmailTemplate> instantTemplate = templateRepository.findInstantEmailTemplate(eventType1.getId());
 
@@ -94,6 +101,10 @@ public class TemplateRepositoryTest {
         assertTrue(templateRepository.findInstantEmailTemplate(eventType2.getId()).isEmpty());
 
         resourceHelpers.deleteEmailTemplatesById(createdTemplate.getId());
+    }
+
+    @CacheInvalidate(cacheName = "instant-email-templates")
+    void invalidateInstantEmailTemplatesCache(UUID eventTypeId) {
     }
 
     @Test
