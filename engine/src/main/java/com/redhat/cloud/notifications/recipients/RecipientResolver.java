@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,6 +41,15 @@ public class RecipientResolver {
     }
 
     private Set<User> recipientUsers(String orgId, RecipientSettings request, Set<String> subscribers, boolean isOptIn) {
+        /*
+         If the subscription type is opt-in, the user preferences should NOT be ignored and the subscribers Set is empty,
+         then we don't need to retrieve the users from RBAC/IT/BOP because we'll return an empty Set anyway.
+         */
+        // TODO Report this change in the email connector ASAP.
+        if (isOptIn && !request.isIgnoreUserPreferences() && subscribers.isEmpty()) {
+            return Collections.emptySet();
+        }
+
         List<User> rbacUsers;
         if (request.getGroupId() == null) {
             rbacUsers = rbacRecipientUsersProvider.getUsers(orgId, request.isOnlyAdmins());

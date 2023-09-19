@@ -249,6 +249,7 @@ class EmailSubscriptionTypeProcessorTest {
             Bundle bundle = new Bundle();
             bundle.setName("rhel");
             Application application = new Application();
+            application.setId(UUID.randomUUID());
             application.setName("policies");
             application.setBundle(bundle);
             EventType eventType = new EventType();

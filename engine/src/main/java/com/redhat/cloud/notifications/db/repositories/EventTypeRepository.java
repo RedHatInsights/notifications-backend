@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeKey;
 import com.redhat.cloud.notifications.models.EventTypeKeyBundleAppEventTriplet;
 import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
+import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -25,6 +26,7 @@ public class EventTypeRepository {
         throw new IllegalArgumentException("Unsupported EventTypeKey found: " + eventTypeKey.getClass());
     }
 
+    @CacheResult(cacheName = "event-types-from-baet")
     public EventType getEventType(String bundleName, String applicationName, String eventTypeName) {
         String query = "FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle b " +
                 "WHERE e.name = :eventTypeName AND a.name = :applicationName AND b.name = :bundleName";
@@ -35,6 +37,7 @@ public class EventTypeRepository {
                 .getSingleResult();
     }
 
+    @CacheResult(cacheName = "event-types-from-fqn")
     public EventType getEventType(String fullyQualifiedName) {
         String query = "FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle b " +
                 "WHERE e.fullyQualifiedName = :fullyQualifiedName";

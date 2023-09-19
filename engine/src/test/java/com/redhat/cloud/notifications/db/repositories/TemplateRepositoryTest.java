@@ -14,7 +14,6 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -72,8 +71,8 @@ public class TemplateRepositoryTest {
     }
 
     private void assertIsEmailAggregationSupported(boolean app1, boolean app2) {
-        assertEquals(app1, templateRepository.isEmailAggregationSupported(bundle.getName(), this.app1.getName(), List.of(DAILY)));
-        assertEquals(app2, templateRepository.isEmailAggregationSupported(bundle.getName(), this.app2.getName(), List.of(DAILY)));
+        assertEquals(app1, templateRepository.isEmailAggregationSupported(this.app1.getId()));
+        assertEquals(app2, templateRepository.isEmailAggregationSupported(this.app2.getId()));
     }
 
     @Test

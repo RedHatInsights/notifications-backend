@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
+import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -16,12 +17,18 @@ import jakarta.persistence.TypedQuery;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class TemplateRepository {
+
+    private static final List<EmailSubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(EmailSubscriptionType.values())
+            .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
+            .collect(Collectors.toList());
 
     @Inject
     EntityManager entityManager;
@@ -31,17 +38,17 @@ public class TemplateRepository {
 
     private Optional<InstantEmailTemplate> defaultEmailTemplate = null;
 
-
-    public boolean isEmailAggregationSupported(String bundleName, String appName, List<EmailSubscriptionType> subscriptionTypes) {
-        String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.bundle.name = :bundleName " +
-                "AND application.name = :appName AND subscriptionType IN (:subscriptionTypes)";
+    @CacheResult(cacheName = "is-email-aggregation-supported")
+    public boolean isEmailAggregationSupported(UUID appId) {
+        String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.id = :appId " +
+                " AND subscriptionType IN (:subscriptionTypes)";
         return entityManager.createQuery(hql, Long.class)
-                .setParameter("bundleName", bundleName)
-                .setParameter("appName", appName)
-                .setParameter("subscriptionTypes", subscriptionTypes)
+                .setParameter("appId", appId)
+                .setParameter("subscriptionTypes", NON_INSTANT_SUBSCRIPTION_TYPES)
                 .getSingleResult() > 0;
     }
 
+    @CacheResult(cacheName = "instant-email-templates")
     public Optional<InstantEmailTemplate> findInstantEmailTemplate(UUID eventTypeId) {
         String hql = "FROM InstantEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
                 "WHERE t.eventType.id = :eventTypeId";
