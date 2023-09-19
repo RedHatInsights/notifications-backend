@@ -47,6 +47,7 @@ public class RecipientResolver {
          */
         // TODO Report this change in the email connector ASAP.
         if (isOptIn && !request.isIgnoreUserPreferences() && subscribers.isEmpty()) {
+            usersCount.set(0);
             return Collections.emptySet();
         }
 
