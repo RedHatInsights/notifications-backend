@@ -101,16 +101,26 @@ public class EmailAggregator {
                  * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
                  * The target endpoints properties will determine whether or not each candidate will actually receive an email.
                  */
-                Set<User> users = recipientResolver.recipientUsers(
-                    aggregationKey.getOrgId(),
-                    Stream.concat(
-                        endpoints
-                            .stream()
-                            .map(EndpointRecipientSettings::new),
-                        getActionRecipient(aggregation).stream()
-                    ).collect(Collectors.toSet()),
-                    getSubscribers(eventType, subscribersByEventType)
-                );
+                Set<User> users;
+
+                if (featureFlipper.isEmailConnectorEnabled()) {
+                    users = getSubscribers(eventType, subscribersByEventType).stream().map(username -> {
+                        User usr = new User();
+                        usr.setUsername(username);
+                        return usr;
+                    }).collect(Collectors.toSet());
+                } else {
+                    users = recipientResolver.recipientUsers(
+                        aggregationKey.getOrgId(),
+                        Stream.concat(
+                            endpoints
+                                .stream()
+                                .map(EndpointRecipientSettings::new),
+                            getActionRecipient(aggregation).stream()
+                        ).collect(Collectors.toSet()),
+                        getSubscribers(eventType, subscribersByEventType)
+                    );
+                }
 
                 /*
                  * We now have the final recipients list.

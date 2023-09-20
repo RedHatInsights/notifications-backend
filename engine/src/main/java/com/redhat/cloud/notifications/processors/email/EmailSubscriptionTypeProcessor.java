@@ -25,7 +25,10 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
+import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
@@ -115,6 +118,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
     private Counter failedAggregationCommandCount;
+
+    @Inject
+    ConnectorSender connectorSender;
 
     @PostConstruct
     void postConstruct() {
@@ -314,13 +320,30 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                     action.setContext(contextBuilder.build());
                     event.setEventWrapper(new EventWrapperAction(action));
 
-                    NotificationHistory history = emailSender.sendEmail(aggregation.getValue(), event, subject, body, false, endpoint);
-                    if (history != null) {
-                        Integer totalRecipients = (Integer) history.getDetails().get(TOTAL_RECIPIENTS_KEY);
-                        if (NotificationStatus.SUCCESS == history.getStatus()) {
-                            nbRecipientsSuccessfullySent += totalRecipients;
-                        } else {
-                            nbRecipientsFailureSent += totalRecipients;
+                    if (featureFlipper.isEmailConnectorEnabled()) {
+                        Set<String> recipientsUsernames = aggregation.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
+                        String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
+                        String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body);
+
+                        Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
+
+                        // Prepare all the data to be sent to the connector.
+                        final EmailNotification emailNotification = new EmailNotification(
+                            bodyStr, subjectStr,
+                            event.getOrgId(),
+                            recipientSettings, recipientsUsernames
+                        );
+
+                        connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
+                    } else {
+                        NotificationHistory history = emailSender.sendEmail(aggregation.getValue(), event, subject, body, false, endpoint);
+                        if (history != null) {
+                            Integer totalRecipients = (Integer) history.getDetails().get(TOTAL_RECIPIENTS_KEY);
+                            if (NotificationStatus.SUCCESS == history.getStatus()) {
+                                nbRecipientsSuccessfullySent += totalRecipients;
+                            } else {
+                                nbRecipientsFailureSent += totalRecipients;
+                            }
                         }
                     }
                 }
@@ -332,11 +355,28 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                     action.setContext(contextBuilder.build());
                     event.setEventWrapper(new EventWrapperAction(action));
 
-                    NotificationHistory history = emailSender.sendEmail(aggregation.getKey(), event, subject, body, false, endpoint);
-                    if (NotificationStatus.SUCCESS == history.getStatus()) {
-                        nbRecipientsSuccessfullySent++;
+                    if (featureFlipper.isEmailConnectorEnabled()) {
+                        Set<String> recipientsUsernames = Set.of(aggregation.getKey().getUsername());
+                        String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
+                        String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body);
+
+                        Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
+
+                        // Prepare all the data to be sent to the connector.
+                        final EmailNotification emailNotification = new EmailNotification(
+                            bodyStr, subjectStr,
+                            event.getOrgId(),
+                            recipientSettings, recipientsUsernames
+                        );
+
+                        connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
                     } else {
-                        nbRecipientsFailureSent++;
+                        NotificationHistory history = emailSender.sendEmail(aggregation.getKey(), event, subject, body, false, endpoint);
+                        if (NotificationStatus.SUCCESS == history.getStatus()) {
+                            nbRecipientsSuccessfullySent++;
+                        } else {
+                            nbRecipientsFailureSent++;
+                        }
                     }
                 }
             }
@@ -347,8 +387,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
             emailAggregationRepository.purgeOldAggregation(aggregationKey, aggregationCommand.getEnd());
         }
 
-        // build and persist aggregation history if needed
-        if (aggregatorEvent.isPresent()) {
+        // build and persist aggregation history if needed.
+        // If email connector is enabled, it will take care of history
+        if (aggregatorEvent.isPresent() && !featureFlipper.isEmailConnectorEnabled()) {
             buildAggregatedHistory(startTime, endpoint, event, nbRecipientsSuccessfullySent, nbRecipientsFailureSent);
         }
     }
