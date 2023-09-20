@@ -39,7 +39,6 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,10 +59,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     public static final String AGGREGATION_CONSUMED_TIMER_NAME = "aggregation.time.consumed";
     protected static final String TAG_KEY_BUNDLE = "bundle";
     protected static final String TAG_KEY_APPLICATION = "application";
-
-    private static final List<EmailSubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(EmailSubscriptionType.values())
-            .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
-            .collect(Collectors.toList());
 
     @Inject
     EmailAggregationRepository emailAggregationRepository;
@@ -126,7 +121,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         final String bundleName = eventType.getApplication().getBundle().getName();
         final String applicationName = eventType.getApplication().getName();
 
-        final boolean shouldSaveAggregation = this.templateRepository.isEmailAggregationSupported(bundleName, applicationName, NON_INSTANT_SUBSCRIPTION_TYPES);
+        final boolean shouldSaveAggregation = this.templateRepository.isEmailAggregationSupported(eventType.getApplicationId());
 
         if (shouldSaveAggregation) {
             final EmailAggregation aggregation = new EmailAggregation();
