@@ -9,7 +9,7 @@ ARG cacerts_keystore_password
 # The argument that holds Red Hat IT's custom certificate's location.
 ARG rh_it_root_ca_cert_url
 
-# install postgresql 11
+# install postgresql 15
 RUN microdnf install -y dnf
 RUN dnf install -y 'dnf-command(config-manager)'
 RUN dnf install -y  https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
