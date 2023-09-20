@@ -13,8 +13,8 @@ ARG rh_it_root_ca_cert_url
 RUN microdnf install -y dnf
 RUN dnf install -y 'dnf-command(config-manager)'
 RUN dnf install -y  https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-RUN dnf install -y postgresql11-server
-RUN dnf install -y postgresql11-contrib
+RUN dnf install -y postgresql15-server
+RUN dnf install -y postgresql15-contrib
 
 
 # 1. Install the UUID package which is required for the scripts.
