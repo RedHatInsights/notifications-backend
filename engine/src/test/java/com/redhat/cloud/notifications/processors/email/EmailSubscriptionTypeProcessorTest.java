@@ -31,7 +31,6 @@ import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
-import io.vertx.core.json.JsonObject;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.inject.Any;
