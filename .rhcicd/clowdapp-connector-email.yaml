@@ -101,7 +101,9 @@ objects:
               name: backoffice
               key: client-id
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV
-          value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV}
+          value: ${BACKOFFICE_CLIENT_ENV}
+        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_URL
+          value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY
           value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_PSKS
@@ -150,6 +152,16 @@ objects:
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
 parameters:
+- name: BACKOFFICE_CLIENT_ENV
+  description: Back-office client environment
+  value: qa
+- name: BACKOFFICE_HOST
+  description: The host of the backoffice proxy
+  value: backoffice-proxy.apps.ext.spoke.preprod.us-west-2.aws.paas.redhat.com
+- name: BACKOFFICE_SCHEME
+  description: The scheme for the backoffice proxy host's URL
+  value: "https"
+
 - name: CPU_LIMIT
   description: CPU limit
   value: 200m
@@ -210,9 +222,6 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_SINGLE_EMAIL_PER_USER_ENABLED
   description: Is sending a single email per user enabled?
   value: "false"
-- name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV
-  description: The back office proxy's environment.
-  value: "qa"
 - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY
   description: The application's key which will be used to authenticate to RBAC.
   value: "notifications"
