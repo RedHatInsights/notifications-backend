@@ -21,10 +21,8 @@ import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBAC
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsFilter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.camel.Endpoint;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
-import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
@@ -183,7 +181,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * up separately because we need to create a special SSL context which
          * trusts IT's certificate.
          */
-        final Endpoint itEndpoint = this.setUpITEndpoint();
+        final HttpEndpointBuilderFactory.HttpEndpointBuilder itEndpoint = this.setUpITEndpoint();
 
         from(direct(Routes.FETCH_USERS_IT))
             .routeId(Routes.FETCH_USERS_IT)
@@ -292,7 +290,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      * @throws Exception if the endpoint could not be created due to an
      * unexpected error.
      */
-    private Endpoint setUpITEndpoint() throws Exception {
+    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpITEndpoint() {
         final KeyStoreParameters ksp = new KeyStoreParameters();
         ksp.setResource(this.emailConnectorConfig.getItKeyStoreLocation());
         ksp.setPassword(this.emailConnectorConfig.getItKeyStorePassword());
@@ -303,10 +301,16 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         final SSLContextParameters scp = new SSLContextParameters();
         scp.setTrustManagers(tmp);
 
-        final HttpComponent httpComponent = this.getCamelContext().getComponent("https", HttpComponent.class);
-        httpComponent.setSslContextParameters(scp);
-
-        return httpComponent.createEndpoint(String.format("https:%s", this.emailConnectorConfig.getItUserServiceURL()));
+        // Remove the schema from the url to avoid the
+        // "ResolveEndpointFailedException", which complaints about specifying
+        // the schema twice.
+        final String fullURL = this.emailConnectorConfig.getItUserServiceURL();
+        if (fullURL.startsWith("https")) {
+            return https(fullURL.replace("https://", ""))
+                .sslContextParameters(scp);
+        } else {
+            return http(fullURL.replace("http://", ""));
+        }
     }
 
     /**
