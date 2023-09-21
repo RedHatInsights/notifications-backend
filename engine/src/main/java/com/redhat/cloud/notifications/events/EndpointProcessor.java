@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -35,6 +36,10 @@ public class EndpointProcessor {
     public static final String SLACK_ENDPOINT_SUBTYPE = "slack";
     public static final String TEAMS_ENDPOINT_SUBTYPE = "teams";
     public static final String GOOGLE_CHAT_ENDPOINT_SUBTYPE = "google_chat";
+
+    public static final String NOTIFICATIONS_APP_BUNDLE_NAME = "console";
+    public static final String NOTIFICATIONS_APP_NAME = "notifications";
+    public static final String AGGREGATION_EVENT_TYPE_NAME = "aggregation";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -80,7 +85,6 @@ public class EndpointProcessor {
 
     public void process(Event event) {
         processedItems.increment();
-
         final List<Endpoint> endpoints;
         if (TestEventHelper.isIntegrationTestEvent(event)) {
             final UUID endpointUuid = TestEventHelper.extractEndpointUuidFromTestEvent(event);
@@ -88,6 +92,8 @@ public class EndpointProcessor {
             final Endpoint endpoint = this.endpointRepository.findByUuidAndOrgId(endpointUuid, event.getOrgId());
 
             endpoints = List.of(endpoint);
+        } else if (isAggregatorEvent(event)) {
+            endpoints = List.of(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION));
         } else {
             endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
         }
@@ -121,10 +127,14 @@ public class EndpointProcessor {
                             }
                             break;
                         case EMAIL_SUBSCRIPTION:
-                            if (this.featureFlipper.isEmailConnectorEnabled()) {
-                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
+                            if (isAggregatorEvent(event)) {
+                                emailProcessor.processAggregation(event);
                             } else {
-                                emailProcessor.process(event, endpointsByTypeEntry.getValue());
+                                if (this.featureFlipper.isEmailConnectorEnabled()) {
+                                    emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
+                                } else {
+                                    emailProcessor.process(event, endpointsByTypeEntry.getValue());
+                                }
                             }
                             break;
                         case WEBHOOK:
@@ -142,5 +152,16 @@ public class EndpointProcessor {
                 }
             }
         });
+    }
+
+    public static boolean isAggregatorEvent(final com.redhat.cloud.notifications.models.Event event) {
+        if (event.getEventWrapper() instanceof EventWrapperAction) {
+            Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
+
+            return NOTIFICATIONS_APP_BUNDLE_NAME.equals(action.getBundle()) &&
+                NOTIFICATIONS_APP_NAME.equals(action.getApplication()) &&
+                AGGREGATION_EVENT_TYPE_NAME.equals(action.getEventType());
+        }
+        return false;
     }
 }

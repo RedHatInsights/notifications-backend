@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
@@ -21,6 +22,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
@@ -30,11 +32,17 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -43,12 +51,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_REJECTED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CONSUMED_TIMER_NAME;
+import static java.time.ZoneOffset.UTC;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -61,6 +73,10 @@ import static org.mockito.Mockito.when;
 
 @QuarkusTest
 class EmailSubscriptionTypeProcessorTest {
+
+    final String BUNDLE_NAME = "console";
+    final String APP_NAME = "notifications";
+    final String EVENT_TYPE_NAME = "aggregation";
 
     @Inject
     EmailSubscriptionTypeProcessor testee;
@@ -88,7 +104,10 @@ class EmailSubscriptionTypeProcessorTest {
     FeatureFlipper featureFlipper;
 
     @Inject
-    protected ResourceHelpers resourceHelpers;
+    ResourceHelpers resourceHelpers;
+
+    @Inject
+    EntityManager entityManager;
 
     @BeforeEach
     void beforeEach() {
@@ -99,32 +118,37 @@ class EmailSubscriptionTypeProcessorTest {
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
         testee.process(new Event(), null);
-        verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean());
+        verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
     }
 
     @Test
     void shouldNotProcessWhenEndpointsAreEmpty() {
         testee.process(new Event(), List.of());
-        verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean());
+        verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
     }
 
-    @Test
-    void shouldSuccessfullySendTwoAggregatedEmailToTwoRecipients() {
-        shouldSuccessfullySendTwoAggregatedEmails();
+    @ParameterizedTest
+    @ValueSource(strings = {AGGREGATION_CHANNEL, INGRESS_CHANNEL})
+    void shouldSuccessfullySendTwoAggregatedEmailToTwoRecipients(String channel) {
+        when(sender.sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class))).thenReturn(new NotificationHistory());
+        shouldSuccessfullySendTwoAggregatedEmails(channel);
     }
 
-    @Test
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients() {
+    @ParameterizedTest
+    @ValueSource(strings = {AGGREGATION_CHANNEL, INGRESS_CHANNEL})
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients(String channel) {
         try {
             featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(true);
-            shouldSuccessfullySendTwoAggregatedEmails();
+            NotificationHistory nh = new NotificationHistory();
+            nh.setDetails(Map.of(EmailSubscriptionTypeProcessor.TOTAL_RECIPIENTS_KEY, 1));
+            when(sender.sendEmail(any(Set.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class))).thenReturn(nh);
+            shouldSuccessfullySendTwoAggregatedEmails(channel);
         } finally {
             featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(false);
         }
     }
 
-
-    void shouldSuccessfullySendTwoAggregatedEmails() {
+    void shouldSuccessfullySendTwoAggregatedEmails(String channel) {
 
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
@@ -142,6 +166,8 @@ class EmailSubscriptionTypeProcessorTest {
             LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
             DAILY
         );
+
+        createAggregatorEventTypeIfNeeded(channel);
 
         User user1 = new User();
         user1.setUsername("foo");
@@ -167,8 +193,13 @@ class EmailSubscriptionTypeProcessorTest {
             emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
             emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
 
-            inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
-            inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
+            if (AGGREGATION_CHANNEL.equals(channel)) {
+                inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
+                inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
+            } else if (INGRESS_CHANNEL.equals(channel)) {
+                inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand1));
+                inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand2));
+            }
 
             micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
             micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
@@ -201,20 +232,66 @@ class EmailSubscriptionTypeProcessorTest {
             );
 
             if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-                verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
-                verify(sender, times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+                verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+                verify(sender, times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
             } else {
-                verify(sender, times(1)).sendEmail(eq(user1), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
-                verify(sender, times(1)).sendEmail(eq(user2), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
-                verify(sender, times(1)).sendEmail(eq(user3), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), eq(false));
+                verify(sender, times(1)).sendEmail(eq(user1), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+                verify(sender, times(1)).sendEmail(eq(user2), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+                verify(sender, times(1)).sendEmail(eq(user3), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
             }
-
+            getEventHistory(channel);
         } finally {
             if (null != blankAgg2) {
                 resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
             }
         }
         micrometerAssertionHelper.clearSavedValues();
+    }
+
+    private void createAggregatorEventTypeIfNeeded(String channel) {
+        if (INGRESS_CHANNEL.equals(channel)) {
+            Application aggregatorApp = resourceHelpers.findOrCreateApplication(BUNDLE_NAME, APP_NAME);
+            String eventTypeName = EVENT_TYPE_NAME;
+            try {
+                resourceHelpers.findEventType(aggregatorApp.getId(), eventTypeName);
+            } catch (NoResultException nre) {
+                resourceHelpers.createEventType(aggregatorApp.getId(), eventTypeName);
+            }
+        }
+    }
+
+    @Transactional
+    public void getEventHistory(String channel) {
+        if (INGRESS_CHANNEL.equals(channel)) {
+            String query = "SELECT nh FROM NotificationHistory nh WHERE nh.event.eventType.name = 'aggregation'";
+            List<NotificationHistory> histories = entityManager.createQuery(query, NotificationHistory.class).getResultList();
+            assertFalse(histories.isEmpty());
+            entityManager.createQuery("delete from NotificationHistory").executeUpdate();
+            histories = entityManager.createQuery(query, NotificationHistory.class).getResultList();
+            assertTrue(histories.isEmpty());
+        }
+    }
+
+    private String buildAggregatorAction(AggregationCommand aggregationCommand) {
+
+        Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
+        Map<String, Object> payload = JsonObject.mapFrom(aggregationCommand).getMap();
+        payload.forEach(payloadBuilder::withAdditionalProperty);
+
+        Action action = new Action.ActionBuilder()
+            .withBundle(BUNDLE_NAME)
+            .withApplication(APP_NAME)
+            .withEventType(EVENT_TYPE_NAME)
+            .withOrgId(aggregationCommand.getAggregationKey().getOrgId())
+            .withTimestamp(LocalDateTime.now(UTC))
+            .withEvents(List.of(
+                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                    .withMetadata(new Metadata.MetadataBuilder().build())
+                    .withPayload(payloadBuilder.build())
+                    .build()))
+            .build();
+
+        return Parser.encode(action);
     }
 
     @Test
@@ -256,6 +333,7 @@ class EmailSubscriptionTypeProcessorTest {
             eventType.setId(UUID.randomUUID());
             eventType.setApplication(application);
             Event event = new Event();
+            event.setOrgId("123456");
             event.setEventType(eventType);
             event.setId(UUID.randomUUID());
             event.setEventWrapper(new EventWrapperAction(
@@ -286,10 +364,10 @@ class EmailSubscriptionTypeProcessorTest {
 
             testee.process(event, List.of(endpoint));
             if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-                verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
+                verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true), any(Endpoint.class));
             } else {
-                verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
-                verify(sender, times(1)).sendEmail(eq(user2), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true));
+                verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true), any(Endpoint.class));
+                verify(sender, times(1)).sendEmail(eq(user2), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true), any(Endpoint.class));
             }
         } finally {
             featureFlipper.setUseDefaultTemplate(false);

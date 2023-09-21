@@ -42,7 +42,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     }
 
     public void setupInMemoryConnector(Map<String, String> props) {
-        props.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory("aggregation"));
+        props.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DailyEmailAggregationJob.AGGREGATION_CHANNEL));
+        props.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DailyEmailAggregationJob.EGRESS_CHANNEL));
     }
 
     @Override

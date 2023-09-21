@@ -219,20 +219,7 @@ public class ResourceHelpers {
     }
 
     public AggregationEmailTemplate createBlankAggregationEmailTemplate(String bundleName, String appName) {
-
-        Bundle bundle = null;
-        try {
-            bundle = findBundle(bundleName);
-        } catch (NoResultException nre) {
-            bundle = createBundle(bundleName);
-        }
-
-        Application app = null;
-        try {
-            app = findApp(bundleName, appName);
-        } catch (NoResultException nre) {
-            app = createApp(bundle.getId(), appName);
-        }
+        Application app = findOrCreateApplication(bundleName, appName);
 
         Template blankTemplate = createTemplate("blank_" + UUID.randomUUID(), "test blank template", StringUtils.EMPTY);
 
@@ -240,20 +227,7 @@ public class ResourceHelpers {
     }
 
     public InstantEmailTemplate createBlankInstantEmailTemplate(String bundleName, String appName, String eventTypeName) {
-
-        Bundle bundle = null;
-        try {
-            bundle = findBundle(bundleName);
-        } catch (NoResultException nre) {
-            bundle = createBundle(bundleName);
-        }
-
-        Application app = null;
-        try {
-            app = findApp(bundleName, appName);
-        } catch (NoResultException nre) {
-            app = createApp(bundle.getId(), appName);
-        }
+        Application app = findOrCreateApplication(bundleName, appName);
 
         EventType eventType = null;
         try {
@@ -265,5 +239,22 @@ public class ResourceHelpers {
         Template blankTemplate = createTemplate("blank_" + UUID.randomUUID(), "test blank template", StringUtils.EMPTY);
 
         return createInstantEmailTemplate(eventType.getId(), blankTemplate.getId(), blankTemplate.getId(), true);
+    }
+
+    public Application findOrCreateApplication(String bundleName, String appName) {
+        Bundle bundle = null;
+        try {
+            bundle = findBundle(bundleName);
+        } catch (NoResultException nre) {
+            bundle = createBundle(bundleName);
+        }
+
+        Application app = null;
+        try {
+            app = findApp(bundleName, appName);
+        } catch (NoResultException nre) {
+            app = createApp(bundle.getId(), appName);
+        }
+        return app;
     }
 }

@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationDisabled;
 import com.redhat.cloud.notifications.processors.webclient.SslVerificationEnabled;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
@@ -200,7 +201,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         }
     }
 
-    public void doHttpRequest(Event event, Endpoint endpoint, HttpRequest<Buffer> req, JsonObject payload, String method, String url, boolean persistHistory) {
+    public NotificationHistory doHttpRequest(Event event, Endpoint endpoint, HttpRequest<Buffer> req, JsonObject payload, String method, String url, boolean persistHistory) {
         final long startTime = System.currentTimeMillis();
         boolean isEmailEndpoint = endpoint.getType() == EMAIL_SUBSCRIPTION;
         final NotificationHistory history = buildNotificationHistory(event, endpoint, startTime);
@@ -222,7 +223,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                     if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
                         try {
                             int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
-                            details.put("total_recipients", totalRecipients);
+                            details.put(EmailSubscriptionTypeProcessor.TOTAL_RECIPIENTS_KEY, totalRecipients);
                             history.setDetails(details);
                             if (totalRecipients > 0) {
                                 Log.infof("Payload sent to bop = %s", payload);
@@ -327,8 +328,10 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         } finally {
             updateMetrics(history.getStatus(), isEmailEndpoint);
             if (persistHistory) {
+                history.setInvocationTime(System.currentTimeMillis() - startTime);
                 persistNotificationHistory(history);
             }
+            return history;
         }
     }
 

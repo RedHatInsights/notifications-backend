@@ -38,21 +38,21 @@ import static io.quarkus.runtime.LaunchMode.TEST;
 @ApplicationScoped
 public class FeatureFlipper {
 
-    @ConfigProperty(name = "notifications.aggregator-org-pref-enabled", defaultValue = "false")
-    boolean aggregatorOrgPrefEnabled;
+    @ConfigProperty(name = "notifications.aggregator-send-on-ingress", defaultValue = "false")
+    boolean aggregatorSendOnIngress;
 
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
-        Log.infof("The aggregator use org id time preference is %s", aggregatorOrgPrefEnabled ? "enabled" : "disabled");
+        Log.infof("The aggregator send command on ingress is %s", aggregatorSendOnIngress ? "enabled" : "disabled");
     }
 
-    public boolean isAggregatorOrgPrefEnabled() {
-        return this.aggregatorOrgPrefEnabled;
+    public boolean isAggregatorSendOnIngress() {
+        return aggregatorSendOnIngress;
     }
 
-    public void setAggregatorOrgPrefEnabled(boolean aggregatorOrgPrefEnabled) {
+    public void setAggregatorSendOnIngress(boolean aggregatorSendOnIngress) {
         checkTestLaunchMode();
-        this.aggregatorOrgPrefEnabled = aggregatorOrgPrefEnabled;
+        this.aggregatorSendOnIngress = aggregatorSendOnIngress;
     }
 
     /**

@@ -1,13 +1,12 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.processors.webclient.BopWebClient;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.recipients.User;
@@ -65,9 +64,6 @@ public class EmailSender {
     WebhookTypeProcessor webhookSender;
 
     @Inject
-    EndpointRepository endpointRepository;
-
-    @Inject
     TemplateService templateService;
 
     @Inject
@@ -86,11 +82,14 @@ public class EmailSender {
         bopApiToken = LineBreakCleaner.clean(bopApiToken);
     }
 
-    public void sendEmail(Set<User> users, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory) {
+    public NotificationHistory sendEmail(Set<User> users, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory, Endpoint endpoint) {
+
+        NotificationHistory history = null;
         if (users.isEmpty()) {
             Log.debug("No recipient found for this email");
-            return;
+            return history;
         }
+
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
@@ -109,7 +108,6 @@ public class EmailSender {
 
         // uses canonical EmailSubscription
         try {
-            Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
             // TODO Add recipients processing from policies-notifications processing (failed recipients)
             //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
@@ -117,23 +115,26 @@ public class EmailSender {
             // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
             //      also add metrics for these failures
 
-            webhookSender.doHttpRequest(
+            history = webhookSender.doHttpRequest(
                 event, endpoint,
                 bopRequest,
                 getPayload(users, event.getEventWrapper(), subject, body),
                 "POST",
                 bopUrl,
                 persistHistory);
+            return history;
         } catch (Exception e) {
             Log.error("Email sending failed", e);
         } finally {
             processedTimer.stop(registry.timer("processor.email.processed", "bundle", bundleName, "application", applicationName));
             processTime.record(Duration.between(start, LocalDateTime.now(UTC)));
+            return history;
         }
     }
 
     @Deprecated(forRemoval = true) // one email should be able to be send to multiple users because its body must not contains user personal data anymore
-    public void sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory) {
+    public NotificationHistory sendEmail(User user, Event event, TemplateInstance subject, TemplateInstance body, boolean persistHistory, Endpoint endpoint) {
+        NotificationHistory history = null;
         final HttpRequest<Buffer> bopRequest = this.buildBOPHttpRequest();
         LocalDateTime start = LocalDateTime.now(UTC);
 
@@ -152,7 +153,6 @@ public class EmailSender {
 
         // uses canonical EmailSubscription
         try {
-            Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
             // TODO Add recipients processing from policies-notifications processing (failed recipients)
             //      by checking the NotificationHistory's details section (if missing payload - fix in WebhookTypeProcessor)
@@ -160,7 +160,7 @@ public class EmailSender {
             // TODO If the call fails - we should probably rollback Kafka topic (if BOP is down for example)
             //      also add metrics for these failures
 
-            webhookSender.doHttpRequest(
+            history = webhookSender.doHttpRequest(
                     event, endpoint,
                     bopRequest,
                     getPayload(user, event.getEventWrapper(), subject, body), "POST", bopUrl, persistHistory);
@@ -171,6 +171,7 @@ public class EmailSender {
         } catch (Exception e) {
             Log.info("Email sending failed", e);
         }
+        return history;
     }
 
     private JsonObject getPayload(Set<User> users, EventWrapper<?, ?> eventWrapper, TemplateInstance subject, TemplateInstance body) {

@@ -95,4 +95,13 @@ public class EventRepository {
                 .setParameter("id", event.getId())
                 .executeUpdate();
     }
+
+    @Transactional
+    public void updateEventDisplayName(Event event) {
+        String hql = "UPDATE Event SET eventTypeDisplayName = :eventDisplayName WHERE id = :id";
+        entityManager.createQuery(hql)
+            .setParameter("eventDisplayName", event.getEventTypeDisplayName())
+            .setParameter("id", event.getId())
+            .executeUpdate();
+    }
 }
