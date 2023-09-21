@@ -322,11 +322,13 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                     event.setEventWrapper(new EventWrapperAction(action));
 
                     NotificationHistory history = emailSender.sendEmail(aggregation.getValue(), event, subject, body, false, endpoint);
-                    Integer totalRecipients = (Integer) history.getDetails().get(TOTAL_RECIPIENTS_KEY);
-                    if (NotificationStatus.SUCCESS == history.getStatus()) {
-                        nbRecipientsSuccessfullySent += totalRecipients;
-                    } else {
-                        nbRecipientsFailureSent += totalRecipients;
+                    if (history != null) {
+                        Integer totalRecipients = (Integer) history.getDetails().get(TOTAL_RECIPIENTS_KEY);
+                        if (NotificationStatus.SUCCESS == history.getStatus()) {
+                            nbRecipientsSuccessfullySent += totalRecipients;
+                        } else {
+                            nbRecipientsFailureSent += totalRecipients;
+                        }
                     }
                 }
             } else {
