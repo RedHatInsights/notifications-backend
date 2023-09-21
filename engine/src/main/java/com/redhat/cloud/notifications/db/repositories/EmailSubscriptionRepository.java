@@ -28,16 +28,6 @@ public class EmailSubscriptionRepository {
                 .getResultList();
     }
 
-    public List<String> getSubscribersByApplication(String orgId, UUID applicationId, EmailSubscriptionType subscriptionType) {
-        String hql = "SELECT id.userId FROM EmailSubscription WHERE id.orgId = :orgId AND id.subscriptionType = :subscriptionType " +
-                "AND application.id = :applicationId";
-        return entityManager.createQuery(hql, String.class)
-                .setParameter("orgId", orgId)
-                .setParameter("subscriptionType", subscriptionType)
-                .setParameter("applicationId", applicationId)
-                .getResultList();
-    }
-
     public List<String> getSubscribersByEventType(String orgId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
         String hql = "SELECT id.userId FROM EventTypeEmailSubscription WHERE id.orgId = :orgId AND id.subscriptionType = :subscriptionType " +
                 "AND eventType.id = :eventTypeId";

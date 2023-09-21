@@ -832,7 +832,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .contentType(JSON)
                 .body(Json.encode(values))
                 .when()
-                .post("/user-config/notification-preference")
+                .post("/user-config/notification-event-type-preference")
                 .then()
                 .statusCode(200);
     }

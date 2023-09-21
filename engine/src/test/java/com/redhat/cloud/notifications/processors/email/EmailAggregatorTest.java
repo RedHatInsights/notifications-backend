@@ -18,7 +18,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -67,11 +65,6 @@ class EmailAggregatorTest {
 
     final EmailAggregationKey aggregationKey = new EmailAggregationKey("org-1", "rhel", "policies");
 
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
-    }
-
     @BeforeEach
     void beforeEach() {
         emailAggregator.aggregationMaxPageSize = 5;
@@ -85,7 +78,6 @@ class EmailAggregatorTest {
         EventType eventType1 = resourceHelpers.createEventType(application.getId(), TestHelpers.eventType);
         EventType eventType2 = resourceHelpers.createEventType(application.getId(), "not-used");
         resourceHelpers.createEventType(application.getId(), "event-type-2");
-        resourceHelpers.createEmailSubscription("org-1", "user-1", application, DAILY);
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType2, DAILY);
 
         Endpoint endpoint = new Endpoint();
@@ -103,21 +95,8 @@ class EmailAggregatorTest {
             }).collect(Collectors.toSet());
         });
 
-        // Test user subscription based on application
-        Map<User, Map<String, Object>> result = aggregate();
-        assertNotNull(result);
-        assertTrue(result.size() == 1);
-        assertTrue(result.keySet().stream().filter(usr -> usr.getEmail().equals("user-1")).count() == 1);
-        User user = result.keySet().stream().findFirst().get();
-        assertEquals(4, ((LinkedHashMap) result.get(user).get("policies")).size());
-        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
-        emailAggregationRepository.purgeOldAggregation(aggregationKey, LocalDateTime.now(ZoneOffset.UTC));
-        reset(emailAggregationRepository); // just reset mockito counter
-
         // Test user subscription based on event type
-        featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
-        result = aggregate();
+        Map<User, Map<String, Object>> result = aggregate();
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
         reset(emailAggregationRepository); // just reset mockito counter
@@ -132,7 +111,7 @@ class EmailAggregatorTest {
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.aggregationMaxPageSize));
         assertEquals(1, result.size());
-        user = result.keySet().stream().findFirst().get();
+        User user = result.keySet().stream().findFirst().get();
         assertTrue(user.getEmail().equals("user-2"));
         assertEquals(8, ((LinkedHashMap) result.get(user).get("policies")).size());
 
