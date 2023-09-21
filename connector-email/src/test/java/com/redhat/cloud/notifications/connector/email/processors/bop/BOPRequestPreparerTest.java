@@ -54,6 +54,7 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
         // Assert that the headers are correct.
         final Map<String, Object> headers = exchange.getMessage().getHeaders();
         Assertions.assertEquals(HttpMethods.POST, headers.get(Exchange.HTTP_METHOD));
+        Assertions.assertEquals("/v1/sendEmails", headers.get(Exchange.HTTP_PATH));
         Assertions.assertEquals("application/json", headers.get(Exchange.CONTENT_TYPE));
         Assertions.assertEquals(this.emailConnectorConfig.getBopApiToken(), headers.get(Constants.BOP_API_TOKEN_HEADER));
         Assertions.assertEquals(this.emailConnectorConfig.getBopClientId(), headers.get(Constants.BOP_CLIENT_ID_HEADER));
@@ -92,6 +93,7 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
         // Assert that the headers are correct.
         final Map<String, Object> headers = exchange.getMessage().getHeaders();
         Assertions.assertEquals(HttpMethods.POST, headers.get(Exchange.HTTP_METHOD));
+        Assertions.assertEquals("/v1/sendEmails", headers.get(Exchange.HTTP_PATH));
         Assertions.assertEquals("application/json", headers.get(Exchange.CONTENT_TYPE));
         Assertions.assertEquals(this.emailConnectorConfig.getBopApiToken(), headers.get(Constants.BOP_API_TOKEN_HEADER));
         Assertions.assertEquals(this.emailConnectorConfig.getBopClientId(), headers.get(Constants.BOP_CLIENT_ID_HEADER));
