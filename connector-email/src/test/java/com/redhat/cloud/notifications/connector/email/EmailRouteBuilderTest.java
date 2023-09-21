@@ -1,10 +1,13 @@
 package com.redhat.cloud.notifications.connector.email;
 
+import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
+import com.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
+import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.AdviceWith;
@@ -19,6 +22,12 @@ import java.util.Set;
 @QuarkusTest
 @TestProfile(EmailRouteBuilderTest.class)
 public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
+    @Inject
+    EmailConnectorConfig emailConnectorConfig;
+
+    @Inject
+    EmailRouteBuilder emailRouteBuilder;
+
     @Inject
     ProducerTemplate producerTemplate;
 
@@ -60,6 +69,23 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         final List<Exchange> splittedExchanges = sendEmailBopEndpoint.getExchanges();
         for (final Exchange splittedExchange : splittedExchanges) {
             Assertions.assertTrue(splittedExchange.getProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, Boolean.class), "after splitting the usernames' list, the resulting exchanges did not contain the 'single email per user' flag defined as a property");
+        }
+    }
+
+    /**
+     * Tests that the function under test creates the BOP endpoint with the
+     * {@link BOPTrustManager} class as the SSL context parameters, and that
+     * that class is essentially a NOOP class.
+     * @throws Exception if the endpoint could not be created.
+     */
+    @Test
+    void testBuildBOPEndpoint() throws Exception {
+        try (Endpoint bopEndpoint = this.emailRouteBuilder.setUpBOPEndpoint().resolve(this.context)) {
+            Assertions.assertEquals(this.emailConnectorConfig.getBopURL(), bopEndpoint.getEndpointBaseUri(), "the base URI of the endpoint is not the same as the one set through the properties");
+
+            final String bopEndpointURI = bopEndpoint.getEndpointUri();
+            Assertions.assertTrue(bopEndpointURI.contains("trustManager%3Dcom.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager"), "the endpoint does not contain a reference to the BOPTrustManager");
+            Assertions.assertTrue(bopEndpointURI.contains("x509HostnameVerifier=NO_OP"), "the base URI does not contain a mention to the NO_OP hostname verifier");
         }
     }
 }
