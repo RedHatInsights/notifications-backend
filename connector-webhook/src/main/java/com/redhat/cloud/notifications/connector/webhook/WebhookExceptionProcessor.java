@@ -28,7 +28,7 @@ public class WebhookExceptionProcessor extends ExceptionProcessor {
             log(DEBUG, e, exchange);
             exchange.setProperty(HTTP_STATUS_CODE, e.getStatusCode());
             if (http400ErrorRange.isValidValue(e.getStatusCode())) {
-                exchange.setProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, Boolean.TRUE.booleanValue());
+                exchange.setProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, true);
             } else {
                 exchange.setProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, true);
             }
