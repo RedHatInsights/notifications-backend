@@ -18,10 +18,13 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
         super.process(exchange);
         Message in = exchange.getIn();
         JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
-        if (exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS) != null || exchange.getProperty(DISABLE_ENDPOINT_CLIENT_ERRORS) != null) {
+        boolean clientError = exchange.getProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, false, boolean.class);
+        boolean serverError = exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, false, boolean.class);
+
+        if (clientError || serverError) {
             JsonObject data = new JsonObject(cloudEvent.getString("data"));
             data.getJsonObject("details").put(HTTP_STATUS_CODE, exchange.getProperty(HTTP_STATUS_CODE));
-            if (exchange.getProperty(DISABLE_ENDPOINT_CLIENT_ERRORS) != null) {
+            if (clientError) {
                 data.put(DISABLE_ENDPOINT_CLIENT_ERRORS, exchange.getProperty(DISABLE_ENDPOINT_CLIENT_ERRORS));
             } else {
                 data.put(INCREMENT_ENDPOINT_SERVER_ERRORS, exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS));

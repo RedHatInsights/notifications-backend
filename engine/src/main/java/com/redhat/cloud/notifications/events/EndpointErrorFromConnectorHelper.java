@@ -53,10 +53,10 @@ public class EndpointErrorFromConnectorHelper {
         JsonObject data = new JsonObject(payload.getString("data"));
         if (strHistoryId != null) {
             UUID historyId = UUID.fromString(strHistoryId);
-            Boolean shouldIncrementServerError = data.getBoolean(INCREMENT_ENDPOINT_SERVER_ERRORS, false);
-            Boolean shouldDisableEndpointClientError = data.getBoolean(DISABLE_ENDPOINT_CLIENT_ERRORS, false);
+            boolean shouldIncrementServerError = data.getBoolean(INCREMENT_ENDPOINT_SERVER_ERRORS, false);
+            boolean shouldDisableEndpointClientError = data.getBoolean(DISABLE_ENDPOINT_CLIENT_ERRORS, false);
 
-            if (Boolean.TRUE.equals(data.getBoolean("successful", false))) {
+            if (data.getBoolean("successful", false)) {
                 final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId.toString());
                 if (endpoint != null) {
                     boolean reset = endpointRepository.resetEndpointServerErrors(endpoint.getId());
@@ -67,7 +67,7 @@ public class EndpointErrorFromConnectorHelper {
             } else if (shouldIncrementServerError || shouldDisableEndpointClientError) {
                 final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId.toString());
 
-                if (Boolean.TRUE.equals(shouldDisableEndpointClientError)) {
+                if (shouldDisableEndpointClientError) {
                     /*
                      * The target endpoint returned a 4xx status. That kind of error requires an update of the
                      * endpoint settings (URL, secret token...). The endpoint will most likely never return a
@@ -82,7 +82,7 @@ public class EndpointErrorFromConnectorHelper {
                     }
                 }
 
-                if (Boolean.TRUE.equals(shouldIncrementServerError)) {
+                if (shouldIncrementServerError) {
                     /*
                      * The target endpoint returned a 5xx status. That kind of error happens in case of remote
                      * server failure, which is usually something temporary. Sending another notification to

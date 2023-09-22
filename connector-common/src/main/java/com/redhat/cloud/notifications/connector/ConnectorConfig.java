@@ -26,9 +26,6 @@ public class ConnectorConfig {
     private static final String REDELIVERY_DELAY = "notifications.connector.redelivery.delay";
     private static final String REDELIVERY_MAX_ATTEMPTS = "notifications.connector.redelivery.max-attempts";
 
-    private static final String HTTPS_CONNECT_TIMEOUT_MS = "notifications.connector.https.connect-timeout-ms";
-    private static final String HTTPS_SOCKET_TIMEOUT_MS = "notifications.connector.https.socket-timeout-ms";
-
     @ConfigProperty(name = ENDPOINT_CACHE_MAX_SIZE, defaultValue = "100")
     int endpointCacheMaxSize;
 
@@ -64,12 +61,6 @@ public class ConnectorConfig {
     @ConfigProperty(name = REDELIVERY_MAX_ATTEMPTS, defaultValue = "2")
     int redeliveryMaxAttempts;
 
-    @ConfigProperty(name = HTTPS_CONNECT_TIMEOUT_MS, defaultValue = "2500")
-    int httpsConnectTimeout;
-
-    @ConfigProperty(name = HTTPS_SOCKET_TIMEOUT_MS, defaultValue = "2500")
-    int httpsSocketTimeout;
-
     public void log() {
         log(Collections.emptyMap());
     }
@@ -87,8 +78,6 @@ public class ConnectorConfig {
         Log.infof("%s=%s", REDELIVERY_COUNTER_NAME, redeliveryCounterName);
         Log.infof("%s=%s", REDELIVERY_DELAY, redeliveryDelay);
         Log.infof("%s=%s", REDELIVERY_MAX_ATTEMPTS, redeliveryMaxAttempts);
-        Log.infof("%s=%s", HTTPS_CONNECT_TIMEOUT_MS, httpsConnectTimeout);
-        Log.infof("%s=%s", HTTPS_SOCKET_TIMEOUT_MS, httpsSocketTimeout);
         if (additionalEntries != null) {
             for (Entry<String, Object> additionalEntry : additionalEntries.entrySet()) {
                 Log.infof("%s=%s", additionalEntry.getKey(), additionalEntry.getValue());
@@ -138,13 +127,5 @@ public class ConnectorConfig {
 
     public int getRedeliveryMaxAttempts() {
         return redeliveryMaxAttempts;
-    }
-
-    public int getHttpsConnectTimeout() {
-        return httpsConnectTimeout;
-    }
-
-    public int getHttpsSocketTimeout() {
-        return httpsSocketTimeout;
     }
 }

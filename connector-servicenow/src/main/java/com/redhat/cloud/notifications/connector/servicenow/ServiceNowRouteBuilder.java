@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.connector.servicenow;
 
-import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -23,7 +22,7 @@ import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.H
 public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Inject
-    ConnectorConfig connectorConfig;
+    ServiceNowConnectorConfig connectorConfig;
 
     @Override
     public void configureRoute() {

@@ -6,8 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.jboss.logging.Logger;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
+import java.io.IOException;
 import java.time.temporal.ValueRange;
 
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.DISABLE_ENDPOINT_CLIENT_ERRORS;
@@ -29,13 +28,13 @@ public class WebhookExceptionProcessor extends ExceptionProcessor {
             log(DEBUG, e, exchange);
             exchange.setProperty(HTTP_STATUS_CODE, e.getStatusCode());
             if (http400ErrorRange.isValidValue(e.getStatusCode())) {
-                exchange.setProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, Boolean.TRUE);
+                exchange.setProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, Boolean.TRUE.booleanValue());
             } else {
-                exchange.setProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, Boolean.TRUE);
+                exchange.setProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, true);
             }
-        } else if (t instanceof SocketTimeoutException
-            || t instanceof UnknownHostException) {
-            exchange.setProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, Boolean.TRUE);
+        } else if (t instanceof IOException) {
+            logDefault(t, exchange);
+            exchange.setProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, true);
         } else {
             logDefault(t, exchange);
         }
