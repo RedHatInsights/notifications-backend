@@ -134,10 +134,7 @@ public class ConnectorReceiverTest {
 
         ArgumentCaptor<NotificationHistory> nhUpdate = ArgumentCaptor.forClass(NotificationHistory.class);
         verify(notificationHistoryRepository, times(1)).updateHistoryItem(nhUpdate.capture());
-
-        if (!isSuccessful) {
-            verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(nhUpdate.getValue().getId().toString());
-        }
+        verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(nhUpdate.getValue().getId().toString());
 
         verifyNoMoreInteractions(notificationHistoryRepository);
 

@@ -6,11 +6,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.jboss.logging.Logger;
-
+import java.io.IOException;
 import java.time.temporal.ValueRange;
 
+import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.DISABLE_ENDPOINT_CLIENT_ERRORS;
+import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.HTTP_STATUS_CODE;
+import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.INCREMENT_ENDPOINT_SERVER_ERRORS;
 import static org.jboss.logging.Logger.Level.DEBUG;
-import static org.jboss.logging.Logger.Level.ERROR;
 
 @ApplicationScoped
 public class WebhookExceptionProcessor extends ExceptionProcessor {
@@ -23,12 +25,16 @@ public class WebhookExceptionProcessor extends ExceptionProcessor {
     @Override
     protected void process(Throwable t, Exchange exchange) {
         if (t instanceof HttpOperationFailedException e) {
+            log(DEBUG, e, exchange);
+            exchange.setProperty(HTTP_STATUS_CODE, e.getStatusCode());
             if (http400ErrorRange.isValidValue(e.getStatusCode())) {
-                // TODO Disable the integration using the 'integration-disabled' event type.
-                log(DEBUG, e, exchange);
+                exchange.setProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, true);
             } else {
-                log(ERROR, e, exchange);
+                exchange.setProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, true);
             }
+        } else if (t instanceof IOException) {
+            logDefault(t, exchange);
+            exchange.setProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, true);
         } else {
             logDefault(t, exchange);
         }

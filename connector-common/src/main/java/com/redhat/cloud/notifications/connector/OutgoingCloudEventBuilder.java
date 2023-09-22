@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector;
 
+import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
@@ -17,6 +18,7 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_U
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TYPE;
 import static java.time.ZoneOffset.UTC;
 
+@DefaultBean
 @ApplicationScoped
 public class OutgoingCloudEventBuilder implements Processor {
 

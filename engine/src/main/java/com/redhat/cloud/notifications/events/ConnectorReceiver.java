@@ -14,6 +14,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
@@ -52,6 +53,9 @@ public class ConnectorReceiver {
     @Inject
     CamelHistoryFillerHelper camelHistoryFillerHelper;
 
+    @Inject
+    EndpointErrorFromConnectorHelper endpointErrorFromConnectorHelper;
+
     private Counter messagesProcessedCounter;
     private Counter messagesErrorCounter;
 
@@ -80,6 +84,7 @@ public class ConnectorReceiver {
             if (!updated) {
                 Log.warnf("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
             }
+            endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(new JsonObject(payload));
         } catch (Exception e) {
             messagesErrorCounter.increment();
             Log.error("|  Failure to update the history", e);
