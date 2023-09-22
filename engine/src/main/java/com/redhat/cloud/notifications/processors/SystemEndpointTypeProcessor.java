@@ -61,7 +61,14 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
         ).collect(Collectors.toSet());
     }
 
-    protected Set<com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings> extractAndTransformRecipientSettings(final Event event, final List<Endpoint> endpoints) {
+    /**
+     * Extracts the recipient settings from the event and the endpoints and
+     * transforms them to a DTO in order to send them to the email connector.
+     * @param event the event to extract the recipient settings from.
+     * @param endpoints the endpoints to extract the recipient settings from.
+     * @return a set of recipient settings DTOs.
+     */
+    public Set<com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings> extractAndTransformRecipientSettings(final Event event, final List<Endpoint> endpoints) {
         final Set<RecipientSettings> recipientSettings = this.extractRecipientSettings(event, endpoints);
 
         return recipientSettings
