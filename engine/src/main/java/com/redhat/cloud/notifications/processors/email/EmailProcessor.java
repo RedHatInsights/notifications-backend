@@ -40,7 +40,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
-        final Set<RecipientSettings> recipientSettings = this.extractAndTransformRecipientSettings(event, endpoints);
 
         // Generate an aggregation if the event supports it.
         this.emailSubscriptionTypeProcessor.generateAggregationWhereDue(event);
@@ -49,6 +48,22 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final Optional<InstantEmailTemplate> instantEmailTemplateMaybe = this.templateRepository.findInstantEmailTemplate(event.getEventType().getId());
         if (instantEmailTemplateMaybe.isEmpty()) {
             Log.debugf("[event_uuid: %s] The event was skipped because there were no suitable templates for it", event.getId());
+            return;
+        }
+
+        // Get the set of user IDs that should receive an email notification for
+        // the given event.
+        final List<String> subscribers = this.getSubscribers(event);
+
+        final Set<RecipientSettings> recipientSettings = this.extractAndTransformRecipientSettings(event, endpoints);
+
+        // When the user preferences are not ignored and there are no subscribers to the event,
+        // there's no need to further process the recipient settings because no email will be sent from them.
+        recipientSettings.removeIf(settings -> !settings.isIgnoreUserPreferences() && subscribers.isEmpty());
+
+        // If we removed all recipient settings, it means no email will be sent from the event and we can exit this method.
+        if (recipientSettings.isEmpty()) {
+            Log.debugf("[event_uuid: %s] The event was skipped because there were no subscribers for it and user preferences are not ignored", event.getId());
             return;
         }
 
@@ -63,14 +78,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         final String subject = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
         final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate);
-
-        // Get the set of user IDs that should receive an email notification for
-        // the given event.
-        final List<String> subscribers = this.getSubscribers(event);
-        if (subscribers.isEmpty()) {
-            Log.debugf("[event_uuid: %s] The event was skipped because there were no subscribers for it", event.getId());
-            return;
-        }
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(

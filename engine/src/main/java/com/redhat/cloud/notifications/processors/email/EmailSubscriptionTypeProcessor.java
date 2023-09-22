@@ -144,7 +144,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
      * @param event the event to be included, or not, in the aggregation.
      */
     public void generateAggregationWhereDue(final Event event) {
-        // TODO: Check if we should be using the eventType or application's id instead of the name
         final EventType eventType = event.getEventType();
         final String bundleName = eventType.getApplication().getBundle().getName();
         final String applicationName = eventType.getApplication().getName();

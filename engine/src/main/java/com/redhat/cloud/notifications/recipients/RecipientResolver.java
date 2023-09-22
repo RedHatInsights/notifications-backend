@@ -45,7 +45,6 @@ public class RecipientResolver {
          If the subscription type is opt-in, the user preferences should NOT be ignored and the subscribers Set is empty,
          then we don't need to retrieve the users from RBAC/IT/BOP because we'll return an empty Set anyway.
          */
-        // TODO Report this change in the email connector ASAP.
         if (isOptIn && !request.isIgnoreUserPreferences() && subscribers.isEmpty()) {
             usersCount.set(0);
             return Collections.emptySet();
