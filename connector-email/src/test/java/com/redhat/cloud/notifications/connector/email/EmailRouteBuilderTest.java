@@ -101,7 +101,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             Assertions.assertEquals(this.emailConnectorConfig.getItUserServiceURL(), bopEndpoint.getEndpointBaseUri(), "the base URI of the endpoint is not the same as the one set through the properties");
 
             final String itEndpointUri = bopEndpoint.getEndpointUri();
-            Assertions.assertTrue(itEndpointUri.contains("TrustManagerType%5BkeyStore"), "the trust manager type for the IT endpoint is not set to \"keyStore\"");
+            Assertions.assertTrue(itEndpointUri.contains("keyManagers%3DKeyManagersParameters"), "the key manager was not set in the endpoint");
+            Assertions.assertTrue(itEndpointUri.contains("keyStore%3DKeyStoreParameters"), "the key store parameters were not set in the endpoint");
+            Assertions.assertTrue(itEndpointUri.contains("sslContextParameters=SSLContextParameters"), "the SSL context parameters were not set in the endpoint");
             Assertions.assertTrue(itEndpointUri.contains("password%3D********"), "the URI does not contain a reference to the key store's password");
         }
     }
