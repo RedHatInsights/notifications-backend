@@ -24,6 +24,7 @@ import jakarta.inject.Inject;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.http.base.HttpOperationFailedException;
+import org.apache.camel.support.jsse.KeyManagersParameters;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
@@ -287,19 +288,18 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      * Creates the endpoint for the IT Users service. It makes Apache Camel
      * trust the service's certificate.
      * @return the created endpoint.
-     * @throws Exception if the endpoint could not be created due to an
-     * unexpected error.
      */
     protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpITEndpoint() {
-        final KeyStoreParameters ksp = new KeyStoreParameters();
-        ksp.setResource(this.emailConnectorConfig.getItKeyStoreLocation());
-        ksp.setPassword(this.emailConnectorConfig.getItKeyStorePassword());
+        final KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
+        keyStoreParameters.setResource(this.emailConnectorConfig.getItKeyStoreLocation());
+        keyStoreParameters.setPassword(this.emailConnectorConfig.getItKeyStorePassword());
 
-        final TrustManagersParameters tmp = new TrustManagersParameters();
-        tmp.setKeyStore(ksp);
+        final KeyManagersParameters keyManagersParameters = new KeyManagersParameters();
+        keyManagersParameters.setKeyPassword(this.emailConnectorConfig.getItKeyStorePassword());
+        keyManagersParameters.setKeyStore(keyStoreParameters);
 
-        final SSLContextParameters scp = new SSLContextParameters();
-        scp.setTrustManagers(tmp);
+        final SSLContextParameters sslContextParameters = new SSLContextParameters();
+        sslContextParameters.setKeyManagers(keyManagersParameters);
 
         // Remove the schema from the url to avoid the
         // "ResolveEndpointFailedException", which complaints about specifying
@@ -307,7 +307,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         final String fullURL = this.emailConnectorConfig.getItUserServiceURL();
         if (fullURL.startsWith("https")) {
             return https(fullURL.replace("https://", ""))
-                .sslContextParameters(scp);
+                .sslContextParameters(sslContextParameters);
         } else {
             return http(fullURL.replace("http://", ""));
         }
