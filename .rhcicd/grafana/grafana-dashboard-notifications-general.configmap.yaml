@@ -2697,7 +2697,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "builder",
-              "expr": "sum by(bundle, application) (rate(input_consumed_seconds_count{service=\"notifications-engine-service\"}[5m]))",
+              "expr": "sum by(bundle, application) (increase(input_consumed_seconds_count{service=\"notifications-engine-service\"}[5m]))",
               "hide": false,
               "legendFormat": "{{bundle}}/{{application}}",
               "range": true,
