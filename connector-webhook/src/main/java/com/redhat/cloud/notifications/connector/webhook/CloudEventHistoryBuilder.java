@@ -16,12 +16,12 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
     @Override
     public void process(Exchange exchange) throws Exception {
         super.process(exchange);
-        Message in = exchange.getIn();
-        JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
         boolean clientError = exchange.getProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, false, boolean.class);
         boolean serverError = exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, false, boolean.class);
 
         if (clientError || serverError) {
+            Message in = exchange.getIn();
+            JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
             JsonObject data = new JsonObject(cloudEvent.getString("data"));
             data.getJsonObject("details").put(HTTP_STATUS_CODE, exchange.getProperty(HTTP_STATUS_CODE));
             if (clientError) {
@@ -29,8 +29,8 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
             } else {
                 data.put(INCREMENT_ENDPOINT_SERVER_ERRORS, exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS));
             }
-            cloudEvent.put("data", data.encode());
+            cloudEvent.put("data", data.toJson());
+            in.setBody(cloudEvent.toJson());
         }
-        in.setBody(cloudEvent.encode());
     }
 }
