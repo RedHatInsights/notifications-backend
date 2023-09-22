@@ -2473,7 +2473,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             Assertions.assertEquals(25L, webhookProperties.getBasicAuthenticationSourcesId(), "Sources was called to create the basic authentication secret, but the secret's ID wasn't present in the database");
             Assertions.assertEquals(50L, webhookProperties.getSecretTokenSourcesId(), "Sources was called to create the secret token secret, but the secret's ID wasn't present in the database");
-            Assertions.assertEquals(75L, webhookProperties.getBearerAuthenticationSourcesId(), "Sources was called to create the secret token secret, but the secret's ID wasn't present in the database");
+            Assertions.assertEquals(75L, webhookProperties.getBearerAuthenticationSourcesId(), "Sources was called to create the bearer authentication secret, but the secret's ID wasn't present in the database");
 
         } finally {
             this.featureFlipper.setSourcesSecretsBackend(wasSourcesEnabled);

@@ -17,7 +17,7 @@ public final class Secret {
 
     public static final String TYPE_BASIC_AUTH = "notifications-basic-authentication";
     public static final String TYPE_SECRET_TOKEN = "notifications-secret-token";
-    public static final String TYPE_BEARER_TOKEN = "notifications-bearer-token";
+    public static final String TYPE_BEARER_AUTHENTICATION = "notifications-bearer-authentication";
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Long id;
