@@ -29,8 +29,8 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
             } else {
                 data.put(INCREMENT_ENDPOINT_SERVER_ERRORS, exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS));
             }
-            cloudEvent.put("data", data.toJson());
-            in.setBody(cloudEvent.toJson());
+            cloudEvent.put("data", data.encode());
+            in.setBody(cloudEvent.encode());
         }
     }
 }
