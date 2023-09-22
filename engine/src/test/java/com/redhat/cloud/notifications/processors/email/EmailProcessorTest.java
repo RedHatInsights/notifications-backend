@@ -255,7 +255,6 @@ public class EmailProcessorTest {
         final Recipients recipients = recipientsMaybe.get();
         recipients.setIgnoreUserPreferences(false);
 
-
         final List<Endpoint> endpoints = this.setUpStubEndpoints();
 
         // Set all the user preferences' "ignore user preferences" flag to
