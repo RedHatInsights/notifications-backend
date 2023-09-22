@@ -234,62 +234,54 @@ public class EmailProcessorTest {
     }
 
     /**
-     * Tests that when there are no subscribers associated to the event type,
-     * then the processor ignores the event.
+     * Tests that when the subscribers list to the event is empty, and the
+     * extracted recipient settings from both the event and the endpoints do
+     * not contain a single "ignore user preferences" flag set to true, then
+     * the processor ignores the event.
      */
     @Test
-    void testMissingSubscribers() {
+    void testIgnoreUserPreferencesEmptySubscribers() {
         // Prepare the required stubs.
         final Event event = this.setUpStubEvent();
+
+        // Set the "ignore user preferences" to false, so that one of the
+        // conditions to remove the resulting recipient settings from the set
+        // in the email processor is met.
+        final EventWrapper<NotificationsConsoleCloudEvent, EventTypeKeyFqn> eventWrapper = (EventWrapper<NotificationsConsoleCloudEvent, EventTypeKeyFqn>) event.getEventWrapper();
+        final Optional<Recipients> recipientsMaybe = eventWrapper.getEvent().getRecipients();
+        if (recipientsMaybe.isEmpty()) {
+            Assertions.fail("the \"recipients\" object from the stubbed event is empty");
+        }
+        final Recipients recipients = recipientsMaybe.get();
+        recipients.setIgnoreUserPreferences(false);
+
+
         final List<Endpoint> endpoints = this.setUpStubEndpoints();
 
-        // Create the stub templates for the instant email template that we
-        // will simulate that is returned from the template repository.
-        final String subjectData = "test-missing-subscribers-subject-data";
-        final String bodyData = "test-missing-subscribers-body-data";
+        // Set all the user preferences' "ignore user preferences" flag to
+        // false, so that one of the conditions to remove the resulting
+        // recipient settings from the set in the email processor is met.
+        for (final Endpoint endpoint : endpoints) {
+            final SystemSubscriptionProperties properties = endpoint.getProperties(SystemSubscriptionProperties.class);
+            properties.setIgnorePreferences(false);
+        }
 
-        final Template subjectTemplate = new Template();
-        subjectTemplate.setData(subjectData);
+        // Return a non-empty instant email template to simulate that there
+        // exists one for the event, in order to keep going with the execution.
+        Mockito.when(this.templateRepository.findInstantEmailTemplate(event.getEventType().getId())).thenReturn(Optional.of(new InstantEmailTemplate()));
 
-        final Template bodyTemplate = new Template();
-        bodyTemplate.setData(bodyData);
-
-        final InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
-        instantEmailTemplate.setSubjectTemplate(subjectTemplate);
-        instantEmailTemplate.setBodyTemplate(bodyTemplate);
-
-        Mockito.when(this.templateRepository.findInstantEmailTemplate(event.getEventType().getId())).thenReturn(Optional.of(instantEmailTemplate));
-
-        // Mock the template instances that will be returned from the compiling
-        // operation.
-        final TemplateInstance subjectTemplateInstance = Mockito.mock(TemplateInstance.class);
-        final TemplateInstance bodyTemplateInstance = Mockito.mock(TemplateInstance.class);
-        Mockito.when(this.templateService.compileTemplate(subjectData, "subject")).thenReturn(subjectTemplateInstance);
-        Mockito.when(this.templateService.compileTemplate(bodyData, "body")).thenReturn(bodyTemplateInstance);
-
-        // Mock the rendered contents that will be returned from the rendering
-        // operation.
-        final String stubbedRenderedSubject = "test-missing-subscribers-rendered-subject";
-        final String stubbedRenderedBody = "test-missing-subscribers-rendered-body";
-        Mockito.when(this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplateInstance)).thenReturn(stubbedRenderedSubject);
-        Mockito.when(this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplateInstance)).thenReturn(stubbedRenderedBody);
-
-        // Do not return any subscribers for this test.
+        // Do not return any subscribers for this test, so that the other
+        // condition to remove the resulting recipient settings from the set
+        // in the email processor is met.
         Mockito.when(this.emailSubscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), EmailSubscriptionType.INSTANT)).thenReturn(List.of());
 
         // Call the processor under test.
         this.emailProcessor.process(event, endpoints);
 
-        // Verify that the compilation functions were called.
-        Mockito.verify(this.templateService, Mockito.times(1)).compileTemplate(subjectData, "subject");
-        Mockito.verify(this.templateService, Mockito.times(1)).compileTemplate(bodyData, "body");
-
-        // Verify that the rendering functions were called.
-        Mockito.verify(this.templateService, Mockito.times(1)).renderTemplate(event.getEventWrapper().getEvent(), subjectTemplateInstance);
-        Mockito.verify(this.templateService, Mockito.times(1)).renderTemplate(event.getEventWrapper().getEvent(), bodyTemplateInstance);
-
-        // Verify that, since there were no subscribers to notify, the event
-        // was ignored.
+        // Verify that the processor returned without calling any further
+        // dependencies in the code.
+        Mockito.verify(this.templateService, Mockito.times(0)).compileTemplate(Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(this.templateService, Mockito.times(0)).renderTemplate(Mockito.any(), Mockito.any(TemplateInstance.class));
         Mockito.verify(this.endpointRepository, Mockito.times(0)).getOrCreateDefaultSystemSubscription(Mockito.anyString(), Mockito.anyString(), Mockito.eq(EndpointType.EMAIL_SUBSCRIPTION));
         Mockito.verify(this.connectorSender, Mockito.times(0)).send(Mockito.any(Event.class), Mockito.any(Endpoint.class), Mockito.any(JsonObject.class));
     }

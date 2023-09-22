@@ -57,8 +57,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         final Set<RecipientSettings> recipientSettings = this.extractAndTransformRecipientSettings(event, endpoints);
 
-        // When the user preferences are not ignored and there are no subscribers to the event,
-        // there's no need to further process the recipient settings because no email will be sent from them.
+        // When the user preferences are not ignored and there are no
+        // subscribers to the event, there's no need to further process the
+        // recipient settings because no email will be sent from them.
         recipientSettings.removeIf(settings -> !settings.isIgnoreUserPreferences() && subscribers.isEmpty());
 
         // If we removed all recipient settings, it means no email will be sent from the event and we can exit this method.
