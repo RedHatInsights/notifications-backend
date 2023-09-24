@@ -43,6 +43,7 @@ public class ConnectorSender {
     NotificationHistoryRepository notificationHistoryRepository;
 
     public void send(Event event, Endpoint endpoint, JsonObject payload) {
+        payload.put("orgId", event.getOrgId());
 
         String connector = getConnector(endpoint);
 
@@ -50,7 +51,7 @@ public class ConnectorSender {
         history.setStatus(PROCESSING);
 
         Log.infof("Sending notification to connector [orgId=%s, eventId=%s, connector=%s, historyId=%s]",
-                endpoint.getOrgId(), event.getId(), connector, history.getId());
+                event.getOrgId(), event.getId(), connector, history.getId());
 
         notificationHistoryRepository.createNotificationHistory(history);
 
@@ -62,7 +63,7 @@ public class ConnectorSender {
             history.setDetails(Map.of("failure", e.getMessage()));
             notificationHistoryRepository.updateHistoryItem(history);
             Log.infof(e, "Failed to send notification to connector [orgId=%s, eventId=%s, connector=%s, historyId=%s]",
-                    endpoint.getOrgId(), event.getId(), connector, history.getId());
+                    event.getOrgId(), event.getId(), connector, history.getId());
         }
     }
 

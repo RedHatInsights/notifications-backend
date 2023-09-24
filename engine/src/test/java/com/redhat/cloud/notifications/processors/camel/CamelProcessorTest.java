@@ -105,11 +105,11 @@ public abstract class CamelProcessorTest {
         assertNotNull(cloudEventMetadata.getId());
         assertEquals(getExpectedCloudEventType(), cloudEventMetadata.getType());
 
-        CamelNotification notification = message.getPayload().mapTo(CamelNotification.class);
+        JsonObject notification = message.getPayload();
 
-        assertEquals(DEFAULT_ORG_ID, notification.orgId);
-        assertEquals(WEBHOOK_URL, notification.webhookUrl);
-        assertEquals(getExpectedMessage(), notification.message);
+        assertEquals(DEFAULT_ORG_ID, notification.getString("orgId"));
+        assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
+        assertEquals(getExpectedMessage(), notification.getString("message"));
     }
 
     protected void assertNotificationsConnectorHeader(Message<JsonObject> message) {
@@ -155,6 +155,7 @@ public abstract class CamelProcessorTest {
 
         Event event = new Event();
         event.setId(UUID.randomUUID());
+        event.setOrgId(DEFAULT_ORG_ID);
         event.setEventWrapper(new EventWrapperAction(action));
 
         return event;
