@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.component.http.HttpComponent;
+import org.apache.camel.component.seda.SedaComponent;
 import org.apache.hc.core5.util.Timeout;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
@@ -31,6 +32,7 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
 
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     private static final String APPLICATION_JSON = "application/json";
+    private static final String SEDA = "seda";
 
     @Inject
     WebhookConnectorConfig webhookConnectorConfig;
@@ -38,10 +40,14 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
     @Override
     public void configureRoute() {
 
-        configureTimeout(getContext().getComponent("http", HttpComponent.class));
-        configureTimeout(getContext().getComponent("https", HttpComponent.class));
+        configureHttpComponent("http");
+        configureHttpComponent("https");
+        configureSedaComponent();
 
         from(direct(ENGINE_TO_CONNECTOR))
+            .to(seda(SEDA));
+
+        from(seda(SEDA))
             .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
             .routeId(webhookConnectorConfig.getConnectorName())
             .choice()
@@ -68,10 +74,20 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
             .to(direct(SUCCESS));
     }
 
-    private void configureTimeout(HttpComponent httpComponent) {
-        httpComponent.setConnectTimeout(Timeout.ofMilliseconds(webhookConnectorConfig.getHttpsConnectTimeout()));
-        httpComponent.setSoTimeout(Timeout.ofMilliseconds(webhookConnectorConfig.getHttpsSocketTimeout()));
-        httpComponent.setFollowRedirects(true);
+    private void configureHttpComponent(String componentName) {
+        HttpComponent component = getContext().getComponent(componentName, HttpComponent.class);
+        component.setConnectTimeout(Timeout.ofMilliseconds(webhookConnectorConfig.getHttpConnectTimeout()));
+        component.setSoTimeout(Timeout.ofMilliseconds(webhookConnectorConfig.getHttpSocketTimeout()));
+        component.setConnectionsPerRoute(webhookConnectorConfig.getHttpConnectionsPerRoute());
+        component.setMaxTotalConnections(webhookConnectorConfig.getHttpMaxTotalConnections());
+        component.setFollowRedirects(true);
+    }
+
+    private void configureSedaComponent() {
+        SedaComponent component = getContext().getComponent("seda", SedaComponent.class);
+        component.setConcurrentConsumers(webhookConnectorConfig.getSedaConcurrentConsumers());
+        component.setQueueSize(webhookConnectorConfig.getSedaQueueSize());
+        component.setDefaultBlockWhenFull(true);
     }
 
     private HttpEndpointBuilderFactory.HttpEndpointBuilder buildUnsecureSslEndpoint() {

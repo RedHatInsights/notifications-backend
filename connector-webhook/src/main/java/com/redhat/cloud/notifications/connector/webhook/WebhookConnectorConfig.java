@@ -10,38 +10,74 @@ import java.util.Map;
 @ApplicationScoped
 public class WebhookConnectorConfig extends ConnectorConfig {
 
-    private static final String HTTPS_CONNECT_TIMEOUT_MS = "notifications.connector.https.connect-timeout-ms";
-    private static final String HTTPS_SOCKET_TIMEOUT_MS = "notifications.connector.https.socket-timeout-ms";
+    private static final String HTTP_CONNECT_TIMEOUT_MS = "notifications.connector.http.connect-timeout-ms";
+    private static final String HTTP_CONNECTIONS_PER_ROUTE = "notifications.connector.http.connections-per-route";
+    private static final String HTTP_MAX_TOTAL_CONNECTIONS = "notifications.connector.http.max-total-connections";
+    private static final String HTTP_SOCKET_TIMEOUT_MS = "notifications.connector.http.socket-timeout-ms";
     private static final String ALTERNATIVE_NAMES = "notifications.connector.alternative.names";
+    private static final String SEDA_CONCURRENT_CONSUMERS = "notifications.connector.seda.concurrent-consumers";
+    private static final String SEDA_QUEUE_SIZE = "notifications.connector.seda.queue-size";
 
-    @ConfigProperty(name = HTTPS_CONNECT_TIMEOUT_MS, defaultValue = "2500")
-    int httpsConnectTimeout;
+    @ConfigProperty(name = HTTP_CONNECT_TIMEOUT_MS, defaultValue = "2500")
+    int httpConnectTimeout;
 
-    @ConfigProperty(name = HTTPS_SOCKET_TIMEOUT_MS, defaultValue = "2500")
-    int httpsSocketTimeout;
+    @ConfigProperty(name = HTTP_CONNECTIONS_PER_ROUTE, defaultValue = "20")
+    int httpConnectionsPerRoute;
+
+    @ConfigProperty(name = HTTP_MAX_TOTAL_CONNECTIONS, defaultValue = "200")
+    int httpMaxTotalConnections;
+
+    @ConfigProperty(name = HTTP_SOCKET_TIMEOUT_MS, defaultValue = "2500")
+    int httpSocketTimeout;
 
     @ConfigProperty(name = ALTERNATIVE_NAMES, defaultValue = "ansible")
     List<String> alternativeNames;
 
+    @ConfigProperty(name = SEDA_CONCURRENT_CONSUMERS, defaultValue = "20")
+    int sedaConcurrentConsumers;
+
+    @ConfigProperty(name = SEDA_QUEUE_SIZE, defaultValue = "20")
+    int sedaQueueSize;
+
     @Override
     public void log() {
         Map<String, Object> additionalEntries = Map.of(
-            HTTPS_CONNECT_TIMEOUT_MS, httpsConnectTimeout,
-            HTTPS_SOCKET_TIMEOUT_MS, httpsSocketTimeout,
-            ALTERNATIVE_NAMES, alternativeNames
+                HTTP_CONNECT_TIMEOUT_MS, httpConnectTimeout,
+                HTTP_CONNECTIONS_PER_ROUTE, httpConnectionsPerRoute,
+                HTTP_MAX_TOTAL_CONNECTIONS, httpMaxTotalConnections,
+                HTTP_SOCKET_TIMEOUT_MS, httpSocketTimeout,
+                ALTERNATIVE_NAMES, alternativeNames,
+                SEDA_CONCURRENT_CONSUMERS, sedaConcurrentConsumers,
+                SEDA_QUEUE_SIZE, sedaQueueSize
         );
         log(additionalEntries);
     }
 
-    public int getHttpsConnectTimeout() {
-        return httpsConnectTimeout;
+    public int getHttpConnectTimeout() {
+        return httpConnectTimeout;
     }
 
-    public int getHttpsSocketTimeout() {
-        return httpsSocketTimeout;
+    public int getHttpConnectionsPerRoute() {
+        return httpConnectionsPerRoute;
+    }
+
+    public int getHttpMaxTotalConnections() {
+        return httpMaxTotalConnections;
+    }
+
+    public int getHttpSocketTimeout() {
+        return httpSocketTimeout;
     }
 
     public List<String> getAlternativeNames() {
         return alternativeNames;
+    }
+
+    public int getSedaConcurrentConsumers() {
+        return sedaConcurrentConsumers;
+    }
+
+    public int getSedaQueueSize() {
+        return sedaQueueSize;
     }
 }
