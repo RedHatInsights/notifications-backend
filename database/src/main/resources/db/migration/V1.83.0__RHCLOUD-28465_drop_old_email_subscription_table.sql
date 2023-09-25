@@ -1,1 +1,0 @@
-DROP TABLE endpoint_email_subscriptions;
