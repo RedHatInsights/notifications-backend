@@ -559,9 +559,10 @@ public class SecretUtilsTest {
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
-        // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
-        // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
-        // operation.
+        // Set up the mock calls for the "create" calls from the REST Client.
+        // Make sure we return the basic authentication's ID first, the secret
+        // token's ID second and the bearer authentication's ID third, since we
+        // are expecting a successful create operation.
         Mockito.when(this.sourcesServiceMock.create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock, bearerMock);
 
         // Call the function under test.
