@@ -65,9 +65,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.emails-only-mode.enabled", defaultValue = "false")
     boolean emailsOnlyMode;
 
-    @ConfigProperty(name = "notifications.use-event-type-for-subscription.enabled", defaultValue = "false")
-    boolean useEventTypeForSubscriptionEnabled;
-
     @ConfigProperty(name = "notifications.use-secured-email-templates.enabled", defaultValue = "false")
     boolean useSecuredEmailTemplates;
 
@@ -107,7 +104,6 @@ public class FeatureFlipper {
         Log.infof("The use of rbac for fetching users is %s", useRbacForFetchingUsers ? "enabled" : "disabled");
         Log.infof("Emails only mode is %s", emailsOnlyMode ? "enabled" : "disabled");
         Log.infof("The use of secured email templates is %s", useSecuredEmailTemplates ? "enabled" : "disabled");
-        Log.infof("The event type level for email subscription is %s", useEventTypeForSubscriptionEnabled ? "enabled" : "disabled");
         Log.infof("Instant emails are %s", instantEmailsEnabled ? "enabled" : "disabled");
         Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
         Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
@@ -202,15 +198,6 @@ public class FeatureFlipper {
     public void setEmailsOnlyMode(boolean emailsOnlyMode) {
         checkTestLaunchMode();
         this.emailsOnlyMode = emailsOnlyMode;
-    }
-
-    public boolean isUseEventTypeForSubscriptionEnabled() {
-        return useEventTypeForSubscriptionEnabled;
-    }
-
-    public void setUseEventTypeForSubscriptionEnabled(boolean useEventTypeForSubscriptionEnabled) {
-        checkTestLaunchMode();
-        this.useEventTypeForSubscriptionEnabled = useEventTypeForSubscriptionEnabled;
     }
 
     public boolean isUseSecuredEmailTemplates() {

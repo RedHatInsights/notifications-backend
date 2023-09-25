@@ -65,28 +65,18 @@ public class EmailAggregator {
             .getEmailSubscribersUserIdGroupedByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType);
     }
 
-    private Set<String> getSubscribers(String eventType, Set<String> subscribers, Map<String, Set<String>> subscribersByEventType) {
-        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
-            if (subscribersByEventType.containsKey(eventType)) {
-                return subscribersByEventType.get(eventType);
-            } else {
-                return Set.of();
-            }
+    private Set<String> getSubscribers(String eventType, Map<String, Set<String>> subscribersByEventType) {
+        if (subscribersByEventType.containsKey(eventType)) {
+            return subscribersByEventType.get(eventType);
+        } else {
+            return Set.of();
         }
-        return subscribers;
     }
 
     public Map<User, Map<String, Object>> getAggregated(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType, LocalDateTime start, LocalDateTime end) {
 
         Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
-        Set<String> subscribers = null;
-        Map<String, Set<String>> subscribersByEventType = null;
-
-        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
-            subscribersByEventType = getEmailSubscribersGroupedByEventType(aggregationKey, emailSubscriptionType);
-        } else {
-            subscribers = getEmailSubscribers(aggregationKey, emailSubscriptionType);
-        }
+        Map<String, Set<String>> subscribersByEventType = getEmailSubscribersGroupedByEventType(aggregationKey, emailSubscriptionType);
 
         int offset = 0;
         int totalAggregatedElements = 0;
@@ -119,7 +109,7 @@ public class EmailAggregator {
                             .map(EndpointRecipientSettings::new),
                         getActionRecipient(aggregation).stream()
                     ).collect(Collectors.toSet()),
-                    getSubscribers(eventType, subscribers, subscribersByEventType)
+                    getSubscribers(eventType, subscribersByEventType)
                 );
 
                 /*

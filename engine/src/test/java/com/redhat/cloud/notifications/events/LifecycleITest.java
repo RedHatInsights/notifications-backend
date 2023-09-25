@@ -15,14 +15,14 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.BehaviorGroupActionId;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailSubscription;
-import com.redhat.cloud.notifications.models.EmailSubscriptionId;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.EventTypeBehaviorId;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
+import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
@@ -174,7 +174,7 @@ public class LifecycleITest {
         retry(() -> checkEndpointHistory(emailEndpoint, 0, true));
 
         // Lets subscribe the user to the email preferences
-        subscribeUserPreferences(accountId, username, app.getId());
+        subscribeUserPreferences(username, eventType.getId());
 
         // Pushing a new message should trigger three webhook calls and 1 email
         pushMessage(3, 1, 1, 0);
@@ -494,14 +494,14 @@ public class LifecycleITest {
     }
 
     @Transactional
-    void subscribeUserPreferences(String accountId, String userId, UUID appId) {
-        Application application = entityManager.find(Application.class, appId);
-        EmailSubscription subscription = new EmailSubscription();
-        subscription.setId(new EmailSubscriptionId());
-        subscription.setAccountId(accountId);
-        subscription.setOrgId(DEFAULT_ORG_ID);
+    void subscribeUserPreferences(String userId, UUID eventTypeId) {
+        EventType eventType = entityManager.find(EventType.class, eventTypeId);
+        EventTypeEmailSubscription subscription = new EventTypeEmailSubscription();
+        subscription.setId(new EventTypeEmailSubscriptionId());
+        subscription.setSubscribed(true);
         subscription.setUserId(userId);
-        subscription.setApplication(application);
+        subscription.setEventType(eventType);
+        subscription.setOrgId(DEFAULT_ORG_ID);
         subscription.setType(INSTANT);
         entityManager.persist(subscription);
     }

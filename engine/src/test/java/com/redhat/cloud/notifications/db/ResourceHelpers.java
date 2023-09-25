@@ -5,8 +5,6 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailSubscription;
-import com.redhat.cloud.notifications.models.EmailSubscriptionId;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -188,21 +186,6 @@ public class ResourceHelpers {
         eventTypeEmailSubscription.setSubscribed(true);
         entityManager.persist(eventTypeEmailSubscription);
         return eventTypeEmailSubscription;
-    }
-
-    @Transactional
-    public EmailSubscription createEmailSubscription(String orgId, String userId, Application application, EmailSubscriptionType subscriptionType) {
-        EmailSubscription emailSubscription = new EmailSubscription();
-        EmailSubscriptionId emailSubscriptionId = new EmailSubscriptionId();
-        emailSubscriptionId.orgId = orgId;
-        emailSubscriptionId.applicationId = application.getId();
-        emailSubscriptionId.userId = userId;
-        emailSubscriptionId.subscriptionType = subscriptionType;
-        emailSubscription.setId(emailSubscriptionId);
-
-        emailSubscription.setApplication(entityManager.find(Application.class, application.getId()));
-        entityManager.persist(emailSubscription);
-        return emailSubscription;
     }
 
     @Transactional

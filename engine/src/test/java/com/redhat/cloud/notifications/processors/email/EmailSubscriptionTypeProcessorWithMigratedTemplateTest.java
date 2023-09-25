@@ -72,7 +72,7 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
         String bundle = "rhel";
         String application = "policies";
 
-        subscribe(DEFAULT_ORG_ID, username, bundle, application);
+        addEventTypeSubscription(DEFAULT_ORG_ID, username);
 
         final List<String> bodyRequests = new ArrayList<>();
 
@@ -169,18 +169,19 @@ public class EmailSubscriptionTypeProcessorWithMigratedTemplateTest {
     }
 
     @Transactional
-    void subscribe(String orgId, String username, String bundleName, String applicationName) {
-        String query = "INSERT INTO endpoint_email_subscriptions(org_id, user_id, application_id, subscription_type) " +
-                "SELECT :orgId, :userId, a.id, :subscriptionType " +
-                "FROM applications a, bundles b WHERE a.bundle_id = b.id AND a.name = :applicationName AND b.name = :bundleName " +
-                "ON CONFLICT (org_id, user_id, application_id, subscription_type) DO NOTHING";
-        entityManager.createNativeQuery(query)
-                .setParameter("orgId", orgId)
-                .setParameter("userId", username)
-                .setParameter("bundleName", bundleName)
-                .setParameter("applicationName", applicationName)
-                .setParameter("subscriptionType", INSTANT.name())
-                .executeUpdate();
+    public int addEventTypeSubscription(String orgId, String username) {
+        String query = "INSERT INTO email_subscriptions(org_id, user_id, event_type_id, subscription_type, subscribed) " +
+            "VALUES (:orgId, :userId, :eventTypeId, :subscriptionType, :subscribed) " +
+            "ON CONFLICT (org_id, user_id, event_type_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
+
+        // HQL does not support the ON CONFLICT clause so we need a native query here
+        return entityManager.createNativeQuery(query)
+            .setParameter("orgId", orgId)
+            .setParameter("userId", username)
+            .setParameter("eventTypeId", getEventTypes().get(0).getId())
+            .setParameter("subscriptionType", INSTANT.name())
+            .setParameter("subscribed", true)
+            .executeUpdate();
     }
 
     List<EventType> getEventTypes() {

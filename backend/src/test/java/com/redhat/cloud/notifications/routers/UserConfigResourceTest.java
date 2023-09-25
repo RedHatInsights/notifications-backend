@@ -8,26 +8,17 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.EmailSubscription;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
-import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm;
-import com.redhat.cloud.notifications.routers.models.SettingsValueJsonForm.Field;
-import com.redhat.cloud.notifications.routers.models.SettingsValues;
-import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
-import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
-import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -80,7 +71,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @AfterEach
     void afterEach() {
-        featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
         featureFlipper.setInstantEmailsEnabled(false);
     }
 
@@ -97,21 +87,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     ApplicationRepository applicationRepository;
 
     @Inject
-    ResourceHelpers resourceHelpers;
-
-    @Inject
     EventTypeRepository eventTypeRepository;
-
-
-    private Field rhelPolicyForm(SettingsValueJsonForm jsonForm) {
-        for (Field section : jsonForm.fields.get(0).sections) {
-            if (section.name.equals("policies")) {
-                return section;
-            }
-        }
-
-        return null;
-    }
 
     private SettingsValueByEventTypeJsonForm.Application rhelPolicyForm(SettingsValueByEventTypeJsonForm settingsValuesByEventType) {
         for (String bundleName : settingsValuesByEventType.bundles.keySet()) {
@@ -140,33 +116,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return result;
     }
 
-    private Map<EmailSubscriptionType, Boolean> extractNotificationValues(Field sectionField, String bundle, String application) {
-        Map<EmailSubscriptionType, Boolean> result = new HashMap<>();
-        for (Field field : sectionField.fields.get(0).fields) {
-            for (EmailSubscriptionType type : EmailSubscriptionType.values()) {
-                if (field.name != null && field.name.equals(String.format("bundles[%s].applications[%s].notifications[%s]", bundle, application, type))) {
-                    result.put(type, (Boolean) field.initialValue);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private SettingsValues createSettingsValue(String bundle, String application, boolean daily, boolean instant) {
-        ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-        applicationSettingsValue.notifications.put(DAILY, daily);
-        applicationSettingsValue.notifications.put(INSTANT, instant);
-
-        BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
-        bundleSettingsValue.applications.put(application, applicationSettingsValue);
-
-        SettingsValues settingsValues = new SettingsValues();
-        settingsValues.bundles.put(bundle, bundleSettingsValue);
-
-        return settingsValues;
-    }
-
     private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
 
         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
@@ -186,250 +135,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         settingsValues.bundles.put(bundle, bundleSettingsValue);
 
         return settingsValues;
-    }
-
-    @Test
-    void testLegacySettings() {
-        testSettings();
-    }
-
-    @Test
-    void testLegacySettingsWithDrawerEnabled() {
-        try {
-            featureFlipper.setDrawerEnabled(true);
-            testSettings();
-        } finally {
-            featureFlipper.setDrawerEnabled(false);
-        }
-    }
-
-    void testSettings() {
-        String accountId = "empty";
-        String orgId = "empty";
-        String username = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
-
-        String bundle = "rhel";
-        String application = "policies";
-        String eventType = "policy-triggered";
-
-        String instantTemplateId = createInstantTemplate(bundle, application, eventType);
-        String aggregationTemplateId = createAggregationTemplate(bundle, application);
-
-        SettingsValueJsonForm jsonForm = getPreferencesByBundle(identityHeader, bundle);
-
-        Field rhelPolicy = rhelPolicyForm(jsonForm);
-        assertNotNull(rhelPolicy, "RHEL policies not found");
-
-        SettingsValues settingsValues = createSettingsValue(bundle, application, false, false);
-
-        featureFlipper.setInstantEmailsEnabled(false);
-        postPreferences(identityHeader, settingsValues, 400);
-
-        featureFlipper.setInstantEmailsEnabled(true);
-        postPreferences(identityHeader, settingsValues, 200);
-
-        featureFlipper.setInstantEmailsEnabled(false);
-        jsonForm = getPreferencesByBundle(identityHeader, bundle);
-        rhelPolicy = rhelPolicyForm(jsonForm);
-        boolean instantEmailSettingsReturned = extractNotificationValues(rhelPolicy, bundle, application)
-                .keySet().stream().anyMatch(INSTANT::equals);
-        assertFalse(instantEmailSettingsReturned, "Instant email subscription settings should not be returned when instant emails are disabled");
-
-        featureFlipper.setInstantEmailsEnabled(true);
-        jsonForm = getPreferencesByBundle(identityHeader, bundle);
-        rhelPolicy = rhelPolicyForm(jsonForm);
-        assertNotNull(rhelPolicy, "RHEL policies not found");
-        Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy, bundle, application);
-
-        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
-        UserConfigPreferences preferences = given()
-                .header(identityHeader)
-                .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().as(UserConfigPreferences.class);
-
-        assertEquals(false, preferences.getDailyEmail());
-        assertEquals(false, preferences.getInstantEmail());
-
-        // Daily to true
-        settingsValues = createSettingsValue(bundle, application, true, false);
-        postPreferences(identityHeader, settingsValues, 200);
-        jsonForm = getPreferencesByBundle(identityHeader, bundle);
-        rhelPolicy = rhelPolicyForm(jsonForm);
-        assertNotNull(rhelPolicy, "RHEL policies not found");
-        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
-
-        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
-        preferences = given()
-                .header(identityHeader)
-                .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().as(UserConfigPreferences.class);
-
-        assertEquals(true, preferences.getDailyEmail());
-        assertEquals(false, preferences.getInstantEmail());
-
-        // Instant to true
-        settingsValues = createSettingsValue(bundle, application, false, true);
-        postPreferences(identityHeader, settingsValues, 200);
-        jsonForm = getPreferencesByBundle(identityHeader, bundle);
-        rhelPolicy = rhelPolicyForm(jsonForm);
-        assertNotNull(rhelPolicy, "RHEL policies not found");
-        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
-
-        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
-        preferences = given()
-                .header(identityHeader)
-                .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().as(UserConfigPreferences.class);
-
-        assertEquals(false, preferences.getDailyEmail());
-        assertEquals(true, preferences.getInstantEmail());
-
-        // Both to true
-        settingsValues = createSettingsValue(bundle, application, true, true);
-        postPreferences(identityHeader, settingsValues, 200);
-        jsonForm = getPreferencesByBundle(identityHeader, bundle);
-        rhelPolicy = rhelPolicyForm(jsonForm);
-        assertNotNull(rhelPolicy, "RHEL policies not found");
-        initialValues = extractNotificationValues(rhelPolicy, bundle, application);
-
-        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).notifications);
-        preferences = given()
-                .header(identityHeader)
-                .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().as(UserConfigPreferences.class);
-
-        assertEquals(true, preferences.getDailyEmail());
-        assertEquals(true, preferences.getInstantEmail());
-
-        // does not fail if we have unknown apps in our bundle's settings
-        emailSubscriptionRepository.subscribe(accountId, orgId, username, bundle, "not-found-app", DAILY);
-
-        getPreferencesByBundle(identityHeader, bundle);
-
-        emailSubscriptionRepository.unsubscribe(orgId, username, "not-found-bundle", "not-found-app", DAILY);
-
-        // Fails if we don't specify the bundleName
-        given()
-                .header(identityHeader)
-                .when()
-                .get("/user-config/notification-preference")
-                .then()
-                .statusCode(400)
-                .contentType(JSON);
-
-        // does not add if we try to create unknown bundle/apps
-        SettingsValues settingsValue = createSettingsValue("not-found-bundle-2", "not-found-app-2", true, true);
-        postPreferences(identityHeader, settingsValues, 200);
-        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "not-found-bundle-2", "not-found-app-2", DAILY));
-        assertNull(emailSubscriptionRepository.getEmailSubscription(orgId, username, "not-found-bundle", "not-found-app", INSTANT));
-
-        // Does not add event type if is not supported by the templates
-        deleteAggregationTemplate(aggregationTemplateId);
-        SettingsValueJsonForm settingsValueJsonForm = given()
-                .header(identityHeader)
-                .when().get("/user-config/notification-preference?bundleName=rhel")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().as(SettingsValueJsonForm.class);
-        Field rhelPolicy2 = rhelPolicyForm(settingsValueJsonForm);
-        assertNotNull(rhelPolicy2, "RHEL policies not found");
-        assertEquals(1, rhelPolicy2.fields.get(0).fields.size());
-        assertEquals("bundles[rhel].applications[policies].notifications[INSTANT]", rhelPolicy2.fields.get(0).fields.get(0).name);
-
-        // Skip the application if there are no supported types
-        deleteInstantTemplate(instantTemplateId);
-        settingsValueJsonForm = given()
-                .header(identityHeader)
-                .when().get("/user-config/notification-preference?bundleName=rhel")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().as(SettingsValueJsonForm.class);
-        rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
-        assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
-
-    }
-
-    private SettingsValueJsonForm getPreferencesByBundle(Header identityHeader, String bundleName) {
-        return given()
-                .header(identityHeader)
-                .queryParam("bundleName", bundleName)
-                .when().get("/user-config/notification-preference")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().body().as(SettingsValueJsonForm.class);
-    }
-
-    private void postPreferences(Header identityHeader, SettingsValues settingsValues, int expectedStatusCode) {
-        given()
-                .header(identityHeader)
-                .contentType(JSON)
-                .body(Json.encode(settingsValues))
-                .when()
-                .post("/user-config/notification-preference")
-                .then()
-                .statusCode(expectedStatusCode);
-    }
-
-    @Test
-    void testMirroringUpdateToEmailSubscriptionByEventType() {
-        String accountId = "empty";
-        String orgId = "empty";
-        String username = "user";
-        String username2 = "user2";
-
-        String bundle = "rhel";
-        String application = "policies";
-
-        UUID newEventTypeId = resourceHelpers.createEventType(bundle, application, "new-event-type");
-        List<EmailSubscription> emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username);
-        List<EventTypeEmailSubscription> eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
-        assertEquals(0, emailSubscriptionList.size());
-        assertEquals(0, eventTypeEmailSubscriptionList.size());
-
-        // users 1 and 2 subscribes to emails
-        emailSubscriptionRepository.subscribe(accountId, orgId, username, bundle, application, INSTANT);
-        emailSubscriptionRepository.subscribe(accountId, orgId, username2, bundle, application, INSTANT);
-        emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username);
-        assertEquals(1, emailSubscriptionList.size());
-        emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username2);
-        assertEquals(1, emailSubscriptionList.size());
-        eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
-        assertEquals(2, eventTypeEmailSubscriptionList.size());
-        assertEquals(1, eventTypeEmailSubscriptionList.stream().filter(t -> t.getEventType().getId().equals(newEventTypeId)).count());
-        eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username2);
-        assertEquals(2, eventTypeEmailSubscriptionList.size());
-        assertEquals(1, eventTypeEmailSubscriptionList.stream().filter(t -> t.getEventType().getId().equals(newEventTypeId)).count());
-
-        // user 2 unsubscribe
-        emailSubscriptionRepository.unsubscribe(orgId, username2, bundle, application, INSTANT);
-        eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username2);
-        emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username2);
-        assertEquals(0, eventTypeEmailSubscriptionList.size());
-        assertEquals(0, emailSubscriptionList.size());
-
-        // user 1 subscriptions are still here
-        emailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsForUser(orgId, username);
-        eventTypeEmailSubscriptionList = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
-        assertEquals(1, emailSubscriptionList.size());
-        assertEquals(2, eventTypeEmailSubscriptionList.size());
     }
 
     @Test
@@ -462,16 +167,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         String instantTemplateId = createInstantTemplate(bundle, application, eventType);
         String aggregationTemplateId = createAggregationTemplate(bundle, application);
-
-        // should return code 400 because the subscription by event type feature is not available yet
-        given()
-            .header(identityHeader)
-            .queryParam("bundleName", bundle)
-            .when().get(path)
-            .then()
-            .statusCode(400);
-
-        featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
 
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
             .header(identityHeader)

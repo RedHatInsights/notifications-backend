@@ -12,11 +12,9 @@ import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepositor
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
@@ -59,7 +57,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -69,10 +66,6 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_AC
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
-import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_NAME;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
@@ -85,7 +78,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -107,7 +99,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @AfterEach
     void afterEach() {
-        featureFlipper.setUseEventTypeForSubscriptionEnabled(false);
         featureFlipper.setInstantEmailsEnabled(false);
     }
 
@@ -1547,168 +1538,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .statusCode(400)
                 .contentType(JSON)
                 .extract().response();
-    }
-
-    @Test
-    void testEmailSubscription() {
-        String accountId = "test-subscription";
-        String orgId = "test-subscription-org-id";
-        String username = "test-user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-        helpers.createTestAppAndEventTypes();
-        // invalid bundle/application combination gives a 404
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
-                .then().statusCode(404)
-                .contentType(TEXT);
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
-                .then().statusCode(404)
-                .contentType(TEXT);
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/rhel/" + TEST_APP_NAME + "/instant")
-                .then().statusCode(404)
-                .contentType(TEXT);
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/policies/instant")
-                .then().statusCode(404)
-                .contentType(TEXT);
-
-        // Unknown bundle/apps give 404
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/idontexist/meneither/instant")
-                .then().statusCode(404)
-                .contentType(TEXT);
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/idontexist/meneither/instant")
-                .then().statusCode(404)
-                .contentType(TEXT);
-
-        // Disable everything as preparation
-        // rhel/policies instant and daily
-        // TEST_BUNDLE_NAME/TEST_APP_NAME instant and daily
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
-                .then().statusCode(200)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200)
-                .contentType(JSON);
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/daily")
-                .then().statusCode(200)
-                .contentType(JSON);
-
-        assertNull(getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
-        assertNull(getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
-
-        // Enable instant on rhel.policies
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNotNull(getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
-        assertNull(getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
-
-        // Enable daily on rhel.policies
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNotNull(getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
-        assertNotNull(getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
-
-        // Enable instant on TEST_BUNDLE_NAME.TEST_APP_NAME
-        given()
-                .header(identityHeader)
-                .when()
-                .put("/endpoints/email/subscription/" + TEST_BUNDLE_NAME + "/" + TEST_APP_NAME + "/instant")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNotNull(getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
-        assertNotNull(getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
-        assertNotNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
-
-        // Disable daily on rhel.policies
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/policies/daily")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNotNull(getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
-        assertNull(getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
-        assertNotNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
-
-        // Disable instant on rhel.policies
-        given()
-                .header(identityHeader)
-                .when()
-                .delete("/endpoints/email/subscription/rhel/policies/instant")
-                .then().statusCode(200).contentType(JSON);
-
-        assertNull(getEmailSubscription(orgId, username, "rhel", "policies", INSTANT));
-        assertNull(getEmailSubscription(orgId, username, "rhel", "policies", DAILY));
-        assertNotNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, INSTANT));
-        assertNull(getEmailSubscription(orgId, username, TEST_BUNDLE_NAME, TEST_APP_NAME, DAILY));
-    }
-
-    @Test
-    void testEmailSubscriptionWithEventType() {
-        featureFlipper.setUseEventTypeForSubscriptionEnabled(true);
-        testEmailSubscription();
-    }
-
-    private Object getEmailSubscription(String orgId, String username, String bundleName, String applicationName, EmailSubscriptionType type) {
-        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
-            Optional<EventTypeEmailSubscription> emailSubscription = emailSubscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName)
-                .stream().filter(sub -> type == sub.getType()).findFirst();
-            if (emailSubscription.isPresent()) {
-                return emailSubscription.get();
-            }
-            return null;
-        } else {
-            return emailSubscriptionRepository.getEmailSubscription(orgId, username, bundleName, applicationName, type);
-        }
     }
 
     @Test

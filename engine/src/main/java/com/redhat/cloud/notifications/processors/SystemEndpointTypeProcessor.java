@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -26,23 +25,13 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
     @Inject
     RecipientResolver recipientResolver;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     protected Set<User> getRecipientList(Event event, List<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType) {
         EventType eventType = event.getEventType();
 
         final Set<RecipientSettings> requests = this.extractRecipientSettings(event, endpoints);
 
-        Set<String> subscribers;
-        if (featureFlipper.isUseEventTypeForSubscriptionEnabled()) {
-            subscribers = Set.copyOf(emailSubscriptionRepository
+        Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
                     .getSubscribersByEventType(event.getOrgId(), eventType.getId(), emailSubscriptionType));
-        } else {
-            subscribers = Set.copyOf(emailSubscriptionRepository
-                    .getSubscribersByApplication(event.getOrgId(), eventType.getApplicationId(), emailSubscriptionType));
-        }
-
         return recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers, emailSubscriptionType.isOptIn());
     }
 

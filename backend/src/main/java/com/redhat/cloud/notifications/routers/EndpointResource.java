@@ -10,10 +10,8 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
-import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -71,7 +69,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -511,69 +508,6 @@ public class EndpointResource {
                 return Response.noContent().build();
             }
             return Response.ok(json).build();
-        }
-    }
-
-    @Deprecated
-    @PUT
-    @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
-    @Produces(APPLICATION_JSON)
-    @Operation(summary = "Subscribe to email notifications", description = "Use this endpoint to subscribe to email notifications from a specific application.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    @Transactional
-    public boolean subscribeEmail(
-            @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
-            @PathParam("type") EmailSubscriptionType type) {
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        String accountId = getAccountId(sec);
-        String orgId = getOrgId(sec);
-
-        if (!featureFlipper.isInstantEmailsEnabled() && type == INSTANT) {
-            throw new BadRequestException("Subscribing to instant emails is not supported");
-        }
-
-        Application app = applicationRepository.getApplication(bundleName, applicationName);
-        if (app == null) {
-            throw new NotFoundException();
-        } else {
-            return emailSubscriptionRepository.subscribe(
-                accountId,
-                orgId,
-                principal.getName(),
-                bundleName,
-                applicationName,
-                type
-            );
-        }
-    }
-
-    @Deprecated
-    @DELETE
-    @Path("/email/subscription/{bundleName}/{applicationName}/{type}")
-    @Produces(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    @Transactional
-    public boolean unsubscribeEmail(
-            @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName,
-            @PathParam("type") EmailSubscriptionType type) {
-        RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        String orgId = getOrgId(sec);
-
-        if (!featureFlipper.isInstantEmailsEnabled() && type == INSTANT) {
-            throw new BadRequestException("Unsubscribing from instant emails is not supported");
-        }
-
-        Application app = applicationRepository.getApplication(bundleName, applicationName);
-        if (app == null) {
-            throw new NotFoundException();
-        } else {
-            return emailSubscriptionRepository.unsubscribe(
-                orgId,
-                principal.getName(),
-                bundleName,
-                applicationName,
-                type
-            );
         }
     }
 
