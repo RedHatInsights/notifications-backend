@@ -7,6 +7,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static java.util.Map.Entry;
 
@@ -65,23 +66,25 @@ public class ConnectorConfig {
         log(Collections.emptyMap());
     }
 
-    protected void log(Map<String, Object> additionalEntries) {
+    protected void log(Map<String, Object> additionalConfig) {
+
+        Map<String, Object> config = new TreeMap<>();
+        config.put(ENDPOINT_CACHE_MAX_SIZE, endpointCacheMaxSize);
+        config.put(KAFKA_INCOMING_GROUP_ID, incomingKafkaGroupId);
+        config.put(KAFKA_INCOMING_MAX_POLL_INTERVAL_MS, incomingKafkaMaxPollIntervalMs);
+        config.put(KAFKA_INCOMING_MAX_POLL_RECORDS, incomingKafkaMaxPollRecords);
+        config.put(KAFKA_INCOMING_POLL_ON_ERROR, incomingKafkaPollOnError);
+        config.put(KAFKA_INCOMING_TOPIC, incomingKafkaTopic);
+        config.put(KAFKA_OUTGOING_TOPIC, outgoingKafkaTopic);
+        config.put(NAME, connectorName);
+        config.put(REDELIVERY_COUNTER_NAME, redeliveryCounterName);
+        config.put(REDELIVERY_DELAY, redeliveryDelay);
+        config.put(REDELIVERY_MAX_ATTEMPTS, redeliveryMaxAttempts);
+        config.putAll(additionalConfig);
+
         Log.info("=== Connector configuration ===");
-        Log.infof("%s=%s", ENDPOINT_CACHE_MAX_SIZE, endpointCacheMaxSize);
-        Log.infof("%s=%s", KAFKA_INCOMING_GROUP_ID, incomingKafkaGroupId);
-        Log.infof("%s=%s", KAFKA_INCOMING_MAX_POLL_INTERVAL_MS, incomingKafkaMaxPollIntervalMs);
-        Log.infof("%s=%s", KAFKA_INCOMING_MAX_POLL_RECORDS, incomingKafkaMaxPollRecords);
-        Log.infof("%s=%s", KAFKA_INCOMING_POLL_ON_ERROR, incomingKafkaPollOnError);
-        Log.infof("%s=%s", KAFKA_INCOMING_TOPIC, incomingKafkaTopic);
-        Log.infof("%s=%s", KAFKA_OUTGOING_TOPIC, outgoingKafkaTopic);
-        Log.infof("%s=%s", NAME, connectorName);
-        Log.infof("%s=%s", REDELIVERY_COUNTER_NAME, redeliveryCounterName);
-        Log.infof("%s=%s", REDELIVERY_DELAY, redeliveryDelay);
-        Log.infof("%s=%s", REDELIVERY_MAX_ATTEMPTS, redeliveryMaxAttempts);
-        if (additionalEntries != null) {
-            for (Entry<String, Object> additionalEntry : additionalEntries.entrySet()) {
-                Log.infof("%s=%s", additionalEntry.getKey(), additionalEntry.getValue());
-            }
+        for (Entry<String, Object> configEntry : config.entrySet()) {
+            Log.infof("%s=%s", configEntry.getKey(), configEntry.getValue());
         }
     }
 
