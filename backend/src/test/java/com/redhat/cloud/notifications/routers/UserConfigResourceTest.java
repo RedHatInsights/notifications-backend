@@ -18,9 +18,6 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
-import com.redhat.cloud.notifications.routers.models.SettingsValues;
-import com.redhat.cloud.notifications.routers.models.SettingsValues.ApplicationSettingsValue;
-import com.redhat.cloud.notifications.routers.models.SettingsValues.BundleSettingsValue;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -117,20 +114,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         }
 
         return result;
-    }
-
-    private SettingsValues createSettingsValue(String bundle, String application, boolean daily, boolean instant) {
-        ApplicationSettingsValue applicationSettingsValue = new ApplicationSettingsValue();
-        applicationSettingsValue.notifications.put(DAILY, daily);
-        applicationSettingsValue.notifications.put(INSTANT, instant);
-
-        BundleSettingsValue bundleSettingsValue = new BundleSettingsValue();
-        bundleSettingsValue.applications.put(application, applicationSettingsValue);
-
-        SettingsValues settingsValues = new SettingsValues();
-        settingsValues.bundles.put(bundle, bundleSettingsValue);
-
-        return settingsValues;
     }
 
     private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {

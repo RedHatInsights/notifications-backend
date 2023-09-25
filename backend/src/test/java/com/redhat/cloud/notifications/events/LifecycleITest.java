@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -21,7 +20,7 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
-import com.redhat.cloud.notifications.routers.models.SettingsValues;
+import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
@@ -50,6 +49,7 @@ import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_2_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
+import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -819,18 +819,24 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private void subscribeUserPreferences(Header identityHeader, String bundleName, String appName) {
-        SettingsValues values = new SettingsValues();
-        SettingsValues.ApplicationSettingsValue applicationSettingsValue = new SettingsValues.ApplicationSettingsValue();
-        applicationSettingsValue.notifications.put(EmailSubscriptionType.INSTANT, true);
-        SettingsValues.BundleSettingsValue bundleSettingsValue = new SettingsValues.BundleSettingsValue();
+
+        SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
+        eventTypeSettingsValue.emailSubscriptionTypes.put(DAILY, true);
+
+        SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
+        applicationSettingsValue.eventTypes.put(EVENT_TYPE_NAME, eventTypeSettingsValue);
+
+        SettingsValuesByEventType.BundleSettingsValue bundleSettingsValue = new SettingsValuesByEventType.BundleSettingsValue();
         bundleSettingsValue.applications.put(appName, applicationSettingsValue);
-        values.bundles.put(bundleName, bundleSettingsValue);
+
+        SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
+        settingsValues.bundles.put(bundleName, bundleSettingsValue);
 
         given()
                 .basePath(API_NOTIFICATIONS_V_1_0)
                 .header(identityHeader)
                 .contentType(JSON)
-                .body(Json.encode(values))
+                .body(Json.encode(settingsValues))
                 .when()
                 .post("/user-config/notification-event-type-preference")
                 .then()
