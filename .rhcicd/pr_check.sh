@@ -16,6 +16,11 @@ export IMAGE="quay.io/cloudservices/notifications-engine"
 export DOCKERFILE=docker/Dockerfile.notifications-engine.jvm
 source $CICD_ROOT/build.sh
 
+# Build the notifications-connector-drawer image and push it to Quay
+export IMAGE="quay.io/cloudservices/notifications-connector-drawer"
+export DOCKERFILE=docker/Dockerfile.notifications-connector-drawer.jvm
+source $CICD_ROOT/build.sh
+
 # Build the notifications-connector-email image and push it to Quay
 export IMAGE="quay.io/cloudservices/notifications-connector-email"
 export DOCKERFILE=docker/Dockerfile.notifications-connector-email.jvm
@@ -56,7 +61,7 @@ export APP_NAME="notifications"
 export COMPONENT_NAME="notifications-backend"
 export IMAGE="quay.io/cloudservices/notifications-backend"
 export DEPLOY_TIMEOUT="900"
-export EXTRA_DEPLOY_ARGS="--set-parameter notifications-engine/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-email/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-google-chat/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-microsoft-teams/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-servicenow/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-slack/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-splunk/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-webhook/IMAGE_TAG=${IMAGE_TAG} --no-remove-resources historical-system-profiles --no-remove-resources system-baseline"
+export EXTRA_DEPLOY_ARGS="--set-parameter notifications-engine/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-drawer/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-email/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-google-chat/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-microsoft-teams/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-servicenow/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-slack/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-splunk/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-webhook/IMAGE_TAG=${IMAGE_TAG} --no-remove-resources historical-system-profiles --no-remove-resources system-baseline"
 source $CICD_ROOT/deploy_ephemeral_env.sh
 
 # Run IQE tests
