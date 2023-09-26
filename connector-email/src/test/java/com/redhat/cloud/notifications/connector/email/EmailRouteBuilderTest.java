@@ -9,13 +9,18 @@ import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
+import org.apache.camel.Expression;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.AdviceWith;
+import org.apache.camel.component.caffeine.CaffeineConfiguration;
+import org.apache.camel.component.caffeine.EvictionType;
+import org.apache.camel.component.caffeine.cache.CaffeineCacheComponent;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -105,6 +110,36 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             Assertions.assertTrue(itEndpointUri.contains("keyStore%3DKeyStoreParameters"), "the key store parameters were not set in the endpoint");
             Assertions.assertTrue(itEndpointUri.contains("sslContextParameters=SSLContextParameters"), "the SSL context parameters were not set in the endpoint");
             Assertions.assertTrue(itEndpointUri.contains("password%3D********"), "the URI does not contain a reference to the key store's password");
+        }
+    }
+
+    /**
+     * Tests that the correct cache format is computed for the Caffeine cache
+     * keys.
+     */
+    @Test
+    void testComputeCacheKey() {
+        final Expression cacheKey = this.emailRouteBuilder.computeCacheKey();
+
+        Assertions.assertEquals("simple{${exchangeProperty.orgId}-adminsOnly=${exchangeProperty.current_recipient_settings.adminsOnly}}", cacheKey.toString(), "unexpected cache key generated");
+    }
+
+    /**
+     * Tests that the Caffeine cache component has the configurations that we
+     * expect.
+     * @throws IOException if an unexpected error occurs when fetching the
+     * Caffeine cache component.
+     */
+    @Test
+    void testCaffeineCacheConfiguration() throws IOException {
+        this.emailRouteBuilder.configureCaffeineCache();
+
+        try (CaffeineCacheComponent caffeineCacheComponent = this.context().getComponent("caffeine-cache", CaffeineCacheComponent.class)) {
+            final CaffeineConfiguration caffeineConfiguration = caffeineCacheComponent.getConfiguration();
+
+            Assertions.assertEquals(EvictionType.TIME_BASED, caffeineConfiguration.getEvictionType(), "unexpected eviction type set in the configuration");
+            Assertions.assertEquals(300, caffeineConfiguration.getExpireAfterAccessTime(), "unexpected expiration after access time set in the configuration");
+            Assertions.assertEquals(300, caffeineConfiguration.getExpireAfterWriteTime(), "unexpected expiration after write time set in the configuration");
         }
     }
 }

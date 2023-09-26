@@ -21,8 +21,13 @@ import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBAC
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsFilter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.apache.camel.Expression;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
+import org.apache.camel.component.caffeine.CaffeineConfiguration;
+import org.apache.camel.component.caffeine.CaffeineConstants;
+import org.apache.camel.component.caffeine.EvictionType;
+import org.apache.camel.component.caffeine.cache.CaffeineCacheComponent;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.support.jsse.KeyManagersParameters;
 import org.apache.camel.support.jsse.KeyStoreParameters;
@@ -135,6 +140,11 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      */
     @Override
     public void configureRoute() throws Exception {
+        /*
+         * Configure Caffeine cache.
+         */
+        this.configureCaffeineCache();
+
         from(direct(ENGINE_TO_CONNECTOR))
             .routeId(this.connectorConfig.getConnectorName())
             /*
@@ -160,19 +170,37 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          */
         from(direct(Routes.FETCH_USERS_RBAC))
             .routeId(Routes.FETCH_USERS_RBAC)
-            // Clear all the headers that may come from the previous route.
-            .removeHeaders("*")
-            // Initialize the offset and the loop condition so that we at least
-            // enter once on it.
-            .setProperty(ExchangeProperty.OFFSET, constant(0))
-            .setProperty(ExchangeProperty.LIMIT, constant(this.emailConnectorConfig.getRbacElementsPerPage()))
-            // Begin fetching the users...
-            .loopDoWhile(this.notFinishedFetchingAllPages)
-                // Prepare the request and its headers.
-                .process(this.rbacPrincipalsRequestPreparerProcessor)
-                .to(this.emailConnectorConfig.getRbacURL())
-                // Process the results and determine if we should keep looping.
-                .process(this.rbacUsersProcessor)
+            .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_GET))
+            .setHeader(CaffeineConstants.KEY, this.computeCacheKey())
+            .to(caffeineCache(Routes.FETCH_USERS_RBAC))
+            // Avoid calling RBAC if we do have the usernames cached.
+            .choice()
+                .when(header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(Boolean.TRUE))
+                    // The cache engine leaves the usernames in the body of the
+                    // exchange, that is why we need to set them back in the
+                    // property that the subsequent processors expect to find them.
+                    .setProperty(ExchangeProperty.USERNAMES, body())
+                .otherwise()
+                    // Clear all the headers that may come from the previous route.
+                    .removeHeaders("*")
+                    // Initialize the offset and the loop condition so that we at least
+                    // enter once on it.
+                    .setProperty(ExchangeProperty.OFFSET, constant(0))
+                    .setProperty(ExchangeProperty.LIMIT, constant(this.emailConnectorConfig.getRbacElementsPerPage()))
+                    // Begin fetching the users...
+                    .loopDoWhile(this.notFinishedFetchingAllPages)
+                        // Prepare the request and its headers.
+                        .process(this.rbacPrincipalsRequestPreparerProcessor)
+                        .to(this.emailConnectorConfig.getRbacURL())
+                        // Process the results and determine if we should keep looping.
+                        .process(this.rbacUsersProcessor)
+                    .end()
+                    // Store all the received recipients in the cache.
+                    .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_PUT))
+                    .setHeader(CaffeineConstants.KEY, this.computeCacheKey())
+                    .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERNAMES))
+                    .to(caffeineCache(Routes.FETCH_USERS_RBAC))
+            .endChoice()
             .end()
             .process(this.recipientsFilter)
             .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
@@ -186,17 +214,35 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
         from(direct(Routes.FETCH_USERS_IT))
             .routeId(Routes.FETCH_USERS_IT)
-            // Clear all the headers that may come from the previous route.
-            .removeHeaders("*")
-            // Initialize the offset and the loop condition so that we at least
-            // enter once on it.
-            .setProperty(ExchangeProperty.OFFSET, constant(0))
-            .setProperty(ExchangeProperty.LIMIT, constant(this.emailConnectorConfig.getItElementsPerPage()))
-            // Begin fetching the users...
-            .loopDoWhile(this.notFinishedFetchingAllPages)
-                .process(this.itUserRequestPreparer)
-                .to(itEndpoint)
-                .process(this.itResponseProcessor)
+            .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_GET))
+            .setHeader(CaffeineConstants.KEY, this.computeCacheKey())
+            .to(caffeineCache(Routes.FETCH_USERS_IT))
+            // Avoid calling IT if we do have the usernames cached.
+            .choice()
+                .when(header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(Boolean.TRUE))
+                    // The cache engine leaves the usernames in the body of the
+                    // exchange, that is why we need to set them back in the
+                    // property that the subsequent processors expect to find them.
+                    .setProperty(ExchangeProperty.USERNAMES, body())
+                .otherwise()
+                    // Clear all the headers that may come from the previous route.
+                    .removeHeaders("*")
+                    // Initialize the offset and the loop condition so that we at least
+                    // enter once on it.
+                    .setProperty(ExchangeProperty.OFFSET, constant(0))
+                    .setProperty(ExchangeProperty.LIMIT, constant(this.emailConnectorConfig.getItElementsPerPage()))
+                    // Begin fetching the users...
+                    .loopDoWhile(this.notFinishedFetchingAllPages)
+                        .process(this.itUserRequestPreparer)
+                        .to(itEndpoint)
+                        .process(this.itResponseProcessor)
+                    .end()
+                    // Store all the received recipients in the cache.
+                    .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_PUT))
+                    .setHeader(CaffeineConstants.KEY, this.computeCacheKey())
+                    .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERNAMES))
+                    .to(caffeineCache(Routes.FETCH_USERS_IT))
+            .endChoice()
             .end()
             .process(this.recipientsFilter)
             .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
@@ -282,6 +328,31 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                 .setProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, constant(true))
                 .to(direct(Routes.SEND_EMAIL_BOP))
             .end();
+    }
+
+    /**
+     * Computes the cache key.
+     * @return a simple expression with the "${orgId}-adminsOnly=${adminsOnly}"
+     * format.
+     */
+    protected Expression computeCacheKey() {
+        return simpleF(
+            "${exchangeProperty.%s}-adminsOnly=${exchangeProperty.%s.adminsOnly}",
+            ORG_ID,
+            ExchangeProperty.CURRENT_RECIPIENT_SETTINGS
+        );
+    }
+
+    /**
+     * Sets a common configuration for all the Caffeine caches.
+     */
+    protected void configureCaffeineCache() {
+        final CaffeineCacheComponent caffeineCacheComponent = this.getCamelContext().getComponent("caffeine-cache", CaffeineCacheComponent.class);
+        final CaffeineConfiguration caffeineConfiguration = caffeineCacheComponent.getConfiguration();
+
+        // We explicitly set the eviction type as time based, since the default
+        // value is size based: https://camel.apache.org/components/4.0.x/caffeine-cache-component.html.
+        caffeineConfiguration.setEvictionType(EvictionType.TIME_BASED);
     }
 
     /**
