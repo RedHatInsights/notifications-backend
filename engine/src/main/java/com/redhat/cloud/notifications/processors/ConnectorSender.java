@@ -43,7 +43,8 @@ public class ConnectorSender {
     NotificationHistoryRepository notificationHistoryRepository;
 
     public void send(Event event, Endpoint endpoint, JsonObject payload) {
-        payload.put("orgId", event.getOrgId());
+        payload.put("org_id", event.getOrgId());
+        payload.put("orgId", event.getOrgId()); // TODO For migration purposes, remove ASAP.
 
         String connector = getConnector(endpoint);
 

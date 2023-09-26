@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.AUTHENTICATION_TOKEN;
@@ -118,7 +117,6 @@ public class ServiceNowCloudEventDataExtractorTest extends CamelQuarkusTestSuppo
         JsonObject cloudEventDataCopy = cloudEventData.copy();
         serviceNowCloudEventDataExtractor.extract(exchange, cloudEventData);
 
-        assertEquals(cloudEventDataCopy.getString("org_id"), exchange.getProperty(ORG_ID, String.class));
         assertEquals(cloudEventDataCopy.getString("account_id"), exchange.getProperty(ACCOUNT_ID, String.class));
         assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("url"), exchange.getProperty(TARGET_URL, String.class));
         assertTrue(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("url").endsWith(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class)));

@@ -7,7 +7,6 @@ import org.apache.camel.Exchange;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.ProtocolException;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.AUTHENTICATION_TOKEN;
@@ -26,8 +25,6 @@ public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
     @Override
     public void extract(Exchange exchange, JsonObject cloudEventData) throws Exception {
 
-        // TODO Rely on the org ID parsing from IncomingCloudEventProcessor?
-        exchange.setProperty(ORG_ID, cloudEventData.getString("org_id"));
         exchange.setProperty(ACCOUNT_ID, cloudEventData.getString("account_id"));
 
         JsonObject metadata = cloudEventData.getJsonObject(NOTIF_METADATA);
