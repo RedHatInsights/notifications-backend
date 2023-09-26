@@ -68,7 +68,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
 
         JsonObject notification = message.getPayload();
 
-        assertEquals(DEFAULT_ORG_ID, notification.getString("orgId"));
+        assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
         assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
         assertEquals(CHANNEL, notification.getString("channel"));
         assertEquals(SLACK_EXPECTED_MSG, notification.getString("message"));

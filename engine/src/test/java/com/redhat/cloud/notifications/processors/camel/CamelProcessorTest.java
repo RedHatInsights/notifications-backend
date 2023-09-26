@@ -107,7 +107,7 @@ public abstract class CamelProcessorTest {
 
         JsonObject notification = message.getPayload();
 
-        assertEquals(DEFAULT_ORG_ID, notification.getString("orgId"));
+        assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
         assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
         assertEquals(getExpectedMessage(), notification.getString("message"));
     }

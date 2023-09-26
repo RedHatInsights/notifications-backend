@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.AUTHENTICATION_TOKEN;
@@ -140,7 +139,6 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         JsonObject cloudEventDataCopy = cloudEventData.copy();
         splunkCloudEventDataExtractor.extract(exchange, cloudEventData);
 
-        assertEquals(cloudEventDataCopy.getString("org_id"), exchange.getProperty(ORG_ID, String.class));
         assertEquals(cloudEventDataCopy.getString("account_id"), exchange.getProperty(ACCOUNT_ID, String.class));
         assertTrue(exchange.getProperty(TARGET_URL, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
         // Trailing slashes should be removed before we modify the target URL path.
