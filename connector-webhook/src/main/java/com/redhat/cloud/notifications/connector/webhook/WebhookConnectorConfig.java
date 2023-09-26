@@ -15,8 +15,6 @@ public class WebhookConnectorConfig extends ConnectorConfig {
     private static final String HTTP_MAX_TOTAL_CONNECTIONS = "notifications.connector.http.max-total-connections";
     private static final String HTTP_SOCKET_TIMEOUT_MS = "notifications.connector.http.socket-timeout-ms";
     private static final String ALTERNATIVE_NAMES = "notifications.connector.alternative.names";
-    private static final String SEDA_CONCURRENT_CONSUMERS = "notifications.connector.seda.concurrent-consumers";
-    private static final String SEDA_QUEUE_SIZE = "notifications.connector.seda.queue-size";
 
     @ConfigProperty(name = HTTP_CONNECT_TIMEOUT_MS, defaultValue = "2500")
     int httpConnectTimeout;
@@ -33,12 +31,6 @@ public class WebhookConnectorConfig extends ConnectorConfig {
     @ConfigProperty(name = ALTERNATIVE_NAMES, defaultValue = "ansible")
     List<String> alternativeNames;
 
-    @ConfigProperty(name = SEDA_CONCURRENT_CONSUMERS, defaultValue = "20")
-    int sedaConcurrentConsumers;
-
-    @ConfigProperty(name = SEDA_QUEUE_SIZE, defaultValue = "20")
-    int sedaQueueSize;
-
     @Override
     public void log() {
         Map<String, Object> additionalEntries = Map.of(
@@ -46,9 +38,7 @@ public class WebhookConnectorConfig extends ConnectorConfig {
                 HTTP_CONNECTIONS_PER_ROUTE, httpConnectionsPerRoute,
                 HTTP_MAX_TOTAL_CONNECTIONS, httpMaxTotalConnections,
                 HTTP_SOCKET_TIMEOUT_MS, httpSocketTimeout,
-                ALTERNATIVE_NAMES, alternativeNames,
-                SEDA_CONCURRENT_CONSUMERS, sedaConcurrentConsumers,
-                SEDA_QUEUE_SIZE, sedaQueueSize
+                ALTERNATIVE_NAMES, alternativeNames
         );
         log(additionalEntries);
     }
@@ -71,13 +61,5 @@ public class WebhookConnectorConfig extends ConnectorConfig {
 
     public List<String> getAlternativeNames() {
         return alternativeNames;
-    }
-
-    public int getSedaConcurrentConsumers() {
-        return sedaConcurrentConsumers;
-    }
-
-    public int getSedaQueueSize() {
-        return sedaQueueSize;
     }
 }
