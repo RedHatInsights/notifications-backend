@@ -82,10 +82,6 @@ public class ConnectorReceiver {
 
             String historyId = (String) decodedPayload.get("historyId");
             final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId);
-            if (endpoint == null) {
-                Log.infof("Unable to update history %s, because it no longer exists", historyId);
-                return;
-            }
 
             reinjectIfNeeded(endpoint, decodedPayload);
             boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);

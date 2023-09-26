@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -50,6 +51,9 @@ public class ConnectorReceiverTest {
     @InjectSpy
     CamelHistoryFillerHelper camelHistoryFillerHelper;
 
+    @InjectSpy
+    EndpointRepository endpointRepository;
+
     final String expectedHistoryId = UUID.randomUUID().toString();
 
     @BeforeEach
@@ -58,7 +62,9 @@ public class ConnectorReceiverTest {
                 MESSAGES_PROCESSED_COUNTER_NAME,
                 MESSAGES_ERROR_COUNTER_NAME
         );
-        Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(Mockito.eq(expectedHistoryId))).thenReturn(new Endpoint());
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setId(UUID.fromString(expectedHistoryId));
+        Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(Mockito.eq(expectedHistoryId))).thenReturn(endpoint);
     }
 
     @AfterEach
@@ -109,7 +115,7 @@ public class ConnectorReceiverTest {
 
     @Test
     void testValidPayloadWithDeletedEndpoint() {
-        testPayload(UUID.randomUUID().toString(), false, 67549274, null, NotificationStatus.SUCCESS);
+        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS);
     }
 
     private void testPayload(boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
@@ -147,28 +153,28 @@ public class ConnectorReceiverTest {
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(MESSAGES_PROCESSED_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(MESSAGES_ERROR_COUNTER_NAME, 0);
 
+        ArgumentCaptor<NotificationHistory> nhUpdate = ArgumentCaptor.forClass(NotificationHistory.class);
+        verify(notificationHistoryRepository, times(1)).updateHistoryItem(nhUpdate.capture());
+        verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(nhUpdate.getValue().getId().toString());
+
+        verifyNoMoreInteractions(notificationHistoryRepository);
+
+        ArgumentCaptor<Map<String, Object>> decodedPayload = ArgumentCaptor.forClass(Map.class);
+        verify(camelHistoryFillerHelper).updateHistoryItem(decodedPayload.capture());
+
+        assertEquals(expectedNotificationStatus, nhUpdate.getValue().getStatus());
+
+        assertEquals(historyId, decodedPayload.getValue().get("historyId"));
+        assertEquals(expectedDuration, ((Number) decodedPayload.getValue().get("duration")).longValue());
+        assertEquals(expectedOutcome, decodedPayload.getValue().get("outcome"));
+        Map<String, Object> details = (Map<String, Object>) decodedPayload.getValue().get("details");
+        assertEquals(expectedDetailsType, details.get("type"));
+        assertEquals(expectedDetailsTarget, details.get("target"));
+
         if (!expectedHistoryId.equals(historyId)) {
-            verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(historyId);
-            verifyNoMoreInteractions(notificationHistoryRepository);
-            verifyNoInteractions(camelHistoryFillerHelper);
-        } else {
-            ArgumentCaptor<NotificationHistory> nhUpdate = ArgumentCaptor.forClass(NotificationHistory.class);
-            verify(notificationHistoryRepository, times(1)).updateHistoryItem(nhUpdate.capture());
-            verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(nhUpdate.getValue().getId().toString());
-
-            verifyNoMoreInteractions(notificationHistoryRepository);
-
-            ArgumentCaptor<Map<String, Object>> decodedPayload = ArgumentCaptor.forClass(Map.class);
-            verify(camelHistoryFillerHelper).updateHistoryItem(decodedPayload.capture());
-
-            assertEquals(expectedNotificationStatus, nhUpdate.getValue().getStatus());
-
-            assertEquals(historyId, decodedPayload.getValue().get("historyId"));
-            assertEquals(expectedDuration, ((Number) decodedPayload.getValue().get("duration")).longValue());
-            assertEquals(expectedOutcome, decodedPayload.getValue().get("outcome"));
-            Map<String, Object> details = (Map<String, Object>) decodedPayload.getValue().get("details");
-            assertEquals(expectedDetailsType, details.get("type"));
-            assertEquals(expectedDetailsTarget, details.get("target"));
+            verifyNoInteractions(endpointRepository);
+        } else if (isSuccessful) {
+            verify(endpointRepository, times(1)).resetEndpointServerErrors(UUID.fromString(expectedHistoryId));
         }
     }
 }

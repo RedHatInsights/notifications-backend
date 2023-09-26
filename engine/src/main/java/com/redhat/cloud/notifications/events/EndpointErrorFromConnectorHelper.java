@@ -49,6 +49,11 @@ public class EndpointErrorFromConnectorHelper {
 
     public void manageEndpointDisablingIfNeeded(Endpoint endpoint, JsonObject payload) {
         String strHistoryId = payload.getString("id");
+        if (endpoint == null) {
+            Log.debugf("Unable to update endpoint data from history %s, because it no longer exists", strHistoryId);
+            return;
+        }
+
         JsonObject data = new JsonObject(payload.getString("data"));
         if (strHistoryId != null) {
             boolean shouldIncrementServerError = data.getBoolean(INCREMENT_ENDPOINT_SERVER_ERRORS, false);
