@@ -79,12 +79,20 @@ public class ConnectorReceiver {
         try {
             Log.infof("Processing return from camel: %s", payload);
             Map<String, Object> decodedPayload = decodeItem(payload);
-            reinjectIfNeeded(decodedPayload);
+
+            String historyId = (String) decodedPayload.get("historyId");
+            final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId);
+            if (endpoint == null) {
+                Log.infof("Unable to update history %s, because it no longer exists", historyId);
+                return;
+            }
+
+            reinjectIfNeeded(endpoint, decodedPayload);
             boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
             if (!updated) {
                 Log.warnf("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
             }
-            endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(new JsonObject(payload));
+            endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, new JsonObject(payload));
         } catch (Exception e) {
             messagesErrorCounter.increment();
             Log.error("|  Failure to update the history", e);
@@ -93,15 +101,13 @@ public class ConnectorReceiver {
         }
     }
 
-    private void reinjectIfNeeded(Map<String, Object> payloadMap) {
+    private void reinjectIfNeeded(Endpoint endpoint, Map<String, Object> payloadMap) {
         if (!featureFlipper.isEnableReInject() || (payloadMap.containsKey("successful") && ((Boolean) payloadMap.get("successful")))) {
             return;
         }
 
         String historyId = (String) payloadMap.get("historyId");
         Log.infof("Notification with id %s was not successful, resubmitting for further processing", historyId);
-
-        Endpoint ep = notificationHistoryRepository.getEndpointForHistoryId(historyId);
 
         Event event = new Event();
         Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
@@ -113,8 +119,8 @@ public class ConnectorReceiver {
         // Save the original id, as we may need it in the future.
         Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
         contextBuilder.withAdditionalProperty("original-id", historyId);
-        if (ep != null) { // TODO For the current tests. EP should not be null in real life
-            contextBuilder.withAdditionalProperty("failed-integration", ep.getName());
+        if (endpoint != null) { // TODO For the current tests. EP should not be null in real life
+            contextBuilder.withAdditionalProperty("failed-integration", endpoint.getName());
         }
 
         Action action = new Action.ActionBuilder()
@@ -122,8 +128,8 @@ public class ConnectorReceiver {
                 .withBundle("console")
                 .withApplication("integrations")
                 .withEventType(INTEGRATION_FAILED_EVENT_TYPE)
-                .withAccountId(ep != null ? ep.getAccountId() : "")
-                .withOrgId(ep != null && ep.getOrgId() != null ? ep.getOrgId() : "")
+                .withAccountId(endpoint != null ? endpoint.getAccountId() : "")
+                .withOrgId(endpoint != null && endpoint.getOrgId() != null ? endpoint.getOrgId() : "")
                 .withContext(contextBuilder.build())
                 .withTimestamp(LocalDateTime.now(ZoneOffset.UTC))
                 .withEvents(Collections.singletonList(event))

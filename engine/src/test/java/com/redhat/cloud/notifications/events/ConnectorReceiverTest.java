@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import io.quarkus.test.InjectMock;
@@ -17,9 +18,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.MESSAGES_ERROR_COUNTER_NAME;
@@ -47,12 +50,15 @@ public class ConnectorReceiverTest {
     @InjectSpy
     CamelHistoryFillerHelper camelHistoryFillerHelper;
 
+    final String expectedHistoryId = UUID.randomUUID().toString();
+
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(
                 MESSAGES_PROCESSED_COUNTER_NAME,
                 MESSAGES_ERROR_COUNTER_NAME
         );
+        Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(Mockito.eq(expectedHistoryId))).thenReturn(new Endpoint());
     }
 
     @AfterEach
@@ -101,8 +107,17 @@ public class ConnectorReceiverTest {
         testPayload(true, 2147483600000L, null, NotificationStatus.SUCCESS);
     }
 
+    @Test
+    void testValidPayloadWithDeletedEndpoint() {
+        testPayload(UUID.randomUUID().toString(), false, 67549274, null, NotificationStatus.SUCCESS);
+    }
+
     private void testPayload(boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
-        String expectedHistoryId = "e3c90a94-751b-4ce1-b345-b85d825795a4";
+        testPayload(expectedHistoryId, isSuccessful, expectedDuration, expectedOutcome, expectedNotificationStatus);
+    }
+
+    private void testPayload(String historyId, boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
+
         String expectedDetailsType = "com.redhat.console.notification.toCamel.tower";
         String expectedDetailsTarget = "1.2.3.4";
 
@@ -123,7 +138,7 @@ public class ConnectorReceiverTest {
                 "source", "demo-log",
                 "type", "com.redhat.cloud.notifications.history",
                 "time", "2021-12-14T10:08:23.217Z",
-                "id", expectedHistoryId,
+                "id", historyId,
                 "content-type", "application/json",
                 "data", Json.encode(dataMap)
         ));
@@ -132,22 +147,28 @@ public class ConnectorReceiverTest {
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(MESSAGES_PROCESSED_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(MESSAGES_ERROR_COUNTER_NAME, 0);
 
-        ArgumentCaptor<NotificationHistory> nhUpdate = ArgumentCaptor.forClass(NotificationHistory.class);
-        verify(notificationHistoryRepository, times(1)).updateHistoryItem(nhUpdate.capture());
-        verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(nhUpdate.getValue().getId().toString());
+        if (!expectedHistoryId.equals(historyId)) {
+            verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(historyId);
+            verifyNoMoreInteractions(notificationHistoryRepository);
+            verifyNoInteractions(camelHistoryFillerHelper);
+        } else {
+            ArgumentCaptor<NotificationHistory> nhUpdate = ArgumentCaptor.forClass(NotificationHistory.class);
+            verify(notificationHistoryRepository, times(1)).updateHistoryItem(nhUpdate.capture());
+            verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(nhUpdate.getValue().getId().toString());
 
-        verifyNoMoreInteractions(notificationHistoryRepository);
+            verifyNoMoreInteractions(notificationHistoryRepository);
 
-        ArgumentCaptor<Map<String, Object>> decodedPayload = ArgumentCaptor.forClass(Map.class);
-        verify(camelHistoryFillerHelper).updateHistoryItem(decodedPayload.capture());
+            ArgumentCaptor<Map<String, Object>> decodedPayload = ArgumentCaptor.forClass(Map.class);
+            verify(camelHistoryFillerHelper).updateHistoryItem(decodedPayload.capture());
 
-        assertEquals(expectedNotificationStatus, nhUpdate.getValue().getStatus());
+            assertEquals(expectedNotificationStatus, nhUpdate.getValue().getStatus());
 
-        assertEquals(expectedHistoryId, decodedPayload.getValue().get("historyId"));
-        assertEquals(expectedDuration, ((Number) decodedPayload.getValue().get("duration")).longValue());
-        assertEquals(expectedOutcome, decodedPayload.getValue().get("outcome"));
-        Map<String, Object> details = (Map<String, Object>) decodedPayload.getValue().get("details");
-        assertEquals(expectedDetailsType, details.get("type"));
-        assertEquals(expectedDetailsTarget, details.get("target"));
+            assertEquals(historyId, decodedPayload.getValue().get("historyId"));
+            assertEquals(expectedDuration, ((Number) decodedPayload.getValue().get("duration")).longValue());
+            assertEquals(expectedOutcome, decodedPayload.getValue().get("outcome"));
+            Map<String, Object> details = (Map<String, Object>) decodedPayload.getValue().get("details");
+            assertEquals(expectedDetailsType, details.get("type"));
+            assertEquals(expectedDetailsTarget, details.get("target"));
+        }
     }
 }
