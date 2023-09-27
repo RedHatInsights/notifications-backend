@@ -214,8 +214,6 @@ objects:
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
         - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
           value: ${SOURCES_ENABLED}
-        - name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
-          value: ${NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED}
         - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
           value: ${NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED}
         - name: NOTIFICATIONS_SEND_SINGLE_EMAIL_FOR_MULTIPLE_RECIPIENTS_ENABLED
@@ -379,8 +377,6 @@ parameters:
 - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
   description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
   value: "true"
-- name: NOTIFICATIONS_USE_EVENT_TYPE_FOR_SUBSCRIPTION_ENABLED
-  value: "false"
 - name: IT_SERVICE_TO_SERVICE_KEY_STORE
   description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
   value: ""
