@@ -11,7 +11,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import java.util.UUID;
 
 @ApplicationScoped
 public class EndpointErrorFromConnectorHelper {
@@ -48,25 +47,24 @@ public class EndpointErrorFromConnectorHelper {
         disabledWebhooksClientErrorCount = registry.counter(DISABLED_WEBHOOKS_COUNTER, ERROR_TYPE_TAG_KEY, CLIENT_TAG_VALUE);
     }
 
-    public void manageEndpointDisablingIfNeeded(JsonObject payload) {
+    public void manageEndpointDisablingIfNeeded(Endpoint endpoint, JsonObject payload) {
         String strHistoryId = payload.getString("id");
+        if (endpoint == null) {
+            Log.debugf("Unable to update endpoint data from history %s, because it no longer exists", strHistoryId);
+            return;
+        }
+
         JsonObject data = new JsonObject(payload.getString("data"));
         if (strHistoryId != null) {
-            UUID historyId = UUID.fromString(strHistoryId);
             boolean shouldIncrementServerError = data.getBoolean(INCREMENT_ENDPOINT_SERVER_ERRORS, false);
             boolean shouldDisableEndpointClientError = data.getBoolean(DISABLE_ENDPOINT_CLIENT_ERRORS, false);
 
             if (data.getBoolean("successful", false)) {
-                final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId.toString());
-                if (endpoint != null) {
-                    boolean reset = endpointRepository.resetEndpointServerErrors(endpoint.getId());
-                    if (reset) {
-                        Log.infof("The server errors counter of endpoint %s was just reset", endpoint.getId());
-                    }
+                boolean reset = endpointRepository.resetEndpointServerErrors(endpoint.getId());
+                if (reset) {
+                    Log.infof("The server errors counter of endpoint %s was just reset", endpoint.getId());
                 }
             } else if (shouldIncrementServerError || shouldDisableEndpointClientError) {
-                final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId.toString());
-
                 if (shouldDisableEndpointClientError) {
                     /*
                      * The target endpoint returned a 4xx status. That kind of error requires an update of the

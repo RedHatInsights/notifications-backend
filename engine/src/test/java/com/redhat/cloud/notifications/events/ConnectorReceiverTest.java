@@ -3,7 +3,9 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import io.quarkus.test.InjectMock;
@@ -17,9 +19,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.MESSAGES_ERROR_COUNTER_NAME;
@@ -47,12 +51,20 @@ public class ConnectorReceiverTest {
     @InjectSpy
     CamelHistoryFillerHelper camelHistoryFillerHelper;
 
+    @InjectSpy
+    EndpointRepository endpointRepository;
+
+    final String expectedHistoryId = UUID.randomUUID().toString();
+
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(
                 MESSAGES_PROCESSED_COUNTER_NAME,
                 MESSAGES_ERROR_COUNTER_NAME
         );
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setId(UUID.fromString(expectedHistoryId));
+        Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(Mockito.eq(expectedHistoryId))).thenReturn(endpoint);
     }
 
     @AfterEach
@@ -101,8 +113,17 @@ public class ConnectorReceiverTest {
         testPayload(true, 2147483600000L, null, NotificationStatus.SUCCESS);
     }
 
+    @Test
+    void testValidPayloadWithDeletedEndpoint() {
+        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS);
+    }
+
     private void testPayload(boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
-        String expectedHistoryId = "e3c90a94-751b-4ce1-b345-b85d825795a4";
+        testPayload(expectedHistoryId, isSuccessful, expectedDuration, expectedOutcome, expectedNotificationStatus);
+    }
+
+    private void testPayload(String historyId, boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
+
         String expectedDetailsType = "com.redhat.console.notification.toCamel.tower";
         String expectedDetailsTarget = "1.2.3.4";
 
@@ -123,7 +144,7 @@ public class ConnectorReceiverTest {
                 "source", "demo-log",
                 "type", "com.redhat.cloud.notifications.history",
                 "time", "2021-12-14T10:08:23.217Z",
-                "id", expectedHistoryId,
+                "id", historyId,
                 "content-type", "application/json",
                 "data", Json.encode(dataMap)
         ));
@@ -143,11 +164,17 @@ public class ConnectorReceiverTest {
 
         assertEquals(expectedNotificationStatus, nhUpdate.getValue().getStatus());
 
-        assertEquals(expectedHistoryId, decodedPayload.getValue().get("historyId"));
+        assertEquals(historyId, decodedPayload.getValue().get("historyId"));
         assertEquals(expectedDuration, ((Number) decodedPayload.getValue().get("duration")).longValue());
         assertEquals(expectedOutcome, decodedPayload.getValue().get("outcome"));
         Map<String, Object> details = (Map<String, Object>) decodedPayload.getValue().get("details");
         assertEquals(expectedDetailsType, details.get("type"));
         assertEquals(expectedDetailsTarget, details.get("target"));
+
+        if (!expectedHistoryId.equals(historyId)) {
+            verifyNoInteractions(endpointRepository);
+        } else if (isSuccessful) {
+            verify(endpointRepository, times(1)).resetEndpointServerErrors(UUID.fromString(expectedHistoryId));
+        }
     }
 }

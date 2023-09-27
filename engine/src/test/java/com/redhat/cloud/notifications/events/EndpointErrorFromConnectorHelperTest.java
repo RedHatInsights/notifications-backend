@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import io.quarkus.test.InjectMock;
@@ -32,9 +31,6 @@ import static org.mockito.Mockito.*;
 @QuarkusTest
 class EndpointErrorFromConnectorHelperTest {
 
-    @InjectMock
-    NotificationHistoryRepository notificationHistoryRepository;
-
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
@@ -59,67 +55,53 @@ class EndpointErrorFromConnectorHelperTest {
     }
 
     @Test
-    void testEndpointNotFound() {
-        JsonObject payload = buildTestPayload(true, 200, null, null);
-        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(payload);
-        verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(payload.getString("id"));
-        verifyNoInteractions(endpointRepository);
-        verifyNoInteractions(integrationDisabledNotifier);
-        assertMetrics(0, 0);
-    }
-
-    @Test
     void testResetEndpointServerErrorCount() {
-        final UUID endpointUuid = mockEndpointFromNotificationHistorySearch();
+        final Endpoint endpoint = mockEndpointFromNotificationHistorySearch();
 
         JsonObject payload = buildTestPayload(true, 200, null, null);
-        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(payload);
-        verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(payload.getString("id"));
-        verify(endpointRepository, times(1)).resetEndpointServerErrors(endpointUuid);
+        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
+        verify(endpointRepository, times(1)).resetEndpointServerErrors(endpoint.getId());
         verifyNoInteractions(integrationDisabledNotifier);
         assertMetrics(0, 0);
     }
 
     @Test
     void testIncreaseServerErrorCount() {
-        final UUID endpointUuid = mockEndpointFromNotificationHistorySearch();
+        final Endpoint endpoint = mockEndpointFromNotificationHistorySearch();
 
         JsonObject payload = buildTestPayload(false, 503, true, null);
-        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(payload);
-        verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(payload.getString("id"));
-        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpointUuid), anyInt());
+        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
+        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), anyInt());
         verifyNoInteractions(integrationDisabledNotifier);
         assertMetrics(0, 0);
     }
 
     @Test
     void testIncreaseAndDisableServerErrorCount() {
-        final UUID endpointUuid = mockEndpointFromNotificationHistorySearch();
-        Mockito.when(endpointRepository.incrementEndpointServerErrors(eq(endpointUuid), anyInt())).thenReturn(true);
+        final Endpoint endpoint = mockEndpointFromNotificationHistorySearch();
+        Mockito.when(endpointRepository.incrementEndpointServerErrors(eq(endpoint.getId()), anyInt())).thenReturn(true);
 
         JsonObject payload = buildTestPayload(false, 503, true, null);
-        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(payload);
-        verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(payload.getString("id"));
-        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpointUuid), anyInt());
+        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
+        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), anyInt());
         verify(integrationDisabledNotifier, times(1)).tooManyServerErrors(any(), anyInt());
         assertMetrics(1, 0);
     }
 
     @Test
     void testDisableEndpointBecauseOfClientError() {
-        final UUID endpointUuid = mockEndpointFromNotificationHistorySearch();
-        Mockito.when(endpointRepository.disableEndpoint(endpointUuid)).thenReturn(true);
+        final Endpoint endpoint = mockEndpointFromNotificationHistorySearch();
+        Mockito.when(endpointRepository.disableEndpoint(endpoint.getId())).thenReturn(true);
 
         JsonObject payload = buildTestPayload(false, 408, null, true);
-        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(payload);
-        verify(notificationHistoryRepository, times(1)).getEndpointForHistoryId(payload.getString("id"));
-        verify(endpointRepository, times(1)).disableEndpoint(endpointUuid);
+        endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
+        verify(endpointRepository, times(1)).disableEndpoint(endpoint.getId());
         verify(integrationDisabledNotifier, times(1)).clientError(any(), eq(408));
         assertMetrics(0, 1);
     }
 
     @NotNull
-    private UUID mockEndpointFromNotificationHistorySearch() {
+    private Endpoint mockEndpointFromNotificationHistorySearch() {
         // Create an Endpoint which will be simulated to be fetched from the database.
         final String orgId = "test-org-id";
         final UUID endpointUuid = UUID.randomUUID();
@@ -129,8 +111,7 @@ class EndpointErrorFromConnectorHelperTest {
         endpointFixture.setOrgId(orgId);
         endpointFixture.setType(EndpointType.WEBHOOK);
 
-        Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(anyString())).thenReturn(endpointFixture);
-        return endpointUuid;
+        return endpointFixture;
     }
 
 
