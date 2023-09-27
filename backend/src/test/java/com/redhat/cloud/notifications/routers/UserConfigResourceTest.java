@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
+import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -411,5 +412,62 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     private void deleteAggregationTemplate(String templateId) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         deleteAggregationEmailTemplate(adminIdentity, templateId);
+    }
+
+    @Test
+    void testSettingsUserPreferenceUsingDeprecatedApi() {
+        String path = "/user-config/notification-event-type-preference";
+        String accountId = "empty";
+        String orgId = "empty";
+        String username = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        String bundle = "rhel";
+        String application = "policies";
+        String eventType = "policy-triggered";
+
+        createInstantTemplate(bundle, application, eventType);
+        createAggregationTemplate(bundle, application);
+
+        // Daily and Instant to false
+        updateAndCheckUserPreferenceUsingDeprecatedApi(path, identityHeader, bundle, application, eventType, false, false, true);
+
+        // Daily to true
+        updateAndCheckUserPreferenceUsingDeprecatedApi(path, identityHeader, bundle, application, eventType, true, false, true);
+
+        // Instant to true
+        updateAndCheckUserPreferenceUsingDeprecatedApi(path, identityHeader, bundle, application, eventType, false, true, true);
+
+        // Both to true
+        updateAndCheckUserPreferenceUsingDeprecatedApi(path, identityHeader, bundle, application, eventType, true, true, true);
+
+        given()
+            .header(identityHeader)
+            .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, "another-app"))
+            .then()
+            .statusCode(403)
+            .contentType(JSON)
+            .extract().body();
+
+    }
+
+    private void updateAndCheckUserPreferenceUsingDeprecatedApi(String path, Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer);
+        postPreferencesByEventType(path, identityHeader, settingsValues, 200);
+
+        final UserConfigPreferences preferences = given()
+            .header(identityHeader)
+            .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(UserConfigPreferences.class);
+
+        assertNotNull(preferences);
+
+        assertEquals(daily, preferences.getDailyEmail());
+        assertEquals(instant, preferences.getInstantEmail());
     }
 }
