@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
-import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import com.redhat.cloud.notifications.connector.drawer.config.DrawerConnectorConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -13,7 +13,7 @@ import static org.apache.camel.LoggingLevel.INFO;
 public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Inject
-    ConnectorConfig drawerConnectorConfig;
+    DrawerConnectorConfig drawerConnectorConfig;
 
     @Override
     public void configureRoute() {
