@@ -10,7 +10,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.MissingResourceException;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.BASIC_AUTH_PASSWORD;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.BASIC_AUTH_USERNAME;
@@ -43,12 +42,6 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
         if (basicAuth != null) {
             exchange.setProperty(BASIC_AUTH_USERNAME, basicAuth.getString("username"));
             exchange.setProperty(BASIC_AUTH_PASSWORD, basicAuth.getString("password"));
-        }
-
-        if (cloudEventData.getJsonObject(PAYLOAD).containsKey("org_id")) {
-            exchange.setProperty(ORG_ID, cloudEventData.getJsonObject(PAYLOAD).getString("org_id"));
-        } else if (cloudEventData.getJsonObject(PAYLOAD).containsKey("redhatorgid")) {
-            exchange.setProperty(ORG_ID, cloudEventData.getJsonObject(PAYLOAD).getString("redhatorgid"));
         }
 
         exchange.getIn().setBody(cloudEventData.getJsonObject(PAYLOAD).encode());

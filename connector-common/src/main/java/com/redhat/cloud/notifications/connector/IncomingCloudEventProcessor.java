@@ -44,9 +44,6 @@ public class IncomingCloudEventProcessor implements Processor {
 
         JsonObject data = cloudEvent.getJsonObject(CLOUD_EVENT_DATA);
         exchange.setProperty(ORG_ID, data.getString("org_id"));
-        if (exchange.getProperty(ORG_ID, String.class) == null) { // TODO For migration purposes, remove ASAP.
-            exchange.setProperty(ORG_ID, data.getString("orgId"));
-        }
 
         cloudEventDataExtractor.extract(exchange, data);
     }
