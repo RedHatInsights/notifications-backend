@@ -22,7 +22,9 @@ public class SecretUtilsTest {
     static final String BASIC_AUTH_PASSWORD = "basic-auth-test-password";
     static final String BASIC_AUTH_USERNAME = "basic-auth-test-username";
     static final String SECRET_TOKEN = "secret-token";
+    static final String BEARER_AUTHENTICATION = "bearer-test-authentication";
     static final Long SECRET_TOKEN_SOURCES_ID = 100L;
+    static final Long BEARER_TOKEN_SOURCES_ID = 150L;
 
     @InjectMock
     @RestClient
@@ -53,6 +55,10 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.password = SECRET_TOKEN;
 
+        // Create a "bearer authentication" secret mock.
+        final Secret secretBearerMock = new Secret();
+        secretBearerMock.password = BEARER_AUTHENTICATION;
+
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "get-secrets-for-endpoint-test-organization-id";
 
@@ -61,6 +67,7 @@ public class SecretUtilsTest {
 
         webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
+        webhookProperties.setBearerAuthenticationSourcesId(BEARER_TOKEN_SOURCES_ID);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
@@ -68,6 +75,7 @@ public class SecretUtilsTest {
         // Set up the mock calls for the "get by id" calls from the REST Client.
         Mockito.when(this.sourcesServiceMock.getById(orgId, this.sourcesPsk, BASIC_AUTH_SOURCES_ID)).thenReturn(basicAuthenticationMock);
         Mockito.when(this.sourcesServiceMock.getById(orgId, this.sourcesPsk, SECRET_TOKEN_SOURCES_ID)).thenReturn(secretTokenMock);
+        Mockito.when(this.sourcesServiceMock.getById(orgId, this.sourcesPsk, BEARER_TOKEN_SOURCES_ID)).thenReturn(secretBearerMock);
 
         // Call the function under test.
         this.secretUtils.loadSecretsForEndpoint(endpoint);
@@ -88,10 +96,15 @@ public class SecretUtilsTest {
         final String secretToken = props.getSecretToken();
         Assertions.assertEquals(SECRET_TOKEN, secretToken, "the secret token doesn't match");
 
-        // Assert that the underlying function was called exactly two times, since we are expecting that both the
-        // "basic authentication" and the "secret token" secrets were fetched.
+        final String secretBearer = props.getBearerAuthentication();
+        Assertions.assertEquals(BEARER_AUTHENTICATION, secretBearer, "the secret bearer doesn't match");
+
+        // Assert that the underlying function was called exactly three times,
+        // since we are expecting that "basic authentication", "secret token"
+        // and "bearer authentication" secrets were fetched.
         final int wantedNumberOfInvocations = 1;
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(orgId, this.sourcesPsk, BASIC_AUTH_SOURCES_ID);
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(orgId, this.sourcesPsk, SECRET_TOKEN_SOURCES_ID);
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).getById(orgId, this.sourcesPsk, SECRET_TOKEN_SOURCES_ID);
     }
 
@@ -125,6 +138,10 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
 
+        // Create a "bearer authentication" secret mock.
+        final Secret secretBearerMock = new Secret();
+        secretBearerMock.id = BEARER_TOKEN_SOURCES_ID;
+
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "create-secrets-for-endpoint-test-organization-id";
 
@@ -134,14 +151,16 @@ public class SecretUtilsTest {
 
         webhookProperties.setBasicAuthentication(basicAuth);
         webhookProperties.setSecretToken(SECRET_TOKEN);
+        webhookProperties.setBearerAuthentication(BEARER_AUTHENTICATION);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
-        // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
-        // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
-        // operation.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock);
+        // Set up the mock calls for the "create" calls from the REST Client.
+        // Make sure we return the basic authentication's ID first, the secret
+        // token's ID second, and the bearer authentication's ID third, since
+        // we are expecting a successful create operation.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock, secretBearerMock);
 
         // Call the function under test.
         this.secretUtils.createSecretsForEndpoint(endpoint);
@@ -157,10 +176,12 @@ public class SecretUtilsTest {
         // Assert the results.
         Assertions.assertEquals(BASIC_AUTH_SOURCES_ID, props.getBasicAuthenticationSourcesId(), "the ID of the basic authentication secret from Sources doesn't match");
         Assertions.assertEquals(SECRET_TOKEN_SOURCES_ID, props.getSecretTokenSourcesId(), "the ID of the secret token's secret from Sources doesn't match");
+        Assertions.assertEquals(BEARER_TOKEN_SOURCES_ID, props.getBearerAuthenticationSourcesId(), "the ID of the secret bearer from Sources doesn't match");
 
-        // Assert that the underlying function was called exactly two times, since we are expecting that both the
-        // "basic authentication" and the "secret token" secrets were created.
-        final int wantedNumberOfInvocations = 2;
+        // Assert that the underlying function was called exactly three times,
+        // since we are expecting that the "basic authentication", "secret
+        // token" and "bearer authentication" secrets were created.
+        final int wantedNumberOfInvocations = 3;
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any());
     }
 
@@ -175,19 +196,25 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
 
+        // Set the ID for the secret bearer that is supposed that is created in Sources.
+        final Secret secretBearerMock = new Secret();
+        secretBearerMock.id = BEARER_TOKEN_SOURCES_ID;
+
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "create-secrets-for-endpoint-basic-auth-null-test-organization-id";
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
         webhookProperties.setSecretToken(SECRET_TOKEN);
+        webhookProperties.setBearerAuthentication(BEARER_AUTHENTICATION);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
-        // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
-        // authentication is null, only the secret token should be created.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any())).thenReturn(secretTokenMock);
+        // Set up the mock call for the "create" call from the REST Client. In
+        // this case, since the basic authentication is null, only the secret
+        // token should be created.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any())).thenReturn(secretTokenMock, secretBearerMock);
 
         // Call the function under test.
         this.secretUtils.createSecretsForEndpoint(endpoint);
@@ -202,10 +229,12 @@ public class SecretUtilsTest {
 
         // Assert the results.
         Assertions.assertEquals(SECRET_TOKEN_SOURCES_ID, props.getSecretTokenSourcesId(), "the ID of the secret token's secret from Sources doesn't match");
+        Assertions.assertEquals(BEARER_TOKEN_SOURCES_ID, props.getBearerAuthenticationSourcesId(), "the ID of the bearer secret from Sources doesn't match");
 
-        // Assert that the underlying function was called exactly one time: just for the "secret token"'s secret
-        // creation.
-        final int wantedNumberOfInvocations = 1;
+        // Assert that the underlying function was called exactly two times:
+        // one for the "secret token"'s secret creation and another one for the
+        // "bearer authentication"'s secret creation.
+        final int wantedNumberOfInvocations = 2;
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any());
     }
 
@@ -371,6 +400,10 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.password = SECRET_TOKEN;
 
+        // Create a "bearer authentication" secret mock.
+        final Secret bearerMock = new Secret();
+        bearerMock.password = BEARER_AUTHENTICATION;
+
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "update-secrets-for-endpoint-test-organization-id";
 
@@ -381,6 +414,7 @@ public class SecretUtilsTest {
         final String updatedUsername = String.format("%s-updated", BASIC_AUTH_USERNAME);
         final String updatedPassword = String.format("%s-updated", BASIC_AUTH_PASSWORD);
         final String updatedSecretToken = String.format("%s-updated", SECRET_TOKEN);
+        final String updatedBearer = String.format("%s-updated", BEARER_AUTHENTICATION);
 
         BasicAuthentication basicAuth = new BasicAuthentication(updatedUsername, updatedPassword);
         webhookProperties.setBasicAuthentication(basicAuth);
@@ -389,6 +423,9 @@ public class SecretUtilsTest {
         webhookProperties.setSecretToken(updatedSecretToken);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
+        webhookProperties.setBearerAuthentication(updatedBearer);
+        webhookProperties.setBearerAuthenticationSourcesId(BEARER_TOKEN_SOURCES_ID);
+
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
@@ -396,6 +433,7 @@ public class SecretUtilsTest {
         // to be updated.
         Mockito.when(this.sourcesServiceMock.getById(orgId, this.sourcesPsk, BASIC_AUTH_SOURCES_ID)).thenReturn(basicAuthenticationMock);
         Mockito.when(this.sourcesServiceMock.getById(orgId, this.sourcesPsk, SECRET_TOKEN_SOURCES_ID)).thenReturn(secretTokenMock);
+        Mockito.when(this.sourcesServiceMock.getById(orgId, this.sourcesPsk, BEARER_TOKEN_SOURCES_ID)).thenReturn(bearerMock);
 
         // Call the function under test.
         this.secretUtils.updateSecretsForEndpoint(endpoint);
@@ -416,11 +454,15 @@ public class SecretUtilsTest {
         final String secretToken = props.getSecretToken();
         Assertions.assertEquals(updatedSecretToken, secretToken, "the updated secret token doesn't match");
 
+        final String bearerToken = props.getBearerAuthentication();
+        Assertions.assertEquals(updatedBearer, bearerToken, "the updated bearer doesn't match");
+
         // Assert that the underlying "update" function was called exactly two times, since we are expecting that both
         // the "basic authentication" and the "secret token" secrets were successfully updated.
         final int wantedNumberOfInvocationsUpdate = 1;
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.eq(BASIC_AUTH_SOURCES_ID), Mockito.any());
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.eq(SECRET_TOKEN_SOURCES_ID), Mockito.any());
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocationsUpdate)).update(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.eq(BEARER_TOKEN_SOURCES_ID), Mockito.any());
     }
 
     /**
@@ -439,6 +481,7 @@ public class SecretUtilsTest {
         // IDs on the database. This should trigger the deletion of these secrets on Sources.
         webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
+        webhookProperties.setBearerAuthenticationSourcesId(BEARER_TOKEN_SOURCES_ID);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
@@ -449,11 +492,13 @@ public class SecretUtilsTest {
         // The IDs of the properties should be null now.
         Assertions.assertNull(webhookProperties.getBasicAuthenticationSourcesId(), "the basic authentication's Sources ID isn't null");
         Assertions.assertNull(webhookProperties.getSecretTokenSourcesId(), "the secret token's Sources ID isn't null");
+        Assertions.assertNull(webhookProperties.getBearerAuthenticationSourcesId(), "the bearer Sources ID isn't null");
 
         // It should have triggered two "delete" calls to Sources to delete both of the secrets.
         final int wantedNumberOfInvocations = 1;
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(orgId, this.sourcesPsk, BASIC_AUTH_SOURCES_ID);
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(orgId, this.sourcesPsk, SECRET_TOKEN_SOURCES_ID);
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(orgId, this.sourcesPsk, BEARER_TOKEN_SOURCES_ID);
     }
 
     /**
@@ -496,6 +541,10 @@ public class SecretUtilsTest {
         final Secret secretTokenMock = new Secret();
         secretTokenMock.id = SECRET_TOKEN_SOURCES_ID;
 
+        // Set the ID for the bearer secret that is supposed that is created in Sources.
+        final Secret bearerMock = new Secret();
+        bearerMock.id = BEARER_TOKEN_SOURCES_ID;
+
         // Create an endpoint that contains the expected data by the function under test.
         final String orgId = "update-secrets-for-endpoint-create-test-organization-id";
 
@@ -505,14 +554,16 @@ public class SecretUtilsTest {
 
         webhookProperties.setBasicAuthentication(basicAuth);
         webhookProperties.setSecretToken(SECRET_TOKEN);
+        webhookProperties.setBearerAuthentication(BEARER_AUTHENTICATION);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
-        // Set up the mock calls for the "create" calls from the REST Client. Make sure we return the basic
-        // authentication's ID first, and the secret token's ID second, since we are expecting a successful create
-        // operation.
-        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock);
+        // Set up the mock calls for the "create" calls from the REST Client.
+        // Make sure we return the basic authentication's ID first, the secret
+        // token's ID second and the bearer authentication's ID third, since we
+        // are expecting a successful create operation.
+        Mockito.when(this.sourcesServiceMock.create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any())).thenReturn(basicAuthenticationMock, secretTokenMock, bearerMock);
 
         // Call the function under test.
         this.secretUtils.updateSecretsForEndpoint(endpoint);
@@ -528,10 +579,12 @@ public class SecretUtilsTest {
         // Assert the results.
         Assertions.assertEquals(BASIC_AUTH_SOURCES_ID, props.getBasicAuthenticationSourcesId(), "the ID of the basic authentication secret from Sources doesn't match");
         Assertions.assertEquals(SECRET_TOKEN_SOURCES_ID, props.getSecretTokenSourcesId(), "the ID of the secret token's secret from Sources doesn't match");
+        Assertions.assertEquals(BEARER_TOKEN_SOURCES_ID, props.getBearerAuthenticationSourcesId(), "the ID of the bearer secret from Sources doesn't match");
 
-        // Assert that the underlying function was called exactly two times, since we are expecting that both the
-        // "basic authentication" and the "secret token" secrets were created.
-        final int wantedNumberOfInvocations = 2;
+        // Assert that the underlying function was called exactly three times,
+        // since we are expecting that the "basic authentication", "secret
+        // token" and "bearer authentication" secrets were created.
+        final int wantedNumberOfInvocations = 3;
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).create(Mockito.eq(orgId), Mockito.eq(this.sourcesPsk), Mockito.any());
     }
 
@@ -549,6 +602,7 @@ public class SecretUtilsTest {
 
         webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
+        webhookProperties.setBearerAuthenticationSourcesId(BEARER_TOKEN_SOURCES_ID);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
@@ -561,6 +615,7 @@ public class SecretUtilsTest {
         final int wantedNumberOfInvocations = 1;
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(orgId, this.sourcesPsk, BASIC_AUTH_SOURCES_ID);
         Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(orgId, this.sourcesPsk, SECRET_TOKEN_SOURCES_ID);
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(wantedNumberOfInvocations)).delete(orgId, this.sourcesPsk, BEARER_TOKEN_SOURCES_ID);
     }
 
     /**

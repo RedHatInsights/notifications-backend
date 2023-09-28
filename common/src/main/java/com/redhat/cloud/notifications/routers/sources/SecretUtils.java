@@ -46,15 +46,7 @@ public class SecretUtils {
 
             final Long basicAuthSourcesId = props.getBasicAuthenticationSourcesId();
             if (basicAuthSourcesId != null) {
-                final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
-
-                final Secret secret = this.sourcesService.getById(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    basicAuthSourcesId
-                );
-
-                getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
+                Secret secret = loadSecretFromSources(endpoint, basicAuthSourcesId);
 
                 props.setBasicAuthentication(
                     new BasicAuthentication(
@@ -66,19 +58,30 @@ public class SecretUtils {
 
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
             if (secretTokenSourcesId != null) {
-                final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
-
-                final Secret secret = this.sourcesService.getById(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    secretTokenSourcesId
-                );
-
-                getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
-
+                Secret secret = loadSecretFromSources(endpoint, secretTokenSourcesId);
                 props.setSecretToken(secret.password);
             }
+
+            final Long bearerSourcesId = props.getBearerAuthenticationSourcesId();
+            if (bearerSourcesId != null) {
+                Secret secret = loadSecretFromSources(endpoint, bearerSourcesId);
+                props.setBearerAuthentication(secret.password);
+            }
         }
+    }
+
+    private Secret loadSecretFromSources(Endpoint endpoint, Long secretId) {
+
+        final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
+
+        final Secret secret = this.sourcesService.getById(
+            endpoint.getOrgId(),
+            this.sourcesPsk,
+            secretId
+        );
+
+        getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
+        return secret;
     }
 
     /**
@@ -102,11 +105,18 @@ public class SecretUtils {
 
             final String secretToken = props.getSecretToken();
             if (secretToken != null && !secretToken.isBlank()) {
-                final long id = this.createSecretTokenSecret(secretToken, endpoint.getOrgId());
+                final long id = this.createSecretTokenSecret(secretToken, Secret.TYPE_SECRET_TOKEN, endpoint.getOrgId());
 
                 Log.infof("[secret_id: %s] Secret token secret created in Sources", id);
 
                 props.setSecretTokenSourcesId(id);
+            }
+
+            final String bearerToken = props.getBearerAuthentication();
+            if (bearerToken != null && !bearerToken.isBlank()) {
+                final long id = this.createSecretTokenSecret(secretToken, Secret.TYPE_BEARER_AUTHENTICATION, endpoint.getOrgId());
+                Log.infof("[secret_id: %s] Secret bearer token created in Sources", id);
+                props.setBearerAuthenticationSourcesId(id);
             }
         }
     }
@@ -135,12 +145,7 @@ public class SecretUtils {
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
-                    this.sourcesService.delete(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        basicAuthId
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
+                    deleteSecret(endpoint, basicAuthId, "[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation");
 
                     props.setBasicAuthenticationSourcesId(null);
                 } else {
@@ -170,42 +175,47 @@ public class SecretUtils {
 
             final String secretToken = props.getSecretToken();
             final Long secretTokenId = props.getSecretTokenSourcesId();
-            if (secretTokenId != null) {
-                if (secretToken == null || secretToken.isBlank()) {
-                    this.sourcesService.delete(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        secretTokenId
-                    );
+            props.setSecretTokenSourcesId(updateSecretToken(endpoint, secretToken, secretTokenId, Secret.TYPE_SECRET_TOKEN, "Secret token secret"));
 
-                    props.setSecretTokenSourcesId(null);
+            final String bearerToken = props.getBearerAuthentication();
+            final Long bearerTokenId = props.getBearerAuthenticationSourcesId();
+            props.setBearerAuthenticationSourcesId(updateSecretToken(endpoint, bearerToken, bearerTokenId, Secret.TYPE_BEARER_AUTHENTICATION, "Bearer token"));
+        }
+    }
 
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources during an endpoint update operation", endpoint.getId(), secretTokenId);
-                } else {
-                    Secret secret = new Secret();
-
-                    secret.password = secretToken;
-
-                    this.sourcesService.update(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        secretTokenId,
-                        secret
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret updated in Sources", endpoint.getId(), secretTokenId);
-                }
+    private Long updateSecretToken(Endpoint endpoint, String password, Long secretId, String secretType, String logDisplaySecretType) {
+        if (secretId != null) {
+            if (password == null || password.isBlank()) {
+                this.sourcesService.delete(
+                    endpoint.getOrgId(),
+                    this.sourcesPsk,
+                    secretId
+                );
+                Log.infof("[endpoint_id: %s][secret_id: %s] %s deleted in Sources during an endpoint update operation", endpoint.getId(), secretId, logDisplaySecretType);
+                return null;
             } else {
-                if (secretToken == null || secretToken.isBlank()) {
-                    Log.debugf("[endpoint_id: %s] Secret token secret not created in Sources: the secret token object is null or blank", endpoint.getId());
-                } else {
-                    final long id = this.createSecretTokenSecret(secretToken, endpoint.getOrgId());
+                Secret secret = new Secret();
+                secret.password = password;
 
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret created in Sources during an endpoint update operation", endpoint.getId(), id);
-
-                    props.setSecretTokenSourcesId(id);
-                }
+                this.sourcesService.update(
+                    endpoint.getOrgId(),
+                    this.sourcesPsk,
+                    secretId,
+                    secret
+                );
+                Log.infof("[endpoint_id: %s][secret_id: %s] %s updated in Sources", endpoint.getId(), secretId, logDisplaySecretType);
+                return secretId;
+            }
+        } else {
+            if (password == null || password.isBlank()) {
+                Log.debugf("[endpoint_id: %s] %s not created in Sources: the secret token object is null or blank", endpoint.getId(), logDisplaySecretType);
+            } else {
+                final long id = this.createSecretTokenSecret(password, secretType, endpoint.getOrgId());
+                Log.infof("[endpoint_id: %s][secret_id: %s] %s created in Sources during an endpoint update operation", endpoint.getId(), id, logDisplaySecretType);
+                return id;
             }
         }
+        return secretId;
     }
 
     /**
@@ -221,24 +231,28 @@ public class SecretUtils {
 
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
-                this.sourcesService.delete(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    basicAuthId
-                );
-                Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources", endpoint.getId(), basicAuthId);
+                deleteSecret(endpoint, basicAuthId, "[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources");
             }
 
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
-                this.sourcesService.delete(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    secretTokenId
-                );
-                Log.infof("[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources", endpoint.getId(), secretTokenId);
+                deleteSecret(endpoint, secretTokenId, "[endpoint_id: %s][secret_id: %s] Secret token secret deleted in Sources");
+            }
+
+            final Long bearerSourcesId = props.getBearerAuthenticationSourcesId();
+            if (bearerSourcesId != null) {
+                deleteSecret(endpoint, bearerSourcesId, "[endpoint_id: %s][secret_id: %s] Bearer token deleted in Sources");
             }
         }
+    }
+
+    private void deleteSecret(Endpoint endpoint, Long secretId, String logMessageFormat) {
+        this.sourcesService.delete(
+            endpoint.getOrgId(),
+            this.sourcesPsk,
+            secretId
+        );
+        Log.infof(logMessageFormat, endpoint.getId(), secretId);
     }
 
     /**
@@ -254,13 +268,7 @@ public class SecretUtils {
         secret.password = basicAuthentication.getPassword();
         secret.username = basicAuthentication.getUsername();
 
-        final Secret createdSecret = this.sourcesService.create(
-            orgId,
-            this.sourcesPsk,
-            secret
-        );
-
-        return createdSecret.id;
+        return createSecret(orgId, secret);
     }
 
     /**
@@ -269,12 +277,16 @@ public class SecretUtils {
      * @param orgId the organization id related to this operation for the tenant identification.
      * @return the id of the created secret.
      */
-    private long createSecretTokenSecret(final String secretToken, final String orgId) {
+    private long createSecretTokenSecret(final String secretToken, final String tokenType, final String orgId) {
         Secret secret = new Secret();
 
-        secret.authenticationType = Secret.TYPE_SECRET_TOKEN;
+        secret.authenticationType = tokenType;
         secret.password = secretToken;
 
+        return createSecret(orgId, secret);
+    }
+
+    private Long createSecret(String orgId, Secret secret) {
         final Secret createdSecret = this.sourcesService.create(
             orgId,
             this.sourcesPsk,

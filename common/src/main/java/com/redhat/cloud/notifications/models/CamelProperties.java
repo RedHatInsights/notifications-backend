@@ -100,6 +100,22 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
         this.basicAuthenticationSourcesId = basicAuthenticationSourcesId;
     }
 
+    public Long getBearerAuthenticationSourcesId() {
+        return null;
+    }
+
+    public void setBearerAuthenticationSourcesId(Long bearerAuthenticationSourcesId) {
+        // do nothing here
+    }
+
+    public String getBearerAuthentication() {
+        return null;
+    }
+
+    public void setBearerAuthentication(String bearerAuthentication) {
+        // do nothing here
+    }
+
     @Override
     public String toString() {
         return "CamelProperties{" +
