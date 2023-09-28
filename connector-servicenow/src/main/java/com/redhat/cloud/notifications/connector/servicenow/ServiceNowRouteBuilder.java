@@ -29,7 +29,7 @@ public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
 
         configureHttpsComponent();
 
-        from(direct(ENGINE_TO_CONNECTOR))
+        from(seda(ENGINE_TO_CONNECTOR))
             .routeId(connectorConfig.getConnectorName())
             .process(new BasicAuthenticationProcessor())
             // SSL certificates may or may not be verified depending on the integration settings.

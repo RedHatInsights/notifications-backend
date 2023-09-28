@@ -24,7 +24,7 @@ public class GoogleChatRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Override
     public void configureRoute() {
-        from(direct(ENGINE_TO_CONNECTOR))
+        from(seda(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
                 .setHeader(HTTP_METHOD, constant("POST"))
                 .setHeader(CONTENT_TYPE, constant("application/json"))

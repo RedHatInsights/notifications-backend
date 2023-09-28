@@ -256,7 +256,8 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
     protected static JsonObject assertKafkaSinkIsSatisfied(String cloudEventId, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful, String expectedTargetUrl, String... expectedOutcomeStarts) throws InterruptedException {
 
-        kafkaSinkMockEndpoint.assertIsSatisfied();
+        // We need a timeout here because SEDA processes the exchange from a different thread and a race condition may happen.
+        kafkaSinkMockEndpoint.assertIsSatisfied(2000L);
 
         Exchange exchange = kafkaSinkMockEndpoint.getReceivedExchanges().get(0);
         JsonObject payload = new JsonObject(exchange.getIn().getBody(String.class));
