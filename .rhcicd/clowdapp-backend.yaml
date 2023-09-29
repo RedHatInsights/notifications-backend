@@ -140,10 +140,12 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
-        - name: QUARKUS_OPENTELEMETRY_ENABLED
-          value: ${QUARKUS_OPENTELEMETRY_ENABLED}
-        - name: QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT
-          value: ${QUARKUS_OPENTELEMETRY_ENDPOINT}
+        - name: QUARKUS_OTEL_SDK_DISABLED
+          value: ${QUARKUS_OTEL_SDK_DISABLED}
+        - name: QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: ${QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+        - name: QUARKUS_DATASOURCE_JDBC_TELEMETRY
+          value: ${QUARKUS_DATASOURCE_JDBC_TELEMETRY}
         - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
         - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
@@ -314,10 +316,12 @@ parameters:
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
-- name: QUARKUS_OPENTELEMETRY_ENABLED
-  value: "false"
-- name: QUARKUS_OPENTELEMETRY_ENDPOINT
+- name: QUARKUS_OTEL_SDK_DISABLED
+  value: "true"
+- name: QUARKUS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
   value: "http://localhost:4317"
+- name: QUARKUS_DATASOURCE_JDBC_TELEMETRY
+  value: "false"
 - description: bucket secret name
   name: FLOORIST_BUCKET_SECRET_NAME
   required: true
