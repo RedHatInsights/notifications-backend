@@ -33,7 +33,7 @@ public class SplunkRouteBuilder extends EngineToConnectorRouteBuilder {
 
         configureHttpsComponent();
 
-        from(direct(ENGINE_TO_CONNECTOR))
+        from(seda(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
                 // Events are split to be sent in batch to Splunk HEC.
                 .process(eventsSplitter)

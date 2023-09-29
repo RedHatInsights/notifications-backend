@@ -20,7 +20,7 @@ public class SlackRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Override
     public void configureRoute() {
-        from(direct(ENGINE_TO_CONNECTOR))
+        from(seda(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
                 .toD(slack("${exchangeProperty." + CHANNEL + "}").webhookUrl("${exchangeProperty." + TARGET_URL + "}"), connectorConfig.getEndpointCacheMaxSize())
                 .log(INFO, getClass().getName(), "Sent Slack notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")

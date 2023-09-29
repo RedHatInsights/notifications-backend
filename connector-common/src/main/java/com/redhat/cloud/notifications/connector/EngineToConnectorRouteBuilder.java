@@ -86,5 +86,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
         component.setQueueSize(connectorConfig.getSedaQueueSize());
         // The Kafka messages consumption is blocked (paused) when the SEDA queue is full.
         component.setDefaultBlockWhenFull(true);
+        // The onException clauses will work with SEDA only if this is set to true.
+        component.setBridgeErrorHandler(true);
     }
 }

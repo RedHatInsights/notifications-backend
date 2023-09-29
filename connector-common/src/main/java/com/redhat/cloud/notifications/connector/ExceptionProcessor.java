@@ -14,7 +14,11 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.SUCCESSFUL;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
+import static org.apache.camel.Exchange.ERRORHANDLER_BRIDGE;
 import static org.apache.camel.Exchange.EXCEPTION_CAUGHT;
+import static org.apache.camel.Exchange.FAILURE_ENDPOINT;
+import static org.apache.camel.Exchange.FAILURE_ROUTE_ID;
+import static org.apache.camel.Exchange.FATAL_FALLBACK_ERROR_HANDLER;
 
 /**
  * Extend this class in an {@link ApplicationScoped} bean from a connector Maven module to change the
@@ -30,6 +34,9 @@ public class ExceptionProcessor implements Processor {
     @Inject
     ProducerTemplate producerTemplate;
 
+    @Inject
+    ConnectorConfig connectorConfig;
+
     @Override
     public void process(Exchange exchange) {
 
@@ -40,7 +47,22 @@ public class ExceptionProcessor implements Processor {
 
         process(t, exchange);
 
-        producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchange);
+        if (connectorConfig.isSedaEnabled()) {
+            /*
+             * There is currently a bug in Camel that will cause a NullPointerException throw when SEDA is used and the
+             * exchange is passed to producerTemplate#send. To work around that bug, we're cloning the current exchange
+             * and removing all Camel internal properties related to the exception that is being processed.
+             */
+            Exchange exchangeCopy = exchange.copy();
+            exchangeCopy.removeProperty(ERRORHANDLER_BRIDGE);
+            exchangeCopy.removeProperty(EXCEPTION_CAUGHT);
+            exchangeCopy.removeProperty(FAILURE_ENDPOINT);
+            exchangeCopy.removeProperty(FAILURE_ROUTE_ID);
+            exchangeCopy.removeProperty(FATAL_FALLBACK_ERROR_HANDLER);
+            producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchangeCopy);
+        } else {
+            producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchange);
+        }
     }
 
     protected final void logDefault(Throwable t, Exchange exchange) {
