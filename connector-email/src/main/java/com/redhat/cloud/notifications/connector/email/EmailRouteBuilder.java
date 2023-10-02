@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.email.aggregation.UserAggregationStrategy;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
+import com.redhat.cloud.notifications.connector.email.config.Environment;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
 import com.redhat.cloud.notifications.connector.email.predicates.NotFinishedFetchingAllPages;
@@ -52,6 +53,12 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      */
     @Inject
     EmailConnectorConfig emailConnectorConfig;
+
+    /**
+     * Helps determine in which environment the connector is running on.
+     */
+    @Inject
+    Environment environment;
 
     /**
      * Processor which takes the response from BOP and transforms it to our
@@ -224,7 +231,12 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * up separately because we need to create a special SSL context which
          * trusts IT's certificate.
          */
-        final HttpEndpointBuilderFactory.HttpEndpointBuilder itEndpoint = this.setUpITEndpoint();
+        final HttpEndpointBuilderFactory.HttpEndpointBuilder itEndpoint;
+        if (this.environment.isDevelopmentEnvironment()) {
+            itEndpoint = this.setUpITEndpointDevelopment();
+        } else {
+            itEndpoint = this.setUpITEndpoint();
+        }
 
         from(direct(Routes.FETCH_USERS_IT))
             .routeId(Routes.FETCH_USERS_IT)
@@ -398,6 +410,25 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         if (fullURL.startsWith("https")) {
             return https(fullURL.replace("https://", ""))
                 .sslContextParameters(sslContextParameters);
+        } else {
+            return http(fullURL.replace("http://", ""));
+        }
+    }
+
+    /**
+     * Creates the endpoint for the IT Users service for the development
+     * environment. It creates the endpoint without requiring a key store with
+     * Red Hat's certificate. Useful for development purposes or when testing
+     * the connector.
+     * @return the created endpoint.
+     */
+    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpITEndpointDevelopment() {
+        // Remove the schema from the url to avoid the
+        // "ResolveEndpointFailedException", which complaints about specifying
+        // the schema twice.
+        final String fullURL = this.emailConnectorConfig.getItUserServiceURL();
+        if (fullURL.startsWith("https")) {
+            return https(fullURL.replace("https://", ""));
         } else {
             return http(fullURL.replace("http://", ""));
         }
