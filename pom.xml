@@ -52,7 +52,7 @@
         <checkstyle-plugin.version>3.3.0</checkstyle-plugin.version>
         <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
         <jacoco-plugin.version>0.8.10</jacoco-plugin.version>
-        <checkstyle.version>10.12.3</checkstyle.version>
+        <checkstyle.version>10.12.4</checkstyle.version>
 
         <testcontainers.version>1.19.0</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
