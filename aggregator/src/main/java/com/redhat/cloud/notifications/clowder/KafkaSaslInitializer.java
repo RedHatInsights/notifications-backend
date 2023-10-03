@@ -39,9 +39,11 @@ public class KafkaSaslInitializer {
                             configurePlainAuthentication(securityProtocol, saslMechanism, saslJaasConfig);
                             break;
                         case SCRAM_SHA_512:
-                            String truststoreLocation = config.getValue(KAFKA_SSL_TRUSTSTORE_LOCATION, String.class);
-                            String truststoreType = config.getValue(KAFKA_SSL_TRUSTSTORE_TYPE, String.class);
-                            configureScramAuthentication(securityProtocol, saslMechanism, saslJaasConfig, truststoreLocation, truststoreType);
+                            configureScramAuthentication(securityProtocol, saslMechanism, saslJaasConfig);
+                            config.getOptionalValue(KAFKA_SSL_TRUSTSTORE_LOCATION, String.class).ifPresent(truststoreLocation -> {
+                                String truststoreType = config.getValue(KAFKA_SSL_TRUSTSTORE_TYPE, String.class);
+                                configureTruststore(truststoreLocation, truststoreType);
+                            });
                             break;
                         default:
                             throw new IllegalStateException("Unexpected Kafka SASL mechanism: " + saslMechanism);
@@ -59,10 +61,13 @@ public class KafkaSaslInitializer {
         setValue(KAFKA_SASL_JAAS_CONFIG, saslJaasConfig);
     }
 
-    private static void configureScramAuthentication(String securityProtocol, String saslMechanism, String saslJaasConfig, String truststoreLocation, String truststoreType) {
+    private static void configureScramAuthentication(String securityProtocol, String saslMechanism, String saslJaasConfig) {
         setValue(KAFKA_SECURITY_PROTOCOL, securityProtocol);
         setValue(KAFKA_SASL_MECHANISM, saslMechanism);
         setValue(KAFKA_SASL_JAAS_CONFIG, saslJaasConfig);
+    }
+
+    private static void configureTruststore(String truststoreLocation, String truststoreType) {
         setValue(KAFKA_SSL_TRUSTSTORE_LOCATION, truststoreLocation);
         setValue(KAFKA_SSL_TRUSTSTORE_TYPE, truststoreType);
     }
