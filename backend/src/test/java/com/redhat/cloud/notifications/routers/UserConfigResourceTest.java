@@ -27,7 +27,9 @@ import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
@@ -83,6 +85,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
+
+    @Inject
+    EntityManager entityManager;
 
     @InjectSpy
     ApplicationRepository applicationRepository;
@@ -169,6 +174,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String instantTemplateId = createInstantTemplate(bundle, application, eventType);
         String aggregationTemplateId = createAggregationTemplate(bundle, application);
 
+        updatePoliciesEventTypeVisibility(false);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
             .header(identityHeader)
             .queryParam("bundleName", bundle)
@@ -179,6 +185,19 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
 
         SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        assertNull(rhelPolicy, "RHEL policies found");
+
+        updatePoliciesEventTypeVisibility(true);
+        settingsValuesByEventType = given()
+            .header(identityHeader)
+            .queryParam("bundleName", bundle)
+            .when().get(path)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
         assertNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
@@ -348,6 +367,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         if (featureFlipper.isDrawerEnabled()) {
             assertEquals(drawer, notificationPreferenes.get(DRAWER));
         }
+    }
+
+    @Transactional
+    void updatePoliciesEventTypeVisibility(boolean visible) {
+        entityManager.createQuery("UPDATE EventType SET visible= :visible where name='policy-triggered'")
+            .setParameter("visible", visible)
+            .executeUpdate();
     }
 
     private void postPreferencesByEventType(String path, Header identityHeader, SettingsValuesByEventType settingsValues, int expectedStatusCode) {

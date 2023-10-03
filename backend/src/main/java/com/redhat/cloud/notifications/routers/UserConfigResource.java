@@ -215,20 +215,22 @@ public class UserConfigResource {
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
         applicationSettingsValue.displayName = application.getDisplayName();
         for (EventType eventType : application.getEventTypes()) {
-            SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
-            eventTypeSettingsValue.displayName = eventType.getDisplayName();
-            eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
-            for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
-                if (featureFlipper.isInstantEmailsEnabled() || emailSubscriptionType != INSTANT) {
-                    // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
-                    boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
-                    if (supported) {
-                        eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, emailSubscriptionType.isOptOut());
+            if (eventType.isVisible()) {
+                SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
+                eventTypeSettingsValue.displayName = eventType.getDisplayName();
+                eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
+                for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
+                    if (featureFlipper.isInstantEmailsEnabled() || emailSubscriptionType != INSTANT) {
+                        // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
+                        boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
+                        if (supported) {
+                            eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, emailSubscriptionType.isOptOut());
+                        }
                     }
                 }
-            }
-            if (eventTypeSettingsValue.emailSubscriptionTypes.size() > 0) {
-                applicationSettingsValue.eventTypes.put(eventType.getName(), eventTypeSettingsValue);
+                if (eventTypeSettingsValue.emailSubscriptionTypes.size() > 0) {
+                    applicationSettingsValue.eventTypes.put(eventType.getName(), eventTypeSettingsValue);
+                }
             }
         }
 
