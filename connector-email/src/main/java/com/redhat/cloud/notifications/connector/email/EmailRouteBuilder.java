@@ -279,16 +279,34 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          */
         from(direct(Routes.FETCH_GROUP_USERS))
             .routeId(Routes.FETCH_GROUP_USERS)
-            // Clear all the headers that may come from the previous route.
-            .removeHeaders("*")
-            // Initialize the offset and the loop condition so that we at least
-            // enter once on it.
-            .setProperty(ExchangeProperty.LIMIT, constant(this.emailConnectorConfig.getRbacElementsPerPage()))
-            .setProperty(ExchangeProperty.OFFSET, constant(0))
-            .loopDoWhile(this.notFinishedFetchingAllPages)
-                .process(this.rbacGroupPrincipalsRequestPreparerProcessor)
-                .to(this.emailConnectorConfig.getRbacURL())
-                .process(this.rbacUsersProcessor)
+            .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_GET))
+            .setHeader(CaffeineConstants.KEY, this.computeGroupPrincipalsCacheKey())
+            .to(caffeineCache(Routes.FETCH_GROUP_USERS))
+            // Avoid calling RBAC if we do have the usernames cached.
+            .choice()
+                .when(header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(Boolean.TRUE))
+                    // The cache engine leaves the usernames in the body of the
+                    // exchange, that is why we need to set them back in the
+                    // property that the subsequent processors expect to find them.
+                    .setProperty(ExchangeProperty.USERNAMES, body())
+                .otherwise()
+                    // Clear all the headers that may come from the previous route.
+                    .removeHeaders("*")
+                    // Initialize the offset and the loop condition so that we at least
+                    // enter once on it.
+                    .setProperty(ExchangeProperty.LIMIT, constant(this.emailConnectorConfig.getRbacElementsPerPage()))
+                    .setProperty(ExchangeProperty.OFFSET, constant(0))
+                    .loopDoWhile(this.notFinishedFetchingAllPages)
+                        .process(this.rbacGroupPrincipalsRequestPreparerProcessor)
+                        .to(this.emailConnectorConfig.getRbacURL())
+                        .process(this.rbacUsersProcessor)
+                    .end()
+                        // Store all the received recipients in the cache.
+                        .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_PUT))
+                        .setHeader(CaffeineConstants.KEY, this.computeGroupPrincipalsCacheKey())
+                        .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERNAMES))
+                        .to(caffeineCache(Routes.FETCH_GROUP_USERS))
+            .endChoice()
             .end()
             .process(this.recipientsFilter)
             .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
@@ -340,6 +358,18 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             "${exchangeProperty.%s}-adminsOnly=${exchangeProperty.%s.adminsOnly}",
             ORG_ID,
             ExchangeProperty.CURRENT_RECIPIENT_SETTINGS
+        );
+    }
+
+    /**
+     * Computes the cache key for the "fetch group principals" route.
+     * @return a simple expression with the "${orgId}-${groupId}" format.
+     */
+    protected Expression computeGroupPrincipalsCacheKey() {
+        return simpleF(
+            "${exchangeProperty.%s}-${exchangeProperty.%s}",
+            ORG_ID,
+            ExchangeProperty.GROUP_UUID
         );
     }
 
