@@ -24,7 +24,7 @@
     "react-router-dom": "5.3.3",
     "react-use": "17.4.0",
     "typestyle": "2.3.0",
-    "zod": "3.17.3"
+    "zod": "3.22.3"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.18.6",
