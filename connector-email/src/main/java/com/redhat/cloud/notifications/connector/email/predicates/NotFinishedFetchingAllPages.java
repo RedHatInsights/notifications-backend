@@ -15,7 +15,7 @@ public class NotFinishedFetchingAllPages implements Predicate {
      */
     @Override
     public boolean matches(final Exchange exchange) {
-        final Object fetchedCount = exchange.getProperty(ExchangeProperty.ELEMENTS_COUNT);
+        final Integer fetchedCount = exchange.getProperty(ExchangeProperty.ELEMENTS_COUNT, Integer.class);
 
         // If we didn't fetch any count that means this is the first time we
         // enter the loop, so we can simply let the first iteration run.

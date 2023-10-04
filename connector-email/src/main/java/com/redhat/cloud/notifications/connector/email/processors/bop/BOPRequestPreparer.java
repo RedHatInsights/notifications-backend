@@ -27,24 +27,24 @@ public class BOPRequestPreparer implements Processor {
     public void process(final Exchange exchange) {
         final String subject = exchange.getProperty(ExchangeProperty.RENDERED_SUBJECT, String.class);
         final String body = exchange.getProperty(ExchangeProperty.RENDERED_BODY, String.class);
-        final Set<String> usernames = new HashSet<>();
+        final Set<String> recipients = new HashSet<>();
 
         // We still need to support sending individual emails per user for a
         // while. However, that will go away soon, so we can consider the
         // following code block very much deprecated.
         final Boolean singleEmailPerUser = exchange.getProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, Boolean.class);
         if (singleEmailPerUser != null && singleEmailPerUser) {
-            usernames.add(exchange.getMessage().getBody(String.class));
+            recipients.add(exchange.getMessage().getBody(String.class));
         } else {
-            final Set<String> entireUsernameSet = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
+            final Set<String> usernames = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
 
-            usernames.addAll(entireUsernameSet);
+            recipients.addAll(usernames);
         }
 
         final Email email = new Email(
             subject,
             body,
-            usernames
+            recipients
         );
 
         final Emails emails = new Emails();

@@ -353,6 +353,9 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         // We explicitly set the eviction type as time based, since the default
         // value is size based: https://camel.apache.org/components/4.0.x/caffeine-cache-component.html.
         caffeineConfiguration.setEvictionType(EvictionType.TIME_BASED);
+        caffeineConfiguration.setExpireAfterWriteTime(emailConnectorConfig.getUserProviderCacheExpireAfterWrite());
+        // This shouldn't be needed but Camel's CaffeineConfiguration makes this mandatory...
+        caffeineConfiguration.setExpireAfterAccessTime(emailConnectorConfig.getUserProviderCacheExpireAfterWrite());
     }
 
     /**

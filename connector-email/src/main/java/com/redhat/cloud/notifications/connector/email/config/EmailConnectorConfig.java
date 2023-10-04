@@ -34,6 +34,7 @@ public class EmailConnectorConfig extends ConnectorConfig {
     // overriding them in the tests.
     public static final String RBAC_DEVELOPMENT_AUTHENTICATION_KEY = "notifications.connector.user-provider.rbac.development-authentication-key";
     public static final String RBAC_PSKS = "notifications.connector.user-provider.rbac.psks";
+    public static final String USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE = "notifications.connector.user-provider.cache.expire-after-write";
 
     @ConfigProperty(name = BOP_API_TOKEN)
     String bopApiToken;
@@ -93,6 +94,9 @@ public class EmailConnectorConfig extends ConnectorConfig {
     @ConfigProperty(name = RBAC_URL)
     String rbacURL;
 
+    @ConfigProperty(name = USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, defaultValue = "600")
+    int userProviderCacheExpireAfterWrite;
+
     @Override
     public void log() {
         final Map<String, Object> additionalEntries = new HashMap<>();
@@ -110,6 +114,7 @@ public class EmailConnectorConfig extends ConnectorConfig {
         additionalEntries.put(RBAC_ELEMENTS_PAGE, this.rbacElementsPerPage);
         additionalEntries.put(RBAC_URL, this.rbacURL);
         additionalEntries.put(SINGLE_EMAIL_PER_USER, this.singleEmailPerUserEnabled);
+        additionalEntries.put(USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, this.userProviderCacheExpireAfterWrite);
 
         log(additionalEntries);
     }
@@ -209,5 +214,9 @@ public class EmailConnectorConfig extends ConnectorConfig {
 
     public boolean isSingleEmailPerUserEnabled() {
         return this.singleEmailPerUserEnabled;
+    }
+
+    public int getUserProviderCacheExpireAfterWrite() {
+        return userProviderCacheExpireAfterWrite;
     }
 }
