@@ -25,6 +25,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
 
     @Override
+    protected boolean useDefaultHttpBehaviour() {
+        return true;
+    }
+
+    @Override
     protected String getMockEndpointPattern() {
         return "https://foo.bar*";
     }

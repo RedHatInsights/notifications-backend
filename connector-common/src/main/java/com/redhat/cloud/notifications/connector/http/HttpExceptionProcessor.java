@@ -1,29 +1,30 @@
-package com.redhat.cloud.notifications.connector.webhook;
+package com.redhat.cloud.notifications.connector.http;
 
-import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import io.quarkus.logging.Log;
-import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.jboss.logging.Logger;
 import java.io.IOException;
 import java.time.temporal.ValueRange;
 
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.DISABLE_ENDPOINT_CLIENT_ERRORS;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.HTTP_STATUS_CODE;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.INCREMENT_ENDPOINT_SERVER_ERRORS;
+import static com.redhat.cloud.notifications.connector.ExceptionProcessor.getExchangeId;
+import static com.redhat.cloud.notifications.connector.ExceptionProcessor.getOrgId;
+import static com.redhat.cloud.notifications.connector.ExceptionProcessor.getRouteId;
+import static com.redhat.cloud.notifications.connector.ExceptionProcessor.getTargetUrl;
+import static com.redhat.cloud.notifications.connector.ExceptionProcessor.logDefault;
+import static com.redhat.cloud.notifications.connector.http.Constants.DISABLE_ENDPOINT_CLIENT_ERRORS;
+import static com.redhat.cloud.notifications.connector.http.Constants.HTTP_STATUS_CODE;
+import static com.redhat.cloud.notifications.connector.http.Constants.INCREMENT_ENDPOINT_SERVER_ERRORS;
 import static org.jboss.logging.Logger.Level.DEBUG;
 
-@ApplicationScoped
-public class WebhookExceptionProcessor extends ExceptionProcessor {
+public class HttpExceptionProcessor {
 
     private static final String HTTP_LOG_MSG = "Message sending failed on %s: [orgId=%s, historyId=%s, webhookUrl=%s] " +
         "with status code [%d] and body [%s]";
 
-    final ValueRange http400ErrorRange = ValueRange.of(400, 499);
+    static final ValueRange http400ErrorRange = ValueRange.of(400, 499);
 
-    @Override
-    protected void process(Throwable t, Exchange exchange) {
+    public static void process(Throwable t, Exchange exchange) {
         if (t instanceof HttpOperationFailedException e) {
             log(DEBUG, e, exchange);
             exchange.setProperty(HTTP_STATUS_CODE, e.getStatusCode());
@@ -40,7 +41,7 @@ public class WebhookExceptionProcessor extends ExceptionProcessor {
         }
     }
 
-    private void log(Logger.Level level, HttpOperationFailedException e, Exchange exchange) {
+    private static void log(Logger.Level level, HttpOperationFailedException e, Exchange exchange) {
         Log.logf(
             level,
             HTTP_LOG_MSG,

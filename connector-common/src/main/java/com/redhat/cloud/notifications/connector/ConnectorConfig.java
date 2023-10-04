@@ -29,6 +29,8 @@ public class ConnectorConfig {
     private static final String SEDA_CONCURRENT_CONSUMERS = "notifications.connector.seda.concurrent-consumers";
     private static final String SEDA_ENABLED = "notifications.connector.seda.enabled";
     private static final String SEDA_QUEUE_SIZE = "notifications.connector.seda.queue-size";
+    private static final String DEFAULT_HTTP_BEHAVIOURS_ENABLED = "notifications.connector.default.http.behaviours.enabled";
+
 
     @ConfigProperty(name = ENDPOINT_CACHE_MAX_SIZE, defaultValue = "100")
     int endpointCacheMaxSize;
@@ -76,6 +78,9 @@ public class ConnectorConfig {
     @ConfigProperty(name = SEDA_QUEUE_SIZE, defaultValue = "1000")
     int sedaQueueSize;
 
+    @ConfigProperty(name = DEFAULT_HTTP_BEHAVIOURS_ENABLED, defaultValue = "false")
+    boolean defaultHttpBehaviourEnabled;
+
     public void log() {
         log(Collections.emptyMap());
     }
@@ -97,6 +102,8 @@ public class ConnectorConfig {
         config.put(SEDA_CONCURRENT_CONSUMERS, sedaConcurrentConsumers);
         config.put(SEDA_ENABLED, sedaEnabled);
         config.put(SEDA_QUEUE_SIZE, sedaQueueSize);
+        config.put(DEFAULT_HTTP_BEHAVIOURS_ENABLED, defaultHttpBehaviourEnabled);
+
         config.putAll(additionalConfig);
 
         Log.info("=== Connector configuration ===");
@@ -159,5 +166,13 @@ public class ConnectorConfig {
 
     public int getSedaQueueSize() {
         return sedaQueueSize;
+    }
+
+    public boolean isDefaultHttpBehaviourEnabled() {
+        return defaultHttpBehaviourEnabled;
+    }
+
+    public void setDefaultHttpBehaviourEnabled(boolean defaultHttpBehaviourEnabled) {
+        this.defaultHttpBehaviourEnabled = defaultHttpBehaviourEnabled;
     }
 }

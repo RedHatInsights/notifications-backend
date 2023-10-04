@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector;
 
+import com.redhat.cloud.notifications.connector.http.HttpExceptionProcessor;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -45,7 +46,11 @@ public class ExceptionProcessor implements Processor {
         exchange.setProperty(SUCCESSFUL, false);
         exchange.setProperty(OUTCOME, t.getMessage());
 
-        process(t, exchange);
+        if (connectorConfig.isDefaultHttpBehaviourEnabled()) {
+            HttpExceptionProcessor.process(t, exchange);
+        } else {
+            process(t, exchange);
+        }
 
         if (connectorConfig.isSedaEnabled()) {
             /*
@@ -65,7 +70,7 @@ public class ExceptionProcessor implements Processor {
         }
     }
 
-    protected final void logDefault(Throwable t, Exchange exchange) {
+    public static final void logDefault(Throwable t, Exchange exchange) {
         Log.errorf(
                 t,
                 DEFAULT_LOG_MSG,
@@ -76,19 +81,19 @@ public class ExceptionProcessor implements Processor {
         );
     }
 
-    protected final String getRouteId(Exchange exchange) {
+    public static final String getRouteId(Exchange exchange) {
         return exchange.getFromRouteId();
     }
 
-    protected final String getExchangeId(Exchange exchange) {
+    public static final String getExchangeId(Exchange exchange) {
         return exchange.getProperty(ID, String.class);
     }
 
-    protected final String getOrgId(Exchange exchange) {
+    public static final String getOrgId(Exchange exchange) {
         return exchange.getProperty(ORG_ID, String.class);
     }
 
-    protected final String getTargetUrl(Exchange exchange) {
+    public static final String getTargetUrl(Exchange exchange) {
         return exchange.getProperty(TARGET_URL, String.class);
     }
 

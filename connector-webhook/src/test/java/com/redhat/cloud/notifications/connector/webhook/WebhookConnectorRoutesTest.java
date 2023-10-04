@@ -10,27 +10,26 @@ import org.apache.camel.Predicate;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
-
 import java.util.Base64;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.DISABLE_ENDPOINT_CLIENT_ERRORS;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.HTTP_STATUS_CODE;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.INCREMENT_ENDPOINT_SERVER_ERRORS;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.INSIGHT_TOKEN_HEADER;
 import static com.redhat.cloud.notifications.connector.webhook.WebhookCloudEventDataExtractor.BASIC_AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.webhook.WebhookCloudEventDataExtractor.ENDPOINT_PROPERTIES;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
+
+    @Override
+    protected boolean useDefaultHttpBehaviour() {
+        return true;
+    }
 
     @Override
     protected String getMockEndpointPattern() {
@@ -112,25 +111,6 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
                 && checkBearerToken
                 && checkBasicAuth;
         };
-    }
-
-    @Test
-    protected void testFailedNotificationError500() throws Exception {
-        testFailedNotificationAndReturnedFlagsToEngine(500, "My custom internal error", INCREMENT_ENDPOINT_SERVER_ERRORS);
-    }
-
-    @Test
-    protected void testFailedNotificationError404() throws Exception {
-        testFailedNotificationAndReturnedFlagsToEngine(404, "Page not found", DISABLE_ENDPOINT_CLIENT_ERRORS);
-    }
-
-    private void testFailedNotificationAndReturnedFlagsToEngine(int httpReturnCode, String returnedBodyMessage, String flagNameThatShouldBeTrue) throws Exception {
-        mockRemoteServerError(httpReturnCode, returnedBodyMessage);
-        JsonObject returnToEngine = super.testFailedNotification();
-        JsonObject data = new JsonObject(returnToEngine.getString("data"));
-        assertTrue(data.getBoolean(flagNameThatShouldBeTrue));
-        JsonObject details = data.getJsonObject("details");
-        assertEquals(httpReturnCode, details.getInteger(HTTP_STATUS_CODE));
     }
 
     @Test

@@ -1,21 +1,16 @@
-package com.redhat.cloud.notifications.connector.webhook;
+package com.redhat.cloud.notifications.connector.http;
 
-import com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder;
 import io.vertx.core.json.JsonObject;
-import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.DISABLE_ENDPOINT_CLIENT_ERRORS;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.HTTP_STATUS_CODE;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.INCREMENT_ENDPOINT_SERVER_ERRORS;
+import static com.redhat.cloud.notifications.connector.http.Constants.DISABLE_ENDPOINT_CLIENT_ERRORS;
+import static com.redhat.cloud.notifications.connector.http.Constants.HTTP_STATUS_CODE;
+import static com.redhat.cloud.notifications.connector.http.Constants.INCREMENT_ENDPOINT_SERVER_ERRORS;
 
-@ApplicationScoped
-public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
+public class HttpCloudEventHistoryBuilder {
 
-    @Override
-    public void process(Exchange exchange) throws Exception {
-        super.process(exchange);
+    public static void process(Exchange exchange) throws Exception {
         boolean clientError = exchange.getProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, false, boolean.class);
         boolean serverError = exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, false, boolean.class);
 

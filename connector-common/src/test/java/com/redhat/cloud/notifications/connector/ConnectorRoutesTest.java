@@ -27,9 +27,13 @@ import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcess
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_TYPE;
 import static com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder.CE_SPEC_VERSION;
 import static com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder.CE_TYPE;
+import static com.redhat.cloud.notifications.connector.http.Constants.DISABLE_ENDPOINT_CLIENT_ERRORS;
+import static com.redhat.cloud.notifications.connector.http.Constants.HTTP_STATUS_CODE;
+import static com.redhat.cloud.notifications.connector.http.Constants.INCREMENT_ENDPOINT_SERVER_ERRORS;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpError.error;
 import static org.mockserver.model.HttpRequest.request;
@@ -71,6 +75,10 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return false;
     }
 
+    protected boolean useDefaultHttpBehaviour() {
+        return false;
+    }
+
     protected String getMockServerUrl() {
         String mockServerUrl = MockServerLifecycleManager.getMockServerUrl();
         return useHttps() ? mockServerUrl.replace("http:", "https:") : mockServerUrl;
@@ -82,6 +90,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
     @BeforeEach
     void beforeEach() {
+        connectorConfig.setDefaultHttpBehaviourEnabled(useDefaultHttpBehaviour());
         getClient().reset();
         saveRoutesMetrics(
                 ENGINE_TO_CONNECTOR,
@@ -124,16 +133,33 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
     @Test
     protected void testFailedNotificationError500() throws Exception {
-        mockRemoteServerError(500, "My custom internal error");
-        testFailedNotification();
+        if (connectorConfig.isDefaultHttpBehaviourEnabled()) {
+            testFailedNotificationAndReturnedFlagsToEngine(500, "My custom internal error", INCREMENT_ENDPOINT_SERVER_ERRORS);
+        } else {
+            mockRemoteServerError(500, "My custom internal error");
+            testFailedNotification();
+        }
     }
 
     @Test
     protected void testFailedNotificationError404() throws Exception {
-        mockRemoteServerError(404, "Page not found");
-        testFailedNotification();
+        if (connectorConfig.isDefaultHttpBehaviourEnabled()) {
+            testFailedNotificationAndReturnedFlagsToEngine(404, "Page not found", DISABLE_ENDPOINT_CLIENT_ERRORS);
+        } else {
+            mockRemoteServerError(404, "Page not found");
+            testFailedNotification();
+        }
     }
 
+
+    private void testFailedNotificationAndReturnedFlagsToEngine(int httpReturnCode, String returnedBodyMessage, String flagNameThatShouldBeTrue) throws Exception {
+        mockRemoteServerError(httpReturnCode, returnedBodyMessage);
+        JsonObject returnToEngine = testFailedNotification();
+        JsonObject data = new JsonObject(returnToEngine.getString("data"));
+        assertTrue(data.getBoolean(flagNameThatShouldBeTrue));
+        JsonObject details = data.getJsonObject("details");
+        assertEquals(httpReturnCode, details.getInteger(HTTP_STATUS_CODE));
+    }
 
     protected JsonObject testFailedNotification() throws Exception {
 

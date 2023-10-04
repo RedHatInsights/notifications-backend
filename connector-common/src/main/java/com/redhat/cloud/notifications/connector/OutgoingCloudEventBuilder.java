@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector;
 
 import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
@@ -16,6 +17,9 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.START_TI
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.SUCCESSFUL;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TYPE;
+import static com.redhat.cloud.notifications.connector.http.Constants.DISABLE_ENDPOINT_CLIENT_ERRORS;
+import static com.redhat.cloud.notifications.connector.http.Constants.HTTP_STATUS_CODE;
+import static com.redhat.cloud.notifications.connector.http.Constants.INCREMENT_ENDPOINT_SERVER_ERRORS;
 import static java.time.ZoneOffset.UTC;
 
 @DefaultBean
@@ -24,6 +28,9 @@ public class OutgoingCloudEventBuilder implements Processor {
 
     public static final String CE_SPEC_VERSION = "1.0";
     public static final String CE_TYPE = "com.redhat.console.notifications.history";
+
+    @Inject
+    ConnectorConfig connectorConfig;
 
     public void process(Exchange exchange) throws Exception {
 
@@ -44,6 +51,21 @@ public class OutgoingCloudEventBuilder implements Processor {
         JsonObject data = new JsonObject();
         data.put("successful", exchange.getProperty(SUCCESSFUL, Boolean.class));
         data.put("duration", System.currentTimeMillis() - exchange.getProperty(START_TIME, Long.class));
+
+        if (connectorConfig.isDefaultHttpBehaviourEnabled()) {
+            boolean clientError = exchange.getProperty(DISABLE_ENDPOINT_CLIENT_ERRORS, false, boolean.class);
+            boolean serverError = exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS, false, boolean.class);
+
+            if (clientError || serverError) {
+                details.put(HTTP_STATUS_CODE, exchange.getProperty(HTTP_STATUS_CODE));
+                if (clientError) {
+                    data.put(DISABLE_ENDPOINT_CLIENT_ERRORS, exchange.getProperty(DISABLE_ENDPOINT_CLIENT_ERRORS));
+                } else {
+                    data.put(INCREMENT_ENDPOINT_SERVER_ERRORS, exchange.getProperty(INCREMENT_ENDPOINT_SERVER_ERRORS));
+                }
+            }
+        }
+
         data.put("details", details);
 
         JsonObject outgoingCloudEvent = new JsonObject();

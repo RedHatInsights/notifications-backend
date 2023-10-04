@@ -5,14 +5,22 @@ import com.redhat.cloud.notifications.connector.TestLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.apache.camel.Predicate;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class GoogleChatConnectorRoutesTest extends ConnectorRoutesTest {
 
+    @Override
+    protected boolean useDefaultHttpBehaviour() {
+        return true;
+    }
+
+    @Inject
     @Override
     protected String getMockEndpointPattern() {
         return "https://foo.bar";

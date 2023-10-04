@@ -65,10 +65,6 @@
             <groupId>org.apache.camel.quarkus</groupId>
             <artifactId>camel-quarkus-bean</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.camel.quarkus</groupId>
-            <artifactId>camel-quarkus-http</artifactId>
-        </dependency>
 
         <!-- Scope: test -->
         <!-- Some test dependencies are declared in the "profiles" section of this POM. -->

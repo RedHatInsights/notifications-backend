@@ -14,6 +14,11 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 public class TeamsConnectorRoutesTest extends ConnectorRoutesTest {
 
     @Override
+    protected boolean useDefaultHttpBehaviour() {
+        return true;
+    }
+
+    @Override
     protected String getMockEndpointPattern() {
         return "https://foo.bar";
     }
