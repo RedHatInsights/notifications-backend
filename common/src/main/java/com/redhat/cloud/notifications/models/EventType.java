@@ -75,6 +75,10 @@ public class EventType {
     @JsonIgnore
     private boolean filterOutApplication;
 
+    @JsonIgnore
+    private boolean visible = true;
+
+
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
     @JsonIgnore
     private Set<EventTypeBehavior> behaviors;
@@ -153,6 +157,10 @@ public class EventType {
 
     public void setBehaviors(Set<EventTypeBehavior> behaviors) {
         this.behaviors = behaviors;
+    }
+
+    public boolean isVisible() {
+        return visible;
     }
 
     @Override

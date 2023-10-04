@@ -1,0 +1,2 @@
+ALTER TABLE event_type add column visible boolean NOT NULL default true;
+UPDATE event_type set visible=false where application_id in (select a.id from applications a left join bundles b on a.bundle_id = b.id where b.name='console' and a.name in ('integrations', 'notifications'));
