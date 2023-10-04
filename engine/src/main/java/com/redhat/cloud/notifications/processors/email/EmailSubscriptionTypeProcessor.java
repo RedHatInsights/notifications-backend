@@ -35,14 +35,12 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 
@@ -57,7 +55,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
-import static io.quarkus.runtime.LaunchMode.NORMAL;
 
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor {
@@ -118,9 +115,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
     private Counter failedAggregationCommandCount;
-
-    @ConfigProperty(name = "notifications.single.email.test.user")
-    String singleEmailTestUser;
 
     @PostConstruct
     void postConstruct() {
@@ -184,7 +178,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
         Set<User> userList = getRecipientList(event, endpoints.stream().toList(), EmailSubscriptionType.INSTANT);
-        if (isSendSingleEmailForMultipleRecipientsEnabled(userList)) {
+        if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
             emailSender.sendEmail(userList, event, subject, body, true, endpoint);
         } else {
             for (User user : userList) {
@@ -309,7 +303,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                                                                         aggregationCommand.getStart(),
                                                                         aggregationCommand.getEnd());
 
-            if (isSendSingleEmailForMultipleRecipientsEnabled(aggregationsByUsers.keySet())) {
+            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
                 Map<Map<String, Object>, Set<User>> aggregationsEmailContext = aggregationsByUsers.keySet().stream()
                     .collect(Collectors.groupingBy(aggregationsByUsers::get, Collectors.toSet()));
 
@@ -376,14 +370,5 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         } catch (Exception e) {
             Log.errorf(e, "Notification history creation failed for event %s and endpoint %s", event.getId(), history.getEndpoint());
         }
-    }
-
-    private boolean isSendSingleEmailForMultipleRecipientsEnabled(Set<User> users) {
-        if (ProfileManager.getLaunchMode() == NORMAL && featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-            Set<String> strUsers = users.stream().map(User::getUsername).collect(Collectors.toSet());
-            Log.infof("Email test username is %s", singleEmailTestUser);
-            return (strUsers.contains(singleEmailTestUser));
-        }
-        return featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled();
     }
 }
