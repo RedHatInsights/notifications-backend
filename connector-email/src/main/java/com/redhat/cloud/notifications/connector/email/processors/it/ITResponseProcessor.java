@@ -45,7 +45,7 @@ public class ITResponseProcessor implements Processor {
         // Update the offset in case we need to fetch the next page.
         final int limit = exchange.getProperty(ExchangeProperty.LIMIT, Integer.class);
         if (count == limit) {
-            final int offset = (int) exchange.getProperty(ExchangeProperty.OFFSET);
+            final int offset = exchange.getProperty(ExchangeProperty.OFFSET, Integer.class);
             exchange.setProperty(ExchangeProperty.OFFSET, offset + limit);
         }
     }

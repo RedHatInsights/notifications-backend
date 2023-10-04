@@ -222,6 +222,9 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_SINGLE_EMAIL_PER_USER_ENABLED
   description: Is sending a single email per user enabled?
   value: "false"
+- name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE
+  description: Expiration delay in seconds of cached users
+  value: "600"
 - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY
   description: The application's key which will be used to authenticate to RBAC.
   value: "notifications"

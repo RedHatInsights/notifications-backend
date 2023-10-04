@@ -138,8 +138,8 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             final CaffeineConfiguration caffeineConfiguration = caffeineCacheComponent.getConfiguration();
 
             Assertions.assertEquals(EvictionType.TIME_BASED, caffeineConfiguration.getEvictionType(), "unexpected eviction type set in the configuration");
-            Assertions.assertEquals(300, caffeineConfiguration.getExpireAfterAccessTime(), "unexpected expiration after access time set in the configuration");
-            Assertions.assertEquals(300, caffeineConfiguration.getExpireAfterWriteTime(), "unexpected expiration after write time set in the configuration");
+            Assertions.assertEquals(600, caffeineConfiguration.getExpireAfterAccessTime(), "unexpected expiration after access time set in the configuration");
+            Assertions.assertEquals(600, caffeineConfiguration.getExpireAfterWriteTime(), "unexpected expiration after write time set in the configuration");
         }
     }
 }
