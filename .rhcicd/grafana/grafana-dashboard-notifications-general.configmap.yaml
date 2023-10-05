@@ -27,7 +27,6 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "id": 348544,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -2181,37 +2180,7 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
+                "mode": "thresholds"
               },
               "mappings": [],
               "thresholds": {
@@ -2238,17 +2207,20 @@ data:
           },
           "id": 273,
           "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "last"
+              ],
+              "fields": "/^Up$/",
+              "values": false
             },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
+            "textMode": "auto"
           },
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "datasource": {
@@ -2263,7 +2235,7 @@ data:
             }
           ],
           "title": "Email - UPs",
-          "type": "timeseries"
+          "type": "stat"
         },
         {
           "datasource": {
@@ -2343,37 +2315,7 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
+                "mode": "thresholds"
               },
               "mappings": [],
               "thresholds": {
@@ -2400,17 +2342,20 @@ data:
           },
           "id": 275,
           "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
             },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
+            "textMode": "auto"
           },
+          "pluginVersion": "9.3.8",
           "targets": [
             {
               "datasource": {
@@ -2425,7 +2370,7 @@ data:
             }
           ],
           "title": "Email - Restarts",
-          "type": "timeseries"
+          "type": "stat"
         },
         {
           "datasource": {
@@ -2537,7 +2482,7 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 0,
+                "fillOpacity": 10,
                 "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
@@ -2550,7 +2495,7 @@ data:
                 "scaleDistribution": {
                   "type": "linear"
                 },
-                "showPoints": "auto",
+                "showPoints": "never",
                 "spanNulls": false,
                 "stacking": {
                   "group": "A",
@@ -2567,18 +2512,15 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
-              }
+              },
+              "unit": "short"
             },
             "overrides": []
           },
           "gridPos": {
-            "h": 4,
+            "h": 8,
             "w": 3,
             "x": 3,
             "y": 30
@@ -2592,7 +2534,7 @@ data:
               "showLegend": true
             },
             "tooltip": {
-              "mode": "single",
+              "mode": "multi",
               "sort": "none"
             }
           },
@@ -3359,7 +3301,7 @@ data:
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
-                "drawStyle": "line",
+                "drawStyle": "bars",
                 "fillOpacity": 0,
                 "gradientMode": "none",
                 "hideFrom": {
@@ -3373,7 +3315,7 @@ data:
                 "scaleDistribution": {
                   "type": "linear"
                 },
-                "showPoints": "auto",
+                "showPoints": "never",
                 "spanNulls": false,
                 "stacking": {
                   "group": "A",
@@ -3390,10 +3332,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               }
@@ -4556,7 +4494,7 @@ data:
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 1,
+            "x": 0,
             "y": 64
           },
           "id": 258,
@@ -4845,7 +4783,7 @@ data:
             "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
-             "calcs": [
+              "calcs": [
                 "lastNotNull"
               ],
               "fields": "",
@@ -5107,8 +5045,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -5320,8 +5257,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -5412,8 +5348,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -5504,8 +5439,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -5990,11 +5924,15 @@ data:
               "format": "time_series",
               "groupBy": [
                 {
-                  "params": ["$__interval"],
+                  "params": [
+                    "$__interval"
+                  ],
                   "type": "time"
                 },
                 {
-                  "params": ["null"],
+                  "params": [
+                    "null"
+                  ],
                   "type": "fill"
                 }
               ],
@@ -6007,7 +5945,9 @@ data:
               "select": [
                 [
                   {
-                    "params": ["value"],
+                    "params": [
+                      "value"
+                    ],
                     "type": "field"
                   },
                   {
@@ -6138,11 +6078,15 @@ data:
               "format": "heatmap",
               "groupBy": [
                 {
-                  "params": ["$__interval"],
+                  "params": [
+                    "$__interval"
+                  ],
                   "type": "time"
                 },
                 {
-                  "params": ["null"],
+                  "params": [
+                    "null"
+                  ],
                   "type": "fill"
                 }
               ],
@@ -6156,7 +6100,9 @@ data:
               "select": [
                 [
                   {
-                    "params": ["value"],
+                    "params": [
+                      "value"
+                    ],
                     "type": "field"
                   },
                   {
@@ -6248,11 +6194,15 @@ data:
               "format": "time_series",
               "groupBy": [
                 {
-                  "params": ["$__interval"],
+                  "params": [
+                    "$__interval"
+                  ],
                   "type": "time"
                 },
                 {
-                  "params": ["null"],
+                  "params": [
+                    "null"
+                  ],
                   "type": "fill"
                 }
               ],
@@ -6266,7 +6216,9 @@ data:
               "select": [
                 [
                   {
-                    "params": ["value"],
+                    "params": [
+                      "value"
+                    ],
                     "type": "field"
                   },
                   {
@@ -6324,7 +6276,9 @@ data:
       "refresh": "15m",
       "schemaVersion": 37,
       "style": "dark",
-      "tags": ["notifications"],
+      "tags": [
+        "notifications"
+      ],
       "templating": {
         "list": [
           {
@@ -6374,12 +6328,22 @@ data:
           "2h",
           "1d"
         ],
-        "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+        "time_options": [
+          "5m",
+          "15m",
+          "1h",
+          "6h",
+          "12h",
+          "24h",
+          "2d",
+          "7d",
+          "30d"
+        ]
       },
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 4,
+      "version": 2,
       "weekStart": ""
     }
 kind: ConfigMap
