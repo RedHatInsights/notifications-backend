@@ -3364,7 +3364,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-email\", routeId=\"email_subscription\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-email-service\", routeId=\"email_subscription\"}[5m]))",
               "legendFormat": "Success",
               "range": true,
               "refId": "Success"
@@ -3375,7 +3375,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-email\", routeId=\"email_subscription\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-email-service\", routeId=\"email_subscription\"}[5m]))",
               "hide": false,
               "legendFormat": "Failure",
               "range": true,
@@ -4699,8 +4699,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -4761,8 +4760,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "text",
-                    "value": null
+                    "color": "text"
                   }
                 ]
               },
@@ -6283,9 +6281,9 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
-              "text": "prod",
-              "value": "crcp01ue1-prometheus"
+              "selected": true,
+              "text": "stage",
+              "value": "crcs02ue1-prometheus"
             },
             "hide": 0,
             "includeAll": false,
@@ -6294,12 +6292,12 @@ data:
             "name": "datasource",
             "options": [
               {
-                "selected": false,
+                "selected": true,
                 "text": "stage",
                 "value": "crcs02ue1-prometheus"
               },
               {
-                "selected": true,
+                "selected": false,
                 "text": "prod",
                 "value": "crcp01ue1-prometheus"
               }
@@ -6343,7 +6341,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 2,
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap
