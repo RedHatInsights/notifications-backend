@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -38,15 +37,11 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
-import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
-import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
-import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -65,7 +60,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
     public static final String TOTAL_FAILURE_RECIPIENTS_KEY = "total_failure_recipients";
-    public static final String AGGREGATION_CHANNEL = "aggregation";
     public static final String AGGREGATION_COMMAND_REJECTED_COUNTER_NAME = "aggregation.command.rejected";
     public static final String AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME = "aggregation.command.processed";
     public static final String AGGREGATION_COMMAND_ERROR_COUNTER_NAME = "aggregation.command.error";
@@ -244,38 +238,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                 ));
             }
         });
-    }
-
-    @Incoming(AGGREGATION_CHANNEL)
-    @Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)
-    @Blocking
-    @ActivateRequestContext
-    public void consumeEmailAggregations(String aggregationCommandJson) {
-        Timer.Sample consumedTimer = Timer.start(registry);
-        AggregationCommand aggregationCommand;
-        try {
-            aggregationCommand = objectMapper.readValue(aggregationCommandJson, AggregationCommand.class);
-        } catch (JsonProcessingException e) {
-            Log.error("Kafka aggregation payload parsing failed", e);
-            rejectedAggregationCommandCount.increment();
-            return;
-        }
-
-        Log.infof("Processing received aggregation command: %s", aggregationCommand);
-        processedAggregationCommandCount.increment();
-
-        try {
-            processAggregateEmailsByAggregationKey(aggregationCommand, Optional.empty());
-        } catch (Exception e) {
-            Log.warn("Error while processing aggregation", e);
-            failedAggregationCommandCount.increment();
-        } finally {
-            consumedTimer.stop(registry.timer(
-                AGGREGATION_CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, aggregationCommand.getAggregationKey().getBundle(),
-                TAG_KEY_APPLICATION, aggregationCommand.getAggregationKey().getApplication()
-            ));
-        }
     }
 
     private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Optional<Event> aggregatorEvent) {

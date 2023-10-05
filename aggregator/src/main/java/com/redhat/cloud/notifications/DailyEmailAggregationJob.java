@@ -1,8 +1,6 @@
 package com.redhat.cloud.notifications;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -28,11 +26,8 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static io.quarkus.runtime.LaunchMode.NORMAL;
@@ -70,9 +65,6 @@ public class DailyEmailAggregationJob {
     @Channel(EGRESS_CHANNEL)
     Emitter<String> emitterIngress;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     private Gauge pairsProcessed;
 
     @ActivateRequestContext
@@ -91,27 +83,7 @@ public class DailyEmailAggregationJob {
             aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
 
-            List<CompletableFuture<Void>> futures = new ArrayList<>();
-            for (AggregationCommand aggregationCommand : aggregationCommands) {
-                try {
-                    if (featureFlipper.isAggregatorSendOnIngress()) {
-                        sendIt(aggregationCommand);
-                    } else {
-                        final String payload = objectMapper.writeValueAsString(aggregationCommand);
-                        futures.add(emitter.send(payload).toCompletableFuture());
-                    }
-                } catch (JsonProcessingException e) {
-                    Log.warn("Could not transform AggregationCommand to JSON object.", e);
-                }
-            }
-            if (!futures.isEmpty()) {
-                // resolve completable futures so the Quarkus main thread doesn't stop before everything has been sent
-                try {
-                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
-                } catch (InterruptedException | ExecutionException ie) {
-                    Log.error("Writing AggregationCommands failed", ie);
-                }
-            }
+            aggregationCommands.stream().forEach(aggregationCommand -> sendIt(aggregationCommand));
 
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
             emailAggregationResources.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);

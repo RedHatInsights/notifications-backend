@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Parser;
@@ -20,8 +19,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -51,9 +48,6 @@ class DailyEmailAggregationJobTest {
     InMemoryConnector connector;
 
     @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
     ObjectMapper objectMapper;
 
     final AggregationOrgConfig someOrgIdToProceed = new AggregationOrgConfig("someOrgId",
@@ -75,7 +69,6 @@ class DailyEmailAggregationJobTest {
         helpers.purgeEmailAggregations();
         connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
         connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).clear();
-        featureFlipper.setAggregatorSendOnIngress(false);
     }
 
     void initAggregationParameters() {
@@ -85,25 +78,18 @@ class DailyEmailAggregationJobTest {
 
     List<AggregationCommand> getRecordsFromKafka() throws JsonProcessingException {
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
-        if (featureFlipper.isAggregatorSendOnIngress()) {
-            InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
-            for (Message message : results.received()) {
-                Action action = Parser.decode(String.valueOf(message.getPayload()));
-                aggregationCommands.add(objectMapper.convertValue(action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class));
-            }
-        } else {
-            InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL);
-            for (Message message : results.received()) {
-                aggregationCommands.add(objectMapper.readValue(message.getPayload().toString(), AggregationCommand.class));
-            }
+
+        InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
+        for (Message message : results.received()) {
+            Action action = Parser.decode(String.valueOf(message.getPayload()));
+            aggregationCommands.add(objectMapper.convertValue(action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class));
         }
+
         return aggregationCommands;
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldSentFourAggregationsToKafkaTopic(boolean isSendOnIngressFeatureEnabled) throws JsonProcessingException {
-        featureFlipper.setAggregatorSendOnIngress(isSendOnIngressFeatureEnabled);
+    @Test
+    void shouldSentFourAggregationsToKafkaTopic() throws JsonProcessingException {
 
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
@@ -121,10 +107,8 @@ class DailyEmailAggregationJobTest {
         checkAggCommand(listCommand.get(3), "someOrgId", "rhel", "unknown-application");
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldSentTwoAggregationsToKafkaTopic(boolean isSendOnIngressFeatureEnabled) throws JsonProcessingException {
-        featureFlipper.setAggregatorSendOnIngress(isSendOnIngressFeatureEnabled);
+    @Test
+    void shouldSentTwoAggregationsToKafkaTopic() throws JsonProcessingException {
         LocalTime now = LocalTime.now(ZoneOffset.UTC);
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
