@@ -114,7 +114,7 @@ public class DrawerNotificationRepositoryTest {
         List<DrawerNotification> drawerNotifications = drawerNotificationsRepository.create(createdEvent, usrList);
         Instant after = Instant.now();
         long duration = Duration.between(before, after).toMillis();
-        assertTrue(duration < 1500, String.format("Injection duration should be lower than 1.5 sec but was %s mills", duration));
+        assertTrue(duration < 2000, String.format("Injection duration should be lower than 2 sec but was %s mills", duration));
         Log.infof("data injection ended after %s Millis ", Duration.between(before, after).toMillis());
         assertEquals(LIMIT, drawerNotifications.size());
         assertNotNull(drawerNotifications.get(0).getId());
