@@ -36,7 +36,7 @@ public class BOPRequestPreparer implements Processor {
         if (singleEmailPerUser != null && singleEmailPerUser) {
             recipients.add(exchange.getMessage().getBody(String.class));
         } else {
-            final Set<String> usernames = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
+            final Set<String> usernames = exchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
 
             recipients.addAll(usernames);
         }

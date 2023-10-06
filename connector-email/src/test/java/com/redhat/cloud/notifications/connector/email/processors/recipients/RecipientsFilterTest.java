@@ -9,6 +9,7 @@ import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -63,9 +64,9 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
         expectedResult.add("a");
         expectedResult.add("c");
         expectedResult.add("e");
-        final Set<String> result = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
+        final Set<String> result = exchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
 
-        Assertions.assertIterableEquals(expectedResult, result);
+        assertUsernameCollectionsEqualsIgnoreOrder(expectedResult, result);
     }
 
     /**
@@ -97,9 +98,9 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
         this.recipientsFilter.process(exchange);
 
         // Assert that the list contains the expected elements.
-        final Set<String> result = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
+        final Set<String> result = exchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
 
-        Assertions.assertIterableEquals(usernames, result);
+        assertUsernameCollectionsEqualsIgnoreOrder(usernames, result);
     }
 
     /**
@@ -143,8 +144,23 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
         expectedResult.add("b");
         expectedResult.add("c");
         expectedResult.add("e");
-        final Set<String> result = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
+        final Set<String> result = exchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
 
-        Assertions.assertIterableEquals(expectedResult, result);
+        assertUsernameCollectionsEqualsIgnoreOrder(expectedResult, result);
+    }
+
+    /**
+     * Asserts that the username collections contain the usernames, regardless
+     * of the order. We use this function instead of the {@link Assertions#assertIterableEquals(Iterable, Iterable)}
+     * one because that one does check that the order is correct.
+     * @param expected expected username collection to end up with.
+     * @param actual the actual result from the test.
+     */
+    public static void assertUsernameCollectionsEqualsIgnoreOrder(final Collection<String> expected, final Collection<String> actual) {
+        Assertions.assertEquals(expected.size(), actual.size(), String.format("the given username collections differ in size. Expected collection: %s . Actual collection: %s", expected, actual));
+
+        for (final String expectedUsername : expected) {
+            Assertions.assertTrue(actual.contains(expectedUsername), String.format("expected username '%s' not found in collection %s", expectedUsername, actual));
+        }
     }
 }
