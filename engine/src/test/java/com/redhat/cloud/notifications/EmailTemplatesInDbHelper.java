@@ -62,7 +62,7 @@ public abstract class EmailTemplatesInDbHelper {
     protected final Map<String, UUID> eventTypes = new HashMap<>();
 
     @BeforeEach
-    void initData() {
+    protected void initData() {
         Bundle bundle = null;
         try {
             bundle = resourceHelpers.findBundle(getBundle());
