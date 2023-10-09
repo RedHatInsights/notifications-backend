@@ -12,6 +12,11 @@ public class ExchangeProperty {
      */
     public static final String ELEMENTS_COUNT = "elements_count";
     /**
+     * Holds the filtered usernames. It is used in order to avoid the set of
+     * cached usernames from being modified.
+     */
+    public static final String FILTERED_USERNAMES = "usernames_filtered";
+    /**
      * Used to hold the received RBAC group's UUID.
      */
     public static final String GROUP_UUID = "group_uuid";

@@ -62,7 +62,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         final Set<String> usernames = Set.of("a", "b", "c", "d", "e");
 
         final Exchange exchange = this.createExchangeWithBody("");
-        exchange.setProperty(ExchangeProperty.USERNAMES, usernames);
+        exchange.setProperty(ExchangeProperty.FILTERED_USERNAMES, usernames);
 
         final MockEndpoint sendEmailBopEndpoint = this.getMockEndpoint(String.format("mock:direct:%s", Routes.SEND_EMAIL_BOP), false);
         sendEmailBopEndpoint.expectedMessageCount(5);

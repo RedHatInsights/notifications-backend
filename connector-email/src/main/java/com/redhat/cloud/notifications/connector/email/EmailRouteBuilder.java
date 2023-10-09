@@ -324,7 +324,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .routeId(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER)
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
-            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.USERNAMES))
+            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERNAMES))
                 .setProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, constant(true))
                 .to(direct(Routes.SEND_EMAIL_BOP))
             .end();
