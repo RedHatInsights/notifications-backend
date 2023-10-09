@@ -10,7 +10,6 @@ import com.redhat.cloud.notifications.connector.email.predicates.NotFinishedFetc
 import com.redhat.cloud.notifications.connector.email.predicates.rbac.StatusCodeNotFound;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager;
-import com.redhat.cloud.notifications.connector.email.processors.dispatcher.DispatcherProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.it.ITResponseProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.it.ITUserRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.RBACConstants;
@@ -47,14 +46,6 @@ import static org.apache.camel.LoggingLevel.INFO;
 public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     ConnectorConfig connectorConfig;
-
-    /**
-     * Dispatches the exchange either to fetch the RBAC group or directly to
-     * fetch the users, depending on whether the group is present or not in
-     * the incoming exchange.
-     */
-    @Inject
-    DispatcherProcessor dispatcherProcessor;
 
     /**
      * Holds all the configuration parameters required to run the connector.
