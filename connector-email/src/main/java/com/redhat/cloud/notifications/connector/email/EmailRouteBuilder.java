@@ -160,6 +160,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                     .when(simpleF("${exchangeProperty.%s.groupUUID} == null", ExchangeProperty.CURRENT_RECIPIENT_SETTINGS))
                         .to(direct(Routes.FETCH_USERS))
                     .otherwise()
+                        .setProperty(ExchangeProperty.GROUP_UUID, simpleF("${exchangeProperty.%s.groupUUID}", ExchangeProperty.CURRENT_RECIPIENT_SETTINGS))
                         .to(direct(Routes.FETCH_GROUP))
                 .end()
             .end()
