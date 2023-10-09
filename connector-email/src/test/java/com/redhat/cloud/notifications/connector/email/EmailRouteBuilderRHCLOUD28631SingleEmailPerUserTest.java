@@ -105,15 +105,20 @@ public class EmailRouteBuilderRHCLOUD28631SingleEmailPerUserTest extends CamelQu
 
         // Set up the expected exchanges count that the success endpoint should
         // receive at the end of the test.
+        AdviceWith.adviceWith(this.context, Routes.SEND_EMAIL_BOP_CHOICE, a -> {
+            a.mockEndpoints(String.format("direct:%s", ConnectorToEngineRouteBuilder.SUCCESS));
+        });
+
         final MockEndpoint successEndpoint = this.getMockEndpoint(String.format("mock:direct:%s", ConnectorToEngineRouteBuilder.SUCCESS));
-        successEndpoint.expectedMessageCount(4);
+        successEndpoint.expectedMessageCount(1);
 
         // Send the exchange to the entry point of the email connector.
         this.producerTemplate.send(String.format("direct:%s", EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR), exchange);
 
         successEndpoint.assertIsSatisfied();
 
-        // Get the exchanges that we sent to BOP.
+        // Get the exchanges that we sent to BOP. In theory, since we are
+        // sending an email per user, we should receive many of them.
         final MockEndpoint bopEndpoint = this.getMockEndpoint("mock:bopendpoint");
         final List<Exchange> exchanges = bopEndpoint.getExchanges();
 

@@ -305,12 +305,15 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .process(this.recipientsFilter);
 
         from(direct(Routes.SEND_EMAIL_BOP_CHOICE))
+            .routeId(Routes.SEND_EMAIL_BOP_CHOICE)
             .choice()
                 .when(constant(this.emailConnectorConfig.isSingleEmailPerUserEnabled()))
                     .to(direct(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER))
                 .otherwise()
                     .to(direct(Routes.SEND_EMAIL_BOP))
-            .end();
+            .end()
+            .log(INFO, this.getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+            .to(direct(SUCCESS));
 
         /*
          * Prepares the payload accepted by BOP and sends the request to
@@ -323,9 +326,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
             .process(this.BOPRequestPreparer)
-            .to(bopEndpoint)
-            .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-            .to(direct(SUCCESS));
+            .to(bopEndpoint);
 
         /*
          * Temporary route in order to be able to send an email per user,
