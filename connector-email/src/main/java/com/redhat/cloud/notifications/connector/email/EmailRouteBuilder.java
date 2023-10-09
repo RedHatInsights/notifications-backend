@@ -147,12 +147,12 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
         from(direct(ENGINE_TO_CONNECTOR))
             .routeId(this.connectorConfig.getConnectorName())
+            // Initialize the usernames hash set, where we will gather the
+            // fetched users from the user providers.
+            .process(exchange -> exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>()))
             // Split each recipient setting and aggregate the usernames to end
             // up with a single exchange.
             .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.RECIPIENT_SETTINGS), this.userAggregationStrategy).stopOnException()
-                // Initialize the usernames hash set, where we will gather the
-                // fetched users from the user providers.
-                .process(exchange -> exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>()))
                 // As the body of the exchange might change throughout the
                 // routes, save it in an exchange property.
                 .setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, body())
