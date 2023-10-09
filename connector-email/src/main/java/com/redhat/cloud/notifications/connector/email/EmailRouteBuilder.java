@@ -390,7 +390,11 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         // Remove the schema from the url to avoid the
         // "ResolveEndpointFailedException", which complaints about specifying
         // the schema twice.
-        final String fullURL = this.emailConnectorConfig.getItUserServiceURL();
+        //
+        // Set the cookie specification to "ignore" to avoid getting "cookie
+        // rejected" warnings for having a strict cookie policy, specially when
+        // we don't really use those cookies for much.
+        final String fullURL = String.format("%s?httpClient.cookieSpec=ignoreCookies", this.emailConnectorConfig.getItUserServiceURL());
         if (fullURL.startsWith("https")) {
             return https(fullURL.replace("https://", ""))
                 .sslContextParameters(sslContextParameters);
