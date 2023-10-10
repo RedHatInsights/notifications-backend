@@ -11,8 +11,8 @@ public class Environment {
     String environment;
 
     /**
-     * Checks if the "ENV_NAME" environment variable is set to "local-dev".
-     * @return true if the "ENV_NAME" environment variable is set to "local-dev".
+     * Checks if the "ENV_NAME" environment variable is set to "development".
+     * @return true if the "ENV_NAME" environment variable is set to "development".
      */
     public boolean isDevelopmentEnvironment() {
         return DEVELOPMENT.equals(this.environment);
