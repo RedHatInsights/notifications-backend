@@ -46,7 +46,7 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
         final Exchange exchange = this.createExchangeWithBody("");
         exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailSubject);
         exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailBody);
-        exchange.setProperty(ExchangeProperty.USERNAMES, usernames);
+        exchange.setProperty(ExchangeProperty.FILTERED_USERNAMES, usernames);
 
         // Call the processor under test.
         this.bopRequestPreparer.process(exchange);

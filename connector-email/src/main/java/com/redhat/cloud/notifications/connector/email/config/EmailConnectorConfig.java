@@ -28,7 +28,7 @@ public class EmailConnectorConfig extends ConnectorConfig {
     private static final String RBAC_ELEMENTS_PAGE = "notifications.connector.user-provider.rbac.elements-per-page";
     private static final String RBAC_URL = "notifications.connector.user-provider.rbac.url";
     @Deprecated(forRemoval = true)
-    private static final String SINGLE_EMAIL_PER_USER = "notifications.connector.single-email-per-user.enabled";
+    public static final String SINGLE_EMAIL_PER_USER = "notifications.connector.single-email-per-user.enabled";
 
     // The following two keys are public in order to make it easier for
     // overriding them in the tests.

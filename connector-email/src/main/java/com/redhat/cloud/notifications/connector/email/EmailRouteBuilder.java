@@ -2,14 +2,15 @@ package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import com.redhat.cloud.notifications.connector.email.aggregation.UserAggregationStrategy;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
+import com.redhat.cloud.notifications.connector.email.config.Environment;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
 import com.redhat.cloud.notifications.connector.email.predicates.NotFinishedFetchingAllPages;
 import com.redhat.cloud.notifications.connector.email.predicates.rbac.StatusCodeNotFound;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager;
-import com.redhat.cloud.notifications.connector.email.processors.dispatcher.DispatcherProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.it.ITResponseProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.it.ITUserRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.RBACConstants;
@@ -35,6 +36,8 @@ import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
+import java.util.HashSet;
+
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
@@ -46,18 +49,16 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     ConnectorConfig connectorConfig;
 
     /**
-     * Dispatches the exchange either to fetch the RBAC group or directly to
-     * fetch the users, depending on whether the group is present or not in
-     * the incoming exchange.
-     */
-    @Inject
-    DispatcherProcessor dispatcherProcessor;
-
-    /**
      * Holds all the configuration parameters required to run the connector.
      */
     @Inject
     EmailConnectorConfig emailConnectorConfig;
+
+    /**
+     * Helps determine in which environment the connector is running on.
+     */
+    @Inject
+    Environment environment;
 
     /**
      * Processor which takes the response from BOP and transforms it to our
@@ -135,6 +136,12 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     StatusCodeNotFound statusCodeNotFound;
 
     /**
+     * Aggregates the users received from the user providers.
+     */
+    @Inject
+    UserAggregationStrategy userAggregationStrategy;
+
+    /**
      * Configures the flow for this connector.
      * @throws Exception if the IT SSL route could not be correctly set up.
      */
@@ -147,11 +154,26 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
         from(direct(ENGINE_TO_CONNECTOR))
             .routeId(this.connectorConfig.getConnectorName())
-            /*
-             * Dispatches the exchanges either to fetch the users directly, or, if
-             * a group ID is present, fetch the user from that group from RBAC.
-             */
-            .process(this.dispatcherProcessor);
+            // Initialize the usernames hash set, where we will gather the
+            // fetched users from the user providers.
+            .process(exchange -> exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>()))
+            // Split each recipient setting and aggregate the usernames to end
+            // up with a single exchange.
+            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.RECIPIENT_SETTINGS), this.userAggregationStrategy).stopOnException()
+                // As the body of the exchange might change throughout the
+                // routes, save it in an exchange property.
+                .setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, body())
+                .choice()
+                    .when(simpleF("${exchangeProperty.%s.groupUUID} == null", ExchangeProperty.CURRENT_RECIPIENT_SETTINGS))
+                        .to(direct(Routes.FETCH_USERS))
+                    .otherwise()
+                        .setProperty(ExchangeProperty.GROUP_UUID, simpleF("${exchangeProperty.%s.groupUUID}", ExchangeProperty.CURRENT_RECIPIENT_SETTINGS))
+                        .to(direct(Routes.FETCH_GROUP))
+                .end()
+            .end()
+            // Once the split has finished, we can send the exchange to the BOP
+            // route.
+            .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
 
         /*
          * Decides whether we should use RBAC or IT to fetch the users.
@@ -202,15 +224,19 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                     .to(caffeineCache(Routes.FETCH_USERS_RBAC))
             .endChoice()
             .end()
-            .process(this.recipientsFilter)
-            .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
+            .process(this.recipientsFilter);
 
         /*
          * Fetches the users from IT and filters them. The IT's endpoint is set
          * up separately because we need to create a special SSL context which
          * trusts IT's certificate.
          */
-        final HttpEndpointBuilderFactory.HttpEndpointBuilder itEndpoint = this.setUpITEndpoint();
+        final HttpEndpointBuilderFactory.HttpEndpointBuilder itEndpoint;
+        if (this.environment.isDevelopmentEnvironment()) {
+            itEndpoint = this.setUpITEndpointDevelopment();
+        } else {
+            itEndpoint = this.setUpITEndpoint();
+        }
 
         from(direct(Routes.FETCH_USERS_IT))
             .routeId(Routes.FETCH_USERS_IT)
@@ -244,8 +270,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                     .to(caffeineCache(Routes.FETCH_USERS_IT))
             .endChoice()
             .end()
-            .process(this.recipientsFilter)
-            .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
+            .process(this.recipientsFilter);
 
         /*
          * Fetches an RBAC group. If it doesn't exist for some reason, we
@@ -270,8 +295,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .onException(HttpOperationFailedException.class)
                 .onWhen(this.statusCodeNotFound)
                     .handled(true)
-                    .process(this.recipientsFilter)
-                    .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
+                    .process(this.recipientsFilter);
 
         /*
          * Fetch the users from an RBAC group and filters the results according
@@ -290,16 +314,18 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                 .to(this.emailConnectorConfig.getRbacURL())
                 .process(this.rbacUsersProcessor)
             .end()
-            .process(this.recipientsFilter)
-            .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
+            .process(this.recipientsFilter);
 
         from(direct(Routes.SEND_EMAIL_BOP_CHOICE))
+            .routeId(Routes.SEND_EMAIL_BOP_CHOICE)
             .choice()
                 .when(constant(this.emailConnectorConfig.isSingleEmailPerUserEnabled()))
                     .to(direct(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER))
                 .otherwise()
                     .to(direct(Routes.SEND_EMAIL_BOP))
-            .end();
+            .end()
+            .log(INFO, this.getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+            .to(direct(SUCCESS));
 
         /*
          * Prepares the payload accepted by BOP and sends the request to
@@ -312,9 +338,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
             .process(this.BOPRequestPreparer)
-            .to(bopEndpoint)
-            .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-            .to(direct(SUCCESS));
+            .to(bopEndpoint);
 
         /*
          * Temporary route in order to be able to send an email per user,
@@ -324,7 +348,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .routeId(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER)
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
-            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.USERNAMES))
+            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERNAMES))
                 .setProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, constant(true))
                 .to(direct(Routes.SEND_EMAIL_BOP))
             .end();
@@ -378,10 +402,33 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         // Remove the schema from the url to avoid the
         // "ResolveEndpointFailedException", which complaints about specifying
         // the schema twice.
-        final String fullURL = this.emailConnectorConfig.getItUserServiceURL();
+        //
+        // Set the cookie specification to "ignore" to avoid getting "cookie
+        // rejected" warnings for having a strict cookie policy, specially when
+        // we don't really use those cookies for much.
+        final String fullURL = String.format("%s?httpClient.cookieSpec=ignoreCookies", this.emailConnectorConfig.getItUserServiceURL());
         if (fullURL.startsWith("https")) {
             return https(fullURL.replace("https://", ""))
                 .sslContextParameters(sslContextParameters);
+        } else {
+            return http(fullURL.replace("http://", ""));
+        }
+    }
+
+    /**
+     * Creates the endpoint for the IT Users service for the development
+     * environment. It creates the endpoint without requiring a key store with
+     * Red Hat's certificate. Useful for development purposes or when testing
+     * the connector.
+     * @return the created endpoint.
+     */
+    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpITEndpointDevelopment() {
+        // Remove the schema from the url to avoid the
+        // "ResolveEndpointFailedException", which complaints about specifying
+        // the schema twice.
+        final String fullURL = this.emailConnectorConfig.getItUserServiceURL();
+        if (fullURL.startsWith("https")) {
+            return https(fullURL.replace("https://", ""));
         } else {
             return http(fullURL.replace("http://", ""));
         }

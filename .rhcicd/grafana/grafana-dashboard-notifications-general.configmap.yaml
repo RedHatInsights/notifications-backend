@@ -2176,6 +2176,72 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
+          "description": "Number of running pods in the environment",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 3,
+            "x": 3,
+            "y": 22
+          },
+          "id": 273,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "last"
+              ],
+              "fields": "/^Up$/",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(up{container=\"notifications-connector-email-service\"})",
+              "legendFormat": "Up",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Email - UPs",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
           "description": "Number of current restarts (since pod deployment)",
           "fieldConfig": {
             "defaults": {
@@ -2238,6 +2304,72 @@ data:
             }
           ],
           "title": "Webhook - Restarts",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Number of pod restarts since the last deployment",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 3,
+            "x": 3,
+            "y": 26
+          },
+          "id": 275,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-connector-email-service\"})",
+              "legendFormat": "Restarts",
+              "range": true,
+              "refId": "Number of restarts"
+            }
+          ],
+          "title": "Email - Restarts",
           "type": "stat"
         },
         {
@@ -2330,6 +2462,96 @@ data:
             }
           ],
           "title": "Webhook - Memory leak detection",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Graph that helps identifying if any memory leaks have occurred.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 3,
+            "x": 3,
+            "y": 30
+          },
+          "id": 271,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "jvm_memory_used_bytes{service=\"notifications-connector-email-service\", area=\"heap\", id=\"Tenured Gen\"}",
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Memory leak detection"
+            }
+          ],
+          "title": "Email - Memory leak detection",
           "type": "timeseries"
         },
         {
@@ -3067,7 +3289,7 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "description": "",
+          "description": "Gives information regarding the rate of successes, failures and retries for the email connector.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3104,7 +3326,6 @@ data:
                 }
               },
               "mappings": [],
-              "noValue": "0",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -3115,53 +3336,7 @@ data:
                 ]
               }
             },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Success"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Failure"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Retry"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
+            "overrides": []
           },
           "gridPos": {
             "h": 8,
@@ -3169,7 +3344,7 @@ data:
             "x": 6,
             "y": 48
           },
-          "id": 250,
+          "id": 269,
           "options": {
             "legend": {
               "calcs": [],
@@ -3182,16 +3357,14 @@ data:
               "sort": "none"
             }
           },
-          "pluginVersion": "9.3.8",
           "targets": [
             {
               "datasource": {
+                "type": "prometheus",
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
-              "instant": false,
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-email-service\", routeId=\"email_subscription\"}[5m]))",
               "legendFormat": "Success",
               "range": true,
               "refId": "Success"
@@ -3202,9 +3375,8 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-email-service\", routeId=\"email_subscription\"}[5m]))",
               "hide": false,
-              "interval": "",
               "legendFormat": "Failure",
               "range": true,
               "refId": "Failure"
@@ -3215,17 +3387,14 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "exemplar": false,
-              "expr": "sum(increase(camel_google_chat_retry_counter_total[5m]))",
+              "expr": "sum(increase(camel_email_retry_counter_total[5m]))",
               "hide": false,
-              "instant": false,
-              "interval": "",
               "legendFormat": "Retry",
               "range": true,
               "refId": "Retry"
             }
           ],
-          "title": "Google Chat",
+          "title": "Email connector",
           "type": "timeseries"
         },
         {
@@ -3767,6 +3936,7 @@ data:
                 }
               },
               "mappings": [],
+              "noValue": "0",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -3831,7 +4001,7 @@ data:
             "x": 6,
             "y": 56
           },
-          "id": 258,
+          "id": 250,
           "options": {
             "legend": {
               "calcs": [],
@@ -3852,7 +4022,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-splunk-service\", routeId=\"splunk\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
               "instant": false,
               "legendFormat": "Success",
               "range": true,
@@ -3864,7 +4034,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-splunk-service\", routeId=\"splunk\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "Failure",
@@ -3878,7 +4048,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(increase(camel_splunk_retry_counter_total[5m]))",
+              "expr": "sum(increase(camel_google_chat_retry_counter_total[5m]))",
               "hide": false,
               "instant": false,
               "interval": "",
@@ -3887,7 +4057,7 @@ data:
               "refId": "Retry"
             }
           ],
-          "title": "Splunk",
+          "title": "Google Chat",
           "type": "timeseries"
         },
         {
@@ -4222,12 +4392,177 @@ data:
           "type": "timeseries"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failure"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Retry"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 64
+          },
+          "id": 258,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-splunk-service\", routeId=\"splunk\"}[5m]))",
+              "instant": false,
+              "legendFormat": "Success",
+              "range": true,
+              "refId": "Success"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-splunk-service\", routeId=\"splunk\"}[5m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Failure",
+              "range": true,
+              "refId": "Failure"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "sum(increase(camel_splunk_retry_counter_total[5m]))",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "Retry",
+              "range": true,
+              "refId": "Retry"
+            }
+          ],
+          "title": "Splunk",
+          "type": "timeseries"
+        },
+        {
           "collapsed": false,
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 64
+            "y": 72
           },
           "id": 228,
           "panels": [],
@@ -4248,7 +4583,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 65
+            "y": 73
           },
           "hiddenSeries": false,
           "id": 201,
@@ -4364,8 +4699,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -4380,7 +4714,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 65
+            "y": 73
           },
           "id": 254,
           "options": {
@@ -4426,8 +4760,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "text",
-                    "value": null
+                    "color": "text"
                   }
                 ]
               },
@@ -4439,7 +4772,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 65
+            "y": 73
           },
           "id": 205,
           "options": {
@@ -4481,7 +4814,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 73
+            "y": 81
           },
           "id": 188,
           "panels": [],
@@ -4502,7 +4835,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 74
+            "y": 82
           },
           "hiddenSeries": false,
           "id": 153,
@@ -4593,7 +4926,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 74
+            "y": 82
           },
           "hiddenSeries": false,
           "id": 161,
@@ -4710,8 +5043,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -4726,7 +5058,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 74
+            "y": 82
           },
           "id": 252,
           "links": [
@@ -4870,7 +5202,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 82
+            "y": 90
           },
           "id": 179,
           "panels": [],
@@ -4923,8 +5255,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -4936,7 +5267,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 83
+            "y": 91
           },
           "id": 174,
           "options": {
@@ -5015,8 +5346,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -5028,7 +5358,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 83
+            "y": 91
           },
           "id": 208,
           "options": {
@@ -5107,8 +5437,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -5120,7 +5449,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 83
+            "y": 91
           },
           "id": 189,
           "options": {
@@ -5167,7 +5496,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 91
+            "y": 99
           },
           "hiddenSeries": false,
           "id": 113,
@@ -5252,7 +5581,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 91
+            "y": 99
           },
           "hiddenSeries": false,
           "id": 175,
@@ -5337,7 +5666,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 91
+            "y": 99
           },
           "hiddenSeries": false,
           "id": 176,
@@ -5431,7 +5760,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 91
+            "y": 99
           },
           "hiddenSeries": false,
           "id": 177,
@@ -5530,7 +5859,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 99
+            "y": 107
           },
           "id": 24,
           "panels": [],
@@ -5558,7 +5887,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 100
+            "y": 108
           },
           "hiddenSeries": false,
           "id": 22,
@@ -5692,7 +6021,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 100
+            "y": 108
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -5819,7 +6148,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 109
+            "y": 117
           },
           "hiddenSeries": false,
           "id": 85,
@@ -6012,7 +6341,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 1,
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap

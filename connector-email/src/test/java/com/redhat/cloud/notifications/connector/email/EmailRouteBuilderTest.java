@@ -18,6 +18,7 @@ import org.apache.camel.component.caffeine.cache.CaffeineCacheComponent;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -62,7 +63,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         final Set<String> usernames = Set.of("a", "b", "c", "d", "e");
 
         final Exchange exchange = this.createExchangeWithBody("");
-        exchange.setProperty(ExchangeProperty.USERNAMES, usernames);
+        exchange.setProperty(ExchangeProperty.FILTERED_USERNAMES, usernames);
 
         final MockEndpoint sendEmailBopEndpoint = this.getMockEndpoint(String.format("mock:direct:%s", Routes.SEND_EMAIL_BOP), false);
         sendEmailBopEndpoint.expectedMessageCount(5);
@@ -98,18 +99,37 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
      * Tests that the function under test creates the IT endpoint with custom
      * key store, the custom trust manager and the custom SSL context
      * parameters.
+     *
+     * The test cannot be run unless you modify the properties of the
+     * application and specify a JKS container with a certificate inside of it.
      * @throws Exception if the endpoint could not be created.
      */
+    @Disabled
     @Test
     void testBuildITEndpoint() throws Exception {
-        try (Endpoint bopEndpoint = this.emailRouteBuilder.setUpITEndpoint().resolve(this.context)) {
-            Assertions.assertEquals(this.emailConnectorConfig.getItUserServiceURL(), bopEndpoint.getEndpointBaseUri(), "the base URI of the endpoint is not the same as the one set through the properties");
+        try (Endpoint itEndpoint = this.emailRouteBuilder.setUpITEndpoint().resolve(this.context)) {
+            Assertions.assertEquals(this.emailConnectorConfig.getItUserServiceURL(), itEndpoint.getEndpointBaseUri(), "the base URI of the endpoint is not the same as the one set through the properties");
 
-            final String itEndpointUri = bopEndpoint.getEndpointUri();
+            final String itEndpointUri = itEndpoint.getEndpointUri();
+            Assertions.assertTrue(itEndpointUri.contains("cookieSpec=ignoreCookies"), "the cookie policy was not set to 'ignoreCookies' as expected");
             Assertions.assertTrue(itEndpointUri.contains("keyManagers%3DKeyManagersParameters"), "the key manager was not set in the endpoint");
             Assertions.assertTrue(itEndpointUri.contains("keyStore%3DKeyStoreParameters"), "the key store parameters were not set in the endpoint");
             Assertions.assertTrue(itEndpointUri.contains("sslContextParameters=SSLContextParameters"), "the SSL context parameters were not set in the endpoint");
             Assertions.assertTrue(itEndpointUri.contains("password%3D********"), "the URI does not contain a reference to the key store's password");
+        }
+    }
+
+    /**
+     * Tests that the function under test creates the IT endpoint in
+     * development mode, which means that no custom key managers, key stores or
+     * SSL context parameters are set.
+     * @throws Exception if the endpoint could not be created.
+     */
+    @Test
+    void testBuildITEndpointDevelopment() throws Exception {
+        try (Endpoint itEndpoint = this.emailRouteBuilder.setUpITEndpointDevelopment().resolve(this.context)) {
+            Assertions.assertEquals(this.emailConnectorConfig.getItUserServiceURL(), itEndpoint.getEndpointBaseUri(), "the base URI of the endpoint is not the same as the one set through the properties");
+            Assertions.assertEquals(this.emailConnectorConfig.getItUserServiceURL(), itEndpoint.getEndpointUri(), "the URI of the endpoint contains unexpected configuration elements.");
         }
     }
 
