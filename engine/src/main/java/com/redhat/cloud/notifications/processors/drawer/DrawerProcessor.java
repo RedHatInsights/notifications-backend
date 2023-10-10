@@ -18,7 +18,9 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
@@ -80,73 +82,103 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     @Channel(DRAWER_CHANNEL)
     Emitter<JsonObject> emitter;
 
+    @Inject
+    ConnectorSender connectorSender;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (!featureFlipper.isDrawerEnabled()) {
             return;
         }
-        if (endpoints != null && !endpoints.isEmpty()) {
+        if (endpoints == null || endpoints.isEmpty()) {
+            return;
+        }
+
+        // build event thought qute template
+        String renderedData = buildNotificationMessage(event);
+
+        // store it on event table
+        event.setRenderedDrawerNotification(renderedData);
+        eventRepository.updateDrawerNotification(event);
+
+        // get default endpoint
+        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
+
+        if (featureFlipper.isDrawerConnectorEnabled()) {
+            DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
+
+            final Set<String> subscribers = Set.copyOf(getSubscribers(event, EmailSubscriptionType.DRAWER));
+            final Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, endpoints);
+
+            // Prepare all the data to be sent to the connector.
+            final DrawerNotificationToConnector drawerNotificationToConnector = new DrawerNotificationToConnector(
+                event.getOrgId(),
+                drawerEntryPayload,
+                recipientSettings,
+                subscribers
+            );
+
+            connectorSender.send(event, endpoint, JsonObject.mapFrom(drawerNotificationToConnector));
+        } else {
             Set<User> userList = getRecipientList(event, endpoints, EmailSubscriptionType.DRAWER);
-            if (null != userList && !userList.isEmpty()) {
-                process(event, userList);
+            if (null == userList || userList.isEmpty()) {
+                return;
+            }
+
+            UUID historyId = UUID.randomUUID();
+            Log.infof("Processing drawer notification [orgId=%s, eventId=%s, historyId=%s]",
+                event.getOrgId(), event.getId(), historyId);
+
+            long startTime = System.currentTimeMillis();
+
+            NotificationHistory history = null;
+            try {
+                String userNameListAsStr = userList.stream().map(usr -> usr.getId()).collect(Collectors.joining(","));
+                List<DrawerNotification> drawerNotifications = drawerNotificationRepository.create(event, userNameListAsStr);
+
+                DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
+                    for (DrawerNotification drawer : drawerNotifications) {
+                        try {
+                            JsonObject payload = buildJsonPayload(drawer, event);
+                            sendIt(payload);
+                        } catch (Exception e) {
+                            accumulator.add(e);
+                        }
+                    }
+                });
+
+                history = getHistoryStub(endpoint, event, 0L, historyId);
+                history.setStatus(NotificationStatus.SUCCESS);
+            } catch (Exception e) {
+                history = getHistoryStub(endpoint, event, 0L, historyId);
+                history.setStatus(NotificationStatus.FAILED_INTERNAL);
+                history.setDetails(Map.of("failure", e.getMessage()));
+                Log.infof(e, "Processing drawer notification failed [eventId=%s, historyId=%s]", event.getId(), historyId);
+            } finally {
+                long invocationTime = System.currentTimeMillis() - startTime;
+                history.setInvocationTime(invocationTime);
+                persistNotificationHistory(history);
             }
         }
-
     }
 
-    private void process(Event event, Set<User> userList) {
-        UUID historyId = UUID.randomUUID();
-        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
-        Log.infof("Processing drawer notification [orgId=%s, eventId=%s, historyId=%s]",
-            event.getOrgId(), event.getId(), historyId);
-
-        long startTime = System.currentTimeMillis();
-
-        NotificationHistory history = null;
-        try {
-            String userNameListAsStr = userList.stream().map(usr -> usr.getId()).collect(Collectors.joining(","));
-            List<DrawerNotification> drawerNotifications = drawerNotificationRepository.create(event, userNameListAsStr);
-
-            // build event thought qute template
-            String renderedData = buildNotificationMessage(event);
-            // store it on event table
-            event.setRenderedDrawerNotification(renderedData);
-            eventRepository.updateDrawerNotification(event);
-
-            DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
-                for (DrawerNotification drawer : drawerNotifications) {
-                    try {
-                        JsonObject payload = buildJsonPayload(drawer, event);
-                        sendIt(payload);
-                    } catch (Exception e) {
-                        accumulator.add(e);
-                    }
-                }
-            });
-
-            history = getHistoryStub(endpoint, event, 0L, historyId);
-            history.setStatus(NotificationStatus.SUCCESS);
-        } catch (Exception e) {
-            history = getHistoryStub(endpoint, event, 0L, historyId);
-            history.setStatus(NotificationStatus.FAILED_INTERNAL);
-            history.setDetails(Map.of("failure", e.getMessage()));
-            Log.infof(e, "Processing drawer notification failed [eventId=%s, historyId=%s]", event.getId(), historyId);
-        } finally {
-            long invocationTime = System.currentTimeMillis() - startTime;
-            history.setInvocationTime(invocationTime);
-            persistNotificationHistory(history);
-        }
+    private DrawerEntryPayload buildJsonPayloadFromEvent(Event event) {
+        DrawerEntryPayload drawerEntryPayload = new DrawerEntryPayload();
+        drawerEntryPayload.setDescription(event.getRenderedDrawerNotification());
+        drawerEntryPayload.setTitle(event.getEventTypeDisplayName());
+        drawerEntryPayload.setRead(false);
+        drawerEntryPayload.setCreated(event.getCreated());
+        drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
+        DrawerEntry drawerEntry = new DrawerEntry();
+        drawerEntry.setPayload(drawerEntryPayload);
+        return drawerEntryPayload;
     }
 
     private JsonObject buildJsonPayload(DrawerNotification notif, Event event) {
-        DrawerEntryPayload drawerEntryPayload = new DrawerEntryPayload();
+        DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
         drawerEntryPayload.setId(notif.getId());
-        drawerEntryPayload.setDescription(event.getRenderedDrawerNotification());
-        drawerEntryPayload.setTitle(event.getEventTypeDisplayName());
         drawerEntryPayload.setRead(notif.isRead());
-        drawerEntryPayload.setCreated(event.getCreated());
-        drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
+
         DrawerEntry drawerEntry = new DrawerEntry();
         drawerEntry.setOrganizations(List.of(notif.getOrgId()));
         drawerEntry.setUsers(List.of(notif.getUserId()));

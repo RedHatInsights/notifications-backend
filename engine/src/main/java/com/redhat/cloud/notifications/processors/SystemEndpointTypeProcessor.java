@@ -28,7 +28,7 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
     protected Set<User> getRecipientList(Event event, List<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType) {
         EventType eventType = event.getEventType();
 
-        final Set<RecipientSettings> requests = this.extractRecipientSettings(event, endpoints);
+        final Set<RecipientSettings> requests = extractRecipientSettings(event, endpoints);
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
                     .getSubscribersByEventType(event.getOrgId(), eventType.getId(), emailSubscriptionType));
@@ -72,13 +72,13 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
      * @param event the event the users are subscribed to.
      * @return a list of {@link java.util.UUID}s in the {@link String} shape.
      */
-    protected List<String> getSubscribers(final Event event) {
+    protected List<String> getSubscribers(final Event event, final EmailSubscriptionType subscriptionType) {
         final EventType eventType = event.getEventType();
 
         return this.emailSubscriptionRepository.getSubscribersByEventType(
             event.getOrgId(),
             eventType.getId(),
-            EmailSubscriptionType.INSTANT
+            subscriptionType
         );
     }
 }
