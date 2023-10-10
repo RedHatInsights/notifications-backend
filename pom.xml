@@ -69,7 +69,7 @@
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.4.1</quarkus.platform.version>
+        <quarkus.platform.version>3.4.2</quarkus.platform.version>
         <redhat.event-schemas.version>1.4.9</redhat.event-schemas.version>
 
         <sonar.maven.plugin.version>3.10.0.2594</sonar.maven.plugin.version>
