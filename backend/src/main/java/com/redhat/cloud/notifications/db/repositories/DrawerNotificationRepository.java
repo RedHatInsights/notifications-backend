@@ -65,7 +65,7 @@ public class DrawerNotificationRepository {
     public Long count(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                       LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
         String hql = "SELECT count(dn.id) FROM DrawerNotification dn "
-                        +"where dn.orgId = :orgId and dn.userId = :userid";
+                        + "where dn.orgId = :orgId and dn.userId = :userid";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
 
