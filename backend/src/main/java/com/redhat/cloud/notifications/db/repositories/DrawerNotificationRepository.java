@@ -41,7 +41,6 @@ public class DrawerNotificationRepository {
         query.setSortFields(DrawerNotification.SORT_FIELDS);
         query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
-
         String hql = "SELECT dn.id, dn.read, " +
             "dn.event.bundleDisplayName, dn.event.applicationDisplayName, dn.event.eventTypeDisplayName, dn.created, dn.event.renderedDrawerNotification "
             + "FROM DrawerNotification dn where dn.orgId = :orgId and dn.userId = :userid";
@@ -65,9 +64,8 @@ public class DrawerNotificationRepository {
 
     public Long count(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                       LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
-
-        String hql = "SELECT count(dn.id) "
-            + "FROM DrawerNotification dn where dn.orgId = :orgId and dn.userId = :userid";
+        String hql = "SELECT count(dn.id) FROM DrawerNotification dn "
+                        + "where dn.orgId = :orgId and dn.userId = :userid";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
 
@@ -80,14 +78,6 @@ public class DrawerNotificationRepository {
     private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                                            LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
 
-        if (eventTypeIds != null && !eventTypeIds.isEmpty()) {
-            hql += " AND dn.event.eventType.id IN (:eventTypeIds)";
-        } else if (appIds != null && !appIds.isEmpty()) {
-            hql += " AND dn.event.applicationId IN (:appIds)";
-        } else if (bundleIds != null && !bundleIds.isEmpty()) {
-            hql += " AND dn.event.bundleId IN (:bundleIds)";
-        }
-
         if (startDate != null && endDate != null) {
             hql += " AND dn.created BETWEEN :startDate AND :endDate";
         } else if (startDate != null) {
@@ -98,6 +88,27 @@ public class DrawerNotificationRepository {
 
         if (readStatus != null) {
             hql += " AND dn.read = :readStatus";
+        }
+
+        boolean eventTypesNotEmpty = (eventTypeIds != null && !eventTypeIds.isEmpty());
+        boolean applicationsNotEmpty = (appIds != null && !appIds.isEmpty());
+        boolean bundlesNotEmpty = (bundleIds != null && !bundleIds.isEmpty());
+
+        if (eventTypesNotEmpty ||
+            applicationsNotEmpty ||
+            bundlesNotEmpty) {
+
+            // add org id as criteria on event table to allow usage of
+            // index ix_event_org_id_bundle_id_application_id_event_type_display_nam
+            hql += " AND dn.event.orgId = :orgId";
+
+            if (eventTypesNotEmpty) {
+                hql += " AND dn.event.eventType.id IN (:eventTypeIds)";
+            } else if (applicationsNotEmpty) {
+                hql += " AND dn.event.applicationId IN (:appIds)";
+            } else if (bundlesNotEmpty) {
+                hql += " AND dn.event.bundleId IN (:bundleIds)";
+            }
         }
 
         return hql;
@@ -129,8 +140,8 @@ public class DrawerNotificationRepository {
     }
 
     private String getOrderBy(Query.Sort sort) {
-        if (!sort.getSortColumn().equals("dn.event.created")) {
-            return " " + sort.getSortQuery() + ", dn.event.created DESC";
+        if (!sort.getSortColumn().equals("dn.created")) {
+            return " " + sort.getSortQuery() + ", dn.created DESC";
         } else {
             return " " + sort.getSortQuery();
         }
