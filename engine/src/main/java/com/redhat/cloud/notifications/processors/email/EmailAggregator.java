@@ -57,7 +57,7 @@ public class EmailAggregator {
 
     private Set<String> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return Set.copyOf(emailSubscriptionRepository
-            .getEmailSubscribersUserId(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
+                .getEmailSubscribersUserId(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
     }
 
     private Map<String, Set<String>> getEmailSubscribersGroupedByEventType(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
@@ -126,19 +126,19 @@ public class EmailAggregator {
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
 
         return aggregated
-            .entrySet()
-            .stream()
-            .peek(entry -> {
-                // TODO These fields could be passed to EmailPayloadAggregatorFactory.by since we know them from the beginning.
-                entry.getValue().setStartTime(start);
-                entry.getValue().setEndTimeKey(end);
-            })
-            .collect(
-                Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry -> entry.getValue().getContext()
-                )
-            );
+                .entrySet()
+                .stream()
+                .peek(entry -> {
+                    // TODO These fields could be passed to EmailPayloadAggregatorFactory.by since we know them from the beginning.
+                    entry.getValue().setStartTime(start);
+                    entry.getValue().setEndTimeKey(end);
+                })
+                .collect(
+                    Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().getContext()
+                    )
+                );
     }
 
     private void fillUsers(EmailAggregationKey aggregationKey, User user, Map<User, AbstractEmailPayloadAggregator> aggregated, EmailAggregation emailAggregation) {
