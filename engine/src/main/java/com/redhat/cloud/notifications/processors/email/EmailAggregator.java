@@ -134,10 +134,10 @@ public class EmailAggregator {
                     entry.getValue().setEndTimeKey(end);
                 })
                 .collect(
-                    Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> entry.getValue().getContext()
-                    )
+                        Collectors.toMap(
+                            Map.Entry::getKey,
+                            entry -> entry.getValue().getContext()
+                        )
                 );
     }
 
