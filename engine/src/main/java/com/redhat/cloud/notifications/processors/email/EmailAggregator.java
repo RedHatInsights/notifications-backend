@@ -57,7 +57,7 @@ public class EmailAggregator {
 
     private Set<String> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
+            .getEmailSubscribersUserId(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
     }
 
     private Map<String, Set<String>> getEmailSubscribersGroupedByEventType(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
@@ -101,26 +101,16 @@ public class EmailAggregator {
                  * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
                  * The target endpoints properties will determine whether or not each candidate will actually receive an email.
                  */
-                Set<User> users;
-
-                if (featureFlipper.isEmailConnectorEnabled()) {
-                    users = getSubscribers(eventType, subscribersByEventType).stream().map(username -> {
-                        User usr = new User();
-                        usr.setUsername(username);
-                        return usr;
-                    }).collect(Collectors.toSet());
-                } else {
-                    users = recipientResolver.recipientUsers(
-                        aggregationKey.getOrgId(),
-                        Stream.concat(
-                            endpoints
-                                .stream()
-                                .map(EndpointRecipientSettings::new),
-                            getActionRecipient(aggregation).stream()
-                        ).collect(Collectors.toSet()),
-                        getSubscribers(eventType, subscribersByEventType)
-                    );
-                }
+                Set<User> users = recipientResolver.recipientUsers(
+                    aggregationKey.getOrgId(),
+                    Stream.concat(
+                        endpoints
+                            .stream()
+                            .map(EndpointRecipientSettings::new),
+                        getActionRecipient(aggregation).stream()
+                    ).collect(Collectors.toSet()),
+                    getSubscribers(eventType, subscribersByEventType)
+                );
 
                 /*
                  * We now have the final recipients list.
@@ -136,19 +126,19 @@ public class EmailAggregator {
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
 
         return aggregated
-                .entrySet()
-                .stream()
-                .peek(entry -> {
-                    // TODO These fields could be passed to EmailPayloadAggregatorFactory.by since we know them from the beginning.
-                    entry.getValue().setStartTime(start);
-                    entry.getValue().setEndTimeKey(end);
-                })
-                .collect(
-                        Collectors.toMap(
-                            Map.Entry::getKey,
-                            entry -> entry.getValue().getContext()
-                        )
-                );
+            .entrySet()
+            .stream()
+            .peek(entry -> {
+                // TODO These fields could be passed to EmailPayloadAggregatorFactory.by since we know them from the beginning.
+                entry.getValue().setStartTime(start);
+                entry.getValue().setEndTimeKey(end);
+            })
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> entry.getValue().getContext()
+                )
+            );
     }
 
     private void fillUsers(EmailAggregationKey aggregationKey, User user, Map<User, AbstractEmailPayloadAggregator> aggregated, EmailAggregation emailAggregation) {
