@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.component.http.HttpComponent;
+import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
 import org.apache.hc.core5.util.Timeout;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
@@ -31,11 +32,16 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     private static final String APPLICATION_JSON = "application/json";
 
+    static final String ENDPOINT_RESPONSE_TIME_METRIC = "micrometer:timer:webhook.endpoint.response.time";
+    static final String TIMER_ACTION_START = "?action=start";
+    static final String TIMER_ACTION_STOP = "?action=stop";
+
     @Inject
     WebhookConnectorConfig webhookConnectorConfig;
 
     @Override
     public void configureRoute() {
+        getContext().addRoutePolicyFactory(new MicrometerRoutePolicyFactory());
 
         configureHttpComponent("http");
         configureHttpComponent("https");
@@ -60,7 +66,9 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
                     .toD(buildUnsecureSslEndpoint(), webhookConnectorConfig.getEndpointCacheMaxSize())
                 .endChoice()
                 .otherwise()
-                    .toD("${exchangeProperty." + TARGET_URL + "}", webhookConnectorConfig.getEndpointCacheMaxSize())
+                    .to(ENDPOINT_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                        .toD("${exchangeProperty." + TARGET_URL + "}", webhookConnectorConfig.getEndpointCacheMaxSize())
+                    .to(ENDPOINT_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .end()
             .log(INFO, getClass().getName(), "Sent ${exchangeProperty." + TYPE + ".replace('" + CLOUD_EVENT_TYPE_PREFIX + "', '')} notification " +
                 "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}, targetUrl=${exchangeProperty." + TARGET_URL + "}]")
