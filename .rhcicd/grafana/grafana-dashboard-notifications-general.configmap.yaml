@@ -4699,7 +4699,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -4760,7 +4761,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "text"
+                    "color": "text",
+                    "value": null
                   }
                 ]
               },
@@ -5043,7 +5045,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -5193,6 +5196,103 @@ data:
           "type": "timeseries"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 90
+          },
+          "id": 276,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PDD8BE47D10408F45"
+              },
+              "editorMode": "code",
+              "exemplar": true,
+              "expr": "sum(increase(webhook_endpoint_response_time_seconds_max{service=\"notifications-connector-webhook-service\"}[5m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "connector webhook endpoints",
+              "range": true,
+              "refId": "Connector webhook endpoints"
+            }
+          ],
+          "title": "Maximum time spent calling customers endpoints",
+          "type": "timeseries"
+        },
+        {
           "collapsed": false,
           "datasource": {
             "type": "prometheus",
@@ -5202,7 +5302,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 90
+            "y": 98
           },
           "id": 179,
           "panels": [],
@@ -5255,7 +5355,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -5267,7 +5368,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 91
+            "y": 99
           },
           "id": 174,
           "options": {
@@ -5346,7 +5447,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -5358,7 +5460,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 91
+            "y": 99
           },
           "id": 208,
           "options": {
@@ -5437,7 +5539,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -5449,7 +5552,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 91
+            "y": 99
           },
           "id": 189,
           "options": {
@@ -5496,7 +5599,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 99
+            "y": 107
           },
           "hiddenSeries": false,
           "id": 113,
@@ -5581,7 +5684,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 99
+            "y": 107
           },
           "hiddenSeries": false,
           "id": 175,
@@ -5666,7 +5769,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 99
+            "y": 107
           },
           "hiddenSeries": false,
           "id": 176,
@@ -5760,7 +5863,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 99
+            "y": 107
           },
           "hiddenSeries": false,
           "id": 177,
@@ -5859,7 +5962,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 107
+            "y": 115
           },
           "id": 24,
           "panels": [],
@@ -5887,7 +5990,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 108
+            "y": 116
           },
           "hiddenSeries": false,
           "id": 22,
@@ -6021,7 +6124,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 108
+            "y": 116
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -6148,7 +6251,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 117
+            "y": 125
           },
           "hiddenSeries": false,
           "id": 85,
@@ -6341,7 +6444,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 3,
+      "version": 1,
       "weekStart": ""
     }
 kind: ConfigMap
