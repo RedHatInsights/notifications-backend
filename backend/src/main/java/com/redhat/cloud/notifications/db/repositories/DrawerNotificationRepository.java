@@ -42,8 +42,8 @@ public class DrawerNotificationRepository {
         query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
         String hql = "SELECT dn.id, dn.read, " +
-            "ev.bundleDisplayName, ev.applicationDisplayName, ev.eventTypeDisplayName, dn.created, ev.renderedDrawerNotification "
-            + "FROM DrawerNotification dn inner join dn.event as ev where dn.orgId = :orgId and dn.userId = :userid";
+            "dn.event.bundleDisplayName, dn.event.applicationDisplayName, dn.event.eventTypeDisplayName, dn.created, dn.event.renderedDrawerNotification "
+            + "FROM DrawerNotification dn where dn.orgId = :orgId and dn.userId = :userid";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
         if (sort.isPresent()) {
@@ -64,8 +64,8 @@ public class DrawerNotificationRepository {
 
     public Long count(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                       LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
-        String hql = "SELECT COUNT(*) FROM DrawerNotification dn "
-                        + "inner join dn.event as ev where dn.orgId = :orgId and dn.userId = :userid";
+        String hql = "SELECT count(dn.id) FROM DrawerNotification dn "
+                        +"where dn.orgId = :orgId and dn.userId = :userid";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
 
@@ -100,14 +100,14 @@ public class DrawerNotificationRepository {
 
             // add org id as criteria on event table to allow usage of
             // index ix_event_org_id_bundle_id_application_id_event_type_display_nam
-            hql += " AND ev.orgId = :orgId";
+            hql += " AND dn.event.orgId = :orgId";
 
             if (eventTypesNotEmpty) {
-                hql += " AND ev.eventType.id IN (:eventTypeIds)";
+                hql += " AND dn.event.eventType.id IN (:eventTypeIds)";
             } else if (applicationsNotEmpty) {
-                hql += " AND ev.applicationId IN (:appIds)";
+                hql += " AND dn.event.applicationId IN (:appIds)";
             } else if (bundlesNotEmpty) {
-                hql += " AND ev.bundleId IN (:bundleIds)";
+                hql += " AND dn.event.bundleId IN (:bundleIds)";
             }
         }
 
