@@ -145,6 +145,17 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     }
 
     /**
+     * Tests that the correct cache format is computed for the Caffeine cache
+     * keys.
+     */
+    @Test
+    void testComputeGroupsPrincipalCacheKey() {
+        final Expression cacheKey = this.emailRouteBuilder.computeGroupPrincipalsCacheKey();
+
+        Assertions.assertEquals("simple{${exchangeProperty.orgId}-${exchangeProperty.group_uuid}}", cacheKey.toString(), "unexpected cache key generated");
+    }
+
+    /**
      * Tests that the Caffeine cache component has the configurations that we
      * expect.
      * @throws IOException if an unexpected error occurs when fetching the
