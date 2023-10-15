@@ -182,7 +182,7 @@ public class DrawerTemplateMigrationService {
 
         createDrawerIntegrationTemplate(
             warnings, "console", "rbac", List.of("custom-role-updated"),
-            "Rbac/customRoleUpdatedBody", "html", "Rbac custom role created drawer body"
+            "Rbac/customRoleUpdatedBody", "html", "Rbac custom role updated drawer body"
         );
 
         createDrawerIntegrationTemplate(
