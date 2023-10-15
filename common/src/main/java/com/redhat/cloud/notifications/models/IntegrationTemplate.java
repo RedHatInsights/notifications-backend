@@ -36,9 +36,13 @@ public class IntegrationTemplate extends CreationUpdateTimestamped {
     @JsonProperty(access = READ_ONLY)
     private UUID id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id")
     private Application application;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_type_id")
+    private EventType eventType;
 
     // Name of the integration
     private String integrationType;
@@ -94,6 +98,22 @@ public class IntegrationTemplate extends CreationUpdateTimestamped {
         this.orgId = orgId;
     }
 
+    public Application getApplication() {
+        return application;
+    }
+
+    public void setApplication(Application application) {
+        this.application = application;
+    }
+
+    public EventType getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(EventType eventType) {
+        this.eventType = eventType;
+    }
+
     /*
      * Kind of a template. Ordering is from fallback/default to most specific.
      * The idea is that the caller can request a kind and if there is no
@@ -103,6 +123,7 @@ public class IntegrationTemplate extends CreationUpdateTimestamped {
         DEFAULT, // A fallback if nothing more specific is defined
         APPLICATION, // specific for one (sending) application
         EVENT_TYPE, // specific for an event_type of an application
-        ORG  // defined for a single (customer) organisation
+        ORG,  // defined for a single (customer) organisation
+        ALL // all kind of template can be acceptable
     }
 }

@@ -44,7 +44,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
-import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.DEFAULT;
+import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ALL;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 
 @ApplicationScoped
@@ -208,16 +208,16 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             throw new RuntimeException("Drawer notification data transformation failed", e);
         }
 
-        String message = getTemplate()
+        String message = getTemplate(event.getApplicationId(), event.getEventType().getId(), event.getOrgId())
             .data("data", dataAsMap)
-            .render();
+            .render().trim();
 
         return message;
     }
 
     @CacheResult(cacheName = "drawer-template")
-    TemplateInstance getTemplate() {
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, null, DEFAULT, "drawer")
+    TemplateInstance getTemplate(UUID applicationId, UUID eventTypeId, String orgId) {
+        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(applicationId, eventTypeId, orgId, ALL, "drawer")
             .orElseThrow(() -> new IllegalStateException("No default template defined for drawer"));
         String template = integrationTemplate.getTheTemplate().getData();
         return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());

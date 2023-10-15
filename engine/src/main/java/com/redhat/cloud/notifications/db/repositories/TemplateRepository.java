@@ -131,32 +131,55 @@ public class TemplateRepository {
      * Integration templates are more generic templates directly targeted at Integrations
      * other than email, like Splunk, Slack or Teams via Camel. See {@link IntegrationTemplate}
      * for more details.
-     * @param appName Application name the template applies to. Can be null.
+     * @param appId Application name for the template applies to. Can be null.
+     * @param eventTypeId Event type Id for the template applies to. Can be null.
      * @param orgId The organization id for templates that are organization specific. Need to be of Kind ORG
      * @param templateKind Kind of template requested. If it does not exist, Kind DEFAULT is returned or Optional.empty()
      * @param integrationType Type of integration requested. E.g. 'slack', 'teams' or 'splunk'
      * @return IntegrationTemplate with potential fallback or Optional.empty() if there is not even a default template.
      */
-    public Optional<IntegrationTemplate> findIntegrationTemplate(String appName,
+    public Optional<IntegrationTemplate> findIntegrationTemplate(UUID appId,
+                                                                 UUID eventTypeId,
                                                                  String orgId,
                                                                  IntegrationTemplate.TemplateKind templateKind,
                                                                  String integrationType) {
         String hql = "FROM IntegrationTemplate it JOIN FETCH it.theTemplate " +
                 "WHERE it.templateKind <= :templateKind " +
-                "AND it.integrationType = :iType " +
-                "AND (it.orgId IS NULL" + (orgId != null ? " OR it.orgId = :orgId " : "") + ") " +
-                (appName != null ? "AND it.application.name = :appName " : " ") +
-                "ORDER BY it.templateKind DESC, it.orgId ASC "; // nulls in orgId go last. See https://www.postgresql.org/docs/current/queries-order.html
+                "AND it.integrationType = :iType ";
+
+        if (orgId != null) {
+            hql += "AND (it.orgId IS NULL OR it.orgId = :orgId) ";
+        } else {
+            hql += "AND (it.orgId IS NULL) ";
+        }
+
+        if (eventTypeId != null) {
+            hql += "AND (it.eventType IS NULL OR it.eventType.id = :eventTypeId) ";
+        } else {
+            hql += "AND (it.eventType IS NULL) ";
+        }
+
+        if (appId != null) {
+            hql += "AND (it.application IS NULL OR it.application.id = :appId) ";
+        } else {
+            hql += "AND (it.application IS NULL) ";
+        }
+
+        hql += "ORDER BY it.templateKind DESC, it.orgId ASC "; // nulls in orgId go last. See https://www.postgresql.org/docs/current/queries-order.html
+
         TypedQuery<IntegrationTemplate> query = entityManager.createQuery(hql, IntegrationTemplate.class)
                 .setParameter("templateKind", templateKind)
                 .setParameter("iType", integrationType)
                 .setMaxResults(1);
 
-        if (appName != null) {
-            query.setParameter("appName", appName);
+        if (appId != null) {
+            query.setParameter("appId", appId);
         }
         if (orgId != null) {
             query.setParameter("orgId", orgId);
+        }
+        if (eventTypeId != null) {
+            query.setParameter("eventTypeId", eventTypeId);
         }
 
         List<IntegrationTemplate> templates = query.getResultList();
@@ -166,6 +189,5 @@ public class TemplateRepository {
         }
 
         return Optional.of(templates.get(0));
-
     }
 }

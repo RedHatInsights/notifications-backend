@@ -44,7 +44,7 @@ public class TestDrawerDefaultTemplate  {
     }
 
     private TemplateInstance getDefaultDrawerTemplate() {
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, null, ORG, "drawer")
+        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, null, null, ORG, "drawer")
             .orElseThrow(() -> new IllegalStateException("No default template defined"));
         String template = integrationTemplate.getTheTemplate().getData();
         return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());

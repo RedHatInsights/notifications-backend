@@ -89,7 +89,7 @@ public abstract class CamelProcessorTest {
         Endpoint endpoint = buildEndpoint();
         getCamelProcessor().process(event, List.of(endpoint));
 
-        verify(templateRepository, times(1)).findIntegrationTemplate(any(), any(), any(), any());
+        verify(templateRepository, times(1)).findIntegrationTemplate(any(), any(), any(), any(), any());
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
         verifyKafkaMessage();
     }
@@ -128,7 +128,7 @@ public abstract class CamelProcessorTest {
         IntegrationTemplate integrationTemplate = new IntegrationTemplate();
         integrationTemplate.setTheTemplate(template);
 
-        when(templateRepository.findIntegrationTemplate(any(), any(), any(), any())).thenReturn(Optional.of(integrationTemplate));
+        when(templateRepository.findIntegrationTemplate(any(), any(), any(), any(), any())).thenReturn(Optional.of(integrationTemplate));
     }
 
     protected static Event buildEvent() {
