@@ -26,7 +26,7 @@
         <module>connector-webhook</module>
         <module>database</module>
         <module>engine</module>
-        <module>recipient-resolver</module>
+        <module>recipients-resolver</module>
     </modules>
 
     <profiles>

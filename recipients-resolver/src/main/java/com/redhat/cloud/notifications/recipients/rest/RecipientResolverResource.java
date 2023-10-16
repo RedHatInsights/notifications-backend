@@ -1,10 +1,10 @@
-package com.redhat.cloud.notifications.recipientresolver.router;
+package com.redhat.cloud.notifications.recipients.router;
 
-import com.redhat.cloud.notifications.recipientresolver.model.User;
-import com.redhat.cloud.notifications.recipientresolver.resolver.RecipientResolver;
-import com.redhat.cloud.notifications.recipientresolver.router.pojo.Meta;
-import com.redhat.cloud.notifications.recipientresolver.router.pojo.Page;
-import com.redhat.cloud.notifications.recipientresolver.router.pojo.RecipientQuery;
+import com.redhat.cloud.notifications.recipients.model.User;
+import com.redhat.cloud.notifications.recipients.resolver.RecipientResolver;
+import com.redhat.cloud.notifications.recipients.router.pojo.Meta;
+import com.redhat.cloud.notifications.recipients.router.pojo.Page;
+import com.redhat.cloud.notifications.recipients.router.pojo.RecipientQuery;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;

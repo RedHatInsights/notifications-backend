@@ -14,13 +14,11 @@ objects:
     envName: ${ENV_NAME}
     dependencies:
     - rbac
-    optionalDependencies:
-    - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
       webServices:
-        public:
+        private:
           enabled: true
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
@@ -50,29 +48,25 @@ objects:
           mountPath: /mnt/secrets
         readinessProbe:
           httpGet:
-            path: /health/ready
-            port: 8000
+            path: /q/health/ready
+            port: ${{QUARKUS_HTTP_PORT}}
             scheme: HTTP
-          initialDelaySeconds: 60
+          initialDelaySeconds: 20
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
           failureThreshold: 5
         livenessProbe:
           httpGet:
-            path: /health/live
-            port: 8000
+            path: /q/health/live
+            port: ${{QUARKUS_HTTP_PORT}}
             scheme: HTTP
-          initialDelaySeconds: 60
+          initialDelaySeconds: 20
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
           failureThreshold: 5
         env:
-        - name: ENV_BASE_URL
-          value: ${ENV_BASE_URL}
-        - name: ENV_NAME
-          value: ${ENV_NAME}
         - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
           value: ${NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS}
         - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
@@ -109,11 +103,9 @@ objects:
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
         - name: QUARKUS_HTTP_PORT
-          value: "8000"
+          value: "9000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
-        - name: QUARKUS_LOG_CATEGORY__IO_SMALLRYE_REACTIVE_MESSAGING__LEVEL
-          value: ${IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL}
         - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
           value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
         - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
@@ -168,7 +160,7 @@ parameters:
   description: Memory request
   value: 250Mi
 - name: MIN_REPLICAS
-  value: "1"
+  value: "3"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO

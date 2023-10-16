@@ -1,6 +1,6 @@
-package com.redhat.cloud.notifications.recipientresolver.router.pojo;
+package com.redhat.cloud.notifications.recipients.router.pojo;
 
-import com.redhat.cloud.notifications.recipientresolver.model.RecipientSettings;
+import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.util.Set;
