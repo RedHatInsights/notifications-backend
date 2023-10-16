@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.recipients.rest;
 
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.RecipientsResolver;
-import com.redhat.cloud.notifications.recipients.rest.pojo.RecipientQuery;
+import com.redhat.cloud.notifications.recipients.rest.pojo.RecipientsQuery;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -24,7 +24,11 @@ public class RecipientsResolverResource {
     @PUT
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    public List<User> getRecipients(@NotNull @Valid RecipientQuery resolverQuery) {
-        return recipientsResolver.findRecipients(resolverQuery.getOrgId(), resolverQuery.getRecipientSettings(), resolverQuery.getSubscribers(), resolverQuery.isOptIn());
+    public List<User> getRecipients(@NotNull @Valid RecipientsQuery resolversQuery) {
+        return recipientsResolver.findRecipients(
+            resolversQuery.getOrgId(),
+            resolversQuery.getRecipientSettings(),
+            resolversQuery.getSubscribers(),
+            resolversQuery.isOptIn());
     }
 }

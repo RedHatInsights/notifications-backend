@@ -4,7 +4,7 @@ import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import jakarta.validation.constraints.NotNull;
 import java.util.Set;
 
-public class RecipientQuery {
+public class RecipientsQuery {
     @NotNull
     String orgId;
     @NotNull

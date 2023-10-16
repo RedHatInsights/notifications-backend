@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.RecipientsResolver;
-import com.redhat.cloud.notifications.recipients.rest.pojo.RecipientQuery;
+import com.redhat.cloud.notifications.recipients.rest.pojo.RecipientsQuery;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
@@ -37,7 +37,7 @@ public class RecipientResolverResourceTest {
     @Test
     public void testInvalidParameters() throws JsonProcessingException {
         getRecipients(null, 400);
-        RecipientQuery recipientQuery = new RecipientQuery();
+        RecipientsQuery recipientQuery = new RecipientsQuery();
         getRecipients(recipientQuery, 400);
         recipientQuery.setOrgId("123456");
         getRecipients(recipientQuery, 400);
@@ -47,7 +47,7 @@ public class RecipientResolverResourceTest {
 
     @Test
     public void testGetRecipients() throws JsonProcessingException {
-        RecipientQuery recipientQuery = new RecipientQuery();
+        RecipientsQuery recipientQuery = new RecipientsQuery();
         recipientQuery.setRecipientSettings(new HashSet<>());
         recipientQuery.setOrgId("123456");
         List<User> userList = getRecipientsPage(recipientQuery);
@@ -60,11 +60,11 @@ public class RecipientResolverResourceTest {
         Assertions.assertEquals(500, userList.size());
     }
 
-    private static List<User> getRecipientsPage(RecipientQuery resolverQuery) throws JsonProcessingException {
+    private static List<User> getRecipientsPage(RecipientsQuery resolverQuery) throws JsonProcessingException {
         return getRecipients(resolverQuery, 200).as(new TypeRef<>() { });
     }
 
-    private static Response getRecipients(RecipientQuery resolverQuery, int expectedStatusCode) throws JsonProcessingException {
+    private static Response getRecipients(RecipientsQuery resolverQuery, int expectedStatusCode) throws JsonProcessingException {
         return given()
             .when()
             .contentType(JSON)
