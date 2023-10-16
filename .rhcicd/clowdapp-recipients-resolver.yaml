@@ -142,9 +142,6 @@ parameters:
 - name: CPU_REQUEST
   description: CPU request
   value: 125m
-- name: ENV_BASE_URL
-  value: https://console.redhat.com
-  description: The environment's base URL
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
