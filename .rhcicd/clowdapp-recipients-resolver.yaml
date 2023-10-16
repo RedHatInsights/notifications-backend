@@ -138,10 +138,10 @@ parameters:
   value: "false"
 - name: CPU_LIMIT
   description: CPU limit
-  value: 500m
+  value: 250m
 - name: CPU_REQUEST
   description: CPU request
-  value: 500m
+  value: 125m
 - name: ENV_BASE_URL
   value: https://console.redhat.com
   description: The environment's base URL

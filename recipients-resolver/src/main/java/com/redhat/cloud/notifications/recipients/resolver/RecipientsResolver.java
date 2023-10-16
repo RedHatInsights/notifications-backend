@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.recipients.resolver;
 
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
+import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Collections;
@@ -13,12 +14,13 @@ import java.util.stream.Collectors;
 
 
 @ApplicationScoped
-public class RecipientResolver {
+public class RecipientsResolver {
 
     @Inject
     FetchUsersFromExternalServices fetchingUsers;
 
 
+    @CacheResult(cacheName = "find-recipients")
     public List<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, boolean isOptIn) {
         return recipientSettings.stream()
             .flatMap(r -> recipientUsers(orgId, r, subscribers, isOptIn).stream())

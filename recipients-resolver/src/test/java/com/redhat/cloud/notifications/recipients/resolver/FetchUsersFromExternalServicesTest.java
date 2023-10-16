@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
 import com.redhat.cloud.notifications.TestConstants;
-import com.redhat.cloud.notifications.recipients.config.RecipientResolverConfig;
+import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.request.ITUserRequest;
@@ -45,13 +45,13 @@ import static org.mockito.Mockito.when;
 @QuarkusTest
 public class FetchUsersFromExternalServicesTest {
 
-    @ConfigProperty(name = "recipient-provider.it.max-results-per-page", defaultValue = "1000")
+    @ConfigProperty(name = "recipients-provider.it.max-results-per-page", defaultValue = "1000")
     int maxResultsPerPage;
 
-    @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
+    @ConfigProperty(name = "recipients-provider.rbac.elements-per-page", defaultValue = "1000")
     int rbacMaxResultsPerPage;
 
-    @ConfigProperty(name = "recipient-provider.mbop.max-results-per-page", defaultValue = "1000")
+    @ConfigProperty(name = "recipients-provider.mbop.max-results-per-page", defaultValue = "1000")
     int MBOPMaxResultsPerPage;
 
     @ConfigProperty(name = "mbop.apitoken")
@@ -79,7 +79,7 @@ public class FetchUsersFromExternalServicesTest {
     MBOPService mbopService;
 
     @Inject
-    RecipientResolverConfig featureFlipper;
+    RecipientsResolverConfig featureFlipper;
 
     @Test
     void getGroupUsersShouldOnlyContainActiveUsers() {
@@ -434,8 +434,8 @@ public class FetchUsersFromExternalServicesTest {
      * and
      * quarkus.cache.caffeine.recipient-users-provider-get-users.expire-after-write key.
      */
-    @CacheInvalidateAll(cacheName = "recipient-users-provider-get-users")
-    @CacheInvalidateAll(cacheName = "recipient-users-provider-get-group-users")
+    @CacheInvalidateAll(cacheName = "recipients-users-provider-get-users")
+    @CacheInvalidateAll(cacheName = "recipients-users-provider-get-group-users")
     @BeforeEach
     void clearCached() {
     }

@@ -21,14 +21,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
-public class RecipientResolverTest {
+public class RecipientsResolverTest {
 
     private static final String ORG_ID = "org-id-1";
 
     @InjectMock
     FetchUsersFromExternalServices fetchUsersFromExternalServices;
 
-    RecipientResolver recipientResolver = new RecipientResolver();
+    RecipientsResolver recipientsResolver = new RecipientsResolver();
 
     User user1 = createUser("user1", false);
     User user2 = createUser("user2", false);
@@ -43,7 +43,7 @@ public class RecipientResolverTest {
 
     @BeforeEach
     void beforeEach() {
-        recipientResolver.fetchingUsers = fetchUsersFromExternalServices;
+        recipientsResolver.fetchingUsers = fetchUsersFromExternalServices;
 
         // Setting mocks
         when(fetchUsersFromExternalServices.getUsers(
@@ -97,7 +97,7 @@ public class RecipientResolverTest {
     public void withPersonalizedEmailOn() {
         boolean isOptIn = true;
         // Default request, all subscribed users
-        List<User> users = recipientResolver.findRecipients(
+        List<User> users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(new RecipientSettings(false, false, null, Set.of())),
                 subscribedUsers,
@@ -112,7 +112,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // subscribed admin users
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(new RecipientSettings(true, false, null, Set.of())),
                 subscribedUsers,
@@ -127,7 +127,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // users, ignoring preferences
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(new RecipientSettings(false, true, null, Set.of())),
                 subscribedUsers,
@@ -143,7 +143,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // admins, ignoring preferences
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(new RecipientSettings(true, true, null, Set.of())),
                 subscribedUsers,
@@ -158,7 +158,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // Specifying users
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, false, null, Set.of(
@@ -178,7 +178,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // Specifying users ignoring user preferences
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(false, true, null, Set.of(
@@ -198,7 +198,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // Specifying users and only admins
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(true, false, null, Set.of(
@@ -218,7 +218,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // Specifying users and only admins (ignoring user preferences)
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(true, true, null, Set.of(
@@ -238,7 +238,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all subscribed users & admins ignoring preferences
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(false, false, null, Set.of()),
@@ -260,7 +260,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all users ignoring preferences & admins ignoring preferences (redundant, but possible)
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(false, true, null, Set.of()),
@@ -282,7 +282,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all subscribed users from group 1
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(false, false, group1, Set.of())
@@ -300,7 +300,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all subscribed admins from group 1
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(true, false, group1, Set.of())
@@ -318,7 +318,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all subscribed users from group 2
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(false, false, group2, Set.of())
@@ -336,7 +336,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all users from group 2 (ignoring preferences)
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(
                         new RecipientSettings(false, true, group2, Set.of())
@@ -362,7 +362,7 @@ public class RecipientResolverTest {
         Set<String> unsubscribedUsers = subscribedUsers;
 
         // Default request, all subscribed users
-        List<User> users = recipientResolver.findRecipients(
+        List<User> users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, false, null, Set.of())
@@ -379,7 +379,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // subscribed admin users
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(true, false, null, Set.of())
@@ -396,7 +396,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // users, ignoring preferences
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, true, null, Set.of())
@@ -413,7 +413,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // admins, ignoring preferences
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(true, true, null, Set.of())
@@ -430,7 +430,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // Specifying users
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, false, null, Set.of(
@@ -450,7 +450,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // Specifying users ignoring user preferences
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, true, null, Set.of(
@@ -470,7 +470,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // Specifying users and only admins
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(true, false, null, Set.of(
@@ -490,7 +490,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // Specifying users and only admins (ignoring user preferences)
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(true, true, null, Set.of(
@@ -510,7 +510,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all subscribed users & admins ignoring preferences
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, false, null, Set.of()),
@@ -532,7 +532,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all users ignoring preferences & admins ignoring preferences (redundant, but possible)
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, true, null, Set.of()),
@@ -554,7 +554,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // none users from group 1
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, false, group1, Set.of())
@@ -572,7 +572,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // none users from group 1
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(true, false, group1, Set.of())
@@ -590,7 +590,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all subscribed users from group 2
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, false, group2, Set.of())
@@ -608,7 +608,7 @@ public class RecipientResolverTest {
         clearInvocations(fetchUsersFromExternalServices);
 
         // all users from group 2 (ignoring preferences)
-        users = recipientResolver.findRecipients(
+        users = recipientsResolver.findRecipients(
             ORG_ID,
             Set.of(
                 new RecipientSettings(false, true, group2, Set.of())
@@ -632,9 +632,6 @@ public class RecipientResolverTest {
         user.setUsername(username);
         user.setAdmin(isAdmin);
         user.setActive(true);
-        user.setEmail("user email");
-        user.setFirstName("user firstname");
-        user.setLastName("user lastname");
         return user;
     }
 

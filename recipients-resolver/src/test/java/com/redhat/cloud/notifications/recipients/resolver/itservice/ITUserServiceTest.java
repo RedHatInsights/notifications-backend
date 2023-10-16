@@ -72,8 +72,6 @@ public class ITUserServiceTest {
 
         final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someOrgId", true);
         assertTrue(someAccountId.get(0).isActive());
-
-        assertEquals(someAccountId.get(0).getEmail(), "first_adress@trashmail.org");
     }
 
     @Test
@@ -86,10 +84,7 @@ public class ITUserServiceTest {
         final List<User> users = mock.getUsers("someOrgId", false);
 
         final User user = users.get(0);
-        assertEquals("firstName", user.getFirstName());
-        assertEquals("lastName", user.getLastName());
         assertEquals("userName", user.getUsername());
-        assertEquals("email@trashmail.xyz", user.getEmail());
         assertTrue(user.isActive());
         assertFalse(user.isAdmin());
     }
@@ -97,10 +92,7 @@ public class ITUserServiceTest {
     private User createNonAdminMockedUser() {
         User mockedUser = new User();
         mockedUser.setActive(true);
-        mockedUser.setLastName("lastName");
-        mockedUser.setFirstName("firstName");
         mockedUser.setUsername("userName");
-        mockedUser.setEmail("email@trashmail.xyz");
         mockedUser.setAdmin(false);
         mockedUser.setActive(true);
         return mockedUser;

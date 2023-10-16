@@ -3,8 +3,7 @@ package com.redhat.cloud.notifications.recipients.rest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.recipients.model.User;
-import com.redhat.cloud.notifications.recipients.resolver.RecipientResolver;
-import com.redhat.cloud.notifications.recipients.rest.pojo.Page;
+import com.redhat.cloud.notifications.recipients.resolver.RecipientsResolver;
 import com.redhat.cloud.notifications.recipients.rest.pojo.RecipientQuery;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -15,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -32,7 +32,7 @@ public class RecipientResolverResourceTest {
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @InjectMock
-    RecipientResolver recipientResolver;
+    RecipientsResolver recipientsResolver;
 
     @Test
     public void testInvalidParameters() throws JsonProcessingException {
@@ -43,46 +43,24 @@ public class RecipientResolverResourceTest {
         getRecipients(recipientQuery, 400);
         recipientQuery.setRecipientSettings(new HashSet<>());
         getRecipients(recipientQuery, 200);
-        recipientQuery.setOffset(-2);
-        getRecipients(recipientQuery, 400);
     }
 
     @Test
     public void testGetRecipients() throws JsonProcessingException {
-        RecipientQuery recipentQuery = new RecipientQuery();
-        recipentQuery.setRecipientSettings(new HashSet<>());
-        recipentQuery.setOrgId("123456");
-        Page<User> userPage = getRecipientsPage(recipentQuery);
-        Assertions.assertNotNull(userPage);
-        Assertions.assertEquals(0, userPage.getMeta().getCount());
-        Assertions.assertEquals(0, userPage.getData().size());
-        verify(recipientResolver, times(1)).findRecipients(anyString(), any(), any(), anyBoolean());
+        RecipientQuery recipientQuery = new RecipientQuery();
+        recipientQuery.setRecipientSettings(new HashSet<>());
+        recipientQuery.setOrgId("123456");
+        List<User> userList = getRecipientsPage(recipientQuery);
+        Assertions.assertNotNull(userList);
+        Assertions.assertEquals(0, userList.size());
+        verify(recipientsResolver, times(1)).findRecipients(anyString(), any(), any(), anyBoolean());
 
-        when(recipientResolver.findRecipients(anyString(), any(), any(), anyBoolean())).thenReturn(createUserList(5));
-        userPage = getRecipientsPage(recipentQuery);
-        Assertions.assertEquals(5, userPage.getMeta().getCount());
-        Assertions.assertEquals(5, userPage.getData().size());
-
-        when(recipientResolver.findRecipients(anyString(), any(), any(), anyBoolean())).thenReturn(createUserList(1500));
-        userPage = getRecipientsPage(recipentQuery);
-        Assertions.assertEquals(1500, userPage.getMeta().getCount());
-        Assertions.assertEquals(1000, userPage.getData().size());
-        Assertions.assertEquals(createUserList(1000), userPage.getData());
-
-        recipentQuery.setOffset(5);
-        userPage = getRecipientsPage(recipentQuery);
-        Assertions.assertEquals(1500, userPage.getMeta().getCount());
-        Assertions.assertEquals(1000, userPage.getData().size());
-        Assertions.assertEquals(createUserList(1000, 5), userPage.getData());
-
-        recipentQuery.setOffset(1501);
-        userPage = getRecipientsPage(recipentQuery);
-        Assertions.assertEquals(1500, userPage.getMeta().getCount());
-        Assertions.assertEquals(0, userPage.getData().size());
-
+        when(recipientsResolver.findRecipients(anyString(), any(), any(), anyBoolean())).thenReturn(createUserList(500));
+        userList = getRecipientsPage(recipientQuery);
+        Assertions.assertEquals(500, userList.size());
     }
 
-    private static Page<User> getRecipientsPage(RecipientQuery resolverQuery) throws JsonProcessingException {
+    private static List<User> getRecipientsPage(RecipientQuery resolverQuery) throws JsonProcessingException {
         return getRecipients(resolverQuery, 200).as(new TypeRef<>() { });
     }
 
@@ -91,7 +69,7 @@ public class RecipientResolverResourceTest {
             .when()
             .contentType(JSON)
             .body(OBJECT_MAPPER.writeValueAsString(resolverQuery))
-            .post("/internal/recipient-resolver")
+            .put("/internal/recipients-resolver")
             .then()
             .statusCode(expectedStatusCode).extract().response();
     }
@@ -110,11 +88,9 @@ public class RecipientResolverResourceTest {
 
     public User createUser(int index) {
         User user = new User();
+        user.setId(UUID.randomUUID().toString());
         user.setUsername("username-" + index);
         user.setActive(true);
-        user.setEmail("user email");
-        user.setFirstName("user firstname");
-        user.setLastName("user lastname");
         return user;
     }
 }

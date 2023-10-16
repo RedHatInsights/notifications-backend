@@ -50,29 +50,19 @@ public class RecipientSettings {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-
-        if (o == null || this.getClass() != o.getClass()) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        final RecipientSettings that = (RecipientSettings) o;
-        return Objects.equals(this.adminsOnly, that.adminsOnly) &&
-            Objects.equals(this.ignoreUserPreferences, that.ignoreUserPreferences) &&
-            Objects.equals(this.groupUUID, that.groupUUID) &&
-            Objects.equals(this.users, that.users);
+        RecipientSettings that = (RecipientSettings) o;
+        return adminsOnly == that.adminsOnly && ignoreUserPreferences == that.ignoreUserPreferences && Objects.equals(groupUUID, that.groupUUID) && Objects.equals(users, that.users);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(
-            this.adminsOnly ? 1 : 0,
-            this.ignoreUserPreferences ? 1 : 0,
-            (this.groupUUID != null ? groupUUID.hashCode() : 0),
-            (this.users != null ? users.hashCode() : 0)
-        );
+        return Objects.hash(adminsOnly, ignoreUserPreferences, groupUUID, users);
     }
 }
