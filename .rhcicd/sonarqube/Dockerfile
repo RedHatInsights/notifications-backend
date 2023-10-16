@@ -8,6 +8,7 @@ USER root
 ARG cacerts_keystore_password
 # The argument that holds Red Hat IT's custom certificate's location.
 ARG rh_it_root_ca_cert_url
+ARG rh_it_root_ca_cert_secondary_url
 
 # install postgresql 15
 RUN microdnf install -y dnf
@@ -28,6 +29,7 @@ RUN mkdir --parents "/var/cache/yum/metadata" \
     && microdnf clean all \
     && readonly rh_it_root_ca_file="$(mktemp)" \
     && curl --output "${rh_it_root_ca_file}" --insecure "${rh_it_root_ca_cert_url}" \
+    && curl --output "${rh_it_root_ca_secondary_file}" --insecure "${rh_it_root_ca_cert_secondary_url}" \
     && keytool \
         -cacerts \
         -new "${cacerts_keystore_password}" \
@@ -41,7 +43,16 @@ RUN mkdir --parents "/var/cache/yum/metadata" \
          -noprompt \
          -storepass "${cacerts_keystore_password}" \
          -trustcacerts \
-    && rm "${rh_it_root_ca_file}"
+    && keytool \
+         -alias "RH-IT-Root-CA-SECONDARY" \
+         -cacerts \
+         -file "${rh_it_root_ca_secondary_file}" \
+         -importcert \
+         -noprompt \
+         -storepass "${cacerts_keystore_password}" \
+         -trustcacerts \
+    && rm "${rh_it_root_ca_file}" \
+    && rm "${rh_it_root_ca_secondary_file}"
 
 # Copy the repository contents.
 COPY --chown=default:default . /home/default

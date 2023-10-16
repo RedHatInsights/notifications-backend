@@ -20,6 +20,7 @@ readonly COMMIT_SHORT=$(git rev-parse --short=7 HEAD)
 docker build \
   --build-arg cacerts_keystore_password="${CACERTS_KEYSTORE_PASSWORD}" \
   --build-arg rh_it_root_ca_cert_url="${RH_IT_ROOT_CA_CERT_URL}" \
+  --build-arg rh_it_root_ca_cert_secondary_url="${RH_IT_ROOT_CA_CERT_SECONDARY_URL}" \
   --file .rhcicd/sonarqube/Dockerfile \
   --tag notifications-sonarqube:latest \
   .
@@ -33,6 +34,7 @@ if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
     --env COMMIT_SHORT="${COMMIT_SHORT}" \
     --env GIT_BRANCH="${GIT_BRANCH}" \
     --env RH_IT_ROOT_CA_CERT_URL="${RH_IT_ROOT_CA_CERT_URL}" \
+    --env RH_IT_ROOT_CA_CERT_SECONDARY_URL="${RH_IT_ROOT_CA_CERT_SECONDARY_URL}" \
     --env SONARQUBE_HOST_URL="${SONARQUBE_HOST_URL}" \
     --env SONARQUBE_TOKEN="${SONARQUBE_TOKEN}" \
     --rm \
@@ -44,6 +46,7 @@ else
     --env GIT_BRANCH="${GIT_BRANCH}" \
     --env GITHUB_PULL_REQUEST_ID="${ghprbPullId}" \
     --env RH_IT_ROOT_CA_CERT_URL="${RH_IT_ROOT_CA_CERT_URL}" \
+    --env RH_IT_ROOT_CA_CERT_SECONDARY_URL="${RH_IT_ROOT_CA_CERT_SECONDARY_URL}" \
     --env SONARQUBE_HOST_URL="${SONARQUBE_HOST_URL}" \
     --env SONARQUBE_TOKEN="${SONARQUBE_TOKEN}" \
     --rm \
