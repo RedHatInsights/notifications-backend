@@ -6,55 +6,24 @@ set -exv
 CICD_URL=https://raw.githubusercontent.com/RedHatInsights/bonfire/master/cicd
 curl -s $CICD_URL/bootstrap.sh > .cicd_bootstrap.sh && source .cicd_bootstrap.sh
 
-# Build the notifications-backend image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-backend"
-export DOCKERFILE=docker/Dockerfile.notifications-backend.jvm
-source $CICD_ROOT/build.sh
+# Build a temporary image and push it to Quay
+function buildAndPushToQuay() {
+    IMAGE_NAME=$1
+    export IMAGE="quay.io/cloudservices/${IMAGE_NAME}"
+    export DOCKERFILE="docker/Dockerfile.${IMAGE_NAME}.jvm"
+    source $CICD_ROOT/build.sh
+}
 
-# Build the notifications-engine image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-engine"
-export DOCKERFILE=docker/Dockerfile.notifications-engine.jvm
-source $CICD_ROOT/build.sh
-
-# Build the notifications-connector-drawer image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-connector-drawer"
-export DOCKERFILE=docker/Dockerfile.notifications-connector-drawer.jvm
-source $CICD_ROOT/build.sh
-
-# Build the notifications-connector-email image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-connector-email"
-export DOCKERFILE=docker/Dockerfile.notifications-connector-email.jvm
-source $CICD_ROOT/build.sh
-
-# Build the notifications-connector-google-chat image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-connector-google-chat"
-export DOCKERFILE=docker/Dockerfile.notifications-connector-google-chat.jvm
-source $CICD_ROOT/build.sh
-
-# Build the notifications-connector-microsoft-teams image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-connector-microsoft-teams"
-export DOCKERFILE=docker/Dockerfile.notifications-connector-microsoft-teams.jvm
-source $CICD_ROOT/build.sh
-
-# Build the notifications-connector-servicenow image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-connector-servicenow"
-export DOCKERFILE=docker/Dockerfile.notifications-connector-servicenow.jvm
-source $CICD_ROOT/build.sh
-
-# Build the notifications-connector-slack image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-connector-slack"
-export DOCKERFILE=docker/Dockerfile.notifications-connector-slack.jvm
-source $CICD_ROOT/build.sh
-
-# Build the notifications-connector-splunk image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-connector-splunk"
-export DOCKERFILE=docker/Dockerfile.notifications-connector-splunk.jvm
-source $CICD_ROOT/build.sh
-
-# Build the notifications-connector-webhook image and push it to Quay
-export IMAGE="quay.io/cloudservices/notifications-connector-webhook"
-export DOCKERFILE=docker/Dockerfile.notifications-connector-webhook.jvm
-source $CICD_ROOT/build.sh
+buildAndPushToQuay "notifications-backend"
+buildAndPushToQuay "notifications-connector-drawer"
+buildAndPushToQuay "notifications-connector-email"
+buildAndPushToQuay "notifications-connector-google-chat"
+buildAndPushToQuay "notifications-connector-microsoft-teams"
+buildAndPushToQuay "notifications-connector-servicenow"
+buildAndPushToQuay "notifications-connector-slack"
+buildAndPushToQuay "notifications-connector-splunk"
+buildAndPushToQuay "notifications-connector-webhook"
+buildAndPushToQuay "notifications-engine"
 
 # Deploy all images on ephemeral
 export APP_NAME="notifications"
