@@ -48,8 +48,8 @@ public class EmailAggregator {
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String RECIPIENTS_KEY = "recipients";
 
-    @ConfigProperty(name = "notifications.aggregation.batch-size", defaultValue = "100")
-    int batchSize;
+    @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
+    int maxPageSize;
 
     private Map<String, Set<String>> getEmailSubscribersGroupedByEventType(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return emailSubscriptionRepository
@@ -75,8 +75,8 @@ public class EmailAggregator {
         List<EmailAggregation> aggregations;
         do {
             // First, we retrieve paginated aggregations that match the given key.
-            aggregations = emailAggregationRepository.getEmailAggregation(aggregationKey, start, end, offset, batchSize);
-            offset += batchSize;
+            aggregations = emailAggregationRepository.getEmailAggregation(aggregationKey, start, end, offset, maxPageSize);
+            offset += maxPageSize;
 
             // For each aggregation...
             for (EmailAggregation aggregation : aggregations) {
@@ -113,7 +113,7 @@ public class EmailAggregator {
                 });
             }
             totalAggregatedElements += aggregations.size();
-        } while (batchSize == aggregations.size());
+        } while (maxPageSize == aggregations.size());
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
 
         return aggregated
