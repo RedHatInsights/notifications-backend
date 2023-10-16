@@ -39,8 +39,6 @@ objects:
             defaultMode: 420
             optional: true
         volumeMounts:
-        - name: rds-client-ca
-          mountPath: /tmp
         - name: keystore
           readOnly: true
           mountPath: /mnt/secrets
