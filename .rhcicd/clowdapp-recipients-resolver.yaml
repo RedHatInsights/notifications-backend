@@ -2,14 +2,14 @@
 apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
-  name: notifications-recipient-resolver
+  name: notifications-recipients-resolver
 objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdApp
   metadata:
-    name: notifications-recipient-resolver
+    name: notifications-recipients-resolver
     labels:
-      app: notifications-recipient-resolver
+      app: notifications-recipients-resolver
   spec:
     envName: ${ENV_NAME}
     dependencies:
