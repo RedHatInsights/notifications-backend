@@ -28,6 +28,7 @@ RUN mkdir --parents "/var/cache/yum/metadata" \
     && microdnf install --assumeyes uuid-1.6.2-55.el9.x86_64 \
     && microdnf clean all \
     && readonly rh_it_root_ca_file="$(mktemp)" \
+    && readonly rh_it_root_ca_secondary_file="$(mktemp)" \
     && curl --output "${rh_it_root_ca_file}" --insecure "${rh_it_root_ca_cert_url}" \
     && curl --output "${rh_it_root_ca_secondary_file}" --insecure "${rh_it_root_ca_cert_secondary_url}" \
     && keytool \
