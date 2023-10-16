@@ -1,8 +1,8 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver;
+package com.redhat.cloud.notifications.recipients.resolver;
 
 
-import com.redhat.cloud.notifications.recipientresolver.model.RecipientSettings;
-import com.redhat.cloud.notifications.recipientresolver.model.User;
+import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
+import com.redhat.cloud.notifications.recipients.model.User;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Collections;

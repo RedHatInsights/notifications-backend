@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.model;
+package com.redhat.cloud.notifications.recipients.model;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

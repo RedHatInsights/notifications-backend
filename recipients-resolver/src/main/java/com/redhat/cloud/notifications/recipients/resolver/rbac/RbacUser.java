@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.rbac;
+package com.redhat.cloud.notifications.recipients.resolver.rbac;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;

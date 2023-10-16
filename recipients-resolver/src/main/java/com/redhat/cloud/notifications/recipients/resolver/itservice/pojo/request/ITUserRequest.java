@@ -1,6 +1,6 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.request;
+package com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.request;
 
-import com.redhat.cloud.notifications.recipientresolver.resolver.FetchUsersFromExternalServices;
+import com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices;
 import java.util.ArrayList;
 import java.util.List;
 

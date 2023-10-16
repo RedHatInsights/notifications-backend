@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.config;
+package com.redhat.cloud.notifications.recipients.config;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;

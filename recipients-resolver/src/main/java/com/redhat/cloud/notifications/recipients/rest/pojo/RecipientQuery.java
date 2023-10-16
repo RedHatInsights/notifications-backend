@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipients.router.pojo;
+package com.redhat.cloud.notifications.recipients.rest.pojo;
 
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import jakarta.validation.constraints.Min;

@@ -1,12 +1,11 @@
-package com.redhat.cloud.notifications.recipients.router;
+package com.redhat.cloud.notifications.recipients.rest;
 
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.RecipientResolver;
-import com.redhat.cloud.notifications.recipients.router.pojo.Meta;
-import com.redhat.cloud.notifications.recipients.router.pojo.Page;
-import com.redhat.cloud.notifications.recipients.router.pojo.RecipientQuery;
+import com.redhat.cloud.notifications.recipients.rest.pojo.Meta;
+import com.redhat.cloud.notifications.recipients.rest.pojo.Page;
+import com.redhat.cloud.notifications.recipients.rest.pojo.RecipientQuery;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
@@ -29,7 +28,6 @@ public class RecipientResolverResource {
     @POST
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @Transactional
     public Page<User> getRecipients(@NotNull @Valid RecipientQuery resolverQuery) {
         List<User> userList = recipientsResolver.findRecipients(resolverQuery.getOrgId(), resolverQuery.getRecipientSettings(), resolverQuery.getSubscribers(), resolverQuery.isOptIn());
 

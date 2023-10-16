@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.rbac;
+package com.redhat.cloud.notifications.recipients.resolver.rbac;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

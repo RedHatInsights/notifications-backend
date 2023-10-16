@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.rbac;
+package com.redhat.cloud.notifications.recipients.resolver.rbac;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;

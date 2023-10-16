@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.rbac;
+package com.redhat.cloud.notifications.recipients.resolver.rbac;
 
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.ws.rs.client.ClientRequestContext;

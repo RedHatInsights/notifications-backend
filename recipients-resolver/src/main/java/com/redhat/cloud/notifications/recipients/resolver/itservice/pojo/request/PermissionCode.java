@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.request;
+package com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.request;
 
 public class PermissionCode {
 

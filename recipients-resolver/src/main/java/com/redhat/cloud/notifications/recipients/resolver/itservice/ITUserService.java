@@ -1,7 +1,7 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.itservice;
+package com.redhat.cloud.notifications.recipients.resolver.itservice;
 
-import com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.request.ITUserRequest;
-import com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.request.ITUserRequest;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.ITUserResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;

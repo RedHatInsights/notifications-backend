@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.mbop;
+package com.redhat.cloud.notifications.recipients.resolver.mbop;
 
 public class Constants {
     public static final String MBOP_APITOKEN_HEADER = "x-rh-apitoken";

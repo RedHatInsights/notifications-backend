@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipients.router.pojo;
+package com.redhat.cloud.notifications.recipients.rest.pojo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

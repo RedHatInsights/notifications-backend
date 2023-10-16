@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.mbop;
+package com.redhat.cloud.notifications.recipients.resolver.mbop;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

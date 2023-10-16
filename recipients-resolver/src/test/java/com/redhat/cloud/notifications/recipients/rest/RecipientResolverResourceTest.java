@@ -1,11 +1,11 @@
-package com.redhat.cloud.notifications.recipients.router;
+package com.redhat.cloud.notifications.recipients.rest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.RecipientResolver;
-import com.redhat.cloud.notifications.recipients.router.pojo.Page;
-import com.redhat.cloud.notifications.recipients.router.pojo.RecipientQuery;
+import com.redhat.cloud.notifications.recipients.rest.pojo.Page;
+import com.redhat.cloud.notifications.recipients.rest.pojo.RecipientQuery;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;

@@ -1,13 +1,13 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.itservice;
+package com.redhat.cloud.notifications.recipients.resolver.itservice;
 
-import com.redhat.cloud.notifications.recipientresolver.model.User;
-import com.redhat.cloud.notifications.recipientresolver.resolver.FetchUsersFromExternalServices;
-import com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.request.ITUserRequest;
-import com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.response.AccountRelationship;
-import com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.response.Authentication;
-import com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.response.Email;
-import com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.response.ITUserResponse;
-import com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.response.PersonalInformation;
+import com.redhat.cloud.notifications.recipients.model.User;
+import com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.request.ITUserRequest;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.AccountRelationship;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Authentication;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Email;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.ITUserResponse;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.PersonalInformation;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;

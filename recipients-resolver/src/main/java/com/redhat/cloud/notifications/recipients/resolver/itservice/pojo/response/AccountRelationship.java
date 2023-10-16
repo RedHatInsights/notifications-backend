@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipientresolver.resolver.itservice.pojo.response;
+package com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
