@@ -30,8 +30,6 @@ objects:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
         volumes:
-        - name: rds-client-ca
-          emptyDir: {}
         - name: keystore
           secret:
             secretName: it-services
