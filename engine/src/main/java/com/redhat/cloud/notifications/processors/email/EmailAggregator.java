@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -45,20 +44,12 @@ public class EmailAggregator {
     @Inject
     EmailSubscriptionRepository emailSubscriptionRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String RECIPIENTS_KEY = "recipients";
 
-    @ConfigProperty(name = "notifications.get.aggregation.max.page.size", defaultValue = "10000")
-    int aggregationMaxPageSize;
-
-    private Set<String> getEmailSubscribers(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
-        return Set.copyOf(emailSubscriptionRepository
-                .getEmailSubscribersUserId(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType));
-    }
+    @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
+    int maxPageSize;
 
     private Map<String, Set<String>> getEmailSubscribersGroupedByEventType(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
         return emailSubscriptionRepository
@@ -84,8 +75,8 @@ public class EmailAggregator {
         List<EmailAggregation> aggregations;
         do {
             // First, we retrieve paginated aggregations that match the given key.
-            aggregations = emailAggregationRepository.getEmailAggregation(aggregationKey, start, end, offset, aggregationMaxPageSize);
-            offset += aggregationMaxPageSize;
+            aggregations = emailAggregationRepository.getEmailAggregation(aggregationKey, start, end, offset, maxPageSize);
+            offset += maxPageSize;
 
             // For each aggregation...
             for (EmailAggregation aggregation : aggregations) {
@@ -122,7 +113,7 @@ public class EmailAggregator {
                 });
             }
             totalAggregatedElements += aggregations.size();
-        } while (aggregationMaxPageSize == aggregations.size());
+        } while (maxPageSize == aggregations.size());
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
 
         return aggregated

@@ -67,7 +67,7 @@ class EmailAggregatorTest {
 
     @BeforeEach
     void beforeEach() {
-        emailAggregator.aggregationMaxPageSize = 5;
+        emailAggregator.maxPageSize = 5;
     }
 
     @Test
@@ -98,7 +98,7 @@ class EmailAggregatorTest {
         // Test user subscription based on event type
         Map<User, Map<String, Object>> result = aggregate();
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
         reset(emailAggregationRepository); // just reset mockito counter
 
         // nobody subscribed to the right event type yet
@@ -108,8 +108,8 @@ class EmailAggregatorTest {
         // because after the previous aggregate() call the email_aggregation DB table was not purged, we already have 4 records on database
         result = aggregate();
         verify(emailAggregationRepository, times(2)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.aggregationMaxPageSize));
-        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.aggregationMaxPageSize));
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.maxPageSize));
         assertEquals(1, result.size());
         User user = result.keySet().stream().findFirst().get();
         assertTrue(user.getEmail().equals("user-2"));
