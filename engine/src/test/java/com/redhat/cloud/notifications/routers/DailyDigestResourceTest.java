@@ -3,11 +3,13 @@ package com.redhat.cloud.notifications.routers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
+import com.redhat.cloud.notifications.utils.ActionParser;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -23,6 +25,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static io.restassured.RestAssured.given;
@@ -41,6 +44,9 @@ public class DailyDigestResourceTest {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    ActionParser actionParser;
 
     /**
      * Tests that the daily digest cannot be triggered in an environment that
@@ -124,7 +130,10 @@ public class DailyDigestResourceTest {
 
         // We use an object mapper instead of the "Json.decodeValue" because Jackson doesn't seem to like the
         // constructor the "AggregationCommand" has.
-        final AggregationCommand aggregationCommand = this.objectMapper.readValue(kafkaAggregationCommandRaw, AggregationCommand.class);
+        final Action action = actionParser.fromJsonString(kafkaAggregationCommandRaw);
+        Map<String, Object> map = action.getEvents().get(0).getPayload().getAdditionalProperties();
+
+        final AggregationCommand aggregationCommand = objectMapper.convertValue(map, AggregationCommand.class);
 
         Assertions.assertEquals(start, aggregationCommand.getStart(), "unexpected start timestamp coming from the Kafka aggregation command");
         Assertions.assertEquals(end, aggregationCommand.getEnd(), "unexpected end timestamp coming from the Kafka aggregation command");

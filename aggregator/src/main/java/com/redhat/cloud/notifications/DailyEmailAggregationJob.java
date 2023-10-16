@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -36,7 +35,6 @@ import static java.time.ZoneOffset.UTC;
 @ApplicationScoped
 public class DailyEmailAggregationJob {
 
-    public static final String AGGREGATION_CHANNEL = "aggregation";
     public static final String EGRESS_CHANNEL = "egress";
     public static final String BUNDLE_NAME = "console";
     public static final String APP_NAME = "notifications";
@@ -48,18 +46,11 @@ public class DailyEmailAggregationJob {
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
-    @Inject
-    ObjectMapper objectMapper;
-
     @ConfigProperty(name = "prometheus.pushgateway.url")
     String prometheusPushGatewayUrl;
 
     @ConfigProperty(name = "notifications.default.daily.digest.time", defaultValue = "00:00")
     LocalTime defaultDailyDigestTime;
-
-    @Inject
-    @Channel(AGGREGATION_CHANNEL)
-    Emitter<String> emitter;
 
     @Inject
     @Channel(EGRESS_CHANNEL)

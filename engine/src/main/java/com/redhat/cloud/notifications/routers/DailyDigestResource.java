@@ -1,14 +1,17 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.events.KafkaMessageWithIdBuilder;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Parser;
+import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -18,15 +21,22 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
+import static java.time.ZoneOffset.UTC;
 
 @Path(API_INTERNAL + "/daily-digest")
 public class DailyDigestResource {
 
-    public static final String AGGREGATION_OUT_CHANNEL = "toaggregation";
+    public static final String AGGREGATION_OUT_CHANNEL = "egress";
+    public static final String BUNDLE_NAME = "console";
+    public static final String APP_NAME = "notifications";
+    public static final String EVENT_TYPE_NAME = "aggregation";
 
     @Channel(AGGREGATION_OUT_CHANNEL)
     @Inject
@@ -34,9 +44,6 @@ public class DailyDigestResource {
 
     @Inject
     Environment environment;
-
-    @Inject
-    ObjectMapper objectMapper;
 
     /**
      * Triggers a daily digest by sending a command to the Kafka "aggregation"
@@ -70,26 +77,33 @@ public class DailyDigestResource {
             EmailSubscriptionType.DAILY
         );
 
-        try {
-            final Message<String> message = KafkaMessageWithIdBuilder.build(
-                this.objectMapper.writeValueAsString(aggregationCommand)
-            );
-
-            this.aggregationEmitter.send(message);
-
-            return Response.noContent().build();
-        } catch (final JsonProcessingException e) {
-            Log.errorf(
-                "unable to trigger a test a daily digest because the aggregation command could not be serialized: %s. The aggregation command in question is: %s",
-                e.getMessage(),
-                aggregationCommand
-            );
-
-            return Response
-                .status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity("unable to trigger a daily digest due to an internal error")
-                .type(TEXT_PLAIN)
-                .build();
-        }
+        sendIt(aggregationCommand);
+        return Response.noContent().build();
     }
+
+    private void sendIt(AggregationCommand aggregationCommand) {
+
+        Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
+        Map<String, Object> payload = JsonObject.mapFrom(aggregationCommand).getMap();
+        payload.forEach(payloadBuilder::withAdditionalProperty);
+
+        Action action = new Action.ActionBuilder()
+            .withBundle(BUNDLE_NAME)
+            .withApplication(APP_NAME)
+            .withEventType(EVENT_TYPE_NAME)
+            .withOrgId(aggregationCommand.getAggregationKey().getOrgId())
+            .withTimestamp(LocalDateTime.now(UTC))
+            .withEvents(List.of(
+                new Event.EventBuilder()
+                    .withMetadata(new Metadata.MetadataBuilder().build())
+                    .withPayload(payloadBuilder.build())
+                    .build()))
+            .build();
+
+        String encodedAction = Parser.encode(action);
+        Log.infof("Encoded Payload: %s", encodedAction);
+        Message<String> message = Message.of(encodedAction);
+        aggregationEmitter.send(message);
+    }
+
 }

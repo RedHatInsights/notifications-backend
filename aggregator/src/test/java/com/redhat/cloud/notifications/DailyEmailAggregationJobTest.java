@@ -67,7 +67,6 @@ class DailyEmailAggregationJobTest {
     @AfterEach
     void tearDown() {
         helpers.purgeEmailAggregations();
-        connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
         connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).clear();
     }
 
@@ -130,7 +129,6 @@ class DailyEmailAggregationJobTest {
         // remove all preferences, and set default hour in the past, nothing should be processed
         helpers.purgeAggregationOrgConfig();
         testee.setDefaultDailyDigestTime(now.minusHours(2));
-        connector.sink(DailyEmailAggregationJob.AGGREGATION_CHANNEL).clear();
         connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).clear();
 
         testee.processDailyEmail();
