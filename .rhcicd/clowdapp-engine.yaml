@@ -113,6 +113,8 @@ objects:
           value: ${MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED}
         - name: MP_MESSAGING_OUTGOING_DRAWER_ENABLED
           value: ${MP_MESSAGING_OUTGOING_DRAWER_ENABLED}
+        - name: NOTIFICATIONS_AGGREGATION_BATCH_SIZE
+          value: ${NOTIFICATIONS_AGGREGATION_BATCH_SIZE}
         - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
           value: ${NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE}
         - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
@@ -318,6 +320,9 @@ parameters:
   value: "true"
 - name: MP_MESSAGING_OUTGOING_DRAWER_ENABLED
   value: "false"
+- name: NOTIFICATIONS_AGGREGATION_BATCH_SIZE
+  description: Number of aggregation records loaded from the DB during each aggregation process iteration
+  value: "100"
 - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
   value: "false"
 - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
