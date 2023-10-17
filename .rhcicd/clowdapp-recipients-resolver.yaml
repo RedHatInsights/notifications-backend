@@ -1,0 +1,213 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: notifications-recipients-resolver
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
+  metadata:
+    name: notifications-recipients-resolver
+    labels:
+      app: notifications-recipients-resolver
+  spec:
+    envName: ${ENV_NAME}
+    dependencies:
+    - rbac
+    deployments:
+    - name: service
+      minReplicas: ${{MIN_REPLICAS}}
+      webServices:
+        private:
+          enabled: true
+      podSpec:
+        image: ${IMAGE}:${IMAGE_TAG}
+        resources:
+          requests:
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+        volumes:
+        - name: keystore
+          secret:
+            secretName: it-services
+            items:
+              - key: keystore.jks
+                path: clientkeystore.jks
+            defaultMode: 420
+            optional: true
+        volumeMounts:
+        - name: keystore
+          readOnly: true
+          mountPath: /mnt/secrets
+        readinessProbe:
+          httpGet:
+            path: /q/health/ready
+            port: ${{QUARKUS_HTTP_PORT}}
+            scheme: HTTP
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /q/health/live
+            port: ${{QUARKUS_HTTP_PORT}}
+            scheme: HTTP
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        env:
+        - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
+          value: ${NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS}
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: it-services-keystorepassword
+              optional: true
+        - name: QUARKUS_REST_CLIENT_IT_S2S_URL
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: url
+              optional: true
+        - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
+          value: ${RBAC_S2S_READ_TIMEOUT}
+        - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
+          value: ${RBAC_SERVICE_TO_SERVICE_APP}
+        - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
+          valueFrom:
+            secretKeyRef:
+              name: rbac-psks
+              key: psks.json
+        - name: RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE
+          value: ${RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE}
+        - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
+          value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
+        - name: RECIPIENT_PROVIDER_USE_IT_IMPL
+          value: ${RECIPIENT_PROVIDER_USE_IT_IMPL}
+        - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
+          value: ${RBAC_USERS_RETENTION_DELAY}
+        - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
+          value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
+        - name: QUARKUS_HTTP_PORT
+          value: "9000"
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+          value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+          value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
+        - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
+          value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD}
+        - name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
+          value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${CLOUDWATCH_ENABLED}
+        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
+          value: ${HOSTNAME}
+        - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
+          value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
+        - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
+          value: ${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY
+          value: ${SENTRY_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_DSN
+          value: ${SENTRY_DSN}${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+          value: ${ENV_NAME}
+        - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
+          value: ${QUARKUS_REST_CLIENT_LOGGING_SCOPE}
+        - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
+          value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
+        - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
+          value: ${NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS}
+parameters:
+- name: CLOUDWATCH_ENABLED
+  description: Enable Cloudwatch (or not)
+  value: "false"
+- name: CPU_LIMIT
+  description: CPU limit
+  value: 250m
+- name: CPU_REQUEST
+  description: CPU request
+  value: 125m
+- name: ENV_NAME
+  description: ClowdEnvironment name (ephemeral, stage, prod)
+  required: true
+- name: IMAGE
+  description: Image URL
+  value: quay.io/cloudservices/notifications-recipient-resolver
+- name: IMAGE_TAG
+  value: latest
+- name: MEMORY_LIMIT
+  description: Memory limit
+  value: 500Mi
+- name: MEMORY_REQUEST
+  description: Memory request
+  value: 250Mi
+- name: MIN_REPLICAS
+  value: "3"
+- name: NOTIFICATIONS_LOG_LEVEL
+  description: Log level for com.redhat.cloud.notifications
+  value: INFO
+- name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+  description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT30S
+- name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
+  description: Period between two batch executions. Defaults to 5s.
+  value: 5s
+- name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
+  description: Number of log events sent to CloudWatch per batch. Defaults to 10,000 which is the maximum number of log events per batch allowed by CloudWatch.
+  value: "10000"
+- name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
+  description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
+  value: "100000"
+- name: RBAC_S2S_READ_TIMEOUT
+  description: Delay in milliseconds before an RBAC S2S query is interrupted
+  value: "120000"
+- name: RBAC_GROUP_USERS_RETENTION_DELAY
+  description: RBAC group users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT10M
+- name: RBAC_SERVICE_TO_SERVICE_APP
+  description: RBAC application name to use for service-to-service communication
+  value: notifications
+- name: RBAC_USERS_RETENTION_DELAY
+  description: RBAC users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT10M
+- name: RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE
+  description: Limit value sent to the IT API while querying users.
+  value: "1000"
+- name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
+  description: Limit value sent as a query param to the RBAC REST API while querying RBAC users.
+  value: "1000"
+- name: RECIPIENT_PROVIDER_USE_IT_IMPL
+  description: Temporary recipients retrieval switch between RBAC and IT
+  value: "false"
+- name: SENTRY_DSN
+  description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
+- name: SENTRY_ENABLED
+  description: Enable Sentry (or not)
+  value: "false"
+- name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
+  description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
+  value: "true"
+- name: IT_SERVICE_TO_SERVICE_KEY_STORE
+  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
+  value: ""
+- name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
+  value: INFO
+- name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
+  description: When set to 'request-response', rest-client will log the request and response contents
+  value: ""
+- name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
+  description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
+  value: INFO
+- name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
+  value: "false"

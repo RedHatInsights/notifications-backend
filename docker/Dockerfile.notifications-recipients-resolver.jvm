@@ -1,0 +1,34 @@
+####
+# This Dockerfile is used in order to build a container that runs the Quarkus application in JVM mode
+###
+
+# Build the project
+FROM registry.access.redhat.com/ubi8/openjdk-17:latest AS build
+USER root
+COPY . /home/jboss
+WORKDIR /home/jboss
+RUN ./mvnw clean package -Dmaven.test.skip -Dcheckstyle.skip --projects :notifications-recipients-resolver --no-transfer-progress
+
+# Build the container
+FROM registry.access.redhat.com/ubi8/openjdk-17-runtime:latest
+
+# Update the base image packages
+USER root
+RUN microdnf update --refresh --nodocs && microdnf clean all
+# Temporary workaround - setuptools is affected by a CVE and it is not needed to run our app which is why we're removing it from the base image
+RUN rpm -e --nodeps platform-python-setuptools
+USER jboss
+
+ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
+ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -XX:+ExitOnOutOfMemoryError"
+
+# Use four distinct layers so if there are application changes the library layers can be re-used
+COPY --from=build --chown=185 /home/jboss/recipients-resolver/target/quarkus-app/lib/ /deployments/lib/
+COPY --from=build --chown=185 /home/jboss/recipients-resolver/target/quarkus-app/*.jar /deployments/
+COPY --from=build --chown=185 /home/jboss/recipients-resolver/target/quarkus-app/app/ /deployments/app/
+COPY --from=build --chown=185 /home/jboss/recipients-resolver/target/quarkus-app/quarkus/ /deployments/quarkus/
+
+EXPOSE 8080
+USER 185
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTIONS -jar /deployments/quarkus-run.jar"]
