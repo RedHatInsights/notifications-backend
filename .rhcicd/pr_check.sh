@@ -24,6 +24,7 @@ buildAndPushToQuay "notifications-connector-slack"
 buildAndPushToQuay "notifications-connector-splunk"
 buildAndPushToQuay "notifications-connector-webhook"
 buildAndPushToQuay "notifications-engine"
+buildAndPushToQuay "notifications-recipients-resolver"
 
 # Deploy all images on ephemeral
 export APP_NAME="notifications"
