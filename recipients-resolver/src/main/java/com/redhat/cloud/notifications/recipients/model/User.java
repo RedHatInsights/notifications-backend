@@ -6,8 +6,7 @@ public class User {
 
     private String id;
     private String username;
-    private Boolean isActive;
-    private Boolean isAdmin;
+    private boolean admin;
 
     public String getId() {
         return id;
@@ -25,20 +24,12 @@ public class User {
         this.username = username;
     }
 
-    public Boolean isActive() {
-        return isActive;
+    public boolean isAdmin() {
+        return admin;
     }
 
-    public void setActive(Boolean active) {
-        isActive = active;
-    }
-
-    public Boolean isAdmin() {
-        return isAdmin;
-    }
-
-    public void setAdmin(Boolean admin) {
-        isAdmin = admin;
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
     }
 
     @Override

@@ -63,37 +63,12 @@ objects:
           successThreshold: 1
           failureThreshold: 5
         env:
-        - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
-          value: ${NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS}
-        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
-          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
-        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: it-services-keystorepassword
-              optional: true
-        - name: QUARKUS_REST_CLIENT_IT_S2S_URL
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: url
-              optional: true
-        - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
-          value: ${RBAC_S2S_READ_TIMEOUT}
-        - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
-          value: ${RBAC_SERVICE_TO_SERVICE_APP}
-        - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
-          valueFrom:
-            secretKeyRef:
-              name: rbac-psks
-              key: psks.json
-        - name: RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE
-          value: ${RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE}
-        - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
-          value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
-        - name: RECIPIENT_PROVIDER_USE_IT_IMPL
-          value: ${RECIPIENT_PROVIDER_USE_IT_IMPL}
+        - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE
+          value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE}
+        - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED
+          value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED}
+        - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
+          value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
@@ -102,6 +77,8 @@ objects:
           value: "9000"
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
+          value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
         - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
           value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
         - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
@@ -122,12 +99,31 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: it-services-keystorepassword
+              optional: true
+        - name: QUARKUS_REST_CLIENT_IT_S2S_URL
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: url
+              optional: true
         - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
           value: ${QUARKUS_REST_CLIENT_LOGGING_SCOPE}
-        - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
-          value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
-        - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
-          value: ${NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS}
+        - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
+          value: ${RBAC_S2S_READ_TIMEOUT}
+        - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
+          value: ${RBAC_SERVICE_TO_SERVICE_APP}
+        - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
+          valueFrom:
+            secretKeyRef:
+              name: rbac-psks
+              key: psks.json
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -146,6 +142,11 @@ parameters:
   value: quay.io/cloudservices/notifications-recipient-resolver
 - name: IMAGE_TAG
   value: latest
+- name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
+  value: INFO
+- name: IT_SERVICE_TO_SERVICE_KEY_STORE
+  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
+  value: ""
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
@@ -156,6 +157,18 @@ parameters:
   value: "3"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
+  value: INFO
+- name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE
+  description: Limit value sent to the external users service while querying users.
+  value: "1000"
+- name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED
+  description: Users from an organization will be retrieved from MBOP if true
+  value: "false"
+- name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
+  description: Users from an organization will be retrieved from RBAC if true
+  value: "true"
+- name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
+  description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
   value: INFO
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
   description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
@@ -169,45 +182,23 @@ parameters:
 - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
-- name: RBAC_S2S_READ_TIMEOUT
-  description: Delay in milliseconds before an RBAC S2S query is interrupted
-  value: "120000"
+- name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
+  description: When set to 'request-response', rest-client will log the request and response contents
+  value: ""
 - name: RBAC_GROUP_USERS_RETENTION_DELAY
   description: RBAC group users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT10M
+- name: RBAC_S2S_READ_TIMEOUT
+  description: Delay in milliseconds before an RBAC S2S query is interrupted
+  value: "120000"
 - name: RBAC_SERVICE_TO_SERVICE_APP
   description: RBAC application name to use for service-to-service communication
   value: notifications
 - name: RBAC_USERS_RETENTION_DELAY
   description: RBAC users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT10M
-- name: RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE
-  description: Limit value sent to the IT API while querying users.
-  value: "1000"
-- name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
-  description: Limit value sent as a query param to the RBAC REST API while querying RBAC users.
-  value: "1000"
-- name: RECIPIENT_PROVIDER_USE_IT_IMPL
-  description: Temporary recipients retrieval switch between RBAC and IT
-  value: "false"
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
-  value: "false"
-- name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
-  description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
-  value: "true"
-- name: IT_SERVICE_TO_SERVICE_KEY_STORE
-  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
-  value: ""
-- name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
-  value: INFO
-- name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
-  description: When set to 'request-response', rest-client will log the request and response contents
-  value: ""
-- name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
-  description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
-  value: INFO
-- name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
   value: "false"

@@ -90,7 +90,6 @@ public class RecipientResolverResourceTest {
         User user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setUsername("username-" + index);
-        user.setActive(true);
         return user;
     }
 }
