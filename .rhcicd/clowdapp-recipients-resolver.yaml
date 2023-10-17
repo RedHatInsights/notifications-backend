@@ -139,7 +139,7 @@ parameters:
   required: true
 - name: IMAGE
   description: Image URL
-  value: quay.io/cloudservices/notifications-recipient-resolver
+  value: quay.io/cloudservices/notifications-recipients-resolver
 - name: IMAGE_TAG
   value: latest
 - name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
