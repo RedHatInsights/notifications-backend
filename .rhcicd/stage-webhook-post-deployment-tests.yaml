@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: notifications-webhook-post-deployment-tests
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdJobInvocation
+  metadata:
+    name: notifications-webhook-iqe-tests-${IMAGE_TAG}-${UID}
+  spec:
+    appName: notifications-connector-webhook
+    testing:
+      iqe:
+        debug: false
+        dynaconfEnvName: stage_post_deploy
+        filter: ''
+        marker: 'notif_webhook and api'
+parameters:
+- name: IMAGE_TAG
+  value: ''
+  required: true
+- name: UID
+  description: "Unique CJI name suffix"
+  generate: expression
+  from: "[a-z0-9]{6}"
