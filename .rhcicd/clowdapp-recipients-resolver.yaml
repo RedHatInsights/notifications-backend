@@ -74,7 +74,7 @@ objects:
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
         - name: QUARKUS_HTTP_PORT
-          value: "9000"
+          value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
         - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
@@ -158,6 +158,9 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
+- name: QUARKUS_HTTP_PORT
+  description: Quarkus HTTP server port, defaulting to the default Clowder private port
+  value: "9000"
 - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE
   description: Limit value sent to the external users service while querying users.
   value: "1000"
