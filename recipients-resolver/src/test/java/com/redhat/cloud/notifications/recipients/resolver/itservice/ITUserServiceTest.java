@@ -19,7 +19,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -71,7 +70,6 @@ public class ITUserServiceTest {
         when(itUserService.getUsers(any(ITUserRequest.class))).thenReturn(itUserResponses);
 
         final List<User> someAccountId = rbacRecipientUsersProvider.getUsers("someOrgId", true);
-        assertTrue(someAccountId.get(0).isActive());
     }
 
     @Test
@@ -85,16 +83,13 @@ public class ITUserServiceTest {
 
         final User user = users.get(0);
         assertEquals("userName", user.getUsername());
-        assertTrue(user.isActive());
         assertFalse(user.isAdmin());
     }
 
     private User createNonAdminMockedUser() {
         User mockedUser = new User();
-        mockedUser.setActive(true);
         mockedUser.setUsername("userName");
         mockedUser.setAdmin(false);
-        mockedUser.setActive(true);
         return mockedUser;
     }
 }

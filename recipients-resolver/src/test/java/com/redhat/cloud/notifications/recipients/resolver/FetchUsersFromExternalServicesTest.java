@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
-import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.ITUserService;
@@ -22,7 +21,6 @@ import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,23 +43,7 @@ import static org.mockito.Mockito.when;
 @QuarkusTest
 public class FetchUsersFromExternalServicesTest {
 
-    @ConfigProperty(name = "recipients-provider.it.max-results-per-page", defaultValue = "1000")
-    int maxResultsPerPage;
-
-    @ConfigProperty(name = "recipients-provider.rbac.elements-per-page", defaultValue = "1000")
-    int rbacMaxResultsPerPage;
-
-    @ConfigProperty(name = "recipients-provider.mbop.max-results-per-page", defaultValue = "1000")
-    int MBOPMaxResultsPerPage;
-
-    @ConfigProperty(name = "mbop.apitoken")
-    String bopApiToken;
-
-    @ConfigProperty(name = "mbop.client_id")
-    String bopClientId;
-
-    @ConfigProperty(name = "mbop.env")
-    String bopEnv;
+    private static final String DEFAULT_ORG_ID = "default-org-id";
 
     @InjectMock
     @RestClient
@@ -79,7 +61,7 @@ public class FetchUsersFromExternalServicesTest {
     MBOPService mbopService;
 
     @Inject
-    RecipientsResolverConfig featureFlipper;
+    RecipientsResolverConfig recipientsResolverConfig;
 
     @Test
     void getGroupUsersShouldOnlyContainActiveUsers() {
@@ -108,10 +90,9 @@ public class FetchUsersFromExternalServicesTest {
 
         when(rbacServiceToService.getGroupUsers(any(), any(), any(), any())).thenReturn(page);
 
-        List<User> resolvedUsers = fetchUsersFromExternalServices.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, defaultGroup.getUuid());
+        List<User> resolvedUsers = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, defaultGroup.getUuid());
 
         assertEquals(5, resolvedUsers.size());
-        assertTrue(resolvedUsers.stream().allMatch(User::isActive));
     }
 
     @Test
@@ -178,7 +159,7 @@ public class FetchUsersFromExternalServicesTest {
         mockGetGroup(defaultGroup);
         mockGetUsers(elements, false);
 
-        List<User> users = fetchUsersFromExternalServices.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, defaultGroup.getUuid());
+        List<User> users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, defaultGroup.getUuid());
         assertEquals(elements, users.size());
         for (int i = 0; i < elements; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -188,7 +169,7 @@ public class FetchUsersFromExternalServicesTest {
     @Test
     public void getAllUsersFromDefaultGroupRBAC() {
         try {
-            featureFlipper.setFetchUsersWithRBAC(true);
+            recipientsResolverConfig.setFetchUsersWithRBAC(true);
             RbacGroup defaultGroup = new RbacGroup();
             defaultGroup.setPlatformDefault(true);
             defaultGroup.setUuid(UUID.randomUUID());
@@ -198,13 +179,13 @@ public class FetchUsersFromExternalServicesTest {
             mockGetGroup(defaultGroup);
             mockGetUsersRBAC(elements, false);
 
-            List<User> users = fetchUsersFromExternalServices.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, defaultGroup.getUuid());
+            List<User> users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, defaultGroup.getUuid());
             assertEquals(elements, users.size());
             for (int i = 0; i < elements; ++i) {
                 assertEquals(String.format("username-%d", i), users.get(i).getUsername());
             }
         } finally {
-            featureFlipper.setFetchUsersWithRBAC(false);
+            recipientsResolverConfig.setFetchUsersWithRBAC(false);
         }
     }
 
@@ -213,7 +194,7 @@ public class FetchUsersFromExternalServicesTest {
         UUID nonExistentGroup = UUID.randomUUID();
         mockNotFoundGroup(nonExistentGroup);
 
-        List<User> users = fetchUsersFromExternalServices.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, nonExistentGroup);
+        List<User> users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, nonExistentGroup);
         assertEquals(0, users.size());
     }
 
@@ -223,7 +204,7 @@ public class FetchUsersFromExternalServicesTest {
         int updatedSize = 1323;
         mockGetUsers(initialSize, false);
 
-        List<User> users = fetchUsersFromExternalServices.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+        List<User> users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
         assertEquals(initialSize, users.size());
         for (int i = 0; i < initialSize; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -231,24 +212,24 @@ public class FetchUsersFromExternalServicesTest {
 
         mockGetUsers(updatedSize, false);
 
-        users = fetchUsersFromExternalServices.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+        users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
         // Should still have the initial size because of the cache
         assertEquals(initialSize, users.size());
         clearCached();
 
-        users = fetchUsersFromExternalServices.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+        users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
         assertEquals(updatedSize, users.size());
     }
 
     @Test
     public void getAllUsersCacheRBAC() {
         try {
-            featureFlipper.setFetchUsersWithRBAC(true);
+            recipientsResolverConfig.setFetchUsersWithRBAC(true);
             int initialSize = 1095;
             int updatedSize = 1323;
             mockGetUsersRBAC(initialSize, false);
 
-            List<User> users = fetchUsersFromExternalServices.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+            List<User> users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
             assertEquals(initialSize, users.size());
             for (int i = 0; i < initialSize; ++i) {
                 assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -256,15 +237,15 @@ public class FetchUsersFromExternalServicesTest {
 
             mockGetUsersRBAC(updatedSize, false);
 
-            users = fetchUsersFromExternalServices.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+            users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
             // Should still have the initial size because of the cache
             assertEquals(initialSize, users.size());
             clearCached();
 
-            users = fetchUsersFromExternalServices.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+            users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
             assertEquals(updatedSize, users.size());
         } finally {
-            featureFlipper.setFetchUsersWithRBAC(false);
+            recipientsResolverConfig.setFetchUsersWithRBAC(false);
         }
 
     }
@@ -281,7 +262,7 @@ public class FetchUsersFromExternalServicesTest {
         mockGetGroup(group);
         mockGetGroupUsers(initialSize, group.getUuid());
 
-        List<User> users = fetchUsersFromExternalServices.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, group.getUuid());
+        List<User> users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, group.getUuid());
         assertEquals(initialSize, users.size());
         for (int i = 0; i < initialSize; ++i) {
             assertEquals(String.format("username-%d", i), users.get(i).getUsername());
@@ -289,12 +270,12 @@ public class FetchUsersFromExternalServicesTest {
 
         mockGetGroupUsers(updatedSize, group.getUuid());
 
-        users = fetchUsersFromExternalServices.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, group.getUuid());
+        users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, group.getUuid());
         // Should still have the initial size because of the cache
         assertEquals(initialSize, users.size());
         clearCached();
 
-        users = fetchUsersFromExternalServices.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, group.getUuid());
+        users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, group.getUuid());
         assertEquals(updatedSize, users.size());
     }
 
@@ -304,12 +285,12 @@ public class FetchUsersFromExternalServicesTest {
     @Test
     void testGetUsersMBOP() {
         try {
-            this.featureFlipper.setFetchUsersWithMbop(true);
+            this.recipientsResolverConfig.setFetchUsersWithMbop(true);
 
             // Fake a REST call to MBOP.
-            final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
-            final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
-            final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage / 2);
+            final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage());
+            final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage());
+            final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage() / 2);
 
             final boolean adminsOnly = false;
 
@@ -317,23 +298,23 @@ public class FetchUsersFromExternalServicesTest {
             // the configured maximum limit, so that we can test that the loop
             // is working as expected.
             Mockito
-                .when(this.mbopService.getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(FetchUsersFromExternalServices.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), Mockito.anyInt()))
+                .when(this.mbopService.getUsersByOrgId(Mockito.eq(recipientsResolverConfig.getMbopApiToken()), Mockito.eq(recipientsResolverConfig.getMbopClientId()), Mockito.eq(recipientsResolverConfig.getMbopEnv()), Mockito.eq(DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(FetchUsersFromExternalServices.MBOP_SORT_ORDER), Mockito.eq(recipientsResolverConfig.getMaxResultsPerPage()), Mockito.anyInt()))
                 .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
 
             // Call the function under test.
-            final List<User> result = this.fetchUsersFromExternalServices.getUsers(TestConstants.DEFAULT_ORG_ID, adminsOnly);
+            final List<User> result = this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, adminsOnly);
 
             // Verify that the offset argument, which is the one that changes
             // on each iteration, has been correctly incremented.
             final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
-            Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(FetchUsersFromExternalServices.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), capturedOffset.capture());
+            Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(recipientsResolverConfig.getMbopApiToken()), Mockito.eq(recipientsResolverConfig.getMbopClientId()), Mockito.eq(recipientsResolverConfig.getMbopEnv()), Mockito.eq(DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(FetchUsersFromExternalServices.MBOP_SORT_ORDER), Mockito.eq(recipientsResolverConfig.getMaxResultsPerPage()), capturedOffset.capture());
 
             final List<Integer> capturedValues = capturedOffset.getAllValues();
             assertIterableEquals(
                 List.of(
                     0,
-                    this.MBOPMaxResultsPerPage,
-                    this.MBOPMaxResultsPerPage * 2
+                    recipientsResolverConfig.getMaxResultsPerPage(),
+                    recipientsResolverConfig.getMaxResultsPerPage() * 2
                 ),
                 capturedValues,
                 "unexpected offset values used when calling MBOP"
@@ -347,7 +328,7 @@ public class FetchUsersFromExternalServicesTest {
 
             assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
         } finally {
-            this.featureFlipper.setFetchUsersWithMbop(false);
+            this.recipientsResolverConfig.setFetchUsersWithMbop(false);
         }
     }
 
@@ -360,7 +341,7 @@ public class FetchUsersFromExternalServicesTest {
     private void mockGetUsersRBAC(int elements, boolean adminsOnly) {
         MockedUserAnswer answer = new MockedUserAnswer(elements, adminsOnly);
         Mockito.when(rbacServiceToService.getUsers(
-                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                Mockito.eq(DEFAULT_ORG_ID),
                 Mockito.eq(adminsOnly),
                 Mockito.anyInt(),
                 Mockito.anyInt()
@@ -373,21 +354,21 @@ public class FetchUsersFromExternalServicesTest {
 
     private void mockGetGroup(RbacGroup group) {
         when(rbacServiceToService.getGroup(
-                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                Mockito.eq(DEFAULT_ORG_ID),
                 Mockito.eq(group.getUuid())
         )).thenReturn(group);
     }
 
     private void mockNotFoundGroup(UUID groupId) {
         when(rbacServiceToService.getGroup(
-                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                Mockito.eq(DEFAULT_ORG_ID),
                 Mockito.eq(groupId)
         )).thenThrow(new ClientWebApplicationException(404));
     }
 
     private void mockGetGroupUsers(int elements, UUID groupId) {
         when(rbacServiceToService.getGroupUsers(
-                Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+                Mockito.eq(DEFAULT_ORG_ID),
                 Mockito.eq(groupId),
                 Mockito.anyInt(),
                 Mockito.anyInt()
@@ -451,7 +432,7 @@ public class FetchUsersFromExternalServicesTest {
         }
 
         Page<RbacUser> mockedUserAnswerRBAC(int offset, int limit, boolean adminsOnly) {
-            assertEquals(rbacMaxResultsPerPage, limit);
+            assertEquals(recipientsResolverConfig.getMaxResultsPerPage(), limit);
             assertEquals(expectedAdminsOnly, adminsOnly);
             int bound = Math.min(offset + limit, expectedElements);
 
@@ -478,7 +459,7 @@ public class FetchUsersFromExternalServicesTest {
             int firstResult = request.by.withPaging.firstResultIndex;
             int maxResults = request.by.withPaging.maxResults;
 
-            assertEquals(maxResultsPerPage, maxResults);
+            assertEquals(recipientsResolverConfig.getMaxResultsPerPage(), maxResults);
             assertEquals(expectedAdminsOnly, adminsOnly);
 
             int bound = Math.min(firstResult + maxResults, expectedElements);

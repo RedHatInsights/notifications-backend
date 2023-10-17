@@ -631,7 +631,6 @@ public class RecipientsResolverTest {
         User user = new User();
         user.setUsername(username);
         user.setAdmin(isAdmin);
-        user.setActive(true);
         return user;
     }
 
