@@ -63,6 +63,8 @@ objects:
           successThreshold: 1
           failureThreshold: 5
         env:
+        - name: ENV_NAME
+          value: ${ENV_NAME}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED
