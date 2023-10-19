@@ -5,7 +5,6 @@ import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.configuration.ProfileManager;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import static io.quarkus.runtime.LaunchMode.TEST;
 
@@ -38,21 +37,8 @@ import static io.quarkus.runtime.LaunchMode.TEST;
 @ApplicationScoped
 public class FeatureFlipper {
 
-    @ConfigProperty(name = "notifications.aggregator-send-on-ingress", defaultValue = "false")
-    boolean aggregatorSendOnIngress;
-
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
-        Log.infof("The aggregator send command on ingress is %s", aggregatorSendOnIngress ? "enabled" : "disabled");
-    }
-
-    public boolean isAggregatorSendOnIngress() {
-        return aggregatorSendOnIngress;
-    }
-
-    public void setAggregatorSendOnIngress(boolean aggregatorSendOnIngress) {
-        checkTestLaunchMode();
-        this.aggregatorSendOnIngress = aggregatorSendOnIngress;
     }
 
     /**

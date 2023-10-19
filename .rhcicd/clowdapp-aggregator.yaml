@@ -16,10 +16,6 @@ objects:
     - notifications-backend
     database:
       sharedDbAppName: notifications-backend
-    kafkaTopics:
-    - topicName: platform.notifications.aggregation
-      partitions: 2
-      replicas: 3
     jobs:
     - name: cronjob
       schedule: ${CRONTAB_AGGREGATION_JOB}
@@ -61,8 +57,6 @@ objects:
           value: ${ENV_NAME}
         - name: PROMETHEUS_PUSHGATEWAY_URL
           value: ${PROMETHEUS_PUSHGATEWAY}
-        - name: NOTIFICATIONS_AGGREGATOR_SEND_ON_INGRESS
-          value: ${NOTIFICATIONS_AGGREGATOR_SEND_ON_INGRESS}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -103,7 +97,4 @@ parameters:
   value: "300"
 - name: SUSPEND_AGGREGATION_JOB
   description: Should the aggregation cron job be disabled?
-  value: "false"
-- name: NOTIFICATIONS_AGGREGATOR_SEND_ON_INGRESS
-  description: Should send aggregation command on Ingress topic
   value: "false"

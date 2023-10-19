@@ -20,7 +20,6 @@ import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNE
 import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.drawer.DrawerProcessor.DRAWER_CHANNEL;
-import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
 import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
@@ -53,7 +52,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
          * See https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
          */
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(INGRESS_CHANNEL));
-        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(AGGREGATION_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(AGGREGATION_OUT_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(TOCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));

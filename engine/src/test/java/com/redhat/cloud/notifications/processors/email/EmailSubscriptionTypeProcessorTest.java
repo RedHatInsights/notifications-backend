@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
@@ -41,8 +40,6 @@ import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -53,7 +50,6 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_CHANNEL;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_REJECTED_COUNTER_NAME;
@@ -128,22 +124,20 @@ class EmailSubscriptionTypeProcessorTest {
         verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {AGGREGATION_CHANNEL, INGRESS_CHANNEL})
-    void shouldSuccessfullySendTwoAggregatedEmailToTwoRecipients(String channel) {
+    @Test
+    void shouldSuccessfullySendTwoAggregatedEmailToTwoRecipients() {
         when(sender.sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class))).thenReturn(new NotificationHistory());
-        shouldSuccessfullySendTwoAggregatedEmails(channel);
+        shouldSuccessfullySendTwoAggregatedEmails(INGRESS_CHANNEL);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {AGGREGATION_CHANNEL, INGRESS_CHANNEL})
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients(String channel) {
+    @Test
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients() {
         try {
             featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(true);
             NotificationHistory nh = new NotificationHistory();
             nh.setDetails(Map.of(EmailSubscriptionTypeProcessor.TOTAL_RECIPIENTS_KEY, 1));
             when(sender.sendEmail(any(Set.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class))).thenReturn(nh);
-            shouldSuccessfullySendTwoAggregatedEmails(channel);
+            shouldSuccessfullySendTwoAggregatedEmails(INGRESS_CHANNEL);
         } finally {
             featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(false);
         }
@@ -194,13 +188,8 @@ class EmailSubscriptionTypeProcessorTest {
             emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
             emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
 
-            if (AGGREGATION_CHANNEL.equals(channel)) {
-                inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand1));
-                inMemoryConnector.source(AGGREGATION_CHANNEL).send(Json.encode(aggregationCommand2));
-            } else if (INGRESS_CHANNEL.equals(channel)) {
-                inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand1));
-                inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand2));
-            }
+            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand1));
+            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand2));
 
             micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
             micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
@@ -375,15 +364,4 @@ class EmailSubscriptionTypeProcessorTest {
         }
     }
 
-    @Test
-    void consumeEmailAggregationsShouldNotThrowInCaseOfInvalidPayload() {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
-
-        inMemoryConnector.source(AGGREGATION_CHANNEL).send("I am not valid!");
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 1);
-        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 0);
-        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
-
-        micrometerAssertionHelper.clearSavedValues();
-    }
 }
