@@ -44,6 +44,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 
@@ -114,6 +115,10 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     @Inject
     EventRepository eventRepository;
+
+    // This executor is used to run a task asynchronously using a worker thread from a threads pool managed by Quarkus.
+    @Inject
+    ManagedExecutor managedExecutor;
 
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
@@ -194,45 +199,51 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     }
 
     public void processAggregation(Event event) {
+        /*
+         * The aggregation process is long-running task. To avoid blocking the thread used to consume
+         * Kafka messages from the ingress topic, we're performing the aggregation from a worker thread.
+         */
+        managedExecutor.submit(() -> {
 
-        AggregationCommand aggregationCommand = null;
-        Timer.Sample consumedTimer = Timer.start(registry);
+            AggregationCommand aggregationCommand;
+            Timer.Sample consumedTimer = Timer.start(registry);
 
-        try {
-            Action action = actionParser.fromJsonString(event.getPayload());
-            Map<String, Object> map = action.getEvents().get(0).getPayload().getAdditionalProperties();
-            aggregationCommand = objectMapper.convertValue(map, AggregationCommand.class);
-        } catch (Exception e) {
-            Log.error("Kafka aggregation payload parsing failed for event " + event.getId(), e);
-            rejectedAggregationCommandCount.increment();
-            return;
-        }
-
-        Log.infof("Processing received aggregation command: %s", aggregationCommand);
-        processedAggregationCommandCount.increment();
-
-        try {
-            Optional<Application> app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
-            if (app.isPresent()) {
-                event.setEventTypeDisplayName(
-                    String.format("%s - %s - %s",
-                        event.getEventTypeDisplayName(),
-                        app.get().getDisplayName(),
-                        app.get().getBundle().getDisplayName())
-                );
-                eventRepository.updateEventDisplayName(event);
+            try {
+                Action action = actionParser.fromJsonString(event.getPayload());
+                Map<String, Object> map = action.getEvents().get(0).getPayload().getAdditionalProperties();
+                aggregationCommand = objectMapper.convertValue(map, AggregationCommand.class);
+            } catch (Exception e) {
+                Log.error("Kafka aggregation payload parsing failed for event " + event.getId(), e);
+                rejectedAggregationCommandCount.increment();
+                return;
             }
-            processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event));
-        } catch (Exception e) {
-            Log.warn("Error while processing aggregation", e);
-            failedAggregationCommandCount.increment();
-        } finally {
-            consumedTimer.stop(registry.timer(
-                AGGREGATION_CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, aggregationCommand.getAggregationKey().getBundle(),
-                TAG_KEY_APPLICATION, aggregationCommand.getAggregationKey().getApplication()
-            ));
-        }
+
+            Log.infof("Processing received aggregation command: %s", aggregationCommand);
+            processedAggregationCommandCount.increment();
+
+            try {
+                Optional<Application> app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
+                if (app.isPresent()) {
+                    event.setEventTypeDisplayName(
+                            String.format("%s - %s - %s",
+                                    event.getEventTypeDisplayName(),
+                                    app.get().getDisplayName(),
+                                    app.get().getBundle().getDisplayName())
+                    );
+                    eventRepository.updateEventDisplayName(event);
+                }
+                processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event));
+            } catch (Exception e) {
+                Log.warn("Error while processing aggregation", e);
+                failedAggregationCommandCount.increment();
+            } finally {
+                consumedTimer.stop(registry.timer(
+                        AGGREGATION_CONSUMED_TIMER_NAME,
+                        TAG_KEY_BUNDLE, aggregationCommand.getAggregationKey().getBundle(),
+                        TAG_KEY_APPLICATION, aggregationCommand.getAggregationKey().getApplication()
+                ));
+            }
+        });
     }
 
     @Incoming(AGGREGATION_CHANNEL)

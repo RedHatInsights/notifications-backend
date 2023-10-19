@@ -67,6 +67,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -207,7 +208,7 @@ class EmailSubscriptionTypeProcessorTest {
             micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
             // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-            verify(emailAggregationRepository, times(1)).getEmailAggregation(
+            verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
                 eq(aggregationCommand1.getAggregationKey()),
                 eq(aggregationCommand1.getStart()),
                 eq(aggregationCommand1.getEnd()),
@@ -215,29 +216,29 @@ class EmailSubscriptionTypeProcessorTest {
                 anyInt()
             );
 
-            verify(emailAggregationRepository, times(1)).purgeOldAggregation(
+            verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
                 eq(aggregationCommand1.getAggregationKey()),
                 eq(aggregationCommand1.getEnd())
             );
-            verify(emailAggregationRepository, times(1)).getEmailAggregation(
+            verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
                 eq(aggregationCommand2.getAggregationKey()),
                 eq(aggregationCommand2.getStart()),
                 eq(aggregationCommand2.getEnd()),
                 eq(0),
                 anyInt()
             );
-            verify(emailAggregationRepository, times(1)).purgeOldAggregation(
+            verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
                 eq(aggregationCommand2.getAggregationKey()),
                 eq(aggregationCommand2.getEnd())
             );
 
             if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-                verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-                verify(sender, times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+                verify(sender, timeout(5000L).times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+                verify(sender, timeout(5000L).times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
             } else {
-                verify(sender, times(1)).sendEmail(eq(user1), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-                verify(sender, times(1)).sendEmail(eq(user2), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-                verify(sender, times(1)).sendEmail(eq(user3), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+                verify(sender, timeout(5000L).times(1)).sendEmail(eq(user1), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+                verify(sender, timeout(5000L).times(1)).sendEmail(eq(user2), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+                verify(sender, timeout(5000L).times(1)).sendEmail(eq(user3), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
             }
             getEventHistory(channel);
         } finally {
