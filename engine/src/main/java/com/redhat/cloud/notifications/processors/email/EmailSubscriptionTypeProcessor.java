@@ -40,7 +40,9 @@ import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.context.ManagedExecutor;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -108,6 +110,13 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     @Inject
     EventRepository eventRepository;
+
+    // This executor is used to run a task asynchronously using a worker thread from a threads pool managed by Quarkus.
+    @Inject
+    ManagedExecutor managedExecutor;
+
+    @Inject
+    Instance<AsyncAggregation> asyncAggregations;
 
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
@@ -188,6 +197,28 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     }
 
     public void processAggregation(Event event) {
+        if (featureFlipper.isAsyncAggregation()) {
+            /*
+             * The aggregation process is long-running task. To avoid blocking the thread used to consume
+             * Kafka messages from the ingress topic, we're performing the aggregation from a worker thread.
+             */
+            AsyncAggregation asyncAggregation = asyncAggregations.get();
+            asyncAggregation.setEvent(event);
+            managedExecutor.runAsync(asyncAggregation)
+                    .thenRun(() -> {
+                        /*
+                         * When a @Dependent bean is injected into an @ApplicationScoped bean using Instance<T>,
+                         * the dependent bean has to be destroyed manually when it's no longer needed. Otherwise,
+                         * instances of the dependent bean accumulate in memory, causing a memory leak.
+                         */
+                        asyncAggregations.destroy(asyncAggregation);
+                    });
+        } else {
+            processAggregationSync(event);
+        }
+    }
+
+    public void processAggregationSync(Event event) {
 
         AggregationCommand aggregationCommand;
         Timer.Sample consumedTimer = Timer.start(registry);

@@ -95,6 +95,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.drawer-connector.enabled", defaultValue = "false")
     boolean drawerConnectorEnabled;
 
+    @ConfigProperty(name = "notifications.async-aggregation.enabled", defaultValue = "true")
+    boolean asyncAggregation;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -116,6 +119,7 @@ public class FeatureFlipper {
         Log.infof("The webhook connector is %s", webhookConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The email connector is %s", emailConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The drawer connector is %s", drawerConnectorEnabled ? "enabled" : "disabled");
+        Log.infof("The async aggregation is %s", asyncAggregation ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -283,6 +287,15 @@ public class FeatureFlipper {
     public void setDrawerConnectorEnabled(boolean drawerConnectorEnabled) {
         checkTestLaunchMode();
         this.drawerConnectorEnabled = drawerConnectorEnabled;
+    }
+
+    public boolean isAsyncAggregation() {
+        return asyncAggregation;
+    }
+
+    public void setAsyncAggregation(boolean asyncAggregation) {
+        checkTestLaunchMode();
+        this.asyncAggregation = asyncAggregation;
     }
 
     /**
