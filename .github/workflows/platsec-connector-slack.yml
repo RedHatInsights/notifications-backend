@@ -29,6 +29,7 @@ on:
 
 jobs:
   PlatSec-Security-Workflow:
+    if: github.repository == 'RedHatInsights/notifications-backend'
     uses: RedHatInsights/platform-security-gh-workflow/.github/workflows/platsec-security-scan-reusable-workflow.yml@master
     ## The optional parameters below are used if you are using something other than the
     ## the defaults of root '.' for the path and 'Dockerfile' for the Dockerfile name.
