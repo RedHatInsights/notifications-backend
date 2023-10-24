@@ -247,6 +247,8 @@ objects:
           value: ${NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED}
         - name: NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED
           value: ${NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED}
+        - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
+          value: ${NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -421,4 +423,6 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED
   description: Is the drawer connector enabled to process them instead of in the engine?
+  value: "false"
+- name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
   value: "false"
