@@ -276,6 +276,45 @@ public class EmailTemplateMigrationService {
             );
 
             /*
+             * Former src/main/resources/templates/OCMServiceLogs folder.
+             */
+            createInstantEmailTemplate(
+                    warnings, "openshift", "ocm-service-logs", List.of("critical-severity"),
+                    "OCMServiceLogs/criticalSeverityInstantEmailTitle", "txt", "OCM Service Logs critical severity email title",
+                    "OCMServiceLogs/criticalSeverityInstantEmailBody", "html", "OCM Service Logs critical severity email body"
+            );
+            createInstantEmailTemplate(
+                    warnings, "openshift", "ocm-service-logs", List.of("debug-severity"),
+                    "OCMServiceLogs/debugSeverityInstantEmailTitle", "txt", "OCM Service Logs debug severity email title",
+                    "OCMServiceLogs/debugSeverityInstantEmailBody", "html", "OCM Service Logs debug severity email body"
+            );
+            createInstantEmailTemplate(
+                    warnings, "openshift", "ocm-service-logs", List.of("error-severity"),
+                    "OCMServiceLogs/errorSeverityInstantEmailTitle", "txt", "OCM Service Logs error severity email title",
+                    "OCMServiceLogs/errorSeverityInstantEmailBody", "html", "OCM Service Logs error severity email body"
+            );
+            createInstantEmailTemplate(
+                    warnings, "openshift", "ocm-service-logs", List.of("fatal-severity"),
+                    "OCMServiceLogs/fatalSeverityInstantEmailTitle", "txt", "OCM Service Logs fatal severity email title",
+                    "OCMServiceLogs/fatalSeverityInstantEmailBody", "html", "OCM Service Logs fatal severity email body"
+            );
+            createInstantEmailTemplate(
+                    warnings, "openshift", "ocm-service-logs", List.of("info-severity"),
+                    "OCMServiceLogs/infoSeverityInstantEmailTitle", "txt", "OCM Service Logs info severity email title",
+                    "OCMServiceLogs/infoSeverityInstantEmailBody", "html", "OCM Service Logs info severity email body"
+            );
+            createInstantEmailTemplate(
+                    warnings, "openshift", "ocm-service-logs", List.of("major-severity"),
+                    "OCMServiceLogs/majorSeverityInstantEmailTitle", "txt", "OCM Service Logs major severity email title",
+                    "OCMServiceLogs/majorSeverityInstantEmailBody", "html", "OCM Service Logs major severity email body"
+            );
+            createInstantEmailTemplate(
+                    warnings, "openshift", "ocm-service-logs", List.of("warning-severity"),
+                    "OCMServiceLogs/warningSeverityInstantEmailTitle", "txt", "OCM Service Logs warning severity email title",
+                    "OCMServiceLogs/warningSeverityInstantEmailBody", "html", "OCM Service Logs warning severity email body"
+            );
+
+            /*
              * Former src/main/resources/templates/Patch folder.
              */
             createInstantEmailTemplate(

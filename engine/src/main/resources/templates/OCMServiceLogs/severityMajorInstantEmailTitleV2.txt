@@ -1,0 +1,1 @@
+Instant notification - Major Severity - OCM Service Logs - OpenShift
