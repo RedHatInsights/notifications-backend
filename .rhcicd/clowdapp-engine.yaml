@@ -247,6 +247,14 @@ objects:
           value: ${NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED}
         - name: NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED
           value: ${NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED}
+      autoScaler:
+        minReplicaCount: 3
+        maxReplicaCount: 6
+        triggers:
+          - metadata:
+              query: sum(kafka_consumergroup_group_lag{topic="platform.notifications.ingress", group="integrations"})
+              threshold: "1000"
+            type: prometheus
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
