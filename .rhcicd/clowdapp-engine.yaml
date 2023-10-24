@@ -194,6 +194,14 @@ objects:
           value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
         - name: NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES
           value: ${NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES}
+      autoScaler:
+        minReplicaCount: 3
+        maxReplicaCount: 6
+        triggers:
+          - metadata:
+              query: sum(kafka_consumergroup_group_lag{topic=~".*platform.notifications.ingress", group="integrations"})
+              threshold: "1000"
+            type: prometheus
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
