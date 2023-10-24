@@ -43,6 +43,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.context.ManagedExecutor;
+import org.eclipse.microprofile.context.ThreadContext;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -114,6 +115,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     // This executor is used to run a task asynchronously using a worker thread from a threads pool managed by Quarkus.
     @Inject
     ManagedExecutor managedExecutor;
+
+    @Inject
+    ThreadContext threadContext;
 
     @Inject
     Instance<AsyncAggregation> asyncAggregations;
@@ -204,7 +208,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
              */
             AsyncAggregation asyncAggregation = asyncAggregations.get();
             asyncAggregation.setEvent(event);
-            managedExecutor.runAsync(asyncAggregation)
+            managedExecutor.runAsync(threadContext.contextualRunnable(asyncAggregation))
                     .thenRun(() -> {
                         /*
                          * When a @Dependent bean is injected into an @ApplicationScoped bean using Instance<T>,
