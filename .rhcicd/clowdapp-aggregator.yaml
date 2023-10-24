@@ -16,6 +16,10 @@ objects:
     - notifications-backend
     database:
       sharedDbAppName: notifications-backend
+    kafkaTopics:
+    - topicName: platform.notifications.ingress
+      partitions: 3
+      replicas: 3
     jobs:
     - name: cronjob
       schedule: ${CRONTAB_AGGREGATION_JOB}
