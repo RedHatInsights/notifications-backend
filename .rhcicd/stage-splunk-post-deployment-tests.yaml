@@ -7,7 +7,7 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdJobInvocation
   metadata:
-    name: notifications-splunk-iqe-tests-${IMAGE_TAG}-${UID}
+    name: notifications-connector-splunk-tests-${UID}
   spec:
     appName: notifications-connector-splunk
     testing:
