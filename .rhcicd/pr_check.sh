@@ -29,6 +29,8 @@ buildAndPushToQuay "notifications-recipients-resolver"
 # Deploy all images on ephemeral
 export APP_NAME="notifications"
 export COMPONENT_NAME="notifications-backend"
+# ClowdApp templates from stage will be used in ephemeral, meaning that breaking template changes don't have to be deployed in production to fix ephemeral deployments
+export REF_ENV="insights-stage"
 export IMAGE="quay.io/cloudservices/notifications-backend"
 export DEPLOY_TIMEOUT="1200"
 export EXTRA_DEPLOY_ARGS="--set-parameter notifications-engine/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-email/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-google-chat/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-microsoft-teams/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-servicenow/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-slack/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-splunk/IMAGE_TAG=${IMAGE_TAG} --set-parameter notifications-connector-webhook/IMAGE_TAG=${IMAGE_TAG} --no-remove-resources historical-system-profiles --no-remove-resources system-baseline"
