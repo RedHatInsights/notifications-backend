@@ -7,7 +7,7 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdJobInvocation
   metadata:
-    name: notifications-servicenow-iqe-tests-${IMAGE_TAG}-${UID}
+    name: notifications-connector-servicenow-tests-${UID}
   spec:
     appName: notifications-connector-servicenow
     testing:
