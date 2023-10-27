@@ -88,6 +88,10 @@ objects:
           value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY}
         - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
           value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS}
+        - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
+          value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
+        - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
+          value: ${NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE}
         - name: NOTIFICATIONS_CONNECTOR_SINGLE_EMAIL_PER_USER_ENABLED
           value: ${NOTIFICATIONS_CONNECTOR_SINGLE_EMAIL_PER_USER_ENABLED}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_API_TOKEN
@@ -219,6 +223,12 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
   description: Maximum number of redelivery attempts (initial call not included)
   value: "2"
+- name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
+  description: Number of concurrent threads processing exchanges with SEDA
+  value: "1"
+- name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
+  description: Maximum capacity of the SEDA queue
+  value: "1"
 - name: NOTIFICATIONS_CONNECTOR_SINGLE_EMAIL_PER_USER_ENABLED
   description: Is sending a single email per user enabled?
   value: "false"

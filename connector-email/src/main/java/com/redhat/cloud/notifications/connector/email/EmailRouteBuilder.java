@@ -152,7 +152,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          */
         this.configureCaffeineCache();
 
-        from(direct(ENGINE_TO_CONNECTOR))
+        from(seda(ENGINE_TO_CONNECTOR))
             .routeId(this.connectorConfig.getConnectorName())
             // Initialize the usernames hash set, where we will gather the
             // fetched users from the user providers.

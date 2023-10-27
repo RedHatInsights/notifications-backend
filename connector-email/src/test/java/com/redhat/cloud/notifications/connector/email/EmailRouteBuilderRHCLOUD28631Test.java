@@ -122,9 +122,10 @@ public class EmailRouteBuilderRHCLOUD28631Test extends CamelQuarkusTestSupport {
         successEndpoint.expectedMessageCount(1);
 
         // Send the exchange to the entry point of the email connector.
-        this.producerTemplate.send(String.format("direct:%s", EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR), exchange);
+        this.producerTemplate.send(String.format("seda:%s", EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR), exchange);
 
-        successEndpoint.assertIsSatisfied();
+        // We need a timeout here because SEDA processes the exchange from a different thread and a race condition may happen.
+        successEndpoint.assertIsSatisfied(2000L);
 
         // Get the exchanges that we sent to BOP. In theory, since we are
         // sending a single email for multiple users, we should only receive
