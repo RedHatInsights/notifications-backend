@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -17,18 +17,7 @@ public class EmailSubscriptionRepository {
     @Inject
     EntityManager entityManager;
 
-    public List<String> getEmailSubscribersUserId(String orgId, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
-        String query = "SELECT es.id.userId FROM EmailSubscription es WHERE id.orgId = :orgId AND application.bundle.name = :bundleName " +
-                "AND application.name = :applicationName AND id.subscriptionType = :subscriptionType";
-        return entityManager.createQuery(query, String.class)
-                .setParameter("orgId", orgId)
-                .setParameter("bundleName", bundleName)
-                .setParameter("applicationName", applicationName)
-                .setParameter("subscriptionType", subscriptionType)
-                .getResultList();
-    }
-
-    public List<String> getSubscribersByEventType(String orgId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
+    public List<String> getSubscribersByEventType(String orgId, UUID eventTypeId, SubscriptionType subscriptionType) {
         String hql = "SELECT id.userId FROM EventTypeEmailSubscription WHERE id.orgId = :orgId AND id.subscriptionType = :subscriptionType " +
                 "AND eventType.id = :eventTypeId";
         return entityManager.createQuery(hql, String.class)
@@ -38,7 +27,7 @@ public class EmailSubscriptionRepository {
                 .getResultList();
     }
 
-    public Map<String, Set<String>> getEmailSubscribersUserIdGroupedByEventType(String orgId, String bundleName, String applicationName, EmailSubscriptionType subscriptionType) {
+    public Map<String, Set<String>> getEmailSubscribersUserIdGroupedByEventType(String orgId, String bundleName, String applicationName, SubscriptionType subscriptionType) {
         String query = "SELECT eventType.name, es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
             "AND eventType.application.name = :applicationName AND id.subscriptionType = :subscriptionType";
 

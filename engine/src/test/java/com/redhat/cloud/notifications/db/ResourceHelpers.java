@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -13,6 +12,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -26,7 +26,7 @@ import java.security.SecureRandom;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -177,7 +177,7 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, EmailSubscriptionType subscriptionType) {
+    public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType) {
         EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
         eventTypeEmailSubscription.setId(
             new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)

@@ -2,11 +2,11 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
@@ -54,7 +54,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         // Get the set of user IDs that should receive an email notification for
         // the given event.
-        final List<String> subscribers = this.getSubscribers(event, EmailSubscriptionType.INSTANT);
+        final List<String> subscribers = this.getSubscribers(event, SubscriptionType.INSTANT);
 
         final Set<RecipientSettings> recipientSettings = this.extractAndTransformRecipientSettings(event, endpoints);
 

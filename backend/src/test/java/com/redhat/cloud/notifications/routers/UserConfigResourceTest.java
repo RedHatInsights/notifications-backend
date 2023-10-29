@@ -13,9 +13,9 @@ import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepositor
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
@@ -47,9 +47,9 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.createInstantEmailT
 import static com.redhat.cloud.notifications.CrudTestHelpers.createTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteInstantEmailTemplate;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DRAWER;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
+import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,11 +107,11 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return null;
     }
 
-    private Map<EmailSubscriptionType, Boolean> extractNotificationValues(List<SettingsValueByEventTypeJsonForm.EventType> eventTypes, String bundle, String application, String eventName) {
-        Map<EmailSubscriptionType, Boolean> result = new HashMap<>();
+    private Map<SubscriptionType, Boolean> extractNotificationValues(List<SettingsValueByEventTypeJsonForm.EventType> eventTypes, String bundle, String application, String eventName) {
+        Map<SubscriptionType, Boolean> result = new HashMap<>();
         for (SettingsValueByEventTypeJsonForm.EventType eventType : eventTypes) {
             for (SettingsValueByEventTypeJsonForm.Field field : eventType.fields) {
-                for (EmailSubscriptionType type : EmailSubscriptionType.values()) {
+                for (SubscriptionType type : SubscriptionType.values()) {
                     if (field.name != null && field.name.equals(String.format("bundles[%s].applications[%s].eventTypes[%s].emailSubscriptionTypes[%s]", bundle, application, eventName, type))) {
                         result.put(type, (Boolean) field.initialValue);
                     }
@@ -296,7 +296,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
         rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
-        Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, "not-found-bundle-2", "not-found-app-2", eventType);
+        Map<SubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, "not-found-bundle-2", "not-found-app-2", eventType);
         assertEquals(0, initialValues.size());
 
         // Does not add event type if is not supported by the templates
@@ -311,7 +311,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
         assertNotNull(rhelPolicy, "RHEL policies not found");
 
-        Map<EmailSubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
+        Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
 
         if (featureFlipper.isDrawerEnabled()) {
             assertEquals(2, notificationPreferenes.size());
@@ -349,7 +349,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(path, identityHeader);
         final SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
-        Map<EmailSubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
+        Map<SubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
 
         assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).eventTypes.get(eventType).emailSubscriptionTypes);
         final SettingsValueByEventTypeJsonForm.Application preferences = given()
@@ -361,7 +361,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .extract().body().as(SettingsValueByEventTypeJsonForm.Application.class);
 
         assertNotNull(preferences);
-        Map<EmailSubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
+        Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
         assertEquals(daily, notificationPreferenes.get(DAILY));
         assertEquals(instant, notificationPreferenes.get(INSTANT));
         if (featureFlipper.isDrawerEnabled()) {

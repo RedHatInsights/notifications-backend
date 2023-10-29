@@ -84,14 +84,14 @@ public class SettingsValueByEventTypeJsonForm {
             EventType formEventType = new EventType();
             formEventType.name = eventTypeName;
             formEventType.label = eventTypeSettingsValue.displayName;
-            eventTypeSettingsValue.emailSubscriptionTypes.forEach((emailSubscriptionType, isSubscribed) -> {
+            eventTypeSettingsValue.emailSubscriptionTypes.forEach((subscriptionType, isSubscribed) -> {
 
                 Field field = new Field();
-                field.name = String.format("bundles[%s].applications[%s].eventTypes[%s].emailSubscriptionTypes[%s]", bundleName, applicationName, eventTypeName, emailSubscriptionType.toString());
+                field.name = String.format("bundles[%s].applications[%s].eventTypes[%s].emailSubscriptionTypes[%s]", bundleName, applicationName, eventTypeName, subscriptionType.toString());
                 field.initialValue = isSubscribed;
                 field.validate = List.of();
                 field.component = COMPONENT_SUBSCRIPTION;
-                switch (emailSubscriptionType) {
+                switch (subscriptionType) {
                     case DAILY:
                         field.label = "Daily digest";
                         field.description =  "Daily summary of triggered application events in 24 hours span.";

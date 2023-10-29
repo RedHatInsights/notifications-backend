@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -49,7 +48,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor.AGGREGATION_COMMAND_REJECTED_COUNTER_NAME;
@@ -84,9 +83,6 @@ class EmailSubscriptionTypeProcessorTest {
 
     @InjectSpy
     EmailAggregationRepository emailAggregationRepository;
-
-    @InjectMock
-    EmailSubscriptionRepository emailSubscriptionRepository;
 
     @InjectMock
     RecipientResolver recipientResolver;
@@ -171,8 +167,6 @@ class EmailSubscriptionTypeProcessorTest {
         User user3 = new User();
         user3.setUsername("user3");
 
-        when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any()))
-            .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
         when(recipientResolver.recipientUsers(any(), anySet(), any()))
             .then(invocation -> {
                     Set<RecipientSettings> list = invocation.getArgument(1);
@@ -308,8 +302,6 @@ class EmailSubscriptionTypeProcessorTest {
             User user2 = new User();
             user2.setUsername("bar");
 
-            when(emailSubscriptionRepository.getEmailSubscribersUserId(any(), any(), any(), any()))
-                .thenReturn(List.of(user1.getUsername(), user2.getUsername()));
             when(recipientResolver.recipientUsers(any(), any(), any(), eq(true)))
                 .thenReturn(Set.of(user1, user2));
 

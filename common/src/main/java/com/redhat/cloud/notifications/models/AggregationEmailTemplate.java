@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.db.converters.EmailSubscriptionTypeConverter;
+import com.redhat.cloud.notifications.db.converters.SubscriptionTypeConverter;
 import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -44,8 +44,8 @@ public class AggregationEmailTemplate extends CreationUpdateTimestamped {
     private UUID applicationId;
 
     @NotNull
-    @Convert(converter = EmailSubscriptionTypeConverter.class)
-    private EmailSubscriptionType subscriptionType;
+    @Convert(converter = SubscriptionTypeConverter.class)
+    private SubscriptionType subscriptionType;
 
     @ManyToOne(fetch = LAZY, optional = false)
     @JoinColumn(name = "subject_template_id")
@@ -100,11 +100,11 @@ public class AggregationEmailTemplate extends CreationUpdateTimestamped {
         this.applicationId = applicationId;
     }
 
-    public EmailSubscriptionType getSubscriptionType() {
+    public SubscriptionType getSubscriptionType() {
         return subscriptionType;
     }
 
-    public void setSubscriptionType(EmailSubscriptionType subscriptionType) {
+    public void setSubscriptionType(SubscriptionType subscriptionType) {
         this.subscriptionType = subscriptionType;
     }
 

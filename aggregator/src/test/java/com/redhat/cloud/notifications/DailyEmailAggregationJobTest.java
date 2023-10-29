@@ -27,7 +27,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

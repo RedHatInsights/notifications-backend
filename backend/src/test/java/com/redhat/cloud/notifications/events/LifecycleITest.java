@@ -49,7 +49,7 @@ import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_2_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;

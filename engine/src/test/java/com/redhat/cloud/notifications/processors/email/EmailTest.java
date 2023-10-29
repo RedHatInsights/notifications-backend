@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;

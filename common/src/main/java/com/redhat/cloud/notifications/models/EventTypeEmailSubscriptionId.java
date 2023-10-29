@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
-import com.redhat.cloud.notifications.db.converters.EmailSubscriptionTypeConverter;
+import com.redhat.cloud.notifications.db.converters.SubscriptionTypeConverter;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;
@@ -26,8 +26,8 @@ public class EventTypeEmailSubscriptionId implements Serializable {
 
     @NotNull
     @Size(max = 50)
-    @Convert(converter = EmailSubscriptionTypeConverter.class)
-    public EmailSubscriptionType subscriptionType;
+    @Convert(converter = SubscriptionTypeConverter.class)
+    public SubscriptionType subscriptionType;
 
     @Override
     public boolean equals(Object o) {
@@ -44,7 +44,7 @@ public class EventTypeEmailSubscriptionId implements Serializable {
         return false;
     }
 
-    public EventTypeEmailSubscriptionId(String orgId, String userId, UUID eventTypeId, EmailSubscriptionType subscriptionType) {
+    public EventTypeEmailSubscriptionId(String orgId, String userId, UUID eventTypeId, SubscriptionType subscriptionType) {
         this.orgId = orgId;
         this.userId = userId;
         this.eventTypeId = eventTypeId;

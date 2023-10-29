@@ -2,9 +2,9 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class TemplateRepository {
 
-    private static final List<EmailSubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(EmailSubscriptionType.values())
-            .filter(emailSubscriptionType -> emailSubscriptionType != EmailSubscriptionType.INSTANT)
+    private static final List<SubscriptionType> NON_INSTANT_SUBSCRIPTION_TYPES = Arrays.stream(SubscriptionType.values())
+            .filter(subscriptionType -> subscriptionType != SubscriptionType.INSTANT)
             .collect(Collectors.toList());
 
     @Inject
@@ -66,7 +66,7 @@ public class TemplateRepository {
         }
     }
 
-    public Optional<AggregationEmailTemplate> findAggregationEmailTemplate(String bundleName, String appName, EmailSubscriptionType subscriptionType) {
+    public Optional<AggregationEmailTemplate> findAggregationEmailTemplate(String bundleName, String appName, SubscriptionType subscriptionType) {
         String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
                 "WHERE t.application.bundle.name = :bundleName AND t.application.name = :appName " +
                 "AND t.subscriptionType = :subscriptionType";
