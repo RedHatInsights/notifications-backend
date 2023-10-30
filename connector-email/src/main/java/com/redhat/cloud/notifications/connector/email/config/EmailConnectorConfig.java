@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +37,22 @@ public class EmailConnectorConfig extends ConnectorConfig {
     public static final String RBAC_DEVELOPMENT_AUTHENTICATION_KEY = "notifications.connector.user-provider.rbac.development-authentication-key";
     public static final String RBAC_PSKS = "notifications.connector.user-provider.rbac.psks";
     public static final String USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE = "notifications.connector.user-provider.cache.expire-after-write";
+    public static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_MAX_ATTEMPTS = "notifications.connector.recipients-resolver.retry.max-attempts";
+    public static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_INITIAL_BACKOFF = "notifications.connector.recipients-resolver.retry.initial-backoff";
+    public static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_MAX_BACKOFF = "notifications.connector.recipients-resolver.retry.max-backoff";
+    public static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED = "notifications.connector.recipients-resolver.module.enabled";
+
+    @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_MAX_ATTEMPTS, defaultValue = "3")
+    int maxRetryAttempts;
+
+    @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_INITIAL_BACKOFF, defaultValue = "0.1S")
+    Duration initialRetryBackoff;
+
+    @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_MAX_BACKOFF, defaultValue = "1S")
+    Duration maxRetryBackoff;
+
+    @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, defaultValue = "false")
+    boolean recipientsResolverModuleEnabled;
 
     @ConfigProperty(name = BOP_API_TOKEN)
     String bopApiToken;
@@ -120,6 +137,10 @@ public class EmailConnectorConfig extends ConnectorConfig {
         additionalEntries.put(SINGLE_EMAIL_PER_USER, this.singleEmailPerUserEnabled);
         additionalEntries.put(USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, this.userProviderCacheExpireAfterWrite);
         additionalEntries.put(SKIP_BOP_USERS_RESOLUTION, skipBopUsersResolution);
+        additionalEntries.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_MAX_ATTEMPTS, maxRetryAttempts);
+        additionalEntries.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_INITIAL_BACKOFF, initialRetryBackoff);
+        additionalEntries.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_RETRY_MAX_BACKOFF, maxRetryBackoff);
+        additionalEntries.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, recipientsResolverModuleEnabled);
 
         log(additionalEntries);
     }
@@ -231,5 +252,21 @@ public class EmailConnectorConfig extends ConnectorConfig {
 
     public void setSkipBopUsersResolution(boolean skipBopUsersResolution) {
         this.skipBopUsersResolution = skipBopUsersResolution;
+    }
+
+    public int getMaxRetryAttempts() {
+        return maxRetryAttempts;
+    }
+
+    public Duration getInitialRetryBackoff() {
+        return initialRetryBackoff;
+    }
+
+    public Duration getMaxRetryBackoff() {
+        return maxRetryBackoff;
+    }
+
+    public boolean isRecipientsResolverModuleEnabled() {
+        return recipientsResolverModuleEnabled;
     }
 }
