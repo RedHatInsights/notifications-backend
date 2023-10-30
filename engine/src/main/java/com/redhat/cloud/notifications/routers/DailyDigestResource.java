@@ -7,8 +7,8 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Environment;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
@@ -74,7 +74,7 @@ public class DailyDigestResource {
             emailAggregationKey,
             triggerDailyDigestRequest.getStart(),
             triggerDailyDigestRequest.getEnd(),
-            EmailSubscriptionType.DAILY
+            SubscriptionType.DAILY
         );
 
         sendIt(aggregationCommand);

@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -16,6 +15,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
@@ -272,7 +272,7 @@ public class EmailProcessorTest {
         // Do not return any subscribers for this test, so that the other
         // condition to remove the resulting recipient settings from the set
         // in the email processor is met.
-        Mockito.when(this.emailSubscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), EmailSubscriptionType.INSTANT)).thenReturn(List.of());
+        Mockito.when(this.emailSubscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(List.of());
 
         // Call the processor under test.
         this.emailProcessor.process(event, endpoints);
@@ -329,7 +329,7 @@ public class EmailProcessorTest {
         // Mock a list of subscribers that simulate the ones that should be
         // notified for the event.
         final List<String> subscribers = List.of("subscriber-a", "subscriber-b", "subscriber-c");
-        Mockito.when(this.emailSubscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), EmailSubscriptionType.INSTANT)).thenReturn(subscribers);
+        Mockito.when(this.emailSubscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(subscribers);
 
         // Mock the endpoint that should get pulled from the database using
         // the endpoint repository.

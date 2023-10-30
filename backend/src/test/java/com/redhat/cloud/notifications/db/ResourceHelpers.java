@@ -35,8 +35,8 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 

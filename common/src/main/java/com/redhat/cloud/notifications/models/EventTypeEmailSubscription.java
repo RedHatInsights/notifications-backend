@@ -45,11 +45,11 @@ public class EventTypeEmailSubscription {
         id.userId = userId;
     }
 
-    public EmailSubscriptionType getType() {
+    public SubscriptionType getType() {
         return id.subscriptionType;
     }
 
-    public void setType(EmailSubscriptionType type) {
+    public void setType(SubscriptionType type) {
         id.subscriptionType = type;
     }
 

@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Constants;
-import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
@@ -12,9 +11,9 @@ import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
@@ -27,20 +26,21 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.RestPath;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -76,11 +76,6 @@ public class UserConfigResource {
 
     }
 
-    private static String getUserName(SecurityContext sec) {
-        final String userName = ((RhIdPrincipal) sec.getUserPrincipal()).getName();
-        return userName;
-    }
-
     @POST
     @Path("/notification-event-type-preference")
     @Consumes(APPLICATION_JSON)
@@ -89,11 +84,11 @@ public class UserConfigResource {
     @Transactional
     public Response saveSettingsByEventType(@Context SecurityContext sec, @NotNull @Valid SettingsValuesByEventType userSettings) {
 
-        final String userName = getUserName(sec);
+        final String userName = getUsername(sec);
         final String orgId = getOrgId(sec);
 
         // If the instant emails are disabled, we need to check that the request
-        // does not contain any subscription with EmailSubscriptionType.INSTANT.
+        // does not contain any subscription with SubscriptionType.INSTANT.
         if (!featureFlipper.isInstantEmailsEnabled() && userSettings.bundles.values().stream()
                 .flatMap(bundleSettings -> bundleSettings.applications.values().stream())
                 .flatMap(appSettings -> appSettings.eventTypes.values().stream())
@@ -113,14 +108,14 @@ public class UserConfigResource {
                         Optional<EventType> eventType = eventTypeRepository.find(app.getId(), eventTypeName);
                         if (eventType.isPresent()) {
                             // for each email subscription
-                            eventTypeValue.emailSubscriptionTypes.forEach((emailSubscriptionType, subscribed) -> {
+                            eventTypeValue.emailSubscriptionTypes.forEach((subscriptionType, subscribed) -> {
                                 if (subscribed) {
                                     emailSubscriptionRepository.subscribeEventType(
-                                        orgId, userName, eventType.get().getId(), emailSubscriptionType
+                                        orgId, userName, eventType.get().getId(), subscriptionType
                                     );
                                 } else {
                                     emailSubscriptionRepository.unsubscribeEventType(
-                                        orgId, userName, eventType.get().getId(), emailSubscriptionType
+                                        orgId, userName, eventType.get().getId(), subscriptionType
                                     );
                                 }
                             });
@@ -138,14 +133,13 @@ public class UserConfigResource {
     @Tag(name = OApiFilter.PRIVATE)
     public Response getSettingsSchemaByEventType(@Context SecurityContext sec) {
 
-        final String name = getUserName(sec);
+        final String name = getUsername(sec);
         String orgId = getOrgId(sec);
 
         List<EventTypeEmailSubscription> emailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, name);
         SettingsValuesByEventType settingsValues = getSettingsValueForUserByEventType(emailSubscriptions, orgId);
         String jsonFormString = settingsValuesToJsonForm(settingsValues);
-        Response.ResponseBuilder builder;
-        builder = Response.ok(jsonFormString);
+        Response.ResponseBuilder builder = Response.ok(jsonFormString);
         EntityTag etag = new EntityTag(String.valueOf(jsonFormString.hashCode()));
         builder.header("ETag", etag);
         return builder.build();
@@ -156,20 +150,18 @@ public class UserConfigResource {
     @Produces(APPLICATION_JSON)
     @Tag(name = OApiFilter.PRIVATE)
     public Response getPreferencesByEventType(
-        @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName) {
+            @Context SecurityContext sec, @RestPath String bundleName, @RestPath String applicationName) {
 
-        final String name = getUserName(sec);
+        final String name = getUsername(sec);
         String orgId = getOrgId(sec);
 
         SettingsValuesByEventType settingsValues = getSettingsValueForUserByEventType(orgId, name, bundleName, applicationName);
         String jsonFormString = settingsValuesToJsonForm(settingsValues, bundleName, applicationName);
-        Response.ResponseBuilder builder;
-        builder = Response.ok(jsonFormString);
+        Response.ResponseBuilder builder = Response.ok(jsonFormString);
         EntityTag etag = new EntityTag(String.valueOf(jsonFormString.hashCode()));
         builder.header("ETag", etag);
         return builder.build();
     }
-
 
     private String settingsValuesToJsonForm(SettingsValuesByEventType settingsValues, String bundleName, String applicationName) {
         final SettingsValueByEventTypeJsonForm.Application settingsValueJsonForm = SettingsValueByEventTypeJsonForm.fromSettingsValueEventTypes(settingsValues, bundleName, applicationName);
@@ -219,22 +211,21 @@ public class UserConfigResource {
                 SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
                 eventTypeSettingsValue.displayName = eventType.getDisplayName();
                 eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
-                for (EmailSubscriptionType emailSubscriptionType : EmailSubscriptionType.values()) {
-                    if (featureFlipper.isInstantEmailsEnabled() || emailSubscriptionType != INSTANT) {
-                        // TODO NOTIF-450 How do we deal with a failure here? What kind of response should be sent to the UI when the engine is down?
-                        boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), emailSubscriptionType);
+                for (SubscriptionType subscriptionType : SubscriptionType.values()) {
+                    if (featureFlipper.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
+                        boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), subscriptionType);
                         if (supported) {
-                            eventTypeSettingsValue.emailSubscriptionTypes.put(emailSubscriptionType, emailSubscriptionType.isOptOut());
+                            eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscriptionType.isSubscribedByDefault());
                         }
                     }
                 }
-                if (eventTypeSettingsValue.emailSubscriptionTypes.size() > 0) {
+                if (!eventTypeSettingsValue.emailSubscriptionTypes.isEmpty()) {
                     applicationSettingsValue.eventTypes.put(eventType.getName(), eventTypeSettingsValue);
                 }
             }
         }
 
-        if (applicationSettingsValue.eventTypes.size() > 0) {
+        if (!applicationSettingsValue.eventTypes.isEmpty()) {
             settingsValues.bundles.computeIfAbsent(bundle.getName(), unused -> {
                 SettingsValuesByEventType.BundleSettingsValue bundleSettingsValue = new SettingsValuesByEventType.BundleSettingsValue();
                 bundleSettingsValue.displayName = bundle.getDisplayName();

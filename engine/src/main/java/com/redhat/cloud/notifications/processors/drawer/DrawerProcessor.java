@@ -11,13 +11,13 @@ import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.DrawerEntry;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.DrawerNotification;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
@@ -107,7 +107,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         if (featureFlipper.isDrawerConnectorEnabled()) {
             DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
 
-            final Set<String> subscribers = Set.copyOf(getSubscribers(event, EmailSubscriptionType.DRAWER));
+            final Set<String> subscribers = Set.copyOf(getSubscribers(event, SubscriptionType.DRAWER));
             final Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, endpoints);
 
             // Prepare all the data to be sent to the connector.
@@ -120,7 +120,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
             connectorSender.send(event, endpoint, JsonObject.mapFrom(drawerNotificationToConnector));
         } else {
-            Set<User> userList = getRecipientList(event, endpoints, EmailSubscriptionType.DRAWER);
+            Set<User> userList = getRecipientList(event, endpoints, SubscriptionType.DRAWER);
             if (null == userList || userList.isEmpty()) {
                 return;
             }

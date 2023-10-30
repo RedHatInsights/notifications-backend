@@ -3,9 +3,9 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -314,7 +314,7 @@ public class TemplateRepository {
         return template;
     }
 
-    public boolean isEmailSubscriptionSupported(String bundleName, String appName, EmailSubscriptionType subscriptionType) {
+    public boolean isEmailSubscriptionSupported(String bundleName, String appName, SubscriptionType subscriptionType) {
         switch (subscriptionType) {
             case INSTANT:
                 if (featureFlipper.isUseDefaultTemplate()) {
@@ -336,7 +336,7 @@ public class TemplateRepository {
         }
     }
 
-    private boolean isEmailAggregationSupported(String bundleName, String appName, List<EmailSubscriptionType> subscriptionTypes) {
+    private boolean isEmailAggregationSupported(String bundleName, String appName, List<SubscriptionType> subscriptionTypes) {
         String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.bundle.name = :bundleName " +
             "AND application.name = :appName AND subscriptionType IN (:subscriptionTypes)";
         return entityManager.createQuery(hql, Long.class)

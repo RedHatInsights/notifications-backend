@@ -6,8 +6,8 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
@@ -51,9 +51,9 @@ public class EmailAggregator {
     @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
     int maxPageSize;
 
-    private Map<String, Set<String>> getEmailSubscribersGroupedByEventType(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType) {
+    private Map<String, Set<String>> getEmailSubscribersGroupedByEventType(EmailAggregationKey aggregationKey, SubscriptionType subscriptionType) {
         return emailSubscriptionRepository
-            .getEmailSubscribersUserIdGroupedByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), emailSubscriptionType);
+            .getEmailSubscribersUserIdGroupedByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), subscriptionType);
     }
 
     private Set<String> getSubscribers(String eventType, Map<String, Set<String>> subscribersByEventType) {
@@ -64,10 +64,10 @@ public class EmailAggregator {
         }
     }
 
-    public Map<User, Map<String, Object>> getAggregated(EmailAggregationKey aggregationKey, EmailSubscriptionType emailSubscriptionType, LocalDateTime start, LocalDateTime end) {
+    public Map<User, Map<String, Object>> getAggregated(EmailAggregationKey aggregationKey, SubscriptionType subscriptionType, LocalDateTime start, LocalDateTime end) {
 
         Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
-        Map<String, Set<String>> subscribersByEventType = getEmailSubscribersGroupedByEventType(aggregationKey, emailSubscriptionType);
+        Map<String, Set<String>> subscribersByEventType = getEmailSubscribersGroupedByEventType(aggregationKey, subscriptionType);
 
         int offset = 0;
         int totalAggregatedElements = 0;

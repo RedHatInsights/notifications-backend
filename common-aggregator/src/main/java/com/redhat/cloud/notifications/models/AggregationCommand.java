@@ -16,9 +16,9 @@ public class AggregationCommand {
     private final LocalDateTime end;
 
     @NotNull
-    private final EmailSubscriptionType subscriptionType;
+    private final SubscriptionType subscriptionType;
 
-    public AggregationCommand(EmailAggregationKey aggregationKey, LocalDateTime start, LocalDateTime end, EmailSubscriptionType subscriptionType) {
+    public AggregationCommand(EmailAggregationKey aggregationKey, LocalDateTime start, LocalDateTime end, SubscriptionType subscriptionType) {
         this.aggregationKey = aggregationKey;
         this.start = start;
         this.end = end;
@@ -37,7 +37,7 @@ public class AggregationCommand {
         return end;
     }
 
-    public EmailSubscriptionType getSubscriptionType() {
+    public SubscriptionType getSubscriptionType() {
         return subscriptionType;
     }
 

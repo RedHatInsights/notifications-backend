@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +31,7 @@ public class SettingsValuesByEventType {
     public static class EventTypeSettingsValue {
         @JsonIgnore
         public String displayName;
-        public Map<EmailSubscriptionType, Boolean> emailSubscriptionTypes = new HashMap<>();
+        public Map<SubscriptionType, Boolean> emailSubscriptionTypes = new HashMap<>();
         public boolean hasForcedEmail;
     }
 

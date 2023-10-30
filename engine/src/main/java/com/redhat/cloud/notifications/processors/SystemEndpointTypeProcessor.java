@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.processors;
 
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
@@ -25,14 +25,14 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
     @Inject
     RecipientResolver recipientResolver;
 
-    protected Set<User> getRecipientList(Event event, List<Endpoint> endpoints, EmailSubscriptionType emailSubscriptionType) {
+    protected Set<User> getRecipientList(Event event, List<Endpoint> endpoints, SubscriptionType subscriptionType) {
         EventType eventType = event.getEventType();
 
         final Set<RecipientSettings> requests = extractRecipientSettings(event, endpoints);
 
         Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
-                    .getSubscribersByEventType(event.getOrgId(), eventType.getId(), emailSubscriptionType));
-        return recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers, emailSubscriptionType.isOptIn());
+                    .getSubscribersByEventType(event.getOrgId(), eventType.getId(), subscriptionType));
+        return recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers, !subscriptionType.isSubscribedByDefault());
     }
 
     /**
@@ -72,7 +72,7 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
      * @param event the event the users are subscribed to.
      * @return a list of {@link java.util.UUID}s in the {@link String} shape.
      */
-    protected List<String> getSubscribers(final Event event, final EmailSubscriptionType subscriptionType) {
+    protected List<String> getSubscribers(final Event event, final SubscriptionType subscriptionType) {
         final EventType eventType = event.getEventType();
 
         return this.emailSubscriptionRepository.getSubscribersByEventType(

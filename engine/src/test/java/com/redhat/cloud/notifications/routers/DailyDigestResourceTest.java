@@ -6,8 +6,8 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Environment;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.quarkus.test.InjectMock;
@@ -137,7 +137,7 @@ public class DailyDigestResourceTest {
 
         Assertions.assertEquals(start, aggregationCommand.getStart(), "unexpected start timestamp coming from the Kafka aggregation command");
         Assertions.assertEquals(end, aggregationCommand.getEnd(), "unexpected end timestamp coming from the Kafka aggregation command");
-        Assertions.assertEquals(EmailSubscriptionType.DAILY, aggregationCommand.getSubscriptionType(), "unexpected subscription type coming from the Kafka aggregation command");
+        Assertions.assertEquals(SubscriptionType.DAILY, aggregationCommand.getSubscriptionType(), "unexpected subscription type coming from the Kafka aggregation command");
 
         final EmailAggregationKey emailAggregationKey = aggregationCommand.getAggregationKey();
 

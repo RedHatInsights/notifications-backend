@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
-import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
@@ -18,9 +17,10 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.models.EmailSubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class UserPreferencesForPolicy {
@@ -48,15 +48,14 @@ public class UserPreferencesForPolicy {
             throw new ForbiddenException(String.format("This api can't be used for bundle '%s' and application '%s'", bundleName, applicationName));
         }
 
-        final RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-        final String name = principal.getName();
+        final String username = getUsername(sec);
         String orgId = getOrgId(sec);
 
         final UserConfigPreferences preferences = new UserConfigPreferences();
         preferences.setDailyEmail(false);
         preferences.setInstantEmail(false);
 
-        List<EventTypeEmailSubscription> subscriptionTypes = emailSubscriptionRepository.getEmailSubscriptionByEventType(orgId, name, bundleName, applicationName);
+        List<EventTypeEmailSubscription> subscriptionTypes = emailSubscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName);
         if (subscriptionTypes != null && !subscriptionTypes.isEmpty()) {
             for (EventTypeEmailSubscription subscribedEvent : subscriptionTypes) {
                 if (DAILY == subscribedEvent.getType()) {

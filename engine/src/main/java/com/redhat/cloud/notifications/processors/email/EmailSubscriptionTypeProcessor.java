@@ -16,7 +16,6 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import com.redhat.cloud.notifications.models.EmailSubscriptionType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -24,6 +23,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
@@ -187,7 +187,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
-        Set<User> userList = getRecipientList(event, endpoints.stream().toList(), EmailSubscriptionType.INSTANT);
+        Set<User> userList = getRecipientList(event, endpoints.stream().toList(), SubscriptionType.INSTANT);
         if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
             emailSender.sendEmail(userList, event, subject, body, true, endpoint);
         } else {
@@ -377,7 +377,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
 
         // Delete on daily
-        if (aggregationCommand.getSubscriptionType().equals(EmailSubscriptionType.DAILY)) {
+        if (aggregationCommand.getSubscriptionType().equals(SubscriptionType.DAILY)) {
             emailAggregationRepository.purgeOldAggregation(aggregationKey, aggregationCommand.getEnd());
         }
 
