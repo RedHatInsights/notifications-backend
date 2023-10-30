@@ -12,6 +12,8 @@ objects:
     envName: ${ENV_NAME}
     testing:
       iqePlugin: notifications
+    optionalDependencies:
+    - notifications-backend
     kafkaTopics:
     - topicName: platform.notifications.tocamel
       partitions: 3
