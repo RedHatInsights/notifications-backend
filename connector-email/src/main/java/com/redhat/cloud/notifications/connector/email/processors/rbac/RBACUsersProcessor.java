@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.email.processors.rbac;
 
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
+import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -10,11 +11,13 @@ import org.apache.camel.Processor;
 
 import java.util.Set;
 
+import static java.lang.Boolean.TRUE;
+
 @ApplicationScoped
 public class RBACUsersProcessor implements Processor {
     /**
      * Processes the incoming payload from the RBAC service into a filtered
-     * set of usernames. In the case that the users are part of an RBAC group
+     * set of users. In the case that the users are part of an RBAC group
      * it is looked if only admins are allowed and if the user is active before
      * adding it to the set.
      * @param exchange the exchange of the pipeline.
@@ -27,9 +30,9 @@ public class RBACUsersProcessor implements Processor {
         // Extract the data we need to process.
         final JsonArray data = responseBodyJson.getJsonArray("data");
 
-        // Get the list of usernames we will fill with the extracted usernames
+        // Get the list of users we will fill with the extracted users
         // from RBAC's response.
-        final Set<String> usernames = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
+        final Set<User> users = exchange.getProperty(ExchangeProperty.USERS, Set.class);
 
         // In case we are processing the RBAC users from the "get principals
         // from an RBAC group" call, we need to perform a few more checks
@@ -53,7 +56,7 @@ public class RBACUsersProcessor implements Processor {
                 }
             }
 
-            usernames.add(rbacUser.getString("username"));
+            users.add(toUser(rbacUser));
         }
 
         // Store the number of elements that were returned from the page, so
@@ -67,5 +70,13 @@ public class RBACUsersProcessor implements Processor {
             final int offset = (int) exchange.getProperty(ExchangeProperty.OFFSET);
             exchange.setProperty(ExchangeProperty.OFFSET, offset + limit);
         }
+    }
+
+    private static User toUser(JsonObject rbacUser) {
+        User user = new User();
+        user.setUsername(rbacUser.getString("username"));
+        user.setEmail(rbacUser.getString("email"));
+        user.setAdmin(TRUE.equals(rbacUser.getBoolean("is_org_admin")));
+        return user;
     }
 }

@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.connector.email;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
+import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import com.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+
+import static com.redhat.cloud.notifications.connector.email.TestUtils.createUsers;
 
 @QuarkusTest
 @TestProfile(EmailRouteBuilderTest.class)
@@ -60,10 +63,10 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             a.mockEndpointsAndSkip(String.format("direct:%s", Routes.SEND_EMAIL_BOP));
         });
 
-        final Set<String> usernames = Set.of("a", "b", "c", "d", "e");
+        final Set<User> users = createUsers("a", "b", "c", "d", "e");
 
         final Exchange exchange = this.createExchangeWithBody("");
-        exchange.setProperty(ExchangeProperty.FILTERED_USERNAMES, usernames);
+        exchange.setProperty(ExchangeProperty.FILTERED_USERS, users);
 
         final MockEndpoint sendEmailBopEndpoint = this.getMockEndpoint(String.format("mock:direct:%s", Routes.SEND_EMAIL_BOP), false);
         sendEmailBopEndpoint.expectedMessageCount(5);

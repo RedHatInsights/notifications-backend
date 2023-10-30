@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.email.processors.recipients;
 
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
+import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -10,9 +11,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+
+import static com.redhat.cloud.notifications.connector.email.TestUtils.createUsers;
 
 @QuarkusTest
 public class RecipientsFilterTest extends CamelQuarkusTestSupport {
@@ -31,13 +33,7 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
     void testRecipientSettingsUsersKept() {
         final Set<String> recipientUsers = Set.of("a", "c", "e");
         final Set<String> subscribers = Set.of("b");
-        // The set needs to be defined this way in order for it to be modified.
-        final Set<String> usernames = new HashSet<>();
-        usernames.add("a");
-        usernames.add("b");
-        usernames.add("c");
-        usernames.add("d");
-        usernames.add("e");
+        final Set<User> users = createUsers("a", "b", "c", "d", "e");
 
         final RecipientSettings recipientSettings = new RecipientSettings(
             true,
@@ -52,21 +48,16 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
         final Exchange exchange = this.createExchangeWithBody("");
         exchange.setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, recipientSettings);
         exchange.setProperty(ExchangeProperty.SUBSCRIBERS, subscribers);
-        exchange.setProperty(ExchangeProperty.USERNAMES, usernames);
+        exchange.setProperty(ExchangeProperty.USERS, users);
 
         // Call the processor under test.
         this.recipientsFilter.process(exchange);
 
-        // Assert that the list contains the expected elements. The
-        // "expectedResult" set is manually created because "Set.of" doesn't
-        // respect the order of the specified elements.
-        final Set<String> expectedResult = new HashSet<>();
-        expectedResult.add("a");
-        expectedResult.add("c");
-        expectedResult.add("e");
-        final Set<String> result = exchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
+        // Assert that the list contains the expected elements.
+        final Set<User> expectedResult = createUsers("a", "c", "e");
+        final Set<User> result = exchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
 
-        assertUsernameCollectionsEqualsIgnoreOrder(expectedResult, result);
+        Assertions.assertEquals(expectedResult, result);
     }
 
     /**
@@ -76,8 +67,7 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
     @Test
     void testIgnoreUserPreferences() {
         final Set<String> subscribers = Set.of("b");
-        // The set needs to be defined this way in order for it to be modified.
-        final Set<String> usernames = Set.of("a", "b", "c", "d", "e");
+        final Set<User> users = createUsers("a", "b", "c", "d", "e");
 
         final RecipientSettings recipientSettings = new RecipientSettings(
             true,
@@ -92,15 +82,15 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
         final Exchange exchange = this.createExchangeWithBody("");
         exchange.setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, recipientSettings);
         exchange.setProperty(ExchangeProperty.SUBSCRIBERS, subscribers);
-        exchange.setProperty(ExchangeProperty.USERNAMES, usernames);
+        exchange.setProperty(ExchangeProperty.USERS, users);
 
         // Call the processor under test.
         this.recipientsFilter.process(exchange);
 
         // Assert that the list contains the expected elements.
-        final Set<String> result = exchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
+        final Set<User> result = exchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
 
-        assertUsernameCollectionsEqualsIgnoreOrder(usernames, result);
+        Assertions.assertEquals(users, result);
     }
 
     /**
@@ -110,13 +100,7 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
     @Test
     void testFilterUnsubscribedUsernames() {
         final Set<String> subscribers = Set.of("b", "c", "e");
-        // The set needs to be defined this way in order for it to be modified.
-        final Set<String> usernames = new HashSet<>();
-        usernames.add("a");
-        usernames.add("b");
-        usernames.add("c");
-        usernames.add("d");
-        usernames.add("e");
+        final Set<User> users = createUsers("a", "b", "c", "d", "e");
 
         final RecipientSettings recipientSettings = new RecipientSettings(
             true,
@@ -132,7 +116,7 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
         final Exchange exchange = this.createExchangeWithBody("");
         exchange.setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, recipientSettings);
         exchange.setProperty(ExchangeProperty.SUBSCRIBERS, subscribers);
-        exchange.setProperty(ExchangeProperty.USERNAMES, usernames);
+        exchange.setProperty(ExchangeProperty.USERS, users);
 
         // Call the processor under test.
         this.recipientsFilter.process(exchange);
@@ -140,13 +124,10 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
         // Assert that the list contains the expected elements. The
         // "expectedResult" set is manually created because "Set.of" doesn't
         // respect the order of the specified elements.
-        final Set<String> expectedResult = new HashSet<>();
-        expectedResult.add("b");
-        expectedResult.add("c");
-        expectedResult.add("e");
-        final Set<String> result = exchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
+        final Set<User> expectedResult = createUsers("b", "c", "e");
+        final Set<User> result = exchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
 
-        assertUsernameCollectionsEqualsIgnoreOrder(expectedResult, result);
+        Assertions.assertEquals(expectedResult, result);
     }
 
     /**

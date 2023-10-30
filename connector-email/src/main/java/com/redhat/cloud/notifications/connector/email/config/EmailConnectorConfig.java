@@ -27,6 +27,7 @@ public class EmailConnectorConfig extends ConnectorConfig {
     private static final String RBAC_APPLICATION_KEY = "notifications.connector.user-provider.rbac.application-key";
     private static final String RBAC_ELEMENTS_PAGE = "notifications.connector.user-provider.rbac.elements-per-page";
     private static final String RBAC_URL = "notifications.connector.user-provider.rbac.url";
+    private static final String SKIP_BOP_USERS_RESOLUTION = "notifications.connector.bop.skip-users-resolution";
     @Deprecated(forRemoval = true)
     public static final String SINGLE_EMAIL_PER_USER = "notifications.connector.single-email-per-user.enabled";
 
@@ -97,6 +98,9 @@ public class EmailConnectorConfig extends ConnectorConfig {
     @ConfigProperty(name = USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, defaultValue = "600")
     int userProviderCacheExpireAfterWrite;
 
+    @ConfigProperty(name = SKIP_BOP_USERS_RESOLUTION, defaultValue = "false")
+    boolean skipBopUsersResolution;
+
     @Override
     public void log() {
         final Map<String, Object> additionalEntries = new HashMap<>();
@@ -115,6 +119,7 @@ public class EmailConnectorConfig extends ConnectorConfig {
         additionalEntries.put(RBAC_URL, this.rbacURL);
         additionalEntries.put(SINGLE_EMAIL_PER_USER, this.singleEmailPerUserEnabled);
         additionalEntries.put(USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, this.userProviderCacheExpireAfterWrite);
+        additionalEntries.put(SKIP_BOP_USERS_RESOLUTION, skipBopUsersResolution);
 
         log(additionalEntries);
     }
@@ -218,5 +223,13 @@ public class EmailConnectorConfig extends ConnectorConfig {
 
     public int getUserProviderCacheExpireAfterWrite() {
         return userProviderCacheExpireAfterWrite;
+    }
+
+    public boolean isSkipBopUsersResolution() {
+        return skipBopUsersResolution;
+    }
+
+    public void setSkipBopUsersResolution(boolean skipBopUsersResolution) {
+        this.skipBopUsersResolution = skipBopUsersResolution;
     }
 }

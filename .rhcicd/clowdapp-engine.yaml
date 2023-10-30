@@ -150,6 +150,8 @@ objects:
               key: client-id
         - name: PROCESSOR_EMAIL_BOP_ENV
           value: ${BACKOFFICE_CLIENT_ENV}
+        - name: PROCESSOR_EMAIL_BOP_SKIP_USERS_RESOLUTION
+          value: ${PROCESSOR_EMAIL_BOP_SKIP_USERS_RESOLUTION}
         - name: PROCESSOR_EMAIL_BOP_URL
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}:${BACKOFFICE_PORT}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
@@ -330,6 +332,9 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
+- name: PROCESSOR_EMAIL_BOP_SKIP_USERS_RESOLUTION
+  description: Should BOP skip transforming usernames from our payload into email addresses using the IT Users Service?
+  value: "false"
 - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
   value: "false"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT

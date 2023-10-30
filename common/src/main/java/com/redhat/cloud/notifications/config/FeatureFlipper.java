@@ -98,6 +98,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.async-aggregation.enabled", defaultValue = "true")
     boolean asyncAggregation;
 
+    @ConfigProperty(name = "processor.email.bop.skip-users-resolution", defaultValue = "false")
+    boolean skipBopUsersResolution;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -120,6 +123,7 @@ public class FeatureFlipper {
         Log.infof("The email connector is %s", emailConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The drawer connector is %s", drawerConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The async aggregation is %s", asyncAggregation ? "enabled" : "disabled");
+        Log.infof("The BOP users resolution is %s", !skipBopUsersResolution ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -296,6 +300,15 @@ public class FeatureFlipper {
     public void setAsyncAggregation(boolean asyncAggregation) {
         checkTestLaunchMode();
         this.asyncAggregation = asyncAggregation;
+    }
+
+    public boolean isSkipBopUsersResolution() {
+        return skipBopUsersResolution;
+    }
+
+    public void setSkipBopUsersResolution(boolean skipBopUsersResolution) {
+        checkTestLaunchMode();
+        this.skipBopUsersResolution = skipBopUsersResolution;
     }
 
     /**

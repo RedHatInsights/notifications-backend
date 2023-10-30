@@ -12,10 +12,10 @@ public class ExchangeProperty {
      */
     public static final String ELEMENTS_COUNT = "elements_count";
     /**
-     * Holds the filtered usernames. It is used in order to avoid the set of
-     * cached usernames from being modified.
+     * Holds the filtered users. It is used in order to avoid the set of
+     * cached users from being modified.
      */
-    public static final String FILTERED_USERNAMES = "usernames_filtered";
+    public static final String FILTERED_USERS = "users_filtered";
     /**
      * Used to hold the received RBAC group's UUID.
      */
@@ -52,8 +52,7 @@ public class ExchangeProperty {
     public static final String RENDERED_SUBJECT = "rendered_subject";
     /**
      * Represents the curated set of recipients that will end up receiving the
-     * notification through email. Since only usernames are required in order
-     * to send the emails, we will only grab those.
+     * notification through email.
      */
-    public static final String USERNAMES = "usernames";
+    public static final String USERS = "users";
 }

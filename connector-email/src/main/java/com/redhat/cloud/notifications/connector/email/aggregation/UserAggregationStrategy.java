@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.aggregation;
 
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
+import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.AggregationStrategy;
 import org.apache.camel.Exchange;
@@ -24,8 +25,8 @@ public class UserAggregationStrategy implements AggregationStrategy {
             return newExchange;
         }
 
-        final Set<String> oldFilteredUsers = oldExchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
-        final Set<String> newFilteredUsers = newExchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, Set.class);
+        final Set<User> oldFilteredUsers = oldExchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
+        final Set<User> newFilteredUsers = newExchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
 
         if (newFilteredUsers != null) {
             oldFilteredUsers.addAll(newFilteredUsers);

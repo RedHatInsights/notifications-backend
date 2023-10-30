@@ -188,13 +188,23 @@ public class EmailSender {
             );
             throw e;
         }
-        Emails emails = new Emails();
-        emails.addEmail(buildEmail(
-            users,
-            renderedSubject,
-            renderedBody
-        ));
-        return JsonObject.mapFrom(emails);
+        if (featureFlipper.isSkipBopUsersResolution()) {
+            SendEmailsRequest request = new SendEmailsRequest();
+            request.addEmail(buildEmail(
+                    users,
+                    renderedSubject,
+                    renderedBody
+            ));
+            return JsonObject.mapFrom(request);
+        } else {
+            Emails emails = new Emails();
+            emails.addEmail(buildEmail(
+                    users,
+                    renderedSubject,
+                    renderedBody
+            ));
+            return JsonObject.mapFrom(emails);
+        }
     }
 
     @Deprecated(forRemoval = true)
@@ -212,13 +222,23 @@ public class EmailSender {
             );
             throw e;
         }
-        Emails emails = new Emails();
-        emails.addEmail(buildEmail(
-                user.getUsername(),
-                renderedSubject,
-                renderedBody
-        ));
-        return JsonObject.mapFrom(emails);
+        if (featureFlipper.isSkipBopUsersResolution()) {
+            SendEmailsRequest request = new SendEmailsRequest();
+            request.addEmail(buildEmail(
+                    user.getEmail(),
+                    renderedSubject,
+                    renderedBody
+            ));
+            return JsonObject.mapFrom(request);
+        } else {
+            Emails emails = new Emails();
+            emails.addEmail(buildEmail(
+                    user.getUsername(),
+                    renderedSubject,
+                    renderedBody
+            ));
+            return JsonObject.mapFrom(emails);
+        }
     }
 
     protected HttpRequest<Buffer> buildBOPHttpRequest() {
@@ -240,7 +260,13 @@ public class EmailSender {
     }
 
     protected Email buildEmail(Set<User> recipients, String subject, String body) {
-        Set<String> usersEmail = recipients.stream().map(User::getUsername).collect(Collectors.toSet());
+        Set<String> usersEmail;
+        if (featureFlipper.isSkipBopUsersResolution()) {
+            usersEmail = recipients.stream().map(User::getEmail).collect(Collectors.toSet());
+        } else {
+            usersEmail = recipients.stream().map(User::getUsername).collect(Collectors.toSet());
+        }
+
         Email email = new Email();
         email.setBodyType(BODY_TYPE_HTML);
         if (featureFlipper.isAddDefaultRecipientOnSingleEmail()) {
