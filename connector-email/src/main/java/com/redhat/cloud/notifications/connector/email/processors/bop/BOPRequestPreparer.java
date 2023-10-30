@@ -46,13 +46,11 @@ public class BOPRequestPreparer implements Processor {
             }
         } else {
             final Set<User> users = exchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
-            recipients = users.stream().map(user -> {
-                if (emailConnectorConfig.isSkipBopUsersResolution()) {
-                    return user.getEmail();
-                } else {
-                    return user.getUsername();
-                }
-            }).collect(toSet());
+            if (emailConnectorConfig.isSkipBopUsersResolution()) {
+                recipients = users.stream().map(User::getEmail).collect(toSet());
+            } else {
+                recipients = users.stream().map(User::getUsername).collect(toSet());
+            }
         }
 
         final Email email = new Email(
