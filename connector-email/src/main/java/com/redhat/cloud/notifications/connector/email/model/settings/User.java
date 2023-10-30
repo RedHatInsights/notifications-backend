@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.recipients.model;
+package com.redhat.cloud.notifications.connector.email.model.settings;
 
 import java.util.Objects;
 

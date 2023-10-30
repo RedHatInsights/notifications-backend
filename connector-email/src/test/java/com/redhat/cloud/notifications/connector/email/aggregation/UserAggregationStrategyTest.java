@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.aggregation;
 
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
-import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsFilterTest;
+import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -10,8 +10,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
+import static com.redhat.cloud.notifications.connector.email.TestUtils.createUsers;
 
 @QuarkusTest
 public class UserAggregationStrategyTest extends CamelQuarkusTestSupport {
@@ -25,21 +26,15 @@ public class UserAggregationStrategyTest extends CamelQuarkusTestSupport {
     void testAggregation() {
         // Prepare the list of users to simulate an incoming exchange with a
         // few first ones.
-        final Set<String> users = new HashSet<>();
-        users.add("foo");
-        users.add("bar");
-        users.add("baz");
+        final Set<User> users = createUsers("foo", "bar", "baz");
 
         // Prepare the list of users to simulate a second incoming exchange
         // with more users.
-        final Set<String> users2 = new HashSet<>();
-        users2.add("johndoe");
-        users2.add("janedoe");
-        users2.add("jimmydoe");
+        final Set<User> users2 = createUsers("johndoe", "janedoe", "jimmydoe");
 
         // Prepare the list of users that we are expecting to find at the end
         // of the test.
-        final Set<String> finalExpectedUsers = new HashSet<>();
+        final Set<User> finalExpectedUsers = new HashSet<>();
         finalExpectedUsers.addAll(users);
         finalExpectedUsers.addAll(users2);
 
@@ -52,7 +47,7 @@ public class UserAggregationStrategyTest extends CamelQuarkusTestSupport {
 
         // Prepare an old exchange to simulate the aggregation process.
         final Exchange oldExchange = this.createExchangeWithBody("");
-        oldExchange.setProperty(ExchangeProperty.FILTERED_USERNAMES, users);
+        oldExchange.setProperty(ExchangeProperty.FILTERED_USERS, users);
 
         // Call the aggregator under test.
         final Exchange resultExchangeTwo = this.userAggregationStrategy.aggregate(oldExchange, newExchange);
@@ -60,20 +55,20 @@ public class UserAggregationStrategyTest extends CamelQuarkusTestSupport {
 
         // Check that since the new exchange didn't have any new users, the old
         // exchange should contain the original ones.
-        final List<String> resultUsers = resultExchangeTwo.getProperty(ExchangeProperty.FILTERED_USERNAMES, List.class);
-        RecipientsFilterTest.assertUsernameCollectionsEqualsIgnoreOrder(users, resultUsers);
+        final Set<User> resultUsers = resultExchangeTwo.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
+        Assertions.assertEquals(users, resultUsers);
 
         // Prepare a new exchange with a new list of users
 
         final Exchange yetAnotherExchange = this.createExchangeWithBody("");
-        yetAnotherExchange.setProperty(ExchangeProperty.FILTERED_USERNAMES, users2);
+        yetAnotherExchange.setProperty(ExchangeProperty.FILTERED_USERS, users2);
 
         // Call the exchange under test.
         final Exchange finalExchange = this.userAggregationStrategy.aggregate(oldExchange, yetAnotherExchange);
         Assertions.assertEquals(oldExchange, finalExchange, "on following split iterations, the old exchange should be returned along with the aggregated users");
 
         // Assert that the old exchange contains all the aggregated users.
-        final List<String> finalUsersList = finalExchange.getProperty(ExchangeProperty.FILTERED_USERNAMES, List.class);
-        RecipientsFilterTest.assertUsernameCollectionsEqualsIgnoreOrder(finalExpectedUsers, finalUsersList);
+        final Set<User> finalUsersList = finalExchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
+        Assertions.assertEquals(finalExpectedUsers, finalUsersList);
     }
 }

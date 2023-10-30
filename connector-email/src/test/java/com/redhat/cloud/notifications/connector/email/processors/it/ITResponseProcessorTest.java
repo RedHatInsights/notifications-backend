@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.connector.email.processors.it;
 import com.google.common.io.Resources;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
+import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -44,15 +45,15 @@ public class ITResponseProcessorTest extends CamelQuarkusTestSupport {
         final Exchange exchange = this.createExchangeWithBody(incomingBody);
         exchange.setProperty(ExchangeProperty.LIMIT, limit);
         exchange.setProperty(ExchangeProperty.OFFSET, offset);
-        exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>());
+        exchange.setProperty(ExchangeProperty.USERS, new HashSet<User>());
 
         // Call the processor under test.
         this.itResponseProcessor.process(exchange);
 
         // Assert that the grabbed username is correct.
-        final Set<String> usernames = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
-        Assertions.assertEquals(1, usernames.size());
-        Assertions.assertEquals("foo", usernames.iterator().next());
+        final Set<User> users = exchange.getProperty(ExchangeProperty.USERS, Set.class);
+        Assertions.assertEquals(1, users.size());
+        Assertions.assertEquals("foo", users.iterator().next().getUsername());
 
         // Assert that only the expected element was read.
         Assertions.assertEquals(1, exchange.getProperty(ExchangeProperty.ELEMENTS_COUNT));
@@ -82,15 +83,15 @@ public class ITResponseProcessorTest extends CamelQuarkusTestSupport {
         final Exchange exchange = this.createExchangeWithBody(incomingBody);
         exchange.setProperty(ExchangeProperty.LIMIT, limit);
         exchange.setProperty(ExchangeProperty.OFFSET, offset);
-        exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>());
+        exchange.setProperty(ExchangeProperty.USERS, new HashSet<User>());
 
         // Call the processor under test.
         this.itResponseProcessor.process(exchange);
 
         // Assert that the grabbed username is correct.
-        final Set<String> usernames = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
-        Assertions.assertEquals(1, usernames.size());
-        Assertions.assertEquals("foo", usernames.iterator().next());
+        final Set<User> users = exchange.getProperty(ExchangeProperty.USERS, Set.class);
+        Assertions.assertEquals(1, users.size());
+        Assertions.assertEquals("foo", users.iterator().next().getUsername());
 
         // Assert that only the expected element was read.
         Assertions.assertEquals(1, exchange.getProperty(ExchangeProperty.ELEMENTS_COUNT));

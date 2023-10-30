@@ -70,6 +70,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: NOTIFICATIONS_CONNECTOR_BOP_SKIP_USERS_RESOLUTION
+          value: ${NOTIFICATIONS_CONNECTOR_BOP_SKIP_USERS_RESOLUTION}
         - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
           value: ${NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE}
         - name: NOTIFICATIONS_CONNECTOR_FETCH_USERS_RBAC_ENABLED
@@ -205,6 +207,9 @@ parameters:
 - name: MIN_REPLICAS
   value: "3"
 
+- name: NOTIFICATIONS_CONNECTOR_BOP_SKIP_USERS_RESOLUTION
+  description: Should BOP skip transforming usernames from our payload into email addresses using the IT Users Service?
+  value: "false"
 - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
   description: Maximum size of the Camel endpoints cache
   value: "100"

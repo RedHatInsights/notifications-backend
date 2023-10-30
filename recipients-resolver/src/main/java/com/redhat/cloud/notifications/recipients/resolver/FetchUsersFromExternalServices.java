@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.AccountRelationship;
+import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPService;
@@ -177,6 +178,12 @@ public class FetchUsersFromExternalServices {
             user.setId(itUserResponse.id);
             user.setUsername(itUserResponse.authentications.get(0).principal);
 
+            for (Email email : itUserResponse.accountRelationships.get(0).emails) {
+                if (email != null && email.isPrimary != null && email.isPrimary) {
+                    user.setEmail(email.address);
+                }
+            }
+
             if (itUserResponse.accountRelationships != null) {
                 for (AccountRelationship accountRelationship : itUserResponse.accountRelationships) {
                     if (accountRelationship.permissions != null) {
@@ -255,6 +262,7 @@ public class FetchUsersFromExternalServices {
                 if (rbacUser.getActive()) {
                     User user = new User();
                     user.setUsername(rbacUser.getUsername());
+                    user.setEmail(rbacUser.getEmail());
                     user.setAdmin(TRUE.equals(rbacUser.getOrgAdmin()));
                     users.add(user);
                 }
@@ -272,6 +280,7 @@ public class FetchUsersFromExternalServices {
 
                 user.setId(mbopUser.id());
                 user.setUsername(mbopUser.username());
+                user.setEmail(mbopUser.email());
                 user.setAdmin(mbopUser.isOrgAdmin());
 
                 users.add(user);

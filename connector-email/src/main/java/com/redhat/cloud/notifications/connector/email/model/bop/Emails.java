@@ -8,6 +8,7 @@ import java.util.Set;
 /**
  * Represents the payload to be sent to BOP/MBOP.
  */
+@Deprecated(forRemoval = true)
 public class Emails {
 
     @JsonProperty("emails")

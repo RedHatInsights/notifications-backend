@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfi
 import com.redhat.cloud.notifications.connector.email.config.Environment;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
+import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import com.redhat.cloud.notifications.connector.email.predicates.NotFinishedFetchingAllPages;
 import com.redhat.cloud.notifications.connector.email.predicates.rbac.StatusCodeNotFound;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
@@ -154,10 +155,10 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(this.connectorConfig.getConnectorName())
-            // Initialize the usernames hash set, where we will gather the
+            // Initialize the users hash set, where we will gather the
             // fetched users from the user providers.
-            .process(exchange -> exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>()))
-            // Split each recipient setting and aggregate the usernames to end
+            .process(exchange -> exchange.setProperty(ExchangeProperty.USERS, new HashSet<User>()))
+            // Split each recipient setting and aggregate the users to end
             // up with a single exchange.
             .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.RECIPIENT_SETTINGS), this.userAggregationStrategy).stopOnException()
                 // As the body of the exchange might change throughout the
@@ -195,13 +196,13 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_GET))
             .setHeader(CaffeineConstants.KEY, this.computeCacheKey())
             .to(caffeineCache(Routes.FETCH_USERS_RBAC))
-            // Avoid calling RBAC if we do have the usernames cached.
+            // Avoid calling RBAC if we do have the users cached.
             .choice()
                 .when(header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(Boolean.TRUE))
-                    // The cache engine leaves the usernames in the body of the
+                    // The cache engine leaves the users in the body of the
                     // exchange, that is why we need to set them back in the
                     // property that the subsequent processors expect to find them.
-                    .setProperty(ExchangeProperty.USERNAMES, body())
+                    .setProperty(ExchangeProperty.USERS, body())
                 .otherwise()
                     // Clear all the headers that may come from the previous route.
                     .removeHeaders("*")
@@ -220,7 +221,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                     // Store all the received recipients in the cache.
                     .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_PUT))
                     .setHeader(CaffeineConstants.KEY, this.computeCacheKey())
-                    .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERNAMES))
+                    .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERS))
                     .to(caffeineCache(Routes.FETCH_USERS_RBAC))
             .endChoice()
             .end()
@@ -243,13 +244,13 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_GET))
             .setHeader(CaffeineConstants.KEY, this.computeCacheKey())
             .to(caffeineCache(Routes.FETCH_USERS_IT))
-            // Avoid calling IT if we do have the usernames cached.
+            // Avoid calling IT if we do have the users cached.
             .choice()
                 .when(header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(Boolean.TRUE))
-                    // The cache engine leaves the usernames in the body of the
+                    // The cache engine leaves the users in the body of the
                     // exchange, that is why we need to set them back in the
                     // property that the subsequent processors expect to find them.
-                    .setProperty(ExchangeProperty.USERNAMES, body())
+                    .setProperty(ExchangeProperty.USERS, body())
                 .otherwise()
                     // Clear all the headers that may come from the previous route.
                     .removeHeaders("*")
@@ -266,7 +267,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                     // Store all the received recipients in the cache.
                     .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_PUT))
                     .setHeader(CaffeineConstants.KEY, this.computeCacheKey())
-                    .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERNAMES))
+                    .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERS))
                     .to(caffeineCache(Routes.FETCH_USERS_IT))
             .endChoice()
             .end()
@@ -306,13 +307,13 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_GET))
             .setHeader(CaffeineConstants.KEY, this.computeGroupPrincipalsCacheKey())
             .to(caffeineCache(Routes.FETCH_GROUP_USERS))
-            // Avoid calling RBAC if we do have the usernames cached.
+            // Avoid calling RBAC if we do have the users cached.
             .choice()
                 .when(header(CaffeineConstants.ACTION_HAS_RESULT).isEqualTo(Boolean.TRUE))
-                    // The cache engine leaves the usernames in the body of the
+                    // The cache engine leaves the users in the body of the
                     // exchange, that is why we need to set them back in the
                     // property that the subsequent processors expect to find them.
-                    .setProperty(ExchangeProperty.USERNAMES, body())
+                    .setProperty(ExchangeProperty.USERS, body())
                 .otherwise()
                     // Clear all the headers that may come from the previous route.
                     .removeHeaders("*")
@@ -328,7 +329,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                         // Store all the received recipients in the cache.
                         .setHeader(CaffeineConstants.ACTION, constant(CaffeineConstants.ACTION_PUT))
                         .setHeader(CaffeineConstants.KEY, this.computeGroupPrincipalsCacheKey())
-                        .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERNAMES))
+                        .setHeader(CaffeineConstants.VALUE, exchangeProperty(ExchangeProperty.USERS))
                         .to(caffeineCache(Routes.FETCH_GROUP_USERS))
             .endChoice()
             .end()
@@ -366,7 +367,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .routeId(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER)
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
-            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERNAMES))
+            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERS))
                 .setProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, constant(true))
                 .to(direct(Routes.SEND_EMAIL_BOP))
             .end();

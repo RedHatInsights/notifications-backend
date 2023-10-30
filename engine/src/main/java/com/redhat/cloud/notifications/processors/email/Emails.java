@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashSet;
 import java.util.Set;
 
+@Deprecated(forRemoval = true)
 public class Emails {
 
     @JsonProperty("emails")

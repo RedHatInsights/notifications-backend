@@ -4,6 +4,7 @@ import com.google.common.io.Resources;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
+import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -17,6 +18,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+
+import static com.redhat.cloud.notifications.connector.email.TestUtils.createUsers;
 
 @QuarkusTest
 public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
@@ -47,7 +50,7 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
         );
         exchange.setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, recipientSettings);
         exchange.setProperty(ExchangeProperty.LIMIT, this.emailConnectorConfig.getRbacElementsPerPage());
-        exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>());
+        exchange.setProperty(ExchangeProperty.USERS, new HashSet<User>());
 
         // Call the processor under test.
         this.rbacUsersProcessor.process(exchange);
@@ -55,16 +58,11 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
         // Assert that the elements count is correct.
         Assertions.assertEquals(5, exchange.getProperty(ExchangeProperty.ELEMENTS_COUNT));
 
-        // Assert that the usernames are the expected ones.
-        final Set<String> expectedUsernames = new HashSet<>();
-        expectedUsernames.add("foouser");
-        expectedUsernames.add("baruser");
-        expectedUsernames.add("bazuser");
-        expectedUsernames.add("johndoe");
-        expectedUsernames.add("janedoe");
+        // Assert that the users are the expected ones.
+        final Set<User> expectedUsers = createUsers("foouser", "baruser", "bazuser", "johndoe", "janedoe");
 
-        final Set<String> result = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
-        Assertions.assertIterableEquals(expectedUsernames, result);
+        final Set<User> result = exchange.getProperty(ExchangeProperty.USERS, Set.class);
+        Assertions.assertEquals(expectedUsers, result);
     }
 
     /**
@@ -94,7 +92,7 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
         final int limit = 5;
         exchange.setProperty(ExchangeProperty.OFFSET, offset);
         exchange.setProperty(ExchangeProperty.LIMIT, limit);
-        exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>());
+        exchange.setProperty(ExchangeProperty.USERS, new HashSet<User>());
 
         // Call the processor under test.
         this.rbacUsersProcessor.process(exchange);
@@ -102,16 +100,11 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
         // Assert that the elements count is correct.
         Assertions.assertEquals(5, exchange.getProperty(ExchangeProperty.ELEMENTS_COUNT));
 
-        // Assert that the usernames are the expected ones.
-        final Set<String> expectedUsernames = new HashSet<>();
-        expectedUsernames.add("foouser");
-        expectedUsernames.add("baruser");
-        expectedUsernames.add("bazuser");
-        expectedUsernames.add("johndoe");
-        expectedUsernames.add("janedoe");
+        // Assert that the users are the expected ones.
+        final Set<User> expectedUsers = createUsers("foouser", "baruser", "bazuser", "johndoe", "janedoe");
 
-        final Set<String> result = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
-        Assertions.assertIterableEquals(expectedUsernames, result);
+        final Set<User> result = exchange.getProperty(ExchangeProperty.USERS, Set.class);
+        Assertions.assertEquals(expectedUsers, result);
 
         // Assert that the offset got updated.
         Assertions.assertEquals(offset + limit, exchange.getProperty(ExchangeProperty.OFFSET));
@@ -140,7 +133,7 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
         );
         exchange.setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, recipientSettings);
         exchange.setProperty(ExchangeProperty.LIMIT, this.emailConnectorConfig.getRbacElementsPerPage());
-        exchange.setProperty(ExchangeProperty.USERNAMES, new HashSet<String>());
+        exchange.setProperty(ExchangeProperty.USERS, new HashSet<User>());
 
         // Call the processor under test.
         this.rbacUsersProcessor.process(exchange);
@@ -148,12 +141,10 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
         // Assert that the elements count is correct.
         Assertions.assertEquals(5, exchange.getProperty(ExchangeProperty.ELEMENTS_COUNT));
 
-        // Assert that the usernames are the expected ones.
-        final Set<String> expectedUsernames = new HashSet<>();
-        expectedUsernames.add("foouser");
-        expectedUsernames.add("baruser");
+        // Assert that the users are the expected ones.
+        final Set<User> expectedUsers = createUsers("foouser", "baruser");
 
-        final Set<String> result = exchange.getProperty(ExchangeProperty.USERNAMES, Set.class);
-        Assertions.assertIterableEquals(expectedUsernames, result);
+        final Set<User> result = exchange.getProperty(ExchangeProperty.USERS, Set.class);
+        Assertions.assertIterableEquals(expectedUsers, result);
     }
 }
