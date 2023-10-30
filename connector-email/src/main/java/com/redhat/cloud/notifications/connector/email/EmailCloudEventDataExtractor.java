@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
+import java.util.UUID;
 
 @ApplicationScoped
 public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
@@ -29,6 +30,8 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
             .map(jsonSetting -> jsonSetting.mapTo(RecipientSettings.class))
             .toList();
 
+        exchange.setProperty(ExchangeProperty.EVENT_TYPE_ID, UUID.fromString(cloudEventData.getString("event_type_id")));
+        exchange.setProperty(ExchangeProperty.SUBSCRIPTION_TYPE, cloudEventData.getString("subscription_type"));
         final List<String> subscribers = cloudEventData.getJsonArray("subscribers")
             .stream()
             .map(String.class::cast)

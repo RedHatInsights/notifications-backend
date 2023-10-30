@@ -52,22 +52,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             return;
         }
 
-        // Get the set of user IDs that should receive an email notification for
-        // the given event.
-        final List<String> subscribers = this.getSubscribers(event, SubscriptionType.INSTANT);
-
         final Set<RecipientSettings> recipientSettings = this.extractAndTransformRecipientSettings(event, endpoints);
-
-        // When the user preferences are not ignored and there are no
-        // subscribers to the event, there's no need to further process the
-        // recipient settings because no email will be sent from them.
-        recipientSettings.removeIf(settings -> !settings.isIgnoreUserPreferences() && subscribers.isEmpty());
-
-        // If we removed all recipient settings, it means no email will be sent from the event and we can exit this method.
-        if (recipientSettings.isEmpty()) {
-            Log.debugf("[event_uuid: %s] The event was skipped because there were no subscribers for it and user preferences are not ignored", event.getId());
-            return;
-        }
 
         // Render the subject and the body of the email.
         final InstantEmailTemplate instantEmailTemplate = instantEmailTemplateMaybe.get();
@@ -86,8 +71,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             body,
             subject,
             event.getOrgId(),
-            recipientSettings,
-            subscribers
+            event.getEventType().getId(),
+            SubscriptionType.INSTANT.name(),
+            recipientSettings
         );
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);

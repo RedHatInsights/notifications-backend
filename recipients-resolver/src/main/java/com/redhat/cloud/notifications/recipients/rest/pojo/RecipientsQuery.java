@@ -1,46 +1,27 @@
 package com.redhat.cloud.notifications.recipients.rest.pojo;
 
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.recipients.SubscriptionType;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.Set;
+import java.util.UUID;
 
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
+
+@JsonNaming(SnakeCaseStrategy.class)
 public class RecipientsQuery {
+
+    @NotBlank
+    public String orgId;
+
     @NotNull
-    String orgId;
+    public UUID eventTypeId;
+
     @NotNull
-    Set<RecipientSettings> recipientSettings;
-    Set<String> subscribers;
-    boolean isOptIn;
+    public SubscriptionType subscriptionType;
 
-    public String getOrgId() {
-        return orgId;
-    }
-
-    public void setOrgId(String orgId) {
-        this.orgId = orgId;
-    }
-
-    public Set<RecipientSettings> getRecipientSettings() {
-        return recipientSettings;
-    }
-
-    public void setRecipientSettings(Set<RecipientSettings> recipientSettings) {
-        this.recipientSettings = recipientSettings;
-    }
-
-    public Set<String> getSubscribers() {
-        return subscribers;
-    }
-
-    public void setSubscribers(Set<String> subscribers) {
-        this.subscribers = subscribers;
-    }
-
-    public boolean isOptIn() {
-        return isOptIn;
-    }
-
-    public void setOptIn(boolean optIn) {
-        isOptIn = optIn;
-    }
+    @NotNull
+    public Set<RecipientSettings> recipientSettings;
 }

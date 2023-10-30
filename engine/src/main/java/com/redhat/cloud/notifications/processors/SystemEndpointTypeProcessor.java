@@ -38,6 +38,7 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
             subscribers = Set.copyOf(subscriptionRepository
                     .getSubscribers(event.getOrgId(), eventType.getId(), subscriptionType));
         }
+        // This is supposed to be removed soon. As a consequence, this call will not support the event types subscribed by default.
         return recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers, !subscriptionType.isSubscribedByDefault());
     }
 

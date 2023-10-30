@@ -12,7 +12,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import java.util.List;
 
-
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path("/internal/recipients-resolver")
@@ -24,11 +23,12 @@ public class RecipientsResolverResource {
     @PUT
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    public List<User> getRecipients(@NotNull @Valid RecipientsQuery resolversQuery) {
+    public List<User> getRecipients(@NotNull @Valid RecipientsQuery recipientsQuery) {
         return recipientsResolver.findRecipients(
-            resolversQuery.getOrgId(),
-            resolversQuery.getRecipientSettings(),
-            resolversQuery.getSubscribers(),
-            resolversQuery.isOptIn());
+            recipientsQuery.orgId,
+            recipientsQuery.eventTypeId,
+            recipientsQuery.subscriptionType,
+            recipientsQuery.recipientSettings
+        );
     }
 }

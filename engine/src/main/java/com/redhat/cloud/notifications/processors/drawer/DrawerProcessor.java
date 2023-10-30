@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.DrawerEntry;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
@@ -17,7 +18,6 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
-import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ALL;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 
 @ApplicationScoped
 public class DrawerProcessor extends SystemEndpointTypeProcessor {
@@ -85,6 +86,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     @Inject
     ConnectorSender connectorSender;
 
+    @Inject
+    SubscriptionRepository subscriptionRepository;
+
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (!featureFlipper.isDrawerEnabled()) {
@@ -107,7 +111,8 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         if (featureFlipper.isDrawerConnectorEnabled()) {
             DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
 
-            final Set<String> subscribers = Set.copyOf(getSubscribers(event, SubscriptionType.DRAWER));
+            Set<String> unsubscribers = Set.copyOf(
+                    subscriptionRepository.getUnsubscribers(event.getOrgId(), event.getEventType().getId(), DRAWER));
             final Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, endpoints);
 
             // Prepare all the data to be sent to the connector.
@@ -115,12 +120,12 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
                 event.getOrgId(),
                 drawerEntryPayload,
                 recipientSettings,
-                subscribers
+                unsubscribers
             );
 
             connectorSender.send(event, endpoint, JsonObject.mapFrom(drawerNotificationToConnector));
         } else {
-            Set<User> userList = getRecipientList(event, endpoints, SubscriptionType.DRAWER);
+            Set<User> userList = getRecipientList(event, endpoints, DRAWER);
             if (null == userList || userList.isEmpty()) {
                 return;
             }

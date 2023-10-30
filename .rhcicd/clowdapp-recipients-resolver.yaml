@@ -14,6 +14,8 @@ objects:
     envName: ${ENV_NAME}
     dependencies:
     - rbac
+    database:
+      sharedDbAppName: notifications-backend
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
@@ -75,6 +77,8 @@ objects:
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
+        - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
+          value: ${QUARKUS_HIBERNATE_ORM_LOG_SQL}
         - name: QUARKUS_HTTP_PORT
           value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -172,6 +176,8 @@ parameters:
 - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
   description: Users from an organization will be retrieved from RBAC if true
   value: "true"
+- name: QUARKUS_HIBERNATE_ORM_LOG_SQL
+  value: "false"
 - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
   description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
   value: INFO

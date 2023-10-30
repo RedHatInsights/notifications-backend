@@ -46,6 +46,7 @@ import org.eclipse.microprofile.context.ManagedExecutor;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -323,9 +324,12 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
                         // Prepare all the data to be sent to the connector.
                         final EmailNotification emailNotification = new EmailNotification(
-                            bodyStr, subjectStr,
+                            bodyStr,
+                            subjectStr,
                             event.getOrgId(),
-                            recipientSettings, recipientsUsernames
+                            event.getEventType().getId(),
+                            SubscriptionType.DAILY.name(),
+                            recipientSettings
                         );
 
                         connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
@@ -358,9 +362,12 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
                         // Prepare all the data to be sent to the connector.
                         final EmailNotification emailNotification = new EmailNotification(
-                            bodyStr, subjectStr,
+                            bodyStr,
+                            subjectStr,
                             event.getOrgId(),
-                            recipientSettings, recipientsUsernames
+                            event.getEventType().getId(),
+                            SubscriptionType.DAILY.name(),
+                            recipientSettings
                         );
 
                         connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));

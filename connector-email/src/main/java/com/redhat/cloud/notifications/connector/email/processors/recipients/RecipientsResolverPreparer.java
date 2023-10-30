@@ -12,8 +12,11 @@ import org.apache.camel.Processor;
 import org.apache.camel.component.http.HttpMethods;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EVENT_TYPE_ID;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.SUBSCRIPTION_TYPE;
 
 @ApplicationScoped
 public class RecipientsResolverPreparer implements Processor {
@@ -23,18 +26,16 @@ public class RecipientsResolverPreparer implements Processor {
 
     @Override
     public void process(final Exchange exchange) throws JsonProcessingException {
-        List<RecipientSettings> recipientSettings = exchange.getProperty(ExchangeProperty.RECIPIENT_SETTINGS, List.class);
-        List<String> subscribers = exchange.getProperty(ExchangeProperty.SUBSCRIBERS, List.class);
-        final String orgId = exchange.getProperty(ORG_ID, String.class);
+        Set<RecipientSettings> recipientSettings = Set.copyOf(exchange.getProperty(ExchangeProperty.RECIPIENT_SETTINGS, List.class));
 
-        RecipientsQuery recipientsResolversQuery = new RecipientsQuery();
-        recipientsResolversQuery.setSubscribers(Set.copyOf(subscribers));
-        recipientsResolversQuery.setOrgId(orgId);
-        recipientsResolversQuery.setRecipientSettings(Set.copyOf(recipientSettings));
-        recipientsResolversQuery.setOptIn(true);
+        RecipientsQuery recipientsQuery = new RecipientsQuery();
+        recipientsQuery.orgId = exchange.getProperty(ORG_ID, String.class);
+        recipientsQuery.eventTypeId = exchange.getProperty(EVENT_TYPE_ID, UUID.class);
+        recipientsQuery.subscriptionType = exchange.getProperty(SUBSCRIPTION_TYPE, String.class);
+        recipientsQuery.recipientSettings = recipientSettings;
 
         // Serialize the payload.
-        exchange.getMessage().setBody(objectMapper.writeValueAsString(recipientsResolversQuery));
+        exchange.getMessage().setBody(objectMapper.writeValueAsString(recipientsQuery));
 
         // Set the "Accept" header for the incoming payload.
         exchange.getMessage().setHeader("Accept", "application/json");
