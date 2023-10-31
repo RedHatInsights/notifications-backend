@@ -161,8 +161,8 @@ parameters:
   description: Log level for com.redhat.cloud.notifications
   value: INFO
 - name: QUARKUS_HTTP_PORT
-  description: Quarkus HTTP server port, defaulting to the default Clowder private port
-  value: "9000"
+  description: Quarkus HTTP server port
+  value: "8000"
 - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE
   description: Limit value sent to the external users service while querying users.
   value: "1000"
