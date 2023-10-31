@@ -1,19 +1,26 @@
 package com.redhat.cloud.notifications.connector.email;
 
-import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EMAIL_RECIPIENTS;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RECIPIENT_SETTINGS;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RENDERED_BODY;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RENDERED_SUBJECT;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.SUBSCRIBERS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 @QuarkusTest
 public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
@@ -32,7 +39,8 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
             true,
             true,
             UUID.randomUUID(),
-            users
+            users,
+            Collections.emptySet()
         );
 
         final Set<String> users2 = Set.of("d", "e", "f");
@@ -40,7 +48,8 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
             true,
             true,
             UUID.randomUUID(),
-            users2
+            users2,
+            Set.of("foo@bar.com", "bar@foo.com")
         );
 
         final Set<String> users3 = Set.of("g", "h", "i");
@@ -48,7 +57,8 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
             true,
             true,
             UUID.randomUUID(),
-            users3
+            users3,
+            Set.of("john@doe.com")
         );
 
         final List<RecipientSettings> recipientSettingsList = new ArrayList<>();
@@ -75,9 +85,10 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         this.emailCloudEventDataExtractor.extract(exchange, new JsonObject(payload.encode()));
 
         // Assert that the extracted data is correct.
-        Assertions.assertEquals(emailBody, exchange.getProperty(ExchangeProperty.RENDERED_BODY, String.class));
-        Assertions.assertEquals(emailSubject, exchange.getProperty(ExchangeProperty.RENDERED_SUBJECT, String.class));
-        Assertions.assertIterableEquals(recipientSettingsList, exchange.getProperty(ExchangeProperty.RECIPIENT_SETTINGS, List.class));
-        Assertions.assertIterableEquals(subscribers, exchange.getProperty(ExchangeProperty.SUBSCRIBERS, List.class));
+        assertEquals(emailBody, exchange.getProperty(RENDERED_BODY, String.class));
+        assertEquals(emailSubject, exchange.getProperty(RENDERED_SUBJECT, String.class));
+        assertIterableEquals(recipientSettingsList, exchange.getProperty(RECIPIENT_SETTINGS, List.class));
+        assertIterableEquals(subscribers, exchange.getProperty(SUBSCRIBERS, List.class));
+        assertEquals(Set.of("foo@bar.com", "bar@foo.com", "john@doe.com"), exchange.getProperty(EMAIL_RECIPIENTS, Set.class));
     }
 }

@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -32,6 +33,11 @@ public class EndpointRecipientSettings extends RecipientSettings {
 
     @Override
     public Set<String> getUsers() {
-        return Set.of();
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<String> getEmails() {
+        return Collections.emptySet();
     }
 }

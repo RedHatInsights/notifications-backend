@@ -18,12 +18,14 @@ public class RecipientSettings {
     private final boolean ignoreUserPreferences;
     private final UUID groupUUID;
     private final Set<String> users;
+    private final Set<String> emails;
 
-    public RecipientSettings(final boolean adminsOnly, final boolean ignoreUserPreferences, final UUID groupUUID, final Set<String> users) {
+    public RecipientSettings(final boolean adminsOnly, final boolean ignoreUserPreferences, final UUID groupUUID, final Set<String> users, final Set<String> emails) {
         this.adminsOnly = adminsOnly;
         this.ignoreUserPreferences = ignoreUserPreferences;
         this.groupUUID = groupUUID;
         this.users = users;
+        this.emails = emails;
     }
 
     public RecipientSettings(final com.redhat.cloud.notifications.recipients.RecipientSettings recipientSettings) {
@@ -31,6 +33,7 @@ public class RecipientSettings {
         this.ignoreUserPreferences = recipientSettings.isIgnoreUserPreferences();
         this.groupUUID = recipientSettings.getGroupId();
         this.users = recipientSettings.getUsers();
+        this.emails = recipientSettings.getEmails();
     }
 
     public boolean isAdminsOnly() {
@@ -49,6 +52,10 @@ public class RecipientSettings {
         return this.users;
     }
 
+    public Set<String> getEmails() {
+        return emails;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -64,16 +71,12 @@ public class RecipientSettings {
         return this.adminsOnly == that.adminsOnly
             && this.ignoreUserPreferences == that.ignoreUserPreferences
             && Objects.equals(this.groupUUID, that.groupUUID)
-            && Objects.equals(this.users, that.users);
+            && Objects.equals(this.users, that.users)
+            && Objects.equals(this.emails, that.emails);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(
-            this.adminsOnly ? 1 : 0,
-            this.ignoreUserPreferences ? 1 : 0,
-            this.groupUUID != null ? this.groupUUID.hashCode() : 0,
-            this.users != null ? this.users.hashCode() : 0
-        );
+        return Objects.hash(adminsOnly, ignoreUserPreferences, groupUUID, users, emails);
     }
 }
