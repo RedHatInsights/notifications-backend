@@ -159,8 +159,6 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          */
         this.configureCaffeineCache();
 
-        final HttpEndpointBuilderFactory.HttpEndpointBuilder recipientsResolverEndpoint = setUpRecipientsResolverEndpoint();
-
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
             // Initialize the users hash set, where we will gather the
@@ -185,7 +183,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .routeId(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP)
             .doTry()
                 .process(recipientsResolverPreparer)
-                .to(recipientsResolverEndpoint)
+                .to(emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
                 .process(recipientsResolverResponseProcessor)
             .doCatch(Exception.class)
                 .log(LoggingLevel.ERROR, "${exception.message}")
@@ -520,26 +518,6 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                 .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
         } else {
             return http(fullURL.replace("http://", ""));
-        }
-    }
-
-    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpRecipientsResolverEndpoint() {
-        final KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
-        keyStoreParameters.setResource(emailConnectorConfig.getRecipientsResolverKeyStoreLocation());
-        keyStoreParameters.setPassword(emailConnectorConfig.getRecipientsResolverKeyStoreKeyStorePassword());
-
-        final KeyManagersParameters keyManagersParameters = new KeyManagersParameters();
-        keyManagersParameters.setKeyPassword(this.emailConnectorConfig.getRecipientsResolverKeyStoreKeyStorePassword());
-        keyManagersParameters.setKeyStore(keyStoreParameters);
-
-        final SSLContextParameters sslContextParameters = new SSLContextParameters();
-        sslContextParameters.setKeyManagers(keyManagersParameters);
-        String recipientsResolverUrl = emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver";
-        if (recipientsResolverUrl.startsWith("https://")) {
-            return https(recipientsResolverUrl.replace("https://", ""))
-                .sslContextParameters(sslContextParameters);
-        } else {
-            return http(recipientsResolverUrl.replace("http://", ""));
         }
     }
 }

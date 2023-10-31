@@ -37,8 +37,6 @@ public class EmailConnectorConfig extends ConnectorConfig {
     public static final String RBAC_PSKS = "notifications.connector.user-provider.rbac.psks";
     public static final String USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE = "notifications.connector.user-provider.cache.expire-after-write";
     public static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED = "notifications.connector.recipients-resolver.module.enabled";
-    private static final String RECIPIENTS_RESOLVER_KEYSTORE_LOCATION = "notifications.connector.recipients-resolver.key-store-location";
-    private static final String RECIPIENTS_RESOLVER_KEYSTORE_PASSWORD = "notifications.connector.recipients-resolver.key-store-password";
     private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
 
     @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, defaultValue = "false")
@@ -107,12 +105,6 @@ public class EmailConnectorConfig extends ConnectorConfig {
 
     @ConfigProperty(name = SKIP_BOP_USERS_RESOLUTION, defaultValue = "false")
     boolean skipBopUsersResolution;
-
-    @ConfigProperty(name = RECIPIENTS_RESOLVER_KEYSTORE_LOCATION)
-    String recipientsResolverKeyStoreLocation;
-
-    @ConfigProperty(name = RECIPIENTS_RESOLVER_KEYSTORE_PASSWORD)
-    String recipientsResolverKeyStoreKeyStorePassword;
 
     @ConfigProperty(name = RECIPIENTS_RESOLVER_USER_SERVICE_URL)
     String recipientsResolverServiceURL;
@@ -253,14 +245,6 @@ public class EmailConnectorConfig extends ConnectorConfig {
 
     public boolean isRecipientsResolverModuleEnabled() {
         return recipientsResolverModuleEnabled;
-    }
-
-    public String getRecipientsResolverKeyStoreLocation() {
-        return recipientsResolverKeyStoreLocation;
-    }
-
-    public String getRecipientsResolverKeyStoreKeyStorePassword() {
-        return recipientsResolverKeyStoreKeyStorePassword;
     }
 
     public String getRecipientsResolverServiceURL() {
