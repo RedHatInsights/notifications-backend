@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.connector.email;
 
-import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.email.aggregation.UserAggregationStrategy;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
@@ -21,9 +20,12 @@ import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBAC
 import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBACGroupProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBACGroupRequestPreparerProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsFilter;
+import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverPreparer;
+import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Expression;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.component.caffeine.CaffeineConfiguration;
@@ -46,8 +48,6 @@ import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
 public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
-    @Inject
-    ConnectorConfig connectorConfig;
 
     /**
      * Holds all the configuration parameters required to run the connector.
@@ -142,6 +142,12 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     UserAggregationStrategy userAggregationStrategy;
 
+    @Inject
+    RecipientsResolverPreparer recipientsResolverPreparer;
+
+    @Inject
+    RecipientsResolverResponseProcessor recipientsResolverResponseProcessor;
+
     /**
      * Configures the flow for this connector.
      * @throws Exception if the IT SSL route could not be correctly set up.
@@ -154,10 +160,38 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         this.configureCaffeineCache();
 
         from(seda(ENGINE_TO_CONNECTOR))
-            .routeId(this.connectorConfig.getConnectorName())
+            .routeId(emailConnectorConfig.getConnectorName())
             // Initialize the users hash set, where we will gather the
             // fetched users from the user providers.
             .process(exchange -> exchange.setProperty(ExchangeProperty.USERS, new HashSet<User>()))
+
+            .choice()
+                .when(PredicateBuilder.constant(emailConnectorConfig.isRecipientsResolverModuleEnabled()))
+                    .to(direct(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP))
+                .otherwise()
+                    .to(direct(Routes.RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP))
+            .end()
+
+            // Once the split has finished, we can send the exchange to the BOP
+            // route.
+            .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
+
+        /*
+         * Fetches the users from recipients resolver.
+         */
+        from(direct(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP))
+            .routeId(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP)
+            .doTry()
+                .process(recipientsResolverPreparer)
+                .to(emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
+                .process(recipientsResolverResponseProcessor)
+            .doCatch(Exception.class)
+                .log(LoggingLevel.ERROR, "${exception.message}")
+                .to(direct(Routes.RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP))
+            .end();
+
+        from(direct(Routes.RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP))
+            .routeId(Routes.RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP)
             // Split each recipient setting and aggregate the users to end
             // up with a single exchange.
             .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.RECIPIENT_SETTINGS), this.userAggregationStrategy).stopOnException()
@@ -170,11 +204,8 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                     .otherwise()
                         .setProperty(ExchangeProperty.GROUP_UUID, simpleF("${exchangeProperty.%s.groupUUID}", ExchangeProperty.CURRENT_RECIPIENT_SETTINGS))
                         .to(direct(Routes.FETCH_GROUP))
-                .end()
-            .end()
-            // Once the split has finished, we can send the exchange to the BOP
-            // route.
-            .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
+                    .endChoice()
+            .end();
 
         /*
          * Decides whether we should use RBAC or IT to fetch the users.

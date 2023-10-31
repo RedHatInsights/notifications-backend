@@ -36,6 +36,11 @@ public class EmailConnectorConfig extends ConnectorConfig {
     public static final String RBAC_DEVELOPMENT_AUTHENTICATION_KEY = "notifications.connector.user-provider.rbac.development-authentication-key";
     public static final String RBAC_PSKS = "notifications.connector.user-provider.rbac.psks";
     public static final String USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE = "notifications.connector.user-provider.cache.expire-after-write";
+    public static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED = "notifications.connector.recipients-resolver.module.enabled";
+    private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
+
+    @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, defaultValue = "false")
+    boolean recipientsResolverModuleEnabled;
 
     @ConfigProperty(name = BOP_API_TOKEN)
     String bopApiToken;
@@ -101,6 +106,9 @@ public class EmailConnectorConfig extends ConnectorConfig {
     @ConfigProperty(name = SKIP_BOP_USERS_RESOLUTION, defaultValue = "false")
     boolean skipBopUsersResolution;
 
+    @ConfigProperty(name = RECIPIENTS_RESOLVER_USER_SERVICE_URL)
+    String recipientsResolverServiceURL;
+
     @Override
     public void log() {
         final Map<String, Object> additionalEntries = new HashMap<>();
@@ -120,6 +128,8 @@ public class EmailConnectorConfig extends ConnectorConfig {
         additionalEntries.put(SINGLE_EMAIL_PER_USER, this.singleEmailPerUserEnabled);
         additionalEntries.put(USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, this.userProviderCacheExpireAfterWrite);
         additionalEntries.put(SKIP_BOP_USERS_RESOLUTION, skipBopUsersResolution);
+        additionalEntries.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, recipientsResolverModuleEnabled);
+        additionalEntries.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
 
         log(additionalEntries);
     }
@@ -231,5 +241,13 @@ public class EmailConnectorConfig extends ConnectorConfig {
 
     public void setSkipBopUsersResolution(boolean skipBopUsersResolution) {
         this.skipBopUsersResolution = skipBopUsersResolution;
+    }
+
+    public boolean isRecipientsResolverModuleEnabled() {
+        return recipientsResolverModuleEnabled;
+    }
+
+    public String getRecipientsResolverServiceURL() {
+        return recipientsResolverServiceURL;
     }
 }

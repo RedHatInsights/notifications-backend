@@ -11,4 +11,9 @@ public class Routes {
     public static final String SEND_EMAIL_BOP_CHOICE = "send-email-bop-choice";
     @Deprecated(forRemoval = true)
     public static final String SEND_EMAIL_BOP_SINGLE_PER_USER = "send-email-single-per-user";
+    @Deprecated(forRemoval = true)
+    public static final String RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP = "fetch-users-without-recipients-resolver-clowdapp";
+
+    public static final String RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP = "fetch-users-with-recipients-resolver-clowdapp";
+
 }

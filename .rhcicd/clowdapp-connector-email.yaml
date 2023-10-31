@@ -11,6 +11,7 @@ objects:
   spec:
     dependencies:
     - rbac
+    - notifications-recipients-resolver
     envName: ${ENV_NAME}
     kafkaTopics:
     - topicName: platform.notifications.tocamel
@@ -131,6 +132,8 @@ objects:
               name: it-services
               key: url
               optional: true
+        - name: NOTIFICATIONS_CONNECTOR_RECIPIENTS_RESOLVER_MODULE_ENABLED
+          value: ${NOTIFICATIONS_CONNECTOR_RECIPIENTS_RESOLVER_MODULE_ENABLED}
         - name: QUARKUS_HTTP_PORT
           value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -249,6 +252,9 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
+- name: NOTIFICATIONS_CONNECTOR_RECIPIENTS_RESOLVER_MODULE_ENABLED
+  description: enable or not users resolution using recipients-resolver module
+  value: "false"
 
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port, defaulting to the default Clowder private port
