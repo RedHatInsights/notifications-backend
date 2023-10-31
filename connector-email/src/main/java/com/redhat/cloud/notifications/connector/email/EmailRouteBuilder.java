@@ -20,10 +20,12 @@ import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBAC
 import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBACGroupProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBACGroupRequestPreparerProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsFilter;
-import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolver;
+import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverPreparer;
+import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Expression;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.component.caffeine.CaffeineConfiguration;
@@ -141,7 +143,10 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     UserAggregationStrategy userAggregationStrategy;
 
     @Inject
-    RecipientsResolver recipientsResolver;
+    RecipientsResolverPreparer recipientsResolverPreparer;
+
+    @Inject
+    RecipientsResolverResponseProcessor recipientsResolverResponseProcessor;
 
     /**
      * Configures the flow for this connector.
@@ -154,6 +159,8 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          */
         this.configureCaffeineCache();
 
+        final HttpEndpointBuilderFactory.HttpEndpointBuilder recipientsResolverEndpoint = setUpRecipientsResolverEndpoint();
+
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
             // Initialize the users hash set, where we will gather the
@@ -162,7 +169,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
             .choice()
                 .when(PredicateBuilder.constant(emailConnectorConfig.isRecipientsResolverModuleEnabled()))
-                    .process(recipientsResolver)
+                    .to(direct(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP))
                 .otherwise()
                     .to(direct(Routes.RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP))
             .end()
@@ -170,6 +177,20 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             // Once the split has finished, we can send the exchange to the BOP
             // route.
             .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
+
+        /*
+         * Fetches the users from recipients resolver.
+         */
+        from(direct(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP))
+            .routeId(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP)
+            .doTry()
+                .process(recipientsResolverPreparer)
+                .to(recipientsResolverEndpoint)
+                .process(recipientsResolverResponseProcessor)
+            .doCatch(Exception.class)
+                .log(LoggingLevel.ERROR, "${exception.message}")
+                .to(direct(Routes.RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP))
+            .end();
 
         from(direct(Routes.RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP))
             .routeId(Routes.RESOLVE_USERS_WITHOUT_RECIPIENTS_RESOLVER_CLOWDAPP)
@@ -499,6 +520,26 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                 .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
         } else {
             return http(fullURL.replace("http://", ""));
+        }
+    }
+
+    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpRecipientsResolverEndpoint() {
+        final KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
+        keyStoreParameters.setResource(emailConnectorConfig.getRecipientsResolverKeyStoreLocation());
+        keyStoreParameters.setPassword(emailConnectorConfig.getRecipientsResolverKeyStoreKeyStorePassword());
+
+        final KeyManagersParameters keyManagersParameters = new KeyManagersParameters();
+        keyManagersParameters.setKeyPassword(this.emailConnectorConfig.getRecipientsResolverKeyStoreKeyStorePassword());
+        keyManagersParameters.setKeyStore(keyStoreParameters);
+
+        final SSLContextParameters sslContextParameters = new SSLContextParameters();
+        sslContextParameters.setKeyManagers(keyManagersParameters);
+        String recipientsResolverUrl = emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver";
+        if (recipientsResolverUrl.startsWith("https://")) {
+            return https(recipientsResolverUrl.replace("https://", ""))
+                .sslContextParameters(sslContextParameters);
+        } else {
+            return http(recipientsResolverUrl.replace("http://", ""));
         }
     }
 }
