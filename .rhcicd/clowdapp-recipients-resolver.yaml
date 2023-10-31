@@ -18,7 +18,7 @@ objects:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
       webServices:
-        private:
+        public:
           enabled: true
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
