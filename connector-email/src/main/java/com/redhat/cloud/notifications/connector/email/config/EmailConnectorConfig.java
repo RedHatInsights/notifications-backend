@@ -113,15 +113,16 @@ public class EmailConnectorConfig extends ConnectorConfig {
     public void log() {
         final Map<String, Object> additionalEntries = new HashMap<>();
 
-        additionalEntries.put(BOP_API_TOKEN, this.bopApiToken);
-        additionalEntries.put(BOP_CLIENT_ID, this.bopClientId);
+        /*
+         * /!\ WARNING /!\
+         * DO NOT log config values that come from OpenShift secrets.
+         */
+
         additionalEntries.put(BOP_ENV, this.bopEnv);
         additionalEntries.put(BOP_URL, this.bopURL);
         additionalEntries.put(FETCH_USERS_RBAC_ENABLED, this.fetchUsersWithRBAC);
         additionalEntries.put(IT_ELEMENTS_PAGE, this.itElementsPerPage);
         additionalEntries.put(IT_KEYSTORE_LOCATION, this.itKeyStoreLocation);
-        additionalEntries.put(IT_KEYSTORE_PASSWORD, this.itKeyStorePassword);
-        additionalEntries.put(IT_USER_SERVICE_URL, this.itUserServiceURL);
         additionalEntries.put(RBAC_APPLICATION_KEY, this.rbacApplicationKey);
         additionalEntries.put(RBAC_ELEMENTS_PAGE, this.rbacElementsPerPage);
         additionalEntries.put(RBAC_URL, this.rbacURL);
@@ -130,6 +131,11 @@ public class EmailConnectorConfig extends ConnectorConfig {
         additionalEntries.put(SKIP_BOP_USERS_RESOLUTION, skipBopUsersResolution);
         additionalEntries.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, recipientsResolverModuleEnabled);
         additionalEntries.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
+
+        /*
+         * /!\ WARNING /!\
+         * DO NOT log config values that come from OpenShift secrets.
+         */
 
         log(additionalEntries);
     }
