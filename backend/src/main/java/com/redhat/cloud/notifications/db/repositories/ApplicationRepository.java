@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -40,20 +41,47 @@ public class ApplicationRepository {
         }
     }
 
+    /**
+     * Updates the given application and its role access.
+     * @param application the application to be updated.
+     * @param internalRoleAccess the role to be updated.
+     */
     @Transactional
-    public int updateApplication(UUID id, Application app) {
-        String appQuery = "UPDATE Application SET name = :name, displayName = :displayName WHERE id = :id";
-        int rowCount = entityManager.createQuery(appQuery)
-                .setParameter("name", app.getName())
-                .setParameter("displayName", app.getDisplayName())
-                .setParameter("id", id)
+    public void updateApplicationAndAccess(final Application application, final InternalRoleAccess internalRoleAccess) {
+        // First update the internal role of the application.
+        final String internalRole = internalRoleAccess.getRole();
+        if (internalRole != null && !internalRole.isBlank()) {
+            final String updateRoleQuery =
+                "UPDATE " +
+                    "InternalRoleAccess " +
+                    "SET " +
+                    "role = :role " +
+                    "WHERE " +
+                    "application = :application";
+
+            this.entityManager
+                .createQuery(updateRoleQuery)
+                .setParameter("role", internalRoleAccess.getRole())
+                .setParameter("application", application)
                 .executeUpdate();
-        String eventQuery = "UPDATE Event SET applicationDisplayName = :displayName WHERE applicationId = :applicationId";
-        entityManager.createQuery(eventQuery)
-                .setParameter("displayName", app.getDisplayName())
-                .setParameter("applicationId", id)
-                .executeUpdate();
-        return rowCount;
+        }
+
+        // And second update the application itself.
+        final String updateApplicationQuery =
+            "UPDATE " +
+                "Application " +
+            "SET " +
+                "name = :name, " +
+                "displayName = :displayName " +
+            "WHERE " +
+                "id = :uuid";
+
+        this.entityManager
+            .createQuery(updateApplicationQuery)
+            .setParameter("name", application.getName())
+            .setParameter("displayName", application.getDisplayName())
+            .setParameter("uuid", application.getId())
+            .executeUpdate();
     }
 
     @Transactional
