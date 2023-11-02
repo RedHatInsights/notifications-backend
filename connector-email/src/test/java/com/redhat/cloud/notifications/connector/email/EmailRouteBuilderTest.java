@@ -46,7 +46,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     }
 
     /**
-     * Disables the rout builder to ensure that the Camel Context does not get
+     * Disables the route builder to ensure that the Camel Context does not get
      * started before the routes have been advised. More information is
      * available at the <a href="https://people.apache.org/~dkulp/camel/camel-test.html">dkulp's Apache Camel Test documentation page</a>.
      * @return {@code false} in order to stop the Camel Context from booting

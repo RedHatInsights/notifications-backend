@@ -44,6 +44,7 @@ import java.util.HashSet;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
@@ -369,12 +370,16 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         from(direct(Routes.SEND_EMAIL_BOP_CHOICE))
             .routeId(Routes.SEND_EMAIL_BOP_CHOICE)
             .choice()
+                .when(simpleF("${exchangeProperty.%s.isEmpty()}", FILTERED_USERS))
+                    // TODO Lower this log level to DEBUG later.
+                    .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
                 .when(constant(this.emailConnectorConfig.isSingleEmailPerUserEnabled()))
                     .to(direct(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER))
+                    .log(INFO, getClass().getName(), "Sent single recipient Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
                 .otherwise()
                     .to(direct(Routes.SEND_EMAIL_BOP))
+                    .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .end()
-            .log(INFO, this.getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .to(direct(SUCCESS));
 
         /*
@@ -398,7 +403,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .routeId(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER)
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
-            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERS))
+            .split(simpleF("${exchangeProperty.%s}", FILTERED_USERS))
                 .setProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, constant(true))
                 .to(direct(Routes.SEND_EMAIL_BOP))
             .end();
