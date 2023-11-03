@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.event.core.v1.Recipients;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
@@ -47,7 +47,7 @@ public class EmailProcessorTest {
     EmailProcessor emailProcessor;
 
     @InjectMock
-    EmailSubscriptionRepository emailSubscriptionRepository;
+    SubscriptionRepository subscriptionRepository;
 
     @InjectMock
     EndpointRepository endpointRepository;
@@ -148,7 +148,7 @@ public class EmailProcessorTest {
      * particular case:
      *
      * <ul>
-     *     <li>The {@link TemplateRepository#isEmailAggregationSupported(String, String, List)}
+     *     <li>The {@link TemplateRepository#isEmailAggregationSupported(UUID)}
      *     always returns {code false}, because we do not want to hit the
      *     database, and the goal of this tests class is not to test that class'
      *     function.
@@ -272,7 +272,7 @@ public class EmailProcessorTest {
         // Do not return any subscribers for this test, so that the other
         // condition to remove the resulting recipient settings from the set
         // in the email processor is met.
-        Mockito.when(this.emailSubscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(List.of());
+        Mockito.when(this.subscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(List.of());
 
         // Call the processor under test.
         this.emailProcessor.process(event, endpoints);
@@ -329,7 +329,7 @@ public class EmailProcessorTest {
         // Mock a list of subscribers that simulate the ones that should be
         // notified for the event.
         final List<String> subscribers = List.of("subscriber-a", "subscriber-b", "subscriber-c");
-        Mockito.when(this.emailSubscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(subscribers);
+        Mockito.when(this.subscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(subscribers);
 
         // Mock the endpoint that should get pulled from the database using
         // the endpoint repository.

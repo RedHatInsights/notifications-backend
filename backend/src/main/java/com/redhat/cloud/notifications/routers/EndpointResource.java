@@ -6,8 +6,6 @@ import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -93,12 +91,6 @@ public class EndpointResource {
 
     @Inject
     NotificationRepository notificationRepository;
-
-    @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
-
-    @Inject
-    ApplicationRepository applicationRepository;
 
     @Inject
     RbacGroupValidator rbacGroupValidator;

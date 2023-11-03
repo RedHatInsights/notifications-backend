@@ -6,8 +6,8 @@ import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -49,7 +49,7 @@ public class UserConfigResource {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
+    SubscriptionRepository subscriptionRepository;
 
     @Inject
     BundleRepository bundleRepository;
@@ -110,11 +110,11 @@ public class UserConfigResource {
                             // for each email subscription
                             eventTypeValue.emailSubscriptionTypes.forEach((subscriptionType, subscribed) -> {
                                 if (subscribed) {
-                                    emailSubscriptionRepository.subscribeEventType(
+                                    subscriptionRepository.subscribeEventType(
                                         orgId, userName, eventType.get().getId(), subscriptionType
                                     );
                                 } else {
-                                    emailSubscriptionRepository.unsubscribeEventType(
+                                    subscriptionRepository.unsubscribeEventType(
                                         orgId, userName, eventType.get().getId(), subscriptionType
                                     );
                                 }
@@ -136,7 +136,7 @@ public class UserConfigResource {
         final String name = getUsername(sec);
         String orgId = getOrgId(sec);
 
-        List<EventTypeEmailSubscription> emailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, name);
+        List<EventTypeEmailSubscription> emailSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, name);
         SettingsValuesByEventType settingsValues = getSettingsValueForUserByEventType(emailSubscriptions, orgId);
         String jsonFormString = settingsValuesToJsonForm(settingsValues);
         Response.ResponseBuilder builder = Response.ok(jsonFormString);
@@ -189,7 +189,7 @@ public class UserConfigResource {
 
 
     private SettingsValuesByEventType getSettingsValueForUserByEventType(String orgId, String username, String bundleName, String applicationName) {
-        List<EventTypeEmailSubscription> eventTypeEmailSubscriptions = emailSubscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName);
+        List<EventTypeEmailSubscription> eventTypeEmailSubscriptions = subscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName);
 
         List<Application> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundleRepository.getBundle(bundleName).getId(), orgId);
 

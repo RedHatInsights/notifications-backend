@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors;
 
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor {
 
     @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
+    SubscriptionRepository subscriptionRepository;
 
     @Inject
     RecipientResolver recipientResolver;
@@ -30,7 +30,7 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
 
         final Set<RecipientSettings> requests = extractRecipientSettings(event, endpoints);
 
-        Set<String> subscribers = Set.copyOf(emailSubscriptionRepository
+        Set<String> subscribers = Set.copyOf(subscriptionRepository
                     .getSubscribersByEventType(event.getOrgId(), eventType.getId(), subscriptionType));
         return recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers, !subscriptionType.isSubscribedByDefault());
     }
@@ -75,7 +75,7 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
     protected List<String> getSubscribers(final Event event, final SubscriptionType subscriptionType) {
         final EventType eventType = event.getEventType();
 
-        return this.emailSubscriptionRepository.getSubscribersByEventType(
+        return this.subscriptionRepository.getSubscribersByEventType(
             event.getOrgId(),
             eventType.getId(),
             subscriptionType

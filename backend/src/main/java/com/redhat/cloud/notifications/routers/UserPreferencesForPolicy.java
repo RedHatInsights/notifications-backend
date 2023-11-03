@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
 import io.quarkus.logging.Log;
@@ -26,7 +26,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class UserPreferencesForPolicy {
 
     @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
+    SubscriptionRepository subscriptionRepository;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -55,7 +55,7 @@ public class UserPreferencesForPolicy {
         preferences.setDailyEmail(false);
         preferences.setInstantEmail(false);
 
-        List<EventTypeEmailSubscription> subscriptionTypes = emailSubscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName);
+        List<EventTypeEmailSubscription> subscriptionTypes = subscriptionRepository.getEmailSubscriptionByEventType(orgId, username, bundleName, applicationName);
         if (subscriptionTypes != null && !subscriptionTypes.isEmpty()) {
             for (EventTypeEmailSubscription subscribedEvent : subscriptionTypes) {
                 if (DAILY == subscribedEvent.getType()) {

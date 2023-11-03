@@ -12,7 +12,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class EmailSubscriptionRepository {
+public class SubscriptionRepository {
 
     @Inject
     EntityManager entityManager;

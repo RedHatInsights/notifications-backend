@@ -9,8 +9,8 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
@@ -81,7 +81,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     FeatureFlipper featureFlipper;
 
     @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
+    SubscriptionRepository subscriptionRepository;
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
@@ -271,11 +271,11 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database
         assertThrows(PersistenceException.class, () -> {
-            emailSubscriptionRepository.subscribeEventType(orgId, username, UUID.randomUUID(), DAILY);
+            subscriptionRepository.subscribeEventType(orgId, username, UUID.randomUUID(), DAILY);
         });
 
         // not fail if we have unknown event type on unsubscibe, but nb affected rows must be 0
-        assertEquals(0, emailSubscriptionRepository.unsubscribeEventType(orgId, username, UUID.randomUUID(), DAILY));
+        assertEquals(0, subscriptionRepository.unsubscribeEventType(orgId, username, UUID.randomUUID(), DAILY));
 
         // does not add if we try to create unknown bundle/apps
         settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", eventType, true, true, true);
