@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -42,7 +42,7 @@ public class EmailAggregator {
     RecipientResolver recipientResolver;
 
     @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
+    SubscriptionRepository subscriptionRepository;
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
@@ -52,7 +52,7 @@ public class EmailAggregator {
     int maxPageSize;
 
     private Map<String, Set<String>> getEmailSubscribersGroupedByEventType(EmailAggregationKey aggregationKey, SubscriptionType subscriptionType) {
-        return emailSubscriptionRepository
+        return subscriptionRepository
             .getEmailSubscribersUserIdGroupedByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), subscriptionType);
     }
 

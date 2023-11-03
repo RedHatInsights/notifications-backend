@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.repositories.EmailSubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -104,9 +103,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     ResourceHelpers helpers;
-
-    @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
 
     @Inject
     ResourceHelpers resourceHelpers;

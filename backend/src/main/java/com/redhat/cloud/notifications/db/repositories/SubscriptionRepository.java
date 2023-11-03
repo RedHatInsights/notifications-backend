@@ -17,7 +17,7 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 
 @ApplicationScoped
-public class EmailSubscriptionRepository {
+public class SubscriptionRepository {
 
     @Inject
     EntityManager entityManager;

@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EmailSubscriptionRepositoryTest {
+public class SubscriptionRepositoryTest {
 
     private static final String ORG_ID = "someOrgId";
     private static final String BUNDLE_NAME = "best-bundle";
@@ -30,7 +30,7 @@ public class EmailSubscriptionRepositoryTest {
     ResourceHelpers resourceHelpers;
 
     @Inject
-    EmailSubscriptionRepository emailSubscriptionRepository;
+    SubscriptionRepository subscriptionRepository;
 
     @Test
     void testEmailSubscribersUserIdGroupedByEventType() {
@@ -46,7 +46,7 @@ public class EmailSubscriptionRepositoryTest {
         resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", eventTypeA, SubscriptionType.DAILY);
         resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-03", eventTypeC, SubscriptionType.DAILY);
 
-        Map<String, Set<String>> mapUsersByEventType = emailSubscriptionRepository.getEmailSubscribersUserIdGroupedByEventType(ORG_ID, BUNDLE_NAME, APP_NAME, SubscriptionType.DAILY);
+        Map<String, Set<String>> mapUsersByEventType = subscriptionRepository.getEmailSubscribersUserIdGroupedByEventType(ORG_ID, BUNDLE_NAME, APP_NAME, SubscriptionType.DAILY);
         assertEquals(3, mapUsersByEventType.size());
         assertEquals(2, mapUsersByEventType.get("event-type-a").size());
         assertTrue(mapUsersByEventType.get("event-type-a").contains("User-01"));
