@@ -35,6 +35,7 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
             .toList();
 
         final Set<String> emails = recipientSettings.stream()
+                .filter(settings -> settings.getEmails() != null)
                 .flatMap(settings -> settings.getEmails().stream())
                 .collect(toSet());
 
