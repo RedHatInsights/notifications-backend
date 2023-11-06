@@ -274,7 +274,7 @@ public class EmailProcessorTest {
         // Do not return any subscribers for this test, so that the other
         // condition to remove the resulting recipient settings from the set
         // in the email processor is met.
-        Mockito.when(this.subscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(List.of());
+        Mockito.when(this.subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(List.of());
 
         // Call the processor under test.
         this.emailProcessor.process(event, endpoints);
@@ -331,7 +331,7 @@ public class EmailProcessorTest {
         // Mock a list of subscribers that simulate the ones that should be
         // notified for the event.
         final List<String> subscribers = List.of("subscriber-a", "subscriber-b", "subscriber-c");
-        Mockito.when(this.subscriptionRepository.getSubscribersByEventType(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(subscribers);
+        Mockito.when(this.subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(subscribers);
 
         // Mock the endpoint that should get pulled from the database using
         // the endpoint repository.

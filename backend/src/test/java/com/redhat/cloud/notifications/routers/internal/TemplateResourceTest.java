@@ -106,10 +106,10 @@ public class TemplateResourceTest extends DbIsolatedTest {
         // First, we need a bundle, an app and an event type in the DB.
         String bundleId = createBundle(adminIdentity, "bundle-name", "Bundle", OK).get();
         String appId = createApp(adminIdentity, bundleId, "app-name", "App", null, OK).get();
-        String eventTypeId = createEventType(adminIdentity, appId, "event-type-name", "Event type", "Event type description", OK).get();
+        String eventTypeId = createEventType(adminIdentity, appId, "event-type-name", "Event type", "Event type description", false, OK).get();
 
         String appId2 = createApp(adminIdentity, bundleId, "app-name-2", "App2", null, OK).get();
-        String eventTypeId2 = createEventType(adminIdentity, appId2, "event-type-name-2", "Event type 2", "Event type description", OK).get();
+        String eventTypeId2 = createEventType(adminIdentity, appId2, "event-type-name-2", "Event type 2", "Event type description", false, OK).get();
 
         // We also need templates that will be linked with the instant email template tested below.
         Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-template-name", "template-data");

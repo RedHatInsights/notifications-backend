@@ -110,11 +110,11 @@ public class UserConfigResource {
                             // for each email subscription
                             eventTypeValue.emailSubscriptionTypes.forEach((subscriptionType, subscribed) -> {
                                 if (subscribed) {
-                                    subscriptionRepository.subscribeEventType(
+                                    subscriptionRepository.subscribe(
                                         orgId, userName, eventType.get().getId(), subscriptionType
                                     );
                                 } else {
-                                    subscriptionRepository.unsubscribeEventType(
+                                    subscriptionRepository.unsubscribe(
                                         orgId, userName, eventType.get().getId(), subscriptionType
                                     );
                                 }
@@ -215,7 +215,8 @@ public class UserConfigResource {
                     if (featureFlipper.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
                         boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), subscriptionType);
                         if (supported) {
-                            eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscriptionType.isSubscribedByDefault());
+                            boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
+                            eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscribedByDefault);
                         }
                     }
                 }

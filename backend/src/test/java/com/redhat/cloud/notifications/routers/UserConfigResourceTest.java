@@ -271,11 +271,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database
         assertThrows(PersistenceException.class, () -> {
-            subscriptionRepository.subscribeEventType(orgId, username, UUID.randomUUID(), DAILY);
+            subscriptionRepository.subscribe(orgId, username, UUID.randomUUID(), DAILY);
         });
 
-        // not fail if we have unknown event type on unsubscibe, but nb affected rows must be 0
-        assertEquals(0, subscriptionRepository.unsubscribeEventType(orgId, username, UUID.randomUUID(), DAILY));
+        // Fail if we have unknown event type on unsubscribe, but nothing will be added on database
+        assertThrows(PersistenceException.class, () -> {
+            subscriptionRepository.unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
+        });
 
         // does not add if we try to create unknown bundle/apps
         settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", eventType, true, true, true);
