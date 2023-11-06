@@ -30,8 +30,14 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
 
         final Set<RecipientSettings> requests = extractRecipientSettings(event, endpoints);
 
-        Set<String> subscribers = Set.copyOf(subscriptionRepository
-                    .getSubscribersByEventType(event.getOrgId(), eventType.getId(), subscriptionType));
+        Set<String> subscribers;
+        if (subscriptionType.isSubscribedByDefault()) {
+            subscribers = Set.copyOf(subscriptionRepository
+                    .getUnsubscribers(event.getOrgId(), eventType.getId(), subscriptionType));
+        } else {
+            subscribers = Set.copyOf(subscriptionRepository
+                    .getSubscribers(event.getOrgId(), eventType.getId(), subscriptionType));
+        }
         return recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers, !subscriptionType.isSubscribedByDefault());
     }
 
@@ -75,10 +81,10 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
     protected List<String> getSubscribers(final Event event, final SubscriptionType subscriptionType) {
         final EventType eventType = event.getEventType();
 
-        return this.subscriptionRepository.getSubscribersByEventType(
-            event.getOrgId(),
-            eventType.getId(),
-            subscriptionType
-        );
+        if (subscriptionType.isSubscribedByDefault()) {
+            return subscriptionRepository.getUnsubscribers(event.getOrgId(), eventType.getId(), subscriptionType);
+        } else {
+            return subscriptionRepository.getSubscribers(event.getOrgId(), eventType.getId(), subscriptionType);
+        }
     }
 }

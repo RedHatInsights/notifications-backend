@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
-import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -25,47 +24,28 @@ public class SubscriptionRepository {
     @Inject
     FeatureFlipper featureFlipper;
 
-    public int subscribeEventType(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
-        // Opt-in: only subscriptions are stored on database
-        // Opt-on: only un-subscriptions are stored on database
-        if (!subscriptionType.isSubscribedByDefault()) {
-            return addEventTypeSubscription(orgId, username, eventTypeId, subscriptionType, true);
-        } else {
-            return deleteEventTypeSubscription(orgId, username, eventTypeId, subscriptionType);
-        }
+    public void subscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
+        updateSubscription(orgId, username, eventTypeId, subscriptionType, true);
+    }
+
+    public void unsubscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
+        updateSubscription(orgId, username, eventTypeId, subscriptionType, false);
     }
 
     @Transactional
-    public int addEventTypeSubscription(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType, boolean subscribed) {
-        String query = "INSERT INTO email_subscriptions(org_id, user_id, event_type_id, subscription_type, subscribed) " +
+    void updateSubscription(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType, boolean subscribed) {
+        // We're performing an upsert to update the user subscription.
+        String sql = "INSERT INTO email_subscriptions(org_id, user_id, event_type_id, subscription_type, subscribed) " +
             "VALUES (:orgId, :userId, :eventTypeId, :subscriptionType, :subscribed) " +
-            "ON CONFLICT (org_id, user_id, event_type_id, subscription_type) DO NOTHING"; // The value is already on the database, this is OK
+            "ON CONFLICT (org_id, user_id, event_type_id, subscription_type) DO UPDATE SET subscribed = :subscribed";
 
-        // HQL does not support the ON CONFLICT clause so we need a native query here
-        return entityManager.createNativeQuery(query)
+        // HQL does not support the ON CONFLICT clause, so we need a native query here
+        entityManager.createNativeQuery(sql)
             .setParameter("orgId", orgId)
             .setParameter("userId", username)
             .setParameter("eventTypeId", eventTypeId)
             .setParameter("subscriptionType", subscriptionType.name())
             .setParameter("subscribed", subscribed)
-            .executeUpdate();
-    }
-
-    public int unsubscribeEventType(String orgId, String userId, UUID eventTypeId, SubscriptionType subscriptionType) {
-        // Opt-in: only subscriptions are stored on database
-        // Opt-on: only un-subscriptions are stored on database
-        if (!subscriptionType.isSubscribedByDefault()) {
-            return deleteEventTypeSubscription(orgId, userId, eventTypeId, subscriptionType);
-        } else {
-            return addEventTypeSubscription(orgId, userId, eventTypeId, subscriptionType, false);
-        }
-    }
-
-    @Transactional
-    public int deleteEventTypeSubscription(String orgId, String userId, UUID eventTypeId, SubscriptionType subscriptionType) {
-        String query = "DELETE FROM EventTypeEmailSubscription WHERE id = :Id";
-        return entityManager.createQuery(query)
-            .setParameter("Id", new EventTypeEmailSubscriptionId(orgId, userId, eventTypeId, subscriptionType))
             .executeUpdate();
     }
 

@@ -78,6 +78,8 @@ public class EventType {
     @JsonIgnore
     private boolean visible = true;
 
+    @JsonIgnore
+    private boolean subscribedByDefault;
 
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
     @JsonIgnore
@@ -161,6 +163,14 @@ public class EventType {
 
     public boolean isVisible() {
         return visible;
+    }
+
+    public boolean isSubscribedByDefault() {
+        return subscribedByDefault;
+    }
+
+    public void setSubscribedByDefault(boolean subscribedByDefault) {
+        this.subscribedByDefault = subscribedByDefault;
     }
 
     @Override
