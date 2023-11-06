@@ -78,7 +78,6 @@ public class EventType {
     @JsonIgnore
     private boolean visible = true;
 
-    @JsonIgnore
     private boolean subscribedByDefault;
 
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
