@@ -26,6 +26,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Expression;
 import org.apache.camel.LoggingLevel;
+import org.apache.camel.Predicate;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.component.caffeine.CaffeineConfiguration;
@@ -40,10 +41,12 @@ import org.apache.camel.support.jsse.TrustManagersParameters;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EMAIL_RECIPIENTS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static org.apache.camel.LoggingLevel.INFO;
 
@@ -370,7 +373,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         from(direct(Routes.SEND_EMAIL_BOP_CHOICE))
             .routeId(Routes.SEND_EMAIL_BOP_CHOICE)
             .choice()
-                .when(simpleF("${exchangeProperty.%s.isEmpty()}", FILTERED_USERS))
+                .when(shouldSkipEmail())
                     // TODO Lower this log level to DEBUG later.
                     .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
                 .when(constant(this.emailConnectorConfig.isSingleEmailPerUserEnabled()))
@@ -407,6 +410,12 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                 .setProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, constant(true))
                 .to(direct(Routes.SEND_EMAIL_BOP))
             .end();
+    }
+
+    private Predicate shouldSkipEmail() {
+        return exchange -> exchange.getProperty(FILTERED_USERS, Set.class).isEmpty() &&
+                (!emailConnectorConfig.isSkipBopUsersResolution() ||
+                exchange.getProperty(EMAIL_RECIPIENTS, Set.class).isEmpty());
     }
 
     /**
