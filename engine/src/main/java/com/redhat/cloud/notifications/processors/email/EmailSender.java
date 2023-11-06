@@ -54,9 +54,6 @@ public class EmailSender {
     @ConfigProperty(name = "processor.email.bop_env")
     String bopEnv;
 
-    @ConfigProperty(name = "processor.email.no_reply")
-    String noReplyEmail;
-
     @Inject
     FeatureFlipper featureFlipper;
 
@@ -269,9 +266,6 @@ public class EmailSender {
 
         Email email = new Email();
         email.setBodyType(BODY_TYPE_HTML);
-        if (featureFlipper.isAddDefaultRecipientOnSingleEmail()) {
-            email.setRecipients(Set.of(noReplyEmail));
-        }
         email.setBccList(usersEmail);
         email.setSubject(subject);
         email.setBody(body);
