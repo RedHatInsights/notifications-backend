@@ -27,6 +27,9 @@ import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
+import com.redhat.cloud.notifications.routers.internal.models.UpdateApplicationRequest;
+import com.redhat.cloud.notifications.routers.internal.models.dto.ApplicationDTO;
+import com.redhat.cloud.notifications.routers.internal.models.transformer.ApplicationDTOTransformer;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -49,6 +52,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -230,7 +234,7 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Application createApplication(@Context SecurityContext sec, @NotNull @Valid AddApplicationRequest request) {
+    public ApplicationDTO createApplication(@Context SecurityContext sec, @NotNull @Valid AddApplicationRequest request) {
         securityContextUtil.hasPermissionForRole(sec, request.ownerRole);
 
         Application app = new Application();
@@ -239,27 +243,32 @@ public class InternalResource {
         app.setName(request.name);
         app = applicationRepository.createApp(app);
 
-        if (request.ownerRole != null) {
-            InternalRoleAccess access = new InternalRoleAccess();
-            access.setRole(request.ownerRole);
-            access.setApplicationId(app.getId());
-            access.setApplication(app);
-            internalRoleAccessRepository.addAccess(access);
+        InternalRoleAccess internalRoleAccess = null;
+        if (request.ownerRole != null && !request.ownerRole.isBlank()) {
+            internalRoleAccess = new InternalRoleAccess();
+
+            internalRoleAccess.setRole(request.ownerRole);
+            internalRoleAccess.setApplicationId(app.getId());
+            internalRoleAccess.setApplication(app);
+            this.internalRoleAccessRepository.addAccess(internalRoleAccess);
         }
 
-        return app;
+        return ApplicationDTOTransformer.toDTO(app, internalRoleAccess);
     }
 
     @GET
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Application getApplication(@PathParam("appId") UUID appId) {
-        Application app = applicationRepository.getApplication(appId);
+    public ApplicationDTO getApplication(@PathParam("appId") UUID appId) {
+        final Application app = applicationRepository.getApplication(appId);
+
         if (app == null) {
             throw new NotFoundException();
         } else {
-            return app;
+            final InternalRoleAccess internalRoleAccess = this.internalRoleAccessRepository.findOneByApplicationUUID(appId);
+
+            return ApplicationDTOTransformer.toDTO(app, internalRoleAccess);
         }
     }
 
@@ -269,14 +278,47 @@ public class InternalResource {
     @Produces(TEXT_PLAIN)
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Response updateApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId, @NotNull @Valid Application app) {
+    public Response updateApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId, @NotNull UpdateApplicationRequest uar) {
+        // Make sure that the user has the permission to modify the application
+        // or its permission.
         securityContextUtil.hasPermissionForApplication(sec, appId);
-        int rowCount = applicationRepository.updateApplication(appId, app);
-        if (rowCount == 0) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        } else {
-            return Response.ok().build();
+
+        // Attempt fetching the application.
+        final Application application = this.applicationRepository.getApplication(appId);
+        if (application == null) {
+            return Response
+                .status(HttpStatus.SC_NOT_FOUND)
+                .entity("{\"error\": \"The application was not found\"}")
+                .header("Content-Type", APPLICATION_JSON)
+                .build();
         }
+
+        // We have to set the bundle ID because otherwise the entity manager
+        // throws a constraint violation error about the bundle ID being
+        // empty.
+        application.setBundleId(application.getBundle().getId());
+
+        // Update the application's details.
+        final String newApplicationName = uar.name;
+        if (newApplicationName != null && !newApplicationName.isBlank()) {
+            application.setName(newApplicationName);
+        }
+
+        final String newApplicationDisplayName = uar.displayName;
+        if (newApplicationDisplayName != null && !newApplicationDisplayName.isBlank()) {
+            application.setDisplayName(newApplicationDisplayName);
+        }
+
+        // Prepare the internal role to be updated.
+        final InternalRoleAccess internalRoleAccess = new InternalRoleAccess();
+        internalRoleAccess.setRole(uar.ownerRole);
+        internalRoleAccess.setApplicationId(application.getId());
+        internalRoleAccess.setApplication(application);
+
+        // Update the application and its permission.
+        this.applicationRepository.updateApplicationAndAccess(application, internalRoleAccess);
+
+        return Response.ok().build();
     }
 
     @DELETE

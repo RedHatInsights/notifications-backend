@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -39,6 +40,9 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
 
     @Inject
     ApplicationRepository applicationRepository;
+
+    @Inject
+    InternalRoleAccessRepository internalRoleAccessRepository;
 
     @Test
     void shouldFindApplicationsLinkedToForcedEmails() {
@@ -197,6 +201,74 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
             this.applicationRepository.applicationBundleExists(applicationName, UUID.randomUUID().toString()),
             "the application exists, but the specified bundle name doesn't belong to any bundle"
         );
+    }
+
+    /**
+     * Tests that the function under test only updates the application when
+     * no internal role has been given.
+     */
+    @Test
+    void testUpdateApplication() {
+        // Prepare the fixtures.
+        final Bundle bundle = this.resourceHelpers.createBundle("test-update-application");
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+
+        // Update the application's fields.
+        final String updatedApplicationName = "test-update-application-n";
+        final String updatedApplicationDisplayName = "test-update-application-dn";
+        application.setName(updatedApplicationName);
+        application.setDisplayName(updatedApplicationDisplayName);
+
+        // Call the function under test.
+        this.applicationRepository.updateApplicationAndAccess(application, new InternalRoleAccess());
+
+        // Verify that the application was updated in the database.
+        final Application result = this.applicationRepository.getApplication(application.getId());
+
+        Assertions.assertEquals(updatedApplicationName, result.getName(), "the name of the application was not updated");
+        Assertions.assertEquals(updatedApplicationDisplayName, result.getDisplayName(), "the display name of the application was not updated");
+    }
+
+    /**
+     * Tests that the function under test updates both the internal role and
+     * the application.
+     */
+    @Test
+    void testUpdateApplicationAccess() {
+        // Prepare the fixtures.
+        final Bundle bundle = this.resourceHelpers.createBundle("test-update-application-access");
+        final Application application = this.resourceHelpers.createApplication(bundle.getId());
+
+        final InternalRoleAccess internalRoleAccess = new InternalRoleAccess();
+        internalRoleAccess.setApplication(application);
+        internalRoleAccess.setApplicationId(application.getId());
+        internalRoleAccess.setRole("test-internal-role-access");
+
+        this.internalRoleAccessRepository.addAccess(internalRoleAccess);
+
+        // Update the application's fields.
+        final String updatedApplicationName = "test-update-application-access-n";
+        final String updatedApplicationDisplayName = "test-update-application-access-dn";
+        application.setName(updatedApplicationName);
+        application.setDisplayName(updatedApplicationDisplayName);
+
+        // Update the role's fields.
+        final String updatedRoleName = "test-update-application-role-n";
+        internalRoleAccess.setRole(updatedRoleName);
+
+        // Call the function under test.
+        this.applicationRepository.updateApplicationAndAccess(application, internalRoleAccess);
+
+        // Verify that the application was updated in the database.
+        final Application resultApplication = this.applicationRepository.getApplication(application.getId());
+
+        Assertions.assertEquals(updatedApplicationName, resultApplication.getName(), "the name of the application was not updated");
+        Assertions.assertEquals(updatedApplicationDisplayName, resultApplication.getDisplayName(), "the display name of the application was not updated");
+
+        // Verify that the role was updated in the database.
+        final InternalRoleAccess resultInternalRoleAccess = this.internalRoleAccessRepository.findOneByApplicationUUID(application.getId());
+
+        Assertions.assertEquals(updatedRoleName, resultInternalRoleAccess.getRole(), "the role of the internal role access was not updated");
     }
 
     private Endpoint createEmailSubscription(String orgId, boolean isForced) {
