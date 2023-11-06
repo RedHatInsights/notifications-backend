@@ -1,32 +1,21 @@
 package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
-import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
-import com.redhat.cloud.notifications.connector.email.constants.Routes;
-import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import com.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import org.apache.camel.Endpoint;
-import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
-import org.apache.camel.ProducerTemplate;
-import org.apache.camel.builder.AdviceWith;
 import org.apache.camel.component.caffeine.CaffeineConfiguration;
 import org.apache.camel.component.caffeine.EvictionType;
 import org.apache.camel.component.caffeine.cache.CaffeineCacheComponent;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-
-import static com.redhat.cloud.notifications.connector.email.TestUtils.createUsers;
 
 @QuarkusTest
 @TestProfile(EmailRouteBuilderTest.class)
@@ -36,9 +25,6 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
 
     @Inject
     EmailRouteBuilder emailRouteBuilder;
-
-    @Inject
-    ProducerTemplate producerTemplate;
 
     @Override
     public boolean isUseAdviceWith() {
@@ -55,30 +41,6 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     @Override
     public boolean isUseRouteBuilder() {
         return false;
-    }
-
-    @Test
-    void testIndividualEmailPerUser() throws Exception {
-        AdviceWith.adviceWith(this.context, Routes.SEND_EMAIL_BOP_SINGLE_PER_USER, a -> {
-            a.mockEndpointsAndSkip(String.format("direct:%s", Routes.SEND_EMAIL_BOP));
-        });
-
-        final Set<User> users = createUsers("a", "b", "c", "d", "e");
-
-        final Exchange exchange = this.createExchangeWithBody("");
-        exchange.setProperty(ExchangeProperty.FILTERED_USERS, users);
-
-        final MockEndpoint sendEmailBopEndpoint = this.getMockEndpoint(String.format("mock:direct:%s", Routes.SEND_EMAIL_BOP), false);
-        sendEmailBopEndpoint.expectedMessageCount(5);
-
-        this.producerTemplate.send(String.format("direct:%s", Routes.SEND_EMAIL_BOP_SINGLE_PER_USER), exchange);
-
-        sendEmailBopEndpoint.assertIsSatisfied();
-
-        final List<Exchange> splittedExchanges = sendEmailBopEndpoint.getExchanges();
-        for (final Exchange splittedExchange : splittedExchanges) {
-            Assertions.assertTrue(splittedExchange.getProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, Boolean.class), "after splitting the usernames' list, the resulting exchanges did not contain the 'single email per user' flag defined as a property");
-        }
     }
 
     /**

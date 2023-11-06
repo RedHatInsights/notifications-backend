@@ -179,7 +179,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
             // Once the split has finished, we can send the exchange to the BOP
             // route.
-            .to(direct(Routes.SEND_EMAIL_BOP_CHOICE));
+            .to(direct(Routes.SEND_EMAIL_BOP));
 
         /*
          * Fetches the users from recipients resolver.
@@ -375,21 +375,6 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .end()
             .process(this.recipientsFilter);
 
-        from(direct(Routes.SEND_EMAIL_BOP_CHOICE))
-            .routeId(Routes.SEND_EMAIL_BOP_CHOICE)
-            .choice()
-                .when(shouldSkipEmail())
-                    // TODO Lower this log level to DEBUG later.
-                    .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-                .when(constant(this.emailConnectorConfig.isSingleEmailPerUserEnabled()))
-                    .to(direct(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER))
-                    .log(INFO, getClass().getName(), "Sent single recipient Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-                .otherwise()
-                    .to(direct(Routes.SEND_EMAIL_BOP))
-                    .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-            .end()
-            .to(direct(SUCCESS));
-
         /*
          * Prepares the payload accepted by BOP and sends the request to
          * the service.
@@ -398,23 +383,18 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
         from(direct(Routes.SEND_EMAIL_BOP))
             .routeId(Routes.SEND_EMAIL_BOP)
-            // Clear all the headers that may come from the previous route.
-            .removeHeaders("*")
-            .process(this.BOPRequestPreparer)
-            .to(bopEndpoint);
-
-        /*
-         * Temporary route in order to be able to send an email per user,
-         * instead of one per multiple users.
-         */
-        from(direct(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER))
-            .routeId(Routes.SEND_EMAIL_BOP_SINGLE_PER_USER)
-            // Clear all the headers that may come from the previous route.
-            .removeHeaders("*")
-            .split(simpleF("${exchangeProperty.%s}", FILTERED_USERS))
-                .setProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, constant(true))
-                .to(direct(Routes.SEND_EMAIL_BOP))
-            .end();
+            .choice()
+                .when(shouldSkipEmail())
+                    // TODO Lower this log level to DEBUG later.
+                    .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+                .otherwise()
+                    // Clear all the headers that may come from the previous route.
+                    .removeHeaders("*")
+                    .process(this.BOPRequestPreparer)
+                    .to(bopEndpoint)
+                    .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+            .end()
+            .to(direct(SUCCESS));
     }
 
     private Predicate shouldSkipEmail() {

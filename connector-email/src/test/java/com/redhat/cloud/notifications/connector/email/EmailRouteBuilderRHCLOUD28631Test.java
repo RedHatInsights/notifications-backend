@@ -8,9 +8,7 @@ import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsFilterTest;
-import com.redhat.cloud.notifications.connector.email.testprofile.SingleEmailMultipleUsersTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
@@ -36,7 +34,6 @@ import java.util.Set;
  * email for multiple users" option enabled.
  */
 @QuarkusTest
-@TestProfile(SingleEmailMultipleUsersTestProfile.class)
 public class EmailRouteBuilderRHCLOUD28631Test extends CamelQuarkusTestSupport {
     @Inject
     EmailConnectorConfig emailConnectorConfig;
@@ -108,19 +105,16 @@ public class EmailRouteBuilderRHCLOUD28631Test extends CamelQuarkusTestSupport {
             a.weaveByToUri(this.emailConnectorConfig.getRbacURL()).replace().setBody(new ConstantExpression(body));
         });
 
-        // Make sure we replace the BOP endpoint too in order to check the
-        // usernames we are sending.
         AdviceWith.adviceWith(this.context, Routes.SEND_EMAIL_BOP, a -> {
+            // Make sure we replace the BOP endpoint too in order to check the
+            // usernames we are sending.
             a.weaveByToUri(String.format("%s*", this.emailConnectorConfig.getBopURL())).replace().to("mock:bopendpoint");
-        });
-
-        // Set up the expected exchanges count that the success endpoint should
-        // receive at the end of the test.
-        AdviceWith.adviceWith(this.context, Routes.SEND_EMAIL_BOP_CHOICE, a -> {
+            // Set up the expected exchanges count that the success endpoint should
+            // receive at the end of the test.
             a.mockEndpoints(String.format("direct:%s", ConnectorToEngineRouteBuilder.SUCCESS));
         });
 
-        final MockEndpoint successEndpoint = this.getMockEndpoint(String.format("mock:direct:%s", ConnectorToEngineRouteBuilder.SUCCESS));
+        final MockEndpoint successEndpoint = this.getMockEndpoint(String.format("mock:direct:%s", ConnectorToEngineRouteBuilder.SUCCESS), false);
         successEndpoint.expectedMessageCount(1);
 
         // Send the exchange to the entry point of the email connector.
@@ -132,7 +126,7 @@ public class EmailRouteBuilderRHCLOUD28631Test extends CamelQuarkusTestSupport {
         // Get the exchanges that we sent to BOP. In theory, since we are
         // sending a single email for multiple users, we should only receive
         // one exchabnge here.
-        final MockEndpoint bopEndpoint = this.getMockEndpoint("mock:bopendpoint");
+        final MockEndpoint bopEndpoint = this.getMockEndpoint("mock:bopendpoint", false);
         final List<Exchange> exchanges = bopEndpoint.getExchanges();
 
         Assertions.assertEquals(1, exchanges.size(), "unexpected number exchanges present in BOP's endpoint");
