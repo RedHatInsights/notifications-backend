@@ -215,8 +215,8 @@ public class UserConfigResource {
                     if (featureFlipper.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
                         boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), subscriptionType);
                         if (supported) {
-                            boolean subscribed = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
-                            eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscribed);
+                            boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
+                            eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscribedByDefault);
                         }
                     }
                 }
