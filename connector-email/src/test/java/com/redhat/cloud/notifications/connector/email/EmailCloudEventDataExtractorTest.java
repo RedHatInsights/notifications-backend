@@ -9,7 +9,6 @@ import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -40,7 +39,7 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
             true,
             UUID.randomUUID(),
             users,
-            Collections.emptySet()
+            null
         );
 
         final Set<String> users2 = Set.of("d", "e", "f");
