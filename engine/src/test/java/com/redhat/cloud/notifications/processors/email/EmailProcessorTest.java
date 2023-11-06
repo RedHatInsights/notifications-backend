@@ -64,11 +64,13 @@ public class EmailProcessorTest {
      */
     private Event setUpStubEvent() {
         final String[] users = {"foo", "bar", "baz"};
+        final String[] emails = {"john@doe.com", "jane@doe.com"};
 
         final Recipients recipients = new Recipients();
         recipients.setIgnoreUserPreferences(true);
         recipients.setOnlyAdmins(true);
         recipients.setUsers(users);
+        recipients.setEmails(emails);
 
         final NotificationsConsoleCloudEvent notificationsConsoleCloudEvent = Mockito.mock(NotificationsConsoleCloudEvent.class);
         // The type is required for the event wrapper.
@@ -376,7 +378,8 @@ public class EmailProcessorTest {
                     jsonRs.getBoolean("admins_only"),
                     jsonRs.getBoolean("ignore_user_preferences"),
                     (groupUUID == null) ? null : UUID.fromString(groupUUID),
-                    jsonRs.getJsonArray("users").stream().map(String.class::cast).collect(Collectors.toSet())
+                    jsonRs.getJsonArray("users").stream().map(String.class::cast).collect(Collectors.toSet()),
+                    jsonRs.getJsonArray("emails").stream().map(String.class::cast).collect(Collectors.toSet())
                 );
             }).collect(Collectors.toSet());
 

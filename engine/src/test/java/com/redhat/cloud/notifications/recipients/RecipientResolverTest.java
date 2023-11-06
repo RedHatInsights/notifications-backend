@@ -6,6 +6,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -58,6 +59,11 @@ public class RecipientResolverTest {
         @Override
         public Set<String> getUsers() {
             return users;
+        }
+
+        @Override
+        public Set<String> getEmails() {
+            return Collections.emptySet();
         }
     }
 

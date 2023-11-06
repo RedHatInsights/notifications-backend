@@ -20,11 +20,13 @@ public class ActionRecipientSettings extends RecipientSettings {
     private final boolean adminsOnly;
     private final boolean ignorePreferences;
     private final Set<String> users;
+    private final Set<String> emails;
 
-    public ActionRecipientSettings(boolean adminsOnly, boolean ignorePreferences, Collection<String> users) {
+    public ActionRecipientSettings(boolean adminsOnly, boolean ignorePreferences, Collection<String> users, Collection<String> emails) {
         this.adminsOnly = adminsOnly;
         this.ignorePreferences = ignorePreferences;
         this.users = Set.copyOf(users);
+        this.emails = Set.copyOf(emails);
     }
 
     @Override
@@ -47,12 +49,17 @@ public class ActionRecipientSettings extends RecipientSettings {
         return users;
     }
 
+    @Override
+    public Set<String> getEmails() {
+        return emails;
+    }
+
     public static List<ActionRecipientSettings> fromEventWrapper(EventWrapper<?, ?> eventWrapper) {
         if (eventWrapper.getEvent() instanceof Action) {
             return ((Action) eventWrapper.getEvent())
                     .getRecipients()
                     .stream()
-                    .map(r -> new ActionRecipientSettings(r.getOnlyAdmins(), r.getIgnoreUserPreferences(), r.getUsers()))
+                    .map(r -> new ActionRecipientSettings(r.getOnlyAdmins(), r.getIgnoreUserPreferences(), r.getUsers(), r.getEmails()))
                     .collect(Collectors.toList());
         } else if (eventWrapper.getEvent() instanceof NotificationsConsoleCloudEvent cloudEvent) {
             Optional<Recipients> recipients = cloudEvent.getRecipients();
@@ -60,7 +67,8 @@ public class ActionRecipientSettings extends RecipientSettings {
                 return List.of(new ActionRecipientSettings(
                         recipients.get().getOnlyAdmins(),
                         recipients.get().getIgnoreUserPreferences(),
-                        Arrays.asList(recipients.get().getUsers())
+                        Arrays.asList(recipients.get().getUsers()),
+                        Arrays.asList(recipients.get().getEmails())
                 ));
             }
         }

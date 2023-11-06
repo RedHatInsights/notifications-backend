@@ -38,6 +38,7 @@ public class ITUserRequestPreparerTest extends CamelQuarkusTestSupport {
             true,
             true,
             null,
+            null,
             null
         );
 

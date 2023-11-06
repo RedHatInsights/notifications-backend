@@ -60,7 +60,8 @@ public class EmailRouteBuilderRHCLOUD28631SingleEmailPerUserTest extends CamelQu
             true,
             true,
             null,
-            users
+            users,
+            null
         );
         final Set<String> users2 = Set.of("johndoe", "janedoe");
 
@@ -68,7 +69,8 @@ public class EmailRouteBuilderRHCLOUD28631SingleEmailPerUserTest extends CamelQu
             true,
             true,
             null,
-            users2
+            users2,
+            null
         );
 
         // Create the exchange that we will use in this test.

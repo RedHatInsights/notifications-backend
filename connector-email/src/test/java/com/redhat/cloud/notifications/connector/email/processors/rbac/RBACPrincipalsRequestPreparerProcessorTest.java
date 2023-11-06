@@ -31,6 +31,7 @@ public class RBACPrincipalsRequestPreparerProcessorTest extends CamelQuarkusTest
             true,
             true,
             null,
+            null,
             null
         );
         final int offset = 25;

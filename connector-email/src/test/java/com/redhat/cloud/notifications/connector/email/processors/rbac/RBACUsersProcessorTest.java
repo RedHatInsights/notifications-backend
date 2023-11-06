@@ -46,6 +46,7 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
             true,
             true,
             null,
+            null,
             null
         );
         exchange.setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, recipientSettings);
@@ -83,6 +84,7 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
         final RecipientSettings recipientSettings = new RecipientSettings(
             true,
             true,
+            null,
             null,
             null
         );
@@ -129,6 +131,7 @@ public class RBACUsersProcessorTest extends CamelQuarkusTestSupport {
             true,
             true,
             UUID.randomUUID(),
+            null,
             null
         );
         exchange.setProperty(ExchangeProperty.CURRENT_RECIPIENT_SETTINGS, recipientSettings);

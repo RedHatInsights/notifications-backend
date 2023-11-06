@@ -55,4 +55,10 @@ public class ExchangeProperty {
      * notification through email.
      */
     public static final String USERS = "users";
+    /**
+     * Email recipients initially included in the payload received by notifications-engine.
+     * The subscriptions of these recipients are not checked.
+     * They are simply added to the list of recipients retrieved from notifications-recipients-resolver.
+     */
+    public static final String EMAIL_RECIPIENTS = "email_recipients";
 }

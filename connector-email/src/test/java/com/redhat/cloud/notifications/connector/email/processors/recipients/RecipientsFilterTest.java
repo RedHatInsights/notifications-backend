@@ -41,7 +41,8 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
             // as true, in order for the logic not to further modify the set.
             true,
             UUID.randomUUID(),
-            recipientUsers
+            recipientUsers,
+            null
         );
 
         // Prepare the exchange.
@@ -75,6 +76,7 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
             // as true, in order for the logic not to further modify the set.
             true,
             UUID.randomUUID(),
+            null,
             null
         );
 
@@ -109,6 +111,7 @@ public class RecipientsFilterTest extends CamelQuarkusTestSupport {
             // users.
             false,
             UUID.randomUUID(),
+            null,
             null
         );
 

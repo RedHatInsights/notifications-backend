@@ -14,6 +14,8 @@ public abstract class RecipientSettings {
 
     public abstract Set<String> getUsers();
 
+    public abstract Set<String> getEmails();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -26,12 +28,13 @@ public abstract class RecipientSettings {
 
         RecipientSettings that = (RecipientSettings) o;
         return this.isOnlyAdmins() == that.isOnlyAdmins() && this.isIgnoreUserPreferences() == that.isIgnoreUserPreferences() &&
-                Objects.equals(this.getGroupId(), that.getGroupId()) && Objects.equals(this.getUsers(), that.getUsers());
+                Objects.equals(this.getGroupId(), that.getGroupId()) && Objects.equals(this.getUsers(), that.getUsers()) &&
+                Objects.equals(this.getEmails(), that.getEmails());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isOnlyAdmins(), isIgnoreUserPreferences(), getGroupId(), getUsers());
+        return Objects.hash(isOnlyAdmins(), isIgnoreUserPreferences(), getGroupId(), getUsers(), getEmails());
     }
 
 }
