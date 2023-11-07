@@ -21,19 +21,19 @@ public class RecipientsResolver {
 
 
     @CacheResult(cacheName = "find-recipients")
-    public List<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, boolean isOptIn) {
+    public List<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, boolean subscribedByDefault) {
         return recipientSettings.stream()
-            .flatMap(r -> recipientUsers(orgId, r, subscribers, isOptIn).stream())
+            .flatMap(r -> recipientUsers(orgId, r, subscribers, subscribedByDefault).stream())
             .collect(Collectors.toSet()).stream().toList();
     }
 
-    private Set<User> recipientUsers(String orgId, RecipientSettings request, Set<String> subscribers, boolean isOptIn) {
+    private Set<User> recipientUsers(String orgId, RecipientSettings request, Set<String> subscribers, boolean subscribedByDefault) {
 
          /*
          If the subscription type is opt-in, the user preferences should NOT be ignored and the subscribers Set is empty,
          then we don't need to retrieve the users from RBAC/IT/BOP because we'll return an empty Set anyway.
          */
-        if (isOptIn && !request.isIgnoreUserPreferences() && subscribers.isEmpty()) {
+        if (!subscribedByDefault && !request.isIgnoreUserPreferences() && subscribers.isEmpty()) {
             return Collections.emptySet();
         }
 
@@ -59,7 +59,7 @@ public class RecipientsResolver {
         if (request.isIgnoreUserPreferences()) {
             users = Set.copyOf(users);
         } else {
-            if (isOptIn) {
+            if (!subscribedByDefault) {
                 // Otherwise, the recipients from RBAC who didn't subscribe to the event type are filtered out.
                 users = filterUsers(users, subscribers);
             } else {

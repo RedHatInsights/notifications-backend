@@ -115,7 +115,7 @@ class EmailAggregatorTest {
         if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
             when(recipientsResolverService.getRecipients(any(RecipientsQuery.class))).then(parameters -> {
                 RecipientsQuery query = parameters.getArgument(0);
-                Set<String> users = query.getSubscribers();
+                Set<String> users = query.subscribers;
                 return users.stream().map(usrStr -> {
                     User usr = new User();
                     usr.setEmail(usrStr);

@@ -399,7 +399,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(false, false, null, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(user2, user3, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
@@ -416,7 +416,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(true, false, null, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
@@ -433,7 +433,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(false, true, null, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(user1, user2, user3, admin1, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
@@ -450,7 +450,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(true, true, null, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(admin1, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
@@ -469,7 +469,7 @@ public class RecipientResolverTest {
                 ))
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(user3), users);
 
@@ -489,7 +489,7 @@ public class RecipientResolverTest {
                 ))
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(user1, user3), users);
 
@@ -509,7 +509,7 @@ public class RecipientResolverTest {
                 ))
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(admin2), users);
 
@@ -529,7 +529,7 @@ public class RecipientResolverTest {
                 ))
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(admin1, admin2), users);
 
@@ -548,7 +548,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(true, true, null, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(user2, user3, admin1, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
@@ -570,7 +570,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(true, true, null, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(user1, user2, user3, admin1, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getUsers(
@@ -591,7 +591,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(false, false, group1, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(), users);
         verify(rbacRecipientUsersProvider, times(1)).getGroupUsers(
@@ -609,7 +609,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(true, false, group1, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(), users);
         verify(rbacRecipientUsersProvider, times(1)).getGroupUsers(
@@ -627,7 +627,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(false, false, group2, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(user2, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getGroupUsers(
@@ -645,7 +645,7 @@ public class RecipientResolverTest {
                 new TestRecipientSettings(false, true, group2, Set.of())
             ),
             unsubscribedUsers,
-            false
+            true
         );
         assertEquals(Set.of(user2, admin2), users);
         verify(rbacRecipientUsersProvider, times(1)).getGroupUsers(
