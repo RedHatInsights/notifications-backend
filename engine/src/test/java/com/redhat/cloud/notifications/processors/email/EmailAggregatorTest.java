@@ -13,13 +13,17 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -37,9 +41,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -50,6 +56,9 @@ class EmailAggregatorTest {
 
     @InjectMock
     RecipientResolver recipientResolver;
+
+    @InjectMock
+    ExternalRecipientsResolver externalRecipientsResolver;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -63,21 +72,34 @@ class EmailAggregatorTest {
     @InjectMock
     EndpointRepository endpointRepository;
 
+    EventType eventType1;
+    EventType eventType2;
     final EmailAggregationKey aggregationKey = new EmailAggregationKey("org-1", "rhel", "policies");
 
     @BeforeEach
     void beforeEach() {
         emailAggregator.maxPageSize = 5;
+
+        EmailAggregationKey emailAggregationKey = new EmailAggregationKey("org-1", "rhel", "policies");
+        emailAggregationRepository.purgeOldAggregation(emailAggregationKey, LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1));
     }
 
-    @Test
-    void shouldTestRecipientsFromSubscription() {
+    @AfterEach
+    void afterEach() {
+        resourceHelpers.deleteEventTypeEmailSubscription("org-1", "user-2", eventType2, DAILY);
+        resourceHelpers.deleteEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
+    }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldTestRecipientsFromSubscription(boolean UseRecipientsResolverClowdappForDailyDigestEnabled) {
+
+        featureFlipper.setUseRecipientsResolverClowdappForDailyDigestEnabled(UseRecipientsResolverClowdappForDailyDigestEnabled);
         // init test environment
         Application application = resourceHelpers.findApp("rhel", "policies");
-        EventType eventType1 = resourceHelpers.createEventType(application.getId(), TestHelpers.eventType);
-        EventType eventType2 = resourceHelpers.createEventType(application.getId(), "not-used");
-        resourceHelpers.createEventType(application.getId(), "event-type-2");
+        eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);
+        eventType2 = resourceHelpers.findOrCreateEventType(application.getId(), "not-used");
+        resourceHelpers.findOrCreateEventType(application.getId(), "event-type-2");
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType2, DAILY);
 
         Endpoint endpoint = new Endpoint();
@@ -86,19 +108,31 @@ class EmailAggregatorTest {
 
         when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), anyString(), anyString(), anyString())).thenReturn(List.of(endpoint));
 
-        when(recipientResolver.recipientUsers(anyString(), any(), any())).then(parameters -> {
-            Set<String> users = parameters.getArgument(2);
-            return users.stream().map(usrStr -> {
-                User usr = new User();
-                usr.setEmail(usrStr);
-                return usr;
-            }).collect(Collectors.toSet());
-        });
+        if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
+            when(externalRecipientsResolver.recipientUsers(anyString(), any(), any(), any())).then(parameters -> {
+                Set<String> users = parameters.getArgument(2);
+                return users.stream().map(usrStr -> {
+                    User usr = new User();
+                    usr.setEmail(usrStr);
+                    return usr;
+                }).collect(Collectors.toSet());
+            });
+        } else {
+            when(recipientResolver.recipientUsers(anyString(), any(), any())).then(parameters -> {
+                Set<String> users = parameters.getArgument(2);
+                return users.stream().map(usrStr -> {
+                    User usr = new User();
+                    usr.setEmail(usrStr);
+                    return usr;
+                }).collect(Collectors.toSet());
+            });
+        }
 
         // Test user subscription based on event type
         Map<User, Map<String, Object>> result = aggregate();
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
+        verifyRecipientsResolverInteractions();
         reset(emailAggregationRepository); // just reset mockito counter
 
         // nobody subscribed to the right event type yet
@@ -114,7 +148,57 @@ class EmailAggregatorTest {
         User user = result.keySet().stream().findFirst().get();
         assertTrue(user.getEmail().equals("user-2"));
         assertEquals(8, ((LinkedHashMap) result.get(user).get("policies")).size());
+        verifyRecipientsResolverInteractions();
+    }
 
+    @Test
+    void shouldTestFallbackOnLegacyRecipientsResolverFetching() {
+
+        featureFlipper.setUseRecipientsResolverClowdappForDailyDigestEnabled(true);
+        // init test environment
+        Application application = resourceHelpers.findApp("rhel", "policies");
+        eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);
+        eventType2 = resourceHelpers.findOrCreateEventType(application.getId(), "not-used");
+        resourceHelpers.findOrCreateEventType(application.getId(), "event-type-2");
+        resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType2, DAILY);
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setProperties(new SystemSubscriptionProperties());
+        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+        when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), anyString(), anyString(), anyString())).thenReturn(List.of(endpoint));
+
+        when(externalRecipientsResolver.recipientUsers(anyString(), any(), any(), any())).thenThrow(RuntimeException.class);
+
+        when(recipientResolver.recipientUsers(anyString(), any(), any())).then(parameters -> {
+            Set<String> users = parameters.getArgument(2);
+            return users.stream().map(usrStr -> {
+                User usr = new User();
+                usr.setEmail(usrStr);
+                return usr;
+            }).collect(Collectors.toSet());
+        });
+
+        // Test user subscription based on event type
+        Map<User, Map<String, Object>> result = aggregate();
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
+        reset(emailAggregationRepository); // just reset mockito counter
+        verify(externalRecipientsResolver, atLeastOnce()).recipientUsers(anyString(), any(), any(), any());
+        verify(recipientResolver, atLeastOnce()).recipientUsers(anyString(), any(), any());
+
+        // nobody subscribed to the right event type yet
+        assertEquals(0, result.size());
+    }
+
+    private void verifyRecipientsResolverInteractions() {
+        if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
+            verify(externalRecipientsResolver, atLeastOnce()).recipientUsers(anyString(), any(), any(), any());
+            verifyNoInteractions(recipientResolver);
+        } else {
+            verify(recipientResolver, atLeastOnce()).recipientUsers(anyString(), any(), any());
+            verifyNoInteractions(externalRecipientsResolver);
+        }
     }
 
     private Map<User, Map<String, Object>> aggregate() {
@@ -125,7 +209,6 @@ class EmailAggregatorTest {
         emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
 
         emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-
         result.putAll(emailAggregator.getAggregated(aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
         return result;
     }

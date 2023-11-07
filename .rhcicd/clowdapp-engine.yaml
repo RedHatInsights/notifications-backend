@@ -17,6 +17,7 @@ objects:
     - notifications-backend
     - rbac
     - export-service
+    - notifications-recipients-resolver
     optionalDependencies:
     - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
     database:
@@ -156,6 +157,8 @@ objects:
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}:${BACKOFFICE_PORT}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
           value: ${PROCESSOR_EMAIL_NO_REPLY}
+        - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
+          value: ${PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED}
         - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
           value: ${RBAC_S2S_READ_TIMEOUT}
         - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
@@ -426,4 +429,6 @@ parameters:
   description: Is the drawer connector enabled to process them instead of in the engine?
   value: "false"
 - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
+  value: "false"
+- name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
   value: "false"

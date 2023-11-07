@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
@@ -12,6 +13,7 @@ import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmail
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import io.quarkus.logging.Log;
@@ -42,7 +44,13 @@ public class EmailAggregator {
     RecipientResolver recipientResolver;
 
     @Inject
+    ExternalRecipientsResolver externalRecipientsResolver;
+
+    @Inject
     SubscriptionRepository subscriptionRepository;
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
@@ -92,16 +100,28 @@ public class EmailAggregator {
                  * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
                  * The target endpoints properties will determine whether or not each candidate will actually receive an email.
                  */
-                Set<User> users = recipientResolver.recipientUsers(
-                    aggregationKey.getOrgId(),
-                    Stream.concat(
-                        endpoints
-                            .stream()
-                            .map(EndpointRecipientSettings::new),
-                        getActionRecipient(aggregation).stream()
-                    ).collect(Collectors.toSet()),
-                    getSubscribers(eventType, subscribersByEventType)
-                );
+                Set<User> users;
+                if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
+                    try {
+                        Log.info("Start calling external resolver service ");
+                        users = externalRecipientsResolver.recipientUsers(
+                            aggregationKey.getOrgId(),
+                            Stream.concat(
+                                endpoints
+                                    .stream()
+                                    .map(EndpointRecipientSettings::new),
+                                getActionRecipient(aggregation).stream()
+                            ).collect(Collectors.toSet()),
+                            getSubscribers(eventType, subscribersByEventType),
+                            SubscriptionType.DAILY
+                        );
+                    } catch (Exception ex) {
+                        Log.error("Error calling external recipients resolver service", ex);
+                        users = getUsers(aggregationKey, subscribersByEventType, aggregation, eventType, endpoints);
+                    }
+                } else {
+                    users = getUsers(aggregationKey, subscribersByEventType, aggregation, eventType, endpoints);
+                }
 
                 /*
                  * We now have the final recipients list.
@@ -130,6 +150,21 @@ public class EmailAggregator {
                             entry -> entry.getValue().getContext()
                         )
                 );
+    }
+
+    private Set<User> getUsers(EmailAggregationKey aggregationKey, Map<String, Set<String>> subscribersByEventType, EmailAggregation aggregation, String eventType, Set<Endpoint> endpoints) {
+        Set<User> users;
+        users = recipientResolver.recipientUsers(
+            aggregationKey.getOrgId(),
+            Stream.concat(
+                endpoints
+                    .stream()
+                    .map(EndpointRecipientSettings::new),
+                getActionRecipient(aggregation).stream()
+            ).collect(Collectors.toSet()),
+            getSubscribers(eventType, subscribersByEventType)
+        );
+        return users;
     }
 
     private void fillUsers(EmailAggregationKey aggregationKey, User user, Map<User, AbstractEmailPayloadAggregator> aggregated, EmailAggregation emailAggregation) {

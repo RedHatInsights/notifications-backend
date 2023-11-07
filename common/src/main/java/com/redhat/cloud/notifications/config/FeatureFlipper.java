@@ -98,6 +98,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "processor.email.bop.skip-users-resolution", defaultValue = "false")
     boolean skipBopUsersResolution;
 
+    @ConfigProperty(name = "processor.email.aggregation.use-recipients-resolver-clowdapp.enabled", defaultValue = "false")
+    boolean useRecipientsResolverClowdappForDailyDigestEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -120,6 +123,7 @@ public class FeatureFlipper {
         Log.infof("The drawer connector is %s", drawerConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The async aggregation is %s", asyncAggregation ? "enabled" : "disabled");
         Log.infof("The BOP users resolution is %s", !skipBopUsersResolution ? "enabled" : "disabled");
+        Log.infof("The Recipients resolver usage for daily digest is %s", useRecipientsResolverClowdappForDailyDigestEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -296,6 +300,15 @@ public class FeatureFlipper {
     public void setSkipBopUsersResolution(boolean skipBopUsersResolution) {
         checkTestLaunchMode();
         this.skipBopUsersResolution = skipBopUsersResolution;
+    }
+
+    public boolean isUseRecipientsResolverClowdappForDailyDigestEnabled() {
+        return useRecipientsResolverClowdappForDailyDigestEnabled;
+    }
+
+    public void setUseRecipientsResolverClowdappForDailyDigestEnabled(boolean useRecipientsResolverClowdappForDailyDigestEnabled) {
+        checkTestLaunchMode();
+        this.useRecipientsResolverClowdappForDailyDigestEnabled = useRecipientsResolverClowdappForDailyDigestEnabled;
     }
 
     /**

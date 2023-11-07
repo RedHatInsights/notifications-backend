@@ -189,6 +189,12 @@ public class ResourceHelpers {
     }
 
     @Transactional
+    public void deleteEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType) {
+        EventTypeEmailSubscriptionId eventTypeEmailSubscriptionId = new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType);
+        entityManager.createQuery("DELETE FROM EventTypeEmailSubscription WHERE id = :id").setParameter("id", eventTypeEmailSubscriptionId).executeUpdate();
+    }
+
+    @Transactional
     public void deleteEmailTemplatesById(UUID templateId) {
         entityManager.createQuery("DELETE FROM InstantEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
         entityManager.createQuery("DELETE FROM AggregationEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
@@ -240,4 +246,15 @@ public class ResourceHelpers {
         }
         return app;
     }
+
+    public EventType findOrCreateEventType(UUID applicationId, String eventTypeName) {
+        EventType eventType = null;
+        try {
+            eventType = findEventType(applicationId, eventTypeName);
+        } catch (NoResultException nre) {
+            eventType = createEventType(applicationId, eventTypeName);
+        }
+        return eventType;
+    }
+
 }
