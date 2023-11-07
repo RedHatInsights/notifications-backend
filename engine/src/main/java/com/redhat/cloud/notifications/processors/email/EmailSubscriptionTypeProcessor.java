@@ -188,13 +188,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
         Set<User> userList = getRecipientList(event, endpoints.stream().toList(), SubscriptionType.INSTANT);
-        if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-            emailSender.sendEmail(userList, event, subject, body, true, endpoint);
-        } else {
-            for (User user : userList) {
-                emailSender.sendEmail(user, event, subject, body, true, endpoint);
-            }
-        }
+        emailSender.sendEmail(userList, event, subject, body, true, endpoint);
     }
 
     public void processAggregation(Event event) {
@@ -303,73 +297,39 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                                                                         aggregationCommand.getStart(),
                                                                         aggregationCommand.getEnd());
 
-            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-                Map<Map<String, Object>, Set<User>> aggregationsEmailContext = aggregationsByUsers.keySet().stream()
-                    .collect(Collectors.groupingBy(aggregationsByUsers::get, Collectors.toSet()));
+            Map<Map<String, Object>, Set<User>> aggregationsEmailContext = aggregationsByUsers.keySet().stream()
+                .collect(Collectors.groupingBy(aggregationsByUsers::get, Collectors.toSet()));
 
-                for (Map.Entry<Map<String, Object>, Set<User>> aggregation : aggregationsEmailContext.entrySet()) {
+            for (Map.Entry<Map<String, Object>, Set<User>> aggregation : aggregationsEmailContext.entrySet()) {
 
-                    Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
-                    aggregation.getKey().forEach(contextBuilder::withAdditionalProperty);
-                    action.setContext(contextBuilder.build());
-                    event.setEventWrapper(new EventWrapperAction(action));
+                Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
+                aggregation.getKey().forEach(contextBuilder::withAdditionalProperty);
+                action.setContext(contextBuilder.build());
+                event.setEventWrapper(new EventWrapperAction(action));
 
-                    if (featureFlipper.isEmailConnectorEnabled()) {
-                        Set<String> recipientsUsernames = aggregation.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
-                        String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
-                        String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body);
+                if (featureFlipper.isEmailConnectorEnabled()) {
+                    Set<String> recipientsUsernames = aggregation.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
+                    String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
+                    String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body);
 
-                        Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
+                    Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
 
-                        // Prepare all the data to be sent to the connector.
-                        final EmailNotification emailNotification = new EmailNotification(
-                            bodyStr, subjectStr,
-                            event.getOrgId(),
-                            recipientSettings, recipientsUsernames
-                        );
+                    // Prepare all the data to be sent to the connector.
+                    final EmailNotification emailNotification = new EmailNotification(
+                        bodyStr, subjectStr,
+                        event.getOrgId(),
+                        recipientSettings, recipientsUsernames
+                    );
 
-                        connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
-                    } else {
-                        NotificationHistory history = emailSender.sendEmail(aggregation.getValue(), event, subject, body, false, endpoint);
-                        if (history != null) {
-                            Integer totalRecipients = (Integer) history.getDetails().get(TOTAL_RECIPIENTS_KEY);
-                            if (NotificationStatus.SUCCESS == history.getStatus()) {
-                                nbRecipientsSuccessfullySent += totalRecipients;
-                            } else {
-                                nbRecipientsFailureSent += totalRecipients;
-                            }
-                        }
-                    }
-                }
-            } else {
-                for (Map.Entry<User, Map<String, Object>> aggregation : aggregationsByUsers.entrySet()) {
-
-                    Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
-                    aggregation.getValue().forEach(contextBuilder::withAdditionalProperty);
-                    action.setContext(contextBuilder.build());
-                    event.setEventWrapper(new EventWrapperAction(action));
-
-                    if (featureFlipper.isEmailConnectorEnabled()) {
-                        Set<String> recipientsUsernames = Set.of(aggregation.getKey().getUsername());
-                        String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
-                        String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body);
-
-                        Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
-
-                        // Prepare all the data to be sent to the connector.
-                        final EmailNotification emailNotification = new EmailNotification(
-                            bodyStr, subjectStr,
-                            event.getOrgId(),
-                            recipientSettings, recipientsUsernames
-                        );
-
-                        connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
-                    } else {
-                        NotificationHistory history = emailSender.sendEmail(aggregation.getKey(), event, subject, body, false, endpoint);
+                    connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
+                } else {
+                    NotificationHistory history = emailSender.sendEmail(aggregation.getValue(), event, subject, body, false, endpoint);
+                    if (history != null) {
+                        Integer totalRecipients = (Integer) history.getDetails().get(TOTAL_RECIPIENTS_KEY);
                         if (NotificationStatus.SUCCESS == history.getStatus()) {
-                            nbRecipientsSuccessfullySent++;
+                            nbRecipientsSuccessfullySent += totalRecipients;
                         } else {
-                            nbRecipientsFailureSent++;
+                            nbRecipientsFailureSent += totalRecipients;
                         }
                     }
                 }

@@ -111,35 +111,20 @@ class EmailSubscriptionTypeProcessorTest {
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
         testee.process(new Event(), null);
-        verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+        verify(sender, never()).sendEmail(any(Set.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
     }
 
     @Test
     void shouldNotProcessWhenEndpointsAreEmpty() {
         testee.process(new Event(), List.of());
-        verify(sender, never()).sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-    }
-
-    @Test
-    void shouldSuccessfullySendTwoAggregatedEmailToTwoRecipients() {
-        when(sender.sendEmail(any(User.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class))).thenReturn(new NotificationHistory());
-        shouldSuccessfullySendTwoAggregatedEmails(INGRESS_CHANNEL);
+        verify(sender, never()).sendEmail(any(Set.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
     }
 
     @Test
     void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients() {
-        try {
-            featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(true);
-            NotificationHistory nh = new NotificationHistory();
-            nh.setDetails(Map.of(EmailSubscriptionTypeProcessor.TOTAL_RECIPIENTS_KEY, 1));
-            when(sender.sendEmail(any(Set.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class))).thenReturn(nh);
-            shouldSuccessfullySendTwoAggregatedEmails(INGRESS_CHANNEL);
-        } finally {
-            featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(false);
-        }
-    }
-
-    void shouldSuccessfullySendTwoAggregatedEmails(String channel) {
+        NotificationHistory nh = new NotificationHistory();
+        nh.setDetails(Map.of(EmailSubscriptionTypeProcessor.TOTAL_RECIPIENTS_KEY, 1));
+        when(sender.sendEmail(any(Set.class), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class))).thenReturn(nh);
 
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
 
@@ -158,7 +143,7 @@ class EmailSubscriptionTypeProcessorTest {
             DAILY
         );
 
-        createAggregatorEventTypeIfNeeded(channel);
+        createAggregatorEventTypeIfNeeded(INGRESS_CHANNEL);
 
         User user1 = new User();
         user1.setUsername("foo");
@@ -215,15 +200,9 @@ class EmailSubscriptionTypeProcessorTest {
                 eq(aggregationCommand2.getEnd())
             );
 
-            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-                verify(sender, timeout(5000L).times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-                verify(sender, timeout(5000L).times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-            } else {
-                verify(sender, timeout(5000L).times(1)).sendEmail(eq(user1), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-                verify(sender, timeout(5000L).times(1)).sendEmail(eq(user2), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-                verify(sender, timeout(5000L).times(1)).sendEmail(eq(user3), any(Event.class), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
-            }
-            getEventHistory(channel);
+            verify(sender, timeout(5000L).times(1)).sendEmail(eq(Set.of(user1, user2)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+            verify(sender, timeout(5000L).times(1)).sendEmail(eq(Set.of(user3)), any(), any(TemplateInstance.class), any(TemplateInstance.class), anyBoolean(), any(Endpoint.class));
+            getEventHistory(INGRESS_CHANNEL);
         } finally {
             if (null != blankAgg2) {
                 resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
@@ -279,21 +258,7 @@ class EmailSubscriptionTypeProcessorTest {
     }
 
     @Test
-    void shouldSendDefaultEmailTemplatesFromDatabase() {
-        shouldSendDefaultEmail();
-    }
-
-    @Test
     void shouldSendSingleEmailWithTwoRecieversUsingTemplatesFromDatabase() {
-        try {
-            featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(true);
-            shouldSendDefaultEmail();
-        } finally {
-            featureFlipper.setSendSingleEmailForMultipleRecipientsEnabled(false);
-        }
-    }
-
-    void shouldSendDefaultEmail() {
         try {
             featureFlipper.setUseDefaultTemplate(true);
 
@@ -345,12 +310,7 @@ class EmailSubscriptionTypeProcessorTest {
             endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
             testee.process(event, List.of(endpoint));
-            if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-                verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true), any(Endpoint.class));
-            } else {
-                verify(sender, times(1)).sendEmail(eq(user1), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true), any(Endpoint.class));
-                verify(sender, times(1)).sendEmail(eq(user2), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true), any(Endpoint.class));
-            }
+            verify(sender, times(1)).sendEmail(eq(Set.of(user1, user2)), eq(event), any(TemplateInstance.class), any(TemplateInstance.class), eq(true), any(Endpoint.class));
         } finally {
             featureFlipper.setUseDefaultTemplate(false);
         }

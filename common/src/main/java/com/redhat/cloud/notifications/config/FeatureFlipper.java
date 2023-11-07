@@ -71,9 +71,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.instant-emails.enabled", defaultValue = "false")
     boolean instantEmailsEnabled;
 
-    @ConfigProperty(name = "notifications.send-single-email-for-multiple-recipients.enabled", defaultValue = "false")
-    boolean sendSingleEmailForMultipleRecipientsEnabled;
-
     @ConfigProperty(name = "mp.messaging.incoming.exportrequests.enabled", defaultValue = "false")
     boolean exportServiceIntegrationEnabled;
 
@@ -111,7 +108,6 @@ public class FeatureFlipper {
         Log.infof("Emails only mode is %s", emailsOnlyMode ? "enabled" : "disabled");
         Log.infof("The use of secured email templates is %s", useSecuredEmailTemplates ? "enabled" : "disabled");
         Log.infof("Instant emails are %s", instantEmailsEnabled ? "enabled" : "disabled");
-        Log.infof("Sending one single email with multiple recipients is %s", sendSingleEmailForMultipleRecipientsEnabled ? "enabled" : "disabled");
         Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
         Log.infof("Drawer feature is %s", drawerEnabled ? "enabled" : "disabled");
         Log.infof("The use of BOP/MBOP for fetching users is %s", useMBOPForFetchingUsers ? "enabled" : "disabled");
@@ -224,15 +220,6 @@ public class FeatureFlipper {
     public void setInstantEmailsEnabled(boolean instantEmailsEnabled) {
         checkTestLaunchMode();
         this.instantEmailsEnabled = instantEmailsEnabled;
-    }
-
-    public boolean isSendSingleEmailForMultipleRecipientsEnabled() {
-        return sendSingleEmailForMultipleRecipientsEnabled;
-    }
-
-    public void setSendSingleEmailForMultipleRecipientsEnabled(boolean sendSingleEmailForMultipleRecipientsEnabled) {
-        checkTestLaunchMode();
-        this.sendSingleEmailForMultipleRecipientsEnabled = sendSingleEmailForMultipleRecipientsEnabled;
     }
 
     public boolean isDrawerEnabled() {
