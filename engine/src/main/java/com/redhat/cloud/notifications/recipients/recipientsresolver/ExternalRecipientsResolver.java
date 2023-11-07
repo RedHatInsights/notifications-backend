@@ -67,7 +67,7 @@ public class ExternalRecipientsResolver {
             .collect(Collectors.toSet());
 
         recipientsResolversQuery.setRecipientSettings(recipientSettingsSet);
-        recipientsResolversQuery.setOptIn(subscriptionType.isSubscribedByDefault());
+        recipientsResolversQuery.setOptIn(!subscriptionType.isSubscribedByDefault());
         Set<User> recipientsList = retryOnError(() -> recipientsResolverService.getRecipients(recipientsResolversQuery));
         return recipientsList;
     }
