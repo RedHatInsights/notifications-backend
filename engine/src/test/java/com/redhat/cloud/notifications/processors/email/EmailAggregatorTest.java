@@ -80,8 +80,7 @@ class EmailAggregatorTest {
     void beforeEach() {
         emailAggregator.maxPageSize = 5;
 
-        EmailAggregationKey emailAggregationKey = new EmailAggregationKey("org-1", "rhel", "policies");
-        emailAggregationRepository.purgeOldAggregation(emailAggregationKey, LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1));
+        emailAggregationRepository.purgeOldAggregation(aggregationKey, LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1));
     }
 
     @AfterEach
