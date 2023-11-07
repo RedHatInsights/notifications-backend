@@ -13,12 +13,15 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
+import com.redhat.cloud.notifications.recipients.recipientsresolver.RecipientsResolverService;
+import com.redhat.cloud.notifications.recipients.recipientsresolver.pojo.RecipientsQuery;
+import io.quarkus.cache.CacheInvalidate;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,8 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -58,7 +60,8 @@ class EmailAggregatorTest {
     RecipientResolver recipientResolver;
 
     @InjectMock
-    ExternalRecipientsResolver externalRecipientsResolver;
+    @RestClient
+    RecipientsResolverService recipientsResolverService;
 
     @Inject
     FeatureFlipper featureFlipper;
@@ -79,7 +82,9 @@ class EmailAggregatorTest {
     @BeforeEach
     void beforeEach() {
         emailAggregator.maxPageSize = 5;
-
+        clearCachedData();
+        clearInvocations(recipientsResolverService);
+        clearInvocations(recipientResolver);
         emailAggregationRepository.purgeOldAggregation(aggregationKey, LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1));
     }
 
@@ -108,8 +113,9 @@ class EmailAggregatorTest {
         when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), anyString(), anyString(), anyString())).thenReturn(List.of(endpoint));
 
         if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
-            when(externalRecipientsResolver.recipientUsers(anyString(), any(), any(), any())).then(parameters -> {
-                Set<String> users = parameters.getArgument(2);
+            when(recipientsResolverService.getRecipients(any(RecipientsQuery.class))).then(parameters -> {
+                RecipientsQuery query = parameters.getArgument(0);
+                Set<String> users = query.getSubscribers();
                 return users.stream().map(usrStr -> {
                     User usr = new User();
                     usr.setEmail(usrStr);
@@ -131,12 +137,12 @@ class EmailAggregatorTest {
         Map<User, Map<String, Object>> result = aggregate();
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
-        verifyRecipientsResolverInteractions();
-        reset(emailAggregationRepository); // just reset mockito counter
+        verifyRecipientsResolverInteractions(4);
 
         // nobody subscribed to the right event type yet
         assertEquals(0, result.size());
-
+        clearInvocations(recipientsResolverService); // just reset mockito counter
+        clearInvocations(emailAggregationRepository);
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
         // because after the previous aggregate() call the email_aggregation DB table was not purged, we already have 4 records on database
         result = aggregate();
@@ -147,7 +153,7 @@ class EmailAggregatorTest {
         User user = result.keySet().stream().findFirst().get();
         assertTrue(user.getEmail().equals("user-2"));
         assertEquals(8, ((LinkedHashMap) result.get(user).get("policies")).size());
-        verifyRecipientsResolverInteractions();
+        verifyRecipientsResolverInteractions(12);
     }
 
     @Test
@@ -167,7 +173,7 @@ class EmailAggregatorTest {
 
         when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), anyString(), anyString(), anyString())).thenReturn(List.of(endpoint));
 
-        when(externalRecipientsResolver.recipientUsers(anyString(), any(), any(), any())).thenThrow(RuntimeException.class);
+        when(recipientsResolverService.getRecipients(any())).thenThrow(RuntimeException.class);
 
         when(recipientResolver.recipientUsers(anyString(), any(), any())).then(parameters -> {
             Set<String> users = parameters.getArgument(2);
@@ -182,20 +188,20 @@ class EmailAggregatorTest {
         Map<User, Map<String, Object>> result = aggregate();
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
-        verify(externalRecipientsResolver, atLeastOnce()).recipientUsers(anyString(), any(), any(), any());
-        verify(recipientResolver, atLeastOnce()).recipientUsers(anyString(), any(), any());
+        verify(recipientsResolverService, times(4)).getRecipients(any());
+        verify(recipientResolver, times(4)).recipientUsers(anyString(), any(), any());
 
         // nobody subscribed to the right event type yet
         assertEquals(0, result.size());
     }
 
-    private void verifyRecipientsResolverInteractions() {
+    private void verifyRecipientsResolverInteractions(int legacyRecipientResolverInvocations) {
         if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
-            verify(externalRecipientsResolver, atLeastOnce()).recipientUsers(anyString(), any(), any(), any());
+            verify(recipientsResolverService, times(1)).getRecipients(any());
             verifyNoInteractions(recipientResolver);
         } else {
-            verify(recipientResolver, atLeastOnce()).recipientUsers(anyString(), any(), any());
-            verifyNoInteractions(externalRecipientsResolver);
+            verify(recipientResolver, times(legacyRecipientResolverInvocations)).recipientUsers(anyString(), any(), any());
+            verifyNoInteractions(recipientsResolverService);
         }
     }
 
@@ -209,5 +215,13 @@ class EmailAggregatorTest {
         emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
         result.putAll(emailAggregator.getAggregated(aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
         return result;
+    }
+
+    @CacheInvalidate(cacheName = "recipients-resolver-results")
+    void clearCachedData() {
+        /*
+         * This would normally happen after a certain duration fixed in application.properties with the
+         * quarkus.cache.caffeine.recipients-resolver-results.expire-after-write key.
+         */
     }
 }

@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.recipients.recipientsresolver.pojo.Recipie
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
 import dev.failsafe.function.CheckedSupplier;
+import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -57,6 +58,7 @@ public class ExternalRecipientsResolver {
         return Failsafe.with(retryPolicy).get(usersServiceCall);
     }
 
+    @CacheResult(cacheName = "recipients-resolver-results")
     public Set<User> recipientUsers(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, SubscriptionType subscriptionType) {
         RecipientsQuery recipientsResolversQuery = new RecipientsQuery();
         recipientsResolversQuery.setSubscribers(Set.copyOf(subscribers));
