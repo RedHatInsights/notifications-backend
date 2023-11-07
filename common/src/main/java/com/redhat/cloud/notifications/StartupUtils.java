@@ -56,7 +56,8 @@ public class StartupUtils {
     }
 
     public void logExternalServiceUrl(String configKey) {
-        Log.infof("%s=%s", configKey, ConfigProvider.getConfig().getValue(configKey, String.class));
+        String configValue = ConfigProvider.getConfig().getOptionalValue(configKey, String.class).orElse("");
+        Log.infof("%s=%s", configKey, configValue);
     }
 
     public void disableRestClientContextualErrors() {

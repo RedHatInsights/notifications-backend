@@ -64,10 +64,10 @@ public class EmailConnectorConfig extends ConnectorConfig {
     Integer itElementsPerPage;
 
     @ConfigProperty(name = IT_KEYSTORE_LOCATION)
-    String itKeyStoreLocation;
+    Optional<String> itKeyStoreLocation;
 
     @ConfigProperty(name = IT_KEYSTORE_PASSWORD)
-    String itKeyStorePassword;
+    Optional<String> itKeyStorePassword;
 
     @ConfigProperty(name = IT_USER_SERVICE_URL)
     String itUserServiceURL;
@@ -122,7 +122,7 @@ public class EmailConnectorConfig extends ConnectorConfig {
         additionalEntries.put(BOP_URL, this.bopURL);
         additionalEntries.put(FETCH_USERS_RBAC_ENABLED, this.fetchUsersWithRBAC);
         additionalEntries.put(IT_ELEMENTS_PAGE, this.itElementsPerPage);
-        additionalEntries.put(IT_KEYSTORE_LOCATION, this.itKeyStoreLocation);
+        additionalEntries.put(IT_KEYSTORE_LOCATION, this.itKeyStoreLocation.orElse(""));
         additionalEntries.put(RBAC_APPLICATION_KEY, this.rbacApplicationKey);
         additionalEntries.put(RBAC_ELEMENTS_PAGE, this.rbacElementsPerPage);
         additionalEntries.put(RBAC_URL, this.rbacURL);
@@ -164,11 +164,11 @@ public class EmailConnectorConfig extends ConnectorConfig {
         return this.itElementsPerPage;
     }
 
-    public String getItKeyStoreLocation() {
+    public Optional<String> getItKeyStoreLocation() {
         return this.itKeyStoreLocation;
     }
 
-    public String getItKeyStorePassword() {
+    public Optional<String> getItKeyStorePassword() {
         return this.itKeyStorePassword;
     }
 
