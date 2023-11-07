@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 public class ApplicationDTOTransformerTest {
@@ -51,7 +52,7 @@ public class ApplicationDTOTransformerTest {
         Assertions.assertEquals(result.name, application.getName(), "the application's name property was not properly transformed to the DTO");
         Assertions.assertEquals(result.displayName, application.getDisplayName(), "the application's display name property was not properly transformed to the DTO");
         Assertions.assertEquals(result.bundleId, application.getBundleId(), "the application's bundle ID property was not properly transformed to the DTO");
-        Assertions.assertEquals(result.created, application.getCreated().toString(), "the application's created property was not properly transformed to the DTO");
+        Assertions.assertEquals(result.created, application.getCreated().format(DateTimeFormatter.ISO_DATE_TIME), "the application's created property was not properly transformed to the DTO");
         Assertions.assertEquals(result.ownerRole, internalRoleAccess.getRole(), "the internal role was not properly transformed to the DTO");
     }
 }
