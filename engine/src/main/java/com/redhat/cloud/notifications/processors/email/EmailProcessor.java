@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
-import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
@@ -18,9 +18,12 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 
 @ApplicationScoped
 public class EmailProcessor extends SystemEndpointTypeProcessor {
@@ -39,6 +42,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     @Inject
     TemplateService templateService;
 
+    @Inject
+    SubscriptionRepository subscriptionRepository;
+
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
 
@@ -52,16 +58,26 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             return;
         }
 
-        // Get the set of user IDs that should receive an email notification for
-        // the given event.
-        final List<String> subscribers = this.getSubscribers(event, SubscriptionType.INSTANT);
+        Set<String> subscribers;
+        Set<String> unsubscribers;
+        if (event.getEventType().isSubscribedByDefault()) {
+            subscribers = Collections.emptySet();
+            unsubscribers = Set.copyOf(subscriptionRepository.getUnsubscribers(event.getOrgId(), event.getEventType().getId(), INSTANT));
+        } else {
+            subscribers = Set.copyOf(subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), INSTANT));
+            unsubscribers = Collections.emptySet();
+        }
 
         final Set<RecipientSettings> recipientSettings = this.extractAndTransformRecipientSettings(event, endpoints);
 
-        // When the user preferences are not ignored and there are no
-        // subscribers to the event, there's no need to further process the
-        // recipient settings because no email will be sent from them.
-        recipientSettings.removeIf(settings -> !settings.isIgnoreUserPreferences() && subscribers.isEmpty());
+        /*
+         * When:
+         * - the event type is NOT subscribed by default
+         * - the user preferences are NOT ignored
+         * - there are no subscribers to the event type
+         * Then, there's no need to further process the recipient settings because no email will be sent from them.
+         */
+        recipientSettings.removeIf(settings -> !event.getEventType().isSubscribedByDefault() && !settings.isIgnoreUserPreferences() && subscribers.isEmpty());
 
         // If we removed all recipient settings, it means no email will be sent from the event and we can exit this method.
         if (recipientSettings.isEmpty()) {
@@ -87,7 +103,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             subject,
             event.getOrgId(),
             recipientSettings,
-            subscribers
+            subscribers,
+            unsubscribers
         );
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);

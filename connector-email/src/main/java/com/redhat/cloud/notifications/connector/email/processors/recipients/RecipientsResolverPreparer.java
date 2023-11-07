@@ -24,11 +24,13 @@ public class RecipientsResolverPreparer implements Processor {
     @Override
     public void process(final Exchange exchange) throws JsonProcessingException {
         List<RecipientSettings> recipientSettings = exchange.getProperty(ExchangeProperty.RECIPIENT_SETTINGS, List.class);
-        List<String> subscribers = exchange.getProperty(ExchangeProperty.SUBSCRIBERS, List.class);
+        Set<String> subscribers = exchange.getProperty(ExchangeProperty.SUBSCRIBERS, Set.class);
+        Set<String> unsubscribers = exchange.getProperty(ExchangeProperty.UNSUBSCRIBERS, Set.class);
         final String orgId = exchange.getProperty(ORG_ID, String.class);
 
         RecipientsQuery recipientsQuery = new RecipientsQuery();
-        recipientsQuery.subscribers = Set.copyOf(subscribers);
+        recipientsQuery.subscribers = subscribers;
+        recipientsQuery.unsubscribers = unsubscribers;
         recipientsQuery.orgId = orgId;
         recipientsQuery.recipientSettings = Set.copyOf(recipientSettings);
         recipientsQuery.subscribedByDefault = false;

@@ -19,5 +19,7 @@ public class RecipientsQuery {
 
     public Set<String> subscribers;
 
+    public Set<String> unsubscribers;
+
     public boolean subscribedByDefault;
 }

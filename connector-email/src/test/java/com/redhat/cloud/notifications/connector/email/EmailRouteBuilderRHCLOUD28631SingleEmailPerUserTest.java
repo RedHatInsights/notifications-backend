@@ -80,7 +80,7 @@ public class EmailRouteBuilderRHCLOUD28631SingleEmailPerUserTest extends CamelQu
         recipientSettingsList.add(recipientSettings);
         recipientSettingsList.add(recipientSettings2);
 
-        final List<String> subscribers = List.of("user1", "user2");
+        final Set<String> subscribers = Set.of("user1", "user2");
 
         final String emailBody = "emailBody";
         final String emailSubject = "emailSubject";

@@ -71,20 +71,4 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
             .map(com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings::new)
             .collect(Collectors.toSet());
     }
-
-    /**
-     * Gets a list of the email subscribers which should get an email for the
-     * given event.
-     * @param event the event the users are subscribed to.
-     * @return a list of {@link java.util.UUID}s in the {@link String} shape.
-     */
-    protected List<String> getSubscribers(final Event event, final SubscriptionType subscriptionType) {
-        final EventType eventType = event.getEventType();
-
-        if (subscriptionType.isSubscribedByDefault()) {
-            return subscriptionRepository.getUnsubscribers(event.getOrgId(), eventType.getId(), subscriptionType);
-        } else {
-            return subscriptionRepository.getSubscribers(event.getOrgId(), eventType.getId(), subscriptionType);
-        }
-    }
 }

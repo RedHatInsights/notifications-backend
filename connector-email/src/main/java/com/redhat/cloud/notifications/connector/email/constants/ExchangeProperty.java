@@ -38,10 +38,15 @@ public class ExchangeProperty {
      */
     public static final String SINGLE_EMAIL_PER_USER = "single_email_per_user";
     /**
-     * Holds the list of subscribers that have a subscription to the event type
+     * Holds the list of usernames who subscribed to the event type
      * that triggered the notification.
      */
     public static final String SUBSCRIBERS = "subscribers";
+    /**
+     * Holds the list of usernames who unsubscribed from the event type
+     * that triggered the notification.
+     */
+    public static final String UNSUBSCRIBERS = "unsubscribers";
     /**
      * Holds the rendered body contents, ready to be sent in an email.
      */
