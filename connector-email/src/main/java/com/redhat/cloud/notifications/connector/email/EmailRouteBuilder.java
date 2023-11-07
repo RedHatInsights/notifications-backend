@@ -22,6 +22,7 @@ import com.redhat.cloud.notifications.connector.email.processors.rbac.group.RBAC
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsFilter;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Expression;
@@ -268,7 +269,11 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * trusts IT's certificate.
          */
         final HttpEndpointBuilderFactory.HttpEndpointBuilder itEndpoint;
-        if (this.environment.isDevelopmentEnvironment()) {
+        boolean keyStoreConfigMissing = emailConnectorConfig.getItKeyStoreLocation().isEmpty() || emailConnectorConfig.getItKeyStorePassword().isEmpty();
+        if (this.environment.isDevelopmentEnvironment() || keyStoreConfigMissing) {
+            if (keyStoreConfigMissing) {
+                Log.info("IT KeyStore configuration not found");
+            }
             itEndpoint = this.setUpITEndpointDevelopment();
         } else {
             itEndpoint = this.setUpITEndpoint();
@@ -465,11 +470,11 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      */
     protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpITEndpoint() {
         final KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
-        keyStoreParameters.setResource(this.emailConnectorConfig.getItKeyStoreLocation());
-        keyStoreParameters.setPassword(this.emailConnectorConfig.getItKeyStorePassword());
+        keyStoreParameters.setResource(this.emailConnectorConfig.getItKeyStoreLocation().get());
+        keyStoreParameters.setPassword(this.emailConnectorConfig.getItKeyStorePassword().get());
 
         final KeyManagersParameters keyManagersParameters = new KeyManagersParameters();
-        keyManagersParameters.setKeyPassword(this.emailConnectorConfig.getItKeyStorePassword());
+        keyManagersParameters.setKeyPassword(this.emailConnectorConfig.getItKeyStorePassword().get());
         keyManagersParameters.setKeyStore(keyStoreParameters);
 
         final SSLContextParameters sslContextParameters = new SSLContextParameters();
