@@ -16,10 +16,10 @@ objects:
     - ingress
     - notifications-backend
     - rbac
-    - export-service
     - notifications-recipients-resolver
     optionalDependencies:
     - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
+    - export-service
     database:
       sharedDbAppName: notifications-backend
     kafkaTopics:
