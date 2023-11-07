@@ -302,7 +302,7 @@ class EmailSubscriptionTypeProcessorTest {
             User user2 = new User();
             user2.setUsername("bar");
 
-            when(recipientResolver.recipientUsers(any(), any(), any(), eq(true)))
+            when(recipientResolver.recipientUsers(any(), any(), any(), eq(false)))
                 .thenReturn(Set.of(user1, user2));
 
             Bundle bundle = new Bundle();

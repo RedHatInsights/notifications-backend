@@ -60,17 +60,17 @@ public class ExternalRecipientsResolver {
 
     @CacheResult(cacheName = "recipients-resolver-results")
     public Set<User> recipientUsers(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, SubscriptionType subscriptionType) {
-        RecipientsQuery recipientsResolversQuery = new RecipientsQuery();
-        recipientsResolversQuery.setSubscribers(Set.copyOf(subscribers));
-        recipientsResolversQuery.setOrgId(orgId);
+        RecipientsQuery recipientsQuery = new RecipientsQuery();
+        recipientsQuery.subscribers = Set.copyOf(subscribers);
+        recipientsQuery.orgId = orgId;
         Set<com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings> recipientSettingsSet = recipientSettings
             .stream()
             .map(com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings::new)
             .collect(Collectors.toSet());
 
-        recipientsResolversQuery.setRecipientSettings(recipientSettingsSet);
-        recipientsResolversQuery.setOptIn(!subscriptionType.isSubscribedByDefault());
-        Set<User> recipientsList = retryOnError(() -> recipientsResolverService.getRecipients(recipientsResolversQuery));
+        recipientsQuery.recipientSettings = recipientSettingsSet;
+        recipientsQuery.subscribedByDefault = subscriptionType.isSubscribedByDefault();
+        Set<User> recipientsList = retryOnError(() -> recipientsResolverService.getRecipients(recipientsQuery));
         return recipientsList;
     }
 

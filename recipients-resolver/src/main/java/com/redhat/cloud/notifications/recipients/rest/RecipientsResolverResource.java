@@ -26,9 +26,9 @@ public class RecipientsResolverResource {
     @Produces(APPLICATION_JSON)
     public List<User> getRecipients(@NotNull @Valid RecipientsQuery resolversQuery) {
         return recipientsResolver.findRecipients(
-            resolversQuery.getOrgId(),
-            resolversQuery.getRecipientSettings(),
-            resolversQuery.getSubscribers(),
-            resolversQuery.isOptIn());
+            resolversQuery.orgId,
+            resolversQuery.recipientSettings,
+            resolversQuery.subscribers,
+            resolversQuery.subscribedByDefault);
     }
 }

@@ -39,17 +39,17 @@ public class RecipientResolverResourceTest {
         getRecipients(null, 400);
         RecipientsQuery recipientQuery = new RecipientsQuery();
         getRecipients(recipientQuery, 400);
-        recipientQuery.setOrgId("123456");
+        recipientQuery.orgId = "123456";
         getRecipients(recipientQuery, 400);
-        recipientQuery.setRecipientSettings(new HashSet<>());
+        recipientQuery.recipientSettings = new HashSet<>();
         getRecipients(recipientQuery, 200);
     }
 
     @Test
     public void testGetRecipients() throws JsonProcessingException {
         RecipientsQuery recipientQuery = new RecipientsQuery();
-        recipientQuery.setRecipientSettings(new HashSet<>());
-        recipientQuery.setOrgId("123456");
+        recipientQuery.recipientSettings = new HashSet<>();
+        recipientQuery.orgId = "123456";
         List<User> userList = getRecipientsPage(recipientQuery);
         Assertions.assertNotNull(userList);
         Assertions.assertEquals(0, userList.size());

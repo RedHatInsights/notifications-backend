@@ -27,14 +27,14 @@ public class RecipientsResolverPreparer implements Processor {
         List<String> subscribers = exchange.getProperty(ExchangeProperty.SUBSCRIBERS, List.class);
         final String orgId = exchange.getProperty(ORG_ID, String.class);
 
-        RecipientsQuery recipientsResolversQuery = new RecipientsQuery();
-        recipientsResolversQuery.setSubscribers(Set.copyOf(subscribers));
-        recipientsResolversQuery.setOrgId(orgId);
-        recipientsResolversQuery.setRecipientSettings(Set.copyOf(recipientSettings));
-        recipientsResolversQuery.setOptIn(true);
+        RecipientsQuery recipientsQuery = new RecipientsQuery();
+        recipientsQuery.subscribers = Set.copyOf(subscribers);
+        recipientsQuery.orgId = orgId;
+        recipientsQuery.recipientSettings = Set.copyOf(recipientSettings);
+        recipientsQuery.subscribedByDefault = false;
 
         // Serialize the payload.
-        exchange.getMessage().setBody(objectMapper.writeValueAsString(recipientsResolversQuery));
+        exchange.getMessage().setBody(objectMapper.writeValueAsString(recipientsQuery));
 
         // Set the "Accept" header for the incoming payload.
         exchange.getMessage().setHeader("Accept", "application/json");

@@ -95,13 +95,13 @@ public class RecipientsResolverTest {
 
     @Test
     public void withPersonalizedEmailOn() {
-        boolean isOptIn = true;
+        boolean subscribedByDefault = false;
         // Default request, all subscribed users
         List<User> users = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(new RecipientSettings(false, false, null, Set.of())),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin1, user1), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -116,7 +116,7 @@ public class RecipientsResolverTest {
                 ORG_ID,
                 Set.of(new RecipientSettings(true, false, null, Set.of())),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin1), users);
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -131,7 +131,7 @@ public class RecipientsResolverTest {
                 ORG_ID,
                 Set.of(new RecipientSettings(false, true, null, Set.of())),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
 
         assertEquals(List.of(admin1, admin2, user1, user2, user3), sortListByUsername(users));
@@ -147,7 +147,7 @@ public class RecipientsResolverTest {
                 ORG_ID,
                 Set.of(new RecipientSettings(true, true, null, Set.of())),
                 subscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -166,7 +166,7 @@ public class RecipientsResolverTest {
                 ))
             ),
             subscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(user1), users);
 
@@ -186,7 +186,7 @@ public class RecipientsResolverTest {
                         ))
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(user1, user3), sortListByUsername(users));
 
@@ -206,7 +206,7 @@ public class RecipientsResolverTest {
                         ))
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin1), users);
 
@@ -226,7 +226,7 @@ public class RecipientsResolverTest {
                         ))
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2), sortListByUsername(users));
 
@@ -245,7 +245,7 @@ public class RecipientsResolverTest {
                         new RecipientSettings(true, true, null, Set.of())
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2, user1), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -267,7 +267,7 @@ public class RecipientsResolverTest {
                         new RecipientSettings(true, true, null, Set.of())
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2, user1, user2, user3), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -288,7 +288,7 @@ public class RecipientsResolverTest {
                         new RecipientSettings(false, false, group1, Set.of())
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin1, user1), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
@@ -306,7 +306,7 @@ public class RecipientsResolverTest {
                         new RecipientSettings(true, false, group1, Set.of())
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin1), users);
         verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
@@ -324,7 +324,7 @@ public class RecipientsResolverTest {
                         new RecipientSettings(false, false, group2, Set.of())
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(), users);
         verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
@@ -342,7 +342,7 @@ public class RecipientsResolverTest {
                         new RecipientSettings(false, true, group2, Set.of())
                 ),
                 subscribedUsers,
-                isOptIn
+                subscribedByDefault
         );
         assertEquals(List.of(admin2, user2), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
@@ -357,7 +357,7 @@ public class RecipientsResolverTest {
 
     @Test
     public void withPersonalizedEmailOnOptOut() {
-        boolean isOptIn = false;
+        boolean subscribedByDefault = true;
 
         Set<String> unsubscribedUsers = subscribedUsers;
 
@@ -368,7 +368,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(false, false, null, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin2, user2, user3), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -385,7 +385,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(true, false, null, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin2), users);
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -402,7 +402,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(false, true, null, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2, user1, user2, user3), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -419,7 +419,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(true, true, null, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -438,7 +438,7 @@ public class RecipientsResolverTest {
                 ))
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(user3), users);
 
@@ -458,7 +458,7 @@ public class RecipientsResolverTest {
                 ))
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(user1, user3), sortListByUsername(users));
 
@@ -478,7 +478,7 @@ public class RecipientsResolverTest {
                 ))
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin2), users);
 
@@ -498,7 +498,7 @@ public class RecipientsResolverTest {
                 ))
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2), sortListByUsername(users));
 
@@ -517,7 +517,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(true, true, null, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2, user2, user3), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -539,7 +539,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(true, true, null, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin1, admin2, user1, user2, user3), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getUsers(
@@ -560,7 +560,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(false, false, group1, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(), users);
         verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
@@ -578,7 +578,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(true, false, group1, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(), users);
         verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
@@ -596,7 +596,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(false, false, group2, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin2, user2), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
@@ -614,7 +614,7 @@ public class RecipientsResolverTest {
                 new RecipientSettings(false, true, group2, Set.of())
             ),
             unsubscribedUsers,
-            isOptIn
+            subscribedByDefault
         );
         assertEquals(List.of(admin2, user2), sortListByUsername(users));
         verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(

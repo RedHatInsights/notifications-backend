@@ -123,7 +123,7 @@ class DrawerProcessorTest {
         user1.setId("bar");
         user2.setUsername("bar");
 
-        when(recipientResolver.recipientUsers(any(), any(), any(), eq(false)))
+        when(recipientResolver.recipientUsers(any(), any(), any(), eq(true)))
             .thenReturn(Set.of(user1, user2));
 
         Event createdEvent = createEvent(shouldUseConnector);
