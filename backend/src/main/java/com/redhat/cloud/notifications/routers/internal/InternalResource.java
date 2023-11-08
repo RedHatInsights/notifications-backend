@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.db.repositories.StatusRepository;
+import com.redhat.cloud.notifications.ephemeral.EphemeralDataInitializer;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -85,6 +86,9 @@ public class InternalResource {
     private static final Pattern GIT_COMMIT_ID_PATTERN = Pattern.compile("git.commit.id.abbrev=([0-9a-f]{7})");
 
     @Inject
+    EphemeralDataInitializer ephemeralDataInitializer;
+
+    @Inject
     BundleRepository bundleRepository;
 
     @Inject
@@ -134,6 +138,13 @@ public class InternalResource {
             Log.infof("Git commit hash not found: %s", gitProperties);
             return "Git commit hash not found";
         }
+    }
+
+    @PUT
+    @Path("/init-db")
+    @PermitAll
+    public void initDb() {
+        ephemeralDataInitializer.loadFromEnvVar();
     }
 
     @GET

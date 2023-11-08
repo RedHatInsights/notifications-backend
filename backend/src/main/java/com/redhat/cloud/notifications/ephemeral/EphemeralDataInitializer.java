@@ -56,7 +56,7 @@ public class EphemeralDataInitializer {
         }
     }
 
-    private void loadFromEnvVar() {
+    public void loadFromEnvVar() {
         String rawData = System.getenv(EPHEMERAL_DATA_KEY);
         if (rawData != null && !rawData.isBlank()) {
             Log.info("Loading ephemeral data from environment variable");
