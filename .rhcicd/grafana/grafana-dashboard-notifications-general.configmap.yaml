@@ -4737,6 +4737,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "fill": 1,
@@ -4775,19 +4776,28 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "exemplar": true,
-              "expr": "sum(increase(rbac_get_users_total_seconds_max{service=\"notifications-engine-service\"}[5m]))",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "max by(pod) (rbac_get_users_total_seconds_max{service=\"notifications-engine-service\"})",
               "hide": false,
-              "interval": "",
-              "legendFormat": "total",
-              "refId": "A"
+              "legendFormat": "total - {{pod}}",
+              "range": true,
+              "refId": "C"
             },
             {
-              "exemplar": true,
-              "expr": "sum(increase(rbac_get_users_page_seconds_count{service=\"notifications-engine-service\"}[5m]))",
-              "interval": "",
-              "legendFormat": "page",
-              "refId": "B"
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "max by(pod) (rbac_get_users_page_seconds_max{service=\"notifications-engine-service\"})",
+              "hide": false,
+              "legendFormat": "page - {{pod}}",
+              "range": true,
+              "refId": "D"
             }
           ],
           "thresholds": [],
@@ -4828,6 +4838,7 @@ data:
           "dashLength": 10,
           "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "fill": 1,
@@ -4866,11 +4877,16 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(increase(rbac_failures_total[5m]))",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum by (pod) (rbac_failures_total)",
               "hide": false,
-              "interval": "",
-              "legendFormat": "failures",
-              "refId": "A"
+              "legendFormat": "{{label_name}}",
+              "range": true,
+              "refId": "B"
             }
           ],
           "thresholds": [],
@@ -5188,9 +5204,9 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(user_provider_get_users_total_seconds_max{service=\"notifications-recipients-resolver-service\"}[5m]))",
+              "expr": "max by(pod) (user_provider_get_users_total_seconds_max{service=\"notifications-recipients-resolver-service\"})",
               "hide": false,
-              "legendFormat": "Total",
+              "legendFormat": "{{pod}}",
               "range": true,
               "refId": "C"
             }
@@ -5282,25 +5298,12 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
-              },
-              "editorMode": "code",
-              "expr": "sum(increase(rbac_failures_total{service=\"notifications-recipients-resolver-service\"}[5m]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "Rbac",
-              "range": true,
-              "refId": "A"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(it_failures_total{service=\"notifications-recipients-resolver-service\"}[5m]))",
+              "expr": "max by(pod) (it_failures_total{service=\"notifications-recipients-resolver-service\"})",
               "hide": false,
-              "legendFormat": "It",
+              "legendFormat": "It - {{pod}}",
               "range": true,
               "refId": "B"
             },
@@ -5310,11 +5313,23 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(mbop_failures_total{service=\"notifications-recipients-resolver-service\"}[5m]))",
+              "expr": "max by(pod) (mbop_failures_total{service=\"notifications-recipients-resolver-service\"})",
               "hide": false,
-              "legendFormat": "MBOP",
+              "legendFormat": "MBOP - {{pod}}",
               "range": true,
               "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "max by(pod) (rbac_failures_total{service=\"notifications-recipients-resolver-service\"})",
+              "hide": false,
+              "legendFormat": "Rbac - {{pod}}",
+              "range": true,
+              "refId": "D"
             }
           ],
           "title": "Recipients resolver - external call failures",
