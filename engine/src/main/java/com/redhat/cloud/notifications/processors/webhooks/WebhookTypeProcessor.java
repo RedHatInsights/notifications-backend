@@ -220,14 +220,12 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
                 boolean shouldResetEndpointServerErrors = false;
                 Map<String, Object> details = new HashMap<>();
                 if (isEmailEndpoint) {
-                    if (featureFlipper.isSendSingleEmailForMultipleRecipientsEnabled()) {
-                        try {
-                            int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
-                            details.put(EmailSubscriptionTypeProcessor.TOTAL_RECIPIENTS_KEY, totalRecipients);
-                            history.setDetails(details);
-                        } catch (Exception ex) {
-                            Log.error("Could not set the total_recipients field in the history details", ex);
-                        }
+                    try {
+                        int totalRecipients = payload.getJsonArray("emails").getJsonObject(0).getJsonArray("bccList").size();
+                        details.put(EmailSubscriptionTypeProcessor.TOTAL_RECIPIENTS_KEY, totalRecipients);
+                        history.setDetails(details);
+                    } catch (Exception ex) {
+                        Log.error("Could not set the total_recipients field in the history details", ex);
                     }
                 }
                 if (resp.statusCode() >= 200 && resp.statusCode() < 300) {
