@@ -75,7 +75,7 @@ public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
             }
 
             if (path.startsWith("/openapi.json") || path.startsWith(API_INTERNAL + "/validation") || path.startsWith(API_INTERNAL + "/version")
-                    || path.startsWith("/health") || path.startsWith("/metrics")) {
+                    || path.startsWith("/health") || path.startsWith("/metrics") || path.startsWith(API_INTERNAL + "/init-db")) {
                 good = true;
             }
 
