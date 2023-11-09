@@ -28,8 +28,11 @@ public class RecipientsResolver {
     private Set<User> recipientUsers(String orgId, RecipientSettings request, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault) {
 
         /*
-         * If subscribedByDefault is false, the user preferences should NOT be ignored and the subscribers Set is empty,
-         * then we don't need to retrieve the users from the external service because we'll return an empty Set anyway.
+         * When:
+         * - subscribedByDefault is false
+         * - the user preferences should NOT be ignored
+         * - the subscribers Set is empty
+         * Then, we don't need to retrieve the users from the external service because we'll return an empty Set anyway.
          */
         if (!subscribedByDefault && !request.isIgnoreUserPreferences() && subscribers.isEmpty()) {
             return Collections.emptySet();
