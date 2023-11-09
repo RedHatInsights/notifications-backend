@@ -235,13 +235,12 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         try {
             Optional<Application> app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
             if (app.isPresent()) {
-                event.setEventTypeDisplayName(
-                        String.format("%s - %s - %s",
-                                event.getEventTypeDisplayName(),
-                                app.get().getDisplayName(),
-                                app.get().getBundle().getDisplayName())
+                String eventTypeDisplayName = String.format("%s - %s - %s",
+                        event.getEventTypeDisplayName(),
+                        app.get().getDisplayName(),
+                        app.get().getBundle().getDisplayName()
                 );
-                eventRepository.updateEventDisplayName(event);
+                eventRepository.updateEventDisplayName(event.getId(), eventTypeDisplayName);
             }
             processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event));
         } catch (Exception e) {
@@ -272,7 +271,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
 
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
-        Event event = null;
+        Event event;
         if (aggregatorEvent.isEmpty()) {
             event = new Event();
             event.setId(UUID.randomUUID());
