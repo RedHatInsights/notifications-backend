@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.connector.email.processors.bop;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.bop.Email;
-import com.redhat.cloud.notifications.connector.email.model.bop.Emails;
 import com.redhat.cloud.notifications.connector.email.model.bop.SendEmailsRequest;
 import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.vertx.core.json.JsonObject;
@@ -42,25 +41,26 @@ public class BOPRequestPreparer implements Processor {
             recipients = users.stream().map(User::getUsername).collect(toSet());
         }
 
+        // Prepare the email to be sent.
         final Email email = new Email(
             subject,
             body,
             recipients
         );
 
-        JsonObject bopBody;
-        if (emailConnectorConfig.isSkipBopUsersResolution()) {
-            final SendEmailsRequest request = new SendEmailsRequest();
-            request.addEmail(email);
-            bopBody = JsonObject.mapFrom(request);
-        } else {
-            final Emails emails = new Emails();
-            emails.addEmail(email);
-            bopBody = JsonObject.mapFrom(emails);
-        }
+        // Specify if we should skip the users resolution in BOP since we might
+        // have already done it ourselves, the email sender of the email, and
+        // the default recipient that will appear in the email.
+        final SendEmailsRequest sendEmailsRequest = new SendEmailsRequest(
+            Set.of(email),
+            this.emailConnectorConfig.isSkipBopUsersResolution(),
+            exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class),
+            exchange.getProperty(ExchangeProperty.EMAIL_DEFAULT_RECIPIENT, String.class)
+        );
 
         // Specify the message's payload in JSON.
-        exchange.getMessage().setBody(bopBody.encode());
+        final JsonObject bopPayload = JsonObject.mapFrom(sendEmailsRequest);
+        exchange.getMessage().setBody(bopPayload.encode());
 
         // Specify the request's method.
         exchange.getMessage().setHeader(Exchange.HTTP_METHOD, HttpMethods.POST);

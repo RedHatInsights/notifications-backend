@@ -13,7 +13,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EMAIL_DEFAULT_RECIPIENT;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EMAIL_RECIPIENTS;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EMAIL_SENDER;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RECIPIENT_SETTINGS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RENDERED_BODY;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RENDERED_SUBJECT;
@@ -73,6 +75,9 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         final String emailBody = "fake email body";
         final String emailSubject = "fake email subject";
 
+        final String emailSender = "\"Red Hat Insights\" noreply@redhat.com";
+        final String emailDefaultRecipient = "\"Red Hat ConsoleDot\" noreply-consoledot@redhat.com";
+
         // Prepare the JSON object.
         final JsonObject payload = new JsonObject();
         payload.put("recipient_settings", recipientSettingsList);
@@ -80,6 +85,8 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         payload.put("unsubscribers", unsubscribers);
         payload.put("email_body", emailBody);
         payload.put("email_subject", emailSubject);
+        payload.put("email_sender", emailSender);
+        payload.put("email_default_recipient", emailDefaultRecipient);
         payload.put("subscribed_by_default", true);
 
         final Exchange exchange = this.createExchangeWithBody("");
@@ -96,6 +103,8 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         assertEquals(subscribers, exchange.getProperty(SUBSCRIBERS, Set.class));
         assertEquals(unsubscribers, exchange.getProperty(UNSUBSCRIBERS, Set.class));
         assertEquals(Set.of("foo@bar.com", "bar@foo.com", "john@doe.com"), exchange.getProperty(EMAIL_RECIPIENTS, Set.class));
+        assertEquals(emailSender, exchange.getProperty(EMAIL_SENDER, String.class));
+        assertEquals(emailDefaultRecipient, exchange.getProperty(EMAIL_DEFAULT_RECIPIENT, String.class));
         assertTrue(exchange.getProperty(SUBSCRIBED_BY_DEFAULT, boolean.class));
     }
 }

@@ -11,9 +11,14 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
 public class SendEmailsRequest {
 
     private final Set<Email> emails = new HashSet<>();
-    private final boolean skipUsersResolution = true;
+    private final boolean skipUsersResolution;
+    private final String emailSender;
+    private final String defaultRecipient;
 
-    public void addEmail(Email email) {
-        emails.add(email);
+    public SendEmailsRequest(final Set<Email> emails, final boolean skipUsersResolution, final String emailSender, final String defaultRecipient) {
+        this.emails.addAll(emails);
+        this.skipUsersResolution = skipUsersResolution;
+        this.emailSender = emailSender;
+        this.defaultRecipient = defaultRecipient;
     }
 }

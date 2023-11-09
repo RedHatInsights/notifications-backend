@@ -12,6 +12,21 @@ public class ExchangeProperty {
      */
     public static final String ELEMENTS_COUNT = "elements_count";
     /**
+     * Holds the email's default recipient that will appear when receiving an
+     * email from the platform.
+     */
+    public static final String EMAIL_DEFAULT_RECIPIENT = "email_default_recipient";
+    /**
+     * Email recipients initially included in the payload received by notifications-engine.
+     * The subscriptions of these recipients are not checked.
+     * They are simply added to the list of recipients retrieved from notifications-recipients-resolver.
+     */
+    public static final String EMAIL_RECIPIENTS = "email_recipients";
+    /**
+     * Holds the email's sender that will be specified for sending the email.
+     */
+    public static final String EMAIL_SENDER = "email_sender";
+    /**
      * Holds the filtered users. It is used in order to avoid the set of
      * cached users from being modified.
      */
@@ -60,10 +75,4 @@ public class ExchangeProperty {
      * notification through email.
      */
     public static final String USERS = "users";
-    /**
-     * Email recipients initially included in the payload received by notifications-engine.
-     * The subscriptions of these recipients are not checked.
-     * They are simply added to the list of recipients retrieved from notifications-recipients-resolver.
-     */
-    public static final String EMAIL_RECIPIENTS = "email_recipients";
 }

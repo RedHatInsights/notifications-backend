@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
+import com.redhat.cloud.notifications.processors.email.connector.dto.EmailSenderDefaultRecipientDTO;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import io.quarkus.logging.Log;
@@ -34,6 +35,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     EndpointRepository endpointRepository;
 
     @Inject
+    EmailActorsResolver emailActorsResolver;
+
+    @Inject
     EmailSubscriptionTypeProcessor emailSubscriptionTypeProcessor;
 
     @Inject
@@ -47,7 +51,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
-
         // Generate an aggregation if the event supports it.
         this.emailSubscriptionTypeProcessor.generateAggregationWhereDue(event);
 
@@ -97,10 +100,16 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final String subject = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
         final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate);
 
+        // Determine which sender and default recipients should be set in the
+        // email.
+        final EmailSenderDefaultRecipientDTO emailSenderDefaultRecipientDTO = this.emailActorsResolver.getEmailSenderAndDefaultRecipient(event);
+
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
             body,
             subject,
+            emailSenderDefaultRecipientDTO.emailSender(),
+            emailSenderDefaultRecipientDTO.defaultRecipient(),
             event.getOrgId(),
             recipientSettings,
             subscribers,

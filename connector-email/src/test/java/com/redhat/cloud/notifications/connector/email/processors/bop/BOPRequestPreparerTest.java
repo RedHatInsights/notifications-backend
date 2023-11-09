@@ -17,7 +17,7 @@ import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.email.TestUtils.createUsers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -47,12 +47,16 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
             final String emailBody = "this is a fake body";
             final Set<User> users = createUsers("a", "b", "c");
             final Set<String> emails = Set.of("foo@bar.com", "bar@foo.com");
+            final String emailSender = "\"Red Hat Insights\" noreply@redhat.com";
+            final String emailDefaultRecipient = "\"Red Hat ConsoleDot\" noreply-consoledot@redhat.com";
 
             final Exchange exchange = this.createExchangeWithBody("");
             exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailSubject);
             exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailBody);
             exchange.setProperty(ExchangeProperty.FILTERED_USERS, users);
             exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
+            exchange.setProperty(ExchangeProperty.EMAIL_SENDER, emailSender);
+            exchange.setProperty(ExchangeProperty.EMAIL_DEFAULT_RECIPIENT, emailDefaultRecipient);
 
             // Call the processor under test.
             this.bopRequestPreparer.process(exchange);
@@ -74,6 +78,8 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
             assertEquals("this is a fake body", actualEmail.getString("body"));
             assertTrue(actualEmail.getJsonArray("recipients").isEmpty());
             assertTrue(actualEmail.getJsonArray("ccList").isEmpty());
+            assertEquals(emailSender, actualBody.getString("emailSender"));
+            assertEquals(emailDefaultRecipient, actualBody.getString("defaultRecipient"));
             if (skipBopUsersResolution) {
                 assertEquals(5, actualEmail.getJsonArray("bccList").size());
                 assertTrue(Set.of("a-email", "b-email", "c-email", "foo@bar.com", "bar@foo.com").stream()
@@ -89,7 +95,7 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
             if (skipBopUsersResolution) {
                 assertTrue(actualBody.getBoolean("skipUsersResolution"));
             } else {
-                assertNull(actualBody.getBoolean("skipUsersResolution"));
+                assertFalse(actualBody.getBoolean("skipUsersResolution"));
             }
         } finally {
             emailConnectorConfig.setSkipBopUsersResolution(false);

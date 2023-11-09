@@ -27,6 +27,7 @@ import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
+import com.redhat.cloud.notifications.processors.email.connector.dto.EmailSenderDefaultRecipientDTO;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
@@ -75,6 +76,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     @Inject
     BaseTransformer baseTransformer;
+
+    @Inject
+    EmailActorsResolver emailActorsResolver;
 
     @Inject
     EmailSender emailSender;
@@ -323,9 +327,16 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
                     Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
 
+                    // Determine which sender and default recipients should be set in the
+                    // email.
+                    final EmailSenderDefaultRecipientDTO emailSenderDefaultRecipientDTO = this.emailActorsResolver.getEmailSenderAndDefaultRecipient(event);
+
                     // Prepare all the data to be sent to the connector.
                     final EmailNotification emailNotification = new EmailNotification(
-                        bodyStr, subjectStr,
+                        bodyStr,
+                        subjectStr,
+                        emailSenderDefaultRecipientDTO.defaultRecipient(),
+                        emailSenderDefaultRecipientDTO.defaultRecipient(),
                         event.getOrgId(),
                         recipientSettings,
                         /*

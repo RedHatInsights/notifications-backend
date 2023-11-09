@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
+import com.redhat.cloud.notifications.processors.email.connector.dto.EmailSenderDefaultRecipientDTO;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import io.quarkus.qute.TemplateInstance;
@@ -43,6 +44,9 @@ import static java.util.stream.Collectors.toSet;
 public class EmailProcessorTest {
     @InjectMock
     ConnectorSender connectorSender;
+
+    @InjectMock
+    EmailActorsResolver emailActorsResolver;
 
     @Inject
     EmailProcessor emailProcessor;
@@ -340,6 +344,12 @@ public class EmailProcessorTest {
         endpoint.setId(UUID.randomUUID());
         Mockito.when(this.endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION)).thenReturn(endpoint);
 
+        // Mock the sender and the default recipients of the email
+        final String stubbedSender = "Red Hat Insights noreply@redhat.com";
+        final String stubbedDefaultRecipient = "Red Hat Insights noreply-recipient@redhat.com";
+        final EmailSenderDefaultRecipientDTO emailSenderDefaultRecipientDTO = new EmailSenderDefaultRecipientDTO(stubbedSender, stubbedDefaultRecipient);
+        Mockito.when(this.emailActorsResolver.getEmailSenderAndDefaultRecipient(Mockito.any())).thenReturn(emailSenderDefaultRecipientDTO);
+
         // Call the processor under test.
         this.emailProcessor.process(event, endpoints);
 
@@ -368,6 +378,8 @@ public class EmailProcessorTest {
         final String resultEmailBody = payload.getString("email_body");
         final String resultEmailSubject = payload.getString("email_subject");
         final String resultOrgId = payload.getString("orgId");
+        final String resultEmailSender = payload.getString("email_sender");
+        final String resultEmailDefaultRecipient = payload.getString("email_default_recipient");
         final Set<String> resultSubscribers = payload.getJsonArray("subscribers").stream().map(String.class::cast).collect(toSet());
         final Set<RecipientSettings> resultRecipientSettings = payload.getJsonArray("recipient_settings")
             .stream()
@@ -386,6 +398,8 @@ public class EmailProcessorTest {
 
         Assertions.assertEquals(stubbedRenderedBody, resultEmailBody, "the rendered email's body from the email notification does not match the stubbed email body");
         Assertions.assertEquals(stubbedRenderedSubject, resultEmailSubject, "the rendered email's subject from the email notification does not match the stubbed email subject");
+        Assertions.assertEquals(stubbedSender, resultEmailSender, "the rendered email's sender from the email notification does not match the stubbed sender");
+        Assertions.assertEquals(stubbedDefaultRecipient, resultEmailDefaultRecipient, "the rendered email's default recipient from the email notification does not match the stubbed sender");
         Assertions.assertEquals(event.getOrgId(), resultOrgId, "the organization ID from the email notification does not match the one set in the stubbed event");
         Assertions.assertEquals(Set.copyOf(subscribers), resultSubscribers, "the subscribers set in the email notification do not match the stubbed ones");
 
