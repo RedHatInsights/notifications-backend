@@ -66,7 +66,7 @@ public class RecipientsResolver {
                     // When subscribedByDefault is true, we need to remove from the users anyone who unsubscribed.
                     return containsIgnoreCase(unsubscribers, user.getUsername());
                 } else {
-                    // When subscribedByDefault is false, we need to remove from the users anyone who DIT NOT subscribe.
+                    // When subscribedByDefault is false, we need to keep only subscribed users, by removing from the users anyone who DID NOT subscribe.
                     return !containsIgnoreCase(subscribers, user.getUsername());
                 }
             }
