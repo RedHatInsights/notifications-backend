@@ -20,12 +20,8 @@ public class RecipientsResolver {
 
     @CacheResult(cacheName = "find-recipients")
     public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault) {
-        Set<String> lowerCaseSubscribers = subscribers.stream()
-                .map(String::toLowerCase)
-                .collect(toSet());
-        Set<String> lowerCaseUnsubscribers = unsubscribers.stream()
-                .map(String::toLowerCase)
-                .collect(toSet());
+        Set<String> lowerCaseSubscribers = toLowerCaseOrEmpty(subscribers);
+        Set<String> lowerCaseUnsubscribers = toLowerCaseOrEmpty(unsubscribers);
         return recipientSettings.stream()
             .flatMap(r -> recipientUsers(orgId, r, lowerCaseSubscribers, lowerCaseUnsubscribers, subscribedByDefault).stream())
             .collect(toSet());
@@ -43,6 +39,8 @@ public class RecipientsResolver {
         if (!subscribedByDefault && !request.isIgnoreUserPreferences() && subscribers.isEmpty()) {
             return Collections.emptySet();
         }
+
+        Set<String> requestUsers = toLowerCaseOrEmpty(request.getUsers());
 
         List<User> fetchedUsers;
         if (request.getGroupUUID() == null) {
@@ -63,21 +61,18 @@ public class RecipientsResolver {
              * if we did fetch them from the external service. Any fetched users who are not included
              * in the request are removed.
              */
-            if (!request.getUsers().isEmpty()) {
-                Set<String> lowerCaseRequestUsers = request.getUsers().stream()
-                        .map(String::toLowerCase)
-                        .collect(toSet());
-                return !contains(lowerCaseRequestUsers, lowerCaseUsername);
+            if (!requestUsers.isEmpty() && !requestUsers.contains(lowerCaseUsername)) {
+                return true;
             }
 
             // Subscriptions are only considered if the user preferences are NOT ignored.
             if (!request.isIgnoreUserPreferences()) {
                 if (subscribedByDefault) {
                     // When subscribedByDefault is true, we need to remove from the users anyone who unsubscribed.
-                    return contains(unsubscribers, lowerCaseUsername);
+                    return unsubscribers.contains(lowerCaseUsername);
                 } else {
                     // When subscribedByDefault is false, we need to keep only subscribed users, by removing from the users anyone who DID NOT subscribe.
-                    return !contains(subscribers, lowerCaseUsername);
+                    return !subscribers.contains(lowerCaseUsername);
                 }
             }
 
@@ -89,11 +84,13 @@ public class RecipientsResolver {
         return users;
     }
 
-    private static boolean contains(Set<String> usernames, String username) {
+    private static Set<String> toLowerCaseOrEmpty(Set<String> usernames) {
         if (usernames == null) {
-            return false;
+            return Collections.emptySet();
         } else {
-            return usernames.contains(username);
+            return usernames.stream()
+                    .map(String::toLowerCase)
+                    .collect(toSet());
         }
     }
 }
