@@ -13,6 +13,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @ApplicationScoped
 public class EventRepository {
@@ -97,11 +98,11 @@ public class EventRepository {
     }
 
     @Transactional
-    public void updateEventDisplayName(Event event) {
+    public void updateEventDisplayName(UUID eventId, String eventTypeDisplayName) {
         String hql = "UPDATE Event SET eventTypeDisplayName = :eventDisplayName WHERE id = :id";
         entityManager.createQuery(hql)
-            .setParameter("eventDisplayName", event.getEventTypeDisplayName())
-            .setParameter("id", event.getId())
+            .setParameter("eventDisplayName", eventTypeDisplayName)
+            .setParameter("id", eventId)
             .executeUpdate();
     }
 }
