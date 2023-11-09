@@ -13,13 +13,14 @@ import java.util.Collection;
  * @param recipientSettings the collection of recipient settings extracted from
  *                          both the event and the related endpoints to the
  *                          event.
- * @param subscribers       the list of user {@link java.util.UUID}s which were
- *                          subscribed to the event.
+ * @param subscribers       the list of usernames who subscribed to the event type.
+ * @param unsubscribers     the list of usernames who unsubscribed from the event type.
  */
 public record EmailNotification(
     @JsonProperty("email_body")         String emailBody,
     @JsonProperty("email_subject")      String emailSubject,
     @JsonProperty("orgId")              String orgId,
     @JsonProperty("recipient_settings") Collection<RecipientSettings> recipientSettings,
-    @JsonProperty("subscribers")        Collection<String> subscribers
+    @JsonProperty("subscribers")        Collection<String> subscribers,
+    @JsonProperty("unsubscribers")      Collection<String> unsubscribers
 )  { }

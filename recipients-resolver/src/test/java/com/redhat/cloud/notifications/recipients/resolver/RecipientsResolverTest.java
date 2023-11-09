@@ -2,18 +2,21 @@ package com.redhat.cloud.notifications.recipients.resolver;
 
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
+import io.quarkus.cache.Cache;
+import io.quarkus.cache.CacheName;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.Comparator;
+
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.clearInvocations;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -25,10 +28,14 @@ public class RecipientsResolverTest {
 
     private static final String ORG_ID = "org-id-1";
 
+    @Inject
+    RecipientsResolver recipientsResolver;
+
     @InjectMock
     FetchUsersFromExternalServices fetchUsersFromExternalServices;
 
-    RecipientsResolver recipientsResolver = new RecipientsResolver();
+    @CacheName("find-recipients")
+    Cache recipientsCache;
 
     User user1 = createUser("user1", false);
     User user2 = createUser("user2", false);
@@ -39,11 +46,8 @@ public class RecipientsResolverTest {
     UUID group1 = UUID.randomUUID();
     UUID group2 = UUID.randomUUID();
 
-    Set<String> subscribedUsers = Set.of("user1", "admin1");
-
     @BeforeEach
     void beforeEach() {
-        recipientsResolver.fetchingUsers = fetchUsersFromExternalServices;
 
         // Setting mocks
         when(fetchUsersFromExternalServices.getUsers(
@@ -91,540 +95,432 @@ public class RecipientsResolverTest {
         )).thenReturn(List.of(
             admin2
         ));
+
+        recipientsCache.invalidateAll().await().indefinitely();
     }
 
     @Test
-    public void withPersonalizedEmailOn() {
-        boolean subscribedByDefault = false;
-        // Default request, all subscribed users
-        List<User> users = recipientsResolver.findRecipients(
+    void testNotSubscribedByDefaultAndDefaultSettings() {
+        Set<User> recipients = recipientsResolver.findRecipients(
                 ORG_ID,
-                Set.of(new RecipientSettings(false, false, null, Set.of())),
-                subscribedUsers,
-                subscribedByDefault
+                Set.of(new RecipientSettings(false, false, null, emptySet())),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin1, user1), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(false)
-        );
+        assertEquals(Set.of(admin1, user1), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // subscribed admin users
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(new RecipientSettings(true, false, null, Set.of())),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(admin1), users);
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(true)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // users, ignoring preferences
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(new RecipientSettings(false, true, null, Set.of())),
-                subscribedUsers,
-                subscribedByDefault
-        );
-
-        assertEquals(List.of(admin1, admin2, user1, user2, user3), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(false)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // admins, ignoring preferences
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(new RecipientSettings(true, true, null, Set.of())),
-                subscribedUsers,
-            subscribedByDefault
-        );
-        assertEquals(List.of(admin1, admin2), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(true)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // Specifying users
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, false, null, Set.of(
-                    user1.getUsername(), user3.getUsername()
-                ))
-            ),
-            subscribedUsers,
-            subscribedByDefault
-        );
-        assertEquals(List.of(user1), users);
-
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(false)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // Specifying users ignoring user preferences
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(false, true, null, Set.of(
-                                user1.getUsername(), user3.getUsername()
-                        ))
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(user1, user3), sortListByUsername(users));
-
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(false)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // Specifying users and only admins
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(true, false, null, Set.of(
-                                user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername()
-                        ))
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(admin1), users);
-
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(true)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // Specifying users and only admins (ignoring user preferences)
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(true, true, null, Set.of(
-                                user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername()
-                        ))
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(admin1, admin2), sortListByUsername(users));
-
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(true)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // all subscribed users & admins ignoring preferences
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(false, false, null, Set.of()),
-                        new RecipientSettings(true, true, null, Set.of())
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(admin1, admin2, user1), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(true)
-        );
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(false)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // all users ignoring preferences & admins ignoring preferences (redundant, but possible)
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(false, true, null, Set.of()),
-                        new RecipientSettings(true, true, null, Set.of())
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(admin1, admin2, user1, user2, user3), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(true)
-        );
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-                eq(ORG_ID),
-                eq(false)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // all subscribed users from group 1
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(false, false, group1, Set.of())
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(admin1, user1), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
-                eq(ORG_ID),
-                eq(false),
-                eq(group1)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // all subscribed admins from group 1
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(true, false, group1, Set.of())
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(admin1), users);
-        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
-                eq(ORG_ID),
-                eq(true),
-                eq(group1)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // all subscribed users from group 2
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(false, false, group2, Set.of())
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(), users);
-        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
-                eq(ORG_ID),
-                eq(false),
-                eq(group2)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
-        // all users from group 2 (ignoring preferences)
-        users = recipientsResolver.findRecipients(
-                ORG_ID,
-                Set.of(
-                        new RecipientSettings(false, true, group2, Set.of())
-                ),
-                subscribedUsers,
-                subscribedByDefault
-        );
-        assertEquals(List.of(admin2, user2), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
-                eq(ORG_ID),
-                eq(false),
-                eq(group2)
-        );
-        verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
-
     }
 
     @Test
-    public void withPersonalizedEmailOnOptOut() {
-        boolean subscribedByDefault = true;
-
-        Set<String> unsubscribedUsers = subscribedUsers;
-
-        // Default request, all subscribed users
-        List<User> users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, false, null, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    void testNotSubscribedByDefaultAndAdminsOnly() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, false, null, emptySet())),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin2, user2, user3), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(false)
-        );
+        assertEquals(Set.of(admin1), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // subscribed admin users
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(true, false, null, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndIgnoreUserPreferences() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, true, null, emptySet())),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin2), users);
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(true)
-        );
+        assertEquals(Set.of(admin1, admin2, user1, user2, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // users, ignoring preferences
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, true, null, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndAdminsOnlyAndIgnoreUserPreferences() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, true, null, emptySet())),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin1, admin2, user1, user2, user3), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(false)
-        );
+        assertEquals(Set.of(admin1, admin2), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // admins, ignoring preferences
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(true, true, null, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndUsers() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, false, null,
+                        Set.of(user1.getUsername(), user3.getUsername())
+                )),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin1, admin2), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(true)
-        );
+        assertEquals(Set.of(user1), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // Specifying users
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, false, null, Set.of(
-                    user1.getUsername(), user3.getUsername()
-                ))
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndIgnoreUserPreferencesAndUsers() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, true, null,
+                        Set.of(user1.getUsername(), user3.getUsername())
+                )),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(user3), users);
-
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(false)
-        );
+        assertEquals(Set.of(user1, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // Specifying users ignoring user preferences
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, true, null, Set.of(
-                    user1.getUsername(), user3.getUsername()
-                ))
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndAdminsOnlyAndUsers() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, false, null,
+                        Set.of(user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername())
+                )),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(user1, user3), sortListByUsername(users));
-
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(false)
-        );
+        assertEquals(Set.of(admin1), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // Specifying users and only admins
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(true, false, null, Set.of(
-                    user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername()
-                ))
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndAdminsOnlyAndIgnoreUserPreferencesAndUsers() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, true, null,
+                        Set.of(user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername())
+                )),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin2), users);
-
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(true)
-        );
+        assertEquals(Set.of(admin1, admin2), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // Specifying users and only admins (ignoring user preferences)
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(true, true, null, Set.of(
-                    user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername()
-                ))
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndSeveralSettings1() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(
+                        new RecipientSettings(false, false, null, emptySet()),
+                        new RecipientSettings(true, true, null, emptySet())
+                ),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin1, admin2), sortListByUsername(users));
-
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(true)
-        );
+        assertEquals(Set.of(admin1, admin2, user1), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // all subscribed users & admins ignoring preferences
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, false, null, Set.of()),
-                new RecipientSettings(true, true, null, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndSeveralSettings2() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(
+                        new RecipientSettings(false, true, null, emptySet()),
+                        new RecipientSettings(true, true, null, emptySet())
+                ),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin1, admin2, user2, user3), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(true)
-        );
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(false)
-        );
+        assertEquals(Set.of(admin1, admin2, user1, user2, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // all users ignoring preferences & admins ignoring preferences (redundant, but possible)
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, true, null, Set.of()),
-                new RecipientSettings(true, true, null, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndGroup1() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, false, group1, emptySet())),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin1, admin2, user1, user2, user3), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(true)
-        );
-        verify(fetchUsersFromExternalServices, times(1)).getUsers(
-            eq(ORG_ID),
-            eq(false)
-        );
+        assertEquals(Set.of(admin1, user1), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(eq(ORG_ID), eq(false), eq(group1));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // none users from group 1
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, false, group1, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndAdminsOnlyAndGroup1() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, false, group1, emptySet())),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(), users);
-        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
-            eq(ORG_ID),
-            eq(false),
-            eq(group1)
-        );
+        assertEquals(Set.of(admin1), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(eq(ORG_ID), eq(true), eq(group1));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // none users from group 1
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(true, false, group1, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testNotSubscribedByDefaultAndGroup2() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, false, group2, emptySet())),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(), users);
-        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
-            eq(ORG_ID),
-            eq(true),
-            eq(group1)
-        );
+        assertTrue(recipients.isEmpty());
+        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(eq(ORG_ID), eq(false), eq(group2));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // all subscribed users from group 2
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, false, group2, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    public void testNotSubscribedByDefaultAndIgnoreUserPreferencesAndGroup2() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, true, group2, emptySet())),
+                Set.of("user1", "admin1"),
+                emptySet(),
+                false
         );
-        assertEquals(List.of(admin2, user2), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
-            eq(ORG_ID),
-            eq(false),
-            eq(group2)
-        );
+        assertEquals(Set.of(admin2, user2), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(eq(ORG_ID), eq(false), eq(group2));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
-        // all users from group 2 (ignoring preferences)
-        users = recipientsResolver.findRecipients(
-            ORG_ID,
-            Set.of(
-                new RecipientSettings(false, true, group2, Set.of())
-            ),
-            unsubscribedUsers,
-            subscribedByDefault
+    @Test
+    void testSubscribedByDefaultAndDefaultSettings() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, false, null, emptySet())),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
         );
-        assertEquals(List.of(admin2, user2), sortListByUsername(users));
-        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(
-            eq(ORG_ID),
-            eq(false),
-            eq(group2)
-        );
+        assertEquals(Set.of(admin2, user2, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        clearInvocations(fetchUsersFromExternalServices);
+    }
 
+    @Test
+    void testSubscribedByDefaultAndAdminsOnly() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, false, null, emptySet())),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin2), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndIgnoreUserPreferences() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, true, null, emptySet())),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin1, admin2, user1, user2, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndAdminsOnlyAndIgnoreUserPreferences() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, true, null, emptySet())),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin1, admin2), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndUsers() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, false, null,
+                        Set.of(user1.getUsername(), user3.getUsername())
+                )),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndIgnoreUserPreferencesAndUsers() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, true, null,
+                        Set.of(user1.getUsername(), user3.getUsername())
+                )),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(user1, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndAdminsOnlyAndUsers() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, false, null,
+                        Set.of(user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername())
+                )),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin2), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndAdminsOnlyAndIgnoreUserPreferencesAndUsers() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, true, null,
+                        Set.of(user1.getUsername(), user3.getUsername(), admin1.getUsername(), admin2.getUsername())
+                )),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin1, admin2), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndSeveralSettings1() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(
+                        new RecipientSettings(false, false, null, emptySet()),
+                        new RecipientSettings(true, true, null, emptySet())
+                ),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin1, admin2, user2, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndSeveralSettings2() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(
+                        new RecipientSettings(false, true, null, emptySet()),
+                        new RecipientSettings(true, true, null, emptySet())
+                ),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin1, admin2, user1, user2, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
+        verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(false));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndGroup1() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, false, group1, emptySet())),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertTrue(recipients.isEmpty());
+        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(eq(ORG_ID), eq(false), eq(group1));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndAdminsOnlyAndGroup1() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(true, false, group1, emptySet())),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertTrue(recipients.isEmpty());
+        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(eq(ORG_ID), eq(true), eq(group1));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    public void testSubscribedByDefaultAndIgnoreUserPreferencesAndGroup1() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, true, group1, emptySet())),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin1, user1), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(eq(ORG_ID), eq(false), eq(group1));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testSubscribedByDefaultAndGroup2() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(new RecipientSettings(false, false, group2, emptySet())),
+                emptySet(),
+                Set.of("user1", "admin1"),
+                true
+        );
+        assertEquals(Set.of(admin2, user2), recipients);
+        verify(fetchUsersFromExternalServices, times(1)).getGroupUsers(eq(ORG_ID), eq(false), eq(group2));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
     }
 
     public User createUser(String username, boolean isAdmin) {
@@ -633,9 +529,4 @@ public class RecipientsResolverTest {
         user.setAdmin(isAdmin);
         return user;
     }
-
-    private List<User> sortListByUsername(List<User> users) {
-        return users.stream().sorted(Comparator.comparing(User::getUsername)).collect(Collectors.toList());
-    }
-
 }

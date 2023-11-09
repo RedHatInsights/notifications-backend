@@ -11,9 +11,9 @@ import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -24,7 +24,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 
 @QuarkusTest
 public class RecipientResolverResourceTest {
@@ -53,9 +52,9 @@ public class RecipientResolverResourceTest {
         List<User> userList = getRecipientsPage(recipientQuery);
         Assertions.assertNotNull(userList);
         Assertions.assertEquals(0, userList.size());
-        verify(recipientsResolver, times(1)).findRecipients(anyString(), any(), any(), anyBoolean());
+        verify(recipientsResolver, times(1)).findRecipients(anyString(), any(), any(), any(), anyBoolean());
 
-        when(recipientsResolver.findRecipients(anyString(), any(), any(), anyBoolean())).thenReturn(createUserList(500));
+        when(recipientsResolver.findRecipients(anyString(), any(), any(), any(), anyBoolean())).thenReturn(createUserList(500));
         userList = getRecipientsPage(recipientQuery);
         Assertions.assertEquals(500, userList.size());
     }
@@ -74,12 +73,12 @@ public class RecipientResolverResourceTest {
             .statusCode(expectedStatusCode).extract().response();
     }
 
-    public List<User> createUserList(int size) {
+    public Set<User> createUserList(int size) {
         return createUserList(size, 0);
     }
 
-    public List<User> createUserList(int size, int initValue) {
-        List<User> userList = new ArrayList<>(size);
+    public Set<User> createUserList(int size, int initValue) {
+        Set<User> userList = new HashSet<>(size);
         for (int i = initValue; i < size + initValue; i++) {
             userList.add(createUser(i));
         }

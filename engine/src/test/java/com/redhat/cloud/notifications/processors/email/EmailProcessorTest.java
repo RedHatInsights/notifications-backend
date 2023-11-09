@@ -36,7 +36,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 @QuarkusTest
 public class EmailProcessorTest {
@@ -367,7 +368,7 @@ public class EmailProcessorTest {
         final String resultEmailBody = payload.getString("email_body");
         final String resultEmailSubject = payload.getString("email_subject");
         final String resultOrgId = payload.getString("orgId");
-        final List<String> resultSubscribers = payload.getJsonArray("subscribers").stream().map(String.class::cast).toList();
+        final Set<String> resultSubscribers = payload.getJsonArray("subscribers").stream().map(String.class::cast).collect(toSet());
         final Set<RecipientSettings> resultRecipientSettings = payload.getJsonArray("recipient_settings")
             .stream()
             .map(JsonObject.class::cast)
@@ -378,15 +379,15 @@ public class EmailProcessorTest {
                     jsonRs.getBoolean("admins_only"),
                     jsonRs.getBoolean("ignore_user_preferences"),
                     (groupUUID == null) ? null : UUID.fromString(groupUUID),
-                    jsonRs.getJsonArray("users").stream().map(String.class::cast).collect(Collectors.toSet()),
-                    jsonRs.getJsonArray("emails").stream().map(String.class::cast).collect(Collectors.toSet())
+                    jsonRs.getJsonArray("users").stream().map(String.class::cast).collect(toSet()),
+                    jsonRs.getJsonArray("emails").stream().map(String.class::cast).collect(toSet())
                 );
-            }).collect(Collectors.toSet());
+            }).collect(toSet());
 
         Assertions.assertEquals(stubbedRenderedBody, resultEmailBody, "the rendered email's body from the email notification does not match the stubbed email body");
         Assertions.assertEquals(stubbedRenderedSubject, resultEmailSubject, "the rendered email's subject from the email notification does not match the stubbed email subject");
         Assertions.assertEquals(event.getOrgId(), resultOrgId, "the organization ID from the email notification does not match the one set in the stubbed event");
-        Assertions.assertIterableEquals(subscribers, resultSubscribers, "the subscribers set in the email notification do not match the stubbed ones");
+        Assertions.assertEquals(Set.copyOf(subscribers), resultSubscribers, "the subscribers set in the email notification do not match the stubbed ones");
 
         final Set<RecipientSettings> recipientSettings = this.emailProcessor.extractAndTransformRecipientSettings(event, endpoints);
         Assertions.assertIterableEquals(recipientSettings, resultRecipientSettings, "the recipient settings set in the email notification do not match the stubbed ones");

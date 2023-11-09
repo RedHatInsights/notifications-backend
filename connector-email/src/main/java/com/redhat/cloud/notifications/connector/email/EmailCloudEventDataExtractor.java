@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.connector.email;
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
@@ -29,10 +30,15 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
             .map(jsonSetting -> jsonSetting.mapTo(RecipientSettings.class))
             .toList();
 
-        final List<String> subscribers = cloudEventData.getJsonArray("subscribers")
+        final Set<String> subscribers = cloudEventData.getJsonArray("subscribers", JsonArray.of())
             .stream()
             .map(String.class::cast)
-            .toList();
+            .collect(toSet());
+
+        final Set<String> unsubscribers = cloudEventData.getJsonArray("unsubscribers", JsonArray.of())
+                .stream()
+                .map(String.class::cast)
+                .collect(toSet());
 
         final Set<String> emails = recipientSettings.stream()
                 .filter(settings -> settings.getEmails() != null)
@@ -43,6 +49,7 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, cloudEventData.getString("email_subject"));
         exchange.setProperty(ExchangeProperty.RECIPIENT_SETTINGS, recipientSettings);
         exchange.setProperty(ExchangeProperty.SUBSCRIBERS, subscribers);
+        exchange.setProperty(ExchangeProperty.UNSUBSCRIBERS, unsubscribers);
         exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
     }
 }
