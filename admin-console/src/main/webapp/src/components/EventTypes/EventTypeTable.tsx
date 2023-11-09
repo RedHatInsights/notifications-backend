@@ -8,7 +8,7 @@ import {
     ToolbarContent,
     ToolbarItem
 } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
+import { PencilAltIcon, TrashIcon, CheckCircleIcon, TimesIcon } from '@patternfly/react-icons';
 import { ExpandableRowContent, OnCollapse, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import produce from 'immer';
 import * as React from 'react';
@@ -66,6 +66,7 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
                 <Th>Event Type</Th>
                 <Th>Name</Th>
                 <Th>Instant email</Th>
+                <Th>Subscribed by default?</Th>
                 <Th />
             </Thead>
             <Tbody>
@@ -107,6 +108,9 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                         onClick={ () =>
                             !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
                     />
+                    </Td>
+                    <Td>
+                        {eventType.subscribedByDefault ? <CheckCircleIcon /> : <TimesIcon />}
                     </Td>
                     <Td>
                         <ActionList isIconList>

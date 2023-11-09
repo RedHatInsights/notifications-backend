@@ -127,7 +127,7 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
                             <Tr key={ b.id }>
                                 <Td>{ b.displayName }</Td>
                                 <Td>{ b.actions?.map(action => {
-                                    const properties = action.endpoint?.properties as Schemas.EmailSubscriptionProperties;
+                                    const properties = action.endpoint?.properties as Schemas.SystemSubscriptionProperties;
                                     if (properties) {
                                         if (properties.only_admins) {
                                             return 'Admins';

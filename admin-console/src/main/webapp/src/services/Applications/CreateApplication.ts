@@ -25,10 +25,9 @@ const actionCreator =  (params: CreateApplication) => {
     return Operations.InternalResourceUpdateApplication.actionCreator({
         appId: params.id,
         body: {
-            id: params.id,
-            bundle_id: params.bundleId,
             display_name: params.displayName,
-            name: params.name
+            name: params.name,
+            owner_role: params.ownerRole
         }
     });
 };

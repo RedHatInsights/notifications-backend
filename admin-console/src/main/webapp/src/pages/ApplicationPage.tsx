@@ -119,7 +119,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
             name: eventType.name ?? '',
             description: eventType.description ?? '',
             fullyQualifiedName: eventType.fullyQualifiedName ?? '',
-            applicationId
+            applicationId,
+            subscribedByDefault: eventType.subscribedByDefault
 
         }).then (eventTypesQuery.reload);
 
