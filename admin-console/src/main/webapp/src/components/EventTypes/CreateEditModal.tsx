@@ -1,5 +1,7 @@
-import { ActionGroup, Button, Form, FormGroup,
-    HelperText, HelperTextItem, Modal, ModalVariant, TextArea, TextInput } from '@patternfly/react-core';
+import {
+    ActionGroup, Button, Checkbox, Form, FormGroup,
+    HelperText, HelperTextItem, Modal, ModalVariant, TextArea, TextInput
+} from '@patternfly/react-core';
 import React from 'react';
 
 import { EventType } from '../../types/Notifications';
@@ -87,6 +89,15 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             onChange={ handleChange }
                             id='description'
                             name="description"
+                        />
+                    </FormGroup>
+                    <FormGroup label='Subscribed by default?' fieldId='subscribedByDefault'
+                        helperText='Should users be subscribed by default?'>
+                        <Checkbox
+                            id='subscribedByDefault'
+                            name='subscribedByDefault'
+                            isChecked={ eventType.subscribedByDefault }
+                            onChange={ (isChecked) => setEventType(prev => ({...prev, subscribedByDefault: isChecked})) }
                         />
                     </FormGroup>
                     <ActionGroup>

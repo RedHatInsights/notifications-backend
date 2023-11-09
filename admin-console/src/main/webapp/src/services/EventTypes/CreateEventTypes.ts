@@ -9,7 +9,7 @@ export type CreateEventType = {
     applicationId: string;
     name: string;
     fullyQualifiedName: string;
-
+    subscribedByDefault: boolean;
 }
 
 const actionCreator =  (params: CreateEventType) => {
@@ -21,8 +21,8 @@ const actionCreator =  (params: CreateEventType) => {
                 description: params.description,
                 display_name: params.displayName,
                 name: params.name,
-                fully_qualified_name: params.fullyQualifiedName
-
+                fully_qualified_name: params.fullyQualifiedName,
+                subscribed_by_default: params.subscribedByDefault
             }
         });
     }
@@ -35,8 +35,8 @@ const actionCreator =  (params: CreateEventType) => {
             description: params.description,
             display_name: params.displayName,
             name: params.name,
-            fully_qualified_name: params.fullyQualifiedName
-
+            fully_qualified_name: params.fullyQualifiedName,
+            subscribed_by_default: params.subscribedByDefault
         }
     });
 };

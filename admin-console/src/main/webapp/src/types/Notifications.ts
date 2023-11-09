@@ -48,6 +48,7 @@ export interface EventType {
     description: string;
     applicationId: string;
     fullyQualifiedName: string;
+    subscribedByDefault: boolean;
 }
 
 type InstantEmailTemplateRow = {
