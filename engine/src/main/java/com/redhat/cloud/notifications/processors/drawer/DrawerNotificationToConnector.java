@@ -17,5 +17,12 @@ public record DrawerNotificationToConnector(
     Collection<RecipientSettings> recipientSettings,
 
     @JsonProperty("unsubscribers")
-    Collection<String> unsubscribers
+    Collection<String> unsubscribers,
+
+    @JsonProperty("subscribers")
+    Collection<String> subscribers,
+
+    @JsonProperty("subscribed_by_default")
+    boolean subscribedByDefault
+
 )  { }

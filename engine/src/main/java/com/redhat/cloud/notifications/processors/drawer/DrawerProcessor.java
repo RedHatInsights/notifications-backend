@@ -37,6 +37,7 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,6 +114,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
             final Set<String> unsubscribers =
                     Set.copyOf(subscriptionRepository.getUnsubscribers(event.getOrgId(), event.getEventType().getId(), DRAWER));
+            final Set<String> subscribers = Collections.EMPTY_SET;
             final Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, endpoints);
 
             // Prepare all the data to be sent to the connector.
@@ -120,7 +122,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
                 event.getOrgId(),
                 drawerEntryPayload,
                 recipientSettings,
-                unsubscribers
+                unsubscribers,
+                subscribers,
+                true
             );
 
             connectorSender.send(event, endpoint, JsonObject.mapFrom(drawerNotificationToConnector));
