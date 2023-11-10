@@ -4,15 +4,13 @@ import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntry;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
-import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
-import org.apache.camel.util.json.JsonObject;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
@@ -32,21 +30,13 @@ public class DrawerPayloadBuilder implements Processor {
     public void process(Exchange exchange) {
         DrawerUser entry = exchange.getMessage().getBody(DrawerUser.class);
         final DrawerEntryPayload entryPayloadModel = exchange.getProperty(ExchangeProperty.DRAWER_ENTRY_PAYLOAD, DrawerEntryPayload.class);
-        DrawerEntryPayload payloadToSend = new DrawerEntryPayload();
-        payloadToSend.setDescription(entryPayloadModel.getDescription());
-        payloadToSend.setCreated(entryPayloadModel.getCreated());
-        payloadToSend.setRead(entryPayloadModel.isRead());
-        payloadToSend.setSource(entryPayloadModel.getSource());
-        payloadToSend.setTitle(entryPayloadModel.getTitle());
-
-        payloadToSend.setId(entry.getDrawerNotificationUuid());
+        entryPayloadModel.setId(entry.getDrawerNotificationUuid());
 
         DrawerEntry drawerEntry = new DrawerEntry();
-        drawerEntry.setPayload(payloadToSend);
+        drawerEntry.setPayload(entryPayloadModel);
         drawerEntry.setOrganizations(List.of(exchange.getProperty(ORG_ID, String.class)));
         drawerEntry.setUsers(List.of(entry.getId()));
-        Map<String, Object> map = Json.CODEC.fromValue(drawerEntry, Map.class);
-        JsonObject myPayload = new JsonObject(map);
+        JsonObject myPayload = JsonObject.mapFrom(drawerEntry);
 
         Message in = exchange.getIn();
 
@@ -77,6 +67,6 @@ public class DrawerPayloadBuilder implements Processor {
         outgoingCloudEvent.put("time", LocalDateTime.now(UTC).toString());
         outgoingCloudEvent.put("data", myPayload);
 
-        in.setBody(outgoingCloudEvent.toJson());
+        in.setBody(outgoingCloudEvent.encode());
     }
 }
