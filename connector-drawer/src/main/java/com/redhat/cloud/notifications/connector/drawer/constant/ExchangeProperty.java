@@ -7,7 +7,6 @@ public class ExchangeProperty {
     public static final String RECIPIENT_SETTINGS = "recipient_settings";
 
     public static final String UNSUBSCRIBERS = "unsubscribers";
-    public static final String SUBSCRIBERS = "subscribers";
-    public static final String SUBSCRIBED_BY_DEFAULT = "subscribed_by_default";
+
     public static final String DRAWER_ENTRY_PAYLOAD = "drawer_entry_payload";
 }

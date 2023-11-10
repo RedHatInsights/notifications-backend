@@ -97,7 +97,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         drawerEntryPayload.setTitle("the title");
 
         RecipientSettings recipientSettings = new RecipientSettings();
-        return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings), List.of("user-1", "user-2"), null, true);
+        return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings), List.of("user-1", "user-2"));
     }
 
     @Override

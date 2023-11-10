@@ -24,17 +24,14 @@ public class RecipientsResolverPreparer implements Processor {
     @Override
     public void process(final Exchange exchange) throws JsonProcessingException {
         List<RecipientSettings> recipientSettings = exchange.getProperty(ExchangeProperty.RECIPIENT_SETTINGS, List.class);
-        Set<String> subscribers = exchange.getProperty(ExchangeProperty.SUBSCRIBERS, Set.class);
         Set<String> unsubscribers = exchange.getProperty(ExchangeProperty.UNSUBSCRIBERS, Set.class);
-        boolean subscribedByDefault = exchange.getProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, boolean.class);
         final String orgId = exchange.getProperty(ORG_ID, String.class);
 
         RecipientsQuery recipientsQuery = new RecipientsQuery();
-        recipientsQuery.subscribers = subscribers;
         recipientsQuery.unsubscribers = unsubscribers;
         recipientsQuery.orgId = orgId;
         recipientsQuery.recipientSettings = Set.copyOf(recipientSettings);
-        recipientsQuery.subscribedByDefault = subscribedByDefault;
+        recipientsQuery.subscribedByDefault = true;
 
         // Serialize the payload.
         exchange.getMessage().setBody(objectMapper.writeValueAsString(recipientsQuery));
