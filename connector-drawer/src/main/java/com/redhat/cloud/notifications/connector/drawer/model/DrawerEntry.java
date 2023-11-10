@@ -16,10 +16,6 @@ public class DrawerEntry {
 
     private DrawerEntryPayload payload;
 
-    public DrawerEntry() {
-        // default constructor
-    }
-
     public void setOrganizations(List<String> organizations) {
         this.organizations = organizations;
     }
