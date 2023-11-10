@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.model.bop;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -8,6 +9,7 @@ import java.util.Set;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
 
 @JsonAutoDetect(fieldVisibility = ANY)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SendEmailsRequest {
 
     private final Set<Email> emails = new HashSet<>();

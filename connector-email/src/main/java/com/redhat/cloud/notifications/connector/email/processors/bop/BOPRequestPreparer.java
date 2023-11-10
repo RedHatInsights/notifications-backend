@@ -51,11 +51,14 @@ public class BOPRequestPreparer implements Processor {
         // Specify if we should skip the users resolution in BOP since we might
         // have already done it ourselves, the email sender of the email, and
         // the default recipient that will appear in the email.
+        //
+        // We will deliberately use the sender for both the email sender and
+        // the default recipients of the email.
         final SendEmailsRequest sendEmailsRequest = new SendEmailsRequest(
             Set.of(email),
             this.emailConnectorConfig.isSkipBopUsersResolution(),
             exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class),
-            exchange.getProperty(ExchangeProperty.EMAIL_DEFAULT_RECIPIENT, String.class)
+            exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class)
         );
 
         // Specify the message's payload in JSON.

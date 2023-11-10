@@ -399,8 +399,8 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
     private Predicate shouldSkipEmail() {
         return exchange -> exchange.getProperty(FILTERED_USERS, Set.class).isEmpty() &&
-                (!emailConnectorConfig.isSkipBopUsersResolution() ||
-                exchange.getProperty(EMAIL_RECIPIENTS, Set.class).isEmpty());
+            (!emailConnectorConfig.isSkipBopUsersResolution() ||
+            exchange.getProperty(EMAIL_RECIPIENTS, Set.class).isEmpty());
     }
 
     /**

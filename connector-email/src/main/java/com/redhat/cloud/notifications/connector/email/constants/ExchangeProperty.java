@@ -12,11 +12,6 @@ public class ExchangeProperty {
      */
     public static final String ELEMENTS_COUNT = "elements_count";
     /**
-     * Holds the email's default recipient that will appear when receiving an
-     * email from the platform.
-     */
-    public static final String EMAIL_DEFAULT_RECIPIENT = "email_default_recipient";
-    /**
      * Email recipients initially included in the payload received by notifications-engine.
      * The subscriptions of these recipients are not checked.
      * They are simply added to the list of recipients retrieved from notifications-recipients-resolver.

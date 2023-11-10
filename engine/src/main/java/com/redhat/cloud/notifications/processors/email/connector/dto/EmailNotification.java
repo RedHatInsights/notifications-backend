@@ -10,8 +10,6 @@ import java.util.Collection;
  * @param emailSubject          the rendered subject of the email to be sent.
  * @param emailSender           the sender that will appear in the email when
  *                              the user receives it.
- * @param emailDefaultRecipient the recipient that will appear by default in
- *                              the email when the user receives it.
  * @param orgId                 the organization ID associated with the
  *                              triggered event.
  * @param recipientSettings     the collection of recipient settings extracted
@@ -25,13 +23,12 @@ import java.util.Collection;
  *                              default.
  */
 public record EmailNotification(
-    @JsonProperty("email_body")                 String emailBody,
-    @JsonProperty("email_subject")              String emailSubject,
-    @JsonProperty("email_sender")               String emailSender,
-    @JsonProperty("email_default_recipient")    String emailDefaultRecipient,
-    @JsonProperty("orgId")                      String orgId,
-    @JsonProperty("recipient_settings")         Collection<RecipientSettings> recipientSettings,
-    @JsonProperty("subscribers")                Collection<String> subscribers,
-    @JsonProperty("unsubscribers")              Collection<String> unsubscribers,
-    @JsonProperty("subscribed_by_default")      boolean subscribedByDefault
+    @JsonProperty("email_body")             String emailBody,
+    @JsonProperty("email_subject")          String emailSubject,
+    @JsonProperty("email_sender")           String emailSender,
+    @JsonProperty("orgId")                  String orgId,
+    @JsonProperty("recipient_settings")     Collection<RecipientSettings> recipientSettings,
+    @JsonProperty("subscribers")            Collection<String> subscribers,
+    @JsonProperty("unsubscribers")          Collection<String> unsubscribers,
+    @JsonProperty("subscribed_by_default")  boolean subscribedByDefault
 )  { }
