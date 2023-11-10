@@ -210,11 +210,11 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                         asyncAggregations.destroy(asyncAggregation);
                     });
         } else {
-            processAggregationSync(event);
+            processAggregationSync(event, false);
         }
     }
 
-    public void processAggregationSync(Event event) {
+    public void processAggregationSync(Event event, boolean async) {
 
         AggregationCommand aggregationCommand;
         Timer.Sample consumedTimer = Timer.start(registry);
@@ -240,9 +240,13 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                         app.get().getDisplayName(),
                         app.get().getBundle().getDisplayName()
                 );
-                eventRepository.updateEventDisplayName(event.getId(), eventTypeDisplayName);
+                if (async) {
+                    eventRepository.updateEventDisplayNameWithNewTransaction(event.getId(), eventTypeDisplayName);
+                } else {
+                    eventRepository.updateEventDisplayName(event.getId(), eventTypeDisplayName);
+                }
             }
-            processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event));
+            processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event), async);
         } catch (Exception e) {
             Log.warn("Error while processing aggregation", e);
             failedAggregationCommandCount.increment();
@@ -255,7 +259,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
     }
 
-    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Optional<Event> aggregatorEvent) {
+    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Optional<Event> aggregatorEvent, boolean async) {
         TemplateInstance subject = null;
         TemplateInstance body = null;
         final long startTime = System.currentTimeMillis();
@@ -270,7 +274,12 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
             body = templateService.compileTemplate(bodyData, "body");
         }
 
-        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+        Endpoint endpoint;
+        if (async) {
+            endpoint = endpointRepository.getOrCreateDefaultSystemSubscriptionWithNewTransaction(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+        } else {
+            endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+        }
         Event event;
         if (aggregatorEvent.isEmpty()) {
             event = new Event();

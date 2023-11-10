@@ -7,7 +7,6 @@ import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 
 @Dependent
 public class AsyncAggregation implements Runnable {
@@ -29,9 +28,8 @@ public class AsyncAggregation implements Runnable {
 
     @Override
     @ActivateRequestContext
-    @Transactional
     public void run() {
-        emailSubscriptionTypeProcessor.processAggregationSync(event);
+        emailSubscriptionTypeProcessor.processAggregationSync(event, true);
     }
 
     @PreDestroy
