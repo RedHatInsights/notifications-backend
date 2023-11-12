@@ -69,7 +69,9 @@ objects:
       webServices:
         public:
           enabled: true
-          apiPath: notifications
+          apiPaths:
+          - /api/notifications/
+          - /api/integrations/
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
         resources:
