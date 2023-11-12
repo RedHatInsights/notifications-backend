@@ -47,22 +47,18 @@ public class ExceptionProcessor implements Processor {
 
         process(t, exchange);
 
-        if (connectorConfig.isSedaEnabled()) {
-            /*
-             * There is currently a bug in Camel that will cause a NullPointerException throw when SEDA is used and the
-             * exchange is passed to producerTemplate#send. To work around that bug, we're cloning the current exchange
-             * and removing all Camel internal properties related to the exception that is being processed.
-             */
-            Exchange exchangeCopy = exchange.copy();
-            exchangeCopy.removeProperty(ERRORHANDLER_BRIDGE);
-            exchangeCopy.removeProperty(EXCEPTION_CAUGHT);
-            exchangeCopy.removeProperty(FAILURE_ENDPOINT);
-            exchangeCopy.removeProperty(FAILURE_ROUTE_ID);
-            exchangeCopy.removeProperty(FATAL_FALLBACK_ERROR_HANDLER);
-            producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchangeCopy);
-        } else {
-            producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchange);
-        }
+        /*
+         * There is currently a bug in Camel that will cause a NullPointerException throw when SEDA is used and the
+         * exchange is passed to producerTemplate#send. To work around that bug, we're cloning the current exchange
+         * and removing all Camel internal properties related to the exception that is being processed.
+         */
+        Exchange exchangeCopy = exchange.copy();
+        exchangeCopy.removeProperty(ERRORHANDLER_BRIDGE);
+        exchangeCopy.removeProperty(EXCEPTION_CAUGHT);
+        exchangeCopy.removeProperty(FAILURE_ENDPOINT);
+        exchangeCopy.removeProperty(FAILURE_ROUTE_ID);
+        exchangeCopy.removeProperty(FATAL_FALLBACK_ERROR_HANDLER);
+        producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchangeCopy);
     }
 
     protected final void logDefault(Throwable t, Exchange exchange) {

@@ -46,9 +46,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .handled(true)
                 .process(exceptionProcessor);
 
-        if (connectorConfig.isSedaEnabled()) {
-            configureSedaComponent();
-        }
+        configureSedaComponent();
 
         from(buildKafkaEndpoint())
                 .routeId(ENGINE_TO_CONNECTOR)
@@ -58,14 +56,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .removeHeaders("*")
                 .process(incomingCloudEventProcessor)
                 .to(log(getClass().getName()).level("DEBUG").showProperties(true))
-                // TODO The following lines should be removed when all connectors are migrated to SEDA.
-                .choice()
-                .when(exchange -> connectorConfig.isSedaEnabled())
-                .to(seda(ENGINE_TO_CONNECTOR))
-                .endChoice()
-                .otherwise()
-                .to(direct(ENGINE_TO_CONNECTOR))
-                .end();
+                .to(seda(ENGINE_TO_CONNECTOR));
 
         configureRoute();
     }
