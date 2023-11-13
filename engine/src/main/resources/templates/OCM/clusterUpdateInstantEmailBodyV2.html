@@ -1,0 +1,46 @@
+{@boolean renderSection1=true}
+{@boolean renderSection2=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Cluster Manager - OpenShift
+{/content-title}
+{#content-title-section1}
+    {#if action.events[0].payload.global_vars.upgrade_status == 'scheduled'}Upgrade scheduled{#else}Upgrade ended{/if}
+{/content-title-section1}
+{#content-body-section1}
+{#let global_var=action.events[0].payload.global_vars}
+<p>
+This notification is for your <a href="https://cloud.redhat.com/openshift/details/s/{action.events[0].payload.subscription_id}#overview" target="_blank" title="*|CLUSTER_DISPLAY_NAME|*">{action.events[0].payload.cluster_display_name} cluster</a>.
+</p>
+<p>
+Your {global_var.log_description}.
+</p>
+{#if global_var.upgrade_status == 'scheduled'}
+    <p>
+        <strong>What can you expect?</strong>
+        <ul>
+            <li>Your cluster capacity may increase briefly during the course of the upgrade but will never decrease. Your cluster will remain operational during the upgrade.</li>
+            <li>If your applications are not designed as highly available, they may experience brief outages as we roll through the upgrade.</li>
+            <li>We will send reminders as we get closer to the upgrade date. The maintenance window for the upgrade is variable and should take approximately 90 minutes for the control plane nodes and 10 minutes for each worker node.</li>
+        </ul>
+
+        <strong>What should you do to minimize impact?</strong>
+        <ul>
+            <li>You can minimize the impact on your applications by scaling your services to more than one pod. In general, for applications to be able to continue to service clients, they should be scaled.</li>
+            <li>Some pod workloads are not appropriate for scaling, such as a single-instance, non-replicated database using a persistent volume claim. In this situation, a deployment strategy of 'recreate' will ensure the pod is restarted after migration, although a brief outage will be experienced.</li>
+        </ul>
+
+        <strong>For more information, refer to</strong>&nbsp;<a href="https://www.openshift.com/blog/deploying-highly-available-applications-openshift-kubernetes" target="_blank" title="OpenShift HA guide blog">our highly available deployment guide</a>.
+    </p>
+{/if}
+{/let}
+{/content-body-section1}
+{#content-title-section2}
+More info
+{/content-title-section2}
+{#content-body-section2}
+If you have any questions, please <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank" title="Red Hat Support">contact us</a>. Review the <a href="https://access.redhat.com/support/policy/support_process" target="_blank" title="Red Hat support process">support process</a> for guidance on working with Red Hat support.
+<br/><br/>
+Thank you for choosing Red Hat OpenShift {#switch action.events[0].payload.global_vars.subscription_plan}{#case 'OSD'}Dedicated{#case 'OSDTrial'}Dedicated Trial{#case 'MOA'}Service on AWS{/switch}.
+{/content-body-section2}
+{/include}
