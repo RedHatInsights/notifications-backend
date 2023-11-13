@@ -75,7 +75,6 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         final String emailSubject = "fake email subject";
 
         final String emailSender = "\"Red Hat Insights\" noreply@redhat.com";
-        final String emailDefaultRecipient = "\"Red Hat ConsoleDot\" noreply-consoledot@redhat.com";
 
         // Prepare the JSON object.
         final JsonObject payload = new JsonObject();
@@ -85,7 +84,6 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         payload.put("email_body", emailBody);
         payload.put("email_subject", emailSubject);
         payload.put("email_sender", emailSender);
-        payload.put("email_default_recipient", emailDefaultRecipient);
         payload.put("subscribed_by_default", true);
 
         final Exchange exchange = this.createExchangeWithBody("");
