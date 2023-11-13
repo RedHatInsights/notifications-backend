@@ -74,8 +74,9 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
     @Disabled(value = "Not applicable on drawer use case")
     protected void testSuccessfulNotification() { }
 
-    @Disabled(value = "Not applicable on drawer use case")
+    @Override
     protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
+        // Not applicable on drawer use case
         return null;
     }
 
