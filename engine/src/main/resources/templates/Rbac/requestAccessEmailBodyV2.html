@@ -15,10 +15,10 @@
     <p>
         <strong>User's Request:</strong>
         <ul>
-            <li><strong>URL Path:</strong> {data.events[0].payload.url_path}</li>
-            <li><strong>Username:</strong> {data.events[0].payload.username}</li>
-            <li><strong>Email Address:</strong> {data.events[0].payload.user.email}</li>
-            <li><strong>Message from User:</strong> "{data.events[0].payload.user.request}"</li>
+            <li><strong>URL Path:</strong> {action.events[0].payload.url_path}</li>
+            <li><strong>Username:</strong> {action.events[0].payload.username}</li>
+            <li><strong>Email Address:</strong> {action.events[0].payload.user.email}</li>
+            <li><strong>Message from User:</strong> "{action.events[0].payload.user.request}"</li>
         </ul>
         <br/>
         <strong>Action Required:</strong>

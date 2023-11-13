@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 
@@ -29,6 +29,14 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
     static final String GROUP_UPDATED = "group-updated";
     static final String GROUP_DELETED = "group-deleted";
     static final String PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM = "platform-default-group-turned-into-custom";
+    static final String REQUEST_ACCESS = "request-access";
+
+    static String[] RBAC_EVENT_TYPE_NAMES() {
+        return new String[]{RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED,
+            CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS,
+            CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM,
+            REQUEST_ACCESS};
+    }
 
     @Override
     protected String getBundle() {
@@ -42,10 +50,10 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM);
+        return List.of(RBAC_EVENT_TYPE_NAMES());
     }
 
-    @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM })
+    @MethodSource("RBAC_EVENT_TYPE_NAMES")
     @ParameterizedTest
     void shouldTestAllEventTypeTemplateTitles(String eventType) {
         Action action = RbacTestHelpers.createRbacAction();
@@ -54,7 +62,7 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
         testTitle(eventType, result);
     }
 
-    @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM })
+    @MethodSource("RBAC_EVENT_TYPE_NAMES")
     @ParameterizedTest
     void shouldTestAllEventTypeTemplateBodies(String eventType) {
         Action action = RbacTestHelpers.createRbacAction();
@@ -103,6 +111,9 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
                 assertEquals("Instant notification - Platform default group is turned into custom - User Access - Console", result);
+                break;
+            case REQUEST_ACCESS:
+                assertEquals("Instant notification - Request access - User Access - Console", result);
                 break;
             default:
                 break;
@@ -172,6 +183,16 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
                 assertTrue(result.contains("Platform default group is modified by"));
                 assertTrue(result.contains("Red Hat will not be responsible for managing it from now on."));
+                assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+                break;
+            case REQUEST_ACCESS:
+                assertTrue(result.contains("Request for access received"));
+                assertTrue(result.contains("within console.redhat.com. Please review this request and decide whether to grant or deny access."));
+                assertTrue(result.contains("Granting Access:"));
+                assertTrue(result.contains("Denying Access:"));
+                assertTrue(result.contains("https://console.redhat.com/stuff"));
+                assertTrue(result.contains("I want access to stuff"));
+                assertTrue(result.contains("testUser AT somewhere"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             default:
