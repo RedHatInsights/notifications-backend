@@ -6,26 +6,19 @@ import com.redhat.cloud.notifications.connector.email.model.bop.Email;
 import com.redhat.cloud.notifications.connector.email.model.bop.Emails;
 import com.redhat.cloud.notifications.connector.email.model.bop.SendEmailsRequest;
 import com.redhat.cloud.notifications.connector.email.model.settings.User;
-import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.component.http.HttpMethods;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
 public class BOPRequestPreparer implements Processor {
-
-    @ConfigProperty(name = "env.name", defaultValue = "unknown")
-    String environment;
 
     @Inject
     EmailConnectorConfig emailConnectorConfig;
@@ -38,32 +31,15 @@ public class BOPRequestPreparer implements Processor {
     public void process(final Exchange exchange) {
         final String subject = exchange.getProperty(ExchangeProperty.RENDERED_SUBJECT, String.class);
         final String body = exchange.getProperty(ExchangeProperty.RENDERED_BODY, String.class);
+
         final Set<String> recipients;
-
-        // We still need to support sending individual emails per user for a
-        // while. However, that will go away soon, so we can consider the
-        // following code block very much deprecated.
-        final Boolean singleEmailPerUser = exchange.getProperty(ExchangeProperty.SINGLE_EMAIL_PER_USER, Boolean.class);
-        if (singleEmailPerUser != null && singleEmailPerUser) {
-            User recipient = exchange.getMessage().getBody(User.class);
-            if (emailConnectorConfig.isSkipBopUsersResolution()) {
-                recipients = Collections.singleton(recipient.getEmail());
-            } else {
-                recipients = Collections.singleton(recipient.getUsername());
-            }
+        final Set<User> users = exchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
+        if (emailConnectorConfig.isSkipBopUsersResolution()) {
+            recipients = users.stream().map(User::getEmail).collect(toSet());
+            Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
+            recipients.addAll(emails);
         } else {
-            final Set<User> users = exchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
-            if (emailConnectorConfig.isSkipBopUsersResolution()) {
-                recipients = users.stream().map(User::getEmail).collect(toSet());
-                Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
-                recipients.addAll(emails);
-            } else {
-                recipients = users.stream().map(User::getUsername).collect(toSet());
-            }
-        }
-
-        if ("stage".equals(environment)) {
-            Log.infof("Recipients: %s", Arrays.toString(recipients.toArray()));
+            recipients = users.stream().map(User::getUsername).collect(toSet());
         }
 
         final Email email = new Email(

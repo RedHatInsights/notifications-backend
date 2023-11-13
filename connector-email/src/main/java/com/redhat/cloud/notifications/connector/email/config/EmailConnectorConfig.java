@@ -28,8 +28,6 @@ public class EmailConnectorConfig extends ConnectorConfig {
     private static final String RBAC_ELEMENTS_PAGE = "notifications.connector.user-provider.rbac.elements-per-page";
     private static final String RBAC_URL = "notifications.connector.user-provider.rbac.url";
     private static final String SKIP_BOP_USERS_RESOLUTION = "notifications.connector.bop.skip-users-resolution";
-    @Deprecated(forRemoval = true)
-    public static final String SINGLE_EMAIL_PER_USER = "notifications.connector.single-email-per-user.enabled";
 
     // The following two keys are public in order to make it easier for
     // overriding them in the tests.
@@ -53,9 +51,6 @@ public class EmailConnectorConfig extends ConnectorConfig {
 
     @ConfigProperty(name = BOP_URL)
     String bopURL;
-
-    @ConfigProperty(name = SINGLE_EMAIL_PER_USER, defaultValue = "true")
-    boolean singleEmailPerUserEnabled;
 
     @ConfigProperty(name = FETCH_USERS_RBAC_ENABLED, defaultValue = "true")
     boolean fetchUsersWithRBAC;
@@ -126,7 +121,6 @@ public class EmailConnectorConfig extends ConnectorConfig {
         additionalEntries.put(RBAC_APPLICATION_KEY, this.rbacApplicationKey);
         additionalEntries.put(RBAC_ELEMENTS_PAGE, this.rbacElementsPerPage);
         additionalEntries.put(RBAC_URL, this.rbacURL);
-        additionalEntries.put(SINGLE_EMAIL_PER_USER, this.singleEmailPerUserEnabled);
         additionalEntries.put(USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, this.userProviderCacheExpireAfterWrite);
         additionalEntries.put(SKIP_BOP_USERS_RESOLUTION, skipBopUsersResolution);
         additionalEntries.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, recipientsResolverModuleEnabled);
@@ -233,9 +227,6 @@ public class EmailConnectorConfig extends ConnectorConfig {
         return this.rbacURL;
     }
 
-    public boolean isSingleEmailPerUserEnabled() {
-        return this.singleEmailPerUserEnabled;
-    }
 
     public int getUserProviderCacheExpireAfterWrite() {
         return userProviderCacheExpireAfterWrite;

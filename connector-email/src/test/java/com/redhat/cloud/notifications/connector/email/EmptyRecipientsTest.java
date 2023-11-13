@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector.email;
 
+import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -14,12 +15,13 @@ import java.util.HashSet;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SEND_EMAIL_BOP;
-import static com.redhat.cloud.notifications.connector.email.constants.Routes.SEND_EMAIL_BOP_CHOICE;
-import static com.redhat.cloud.notifications.connector.email.constants.Routes.SEND_EMAIL_BOP_SINGLE_PER_USER;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 
 @QuarkusTest
 public class EmptyRecipientsTest extends CamelQuarkusTestSupport {
+
+    @Inject
+    EmailConnectorConfig emailConnectorConfig;
 
     @Inject
     ProducerTemplate producerTemplate;
@@ -35,30 +37,25 @@ public class EmptyRecipientsTest extends CamelQuarkusTestSupport {
         Exchange exchange = createExchangeWithBody("");
         exchange.setProperty(FILTERED_USERS, new HashSet<>());
 
-        adviceWith(SEND_EMAIL_BOP_CHOICE, context(), new AdviceWithRouteBuilder() {
+        adviceWith(SEND_EMAIL_BOP, context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
                 mockEndpointsAndSkip(
-                        "direct:" + SEND_EMAIL_BOP_SINGLE_PER_USER,
-                        "direct:" + SEND_EMAIL_BOP,
+                        emailConnectorConfig.getBopURL() + "*",
                         "direct:" + SUCCESS
                 );
             }
         });
 
-        MockEndpoint sendEmailBopSinglePerUserEndpoint = getMockEndpoint("mock:direct:" + SEND_EMAIL_BOP_SINGLE_PER_USER);
-        sendEmailBopSinglePerUserEndpoint.expectedMessageCount(0);
+        MockEndpoint bopEndpoint = getMockEndpoint("mock:" + emailConnectorConfig.getBopURL().replace("https://", "https:"), false);
+        bopEndpoint.expectedMessageCount(0);
 
-        MockEndpoint sendEmailBopEndpoint = getMockEndpoint("mock:direct:" + SEND_EMAIL_BOP);
-        sendEmailBopEndpoint.expectedMessageCount(0);
-
-        MockEndpoint successEndpoint = getMockEndpoint("mock:direct:" + SUCCESS);
+        MockEndpoint successEndpoint = getMockEndpoint("mock:direct:" + SUCCESS, false);
         successEndpoint.expectedMessageCount(1);
 
-        producerTemplate.send("direct:" + SEND_EMAIL_BOP_CHOICE, exchange);
+        producerTemplate.send("direct:" + SEND_EMAIL_BOP, exchange);
 
-        sendEmailBopSinglePerUserEndpoint.assertIsSatisfied();
-        sendEmailBopEndpoint.assertIsSatisfied();
+        bopEndpoint.assertIsSatisfied();
         successEndpoint.assertIsSatisfied();
     }
 }

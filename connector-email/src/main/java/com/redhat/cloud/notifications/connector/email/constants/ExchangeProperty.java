@@ -34,10 +34,6 @@ public class ExchangeProperty {
      */
     public static final String RECIPIENT_SETTINGS = "recipient_settings";
     /**
-     * A flag to determine if we need to send the email individually per user.
-     */
-    public static final String SINGLE_EMAIL_PER_USER = "single_email_per_user";
-    /**
      * Holds the list of usernames who subscribed to the event type
      * that triggered the notification.
      */
