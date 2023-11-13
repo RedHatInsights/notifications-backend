@@ -148,7 +148,7 @@ parameters:
   description: Maximum size of the Camel endpoints cache
   value: "100"
 - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
-  description: Maximum time in milliseconds allowed to establish an HTTPS connection
+  description: Maximum time in milliseconds allowed to establish an HTTP connection
   value: "30000"
 - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECTIONS_PER_ROUTE
   description: Maximum number of HTTP connections per route
@@ -157,7 +157,7 @@ parameters:
   description: Maximum number of HTTP connections
   value: "200"
 - name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
-  description: Maximum time in milliseconds allowed to wait for HTTPS data
+  description: Maximum time in milliseconds allowed to wait for HTTP data
   value: "30000"
 - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
   description: Delay in milliseconds between two redelivery attempts

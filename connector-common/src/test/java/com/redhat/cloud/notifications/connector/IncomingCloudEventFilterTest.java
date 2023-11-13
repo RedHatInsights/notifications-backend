@@ -5,8 +5,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,19 +23,31 @@ public class IncomingCloudEventFilterTest extends CamelQuarkusTestSupport {
     @InjectMock
     ConnectorConfig connectorConfig;
 
-    @BeforeEach
-    void beforeEach() {
-        when(connectorConfig.getConnectorName()).thenReturn("foo");
+    @Override
+    public boolean isUseRouteBuilder() {
+        return false;
     }
 
     @Test
-    void shouldAcceptValidConnectorHeader() {
+    void shouldAcceptValidConnectorHeaderSingleValue() {
+        mockSupportedConnectorHeaders("foo");
+        assertTrue(incomingCloudEventFilter.matches(buildExchange("foo")));
+    }
+
+    @Test
+    void shouldAcceptValidConnectorHeaderMultipleValues() {
+        mockSupportedConnectorHeaders("bar", "foo");
         assertTrue(incomingCloudEventFilter.matches(buildExchange("foo")));
     }
 
     @Test
     void shouldRejectInvalidConnectorHeader() {
+        mockSupportedConnectorHeaders("foo");
         assertFalse(incomingCloudEventFilter.matches(buildExchange("bar")));
+    }
+
+    private void mockSupportedConnectorHeaders(String... supportedConnectorHeaders) {
+        when(connectorConfig.getSupportedConnectorHeaders()).thenReturn(List.of(supportedConnectorHeaders));
     }
 
     private Exchange buildExchange(String connectorHeader) {

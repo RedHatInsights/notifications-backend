@@ -1,20 +1,27 @@
 package com.redhat.cloud.notifications.connector.email.config;
 
-import com.redhat.cloud.notifications.connector.ConnectorConfig;
+import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 @ApplicationScoped
-public class EmailConnectorConfig extends ConnectorConfig {
+/*
+ * @Alternative and Priority will soon go away.
+ * See https://github.com/quarkusio/quarkus/issues/37042 for more details about the replacement.
+ */
+@Alternative
+@Priority(0) // The value doesn't matter.
+public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_API_TOKEN = "notifications.connector.user-provider.bop.api_token";
     private static final String BOP_CLIENT_ID = "notifications.connector.user-provider.bop.client_id";
     private static final String BOP_ENV = "notifications.connector.user-provider.bop.env";
@@ -105,33 +112,33 @@ public class EmailConnectorConfig extends ConnectorConfig {
     String recipientsResolverServiceURL;
 
     @Override
-    public void log() {
-        final Map<String, Object> additionalEntries = new HashMap<>();
+    protected Map<String, Object> getLoggedConfiguration() {
+        Map<String, Object> config = super.getLoggedConfiguration();
 
         /*
          * /!\ WARNING /!\
          * DO NOT log config values that come from OpenShift secrets.
          */
 
-        additionalEntries.put(BOP_ENV, this.bopEnv);
-        additionalEntries.put(BOP_URL, this.bopURL);
-        additionalEntries.put(FETCH_USERS_RBAC_ENABLED, this.fetchUsersWithRBAC);
-        additionalEntries.put(IT_ELEMENTS_PAGE, this.itElementsPerPage);
-        additionalEntries.put(IT_KEYSTORE_LOCATION, this.itKeyStoreLocation.orElse(""));
-        additionalEntries.put(RBAC_APPLICATION_KEY, this.rbacApplicationKey);
-        additionalEntries.put(RBAC_ELEMENTS_PAGE, this.rbacElementsPerPage);
-        additionalEntries.put(RBAC_URL, this.rbacURL);
-        additionalEntries.put(USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, this.userProviderCacheExpireAfterWrite);
-        additionalEntries.put(SKIP_BOP_USERS_RESOLUTION, skipBopUsersResolution);
-        additionalEntries.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, recipientsResolverModuleEnabled);
-        additionalEntries.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
+        config.put(BOP_ENV, this.bopEnv);
+        config.put(BOP_URL, this.bopURL);
+        config.put(FETCH_USERS_RBAC_ENABLED, this.fetchUsersWithRBAC);
+        config.put(IT_ELEMENTS_PAGE, this.itElementsPerPage);
+        config.put(IT_KEYSTORE_LOCATION, this.itKeyStoreLocation.orElse(""));
+        config.put(RBAC_APPLICATION_KEY, this.rbacApplicationKey);
+        config.put(RBAC_ELEMENTS_PAGE, this.rbacElementsPerPage);
+        config.put(RBAC_URL, this.rbacURL);
+        config.put(USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE, this.userProviderCacheExpireAfterWrite);
+        config.put(SKIP_BOP_USERS_RESOLUTION, skipBopUsersResolution);
+        config.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_MODULE_ENABLED, recipientsResolverModuleEnabled);
+        config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
 
         /*
          * /!\ WARNING /!\
          * DO NOT log config values that come from OpenShift secrets.
          */
 
-        log(additionalEntries);
+        return config;
     }
 
     public String getBopApiToken() {

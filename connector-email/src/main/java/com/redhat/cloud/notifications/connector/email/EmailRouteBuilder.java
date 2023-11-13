@@ -10,7 +10,6 @@ import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import com.redhat.cloud.notifications.connector.email.predicates.NotFinishedFetchingAllPages;
 import com.redhat.cloud.notifications.connector.email.predicates.rbac.StatusCodeNotFound;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
-import com.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager;
 import com.redhat.cloud.notifications.connector.email.processors.it.ITResponseProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.it.ITUserRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.rbac.RBACConstants;
@@ -38,7 +37,6 @@ import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.support.jsse.KeyManagersParameters;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
-import org.apache.camel.support.jsse.TrustManagersParameters;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import java.util.HashSet;
@@ -49,6 +47,7 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EMAIL_RECIPIENTS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
+import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
@@ -158,7 +157,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      * @throws Exception if the IT SSL route could not be correctly set up.
      */
     @Override
-    public void configureRoute() throws Exception {
+    public void configureRoutes() throws Exception {
         /*
          * Configure Caffeine cache.
          */
@@ -506,14 +505,8 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         // the schema twice.
         final String fullURL = this.emailConnectorConfig.getBopURL();
         if (fullURL.startsWith("https")) {
-            final TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
-            trustManagersParameters.setTrustManager(new BOPTrustManager());
-
-            final SSLContextParameters sslContextParameters = new SSLContextParameters();
-            sslContextParameters.setTrustManagers(trustManagersParameters);
-
             return https(fullURL.replace("https://", ""))
-                .sslContextParameters(sslContextParameters)
+                .sslContextParameters(getSslContextParameters())
                 .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
         } else {
             return http(fullURL.replace("http://", ""));

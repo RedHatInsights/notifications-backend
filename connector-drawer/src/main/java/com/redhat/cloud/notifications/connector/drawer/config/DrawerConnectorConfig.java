@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.connector.drawer.config;
 import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import java.util.HashMap;
 import java.util.Map;
 
 @ApplicationScoped
@@ -19,11 +18,11 @@ public class DrawerConnectorConfig extends ConnectorConfig {
     String outgoingDrawerTopic;
 
     @Override
-    public void log() {
-        final Map<String, Object> additionalEntries = new HashMap<>();
-        additionalEntries.put(DRAWER_TOPIC, outgoingDrawerTopic);
-        additionalEntries.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
-        log(additionalEntries);
+    protected Map<String, Object> getLoggedConfiguration() {
+        Map<String, Object> config = super.getLoggedConfiguration();
+        config.put(DRAWER_TOPIC, outgoingDrawerTopic);
+        config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
+        return config;
     }
 
     public String getOutgoingDrawerTopic() {

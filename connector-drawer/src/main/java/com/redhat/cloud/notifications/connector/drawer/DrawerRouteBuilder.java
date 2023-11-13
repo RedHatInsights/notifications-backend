@@ -30,7 +30,7 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
     public static final String CONNECTOR_TO_DRAWER = "connector-to-drawer";
 
     @Override
-    public void configureRoute() {
+    public void configureRoutes() {
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(drawerConnectorConfig.getConnectorName())
             .process(recipientsResolverPreparer)

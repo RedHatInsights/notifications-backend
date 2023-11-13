@@ -77,10 +77,10 @@ objects:
           value: ${NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE}
         - name: NOTIFICATIONS_CONNECTOR_FETCH_USERS_RBAC_ENABLED
           value: ${NOTIFICATIONS_CONNECTOR_FETCH_USERS_RBAC_ENABLED}
-        - name: NOTIFICATIONS_CONNECTOR_HTTPS_CONNECT_TIMEOUT_MS
-          value: ${NOTIFICATIONS_CONNECTOR_HTTPS_CONNECT_TIMEOUT_MS}
-        - name: NOTIFICATIONS_CONNECTOR_HTTPS_SOCKET_TIMEOUT_MS
-          value: ${NOTIFICATIONS_CONNECTOR_HTTPS_SOCKET_TIMEOUT_MS}
+        - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS}
+        - name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_INTERVAL_MS
           value: ${KAFKA_MAX_POLL_INTERVAL_MS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_RECORDS
@@ -217,12 +217,12 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_FETCH_USERS_RBAC_ENABLED
   description: Is RBAC used to fetch the users?
   value: "true"
-- name: NOTIFICATIONS_CONNECTOR_HTTPS_CONNECT_TIMEOUT_MS
-  description: Maximum time in milliseconds allowed to establish an HTTPS connection
+- name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
+  description: Maximum time in milliseconds allowed to establish an HTTP connection
   value: "2500"
-- name: NOTIFICATIONS_CONNECTOR_HTTPS_SOCKET_TIMEOUT_MS
-  description: Maximum time in milliseconds allowed to wait for HTTPS data
-  value: "2500"
+- name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
+  description: Maximum time in milliseconds allowed to wait for HTTP data
+  value: "180000"
 - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
   description: Delay in milliseconds between two redelivery attempts
   value: "1000"

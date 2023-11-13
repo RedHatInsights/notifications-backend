@@ -17,9 +17,9 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.DISABLE_ENDPOINT_CLIENT_ERRORS;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.HTTP_STATUS_CODE;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.INCREMENT_ENDPOINT_SERVER_ERRORS;
+import static com.redhat.cloud.notifications.connector.webhook.CloudEventHistoryBuilder.DISABLE_ENDPOINT_CLIENT_ERRORS;
+import static com.redhat.cloud.notifications.connector.webhook.CloudEventHistoryBuilder.INCREMENT_ENDPOINT_SERVER_ERRORS;
+import static com.redhat.cloud.notifications.connector.webhook.CloudEventHistoryBuilder.STATUS_CODE;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.INSIGHT_TOKEN_HEADER;
 import static com.redhat.cloud.notifications.connector.webhook.WebhookCloudEventDataExtractor.BASIC_AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.webhook.WebhookCloudEventDataExtractor.ENDPOINT_PROPERTIES;
@@ -130,7 +130,7 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
         JsonObject data = new JsonObject(returnToEngine.getString("data"));
         assertTrue(data.getBoolean(flagNameThatShouldBeTrue));
         JsonObject details = data.getJsonObject("details");
-        assertEquals(httpReturnCode, details.getInteger(HTTP_STATUS_CODE));
+        assertEquals(httpReturnCode, details.getInteger(STATUS_CODE));
     }
 
     @Test

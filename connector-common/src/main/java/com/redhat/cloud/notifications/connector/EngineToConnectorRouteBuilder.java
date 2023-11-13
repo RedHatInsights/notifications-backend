@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.connector;
 
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
-import org.apache.camel.component.seda.SedaComponent;
 
 import static org.apache.camel.LoggingLevel.DEBUG;
 import static org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory.KafkaEndpointConsumerBuilder;
@@ -29,8 +29,14 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
     @Inject
     RedeliveryPredicate redeliveryPredicate;
 
+    @Inject
+    Instance<CamelComponentConfigurator> camelComponentsConfigurators;
+
     @Override
     public void configure() throws Exception {
+
+        // Camel components must be configured before they are included in Camel routes definitions.
+        configureComponents();
 
         onException(Throwable.class)
                 .onWhen(redeliveryPredicate::matches)
@@ -46,8 +52,6 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .handled(true)
                 .process(exceptionProcessor);
 
-        configureSedaComponent();
-
         from(buildKafkaEndpoint())
                 .routeId(ENGINE_TO_CONNECTOR)
                 .to(log(getClass().getName()).level("DEBUG").showHeaders(true).showBody(true))
@@ -58,10 +62,20 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .to(log(getClass().getName()).level("DEBUG").showProperties(true))
                 .to(seda(ENGINE_TO_CONNECTOR));
 
-        configureRoute();
+        configureRoutes();
     }
 
-    public abstract void configureRoute() throws Exception;
+    private void configureComponents() {
+        // All CDI beans implementing CamelComponentConfigurator are retrieved from the CDI container.
+        for (CamelComponentConfigurator configurator : camelComponentsConfigurators) {
+            // Each one of them is executed.
+            configurator.configure(getContext());
+            // Then destroyed because it's not needed anymore and would use memory for nothing otherwise.
+            camelComponentsConfigurators.destroy(configurator);
+        }
+    }
+
+    protected abstract void configureRoutes() throws Exception;
 
     private KafkaEndpointConsumerBuilder buildKafkaEndpoint() {
         return kafka(connectorConfig.getIncomingKafkaTopic())
@@ -69,15 +83,5 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .maxPollRecords(connectorConfig.getIncomingKafkaMaxPollRecords())
                 .maxPollIntervalMs(connectorConfig.getIncomingKafkaMaxPollIntervalMs())
                 .pollOnError(connectorConfig.getIncomingKafkaPollOnError());
-    }
-
-    private void configureSedaComponent() {
-        SedaComponent component = getContext().getComponent("seda", SedaComponent.class);
-        component.setConcurrentConsumers(connectorConfig.getSedaConcurrentConsumers());
-        component.setQueueSize(connectorConfig.getSedaQueueSize());
-        // The Kafka messages consumption is blocked (paused) when the SEDA queue is full.
-        component.setDefaultBlockWhenFull(true);
-        // The onException clauses will work with SEDA only if this is set to true.
-        component.setBridgeErrorHandler(true);
     }
 }

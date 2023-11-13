@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.splunk;
+package com.redhat.cloud.notifications.connector.http;
 
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
@@ -6,11 +6,11 @@ import org.apache.camel.support.jsse.TrustManagersParameters;
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;
 
-public class SplunkTrustAllManager implements X509TrustManager {
+public class SslTrustAllManager implements X509TrustManager {
 
     public static SSLContextParameters getSslContextParameters() {
         TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
-        trustManagersParameters.setTrustManager(new SplunkTrustAllManager());
+        trustManagersParameters.setTrustManager(new SslTrustAllManager());
         SSLContextParameters sslContextParameters = new SSLContextParameters();
         sslContextParameters.setTrustManagers(trustManagersParameters);
         return sslContextParameters;
