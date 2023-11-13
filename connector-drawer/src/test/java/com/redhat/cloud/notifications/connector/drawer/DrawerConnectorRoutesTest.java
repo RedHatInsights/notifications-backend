@@ -23,12 +23,10 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
@@ -38,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
@@ -77,6 +74,11 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
     @Disabled(value = "Not applicable on drawer use case")
     protected void testSuccessfulNotification() { }
 
+    @Disabled(value = "Not applicable on drawer use case")
+    protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
+        return null;
+    }
+
     final String RECIPIENTS_RESOLVER_EXCEPTION_MESSAGE = "HTTP operation failed invoking http://";
 
     static final DrawerNotificationToConnector notification = buildTestDrawerNotificationToConnector();
@@ -98,14 +100,6 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
 
         RecipientSettings recipientSettings = new RecipientSettings();
         return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings), List.of("user-1", "user-2"));
-    }
-
-    @Override
-    protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
-        return exchange -> {
-            String outgoingPayload = exchange.getIn().getBody(String.class);
-            return outgoingPayload.equals(incomingPayload.getString("message"));
-        };
     }
 
     private HttpRequest getMockHttpRequest(String path, ExpectationResponseCallback expectationResponseCallback) {
@@ -227,7 +221,8 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
 
     protected static void assertKafkaSinkDrawerIsSatisfied(MockEndpoint kafkaSinkMockDrawerEndpoint) throws InterruptedException {
 
-        kafkaSinkMockDrawerEndpoint.assertIsSatisfied();
+        // We need a timeout here because SEDA processes the exchange from a different thread and a race condition may happen.
+        kafkaSinkMockDrawerEndpoint.assertIsSatisfied(2000L);
 
         for (Exchange exchange : kafkaSinkMockDrawerEndpoint.getReceivedExchanges()) {
             JsonObject payload = new JsonObject(exchange.getIn().getBody(String.class));
@@ -253,12 +248,4 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
             assertEquals(notification.drawerEntryPayload().getTitle(), secondPayloadLevel.getString("title"));
         }
     }
-
-    protected void mockRemoteServerResponse(int httpReturnCode, String bodyMessage) {
-        getClient()
-            .withSecure(useHttps())
-            .when(request().withMethod("PUT").withPath(getRemoteServerPath()))
-            .respond(new HttpResponse().withStatusCode(httpReturnCode).withBody(bodyMessage));
-    }
-
 }
