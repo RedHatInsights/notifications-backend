@@ -9,6 +9,8 @@ objects:
   metadata:
     name: notifications-connector-drawer
   spec:
+    dependencies:
+    - notifications-recipients-resolver
     envName: ${ENV_NAME}
     kafkaTopics:
     - topicName: platform.notifications.tocamel
