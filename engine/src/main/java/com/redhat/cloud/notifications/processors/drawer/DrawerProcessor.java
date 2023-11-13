@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.DrawerEntry;
@@ -36,7 +37,8 @@ import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
-
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -88,6 +90,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     SubscriptionRepository subscriptionRepository;
+
+    @Inject
+    NotificationHistoryRepository notificationHistoryRepository;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
@@ -227,4 +232,20 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         String template = integrationTemplate.getTheTemplate().getData();
         return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
     }
+
+    public void manageConnectorDrawerReturnsIfNeeded(Map<String, Object> decodedPayload, String historyId) {
+        Map<String, Object> details = (HashMap<String, Object>) decodedPayload.get("details");
+        if (null != details && "com.redhat.console.notification.toCamel.drawer".equals(details.get("type"))) {
+            com.redhat.cloud.notifications.models.Event event = notificationHistoryRepository.getEventIdFromHistoryId(historyId);
+            List<HashMap<String, String>> drawerNotifications = (ArrayList<HashMap<String, String>>) details.get("resolved_recipient_list");
+            if (null != drawerNotifications && drawerNotifications.size() > 0) {
+                String drawerNotificationIds = drawerNotifications.stream().map(entry -> entry.get("drawerNotificationUuid") + "#" + entry.get("username"))
+                    .collect(Collectors.joining(","));
+                drawerNotificationRepository.createWithId(event, drawerNotificationIds);
+                details.remove("resolved_recipient_list");
+                details.put("new_drawer_entry_counter", drawerNotifications.size());
+            }
+        }
+    }
+
 }
