@@ -13,11 +13,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.START_TIME;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.SUCCESSFUL;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.TYPE;
 import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
@@ -47,16 +42,6 @@ public class DrawerPayloadBuilder implements Processor {
          */
         in.removeHeaders("*");
         in.setHeader("content-type", "application/cloudevents+json; charset=UTF-8");
-
-        JsonObject details = new JsonObject();
-        details.put("type", exchange.getProperty(TYPE, String.class));
-        details.put("target", exchange.getProperty(TARGET_URL, String.class));
-        details.put("outcome", exchange.getProperty(OUTCOME, String.class));
-
-        JsonObject data = new JsonObject();
-        data.put("successful", exchange.getProperty(SUCCESSFUL, Boolean.class));
-        data.put("duration", System.currentTimeMillis() - exchange.getProperty(START_TIME, Long.class));
-        data.put("details", details);
 
         JsonObject outgoingCloudEvent = new JsonObject();
         outgoingCloudEvent.put("type", CE_TYPE);
