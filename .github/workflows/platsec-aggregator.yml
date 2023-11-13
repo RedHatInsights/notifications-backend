@@ -25,11 +25,14 @@ on:
     branches: [ "main", "master", "security-compliance" ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ "main", "master", "security-compliance" ]
+    branches: [ "main", "master", "security-compliance"
+      # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
+      # The following line adds "ready_for_review" to the activity types which trigger workflows by default.
+      types: ["opened", "synchronize", "reopened", "ready_for_review"]
 
 jobs:
   PlatSec-Security-Workflow:
-    if: github.repository == 'RedHatInsights/notifications-backend'
+    if: github.repository == 'RedHatInsights/notifications-backend' && github.event.pull_request.draft == false
     uses: RedHatInsights/platform-security-gh-workflow/.github/workflows/platsec-security-scan-reusable-workflow.yml@master
     ## The optional parameters below are used if you are using something other than the
     ## the defaults of root '.' for the path and 'Dockerfile' for the Dockerfile name.
