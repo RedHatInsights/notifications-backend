@@ -36,16 +36,24 @@ public class SubscriptionRepository {
                 .getResultList();
     }
 
-    public Map<String, Set<String>> getEmailSubscribersUserIdGroupedByEventType(String orgId, String bundleName, String applicationName, SubscriptionType subscriptionType) {
-        // TODO Replace `subscribed` with `subscribed IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
-        String query = "SELECT eventType.name, es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
-            "AND eventType.application.name = :applicationName AND id.subscriptionType = :subscriptionType AND subscribed";
+    public Map<String, Set<String>> getSubscribersByEventType(String orgId, String bundleName, String applicationName, SubscriptionType subscriptionType) {
+        return getSubscriptionsByEventType(orgId, bundleName, applicationName, subscriptionType, true);
+    }
 
-        List<Object[]> records = entityManager.createQuery(query)
+    public Map<String, Set<String>> getUnsubscribersByEventType(String orgId, String bundleName, String applicationName, SubscriptionType subscriptionType) {
+        return getSubscriptionsByEventType(orgId, bundleName, applicationName, subscriptionType, false);
+    }
+
+    public Map<String, Set<String>> getSubscriptionsByEventType(String orgId, String bundleName, String applicationName, SubscriptionType subscriptionType, boolean subscribed) {
+        String query = "SELECT eventType.name, es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
+            "AND eventType.application.name = :applicationName AND id.subscriptionType = :subscriptionType AND subscribed = :subscribed";
+
+        List<Object[]> records = entityManager.createQuery(query, Object[].class)
             .setParameter("orgId", orgId)
             .setParameter("bundleName", bundleName)
             .setParameter("applicationName", applicationName)
             .setParameter("subscriptionType", subscriptionType)
+            .setParameter("subscribed", subscribed)
             .getResultList();
 
         // group userIds by eventType name

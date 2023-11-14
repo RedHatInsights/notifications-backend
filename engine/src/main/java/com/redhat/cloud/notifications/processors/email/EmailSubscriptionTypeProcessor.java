@@ -329,7 +329,8 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                         event.getOrgId(),
                         recipientSettings,
                         recipientsUsernames,
-                        Collections.emptySet()
+                        Collections.emptySet(),
+                        false
                     );
 
                     connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));

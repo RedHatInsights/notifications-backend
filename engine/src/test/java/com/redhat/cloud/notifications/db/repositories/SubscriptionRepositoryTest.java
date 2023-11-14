@@ -46,7 +46,7 @@ public class SubscriptionRepositoryTest {
         resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-02", eventTypeA, SubscriptionType.DAILY);
         resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-03", eventTypeC, SubscriptionType.DAILY);
 
-        Map<String, Set<String>> mapUsersByEventType = subscriptionRepository.getEmailSubscribersUserIdGroupedByEventType(ORG_ID, BUNDLE_NAME, APP_NAME, SubscriptionType.DAILY);
+        Map<String, Set<String>> mapUsersByEventType = subscriptionRepository.getSubscribersByEventType(ORG_ID, BUNDLE_NAME, APP_NAME, SubscriptionType.DAILY);
         assertEquals(3, mapUsersByEventType.size());
         assertEquals(2, mapUsersByEventType.get("event-type-a").size());
         assertTrue(mapUsersByEventType.get("event-type-a").contains("User-01"));

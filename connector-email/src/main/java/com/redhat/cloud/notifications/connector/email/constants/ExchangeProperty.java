@@ -44,6 +44,10 @@ public class ExchangeProperty {
      */
     public static final String UNSUBSCRIBERS = "unsubscribers";
     /**
+     * Holds a boolean indicating if the event type is subscribed by default.
+     */
+    public static final String SUBSCRIBED_BY_DEFAULT = "subscribedByDefault";
+    /**
      * Holds the rendered body contents, ready to be sent in an email.
      */
     public static final String RENDERED_BODY = "rendered_body";

@@ -48,6 +48,7 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.RENDERED_BODY, cloudEventData.getString("email_body"));
         exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, cloudEventData.getString("email_subject"));
         exchange.setProperty(ExchangeProperty.RECIPIENT_SETTINGS, recipientSettings);
+        exchange.setProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, cloudEventData.getBoolean("subscribed_by_default"));
         exchange.setProperty(ExchangeProperty.SUBSCRIBERS, subscribers);
         exchange.setProperty(ExchangeProperty.UNSUBSCRIBERS, unsubscribers);
         exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);

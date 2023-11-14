@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.recipients.recipientsresolver;
 
-import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.pojo.RecipientsQuery;
@@ -59,9 +58,10 @@ public class ExternalRecipientsResolver {
     }
 
     @CacheResult(cacheName = "recipients-resolver-results")
-    public Set<User> recipientUsers(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, SubscriptionType subscriptionType) {
+    public Set<User> recipientUsers(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault) {
         RecipientsQuery recipientsQuery = new RecipientsQuery();
         recipientsQuery.subscribers = Set.copyOf(subscribers);
+        recipientsQuery.unsubscribers = Set.copyOf(unsubscribers);
         recipientsQuery.orgId = orgId;
         Set<com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings> recipientSettingsSet = recipientSettings
             .stream()
@@ -69,7 +69,7 @@ public class ExternalRecipientsResolver {
             .collect(Collectors.toSet());
 
         recipientsQuery.recipientSettings = recipientSettingsSet;
-        recipientsQuery.subscribedByDefault = subscriptionType.isSubscribedByDefault();
+        recipientsQuery.subscribedByDefault = subscribedByDefault;
         Set<User> recipientsList = retryOnError(() -> recipientsResolverService.getRecipients(recipientsQuery));
         return recipientsList;
     }
