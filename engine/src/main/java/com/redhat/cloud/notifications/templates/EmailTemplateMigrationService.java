@@ -313,6 +313,11 @@ public class EmailTemplateMigrationService {
                     "OCM/severityWarningInstantEmailTitle", "txt", "OCM Service Logs warning severity email title",
                     "OCM/severityWarningInstantEmailBody", "html", "OCM Service Logs warning severity email body"
             );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-update"),
+                "OCM/clusterUpdateInstantEmailTitle", "txt", "OCM cluster update title",
+                "OCM/clusterUpdateInstantEmailBody", "html", "OCM cluster update email body"
+            );
 
             /*
              * Former src/main/resources/templates/Patch folder.
