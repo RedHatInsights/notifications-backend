@@ -10,7 +10,7 @@
 {#content-body-section1}
 {#let global_var=action.events[0].payload.global_vars}
 <p>
-This notification is for your <a href="https://cloud.redhat.com/openshift/details/s/{action.events[0].payload.subscription_id}#overview" target="_blank" title="*|CLUSTER_DISPLAY_NAME|*">{action.events[0].payload.cluster_display_name} cluster</a>.
+This notification is for your <a href="https://cloud.redhat.com/openshift/details/s/{global_var.subscription_id}#overview" target="_blank" title="{global_var.cluster_display_name}">{global_var.cluster_display_name} cluster</a>.
 </p>
 <p>
 Your {global_var.log_description}.
