@@ -53,7 +53,6 @@ public class BOPRequestPreparer implements Processor {
         if (emailConnectorConfig.isSkipBopUsersResolution()) {
             final SendEmailsRequest request = new SendEmailsRequest(
                 Set.of(email),
-                this.emailConnectorConfig.isSkipBopUsersResolution(),
                 exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class),
                 exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class)
             );
