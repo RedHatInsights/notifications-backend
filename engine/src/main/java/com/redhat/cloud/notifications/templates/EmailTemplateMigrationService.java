@@ -315,8 +315,8 @@ public class EmailTemplateMigrationService {
             );
             createInstantEmailTemplate(
                 warnings, "openshift", "cluster-manager", List.of("cluster-update"),
-                "OCM/clusterUpdateInstantEmailTitle", "txt", "OCM Service Logs cluster update title",
-                "OCM/clusterUpdateInstantEmailBody", "html", "OCM Service Logs cluster update email body"
+                "OCM/clusterUpdateInstantEmailTitle", "txt", "OCM cluster update title",
+                "OCM/clusterUpdateInstantEmailBody", "html", "OCM cluster update email body"
             );
 
             /*
