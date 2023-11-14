@@ -17,17 +17,13 @@ public class HttpComponentConfigurator implements CamelComponentConfigurator {
     @Override
     public void configure(CamelContext context) {
         for (String httpComponent : connectorConfig.getHttpComponents()) {
-            configure(context, httpComponent);
+            HttpComponent component = context.getComponent(httpComponent, HttpComponent.class);
+            component.setConnectTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpConnectTimeout()));
+            component.setConnectionsPerRoute(connectorConfig.getHttpConnectionsPerRoute());
+            component.setFollowRedirects(connectorConfig.isFollowRedirects());
+            component.setMaxTotalConnections(connectorConfig.getHttpMaxTotalConnections());
+            component.setSoTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpSocketTimeout()));
+            Log.debugf("Configured %s component", httpComponent);
         }
-    }
-
-    private void configure(CamelContext context, String httpComponent) {
-        HttpComponent component = context.getComponent(httpComponent, HttpComponent.class);
-        component.setConnectTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpConnectTimeout()));
-        component.setConnectionsPerRoute(connectorConfig.getHttpConnectionsPerRoute());
-        component.setFollowRedirects(connectorConfig.isFollowRedirects());
-        component.setMaxTotalConnections(connectorConfig.getHttpMaxTotalConnections());
-        component.setSoTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpSocketTimeout()));
-        Log.debugf("Configured %s component", httpComponent);
     }
 }

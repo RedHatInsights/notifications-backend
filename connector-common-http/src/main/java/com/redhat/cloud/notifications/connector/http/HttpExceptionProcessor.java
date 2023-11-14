@@ -13,6 +13,7 @@ import java.io.IOException;
 import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_CLIENT_ERROR;
 import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_SERVER_ERROR;
 import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_STATUS_CODE;
+import static org.apache.http.HttpStatus.SC_TOO_MANY_REQUESTS;
 import static org.jboss.logging.Logger.Level.DEBUG;
 import static org.jboss.logging.Logger.Level.ERROR;
 
@@ -28,12 +29,12 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
     protected void process(Throwable t, Exchange exchange) {
         if (t instanceof HttpOperationFailedException e) {
             exchange.setProperty(HTTP_STATUS_CODE, e.getStatusCode());
-            if (e.getStatusCode() >= 400 && e.getStatusCode() < 500 && e.getStatusCode() != 429) {
+            if (e.getStatusCode() >= 400 && e.getStatusCode() < 500 && e.getStatusCode() != SC_TOO_MANY_REQUESTS) {
                 if (connectorConfig.isDisableFaultyEndpoints()) {
                     exchange.setProperty(HTTP_CLIENT_ERROR, true);
                 }
                 logHttpError(DEBUG, e, exchange);
-            } else if (e.getStatusCode() == 429 || e.getStatusCode() >= 500) {
+            } else if (e.getStatusCode() == SC_TOO_MANY_REQUESTS || e.getStatusCode() >= 500) {
                 if (connectorConfig.isDisableFaultyEndpoints()) {
                     exchange.setProperty(HTTP_SERVER_ERROR, true);
                 }
