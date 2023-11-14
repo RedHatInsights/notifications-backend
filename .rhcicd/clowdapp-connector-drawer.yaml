@@ -57,6 +57,10 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS}
+        - name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_INTERVAL_MS
           value: ${KAFKA_MAX_POLL_INTERVAL_MS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_RECORDS
@@ -128,6 +132,12 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: "3"
+- name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
+  description: Maximum time in milliseconds allowed to establish an HTTP connection
+  value: "2500"
+- name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
+  description: Maximum time in milliseconds allowed to wait for HTTP data
+  value: "180000"
 - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
   description: Number of concurrent threads processing exchanges with SEDA
   value: "20"
