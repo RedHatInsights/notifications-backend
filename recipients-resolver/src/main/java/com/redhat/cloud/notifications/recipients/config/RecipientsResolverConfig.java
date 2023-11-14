@@ -28,7 +28,7 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = "notifications.recipients-resolver.retry.max-backoff", defaultValue = "1S")
     Duration maxRetryBackoff;
 
-    @ConfigProperty(name = "notifications.log.too.long.request.limit", defaultValue = "30S")
+    @ConfigProperty(name = "notifications.recipients-resolver.warn-if-request-duration-exceeds", defaultValue = "30S")
     Duration logTooLongRequestLimit;
 
     @ConfigProperty(name = "mbop.apitoken", defaultValue = "na")

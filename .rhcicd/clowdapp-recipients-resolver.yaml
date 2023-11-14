@@ -65,8 +65,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
-        - name: NOTIFICATIONS_LOG_TOO_LONG_REQUEST_LIMIT
-          value: ${NOTIFICATIONS_LOG_TOO_LONG_REQUEST_LIMIT}
+        - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_WARN_IF_REQUEST_DURATION_EXCEEDS
+          value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_WARN_IF_REQUEST_DURATION_EXCEEDS}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED
@@ -119,6 +119,8 @@ objects:
               optional: true
         - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
           value: ${QUARKUS_REST_CLIENT_LOGGING_SCOPE}
+        - name: QUARKUS_REST_CLIENT_IT_S2S_READ_TIMEOUT
+          value: ${IT_S2S_READ_TIMEOUT}
         - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
           value: ${RBAC_S2S_READ_TIMEOUT}
         - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
@@ -204,11 +206,14 @@ parameters:
 - name: RBAC_USERS_RETENTION_DELAY
   description: RBAC users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT10M
+- name: IT_S2S_READ_TIMEOUT
+  description: Delay in milliseconds before an IT S2S query is interrupted
+  value: "90000"
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
   description: Enable Sentry (or not)
   value: "false"
-- name: NOTIFICATIONS_LOG_TOO_LONG_REQUEST_LIMIT
+- name: NOTIFICATIONS_RECIPIENTS_RESOLVER_WARN_IF_REQUEST_DURATION_EXCEEDS
   description: Log request if it exceed this limit
   value: PT30S

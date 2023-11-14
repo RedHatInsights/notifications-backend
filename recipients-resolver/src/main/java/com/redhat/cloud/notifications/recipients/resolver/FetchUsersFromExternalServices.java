@@ -71,6 +71,9 @@ public class FetchUsersFromExternalServices {
     @RestClient
     ITUserService itUserService;
 
+    @Inject
+    ObjectMapper objectMapper;
+
     private Counter failuresCounter;
 
     private RetryPolicy<Object> retryPolicy;
@@ -141,9 +144,8 @@ public class FetchUsersFromExternalServices {
             usersPaging = retryOnError(() -> itUserService.getUsers(itRequest));
             Duration duration = Duration.between(startTime, LocalDateTime.now());
             if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
-                final ObjectMapper mapper = new ObjectMapper();
                 try {
-                    Log.warnf("It service response time was %ds for request %s", duration.toSeconds(), mapper.writeValueAsString(itRequest));
+                    Log.warnf("It service response time was %ds for request %s", duration.toSeconds(), objectMapper.writeValueAsString(itRequest));
                 } catch (JsonProcessingException e) {
                     Log.error("unable to convert itRequest into Json string");
                 }
