@@ -35,18 +35,12 @@ public class DrawerNotificationRepository {
         return query.getResultList();
     }
 
+    @Transactional
     public void createWithId(Event event, String drawerNotificationIdList) {
-        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("insert_drawer_notifications_with_id", DrawerNotification.class)
-            .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
-            .registerStoredProcedureParameter(2, String.class, ParameterMode.IN)
-            .registerStoredProcedureParameter(3, UUID.class, ParameterMode.IN)
-            .registerStoredProcedureParameter(4, Timestamp.class, ParameterMode.IN)
-
-            .setParameter(1, drawerNotificationIdList)
-            .setParameter(2, event.getOrgId())
-            .setParameter(3, event.getId())
-            .setParameter(4, Timestamp.valueOf(event.getCreated()));
-
-        query.execute();
+        entityManager.createNativeQuery("CALL insert_drawer_notifications_with_id(:drawerNotificationIdList, :orgId, :eventId, :created)")
+            .setParameter("drawerNotificationIdList", drawerNotificationIdList)
+            .setParameter("orgId", event.getOrgId())
+            .setParameter("eventId", event.getId())
+            .setParameter("created", Timestamp.valueOf(event.getCreated())).executeUpdate();
     }
 }
