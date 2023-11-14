@@ -17,7 +17,7 @@ import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.email.TestUtils.createUsers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -89,7 +89,7 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
             if (skipBopUsersResolution) {
                 assertTrue(actualBody.getBoolean("skipUsersResolution"));
             } else {
-                assertFalse(actualBody.getBoolean("skipUsersResolution"));
+                assertNull(actualBody.getBoolean("skipUsersResolution"));
             }
         } finally {
             emailConnectorConfig.setSkipBopUsersResolution(false);
