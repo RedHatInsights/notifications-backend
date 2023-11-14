@@ -1,0 +1,34 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    User Access - Console
+{/content-title}
+{#content-title-section1}
+    Request for access received
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        This message is to inform you that a user within your organization has requested access to a page or feature
+        within console.redhat.com. Please review this request and decide whether to grant or deny access.
+    </p>
+    <p>
+        <strong>User's Request:</strong>
+        <ul>
+            <li><strong>URL Path:</strong> {action.events[0].payload.url_path}</li>
+            <li><strong>Username:</strong> {action.events[0].payload.username}</li>
+            <li><strong>Email Address:</strong> {action.events[0].payload.user.email}</li>
+            <li><strong>Message from User:</strong> "{action.events[0].payload.user.request}"</li>
+        </ul>
+        <br/>
+        <strong>Action Required:</strong>
+        <ul>
+            <li><strong>Granting Access:</strong>If you decide to grant access, please log in to the console and add the user to the appropriate <a target="blank" href="{environment.url}/iam/user-access/groups/">User Access Group(s).</a></li>
+            <li><strong>Denying Access:</strong> If you choose to deny access, kindly reach out to the user directly to explain the reason for the denial.</li>
+        </ul>
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/iam/user-access/groups/}">Review your user access groups in the console</a>
+{/content-button-section1}
+{/include}

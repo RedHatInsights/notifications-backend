@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -38,6 +39,13 @@ public class RbacTestHelpers {
                         .withAdditionalProperty("username", "testUser1")
                         .withAdditionalProperty("principal", "testUser1")
                         .withAdditionalProperty("operation", "added")
+                        // Used by request-access
+                        .withAdditionalProperty("url_path", "https://console.redhat.com/stuff")
+                        .withAdditionalProperty("user", Map.of(
+                                "email", "testUser AT somewhere",
+                                "request", "I want access to stuff"
+                        ))
+
                         .build()
                 )
                 .build()

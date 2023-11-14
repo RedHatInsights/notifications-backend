@@ -415,6 +415,11 @@ public class EmailTemplateMigrationService {
                 "Rbac/platformGroupToCustomEmailTitle", "txt", "Rbac platform group to custom email title",
                 "Rbac/platformGroupToCustomEmailBody", "html", "Rbac platform group to custom email body"
             );
+            createInstantEmailTemplate(
+                    warnings, "console", "rbac", List.of("request-access"),
+                    "Rbac/requestAccessEmailTitle", "txt", "Rbac request access email title",
+                    "Rbac/requestAccessEmailBody", "html", "Rbac request access email body"
+            );
 
             /*
              * Former src/main/resources/templates/ResourceOptimization folder.
