@@ -104,7 +104,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             event.getOrgId(),
             recipientSettings,
             subscribers,
-            unsubscribers
+            unsubscribers,
+            event.getEventType().isSubscribedByDefault()
         );
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);

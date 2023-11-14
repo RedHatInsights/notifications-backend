@@ -17,10 +17,12 @@ import static com.redhat.cloud.notifications.connector.email.constants.ExchangeP
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RECIPIENT_SETTINGS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RENDERED_BODY;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RENDERED_SUBJECT;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.SUBSCRIBED_BY_DEFAULT;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.SUBSCRIBERS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.UNSUBSCRIBERS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
@@ -78,6 +80,7 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         payload.put("unsubscribers", unsubscribers);
         payload.put("email_body", emailBody);
         payload.put("email_subject", emailSubject);
+        payload.put("subscribed_by_default", true);
 
         final Exchange exchange = this.createExchangeWithBody("");
 
@@ -93,5 +96,6 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         assertEquals(subscribers, exchange.getProperty(SUBSCRIBERS, Set.class));
         assertEquals(unsubscribers, exchange.getProperty(UNSUBSCRIBERS, Set.class));
         assertEquals(Set.of("foo@bar.com", "bar@foo.com", "john@doe.com"), exchange.getProperty(EMAIL_RECIPIENTS, Set.class));
+        assertTrue(exchange.getProperty(SUBSCRIBED_BY_DEFAULT, boolean.class));
     }
 }

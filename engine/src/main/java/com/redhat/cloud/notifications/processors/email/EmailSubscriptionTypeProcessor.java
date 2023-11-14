@@ -328,8 +328,15 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                         bodyStr, subjectStr,
                         event.getOrgId(),
                         recipientSettings,
+                        /*
+                         * The recipients are determined at an earlier stage (see EmailAggregator) using the
+                         * recipients-resolver app and the subscription records from the database.
+                         * The subscribedByDefault value below simply means that recipients-resolver will consider
+                         * the subscribers passed in the request as the recipients candidates of the aggregation email.
+                         */
                         recipientsUsernames,
-                        Collections.emptySet()
+                        Collections.emptySet(),
+                        false
                     );
 
                     connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
