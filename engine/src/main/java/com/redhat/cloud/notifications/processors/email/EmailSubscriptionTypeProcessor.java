@@ -297,15 +297,12 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
 
         if (subject != null && body != null) {
-            Map<User, Map<String, Object>> aggregationsByUsers = emailAggregator.getAggregated(aggregationKey,
+            Map<Map<String, Object>, Set<User>> aggregations = emailAggregator.getAggregations(aggregationKey,
                                                                         aggregationCommand.getSubscriptionType(),
                                                                         aggregationCommand.getStart(),
                                                                         aggregationCommand.getEnd());
 
-            Map<Map<String, Object>, Set<User>> aggregationsEmailContext = aggregationsByUsers.keySet().stream()
-                .collect(Collectors.groupingBy(aggregationsByUsers::get, Collectors.toSet()));
-
-            for (Map.Entry<Map<String, Object>, Set<User>> aggregation : aggregationsEmailContext.entrySet()) {
+            for (Map.Entry<Map<String, Object>, Set<User>> aggregation : aggregations.entrySet()) {
 
                 Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
                 aggregation.getKey().forEach(contextBuilder::withAdditionalProperty);

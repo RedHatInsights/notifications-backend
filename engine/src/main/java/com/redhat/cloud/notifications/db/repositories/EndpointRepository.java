@@ -108,6 +108,7 @@ public class EndpointRepository {
 
     @CacheResult(cacheName = "aggregation-target-email-subscription-endpoints")
     public List<Endpoint> getTargetEmailSubscriptionEndpoints(String orgId, UUID eventTypeId) {
+        // TODO Replace `e.enabled` with `e.enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled AND b.eventType.id = :eventTypeId AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
                 "AND e.compositeType.type = :endpointType";

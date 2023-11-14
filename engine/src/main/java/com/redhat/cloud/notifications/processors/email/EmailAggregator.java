@@ -34,8 +34,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.Map.Entry;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
@@ -69,13 +69,12 @@ public class EmailAggregator {
     @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
     int maxPageSize;
 
-    public Map<User, Map<String, Object>> getAggregated(EmailAggregationKey aggregationKey, SubscriptionType subscriptionType, LocalDateTime start, LocalDateTime end) {
+    public Map<Map<String, Object>, Set<User>> getAggregations(EmailAggregationKey aggregationKey, SubscriptionType subscriptionType, LocalDateTime start, LocalDateTime end) {
 
-        Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
-        Map<String, Set<String>> subscribersByEventType = subscriptionRepository
-                .getSubscribersByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), subscriptionType);
-        Map<String, Set<String>> unsubscribersByEventType = subscriptionRepository
-                .getUnsubscribersByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), subscriptionType);
+        Map<User, AbstractEmailPayloadAggregator> aggregatorsByUser = new HashMap<>();
+
+        Map<String, Map<Boolean, Set<String>>> subscriptionsByEventType = subscriptionRepository
+                .getSubscriptionsByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), subscriptionType);
 
         int offset = 0;
         int totalAggregatedElements = 0;
@@ -110,8 +109,9 @@ public class EmailAggregator {
                  * The target endpoints properties will determine whether each candidate will actually receive an email.
                  */
 
-                Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
-                Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+                Map<Boolean, Set<String>> subscriptions = subscriptionsByEventType.getOrDefault(eventType.getName(), Collections.emptyMap());
+                Set<String> subscribers = subscriptions.getOrDefault(true, Collections.emptySet());
+                Set<String> unsubscribers = subscriptions.getOrDefault(false, Collections.emptySet());
 
                 Set<User> recipients;
                 if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
@@ -143,7 +143,7 @@ public class EmailAggregator {
                  */
                 recipients.forEach(recipient -> {
                     // We may or may not have already initialized an aggregator for the recipient.
-                    AbstractEmailPayloadAggregator aggregator = aggregated
+                    AbstractEmailPayloadAggregator aggregator = aggregatorsByUser
                         .computeIfAbsent(recipient, ignored -> EmailPayloadAggregatorFactory.by(aggregationKey, start, end));
                     // It's aggregation time!
                     aggregator.aggregate(aggregation);
@@ -153,11 +153,17 @@ public class EmailAggregator {
         } while (maxPageSize == aggregations.size());
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
 
-        return aggregated.entrySet().stream()
-                .collect(toMap(
-                        Entry::getKey,
-                        entry -> entry.getValue().getContext()
-                ));
+        /*
+         * After this line, we're transforming the Map<User, AbstractEmailPayloadAggregator> into a Map<Map<String, Object>, Set<User>>.
+         * The initial Map contains the result of the aggregation process (one bundle/app couple) for each aggregation recipient.
+         * The final Map contains the same information but grouped in a different way: all recipients who share the same aggregated data
+         * are grouped in a Set which becomes the value of the new Map. The aggregated data is used at the key of the new Map.
+         */
+        return aggregatorsByUser.entrySet().stream()
+                .collect(groupingBy(
+                        entry -> entry.getValue().getContext(),
+                        mapping(Map.Entry::getKey, toSet()))
+                );
     }
 
     @Deprecated(forRemoval = true)
