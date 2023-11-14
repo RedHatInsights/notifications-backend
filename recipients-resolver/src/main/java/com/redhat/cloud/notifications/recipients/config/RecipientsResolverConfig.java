@@ -28,6 +28,9 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = "notifications.recipients-resolver.retry.max-backoff", defaultValue = "1S")
     Duration maxRetryBackoff;
 
+    @ConfigProperty(name = "notifications.recipients-resolver.warn-if-request-duration-exceeds", defaultValue = "30S")
+    Duration logTooLongRequestLimit;
+
     @ConfigProperty(name = "mbop.apitoken", defaultValue = "na")
     String mbopApiToken;
 
@@ -47,6 +50,7 @@ public class RecipientsResolverConfig {
         Log.infof("The retry back-off initial value is %s", initialRetryBackoff);
         Log.infof("The max retry back-off value is %s", maxRetryBackoff);
         Log.infof("The MBOP env is %s", mbopEnv);
+        Log.infof("The requests to external services will be logged it they exceed %s", logTooLongRequestLimit);
     }
 
     public boolean isFetchUsersWithMbop() {
@@ -91,5 +95,9 @@ public class RecipientsResolverConfig {
 
     public String getMbopEnv() {
         return mbopEnv;
+    }
+
+    public Duration getLogTooLongRequestLimit() {
+        return logTooLongRequestLimit;
     }
 }

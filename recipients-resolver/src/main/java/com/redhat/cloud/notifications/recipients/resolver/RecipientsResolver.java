@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.recipients.resolver;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
 import io.quarkus.cache.CacheResult;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Collections;
@@ -80,7 +81,7 @@ public class RecipientsResolver {
             return false;
 
         });
-
+        Log.infof("%d recipients found for OrgId %s", users.size(), orgId);
         return users;
     }
 

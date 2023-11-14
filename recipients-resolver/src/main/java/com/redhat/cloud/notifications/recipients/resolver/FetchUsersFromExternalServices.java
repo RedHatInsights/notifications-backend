@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.ITUserService;
@@ -31,6 +33,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +61,7 @@ public class FetchUsersFromExternalServices {
     MeterRegistry meterRegistry;
 
     @Inject
-    RecipientsResolverConfig connectorConfig;
+    RecipientsResolverConfig recipientsResolverConfig;
 
     @Inject
     @RestClient
@@ -67,6 +71,9 @@ public class FetchUsersFromExternalServices {
     @RestClient
     ITUserService itUserService;
 
+    @Inject
+    ObjectMapper objectMapper;
+
     private Counter failuresCounter;
 
     private RetryPolicy<Object> retryPolicy;
@@ -75,9 +82,9 @@ public class FetchUsersFromExternalServices {
 
     @PostConstruct
     public void postConstruct() {
-        if (connectorConfig.isFetchUsersWithRBAC()) {
+        if (recipientsResolverConfig.isFetchUsersWithRBAC()) {
             failuresCounter = meterRegistry.counter("rbac.failures");
-        } else if (connectorConfig.isFetchUsersWithMbop()) {
+        } else if (recipientsResolverConfig.isFetchUsersWithMbop()) {
             failuresCounter = meterRegistry.counter("mbop.failures");
         } else {
             failuresCounter = meterRegistry.counter("it.failures");
@@ -85,8 +92,8 @@ public class FetchUsersFromExternalServices {
         retryPolicy = RetryPolicy.builder()
                 .onRetry(event -> failuresCounter.increment())
                 .handle(IOException.class)
-                .withBackoff(connectorConfig.getInitialRetryBackoff(), connectorConfig.getMaxRetryBackoff())
-                .withMaxAttempts(connectorConfig.getMaxRetryAttempts())
+                .withBackoff(recipientsResolverConfig.getInitialRetryBackoff(), recipientsResolverConfig.getMaxRetryBackoff())
+                .withMaxAttempts(recipientsResolverConfig.getMaxRetryAttempts())
                 .onRetriesExceeded(event -> {
                     // All retry attempts failed, let's log a warning about the failure.
                     Log.warn("Users fetching from external service failed", event.getException());
@@ -99,10 +106,18 @@ public class FetchUsersFromExternalServices {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
-        if (connectorConfig.isFetchUsersWithRBAC()) {
+        if (recipientsResolverConfig.isFetchUsersWithRBAC()) {
             users = getWithPagination(
-                page -> retryOnError(() -> rbacServiceToService.getUsers(orgId, adminsOnly, page * connectorConfig.getMaxResultsPerPage(), connectorConfig.getMaxResultsPerPage())));
-        } else if (connectorConfig.isFetchUsersWithMbop()) {
+                page -> retryOnError(() -> {
+                    LocalDateTime startTime = LocalDateTime.now();
+                    Page<RbacUser> rbacUserPage = rbacServiceToService.getUsers(orgId, adminsOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage());
+                    Duration duration = Duration.between(startTime, LocalDateTime.now());
+                    if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
+                        Log.warnf("Rbac service response time was %ds for request OrgId: %s, adminOnly: %s, page %d ", duration.toSeconds(), orgId, adminsOnly, page);
+                    }
+                    return rbacUserPage;
+                }));
+        } else if (recipientsResolverConfig.isFetchUsersWithMbop()) {
             users = fetchUsersWithMbop(orgId, adminsOnly);
         } else {
             users = fetchUsersWithItUserService(orgId, adminsOnly);
@@ -124,12 +139,21 @@ public class FetchUsersFromExternalServices {
         int firstResult = 0;
 
         do {
-            ITUserRequest itRequest = new ITUserRequest(orgId, adminsOnly, firstResult, connectorConfig.getMaxResultsPerPage());
+            ITUserRequest itRequest = new ITUserRequest(orgId, adminsOnly, firstResult, recipientsResolverConfig.getMaxResultsPerPage());
+            final LocalDateTime startTime = LocalDateTime.now();
             usersPaging = retryOnError(() -> itUserService.getUsers(itRequest));
+            Duration duration = Duration.between(startTime, LocalDateTime.now());
+            if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
+                try {
+                    Log.warnf("It service response time was %ds for request %s", duration.toSeconds(), objectMapper.writeValueAsString(itRequest));
+                } catch (JsonProcessingException e) {
+                    Log.error("unable to convert itRequest into Json string");
+                }
+            }
             usersTotal.addAll(usersPaging);
 
-            firstResult += connectorConfig.getMaxResultsPerPage();
-        } while (usersPaging.size() == connectorConfig.getMaxResultsPerPage());
+            firstResult += recipientsResolverConfig.getMaxResultsPerPage();
+        } while (usersPaging.size() == recipientsResolverConfig.getMaxResultsPerPage());
 
         users = transformItUserToUser(usersTotal);
         return users;
@@ -148,24 +172,31 @@ public class FetchUsersFromExternalServices {
             // Required variable since lambdas are not allowed to modify
             // the captured variables.
             int finalOffset = offset;
-            final List<MBOPUser> receivedUsers = this.retryOnError(() ->
-                mbopService.getUsersByOrgId(
-                    connectorConfig.getMbopApiToken(),
-                    connectorConfig.getMbopClientId(),
-                    connectorConfig.getMbopEnv(),
-                    orgId,
-                    adminsOnly,
-                    MBOP_SORT_ORDER,
-                    connectorConfig.getMaxResultsPerPage(),
-                    finalOffset
-                )
+            final List<MBOPUser> receivedUsers = this.retryOnError(() -> {
+                    LocalDateTime startTime = LocalDateTime.now();
+                    List<MBOPUser> mbopUserlist = mbopService.getUsersByOrgId(
+                            recipientsResolverConfig.getMbopApiToken(),
+                            recipientsResolverConfig.getMbopClientId(),
+                            recipientsResolverConfig.getMbopEnv(),
+                            orgId,
+                            adminsOnly,
+                            MBOP_SORT_ORDER,
+                            recipientsResolverConfig.getMaxResultsPerPage(),
+                            finalOffset
+                        );
+                    Duration duration = Duration.between(startTime, LocalDateTime.now());
+                    if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
+                        Log.warnf("MBOP service response time was %ds for request OrgId: %s, adminOnly: %s, offset %d ", duration.toSeconds(), orgId, adminsOnly, finalOffset);
+                    }
+                    return mbopUserlist;
+                }
             );
 
             mbopUsers.addAll(receivedUsers);
 
             offset += receivedUsers.size();
             pageSize = receivedUsers.size();
-        } while (pageSize == connectorConfig.getMaxResultsPerPage());
+        } while (pageSize == recipientsResolverConfig.getMaxResultsPerPage());
 
         users = this.transformMBOPUserToUser(mbopUsers);
         return users;
@@ -230,7 +261,7 @@ public class FetchUsersFromExternalServices {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
                 Page<RbacUser> rbacUsers = retryOnError(() ->
-                    rbacServiceToService.getGroupUsers(orgId, groupId, page * connectorConfig.getMaxResultsPerPage(), connectorConfig.getMaxResultsPerPage()));
+                    rbacServiceToService.getGroupUsers(orgId, groupId, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage()));
                 // Micrometer doesn't like when tags are null and throws a NPE.
                 String orgIdTag = orgId == null ? "" : orgId;
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "orgId", orgIdTag));
@@ -267,7 +298,7 @@ public class FetchUsersFromExternalServices {
                     users.add(user);
                 }
             }
-        } while (rbacUsers.getData().size() == connectorConfig.getMaxResultsPerPage());
+        } while (rbacUsers.getData().size() == recipientsResolverConfig.getMaxResultsPerPage());
         return users;
     }
 
