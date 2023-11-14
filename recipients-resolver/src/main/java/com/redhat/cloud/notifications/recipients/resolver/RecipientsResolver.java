@@ -81,7 +81,7 @@ public class RecipientsResolver {
             return false;
 
         });
-        Log.infof("%d users found for OrgId %s", users.size(), orgId);
+        Log.infof("%d recipients found for OrgId %s", users.size(), orgId);
         return users;
     }
 
