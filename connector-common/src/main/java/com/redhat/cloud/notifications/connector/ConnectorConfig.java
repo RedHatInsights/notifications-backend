@@ -5,7 +5,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -28,6 +28,7 @@ public class ConnectorConfig {
     private static final String REDELIVERY_MAX_ATTEMPTS = "notifications.connector.redelivery.max-attempts";
     private static final String SEDA_CONCURRENT_CONSUMERS = "notifications.connector.seda.concurrent-consumers";
     private static final String SEDA_QUEUE_SIZE = "notifications.connector.seda.queue-size";
+    private static final String SUPPORTED_CONNECTOR_HEADERS = "notifications.connector.supported-connector-headers";
 
     @ConfigProperty(name = ENDPOINT_CACHE_MAX_SIZE, defaultValue = "100")
     int endpointCacheMaxSize;
@@ -72,12 +73,17 @@ public class ConnectorConfig {
     @ConfigProperty(name = SEDA_QUEUE_SIZE, defaultValue = "1000")
     int sedaQueueSize;
 
+    @ConfigProperty(name = SUPPORTED_CONNECTOR_HEADERS)
+    List<String> supportedConnectorHeaders;
+
     public void log() {
-        log(Collections.emptyMap());
+        Log.info("=== Connector configuration ===");
+        for (Entry<String, Object> configEntry : getLoggedConfiguration().entrySet()) {
+            Log.infof("%s=%s", configEntry.getKey(), configEntry.getValue());
+        }
     }
 
-    protected void log(Map<String, Object> additionalConfig) {
-
+    protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = new TreeMap<>();
         config.put(ENDPOINT_CACHE_MAX_SIZE, endpointCacheMaxSize);
         config.put(KAFKA_INCOMING_GROUP_ID, incomingKafkaGroupId);
@@ -92,12 +98,8 @@ public class ConnectorConfig {
         config.put(REDELIVERY_MAX_ATTEMPTS, redeliveryMaxAttempts);
         config.put(SEDA_CONCURRENT_CONSUMERS, sedaConcurrentConsumers);
         config.put(SEDA_QUEUE_SIZE, sedaQueueSize);
-        config.putAll(additionalConfig);
-
-        Log.info("=== Connector configuration ===");
-        for (Entry<String, Object> configEntry : config.entrySet()) {
-            Log.infof("%s=%s", configEntry.getKey(), configEntry.getValue());
-        }
+        config.put(SUPPORTED_CONNECTOR_HEADERS, supportedConnectorHeaders);
+        return config;
     }
 
     public int getEndpointCacheMaxSize() {
@@ -150,5 +152,9 @@ public class ConnectorConfig {
 
     public int getSedaQueueSize() {
         return sedaQueueSize;
+    }
+
+    public List<String> getSupportedConnectorHeaders() {
+        return supportedConnectorHeaders;
     }
 }

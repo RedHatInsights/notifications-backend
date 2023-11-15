@@ -34,9 +34,6 @@ public class ExceptionProcessor implements Processor {
     @Inject
     ProducerTemplate producerTemplate;
 
-    @Inject
-    ConnectorConfig connectorConfig;
-
     @Override
     public void process(Exchange exchange) {
 

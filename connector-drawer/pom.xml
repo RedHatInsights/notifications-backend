@@ -56,19 +56,13 @@
         <!-- Notifications module -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
-            <artifactId>notifications-connector-common</artifactId>
+            <artifactId>notifications-connector-common-http</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-
-        <!-- Camel -->
-        <dependency>
-            <groupId>org.apache.camel.quarkus</groupId>
-            <artifactId>camel-quarkus-http</artifactId>
         </dependency>
 
         <!-- Scope: test -->

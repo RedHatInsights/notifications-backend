@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.microsoft.teams;
 
-import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -17,10 +17,10 @@ import static org.apache.camel.LoggingLevel.INFO;
 public class TeamsRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Inject
-    ConnectorConfig connectorConfig;
+    HttpConnectorConfig connectorConfig;
 
     @Override
-    public void configureRoute() {
+    public void configureRoutes() {
         from(seda(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
                 .setHeader(HTTP_METHOD, constant("POST"))

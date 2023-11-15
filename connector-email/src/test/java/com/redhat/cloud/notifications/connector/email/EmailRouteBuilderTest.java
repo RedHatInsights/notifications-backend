@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
-import com.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager;
+import com.redhat.cloud.notifications.connector.http.SslTrustAllManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
@@ -45,7 +45,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
 
     /**
      * Tests that the function under test creates the BOP endpoint with the
-     * {@link BOPTrustManager} class as the SSL context parameters, and that
+     * {@link SslTrustAllManager} class as the SSL context parameters, and that
      * that class is essentially a NOOP class.
      * @throws Exception if the endpoint could not be created.
      */
@@ -55,7 +55,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             Assertions.assertEquals(this.emailConnectorConfig.getBopURL(), bopEndpoint.getEndpointBaseUri(), "the base URI of the endpoint is not the same as the one set through the properties");
 
             final String bopEndpointURI = bopEndpoint.getEndpointUri();
-            Assertions.assertTrue(bopEndpointURI.contains("trustManager%3Dcom.redhat.cloud.notifications.connector.email.processors.bop.ssl.BOPTrustManager"), "the endpoint does not contain a reference to the BOPTrustManager");
+            Assertions.assertTrue(bopEndpointURI.contains("trustManager%3Dcom.redhat.cloud.notifications.connector.http.SslTrustAllManager"), "the endpoint does not contain a reference to the SslTrustAllManager");
             Assertions.assertTrue(bopEndpointURI.contains("x509HostnameVerifier=NO_OP"), "the base URI does not contain a mention to the NO_OP hostname verifier");
         }
     }

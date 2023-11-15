@@ -1,20 +1,19 @@
 package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.camel.component.http.HttpComponent;
-import org.apache.hc.core5.util.Timeout;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
+import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
-import static com.redhat.cloud.notifications.connector.servicenow.ServiceNowTrustAllManager.getSslContextParameters;
 import static org.apache.camel.LoggingLevel.INFO;
 import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.HttpEndpointBuilder;
 
@@ -22,12 +21,10 @@ import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.H
 public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Inject
-    ServiceNowConnectorConfig connectorConfig;
+    HttpConnectorConfig connectorConfig;
 
     @Override
-    public void configureRoute() {
-
-        configureHttpsComponent();
+    public void configureRoutes() {
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(connectorConfig.getConnectorName())
@@ -44,12 +41,6 @@ public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
                 "(orgId ${exchangeProperty." + ORG_ID + "} account ${exchangeProperty." + ACCOUNT_ID + "}) " +
                 "to ${exchangeProperty." + TARGET_URL + "}")
             .to(direct(SUCCESS));
-    }
-
-    private void configureHttpsComponent() {
-        HttpComponent httpComponent = getCamelContext().getComponent("https", HttpComponent.class);
-        httpComponent.setConnectTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpsConnectTimeout()));
-        httpComponent.setSoTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpsSocketTimeout()));
     }
 
     private HttpEndpointBuilder buildServiceNowEndpoint(boolean trustAll) {
