@@ -34,6 +34,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     EndpointRepository endpointRepository;
 
     @Inject
+    EmailActorsResolver emailActorsResolver;
+
+    @Inject
     EmailSubscriptionTypeProcessor emailSubscriptionTypeProcessor;
 
     @Inject
@@ -47,7 +50,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
-
         // Generate an aggregation if the event supports it.
         this.emailSubscriptionTypeProcessor.generateAggregationWhereDue(event);
 
@@ -101,6 +103,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final EmailNotification emailNotification = new EmailNotification(
             body,
             subject,
+            this.emailActorsResolver.getEmailSender(event),
             event.getOrgId(),
             recipientSettings,
             subscribers,

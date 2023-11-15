@@ -77,6 +77,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     BaseTransformer baseTransformer;
 
     @Inject
+    EmailActorsResolver emailActorsResolver;
+
+    @Inject
     EmailSender emailSender;
 
     @Inject
@@ -325,7 +328,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
                     // Prepare all the data to be sent to the connector.
                     final EmailNotification emailNotification = new EmailNotification(
-                        bodyStr, subjectStr,
+                        bodyStr,
+                        subjectStr,
+                        this.emailActorsResolver.getEmailSender(event),
                         event.getOrgId(),
                         recipientSettings,
                         /*

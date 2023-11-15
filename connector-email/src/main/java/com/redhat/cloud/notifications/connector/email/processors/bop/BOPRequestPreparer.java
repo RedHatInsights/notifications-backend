@@ -42,6 +42,7 @@ public class BOPRequestPreparer implements Processor {
             recipients = users.stream().map(User::getUsername).collect(toSet());
         }
 
+        // Prepare the email to be sent.
         final Email email = new Email(
             subject,
             body,
@@ -50,8 +51,11 @@ public class BOPRequestPreparer implements Processor {
 
         JsonObject bopBody;
         if (emailConnectorConfig.isSkipBopUsersResolution()) {
-            final SendEmailsRequest request = new SendEmailsRequest();
-            request.addEmail(email);
+            final SendEmailsRequest request = new SendEmailsRequest(
+                Set.of(email),
+                exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class),
+                exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class)
+            );
             bopBody = JsonObject.mapFrom(request);
         } else {
             final Emails emails = new Emails();

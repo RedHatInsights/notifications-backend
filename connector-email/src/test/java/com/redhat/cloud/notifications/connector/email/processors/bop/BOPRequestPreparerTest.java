@@ -77,13 +77,13 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
             if (skipBopUsersResolution) {
                 assertEquals(5, actualEmail.getJsonArray("bccList").size());
                 assertTrue(Set.of("a-email", "b-email", "c-email", "foo@bar.com", "bar@foo.com").stream()
-                        .allMatch(bcc -> actualEmail.getJsonArray("bccList").contains(bcc)));
+                    .allMatch(bcc -> actualEmail.getJsonArray("bccList").contains(bcc)));
             } else {
                 assertEquals(3, actualEmail.getJsonArray("bccList").size());
                 assertTrue(Set.of("a", "b", "c").stream()
-                        .allMatch(bcc -> actualEmail.getJsonArray("bccList").contains(bcc)));
+                    .allMatch(bcc -> actualEmail.getJsonArray("bccList").contains(bcc)));
                 assertTrue(Set.of("foo@bar.com", "bar@foo.com").stream()
-                        .noneMatch(bcc -> actualEmail.getJsonArray("bccList").contains(bcc)));
+                    .noneMatch(bcc -> actualEmail.getJsonArray("bccList").contains(bcc)));
             }
             assertEquals("html", actualEmail.getString("bodyType"));
             if (skipBopUsersResolution) {
