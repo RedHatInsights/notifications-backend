@@ -233,7 +233,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
     }
 
-    public void manageConnectorDrawerReturnsIfNeeded(Map<String, Object> decodedPayload, String historyId) {
+    public void manageConnectorDrawerReturnsIfNeeded(Map<String, Object> decodedPayload, UUID historyId) {
+        // To comply to postgres Json array format, our data must look like:
+        // {"{\"key1\":\"value1.1\", \"key2\":\"value1.2\"}","{\"key1\":\"value2.1\", \"key2\":\"value2.2\"}"}
         final String drawerNotificationJsonFormatForPostgres = "\"{\\\"drawerNotificationUuid\\\":\\\"%s\\\", \\\"username\\\":\\\"%s\\\"}\"";
         Map<String, Object> details = (HashMap<String, Object>) decodedPayload.get("details");
         if (null != details && "com.redhat.console.notification.toCamel.drawer".equals(details.get("type"))) {

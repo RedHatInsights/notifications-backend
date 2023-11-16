@@ -78,14 +78,13 @@ public class NotificationHistoryRepository {
         }
     }
 
-    public Event getEventIdFromHistoryId(String historyId) {
+    public Event getEventIdFromHistoryId(UUID historyId) {
 
         String query = "SELECT e from Event e, NotificationHistory h WHERE h.id = :id AND e.id = h.event.id";
-        UUID hid = UUID.fromString(historyId);
 
         try {
             return entityManager.createQuery(query, Event.class)
-                .setParameter("id", hid)
+                .setParameter("id", historyId)
                 .getSingleResult();
         } catch (NoResultException e) {
             return null;
