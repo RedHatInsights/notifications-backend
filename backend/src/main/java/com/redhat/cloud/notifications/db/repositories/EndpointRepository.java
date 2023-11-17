@@ -213,10 +213,9 @@ public class EndpointRepository {
         String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled, serverErrors = 0 " +
                 "WHERE orgId = :orgId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
-                "disableSslVerification = :disableSslVerification, secretToken = :secretToken, basicAuthentication = :basicAuthentication WHERE endpoint.id = :endpointId";
+                "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
         String camelQuery = "UPDATE CamelProperties SET url = :url, extras = :extras, " +
-                "basicAuthentication = :basicAuthentication, " +
-                "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
+                "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
 
         if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
             throw new RuntimeException("Unable to update a system endpoint of type " + endpoint.getType());
@@ -243,8 +242,6 @@ public class EndpointRepository {
                             .setParameter("url", properties.getUrl())
                             .setParameter("method", properties.getMethod())
                             .setParameter("disableSslVerification", properties.getDisableSslVerification())
-                            .setParameter("secretToken", properties.getSecretToken())
-                            .setParameter("basicAuthentication", properties.getBasicAuthentication())
                             .setParameter("endpointId", endpoint.getId())
                             .executeUpdate() > 0;
                 case CAMEL:
@@ -252,10 +249,8 @@ public class EndpointRepository {
                     return entityManager.createQuery(camelQuery)
                             .setParameter("url", cAttr.getUrl())
                             .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
-                            .setParameter("secretToken", cAttr.getSecretToken())
                             .setParameter("endpointId", endpoint.getId())
                             .setParameter("extras", cAttr.getExtras())
-                            .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
                             .executeUpdate() > 0;
                 default:
                     return true;
@@ -361,42 +356,5 @@ public class EndpointRepository {
         } catch (final NoResultException e) {
             return false;
         }
-    }
-
-    /**
-     * Returns a map of endpoint {@link UUID}s and their related organization
-     * ids, which have been identified as having "basic authentication" and
-     * "secret token" secrets stored in the database, but no references to
-     * those secrets in sources. This signals that the endpoints' secrets need
-     * to be migrated to Sources. The function returns just this information
-     * because the goal is to then call {@link #getEndpoint(String, UUID)}
-     * inside a transactional function, and update those endpoints. That way,
-     * when wrapped with a try-catch block, we should be able to catch any
-     * errors that occur while migrating the data.
-     *
-     * @return a map of {@link UUID}s and organization IDs of the endpoints
-     * that should be migrated.
-     */
-    @Deprecated(forRemoval = true)
-    public Map<UUID, String> findEndpointWithPropertiesWithStoredSecrets() {
-        final String query =
-            "SELECT e FROM Endpoint e " +
-                "WHERE EXISTS ( " +
-                    "SELECT cp FROM CamelProperties cp " +
-                    "WHERE cp.id = e.id AND cp.basicAuthenticationSourcesId IS NULL AND cp.secretTokenSourcesId IS NULL " +
-                "AND (cp.basicAuthentication IS NOT NULL OR cp.secretToken IS NOT NULL) " +
-                ") OR EXISTS ( " +
-                    "SELECT wp FROM WebhookProperties wp " +
-                    "WHERE wp.id = e.id AND wp.basicAuthenticationSourcesId IS NULL AND wp.secretTokenSourcesId IS NULL " +
-                    "AND (wp.basicAuthentication IS NOT NULL OR wp.secretToken IS NOT NULL) " +
-                ")";
-
-        final List<Endpoint> endpoints =  this.entityManager
-            .createQuery(query, Endpoint.class)
-            .getResultList();
-
-        return endpoints
-            .stream()
-            .collect(Collectors.toMap(Endpoint::getId, Endpoint::getOrgId));
     }
 }

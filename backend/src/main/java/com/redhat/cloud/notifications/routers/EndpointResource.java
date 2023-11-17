@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -235,9 +236,7 @@ public class EndpointResource {
 
         for (Endpoint endpoint: endpoints) {
             // Fetch the secrets from Sources.
-            if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-                this.secretUtils.loadSecretsForEndpoint(endpoint);
-            }
+            this.secretUtils.loadSecretsForEndpoint(endpoint);
 
             // Redact the secrets for the endpoint if the user does not have
             // permission.
@@ -288,9 +287,7 @@ public class EndpointResource {
          * above. Check <a href="https://issues.redhat.com/browse/RHCLOUD-22971">RHCLOUD-22971</a>
          * for more details.
          */
-        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            this.secretUtils.createSecretsForEndpoint(endpoint);
-        }
+        this.secretUtils.createSecretsForEndpoint(endpoint);
 
         return endpointRepository.createEndpoint(endpoint);
     }
@@ -367,9 +364,7 @@ public class EndpointResource {
             throw new NotFoundException();
         } else {
             // Fetch the secrets from Sources.
-            if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-                this.secretUtils.loadSecretsForEndpoint(endpoint);
-            }
+            this.secretUtils.loadSecretsForEndpoint(endpoint);
 
             // Redact all the credentials from the endpoint's properties.
             this.redactSecretsForEndpoint(sec, endpoint);
@@ -393,10 +388,8 @@ public class EndpointResource {
         checkSystemEndpoint(endpointType);
 
         // Clean up the secrets in Sources.
-        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            Endpoint ep = endpointRepository.getEndpoint(orgId, id);
-            this.secretUtils.deleteSecretsForEndpoint(ep);
-        }
+        final Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
+        this.secretUtils.deleteSecretsForEndpoint(endpoint);
 
         endpointRepository.deleteEndpoint(orgId, id);
 
@@ -471,22 +464,17 @@ public class EndpointResource {
         endpointRepository.updateEndpoint(endpoint);
 
         // Update the secrets in Sources.
-        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
-            var endpointProperties = endpoint.getProperties();
-            var databaseEndpointProperties = dbEndpoint.getProperties();
+        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
+        final EndpointProperties endpointProperties = endpoint.getProperties();
+        final EndpointProperties databaseEndpointProperties = dbEndpoint.getProperties();
 
-            if (endpointProperties instanceof SourcesSecretable && databaseEndpointProperties instanceof SourcesSecretable) {
-                // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
-                // database endpoint, since the client won't be sending those IDs.
-                var incomingEndpointProps = (SourcesSecretable) endpointProperties;
-                var databaseEndpointProps = (SourcesSecretable) databaseEndpointProperties;
-
-                databaseEndpointProps.setBasicAuthentication(incomingEndpointProps.getBasicAuthentication());
-                databaseEndpointProps.setSecretToken(incomingEndpointProps.getSecretToken());
-                databaseEndpointProps.setBearerAuthentication(incomingEndpointProps.getBearerAuthentication());
-                this.secretUtils.updateSecretsForEndpoint(dbEndpoint);
-            }
+        if (endpointProperties instanceof SourcesSecretable incomingProperties && databaseEndpointProperties instanceof SourcesSecretable dep) {
+            // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
+            // database endpoint, since the client won't be sending those IDs.
+            dep.setBasicAuthentication(incomingProperties.getBasicAuthentication());
+            dep.setSecretToken(incomingProperties.getSecretToken());
+            dep.setBearerAuthentication(incomingProperties.getBearerAuthentication());
+            this.secretUtils.updateSecretsForEndpoint(dbEndpoint);
         }
 
         return Response.ok().build();

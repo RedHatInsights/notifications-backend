@@ -3,13 +3,13 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,8 +28,9 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     @NotNull
     private Boolean disableSslVerification = Boolean.FALSE;
 
+    @Transient
     @Size(max = 255)
-    private String secretToken; // TODO Should be optional
+    private String secretToken;
 
     /**
      * The ID of the "secret token" secret in the Sources backend.
@@ -38,7 +39,7 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     @JsonIgnore
     private Long secretTokenSourcesId;
 
-    @Convert(converter = BasicAuthenticationConverter.class)
+    @Transient
     @Valid
     private BasicAuthentication basicAuthentication;
 
