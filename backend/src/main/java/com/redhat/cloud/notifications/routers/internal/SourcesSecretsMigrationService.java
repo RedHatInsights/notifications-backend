@@ -90,6 +90,9 @@ public class SourcesSecretsMigrationService {
                     Log.errorf("[endpoint_id: %s] error when migrating the endpoint secrets: unable to create the secrets for the endpoint: %s", eligibleEndpoint.getKey(), e.getMessage());
                 }
 
+                this.endpointRepository.disableEndpoint(eligibleEndpoint.getValue(), eligibleEndpoint.getKey());
+                Log.infof("[endpoint_id: %s] endpoint disabled");
+
                 errorCounter++;
 
                 continue;
