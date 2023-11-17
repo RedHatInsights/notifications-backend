@@ -318,6 +318,21 @@ public class EmailTemplateMigrationService {
                 "OCM/clusterUpdateInstantEmailTitle", "txt", "OCM cluster update title",
                 "OCM/clusterUpdateInstantEmailBody", "html", "OCM cluster update email body"
             );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-lifecycle"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster lifecycle title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster lifecycle email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-configuration"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster configuration title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster configuration email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-subscription"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster subscription title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster subscription email body"
+            );
 
             /*
              * Former src/main/resources/templates/Patch folder.
