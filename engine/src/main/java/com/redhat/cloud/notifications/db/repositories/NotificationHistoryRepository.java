@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.db.converters.NotificationHistoryDetailsConverter;
 import com.redhat.cloud.notifications.events.ConnectorReceiver;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -72,6 +73,19 @@ public class NotificationHistoryRepository {
             return entityManager.createQuery(query, Endpoint.class)
                     .setParameter("id", hid)
                     .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
+    public Event getEventIdFromHistoryId(UUID historyId) {
+
+        String query = "SELECT e from Event e, NotificationHistory h WHERE h.id = :id AND e.id = h.event.id";
+
+        try {
+            return entityManager.createQuery(query, Event.class)
+                .setParameter("id", historyId)
+                .getSingleResult();
         } catch (NoResultException e) {
             return null;
         }

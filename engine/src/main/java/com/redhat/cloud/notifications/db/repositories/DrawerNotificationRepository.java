@@ -34,4 +34,13 @@ public class DrawerNotificationRepository {
 
         return query.getResultList();
     }
+
+    @Transactional
+    public void createWithId(Event event, String drawerNotificationIdList) {
+        entityManager.createNativeQuery("CALL insert_drawer_notifications_with_id(:drawerNotificationIdList, :orgId, :eventId, :created)")
+            .setParameter("drawerNotificationIdList", drawerNotificationIdList)
+            .setParameter("orgId", event.getOrgId())
+            .setParameter("eventId", event.getId())
+            .setParameter("created", Timestamp.valueOf(event.getCreated())).executeUpdate();
+    }
 }

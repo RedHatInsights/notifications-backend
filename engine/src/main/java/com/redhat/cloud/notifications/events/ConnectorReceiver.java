@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -24,7 +25,6 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
-
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -71,6 +71,9 @@ public class ConnectorReceiver {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @Inject
+    DrawerProcessor drawerProcessor;
+
     @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
     @Incoming(FROMCAMEL_CHANNEL)
     @Blocking
@@ -84,6 +87,7 @@ public class ConnectorReceiver {
             final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId);
 
             reinjectIfNeeded(endpoint, decodedPayload);
+            drawerProcessor.manageConnectorDrawerReturnsIfNeeded(decodedPayload, UUID.fromString(historyId));
             boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
             if (!updated) {
                 Log.warnf("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
