@@ -95,9 +95,10 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_creation subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "scheduled", "Awesome subject", "trial_creation");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "scheduled", "Awesome subject", "trial_creation", "Trial creation");
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("Trial creation"));
         assertFalse(result.contains("This notification is for your"));
         assertTrue(result.contains("Welcome to your OpenShift Dedicated"));
         assertTrue(result.contains("We are notifying you about your"));
@@ -109,9 +110,10 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_reminder subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "scheduled", "Awesome subject", "trial_reminder");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "scheduled", "Awesome subject", "trial_reminder", "Trial reminder");
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("Trial reminder"));
         assertFalse(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertTrue(result.contains("We are notifying you about your"));
@@ -123,9 +125,10 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_delete subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "scheduled", "Awesome subject", "trial_delete");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "scheduled", "Awesome subject", "trial_delete", "Trial delete");
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("Trial delete"));
         assertFalse(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
