@@ -31,6 +31,7 @@ import io.quarkus.qute.TemplateInstance;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
@@ -93,6 +94,11 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     NotificationHistoryRepository notificationHistoryRepository;
+
+    @PostConstruct
+    void postConstruct() {
+        Log.info("DrawerProcessor instance created");
+    }
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
