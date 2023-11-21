@@ -9,7 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
@@ -49,7 +49,7 @@ public class DrawerPayloadBuilder implements Processor {
         outgoingCloudEvent.put("datacontenttype", "application/json");
         outgoingCloudEvent.put("source", "urn:redhat:source:notifications:drawer");
         outgoingCloudEvent.put("id", entry.getId());
-        outgoingCloudEvent.put("time", LocalDateTime.now(UTC).toString());
+        outgoingCloudEvent.put("time", ZonedDateTime.now(UTC).toString());
         outgoingCloudEvent.put("data", myPayload);
 
         in.setBody(outgoingCloudEvent.encode());
