@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -95,6 +96,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     @Inject
     NotificationHistoryRepository notificationHistoryRepository;
 
+    @Inject
+    BundleRepository bundleRepository;
+
     @PostConstruct
     void postConstruct() {
         Log.info("DrawerProcessor instance created");
@@ -184,6 +188,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         drawerEntryPayload.setTitle(event.getEventTypeDisplayName());
         drawerEntryPayload.setCreated(event.getCreated());
         drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
+        drawerEntryPayload.setBundle(bundleRepository.getBundle(event.getBundleId()).getName());
         return drawerEntryPayload;
     }
 
