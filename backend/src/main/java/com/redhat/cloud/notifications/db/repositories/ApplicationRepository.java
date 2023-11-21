@@ -226,6 +226,16 @@ public class ApplicationRepository {
     }
 
     @Transactional
+    public int updateEventTypeVisibility(UUID id, boolean isVisible) {
+        String eventTypeQuery = "UPDATE EventType SET visible = :visible WHERE id = :id";
+        int rowCount = entityManager.createQuery(eventTypeQuery)
+            .setParameter("visible", isVisible)
+            .setParameter("id", id)
+            .executeUpdate();
+        return rowCount;
+    }
+
+    @Transactional
     public boolean deleteEventTypeById(UUID id) {
         String query = "DELETE FROM EventType WHERE id = :id";
         int rowCount = entityManager.createQuery(query)
