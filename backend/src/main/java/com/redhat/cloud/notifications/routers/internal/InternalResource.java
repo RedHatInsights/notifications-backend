@@ -72,6 +72,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
@@ -358,6 +359,20 @@ public class InternalResource {
     public Response updateEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
         securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
         int rowCount = applicationRepository.updateEventType(eventTypeId, eventType);
+        if (rowCount == 0) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } else {
+            return Response.ok().build();
+        }
+    }
+
+    @PUT
+    @Path("/eventTypes/{eventTypeId}/updateVisibility")
+    @Produces(TEXT_PLAIN)
+    @Transactional
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
+    public Response updateEventTypeVisibility(@PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid boolean isVisible) {
+        int rowCount = applicationRepository.updateEventTypeVisibility(eventTypeId, isVisible);
         if (rowCount == 0) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else {

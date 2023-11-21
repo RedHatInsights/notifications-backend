@@ -401,6 +401,17 @@ public abstract class CrudTestHelpers {
         }
     }
 
+    public static void updateEventTypeVisibility(Header identity, String eventTypeId, boolean isVisible, int expectedStatusCode) {
+        given()
+            .header(identity)
+            .contentType(JSON)
+            .pathParam("eventTypeId", eventTypeId)
+            .body(String.valueOf(isVisible))
+            .put("/internal/eventTypes/{eventTypeId}/updateVisibility")
+            .then()
+            .statusCode(expectedStatusCode);
+    }
+
     public static void deleteEventType(Header identity, String eventTypeId, boolean expectedResult) {
         deleteEventType(identity, eventTypeId, expectedResult, OK);
     }

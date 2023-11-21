@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Environment;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
 import io.quarkus.test.InjectMock;
@@ -18,6 +19,7 @@ import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -57,6 +59,7 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.updateApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateDefaultBehaviorGroup;
 import static com.redhat.cloud.notifications.CrudTestHelpers.updateEventType;
+import static com.redhat.cloud.notifications.CrudTestHelpers.updateEventTypeVisibility;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -97,6 +100,9 @@ public class InternalResourceTest extends DbIsolatedTest {
 
     @InjectMock
     Environment environment;
+
+    @Inject
+    EntityManager entityManager;
 
     @Test
     void testCreateNullBundle() {
@@ -317,6 +323,13 @@ public class InternalResourceTest extends DbIsolatedTest {
         // Let's test the event type update API.
         updateEventType(identity, appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", true, OK);
 
+        checkEventTypeVisibility(eventTypeId, true);
+        updateEventTypeVisibility(identity, eventTypeId, false, OK);
+        checkEventTypeVisibility(eventTypeId, false);
+        updateEventTypeVisibility(identity, eventTypeId, true, OK);
+        checkEventTypeVisibility(eventTypeId, true);
+        updateEventTypeVisibility(identity, "unknown", true, NOT_FOUND);
+
         // Let's test the event type delete API.
         deleteEventType(identity, eventTypeId, true);
 
@@ -325,6 +338,12 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         // The app should also contain one event type now.
         getEventTypes(identity, appId, OK, 1);
+    }
+
+    void checkEventTypeVisibility(String eventTypeId, boolean isVisible) {
+        entityManager.clear();
+        EventType eventType = entityManager.find(EventType.class, UUID.fromString(eventTypeId));
+        assertEquals(isVisible, eventType.isVisible());
     }
 
     @Test
@@ -442,6 +461,9 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         updateEventType(otherAppIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, FORBIDDEN);
         updateEventType(appIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, OK);
+
+        updateEventTypeVisibility(otherAppIdentity, newEventTypeId, true, FORBIDDEN);
+        updateEventTypeVisibility(adminIdentity, newEventTypeId, true, OK);
 
         deleteEventType(otherAppIdentity, newEventTypeId, null, FORBIDDEN);
         deleteEventType(otherAppIdentity, eventType2Id, null, FORBIDDEN);
