@@ -279,41 +279,6 @@ public class EmailTemplateMigrationService {
              * Former src/main/resources/templates/OCM folder.
              */
             createInstantEmailTemplate(
-                    warnings, "openshift", "ocm", List.of("severity-critical"),
-                    "OCM/severityCriticalInstantEmailTitle", "txt", "OCM Service Logs critical severity email title",
-                    "OCM/severityCriticalInstantEmailBody", "html", "OCM Service Logs critical severity email body"
-            );
-            createInstantEmailTemplate(
-                    warnings, "openshift", "ocm", List.of("severity-debug"),
-                    "OCM/severityDebugInstantEmailTitle", "txt", "OCM Service Logs debug severity email title",
-                    "OCM/severityDebugInstantEmailBody", "html", "OCM Service Logs debug severity email body"
-            );
-            createInstantEmailTemplate(
-                    warnings, "openshift", "ocm", List.of("severity-error"),
-                    "OCM/severityErrorInstantEmailTitle", "txt", "OCM Service Logs error severity email title",
-                    "OCM/severityErrorInstantEmailBody", "html", "OCM Service Logs error severity email body"
-            );
-            createInstantEmailTemplate(
-                    warnings, "openshift", "ocm", List.of("severity-fatal"),
-                    "OCM/severityFatalInstantEmailTitle", "txt", "OCM Service Logs fatal severity email title",
-                    "OCM/severityFatalInstantEmailBody", "html", "OCM Service Logs fatal severity email body"
-            );
-            createInstantEmailTemplate(
-                    warnings, "openshift", "ocm", List.of("severity-info"),
-                    "OCM/severityInfoInstantEmailTitle", "txt", "OCM Service Logs info severity email title",
-                    "OCM/severityInfoInstantEmailBody", "html", "OCM Service Logs info severity email body"
-            );
-            createInstantEmailTemplate(
-                    warnings, "openshift", "ocm", List.of("severity-major"),
-                    "OCM/severityMajorInstantEmailTitle", "txt", "OCM Service Logs major severity email title",
-                    "OCM/severityMajorInstantEmailBody", "html", "OCM Service Logs major severity email body"
-            );
-            createInstantEmailTemplate(
-                    warnings, "openshift", "ocm", List.of("severity-warning"),
-                    "OCM/severityWarningInstantEmailTitle", "txt", "OCM Service Logs warning severity email title",
-                    "OCM/severityWarningInstantEmailBody", "html", "OCM Service Logs warning severity email body"
-            );
-            createInstantEmailTemplate(
                 warnings, "openshift", "cluster-manager", List.of("cluster-update"),
                 "OCM/clusterUpdateInstantEmailTitle", "txt", "OCM cluster update title",
                 "OCM/clusterUpdateInstantEmailBody", "html", "OCM cluster update email body"
@@ -332,6 +297,51 @@ public class EmailTemplateMigrationService {
                 warnings, "openshift", "cluster-manager", List.of("cluster-subscription"),
                 "OCM/genericInstantEmailTitle", "txt", "OCM cluster subscription title",
                 "OCM/genericInstantEmailBody", "html", "OCM cluster subscription email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-ownership"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster ownership title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster ownership email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-access"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster access title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster access email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-scaling"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster scaling title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster scaling email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("capacity-management"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM capacity management title",
+                "OCM/genericInstantEmailBody", "html", "OCM capacity management email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-security"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster security title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster security email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-add-on"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster add-on title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster add-on email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("customer-support"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM customer support title",
+                "OCM/genericInstantEmailBody", "html", "OCM customer support email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("cluster-networking"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM cluster networking title",
+                "OCM/genericInstantEmailBody", "html", "OCM cluster networking email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "openshift", "cluster-manager", List.of("general-notification"),
+                "OCM/genericInstantEmailTitle", "txt", "OCM general notification title",
+                "OCM/genericInstantEmailBody", "html", "OCM general notification email body"
             );
 
             /*
