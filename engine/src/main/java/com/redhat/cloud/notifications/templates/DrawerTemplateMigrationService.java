@@ -127,12 +127,12 @@ public class DrawerTemplateMigrationService {
         // Integrations
         createDrawerIntegrationTemplate(
             warnings, "console", "integrations", List.of(INTEGRATION_FAILED_EVENT_TYPE),
-            "Integrations/failedIntegrationBody", "html", "Integrations failed integration drawer body"
+            "Integrations/failedIntegrationDrawerBody", "html", "Integrations failed integration drawer body"
         );
 
         createDrawerIntegrationTemplate(
             warnings, "console", "integrations", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
-            "Integrations/integrationDisabledBody", "html", "Integrations disabled integration drawer body"
+            "Integrations/integrationDisabledDrawerBody", "html", "Integrations disabled integration drawer body"
         );
 
         // Inventory
