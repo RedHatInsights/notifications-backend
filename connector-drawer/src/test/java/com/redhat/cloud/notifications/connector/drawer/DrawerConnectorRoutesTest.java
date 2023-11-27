@@ -156,14 +156,16 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
 
         getMockHttpRequest("/internal/recipients-resolver", verifyEmptyRequest);
 
-        JsonObject jsonObject = testFailedNotification();
+        // We expect the connector to retry the notifications since the mocked
+        // request returns a 500.
+        JsonObject jsonObject = testFailedNotification(this.connectorConfig.getRedeliveryMaxAttempts());
         JsonObject data = new JsonObject(jsonObject.getString("data"));
         JsonArray recipientsList = data.getJsonObject("details").getJsonArray(ExchangeProperty.RESOLVED_RECIPIENT_LIST);
         assertNull(recipientsList);
     }
 
     @Override
-    protected JsonObject testFailedNotification() throws Exception {
+    protected JsonObject testFailedNotification(final int maxExpectedRedeliveries) throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
         MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
@@ -182,7 +184,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         }
         checkRouteMetrics(SUCCESS, 0, 0, 0);
         checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
-        micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 0);
+        micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), maxExpectedRedeliveries);
         return outcomingPayload;
     }
 

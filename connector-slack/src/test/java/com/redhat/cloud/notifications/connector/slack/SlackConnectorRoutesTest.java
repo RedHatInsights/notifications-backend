@@ -82,6 +82,16 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
         micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 0);
     }
 
+    @Override
+    @Test
+    protected void testFailedNotificationError500() throws Exception {
+        mockRemoteServerError(500, "My custom internal error");
+
+        // We do not expect any redeliveries because the Slack connector does
+        // not depend on the "HTTP common" module.
+        testFailedNotification(0);
+    }
+
     private void mock404ChannelNotFound() {
         getClient()
                 .when(request().withMethod("POST"))
