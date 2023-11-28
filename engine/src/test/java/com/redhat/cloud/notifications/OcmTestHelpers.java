@@ -14,11 +14,11 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class OcmTestHelpers {
 
-    public static Action createOcmAction(String clusterDisplayName, String subscriptionPlan, String logDescription, String upgradeStatus, String subject) {
-        return createOcmAction(clusterDisplayName, subscriptionPlan, logDescription, upgradeStatus, subject, null, null);
+    public static Action createOcmAction(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject) {
+        return createOcmAction(clusterDisplayName, subscriptionPlan, logDescription, subject, null, null);
     }
 
-    public static Action createOcmAction(String clusterDisplayName, String subscriptionPlan, String logDescription, String upgradeStatus, String subject, String templateSubType, String title) {
+    public static Action createOcmAction(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject, String templateSubType, String title) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle("openshift");
         emailActionMessage.setApplication("cluster-manager");
@@ -36,7 +36,6 @@ public class OcmTestHelpers {
         globalVars.put("subscription_id", "2XqNHRdLNEAzshh7MkkOql6fx6I");
         globalVars.put("subscription_plan", subscriptionPlan);
         globalVars.put("log_description", logDescription);
-        globalVars.put("upgrade_status", upgradeStatus);
         globalVars.put("internal_cluster_id", "fekelklflef");
 
         if (null != templateSubType) {
