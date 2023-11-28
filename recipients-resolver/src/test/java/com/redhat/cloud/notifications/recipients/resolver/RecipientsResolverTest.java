@@ -523,6 +523,57 @@ public class RecipientsResolverTest {
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
     }
 
+    @Test
+    void testRequestUsersIntersection() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(
+                        new RecipientSettings(false, false, null, emptySet()),
+                        new RecipientSettings(false, false, null, Set.of(user2.getUsername(), user3.getUsername()))
+                ),
+                Set.of("user1", "user2", "user3", "admin1", "admin2"),
+                emptySet(),
+                false
+        );
+        assertEquals(Set.of(user2, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(2)).getUsers(eq(ORG_ID), eq(false));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testRequestUsersIntersectionAndIgnoreUserPreferences() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(
+                        new RecipientSettings(false, true, null, emptySet()),
+                        new RecipientSettings(false, true, null, Set.of(user2.getUsername(), user3.getUsername()))
+                ),
+                Set.of("user1", "user3"),
+                emptySet(),
+                false
+        );
+        assertEquals(Set.of(user2, user3), recipients);
+        verify(fetchUsersFromExternalServices, times(2)).getUsers(eq(ORG_ID), eq(false));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
+    @Test
+    void testRequestUsersIntersectionAndDisjointSets() {
+        Set<User> recipients = recipientsResolver.findRecipients(
+                ORG_ID,
+                Set.of(
+                        new RecipientSettings(false, false, null, Set.of(user1.getUsername())),
+                        new RecipientSettings(false, false, null, Set.of(user2.getUsername(), user3.getUsername()))
+                ),
+                Set.of("user1", "user2", "user3", "admin1", "admin2"),
+                emptySet(),
+                false
+        );
+        assertTrue(recipients.isEmpty());
+        verify(fetchUsersFromExternalServices, times(2)).getUsers(eq(ORG_ID), eq(false));
+        verifyNoMoreInteractions(fetchUsersFromExternalServices);
+    }
+
     public User createUser(String username, boolean isAdmin) {
         User user = new User();
         user.setUsername(username);
