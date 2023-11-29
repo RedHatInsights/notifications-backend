@@ -4,13 +4,16 @@ import com.networknt.schema.ValidationMessage;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventValidationException;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.GatewayCertificateRepository;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.ParsingException;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.GatewayCertificate;
 import com.redhat.cloud.notifications.routers.internal.models.MessageValidationResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -25,14 +28,19 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
+import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 
 @Path(API_INTERNAL + "/validation")
 public class ValidationResource {
 
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundle=%s, application=%s, eventType=%s]";
+    private static final String CERTIFICATE_NOT_AUTHORIZED_MSG = "This certificates is not authorized for [bundle=%s, application=%s]";
 
     @Inject
     ApplicationRepository applicationRepository;
+
+    @Inject
+    GatewayCertificateRepository gatewayCertificateRepository;
 
     ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
@@ -111,5 +119,22 @@ public class ValidationResource {
         }
 
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/certificate-according-bundle-and-app")
+    @Produces(APPLICATION_JSON)
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "This certificate is valid this bundle and application"),
+        @APIResponse(responseCode = "401", description = "This certificate is not valid this bundle and application")
+    })
+    public GatewayCertificate validateCertificateAccordingBundleAndApp(@RestQuery String bundle, @RestQuery String application, @RestQuery String certificate) {
+        GatewayCertificate gatewayCertificate = gatewayCertificateRepository.findGatewayCertificate(bundle, application, certificate);
+        if (gatewayCertificate == null) {
+            String message = String.format(CERTIFICATE_NOT_AUTHORIZED_MSG, bundle, application);
+            throw new NotAuthorizedException(message, Response.status(UNAUTHORIZED).build());
+        } else {
+            return gatewayCertificate;
+        }
     }
 }
