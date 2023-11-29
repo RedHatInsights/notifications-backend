@@ -63,8 +63,7 @@ public class HttpRedeliveryPredicateTest extends CamelQuarkusTestSupport {
         // Simulate a timeout exception.
         final Exchange exchange = this.createExchangeWithBody("");
 
-        final SocketTimeoutException exception = Mockito.mock(SocketTimeoutException.class);
-        exchange.setProperty(Exchange.EXCEPTION_CAUGHT, exception);
+        exchange.setProperty(Exchange.EXCEPTION_CAUGHT, new SocketTimeoutException());
 
         // Call the predicate under test.
         Assertions.assertTrue(

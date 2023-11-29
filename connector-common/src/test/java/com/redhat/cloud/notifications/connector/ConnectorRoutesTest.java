@@ -139,7 +139,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         mockRemoteServerError(404, "Page not found");
 
         // We expect the connector to not retry the notification since the
-        // mocked request returns a 400.
+        // mocked request returns a 404.
         testFailedNotification(0);
     }
 
