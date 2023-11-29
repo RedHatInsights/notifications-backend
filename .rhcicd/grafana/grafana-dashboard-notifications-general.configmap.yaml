@@ -5715,7 +5715,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "builder",
-              "expr": "sum by(status) (increase(http_server_requests_seconds_count{container=\"notifications-gw-service\"}[5m]))",
+              "expr": "sum by(status) (increase(http_server_requests_seconds_count{container=\"notifications-gw-service\", uri!~\"/health/live|/health/ready|/metrics\"}[5m]))",
               "hide": false,
               "legendFormat": "__auto",
               "range": true,
