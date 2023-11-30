@@ -4,7 +4,7 @@ CREATE TABLE x509_certificate (
     subject_dn text NOT NULL,
     source_environment text NOT NULL,
     CONSTRAINT pk_x509_certificate PRIMARY KEY (id),
-    CONSTRAINT uq_x509_certificate UNIQUE (application_id, subject_dn, source_environment)
+    CONSTRAINT uq_x509_certificate UNIQUE (application_id, subject_dn)
 );
 
 -- gateway_certificate foreign key
