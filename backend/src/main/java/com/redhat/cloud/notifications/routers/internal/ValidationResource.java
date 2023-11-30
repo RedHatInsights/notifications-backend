@@ -4,11 +4,11 @@ import com.networknt.schema.ValidationMessage;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventValidationException;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
-import com.redhat.cloud.notifications.db.repositories.GatewayCertificateRepository;
+import com.redhat.cloud.notifications.db.repositories.x509CertificateRepository;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.ParsingException;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.GatewayCertificate;
+import com.redhat.cloud.notifications.models.X509Certificate;
 import com.redhat.cloud.notifications.routers.internal.models.MessageValidationResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -23,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.RestQuery;
+import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -34,13 +35,13 @@ import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 public class ValidationResource {
 
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundle=%s, application=%s, eventType=%s]";
-    private static final String CERTIFICATE_NOT_AUTHORIZED_MSG = "This certificates is not authorized for [bundle=%s, application=%s]";
+    private static final String CERTIFICATE_NOT_AUTHORIZED_MSG = "This certificate is not authorized for [bundle=%s, application=%s]";
 
     @Inject
     ApplicationRepository applicationRepository;
 
     @Inject
-    GatewayCertificateRepository gatewayCertificateRepository;
+    x509CertificateRepository x509CertificateRepository;
 
     ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
@@ -122,19 +123,19 @@ public class ValidationResource {
     }
 
     @GET
-    @Path("/certificate-according-bundle-and-app")
+    @Path("/certificate")
     @Produces(APPLICATION_JSON)
     @APIResponses({
         @APIResponse(responseCode = "200", description = "This certificate is valid this bundle and application"),
         @APIResponse(responseCode = "401", description = "This certificate is not valid this bundle and application")
     })
-    public GatewayCertificate validateCertificateAccordingBundleAndApp(@RestQuery String bundle, @RestQuery String application, @RestQuery String certificate) {
-        GatewayCertificate gatewayCertificate = gatewayCertificateRepository.findGatewayCertificate(bundle, application, certificate);
-        if (gatewayCertificate == null) {
+    public X509Certificate validateCertificateAccordingBundleAndApp(@RestQuery String bundle, @RestQuery String application, @RestQuery String certificateSubjectDn) {
+        Optional<X509Certificate> gatewayCertificate = x509CertificateRepository.findCertificate(bundle, application, certificateSubjectDn);
+        if (gatewayCertificate.isEmpty()) {
             String message = String.format(CERTIFICATE_NOT_AUTHORIZED_MSG, bundle, application);
             throw new NotAuthorizedException(message, Response.status(UNAUTHORIZED).build());
         } else {
-            return gatewayCertificate;
+            return gatewayCertificate.get();
         }
     }
 }

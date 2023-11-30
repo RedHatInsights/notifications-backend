@@ -1,10 +1,11 @@
-CREATE TABLE gateway_certificate (
+CREATE TABLE x509_certificate (
     id UUID NOT NULL,
     application_id UUID NOT NULL,
-    certificate_data text NOT NULL,
-    environment text NOT NULL,
-    CONSTRAINT pk_gateway_certificate_notification PRIMARY KEY (id)
+    subject_dn text NOT NULL,
+    source_environment text NOT NULL,
+    CONSTRAINT pk_x509_certificate PRIMARY KEY (id),
+    CONSTRAINT uq_x509_certificate UNIQUE (application_id, subject_dn, source_environment)
 );
 
 -- gateway_certificate foreign key
-ALTER TABLE gateway_certificate ADD CONSTRAINT fk_gateway_certificate_application_id FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE;
+ALTER TABLE x509_certificate ADD CONSTRAINT fk_x509_certificate_application_id FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE;

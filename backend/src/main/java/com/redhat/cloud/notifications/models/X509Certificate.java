@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,18 +15,18 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 @Entity
-@Table(name = "gateway_certificate")
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class GatewayCertificate {
+@Table(name = "x509_certificate")
+@JsonNaming(SnakeCaseStrategy.class)
+public class X509Certificate {
     @Id
     @GeneratedValue
     private UUID id;
 
     @NotNull
-    private String certificateData;
+    private String subjectDn;
 
     @NotNull
-    private String environment;
+    private String sourceEnvironment;
 
     @NotNull
     @Transient
@@ -39,7 +39,7 @@ public class GatewayCertificate {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "application_id")
     @JsonIgnore
-    private Application gatewayCertificateApplication;
+    private Application certificateApplication;
 
     public UUID getId() {
         return id;
@@ -49,20 +49,20 @@ public class GatewayCertificate {
         this.id = id;
     }
 
-    public String getCertificateData() {
-        return certificateData;
+    public String getSubjectDn() {
+        return subjectDn;
     }
 
-    public void setCertificateData(String certificateData) {
-        this.certificateData = certificateData;
+    public void setSubjectDn(String subjectDn) {
+        this.subjectDn = subjectDn;
     }
 
-    public String getEnvironment() {
-        return environment;
+    public String getSourceEnvironment() {
+        return sourceEnvironment;
     }
 
-    public void setEnvironment(String environment) {
-        this.environment = environment;
+    public void setSourceEnvironment(String environment) {
+        this.sourceEnvironment = environment;
     }
 
     public String getBundle() {
@@ -81,11 +81,11 @@ public class GatewayCertificate {
         this.application = application;
     }
 
-    public Application getGatewayCertificateApplication() {
-        return gatewayCertificateApplication;
+    public Application getCertificateApplication() {
+        return certificateApplication;
     }
 
-    public void setGatewayCertificateApplication(Application gatewayCertificateApplication) {
-        this.gatewayCertificateApplication = gatewayCertificateApplication;
+    public void setCertificateApplication(Application certificateApplication) {
+        this.certificateApplication = certificateApplication;
     }
 }
