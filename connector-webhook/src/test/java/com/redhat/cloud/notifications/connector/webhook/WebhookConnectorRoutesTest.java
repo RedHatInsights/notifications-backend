@@ -116,17 +116,18 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
 
     @Test
     protected void testFailedNotificationError500() throws Exception {
-        testFailedNotificationAndReturnedFlagsToEngine(500, "My custom internal error", INCREMENT_ENDPOINT_SERVER_ERRORS);
+        // We expect the connector to attempt redeliveries for the error.
+        testFailedNotificationAndReturnedFlagsToEngine(500, "My custom internal error", INCREMENT_ENDPOINT_SERVER_ERRORS, this.connectorConfig.getRedeliveryMaxAttempts());
     }
 
     @Test
     protected void testFailedNotificationError404() throws Exception {
-        testFailedNotificationAndReturnedFlagsToEngine(404, "Page not found", DISABLE_ENDPOINT_CLIENT_ERRORS);
+        testFailedNotificationAndReturnedFlagsToEngine(404, "Page not found", DISABLE_ENDPOINT_CLIENT_ERRORS, 0);
     }
 
-    private void testFailedNotificationAndReturnedFlagsToEngine(int httpReturnCode, String returnedBodyMessage, String flagNameThatShouldBeTrue) throws Exception {
+    private void testFailedNotificationAndReturnedFlagsToEngine(int httpReturnCode, String returnedBodyMessage, String flagNameThatShouldBeTrue, final int expectedRedeliveriesCount) throws Exception {
         mockRemoteServerError(httpReturnCode, returnedBodyMessage);
-        JsonObject returnToEngine = super.testFailedNotification();
+        JsonObject returnToEngine = super.testFailedNotification(expectedRedeliveriesCount);
         JsonObject data = new JsonObject(returnToEngine.getString("data"));
         assertTrue(data.getBoolean(flagNameThatShouldBeTrue));
         JsonObject details = data.getJsonObject("details");

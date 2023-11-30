@@ -125,17 +125,26 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     @Test
     protected void testFailedNotificationError500() throws Exception {
         mockRemoteServerError(500, "My custom internal error");
-        testFailedNotification();
+
+        // We assume that the connector extends from the "HTTP Common" module,
+        // so in that case the "500" errors should trigger a redelivery. If
+        // the connector you are testing does not extend that module, you will
+        // have to override this test and set the expected redeliveries to
+        // zero.
+        testFailedNotification(this.connectorConfig.getRedeliveryMaxAttempts());
     }
 
     @Test
     protected void testFailedNotificationError404() throws Exception {
         mockRemoteServerError(404, "Page not found");
-        testFailedNotification();
+
+        // We expect the connector to not retry the notification since the
+        // mocked request returns a 404.
+        testFailedNotification(0);
     }
 
 
-    protected JsonObject testFailedNotification() throws Exception {
+    protected JsonObject testFailedNotification(final int maxRedeliveriesCount) throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
         MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
@@ -154,7 +163,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         }
         checkRouteMetrics(SUCCESS, 0, 0, 0);
         checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
-        micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 0);
+        micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), maxRedeliveriesCount);
         return outcomingPayload;
     }
 
@@ -176,7 +185,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         checkRouteMetrics(connectorConfig.getConnectorName(), 1, 1, 1);
         checkRouteMetrics(SUCCESS, 0, 0, 0);
         checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
-        micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 2);
+        micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), this.connectorConfig.getRedeliveryMaxAttempts());
     }
 
     protected void saveRoutesMetrics(String... routeIds) {
