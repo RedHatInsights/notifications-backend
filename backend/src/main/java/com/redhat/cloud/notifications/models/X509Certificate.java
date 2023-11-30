@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.Entity;
@@ -14,12 +15,15 @@ import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+
 @Entity
 @Table(name = "x509_certificate")
 @JsonNaming(SnakeCaseStrategy.class)
 public class X509Certificate {
     @Id
     @GeneratedValue
+    @JsonProperty(access = READ_ONLY)
     private UUID id;
 
     @NotNull

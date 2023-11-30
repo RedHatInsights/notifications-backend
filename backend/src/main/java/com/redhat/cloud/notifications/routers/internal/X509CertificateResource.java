@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal;
 
-import com.redhat.cloud.notifications.db.repositories.x509CertificateRepository;
+import com.redhat.cloud.notifications.db.repositories.X509CertificateRepository;
 import com.redhat.cloud.notifications.models.X509Certificate;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -26,7 +26,7 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 public class X509CertificateResource {
 
     @Inject
-    x509CertificateRepository x509CertificateRepository;
+    X509CertificateRepository x509CertificateRepository;
 
     @POST
     @Consumes(APPLICATION_JSON)

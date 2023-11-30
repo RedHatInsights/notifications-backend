@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class x509CertificateRepository {
+public class X509CertificateRepository {
 
     @Inject
     EntityManager entityManager;

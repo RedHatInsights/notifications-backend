@@ -20,14 +20,13 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
 import static jakarta.ws.rs.core.Response.Status.OK;
-import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class x509CertificatesResourceTest extends DbIsolatedTest {
+public class X509CertificatesResourceTest extends DbIsolatedTest {
 
 
     @ConfigProperty(name = "internal.admin-role")
@@ -43,14 +42,14 @@ public class x509CertificatesResourceTest extends DbIsolatedTest {
         String bundleId = createBundle(adminIdentity, bundleName, "Certificate Bundle", OK.getStatusCode()).get();
         createApp(adminIdentity, bundleId, applicationName, "Certificate Application", null, OK.getStatusCode());
 
-        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", UNAUTHORIZED);
+        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", FORBIDDEN);
 
         X509Certificate x509Certificate = new X509Certificate();
         x509Certificate.setSubjectDn("certificate data");
         x509Certificate.setBundle(bundleName);
         x509Certificate.setApplication(applicationName);
         x509Certificate.setSourceEnvironment("stage");
-        X509Certificate createdCertificate = given()
+        JsonObject createdCertificateId = new JsonObject(given()
             .header(adminIdentity)
             .contentType(JSON)
             .body(Json.encode(x509Certificate))
@@ -58,11 +57,10 @@ public class x509CertificatesResourceTest extends DbIsolatedTest {
             .post("/internal/x509Certificates")
             .then()
             .statusCode(OK.getStatusCode())
-            .extract().as(X509Certificate.class);
+            .extract().asString());
 
-        assertNotNull(createdCertificate);
-        assertNotNull(createdCertificate.getId());
-        UUID certificateId = createdCertificate.getId();
+        String certificateId = createdCertificateId.getString("id");
+        assertNotNull(certificateId);
 
         x509Certificate = checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", OK);
         assertEquals("stage", x509Certificate.getSourceEnvironment());
@@ -81,7 +79,7 @@ public class x509CertificatesResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(OK.getStatusCode());
 
-        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", UNAUTHORIZED);
+        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", FORBIDDEN);
         x509Certificate = checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data updated", OK);
         assertEquals("prod", x509Certificate.getSourceEnvironment());
         assertEquals("certificate data updated", x509Certificate.getSubjectDn());
@@ -96,7 +94,7 @@ public class x509CertificatesResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(OK.getStatusCode());
 
-        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data updated", UNAUTHORIZED);
+        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data updated", FORBIDDEN);
     }
 
     @Test
