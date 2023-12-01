@@ -57,15 +57,10 @@ public class X509CertificateRepository {
 
     @Transactional
     public boolean deleteCertificate(UUID id) {
-        X509Certificate certificate = entityManager.find(X509Certificate.class, id);
-        if (certificate == null) {
-            return false;
-        } else {
-            String deleteHql = "DELETE FROM X509Certificate WHERE id = :id";
-            int rowCount = entityManager.createQuery(deleteHql)
-                    .setParameter("id", id)
-                    .executeUpdate();
-            return rowCount > 0;
-        }
+        String deleteHql = "DELETE FROM X509Certificate WHERE id = :id";
+        int rowCount = entityManager.createQuery(deleteHql)
+                .setParameter("id", id)
+                .executeUpdate();
+        return rowCount > 0;
     }
 }

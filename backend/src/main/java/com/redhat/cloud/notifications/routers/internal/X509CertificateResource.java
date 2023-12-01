@@ -39,7 +39,7 @@ public class X509CertificateResource {
     @Path("/{certificateId}")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    public Response updateCertificate(@RestPath UUID certificateId, X509Certificate certificate) {
+    public Response updateCertificate(@RestPath UUID certificateId, @NotNull X509Certificate certificate) {
         boolean updated = x509CertificateRepository.updateCertificate(certificateId, certificate);
         if (updated) {
             return Response.ok().build();
@@ -50,7 +50,7 @@ public class X509CertificateResource {
 
     @DELETE
     @Path("/{certificateId}")
-    public boolean deleteTemplate(@RestPath UUID certificateId) {
+    public boolean deleteCertificate(@RestPath UUID certificateId) {
         return x509CertificateRepository.deleteCertificate(certificateId);
     }
 }
