@@ -125,8 +125,8 @@ public class ValidationResource {
     @Path("/certificate")
     @Produces(APPLICATION_JSON)
     @APIResponses({
-        @APIResponse(responseCode = "200", description = "This certificate is valid this bundle and application"),
-        @APIResponse(responseCode = "403", description = "This certificate is not valid this bundle and application")
+        @APIResponse(responseCode = "200", description = "This certificate is valid for this bundle and application"),
+        @APIResponse(responseCode = "403", description = "This certificate is not valid for this bundle and application")
     })
     public X509Certificate validateCertificateAccordingBundleAndApp(@RestQuery String bundle, @RestQuery String application, @RestQuery String certificateSubjectDn) {
         Optional<X509Certificate> gatewayCertificate = x509CertificateRepository.findCertificate(bundle, application, certificateSubjectDn);
