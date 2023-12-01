@@ -21,6 +21,7 @@ public class ConnectorConfig {
     private static final String KAFKA_INCOMING_MAX_POLL_RECORDS = "notifications.connector.kafka.incoming.max-poll-records";
     private static final String KAFKA_INCOMING_POLL_ON_ERROR = "notifications.connector.kafka.incoming.poll-on-error";
     private static final String KAFKA_INCOMING_TOPIC = "notifications.connector.kafka.incoming.topic";
+    private static final String KAFKA_MAXIMUM_REINJECTIONS = "notifications.connector.kafka.maximum.reinjections";
     private static final String KAFKA_OUTGOING_TOPIC = "notifications.connector.kafka.outgoing.topic";
     private static final String NAME = "notifications.connector.name";
     private static final String REDELIVERY_COUNTER_NAME = "notifications.connector.redelivery.counter-name";
@@ -32,6 +33,9 @@ public class ConnectorConfig {
 
     @ConfigProperty(name = ENDPOINT_CACHE_MAX_SIZE, defaultValue = "100")
     int endpointCacheMaxSize;
+
+    @ConfigProperty(name = KAFKA_MAXIMUM_REINJECTIONS, defaultValue = "3")
+    int kafkaMaximumReinjections;
 
     @ConfigProperty(name = KAFKA_INCOMING_GROUP_ID)
     String incomingKafkaGroupId;
@@ -91,6 +95,7 @@ public class ConnectorConfig {
         config.put(KAFKA_INCOMING_MAX_POLL_RECORDS, incomingKafkaMaxPollRecords);
         config.put(KAFKA_INCOMING_POLL_ON_ERROR, incomingKafkaPollOnError);
         config.put(KAFKA_INCOMING_TOPIC, incomingKafkaTopic);
+        config.put(KAFKA_MAXIMUM_REINJECTIONS, kafkaMaximumReinjections);
         config.put(KAFKA_OUTGOING_TOPIC, outgoingKafkaTopic);
         config.put(NAME, connectorName);
         config.put(REDELIVERY_COUNTER_NAME, redeliveryCounterName);
@@ -124,6 +129,10 @@ public class ConnectorConfig {
 
     public String getIncomingKafkaTopic() {
         return incomingKafkaTopic;
+    }
+
+    public int getKafkaMaximumReinjections() {
+        return this.kafkaMaximumReinjections;
     }
 
     public String getOutgoingKafkaTopic() {

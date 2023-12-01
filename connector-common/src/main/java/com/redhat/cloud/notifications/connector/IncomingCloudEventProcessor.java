@@ -4,11 +4,11 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
 import org.apache.camel.Processor;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORIGINAL_CLOUD_EVENT;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.RETURN_SOURCE;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.START_TIME;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TYPE;
@@ -28,10 +28,9 @@ public class IncomingCloudEventProcessor implements Processor {
 
     @Override
     public void process(Exchange exchange) throws Exception {
+        JsonObject cloudEvent = new JsonObject(exchange.getMessage().getBody(String.class));
 
-        Message in = exchange.getIn();
-
-        JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
+        exchange.setProperty(ORIGINAL_CLOUD_EVENT, exchange.getMessage().getBody());
 
         exchange.setProperty(ID, cloudEvent.getString(CLOUD_EVENT_ID));
         exchange.setProperty(TYPE, cloudEvent.getString(CLOUD_EVENT_TYPE));
