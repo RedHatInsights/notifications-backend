@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.connector.email;
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
+import com.redhat.cloud.notifications.connector.email.metrics.EmailMetricsProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
@@ -44,6 +45,9 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     RecipientsResolverResponseProcessor recipientsResolverResponseProcessor;
 
+    @Inject
+    EmailMetricsProcessor emailMetricsProcessor;
+
     /**
      * Configures the flow for this connector.
      */
@@ -75,6 +79,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                     .process(this.BOPRequestPreparer)
                     .to(bopEndpoint)
                     .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+                    .process(emailMetricsProcessor)
             .end()
             .to(direct(SUCCESS));
     }

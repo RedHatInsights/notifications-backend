@@ -36,6 +36,7 @@ public class BOPRequestPreparer implements Processor {
         recipients = users.stream().map(User::getEmail).collect(toSet());
         Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
         recipients.addAll(emails);
+        exchange.setProperty(ExchangeProperty.RECIPIENTS_SIZE, recipients.size());
 
         // Prepare the email to be sent.
         final Email email = new Email(
