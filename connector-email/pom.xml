@@ -47,24 +47,14 @@
     </profiles>
 
     <dependencies>
+
         <!-- Scope: compile -->
+
         <!-- Notifications module -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
             <artifactId>notifications-connector-common-http</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.redhat.cloud.common</groupId>
-            <artifactId>insights-notification-schemas-java</artifactId>
-            <version>${insights-notification-schemas-java.version}</version>
-        </dependency>
-
-        <!-- Camel -->
-        <dependency>
-            <groupId>org.apache.camel.quarkus</groupId>
-            <artifactId>camel-quarkus-bean</artifactId>
         </dependency>
 
         <dependency>
@@ -74,6 +64,7 @@
 
         <!-- Scope: test -->
         <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
+
         <!-- Camel -->
         <dependency>
             <groupId>org.apache.camel.quarkus</groupId>

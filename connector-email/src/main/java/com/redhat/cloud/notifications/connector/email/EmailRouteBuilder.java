@@ -4,7 +4,7 @@ import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
-import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverPreparer;
+import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -39,7 +39,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     BOPRequestPreparer BOPRequestPreparer;
 
     @Inject
-    RecipientsResolverPreparer recipientsResolverPreparer;
+    RecipientsResolverRequestPreparer recipientsResolverRequestPreparer;
 
     @Inject
     RecipientsResolverResponseProcessor recipientsResolverResponseProcessor;
@@ -50,28 +50,18 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     @Override
     public void configureRoutes() {
 
-        from(seda(ENGINE_TO_CONNECTOR))
-            .routeId(emailConnectorConfig.getConnectorName())
-            .to(direct(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP))
-
-            // Once the split has finished, we can send the exchange to the BOP
-            // route.
-            .to(direct(Routes.SEND_EMAIL_BOP));
-
-        /*
-         * Fetches the users from recipients resolver.
-         */
-        from(direct(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP))
-            .routeId(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP)
-            .process(recipientsResolverPreparer)
-            .to(emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
-            .process(recipientsResolverResponseProcessor);
-
         /*
          * Prepares the payload accepted by BOP and sends the request to
          * the service.
          */
         final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpoint = this.setUpBOPEndpoint();
+
+        from(seda(ENGINE_TO_CONNECTOR))
+            .routeId(emailConnectorConfig.getConnectorName())
+            .process(recipientsResolverRequestPreparer)
+            .to(emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
+            .process(recipientsResolverResponseProcessor)
+            .to(direct(Routes.SEND_EMAIL_BOP));
 
         from(direct(Routes.SEND_EMAIL_BOP))
             .routeId(Routes.SEND_EMAIL_BOP)
