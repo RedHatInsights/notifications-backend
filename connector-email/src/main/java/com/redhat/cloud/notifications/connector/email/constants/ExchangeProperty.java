@@ -44,4 +44,6 @@ public class ExchangeProperty {
      * Holds the rendered subject contents, ready to be sent in an email.
      */
     public static final String RENDERED_SUBJECT = "rendered_subject";
+
+    public static final String RECIPIENTS_SIZE = "recipientsSize";
 }
