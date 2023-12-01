@@ -291,6 +291,8 @@ public class SourcesSecretsMigrationServiceTest {
             final Endpoint endpoint = this.endpointRepository.getEndpoint(entry.getValue().getOrgId(), entry.getKey());
             Assertions.assertNotNull(endpoint, "the endpoint was not fetched from the database");
 
+            Assertions.assertFalse(endpoint.isEnabled(), "the endpoint should have been disabled after not being able to create the secrets in Sources");
+
             final EndpointProperties endpointProperties = endpoint.getProperties();
             if (endpointProperties instanceof SourcesSecretable properties) {
                 Assertions.assertNull(properties.getBasicAuthenticationSourcesId(), "the basic authentication Sources secret reference should not have been saved in the database");
