@@ -1,16 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.constants;
 
 public class ExchangeProperty {
-    /**
-     * Used to store and retrieve the current recipient settings being
-     * processed.
-     */
-    public static final String CURRENT_RECIPIENT_SETTINGS = "current_recipient_settings";
-    /**
-     * Used to hold the number of elements returned in a particular users
-     * retrieval page.
-     */
-    public static final String ELEMENTS_COUNT = "elements_count";
+
     /**
      * Email recipients initially included in the payload received by notifications-engine.
      * The subscriptions of these recipients are not checked.
@@ -26,18 +17,6 @@ public class ExchangeProperty {
      * cached users from being modified.
      */
     public static final String FILTERED_USERS = "users_filtered";
-    /**
-     * Used to hold the received RBAC group's UUID.
-     */
-    public static final String GROUP_UUID = "group_uuid";
-    /**
-     * The limit property used to determine if we should keep fetching elements.
-     */
-    public static final String LIMIT = "limit";
-    /**
-     * The offset property which will be used to fetch multiple pages.
-     */
-    public static final String OFFSET = "offset";
     /**
      * Holds the gathered recipient settings both from the subscription
      * endpoints and the received event.
@@ -65,9 +44,4 @@ public class ExchangeProperty {
      * Holds the rendered subject contents, ready to be sent in an email.
      */
     public static final String RENDERED_SUBJECT = "rendered_subject";
-    /**
-     * Represents the curated set of recipients that will end up receiving the
-     * notification through email.
-     */
-    public static final String USERS = "users";
 }

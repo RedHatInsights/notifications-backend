@@ -2,9 +2,7 @@ package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
-import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
-import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
@@ -14,7 +12,6 @@ import org.apache.camel.Predicate;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
@@ -49,16 +46,12 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
     /**
      * Configures the flow for this connector.
-     * @throws Exception if the IT SSL route could not be correctly set up.
      */
     @Override
-    public void configureRoutes() throws Exception {
+    public void configureRoutes() {
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
-            // Initialize the users hash set, where we will gather the
-            // fetched users from the user providers.
-            .process(exchange -> exchange.setProperty(ExchangeProperty.USERS, new HashSet<User>()))
             .to(direct(Routes.RESOLVE_USERS_WITH_RECIPIENTS_RESOLVER_CLOWDAPP))
 
             // Once the split has finished, we can send the exchange to the BOP
