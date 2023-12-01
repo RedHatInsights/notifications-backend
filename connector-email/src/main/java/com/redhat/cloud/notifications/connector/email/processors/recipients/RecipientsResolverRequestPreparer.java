@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
-import com.redhat.cloud.notifications.connector.email.processors.recipients.pojo.RecipientsQuery;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -16,7 +15,7 @@ import java.util.Set;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 
 @ApplicationScoped
-public class RecipientsResolverPreparer implements Processor {
+public class RecipientsResolverRequestPreparer implements Processor {
 
     @Inject
     ObjectMapper objectMapper;
@@ -26,8 +25,7 @@ public class RecipientsResolverPreparer implements Processor {
         List<RecipientSettings> recipientSettings = exchange.getProperty(ExchangeProperty.RECIPIENT_SETTINGS, List.class);
         Set<String> subscribers = exchange.getProperty(ExchangeProperty.SUBSCRIBERS, Set.class);
         Set<String> unsubscribers = exchange.getProperty(ExchangeProperty.UNSUBSCRIBERS, Set.class);
-        // TODO Remove the default value after this has been deployed in production.
-        boolean subscribedByDefault = exchange.getProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, false, boolean.class);
+        boolean subscribedByDefault = exchange.getProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, boolean.class);
         final String orgId = exchange.getProperty(ORG_ID, String.class);
 
         RecipientsQuery recipientsQuery = new RecipientsQuery();

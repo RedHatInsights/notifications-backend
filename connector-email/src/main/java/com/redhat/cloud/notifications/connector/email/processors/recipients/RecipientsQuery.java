@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.email.processors.recipients.pojo;
+package com.redhat.cloud.notifications.connector.email.processors.recipients;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
