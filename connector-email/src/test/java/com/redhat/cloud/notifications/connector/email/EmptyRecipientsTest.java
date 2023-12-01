@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashSet;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EMAIL_RECIPIENTS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SEND_EMAIL_BOP;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
@@ -36,6 +37,7 @@ public class EmptyRecipientsTest extends CamelQuarkusTestSupport {
 
         Exchange exchange = createExchangeWithBody("");
         exchange.setProperty(FILTERED_USERS, new HashSet<>());
+        exchange.setProperty(EMAIL_RECIPIENTS, new HashSet<>());
 
         adviceWith(SEND_EMAIL_BOP, context(), new AdviceWithRouteBuilder() {
             @Override

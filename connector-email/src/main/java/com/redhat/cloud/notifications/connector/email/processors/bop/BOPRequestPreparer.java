@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.connector.email.processors.bop;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.bop.Email;
-import com.redhat.cloud.notifications.connector.email.model.bop.Emails;
 import com.redhat.cloud.notifications.connector.email.model.bop.SendEmailsRequest;
 import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.vertx.core.json.JsonObject;
@@ -34,13 +33,9 @@ public class BOPRequestPreparer implements Processor {
 
         final Set<String> recipients;
         final Set<User> users = exchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
-        if (emailConnectorConfig.isSkipBopUsersResolution()) {
-            recipients = users.stream().map(User::getEmail).collect(toSet());
-            Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
-            recipients.addAll(emails);
-        } else {
-            recipients = users.stream().map(User::getUsername).collect(toSet());
-        }
+        recipients = users.stream().map(User::getEmail).collect(toSet());
+        Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
+        recipients.addAll(emails);
 
         // Prepare the email to be sent.
         final Email email = new Email(
@@ -50,18 +45,13 @@ public class BOPRequestPreparer implements Processor {
         );
 
         JsonObject bopBody;
-        if (emailConnectorConfig.isSkipBopUsersResolution()) {
-            final SendEmailsRequest request = new SendEmailsRequest(
-                Set.of(email),
-                exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class),
-                exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class)
-            );
-            bopBody = JsonObject.mapFrom(request);
-        } else {
-            final Emails emails = new Emails();
-            emails.addEmail(email);
-            bopBody = JsonObject.mapFrom(emails);
-        }
+
+        final SendEmailsRequest request = new SendEmailsRequest(
+            Set.of(email),
+            exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class),
+            exchange.getProperty(ExchangeProperty.EMAIL_SENDER, String.class)
+        );
+        bopBody = JsonObject.mapFrom(request);
 
         // Specify the message's payload in JSON.
         exchange.getMessage().setBody(bopBody.encode());

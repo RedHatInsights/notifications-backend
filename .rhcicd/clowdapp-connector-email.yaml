@@ -10,7 +10,6 @@ objects:
     name: notifications-connector-email
   spec:
     dependencies:
-    - rbac
     - notifications-recipients-resolver
     envName: ${ENV_NAME}
     kafkaTopics:
@@ -35,19 +34,6 @@ objects:
           limits:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
-        volumes:
-          - name: keystore
-            secret:
-              secretName: it-services
-              items:
-                - key: keystore.jks
-                  path: clientkeystore.jks
-              defaultMode: 420
-              optional: true
-        volumeMounts:
-          - name: keystore
-            readOnly: true
-            mountPath: /mnt/secrets
         readinessProbe:
           httpGet:
             path: /q/health/ready
@@ -71,12 +57,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
-        - name: NOTIFICATIONS_CONNECTOR_BOP_SKIP_USERS_RESOLUTION
-          value: ${NOTIFICATIONS_CONNECTOR_BOP_SKIP_USERS_RESOLUTION}
         - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
           value: ${NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE}
-        - name: NOTIFICATIONS_CONNECTOR_FETCH_USERS_RBAC_ENABLED
-          value: ${NOTIFICATIONS_CONNECTOR_FETCH_USERS_RBAC_ENABLED}
         - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
           value: ${NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS}
         - name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
@@ -109,29 +91,6 @@ objects:
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_URL
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}
-        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY
-          value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY}
-        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_PSKS
-          valueFrom:
-            secretKeyRef:
-              name: rbac-psks
-              key: psks.json
-        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION
-          value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION}
-        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: it-services-keystorepassword
-              optional: true
-        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_URL
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: url
-              optional: true
-        - name: NOTIFICATIONS_CONNECTOR_RECIPIENTS_RESOLVER_MODULE_ENABLED
-          value: ${NOTIFICATIONS_CONNECTOR_RECIPIENTS_RESOLVER_MODULE_ENABLED}
         - name: QUARKUS_HTTP_PORT
           value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -208,15 +167,9 @@ parameters:
 - name: MIN_REPLICAS
   value: "3"
 
-- name: NOTIFICATIONS_CONNECTOR_BOP_SKIP_USERS_RESOLUTION
-  description: Should BOP skip transforming usernames from our payload into email addresses using the IT Users Service?
-  value: "false"
 - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
   description: Maximum size of the Camel endpoints cache
   value: "100"
-- name: NOTIFICATIONS_CONNECTOR_FETCH_USERS_RBAC_ENABLED
-  description: Is RBAC used to fetch the users?
-  value: "true"
 - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
   description: Maximum time in milliseconds allowed to establish an HTTP connection
   value: "2500"
@@ -235,21 +188,9 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
   description: Maximum capacity of the SEDA queue
   value: "1"
-- name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_CACHE_EXPIRE_AFTER_WRITE
-  description: Expiration delay in seconds of cached users
-  value: "600"
-- name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_RBAC_APPLICATION_KEY
-  description: The application's key which will be used to authenticate to RBAC.
-  value: "notifications"
-- name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_IT_KEY_STORE_LOCATION
-  description: "Key store for opening a secure connection when communicating with IT. It should be set to 'file:/mnt/secrets/clientkeystore.jks'"
-  value: ""
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
-- name: NOTIFICATIONS_CONNECTOR_RECIPIENTS_RESOLVER_MODULE_ENABLED
-  description: enable or not users resolution using recipients-resolver module
-  value: "false"
 
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port, defaulting to the default Clowder private port
