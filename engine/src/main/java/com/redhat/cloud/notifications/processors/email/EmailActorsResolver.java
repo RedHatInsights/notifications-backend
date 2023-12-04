@@ -11,7 +11,7 @@ public class EmailActorsResolver {
      * ConsoleDot applications will use.
      */
     public static final String RH_INSIGHTS_SENDER = "\"Red Hat Insights\" noreply@redhat.com";
-    public static final String OPENSHIFT_SENDER = "no-reply@openshift.com";
+    public static final String OPENSHIFT_SENDER = "\"Red Hat OpenShift\" no-reply@openshift.com";
 
     /**
      * Determines which sender should be set in the email from the given event.
