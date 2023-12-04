@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfi
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.bop.Email;
 import com.redhat.cloud.notifications.connector.email.model.bop.SendEmailsRequest;
-import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -13,8 +12,6 @@ import org.apache.camel.Processor;
 import org.apache.camel.component.http.HttpMethods;
 
 import java.util.Set;
-
-import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
 public class BOPRequestPreparer implements Processor {
@@ -30,12 +27,7 @@ public class BOPRequestPreparer implements Processor {
     public void process(final Exchange exchange) {
         final String subject = exchange.getProperty(ExchangeProperty.RENDERED_SUBJECT, String.class);
         final String body = exchange.getProperty(ExchangeProperty.RENDERED_BODY, String.class);
-
-        final Set<String> recipients;
-        final Set<User> users = exchange.getProperty(ExchangeProperty.FILTERED_USERS, Set.class);
-        recipients = users.stream().map(User::getEmail).collect(toSet());
-        Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
-        recipients.addAll(emails);
+        Set<String> recipients = exchange.getMessage().getBody(Set.class);
         exchange.setProperty(ExchangeProperty.RECIPIENTS_SIZE, recipients.size());
 
         // Prepare the email to be sent.

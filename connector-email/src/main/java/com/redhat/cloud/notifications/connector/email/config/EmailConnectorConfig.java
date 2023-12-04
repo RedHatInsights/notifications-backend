@@ -21,6 +21,8 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_ENV = "notifications.connector.user-provider.bop.env";
     private static final String BOP_URL = "notifications.connector.user-provider.bop.url";
 
+    private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
+
     private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
 
     @ConfigProperty(name = BOP_API_TOKEN)
@@ -38,6 +40,9 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = RECIPIENTS_RESOLVER_USER_SERVICE_URL)
     String recipientsResolverServiceURL;
 
+    @ConfigProperty(name = MAX_RECIPIENTS_PER_EMAIL, defaultValue = "50")
+    int maxRecipientsPerEmail;
+
     @Override
     protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = super.getLoggedConfiguration();
@@ -50,6 +55,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(BOP_ENV, this.bopEnv);
         config.put(BOP_URL, this.bopURL);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
+        config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
 
         /*
          * /!\ WARNING /!\
@@ -77,5 +83,9 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     public String getRecipientsResolverServiceURL() {
         return recipientsResolverServiceURL;
+    }
+
+    public int getMaxRecipientsPerEmail() {
+        return maxRecipientsPerEmail;
     }
 }
