@@ -11,11 +11,11 @@
 {#let global_vars=action.events[0].payload.global_vars}
 <p>
     {#switch global_vars.template_sub_type.or("")}
-    {#case 'trial_creation'}
+    {#case 'osd-trial-creation-template'}
         Welcome to your OpenShift Dedicated trial! We are notifying you about your <a href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}">{global_vars.cluster_display_name} OpenShift Dedicated trial cluster</a>.
-    {#case 'trial_reminder'}
+    {#case 'osd-trial-reminder-template'}
         We are notifying you about your <a href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}">{global_vars.cluster_display_name} OpenShift Dedicated trial cluster</a>.
-    {#case 'trial_delete'}
+    {#case 'osd-trial-deletion-template'}
         Thank you for trialing OpenShift Dedicated!
     {#case}
         This notification is for your <a href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}">{global_vars.cluster_display_name} cluster</a>.
@@ -32,15 +32,15 @@ More info
 {#content-body-section2}
 {#let global_vars=action.events[0].payload.global_vars}
 {#switch global_vars.template_sub_type.or("")}
-{#case 'trial_creation'}
+{#case 'osd-trial-creation-template'}
     <p>
         To learn more about the OpenShift Dedicated trial, please refer to <a href="https://access.redhat.com/articles/5990101" target="_blank">our documentation</a>. You can upgrade your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a href="https://cloud.redhat.com/openshift/details/{action.events[0].payload.global_vars.internal_cluster_id}" target="_blank">OpenShift Cluster Manager</a>.
     </p>
-{#case 'trial_reminder'}
+{#case 'osd-trial-reminder-template'}
     <p>
         You will be notified once your cluster is deleted. You can prevent this automatic deletion by upgrading your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a href="https://cloud.redhat.com/openshift/details/{action.events[0].payload.global_vars.internal_cluster_id}" target="_blank">OpenShift Cluster Manager</a>.
     </p>
-{#case 'trial_delete'}
+{#case 'osd-trial-deletion-template'}
     <p>
         <a href="https://www.openshift.com/products/dedicated/" target="_blank">Learn more</a> about OpenShift Dedicated, and create a new cluster at any time in <a href="https://cloud.redhat.com/openshift/create" target="_blank">OpenShift Cluster Manager</a>!
     </p>
