@@ -41,7 +41,7 @@ public class TestHelpers {
     public static final String policyName1 = "Foobar";
     public static final String policyId2 = "0123-456-789-5721f";
     public static final String policyName2 = "Latest foo is installed";
-    public static final String eventType = "test-email-subscription-instant";
+    public static final String eventType = "policy-triggered";
 
     public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventory_id) {
         return createEmailAggregation(orgId, bundle, application, policyId, inventory_id, null);

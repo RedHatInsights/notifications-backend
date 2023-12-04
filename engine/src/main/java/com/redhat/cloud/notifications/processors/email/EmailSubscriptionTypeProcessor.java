@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -20,9 +19,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.InstantEmailTemplate;
-import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
@@ -47,7 +43,6 @@ import org.eclipse.microprofile.context.ManagedExecutor;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,13 +50,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
-
+/*
+ * This class needs more cleanup but this will be done later to make the reviews easier.
+ * TODO Stop extending SystemEndpointTypeProcessor.
+ */
 @ApplicationScoped
 public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor {
 
-    public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
-    public static final String TOTAL_FAILURE_RECIPIENTS_KEY = "total_failure_recipients";
     public static final String AGGREGATION_COMMAND_REJECTED_COUNTER_NAME = "aggregation.command.rejected";
     public static final String AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME = "aggregation.command.processed";
     public static final String AGGREGATION_COMMAND_ERROR_COUNTER_NAME = "aggregation.command.error";
@@ -78,9 +73,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     @Inject
     EmailActorsResolver emailActorsResolver;
-
-    @Inject
-    EmailSender emailSender;
 
     @Inject
     EmailAggregator emailAggregator;
@@ -105,9 +97,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     @Inject
     EndpointRepository endpointRepository;
-
-    @Inject
-    NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     ApplicationRepository applicationRepository;
@@ -139,11 +128,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (endpoints != null && !endpoints.isEmpty()) {
-            this.generateAggregationWhereDue(event);
-
-            sendEmail(event, Set.copyOf(endpoints));
-        }
+        throw new UnsupportedOperationException("No longer used");
     }
 
     /**
@@ -173,26 +158,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                 Log.warn("Email aggregation persisting failed", e);
             }
         }
-    }
-
-    private void sendEmail(Event event, Set<Endpoint> endpoints) {
-        final TemplateInstance subject;
-        final TemplateInstance body;
-
-        Optional<InstantEmailTemplate> instantEmailTemplate = templateRepository
-                .findInstantEmailTemplate(event.getEventType().getId());
-        if (instantEmailTemplate.isEmpty()) {
-            return;
-        } else {
-            String subjectData = instantEmailTemplate.get().getSubjectTemplate().getData();
-            subject = templateService.compileTemplate(subjectData, "subject");
-            String bodyData = instantEmailTemplate.get().getBodyTemplate().getData();
-            body = templateService.compileTemplate(bodyData, "body");
-        }
-        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
-
-        Set<User> userList = getRecipientList(event, endpoints.stream().toList(), SubscriptionType.INSTANT);
-        emailSender.sendEmail(userList, event, subject, body, true, endpoint);
     }
 
     public void processAggregation(Event event) {
@@ -265,7 +230,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Optional<Event> aggregatorEvent, boolean async) {
         TemplateInstance subject = null;
         TemplateInstance body = null;
-        final long startTime = System.currentTimeMillis();
 
         EmailAggregationKey aggregationKey = aggregationCommand.getAggregationKey();
         Optional<AggregationEmailTemplate> aggregationEmailTemplate = templateRepository
@@ -301,8 +265,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
             action.setEventType(event.getEventType().getName());
         }
 
-        Integer nbRecipientsSuccessfullySent = 0;
-        Integer nbRecipientsFailureSent = 0;
         if (subject != null && body != null) {
             Map<User, Map<String, Object>> aggregationsByUsers = emailAggregator.getAggregated(aggregationKey,
                                                                         aggregationCommand.getSubscriptionType(),
@@ -319,74 +281,37 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                 action.setContext(contextBuilder.build());
                 event.setEventWrapper(new EventWrapperAction(action));
 
-                if (featureFlipper.isEmailConnectorEnabled()) {
-                    Set<String> recipientsUsernames = aggregation.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
-                    String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
-                    String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body);
+                Set<String> recipientsUsernames = aggregation.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
+                String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
+                String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body);
 
-                    Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
+                Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
 
-                    // Prepare all the data to be sent to the connector.
-                    final EmailNotification emailNotification = new EmailNotification(
-                        bodyStr,
-                        subjectStr,
-                        this.emailActorsResolver.getEmailSender(event),
-                        event.getOrgId(),
-                        recipientSettings,
-                        /*
-                         * The recipients are determined at an earlier stage (see EmailAggregator) using the
-                         * recipients-resolver app and the subscription records from the database.
-                         * The subscribedByDefault value below simply means that recipients-resolver will consider
-                         * the subscribers passed in the request as the recipients candidates of the aggregation email.
-                         */
-                        recipientsUsernames,
-                        Collections.emptySet(),
-                        false
-                    );
+                // Prepare all the data to be sent to the connector.
+                final EmailNotification emailNotification = new EmailNotification(
+                    bodyStr,
+                    subjectStr,
+                    this.emailActorsResolver.getEmailSender(event),
+                    event.getOrgId(),
+                    recipientSettings,
+                    /*
+                     * The recipients are determined at an earlier stage (see EmailAggregator) using the
+                     * recipients-resolver app and the subscription records from the database.
+                     * The subscribedByDefault value below simply means that recipients-resolver will consider
+                     * the subscribers passed in the request as the recipients candidates of the aggregation email.
+                     */
+                    recipientsUsernames,
+                    Collections.emptySet(),
+                    false
+                );
 
-                    connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
-                } else {
-                    NotificationHistory history = emailSender.sendEmail(aggregation.getValue(), event, subject, body, false, endpoint);
-                    if (history != null) {
-                        Integer totalRecipients = (Integer) history.getDetails().get(TOTAL_RECIPIENTS_KEY);
-                        if (NotificationStatus.SUCCESS == history.getStatus()) {
-                            nbRecipientsSuccessfullySent += totalRecipients;
-                        } else {
-                            nbRecipientsFailureSent += totalRecipients;
-                        }
-                    }
-                }
+                connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
             }
         }
 
         // Delete on daily
         if (aggregationCommand.getSubscriptionType().equals(SubscriptionType.DAILY)) {
             emailAggregationRepository.purgeOldAggregation(aggregationKey, aggregationCommand.getEnd());
-        }
-
-        // build and persist aggregation history if needed.
-        // If email connector is enabled, it will take care of history
-        if (aggregatorEvent.isPresent() && !featureFlipper.isEmailConnectorEnabled()) {
-            buildAggregatedHistory(startTime, endpoint, event, nbRecipientsSuccessfullySent, nbRecipientsFailureSent);
-        }
-    }
-
-    private void buildAggregatedHistory(long startTime, Endpoint endpoint, Event event, Integer nbRecipientsSuccessfullySent, Integer nbRecipientsFailureSent) {
-        long invocationTime = System.currentTimeMillis() - startTime;
-        NotificationHistory history = getHistoryStub(endpoint, event, invocationTime, UUID.randomUUID());
-        Map<String, Object> details = new HashMap<>();
-        details.put(TOTAL_RECIPIENTS_KEY, nbRecipientsSuccessfullySent + nbRecipientsFailureSent);
-        details.put(TOTAL_FAILURE_RECIPIENTS_KEY, nbRecipientsFailureSent);
-        if (0 == nbRecipientsFailureSent) {
-            history.setStatus(NotificationStatus.SUCCESS);
-        } else {
-            history.setStatus(NotificationStatus.FAILED_INTERNAL);
-        }
-        history.setDetails(details);
-        try {
-            notificationHistoryRepository.createNotificationHistory(history);
-        } catch (Exception e) {
-            Log.errorf(e, "Notification history creation failed for event %s and endpoint %s", event.getId(), history.getEndpoint());
         }
     }
 }

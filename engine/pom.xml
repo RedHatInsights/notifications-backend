@@ -105,12 +105,6 @@
             <version>${apache.commons.csv.version}</version>
         </dependency>
 
-        <!-- Quarkus BOM -->
-        <dependency>
-            <groupId>io.smallrye.reactive</groupId>
-            <artifactId>smallrye-mutiny-vertx-web-client</artifactId>
-        </dependency>
-
         <!-- events-schemas -->
         <dependency>
             <groupId>com.redhat.cloud.event</groupId>

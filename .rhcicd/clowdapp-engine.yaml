@@ -151,8 +151,6 @@ objects:
               key: client-id
         - name: PROCESSOR_EMAIL_BOP_ENV
           value: ${BACKOFFICE_CLIENT_ENV}
-        - name: PROCESSOR_EMAIL_BOP_SKIP_USERS_RESOLUTION
-          value: ${PROCESSOR_EMAIL_BOP_SKIP_USERS_RESOLUTION}
         - name: PROCESSOR_EMAIL_BOP_URL
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}:${BACKOFFICE_PORT}/v1/sendEmails
         - name: PROCESSOR_EMAIL_NO_REPLY
@@ -242,10 +240,6 @@ objects:
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
         - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
           value: ${NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS}
-        - name: NOTIFICATIONS_WEBHOOK_CONNECTOR_ENABLED
-          value: ${NOTIFICATIONS_WEBHOOK_CONNECTOR_ENABLED}
-        - name: NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED
-          value: ${NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED}
         - name: NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED
           value: ${NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED}
         - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
@@ -331,9 +325,6 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
-- name: PROCESSOR_EMAIL_BOP_SKIP_USERS_RESOLUTION
-  description: Should BOP skip transforming usernames from our payload into email addresses using the IT Users Service?
-  value: "false"
 - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
   value: "false"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
@@ -415,11 +406,6 @@ parameters:
 - name: NOTIFICATIONS_DRAWER_ENABLED
   value: "false"
 - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
-  value: "false"
-- name: NOTIFICATIONS_WEBHOOK_CONNECTOR_ENABLED
-  value: "false"
-- name: NOTIFICATIONS_EMAIL_CONNECTOR_ENABLED
-  description: Is the email connector enabled to process emails there instead of in the engine?
   value: "false"
 - name: NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED
   description: Is the drawer connector enabled to process them instead of in the engine?

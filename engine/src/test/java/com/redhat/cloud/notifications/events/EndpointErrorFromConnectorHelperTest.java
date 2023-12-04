@@ -19,13 +19,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHelper.CLIENT_TAG_VALUE;
 import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHelper.DISABLED_WEBHOOKS_COUNTER;
 import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHelper.DISABLE_ENDPOINT_CLIENT_ERRORS;
 import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHelper.ERROR_TYPE_TAG_KEY;
 import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHelper.HTTP_STATUS_CODE;
 import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHelper.INCREMENT_ENDPOINT_SERVER_ERRORS;
 import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHelper.SERVER_TAG_VALUE;
-import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.CLIENT_TAG_VALUE;
 import static org.mockito.Mockito.*;
 
 @QuarkusTest
