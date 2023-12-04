@@ -44,7 +44,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
 
     @Test
     public void testUpgradeScheduledInstantEmailBody() {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "upgrade_scheduled", null);
+        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "upgrade-scheduled-template", null);
         String result = generateEmailBody(CLUSTER_UPDATE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Upgrade scheduled"));
@@ -55,7 +55,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
 
     @Test
     public void testUpgradeEndedInstantEmailBody() {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", "upgrade_ended", null);
+        Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", "upgrade-ended-template", null);
         String result = generateEmailBody(CLUSTER_UPDATE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Upgrade ended"));
@@ -95,7 +95,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_creation subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "trial_creation", "Trial creation");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "osd-trial-creation-template", "Trial creation");
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial creation"));
@@ -110,7 +110,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_reminder subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "trial_reminder", "Trial reminder");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "osd-trial-reminder-template", "Trial reminder");
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial reminder"));
@@ -125,7 +125,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_delete subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "trial_delete", "Trial delete");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "osd-trial-deletion-template", "Trial delete");
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial delete"));

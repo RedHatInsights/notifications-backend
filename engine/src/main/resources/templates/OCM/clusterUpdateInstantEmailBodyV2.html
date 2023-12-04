@@ -5,7 +5,7 @@
     Cluster Manager - OpenShift
 {/content-title}
 {#content-title-section1}
-    {#if action.events[0].payload.global_vars.template_sub_type == 'upgrade_scheduled'}Upgrade scheduled{#else}Upgrade ended{/if}
+    {#if action.events[0].payload.global_vars.template_sub_type == 'upgrade-scheduled-template'}Upgrade scheduled{#else}Upgrade ended{/if}
 {/content-title-section1}
 {#content-body-section1}
 {#let global_var=action.events[0].payload.global_vars}
@@ -15,7 +15,7 @@ This notification is for your <a href="https://cloud.redhat.com/openshift/detail
 <p>
 Your {global_var.log_description}.
 </p>
-{#if global_var.template_sub_type == 'upgrade_scheduled'}
+{#if global_var.template_sub_type == 'upgrade-scheduled-template'}
     <p>
         <strong>What can you expect?</strong>
         <ul>
