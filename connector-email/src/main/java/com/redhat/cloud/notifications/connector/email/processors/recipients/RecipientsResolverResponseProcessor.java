@@ -10,7 +10,6 @@ import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,7 +36,7 @@ public class RecipientsResolverResponseProcessor implements Processor {
     @Override
     public void process(final Exchange exchange) throws JsonProcessingException {
         final String body = exchange.getMessage().getBody(String.class);
-        final Set<String> recipientsList = new HashSet<>(Arrays.asList(this.objectMapper.readValue(body, User[].class)))
+        final Set<String> recipientsList = Arrays.asList(this.objectMapper.readValue(body, User[].class))
             .stream().map(User::getEmail).collect(toSet());
 
         Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
