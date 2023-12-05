@@ -44,7 +44,7 @@ public class RecipientsResolverResponseProcessor implements Processor {
         recipientsList.addAll(emails);
 
         // We have to remove one from the limit, because a default recipient (like noreply@redhat.com) will be automatically added
-        exchange.setProperty(ExchangeProperty.FILTERED_USERS, partition(recipientsList, emailConnectorConfig.getMaxRecipientsPerEmail() -1));
+        exchange.setProperty(ExchangeProperty.FILTERED_USERS, partition(recipientsList, emailConnectorConfig.getMaxRecipientsPerEmail() - 1));
     }
 
     private static Set<List<String>> partition(Set<String> collection, int n) {
