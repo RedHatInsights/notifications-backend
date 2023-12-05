@@ -194,7 +194,7 @@ parameters:
   description: Log level of Notifications
   value: INFO
 - name: NOTIFICATIONS_CONNECTOR_MAX_RECIPIENTS_PER_EMAIL
-  description: Set maximum recipients per email
+  description: If an email has more recipients (to/cc/bcc) than this value, it will be split into several emails with the same content but fewer recipients
   value: "50"
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port, defaulting to the default Clowder private port
