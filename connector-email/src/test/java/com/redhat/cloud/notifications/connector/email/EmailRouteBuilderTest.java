@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.connector.email;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.http.SslTrustAllManager;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import org.apache.camel.Endpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@TestProfile(EmailRouteBuilderTest.class)
 public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     @Inject
     EmailConnectorConfig emailConnectorConfig;

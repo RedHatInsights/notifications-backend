@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.connector.email.processors.bop;
 
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
-import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.connector.email.TestUtils.createUsers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,14 +39,11 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
         // Prepare the properties that the processor expects.
         final String emailSubject = "this is a fake subject";
         final String emailBody = "this is a fake body";
-        final Set<User> users = createUsers("a", "b", "c");
-        final Set<String> emails = Set.of("foo@bar.com", "bar@foo.com");
+        final Set<String> emails = Set.of("foo@bar.com", "bar@foo.com", "a@a.com", "b@b.com", "c@c.com");
 
-        final Exchange exchange = this.createExchangeWithBody("");
+        final Exchange exchange = this.createExchangeWithBody(emails);
         exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailSubject);
         exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailBody);
-        exchange.setProperty(ExchangeProperty.FILTERED_USERS, users);
-        exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
 
         // Call the processor under test.
         this.bopRequestPreparer.process(exchange);
@@ -72,7 +67,7 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
         assertTrue(actualEmail.getJsonArray("ccList").isEmpty());
 
         assertEquals(5, actualEmail.getJsonArray("bccList").size());
-        assertTrue(Set.of("a-email", "b-email", "c-email", "foo@bar.com", "bar@foo.com").stream()
+        assertTrue(Set.of("a@a.com", "b@b.com", "c@c.com", "foo@bar.com", "bar@foo.com").stream()
             .allMatch(bcc -> actualEmail.getJsonArray("bccList").contains(bcc)));
 
         assertEquals("html", actualEmail.getString("bodyType"));

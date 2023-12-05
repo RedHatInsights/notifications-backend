@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
+import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
 import com.redhat.cloud.notifications.connector.email.metrics.EmailMetricsProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
@@ -18,7 +19,6 @@ import java.util.Set;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
-import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.EMAIL_RECIPIENTS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static org.apache.camel.LoggingLevel.INFO;
@@ -65,28 +65,31 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .process(recipientsResolverRequestPreparer)
             .to(emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
             .process(recipientsResolverResponseProcessor)
-            .to(direct(Routes.SEND_EMAIL_BOP));
+            .choice().when(shouldSkipEmail())
+                .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+            .otherwise()
+                .to(direct(Routes.SPLIT_AND_SEND))
+            .end()
+            .to(direct(SUCCESS));
+
+        from(direct(Routes.SPLIT_AND_SEND))
+            .routeId(Routes.SPLIT_AND_SEND)
+            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERS))
+                .to(direct(Routes.SEND_EMAIL_BOP))
+            .end();
 
         from(direct(Routes.SEND_EMAIL_BOP))
             .routeId(Routes.SEND_EMAIL_BOP)
-            .choice()
-                .when(shouldSkipEmail())
-                    // TODO Lower this log level to DEBUG later.
-                    .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-                .otherwise()
-                    // Clear all the headers that may come from the previous route.
-                    .removeHeaders("*")
-                    .process(this.BOPRequestPreparer)
-                    .to(bopEndpoint)
-                    .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-                    .process(emailMetricsProcessor)
-            .end()
-            .to(direct(SUCCESS));
+            // Clear all the headers that may come from the previous route.
+            .removeHeaders("*")
+            .process(this.BOPRequestPreparer)
+            .to(bopEndpoint)
+            .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+            .process(emailMetricsProcessor);
     }
 
     private Predicate shouldSkipEmail() {
-        return exchange -> exchange.getProperty(FILTERED_USERS, Set.class).isEmpty() &&
-            exchange.getProperty(EMAIL_RECIPIENTS, Set.class).isEmpty();
+        return exchange -> exchange.getProperty(FILTERED_USERS, Set.class).isEmpty();
     }
 
     /**

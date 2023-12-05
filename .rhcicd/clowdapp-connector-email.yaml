@@ -91,6 +91,8 @@ objects:
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_URL
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}
+        - name: NOTIFICATIONS_CONNECTOR_MAX_RECIPIENTS_PER_EMAIL
+          value: ${NOTIFICATIONS_CONNECTOR_MAX_RECIPIENTS_PER_EMAIL}
         - name: QUARKUS_HTTP_PORT
           value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -191,7 +193,9 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
-
+- name: NOTIFICATIONS_CONNECTOR_MAX_RECIPIENTS_PER_EMAIL
+  description: If an email has more recipients (to/cc/bcc) than this value, it will be split into several emails with the same content but fewer recipients
+  value: "50"
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port, defaulting to the default Clowder private port
   value: "9000"
