@@ -111,7 +111,7 @@ public class RecipientsListTest extends CamelQuarkusTestSupport {
         MockEndpoint bopRoute = getMockEndpoint("mock:direct:" + SEND_EMAIL_BOP);
 
         splitRoute.expectedMessageCount(1);
-        successEndpoint.expectedMessageCount(0);
+        successEndpoint.expectedMessageCount(1);
         bopRoute.expectedMessageCount(3);
 
         producerTemplate.send("seda:" + ENGINE_TO_CONNECTOR, exchange);
