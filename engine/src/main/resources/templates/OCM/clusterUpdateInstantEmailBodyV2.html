@@ -5,7 +5,7 @@
     Cluster Manager - OpenShift
 {/content-title}
 {#content-title-section1}
-    {#if action.events[0].payload.global_vars.template_sub_type == 'upgrade-scheduled-template'}Upgrade scheduled{#else}Upgrade ended{/if}
+    {action.events[0].payload.title.or(action.events[0].payload.subject.or(""))}
 {/content-title-section1}
 {#content-body-section1}
 {#let global_var=action.events[0].payload.global_vars}
