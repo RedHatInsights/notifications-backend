@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.transformers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
@@ -10,16 +9,12 @@ import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class BaseTransformer {
-
-    @Inject
-    ObjectMapper objectMapper;
 
     // JSON property names' definition.
     public static final String ACCOUNT_ID = "account_id";

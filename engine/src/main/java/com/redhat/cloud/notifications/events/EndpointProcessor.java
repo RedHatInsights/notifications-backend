@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -55,9 +54,6 @@ public class EndpointProcessor {
 
     @Inject
     EmailSubscriptionTypeProcessor emailProcessor;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @Inject
     SlackProcessor slackProcessor;
@@ -130,11 +126,7 @@ public class EndpointProcessor {
                             if (isAggregatorEvent(event)) {
                                 emailProcessor.processAggregation(event);
                             } else {
-                                if (this.featureFlipper.isEmailConnectorEnabled()) {
-                                    emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
-                                } else {
-                                    emailProcessor.process(event, endpointsByTypeEntry.getValue());
-                                }
+                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
                             }
                             break;
                         case WEBHOOK:

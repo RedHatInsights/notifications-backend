@@ -80,20 +80,11 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-mbop-for-fetching-users", defaultValue = "false")
     boolean useMBOPForFetchingUsers;
 
-    @ConfigProperty(name = "notifications.webhook-connector.enabled", defaultValue = "false")
-    boolean webhookConnectorEnabled;
-
-    @ConfigProperty(name = "notifications.email-connector.enabled", defaultValue = "false")
-    boolean emailConnectorEnabled;
-
     @ConfigProperty(name = "notifications.drawer-connector.enabled", defaultValue = "false")
     boolean drawerConnectorEnabled;
 
     @ConfigProperty(name = "notifications.async-aggregation.enabled", defaultValue = "true")
     boolean asyncAggregation;
-
-    @ConfigProperty(name = "processor.email.bop.skip-users-resolution", defaultValue = "false")
-    boolean skipBopUsersResolution;
 
     @ConfigProperty(name = "processor.email.aggregation.use-recipients-resolver-clowdapp.enabled", defaultValue = "false")
     boolean useRecipientsResolverClowdappForDailyDigestEnabled;
@@ -114,11 +105,8 @@ public class FeatureFlipper {
         Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
         Log.infof("Drawer feature is %s", drawerEnabled ? "enabled" : "disabled");
         Log.infof("The use of BOP/MBOP for fetching users is %s", useMBOPForFetchingUsers ? "enabled" : "disabled");
-        Log.infof("The webhook connector is %s", webhookConnectorEnabled ? "enabled" : "disabled");
-        Log.infof("The email connector is %s", emailConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The drawer connector is %s", drawerConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The async aggregation is %s", asyncAggregation ? "enabled" : "disabled");
-        Log.infof("The BOP users resolution is %s", !skipBopUsersResolution ? "enabled" : "disabled");
         Log.infof("The Recipients resolver usage for daily digest is %s", useRecipientsResolverClowdappForDailyDigestEnabled ? "enabled" : "disabled");
     }
 
@@ -244,24 +232,6 @@ public class FeatureFlipper {
         this.useMBOPForFetchingUsers = useMBOPForFetchingUsers;
     }
 
-    public boolean isWebhookConnectorEnabled() {
-        return webhookConnectorEnabled;
-    }
-
-    public void setWebhookConnectorEnabled(boolean webhookConnectorEnabled) {
-        checkTestLaunchMode();
-        this.webhookConnectorEnabled = webhookConnectorEnabled;
-    }
-
-    public boolean isEmailConnectorEnabled() {
-        return this.emailConnectorEnabled;
-    }
-
-    public void setEmailConnectorEnabled(final boolean emailConnectorEnabled) {
-        checkTestLaunchMode();
-        this.emailConnectorEnabled = emailConnectorEnabled;
-    }
-
     public boolean isDrawerConnectorEnabled() {
         return drawerConnectorEnabled;
     }
@@ -278,15 +248,6 @@ public class FeatureFlipper {
     public void setAsyncAggregation(boolean asyncAggregation) {
         checkTestLaunchMode();
         this.asyncAggregation = asyncAggregation;
-    }
-
-    public boolean isSkipBopUsersResolution() {
-        return skipBopUsersResolution;
-    }
-
-    public void setSkipBopUsersResolution(boolean skipBopUsersResolution) {
-        checkTestLaunchMode();
-        this.skipBopUsersResolution = skipBopUsersResolution;
     }
 
     public boolean isUseRecipientsResolverClowdappForDailyDigestEnabled() {

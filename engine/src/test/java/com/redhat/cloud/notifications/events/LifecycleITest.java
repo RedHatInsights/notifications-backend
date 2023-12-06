@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
-import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -27,35 +26,34 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.processors.email.EmailSender;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
+import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
+import io.smallrye.reactive.messaging.memory.InMemorySink;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.mockserver.model.HttpRequest;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
-import static com.redhat.cloud.notifications.ReflectionHelper.updateField;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.PROCESSED_ENDPOINTS_COUNTER_NAME;
@@ -66,10 +64,12 @@ import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -86,7 +86,6 @@ public class LifecycleITest {
     private static final String BUNDLE_NAME = "my-bundle";
     private static final String EVENT_TYPE_NAME = "all";
     private static final String WEBHOOK_MOCK_PATH = "/test/lifecycle";
-    private static final String EMAIL_SENDER_MOCK_PATH = "/test-email-sender/lifecycle";
     private static final String SECRET_TOKEN = "super-secret-token";
 
     @Inject
@@ -98,10 +97,6 @@ public class LifecycleITest {
 
     @InjectMock
     RbacRecipientUsersProvider rbacRecipientUsersProvider;
-
-    // InjectSpy allows us to update the fields via reflection (Inject does not)
-    @InjectSpy
-    EmailSender emailSender;
 
     @Inject
     EntityManager entityManager;
@@ -121,7 +116,7 @@ public class LifecycleITest {
         Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
         Application app = resourceHelpers.createApp(bundle.getId(), APP_NAME);
         EventType eventType = resourceHelpers.createEventType(app.getId(), EVENT_TYPE_NAME);
-        setupEmailMock(accountId, username);
+        setupEmailMock(username);
 
         // We also need behavior groups.
         BehaviorGroup behaviorGroup1 = createBehaviorGroup(accountId, bundle);
@@ -154,9 +149,9 @@ public class LifecycleITest {
         pushMessage(2, 0, 0, 0);
 
         // Let's check the notifications history.
-        retry(() -> checkEndpointHistory(endpoint1, 1, true));
-        retry(() -> checkEndpointHistory(endpoint2, 1, true));
-        retry(() -> checkEndpointHistory(emailEndpoint, 0, true));
+        retry(() -> checkEndpointHistory(endpoint1, 1));
+        retry(() -> checkEndpointHistory(endpoint2, 1));
+        retry(() -> checkEndpointHistory(emailEndpoint, 0));
 
         // We'll link the event type with the default behavior group
         addEventTypeBehavior(eventType.getId(), defaultBehaviorGroup.getId());
@@ -168,10 +163,10 @@ public class LifecycleITest {
         pushMessage(3, 1, 0, 0);
 
         // Let's check the notifications history again.
-        retry(() -> checkEndpointHistory(endpoint1, 2, true));
-        retry(() -> checkEndpointHistory(endpoint2, 2, true));
-        retry(() -> checkEndpointHistory(endpoint3, 1, false));
-        retry(() -> checkEndpointHistory(emailEndpoint, 0, true));
+        retry(() -> checkEndpointHistory(endpoint1, 2));
+        retry(() -> checkEndpointHistory(endpoint2, 2));
+        retry(() -> checkEndpointHistory(endpoint3, 1));
+        retry(() -> checkEndpointHistory(emailEndpoint, 0));
 
         // Lets subscribe the user to the email preferences
         subscribeUserPreferences(username, eventType.getId());
@@ -180,10 +175,10 @@ public class LifecycleITest {
         pushMessage(3, 1, 1, 0);
 
         // Let's check the notifications history again.
-        retry(() -> checkEndpointHistory(endpoint1, 3, true));
-        retry(() -> checkEndpointHistory(endpoint2, 3, true));
-        retry(() -> checkEndpointHistory(endpoint3, 2, false));
-        retry(() -> checkEndpointHistory(emailEndpoint, 1, true));
+        retry(() -> checkEndpointHistory(endpoint1, 3));
+        retry(() -> checkEndpointHistory(endpoint2, 3));
+        retry(() -> checkEndpointHistory(endpoint3, 2));
+        retry(() -> checkEndpointHistory(emailEndpoint, 1));
 
         /*
          * Let's change the behavior group actions configuration by adding an action to the second behavior group.
@@ -195,10 +190,10 @@ public class LifecycleITest {
         pushMessage(3, 1, 1, 0);
 
         // Let's check the notifications history again.
-        retry(() -> checkEndpointHistory(endpoint1, 4, true));
-        retry(() -> checkEndpointHistory(endpoint2, 4, true));
-        retry(() -> checkEndpointHistory(endpoint3, 3, false));
-        retry(() -> checkEndpointHistory(emailEndpoint, 2, true));
+        retry(() -> checkEndpointHistory(endpoint1, 4));
+        retry(() -> checkEndpointHistory(endpoint2, 4));
+        retry(() -> checkEndpointHistory(endpoint3, 3));
+        retry(() -> checkEndpointHistory(emailEndpoint, 2));
 
         /*
          * What happens if we unlink the event type from the behavior groups?
@@ -210,10 +205,10 @@ public class LifecycleITest {
         pushMessage(0, 0, 0, 0);
 
         // The notifications history should be exactly the same than last time.
-        retry(() -> checkEndpointHistory(endpoint1, 4, true));
-        retry(() -> checkEndpointHistory(endpoint2, 4, true));
-        retry(() -> checkEndpointHistory(endpoint3, 3, false));
-        retry(() -> checkEndpointHistory(emailEndpoint, 2, true));
+        retry(() -> checkEndpointHistory(endpoint1, 4));
+        retry(() -> checkEndpointHistory(endpoint2, 4));
+        retry(() -> checkEndpointHistory(endpoint3, 3));
+        retry(() -> checkEndpointHistory(emailEndpoint, 2));
 
         // Linking the default behavior group again
         addEventTypeBehavior(eventType.getId(), defaultBehaviorGroup.getId());
@@ -304,17 +299,8 @@ public class LifecycleITest {
 
         micrometerAssertionHelper.saveCounterValuesBeforeTest(REJECTED_COUNTER_NAME, PROCESSING_EXCEPTION_COUNTER_NAME, PROCESSED_MESSAGES_COUNTER_NAME, PROCESSED_ENDPOINTS_COUNTER_NAME);
 
-        Runnable waitForWebhooks = setupCountdownCalls(
-                expectedWebhookCalls,
-                "HttpServer never received the requests",
-                this::setupWebhookMock
-        );
-
-        Runnable waitForEmails = setupCountdownCalls(
-                expectedSentEmails,
-                "Emails were never sent",
-                this::setupEmailMockServer
-        );
+        InMemorySink<JsonObject> inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
+        inMemorySink.clear();
 
         try {
             emitMockedIngressAction();
@@ -322,8 +308,18 @@ public class LifecycleITest {
             throw new UncheckedIOException(e);
         }
 
-        waitForWebhooks.run();
-        waitForEmails.run();
+        await().until(() -> inMemorySink.received().size() == expectedWebhookCalls + expectedSentEmails);
+
+        Map<String, Long> messagesCountByConnectorHeader = inMemorySink.received().stream()
+                .collect(Collectors.groupingBy(this::extractConnectorHeader, Collectors.counting()));
+
+        if (expectedWebhookCalls > 0) {
+            assertEquals(expectedWebhookCalls, messagesCountByConnectorHeader.get("webhook"), "HttpServer never received the requests");
+        }
+
+        if (expectedSentEmails > 0) {
+            assertEquals(expectedSentEmails, messagesCountByConnectorHeader.get("email_subscription"), "Emails were never sent");
+        }
 
         /*
          * If the message isn't supposed to trigger any notification, we need to wait a bit
@@ -344,28 +340,12 @@ public class LifecycleITest {
         micrometerAssertionHelper.clearSavedValues();
     }
 
-    private Runnable setupCountdownCalls(int expected, String failMessage, Function<CountDownLatch, HttpRequest> setup) {
-        CountDownLatch requestCounter = new CountDownLatch(expected);
-        final HttpRequest request;
-
-        if (expected > 0) {
-            request = setup.apply(requestCounter);
-        } else {
-            request = null;
-        }
-
-        return () -> {
-            if (expected > 0) {
-                try {
-                    if (!requestCounter.await(30, TimeUnit.SECONDS)) {
-                        fail(failMessage);
-                    }
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
-                }
-                MockServerLifecycleManager.getClient().clear(request);
-            }
-        };
+    private String extractConnectorHeader(Message<JsonObject> message) {
+        byte[] actualConnectorHeader = message.getMetadata(KafkaMessageMetadata.class)
+                .get()
+                .getHeaders().headers(X_RH_NOTIFICATIONS_CONNECTOR_HEADER)
+                .iterator().next().value();
+        return new String(actualConnectorHeader, UTF_8);
     }
 
     private void emitMockedIngressAction() throws IOException {
@@ -390,7 +370,7 @@ public class LifecycleITest {
         inMemoryConnector.source("ingress").send(serializedAction);
     }
 
-    private void setupEmailMock(String accountId, String username) {
+    private void setupEmailMock(String username) {
         resourceHelpers.createBlankInstantEmailTemplate(BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
 
         User user = new User();
@@ -405,52 +385,6 @@ public class LifecycleITest {
                 eq(DEFAULT_ORG_ID),
                 eq(true)
         )).thenReturn(List.of(user));
-
-        updateField(
-                emailSender,
-                "bopUrl",
-                getMockServerUrl() + EMAIL_SENDER_MOCK_PATH,
-                EmailSender.class
-        );
-    }
-
-    private HttpRequest setupEmailMockServer(CountDownLatch requestsCounter) {
-        HttpRequest expectedRequestPattern = new HttpRequest()
-                .withPath(EMAIL_SENDER_MOCK_PATH)
-                .withMethod("POST");
-
-        MockServerLifecycleManager.getClient()
-                .withSecure(false)
-                .when(expectedRequestPattern)
-                .respond(request -> {
-                    requestsCounter.countDown();
-                    return response().withStatusCode(200).withBody("Success");
-                });
-
-        return expectedRequestPattern;
-    }
-
-    private HttpRequest setupWebhookMock(CountDownLatch requestsCounter) {
-        HttpRequest expectedRequestPattern = new HttpRequest()
-                .withPath(WEBHOOK_MOCK_PATH)
-                .withMethod("POST");
-
-        MockServerLifecycleManager.getClient()
-                .withSecure(false)
-                .when(expectedRequestPattern)
-                .respond(request -> {
-                    requestsCounter.countDown();
-                    List<String> header = request.getHeader("X-Insight-Token");
-                    if (header != null && header.size() == 1 && SECRET_TOKEN.equals(header.get(0))) {
-                        return response().withStatusCode(200)
-                                .withBody("Success");
-                    } else {
-                        return response().withStatusCode(400)
-                                .withBody("{ \"message\": \"Time is running out\" }");
-                    }
-                });
-
-        return expectedRequestPattern;
     }
 
     @Transactional
@@ -479,10 +413,9 @@ public class LifecycleITest {
     }
 
     @Transactional
-    boolean checkEndpointHistory(Endpoint endpoint, int expectedHistoryEntries, boolean expectedInvocationResult) {
-        return entityManager.createQuery("FROM NotificationHistory WHERE endpoint = :endpoint AND invocationResult = :invocationResult", NotificationHistory.class)
+    boolean checkEndpointHistory(Endpoint endpoint, int expectedHistoryEntries) {
+        return entityManager.createQuery("FROM NotificationHistory WHERE endpoint = :endpoint", NotificationHistory.class)
                 .setParameter("endpoint", endpoint)
-                .setParameter("invocationResult", expectedInvocationResult)
                 .getResultList().size() == expectedHistoryEntries;
     }
 

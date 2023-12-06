@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,9 +29,6 @@ public class EndpointErrorFromConnectorHelper {
 
     @ConfigProperty(name = "processor.webhook.max-server-errors", defaultValue = "10")
     int maxServerErrors;
-
-    @Inject
-    NotificationHistoryRepository notificationHistoryRepository;
 
     private Counter disabledWebhooksServerErrorCount;
     private Counter disabledWebhooksClientErrorCount;
