@@ -97,7 +97,5 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     void setupMockEngine(Map<String, String> props) {
         MockServerLifecycleManager.start();
         props.put("quarkus.rest-client.export-service.url", getMockServerUrl());
-        props.put("quarkus.rest-client.rbac-s2s.url", getMockServerUrl());
-        props.put("quarkus.rest-client.it-s2s.url", getMockServerUrl());
     }
 }

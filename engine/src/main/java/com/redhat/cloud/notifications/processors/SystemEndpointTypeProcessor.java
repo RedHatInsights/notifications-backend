@@ -5,13 +5,14 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
-import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import jakarta.inject.Inject;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,7 +24,7 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
     SubscriptionRepository subscriptionRepository;
 
     @Inject
-    RecipientResolver recipientResolver;
+    ExternalRecipientsResolver externalRecipientsResolver;
 
     protected Set<User> getRecipientList(Event event, List<Endpoint> endpoints, SubscriptionType subscriptionType) {
         EventType eventType = event.getEventType();
@@ -31,14 +32,17 @@ public abstract class SystemEndpointTypeProcessor extends EndpointTypeProcessor 
         final Set<RecipientSettings> requests = extractRecipientSettings(event, endpoints);
 
         Set<String> subscribers;
+        Set<String> unsubscribers;
         if (subscriptionType.isSubscribedByDefault()) {
-            subscribers = Set.copyOf(subscriptionRepository
+            subscribers = Collections.emptySet();
+            unsubscribers = Set.copyOf(subscriptionRepository
                     .getUnsubscribers(event.getOrgId(), eventType.getId(), subscriptionType));
         } else {
             subscribers = Set.copyOf(subscriptionRepository
                     .getSubscribers(event.getOrgId(), eventType.getId(), subscriptionType));
+            unsubscribers = Collections.emptySet();
         }
-        return recipientResolver.recipientUsers(event.getOrgId(), requests, subscribers, subscriptionType.isSubscribedByDefault());
+        return externalRecipientsResolver.recipientUsers(event.getOrgId(), requests, subscribers, unsubscribers, subscriptionType.isSubscribedByDefault());
     }
 
     /**
