@@ -44,7 +44,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
 
     @Test
     public void testUpgradeScheduledInstantEmailBody() {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "upgrade-scheduled-template", null);
+        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "upgrade-scheduled-template", "Upgrade scheduled");
         String result = generateEmailBody(CLUSTER_UPDATE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Upgrade scheduled"));
@@ -58,7 +58,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", "upgrade-ended-template", null);
         String result = generateEmailBody(CLUSTER_UPDATE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains("Upgrade ended"));
+        assertTrue(result.contains("Awesome subject"));
         assertTrue(result.contains(((Map<String, String>) action.getEvents().get(0).getPayload().getAdditionalProperties().get("global_vars")).get("log_description")));
         assertFalse(result.contains("What can you expect"));
         assertTrue(result.contains("Thank you for choosing Red Hat OpenShift Service on AWS."));
@@ -70,6 +70,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         Action action = OcmTestHelpers.createOcmAction("Batcave", "OSD", "<b>Batmobile</b> need a revision", "Awesome subject");
         String result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("Awesome subject"));
         assertTrue(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
@@ -84,6 +85,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject");
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("Awesome subject"));
         assertTrue(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
@@ -99,6 +101,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial creation"));
+        assertFalse(result.contains("Awesome subject"));
         assertFalse(result.contains("This notification is for your"));
         assertTrue(result.contains("Welcome to your OpenShift Dedicated"));
         assertTrue(result.contains("We are notifying you about your"));
@@ -114,6 +117,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial reminder"));
+        assertFalse(result.contains("Awesome subject"));
         assertFalse(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertTrue(result.contains("We are notifying you about your"));
@@ -129,6 +133,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial delete"));
+        assertFalse(result.contains("Awesome subject"));
         assertFalse(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
