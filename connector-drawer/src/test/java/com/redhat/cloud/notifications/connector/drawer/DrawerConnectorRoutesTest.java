@@ -98,6 +98,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         drawerEntryPayload.setId(UUID.fromString("3ccfb747-610d-42e9-97de-05d43d07319d"));
         drawerEntryPayload.setSource("My app");
         drawerEntryPayload.setTitle("the title");
+        drawerEntryPayload.setBundle("My Bundle");
 
         RecipientSettings recipientSettings = new RecipientSettings();
         return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings), List.of("user-1", "user-2"));
@@ -245,6 +246,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
             assertNotNull(secondPayloadLevel.getString("id"));
             assertNotEquals(payload.getString("id"), secondPayloadLevel.getString("id"));
             assertEquals(false, secondPayloadLevel.getBoolean("read"));
+            assertEquals("My Bundle", secondPayloadLevel.getString("bundle"));
 
             assertEquals(notification.drawerEntryPayload().getDescription(), secondPayloadLevel.getString("description"));
             assertEquals(notification.drawerEntryPayload().getSource(), secondPayloadLevel.getString("source"));

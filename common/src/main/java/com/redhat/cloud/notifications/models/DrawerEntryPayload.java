@@ -29,6 +29,8 @@ public class DrawerEntryPayload {
 
     private String source;
 
+    private String bundle;
+
     public DrawerEntryPayload() {
     }
 
@@ -39,6 +41,7 @@ public class DrawerEntryPayload {
         title = (String) rawDrawerEntry[4];
         created = (LocalDateTime) rawDrawerEntry[5];
         description = (String) rawDrawerEntry[6];
+        bundle = (String) rawDrawerEntry[7];
     }
 
     public UUID getId() {
@@ -87,5 +90,13 @@ public class DrawerEntryPayload {
 
     public void setSource(String source) {
         this.source = source;
+    }
+
+    public String getBundle() {
+        return bundle;
+    }
+
+    public void setBundle(String bundle) {
+        this.bundle = bundle;
     }
 }
