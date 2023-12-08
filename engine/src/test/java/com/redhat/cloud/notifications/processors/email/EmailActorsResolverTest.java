@@ -8,12 +8,14 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER;
+import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_PROD;
+import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_STAGE;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.RH_INSIGHTS_SENDER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 public class EmailActorsResolverTest {
+
     @Inject
     EmailActorsResolver emailActorsResolver;
 
@@ -27,10 +29,24 @@ public class EmailActorsResolverTest {
     }
 
     /**
-     * Tests that the OpenShift sender is returned for OCM events.
+     * Tests that the OpenShift sender is returned for OCM events originating from the stage source environment.
      */
     @Test
-    void testOpenshiftClusterManagerEmailSender() {
+    void testOpenshiftClusterManagerStageEmailSender() {
+        Event event = buildOCMEvent("stage");
+        assertEquals(OPENSHIFT_SENDER_STAGE, this.emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+    }
+
+    /**
+     * Tests that the OpenShift sender is returned for OCM events originating from source environments other than stage.
+     */
+    @Test
+    void testOpenshiftClusterManagerDefaultEmailSender() {
+        Event event = buildOCMEvent("prod");
+        assertEquals(OPENSHIFT_SENDER_PROD, this.emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+    }
+
+    private static Event buildOCMEvent(String sourceEnvironment) {
 
         Bundle bundle = new Bundle();
         bundle.setName("openshift");
@@ -44,7 +60,8 @@ public class EmailActorsResolverTest {
 
         Event event = new Event();
         event.setEventType(eventType);
+        event.setSourceEnvironment(sourceEnvironment);
 
-        assertEquals(OPENSHIFT_SENDER, this.emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        return event;
     }
 }
