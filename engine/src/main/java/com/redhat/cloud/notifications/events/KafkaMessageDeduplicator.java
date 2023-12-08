@@ -5,21 +5,15 @@ import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
-import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
-import org.apache.kafka.common.header.Header;
-import org.eclipse.microprofile.reactive.messaging.Message;
 
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
 public class KafkaMessageDeduplicator {
@@ -49,47 +43,30 @@ public class KafkaMessageDeduplicator {
     }
 
     /**
-     * Extracts the message ID from a Kafka message header value. If multiple header values are available, the first one
+     * Validates the message ID retrieved from the Kafka message headers. If multiple header values are available, the first one
      * will be used and the other ones will be ignored. An invalid header value will be counted and logged, but won't
      * interrupt the message processing: the deduplication will be disabled for the message.
+     * @deprecated The rh-message-id header will be replaced by the cloud events or actions id field soon.
      */
-    public UUID findMessageId(EventTypeKey eventTypeKey, Message<String> message) {
-        boolean found = false;
-        Optional<KafkaMessageMetadata> metadata = message.getMetadata(KafkaMessageMetadata.class);
-        if (metadata.isPresent()) {
-            Iterator<Header> headers = metadata.get().getHeaders().headers(MESSAGE_ID_HEADER).iterator();
-            if (headers.hasNext()) {
-                found = true;
-                Header header = headers.next();
-                if (header.value() == null) {
-                    invalidMessageIdCounter.increment();
-                    Log.warnf("Application sent an EventType(%s) with an invalid Kafka header [%s=null]. They must change their " +
-                                    "integration and send a non-null value.", eventTypeKey, MESSAGE_ID_HEADER);
-                } else {
-                    String headerValue = new String(header.value(), UTF_8);
-                    try {
-                        UUID messageId = UUID.fromString(headerValue);
-                        // If the UUID version is 4, then its 15th character has to be "4".
-                        if (!headerValue.substring(14, 15).equals(ACCEPTED_UUID_VERSION)) {
-                            throw new IllegalArgumentException("Wrong UUID version received");
-                        }
-                        validMessageIdCounter.increment();
-                        Log.tracef("Application sent an EventType(%s) with a valid Kafka header [%s=%s]",
-                                eventTypeKey, MESSAGE_ID_HEADER, headerValue);
-                        return messageId;
-                    } catch (IllegalArgumentException e) {
-                        invalidMessageIdCounter.increment();
-                        Log.warnf("Application sent an EventType(%s) with an invalid Kafka header [%s=%s]. They must change their " +
-                                "integration and send a valid UUID (version 4).", eventTypeKey, MESSAGE_ID_HEADER, headerValue);
-                    }
+    @Deprecated(forRemoval = true)
+    public UUID validateMessageId(EventTypeKey eventTypeKey, Optional<String> messageIdHeader) {
+        if (messageIdHeader.isPresent()) {
+            try {
+                UUID messageId = UUID.fromString(messageIdHeader.get());
+                // If the UUID version is 4, then its 15th character has to be "4".
+                if (!messageIdHeader.get().substring(14, 15).equals(ACCEPTED_UUID_VERSION)) {
+                    throw new IllegalArgumentException("Wrong UUID version received");
                 }
+                validMessageIdCounter.increment();
+                Log.tracef("Application sent an EventType(%s) with a valid Kafka header [%s=%s]",
+                        eventTypeKey, MESSAGE_ID_HEADER, messageIdHeader.get());
+                return messageId;
+            } catch (IllegalArgumentException e) {
+                invalidMessageIdCounter.increment();
+                Log.warnf("Application sent an EventType(%s) with an invalid Kafka header [%s=%s]. They must change their " +
+                        "integration and send a valid UUID (version 4).", eventTypeKey, MESSAGE_ID_HEADER, messageIdHeader.get());
             }
-            if (headers.hasNext()) {
-                Log.warnf("Application sent an EventType(%s) with multiple Kafka headers [%s]. They must change their " +
-                                "integration and send only one value.", eventTypeKey, MESSAGE_ID_HEADER);
-            }
-        }
-        if (!found) {
+        } else {
             missingMessageIdCounter.increment();
             Log.tracef("Application sent an EventType(%s) but did not send any Kafka header [%s]",
                     eventTypeKey, MESSAGE_ID_HEADER);

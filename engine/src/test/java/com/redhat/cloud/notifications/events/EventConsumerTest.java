@@ -287,14 +287,14 @@ public class EventConsumerTest {
                 TAG_KEY_APPLICATION, action.getApplication(),
                 TAG_KEY_EVENT_TYPE_FQN, ""
         ).count());
-        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_INVALID_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);

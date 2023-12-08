@@ -49,6 +49,7 @@ public class EventConsumer {
     static final String TAG_KEY_EVENT_TYPE_FQN = "event-type-fqn";
 
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for key: %s";
+    private static final String SOURCE_ENVIRONMENT_HEADER = "rh-source-environment";
 
     @Inject
     MeterRegistry registry;
@@ -70,6 +71,9 @@ public class EventConsumer {
 
     @Inject
     CloudEventTransformerFactory cloudEventTransformerFactory;
+
+    @Inject
+    KafkaHeadersExtractor kafkaHeadersExtractor;
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
@@ -107,6 +111,11 @@ public class EventConsumer {
              * we now have a bundle/app/eventType triplet or a fully qualified name for the event type.
              */
 
+            Map<String, Optional<String>> kafkaHeaders = kafkaHeadersExtractor.extract(message,
+                    MESSAGE_ID_HEADER,
+                    SOURCE_ENVIRONMENT_HEADER
+            );
+
             /*
              * Step 2
              * The message ID is extracted from the event data - if it is not present we fallback to the kafka headers
@@ -114,7 +123,7 @@ public class EventConsumer {
              * apps time to change their integration and start sending the new header. The message ID will become
              * mandatory with cloud events. We may want to throw an exception when it is null.
              */
-            final UUID messageId = getMessageId(eventWrapper, message);
+            final UUID messageId = getMessageId(eventWrapper, kafkaHeaders.get(MESSAGE_ID_HEADER));
 
             String msgId = messageId == null ? "null" : messageId.toString();
             Log.infof("Processing received event [id=%s, %s=%s, orgId=%s, %s]",
@@ -178,7 +187,8 @@ public class EventConsumer {
                  * Step 6
                  * The EventType was found. It's time to create an Event from the current message and persist it.
                  */
-                Event event = new Event(eventType, payload, eventWrapperToProcess);
+                Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
+                Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader);
                 if (event.getId() == null) {
                     // NOTIF-499 If there is no ID provided whatsoever we create one.
                     event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
@@ -241,10 +251,10 @@ public class EventConsumer {
         }
     }
 
-    private UUID getMessageId(EventWrapper<?, ?> eventWrapper, Message<String> message) {
+    private UUID getMessageId(EventWrapper<?, ?> eventWrapper, Optional<String> messageIdHeader) {
         UUID messageId = eventWrapper.getId();
         if (messageId == null) {
-            messageId = kafkaMessageDeduplicator.findMessageId(eventWrapper.getKey(), message);
+            messageId = kafkaMessageDeduplicator.validateMessageId(eventWrapper.getKey(), messageIdHeader);
         }
 
         return messageId;

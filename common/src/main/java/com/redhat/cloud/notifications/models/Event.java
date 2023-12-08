@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -74,15 +75,20 @@ public class Event {
 
     private String renderedDrawerNotification;
 
+    private String sourceEnvironment;
+
     @Transient
     private EventWrapper<?, ?> eventWrapper;
 
     public Event() { }
 
-    public Event(EventType eventType, String payload, EventWrapper<?, ?> eventWrapper) {
+    public Event(EventType eventType, String payload, EventWrapper<?, ?> eventWrapper, Optional<String> sourceEnvironment) {
         this(eventWrapper.getAccountId(), eventWrapper.getOrgId(), eventType, eventWrapper.getId());
         this.payload = payload;
         this.eventWrapper = eventWrapper;
+        if (sourceEnvironment.isPresent()) {
+            this.sourceEnvironment = sourceEnvironment.get();
+        }
     }
 
     public Event(String accountId, String orgId, EventType eventType, UUID eventId) {
@@ -234,6 +240,14 @@ public class Event {
 
     public void setRenderedDrawerNotification(String renderedDrawerNotification) {
         this.renderedDrawerNotification = renderedDrawerNotification;
+    }
+
+    public String getSourceEnvironment() {
+        return sourceEnvironment;
+    }
+
+    public void setSourceEnvironment(String sourceEnvironment) {
+        this.sourceEnvironment = sourceEnvironment;
     }
 
     @Override
