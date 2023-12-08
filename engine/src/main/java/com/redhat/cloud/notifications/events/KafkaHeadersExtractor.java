@@ -6,7 +6,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.kafka.common.header.Header;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -18,19 +17,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class KafkaHeadersExtractor {
 
     public <T> Map<String, Optional<String>> extract(Message<T> message, String... headerKeys) {
-        if (headerKeys.length == 0) {
-            return Collections.emptyMap();
-        } else {
-            Map<String, Optional<String>> headers = new HashMap<>();
+        Map<String, Optional<String>> headers = new HashMap<>();
+        if (headerKeys.length > 0) {
             Optional<KafkaMessageMetadata> metadata = message.getMetadata(KafkaMessageMetadata.class);
             if (metadata.isPresent()) {
                 for (String headerKey : headerKeys) {
                     Iterator<Header> headerValues = metadata.get().getHeaders().headers(headerKey).iterator();
                     if (headerValues.hasNext()) {
                         Header header = headerValues.next();
-                        if (header.value() == null) {
-                            headers.put(headerKey, Optional.empty());
-                        } else {
+                        if (header.value() != null) {
                             String headerValue = new String(header.value(), UTF_8);
                             headers.put(headerKey, Optional.of(headerValue));
                         }
@@ -40,12 +35,14 @@ public class KafkaHeadersExtractor {
                                     headerKey,
                                     message.getPayload());
                         }
-                    } else {
-                        headers.put(headerKey, Optional.empty());
                     }
                 }
             }
-            return headers;
         }
+        // The returned Map always contains all header keys to prevent NPE.
+        for (String headerKey : headerKeys) {
+            headers.putIfAbsent(headerKey, Optional.empty());
+        }
+        return headers;
     }
 }
