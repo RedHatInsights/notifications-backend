@@ -123,7 +123,7 @@ public class EventConsumer {
              * apps time to change their integration and start sending the new header. The message ID will become
              * mandatory with cloud events. We may want to throw an exception when it is null.
              */
-            final UUID messageId = getMessageId(eventWrapper, kafkaHeaders);
+            final UUID messageId = getMessageId(eventWrapper, kafkaHeaders.get(MESSAGE_ID_HEADER));
 
             String msgId = messageId == null ? "null" : messageId.toString();
             Log.infof("Processing received event [id=%s, %s=%s, orgId=%s, %s]",
@@ -251,10 +251,9 @@ public class EventConsumer {
         }
     }
 
-    private UUID getMessageId(EventWrapper<?, ?> eventWrapper, Map<String, Optional<String>> kafkaHeaders) {
+    private UUID getMessageId(EventWrapper<?, ?> eventWrapper, Optional<String> messageIdHeader) {
         UUID messageId = eventWrapper.getId();
         if (messageId == null) {
-            Optional<String> messageIdHeader = kafkaHeaders.get(MESSAGE_ID_HEADER);
             messageId = kafkaMessageDeduplicator.validateMessageId(eventWrapper.getKey(), messageIdHeader);
         }
 
