@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.User;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -40,6 +41,13 @@ public class RecipientsResolverResponseProcessor implements Processor {
             .stream().map(User::getEmail).collect(toSet());
 
         Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
+        if (emailConnectorConfig.isEmailsInternalOnlyEnabled()) {
+            Set<String> forbiddenEmail = emails.stream().filter(email -> !email.trim().toLowerCase().endsWith("@redhat.com")).collect(Collectors.toSet());
+            if (!forbiddenEmail.isEmpty()) {
+                Log.warnf(" %s emails are forbidden for message historyId: %s ", forbiddenEmail, exchange.getProperty(com.redhat.cloud.notifications.connector.ExchangeProperty.ID, String.class));
+            }
+            emails.removeAll(forbiddenEmail);
+        }
         recipientsList.addAll(emails);
 
         // We have to remove one from the limit, because a default recipient (like noreply@redhat.com) will be automatically added

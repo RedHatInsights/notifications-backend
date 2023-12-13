@@ -20,10 +20,10 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_CLIENT_ID = "notifications.connector.user-provider.bop.client_id";
     private static final String BOP_ENV = "notifications.connector.user-provider.bop.env";
     private static final String BOP_URL = "notifications.connector.user-provider.bop.url";
-
     private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
-
     private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
+
+    private static final String NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED = "notifications.emails-internal-only.enabled";
 
     @ConfigProperty(name = BOP_API_TOKEN)
     String bopApiToken;
@@ -43,6 +43,9 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = MAX_RECIPIENTS_PER_EMAIL, defaultValue = "50")
     int maxRecipientsPerEmail;
 
+    @ConfigProperty(name = NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, defaultValue = "false")
+    boolean emailsInternalOnlyEnabled;
+
     @Override
     protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = super.getLoggedConfiguration();
@@ -56,6 +59,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(BOP_URL, this.bopURL);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
+        config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
 
         /*
          * /!\ WARNING /!\
@@ -87,5 +91,9 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     public int getMaxRecipientsPerEmail() {
         return maxRecipientsPerEmail;
+    }
+
+    public boolean isEmailsInternalOnlyEnabled() {
+        return emailsInternalOnlyEnabled;
     }
 }
