@@ -33,6 +33,7 @@ public class SettingsValuesByEventType {
         public String displayName;
         public Map<SubscriptionType, Boolean> emailSubscriptionTypes = new HashMap<>();
         public boolean hasForcedEmail;
+        public boolean subscriptionLocked;
     }
 
     public Map<String, BundleSettingsValue> bundles = new HashMap<>();

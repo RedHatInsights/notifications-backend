@@ -293,7 +293,7 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static EventType buildEventType(String appId, String name, String displayName, String description, boolean subscribedByDefault) {
+    public static EventType buildEventType(String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked) {
         EventType eventType = new EventType();
         if (appId != null) {
             eventType.setApplicationId(UUID.fromString(appId));
@@ -302,11 +302,12 @@ public abstract class CrudTestHelpers {
         eventType.setDisplayName(displayName);
         eventType.setDescription(description);
         eventType.setSubscribedByDefault(subscribedByDefault);
+        eventType.setSubscriptionLocked(subscriptionLocked);
         return eventType;
     }
 
-    public static Optional<String> createEventType(Header identity, String appId, String name, String displayName, String description, boolean subscribedByDefault, int expectedStatusCode) {
-        EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault);
+    public static Optional<String> createEventType(Header identity, String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, int expectedStatusCode) {
+        EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault, subscriptionLocked);
         return createEventType(identity, eventType, expectedStatusCode);
     }
 
@@ -331,6 +332,7 @@ public abstract class CrudTestHelpers {
             assertEquals(eventType.getDisplayName(), jsonEventType.getString("display_name"));
             assertEquals(eventType.getDescription(), jsonEventType.getString("description"));
             assertEquals(eventType.isSubscribedByDefault(), jsonEventType.getBoolean("subscribed_by_default"));
+            assertEquals(eventType.isSubscriptionLocked(), jsonEventType.getBoolean("subscription_locked"));
 
             return Optional.of(jsonEventType.getString("id"));
         } else {
@@ -360,8 +362,8 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void updateEventType(Header identity, String appId, String eventTypeId, String name, String displayName, String description, boolean subscribedByDefault, int expectedStatusCode) {
-        EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault);
+    public static void updateEventType(Header identity, String appId, String eventTypeId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, int expectedStatusCode) {
+        EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault, subscriptionLocked);
 
         given()
                 .contentType(JSON)
@@ -392,6 +394,7 @@ public abstract class CrudTestHelpers {
                     assertEquals(eventType.getDisplayName(), jsonEventType.getString("display_name"));
                     assertEquals(eventType.getDescription(), jsonEventType.getString("description"));
                     assertEquals(eventType.isSubscribedByDefault(), jsonEventType.getBoolean("subscribed_by_default"));
+                    assertEquals(eventType.isSubscriptionLocked(), jsonEventType.getBoolean("subscription_locked"));
                     break;
                 }
                 if (i == jsonEventTypes.size() - 1) {

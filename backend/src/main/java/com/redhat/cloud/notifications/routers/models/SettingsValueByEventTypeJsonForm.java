@@ -33,6 +33,7 @@ public class SettingsValueByEventTypeJsonForm {
         public String checkedWarning;
         @JsonInclude(Include.NON_NULL)
         public String infoMessage;
+        public boolean disabled;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
@@ -91,6 +92,7 @@ public class SettingsValueByEventTypeJsonForm {
                 field.initialValue = isSubscribed;
                 field.validate = List.of();
                 field.component = COMPONENT_SUBSCRIPTION;
+                field.disabled = eventTypeSettingsValue.subscriptionLocked;
                 switch (subscriptionType) {
                     case DAILY:
                         field.label = "Daily digest";

@@ -17,6 +17,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -79,6 +80,8 @@ public class EventType {
     private boolean visible = true;
 
     private boolean subscribedByDefault;
+
+    private boolean subscriptionLocked;
 
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
     @JsonIgnore
@@ -170,6 +173,19 @@ public class EventType {
 
     public void setSubscribedByDefault(boolean subscribedByDefault) {
         this.subscribedByDefault = subscribedByDefault;
+    }
+
+    public boolean isSubscriptionLocked() {
+        return subscriptionLocked;
+    }
+
+    public void setSubscriptionLocked(boolean subscriptionLocked) {
+        this.subscriptionLocked = subscriptionLocked;
+    }
+
+    @AssertTrue(message = "The subscription of an event type can only be locked if the event type is subscribed by default")
+    private boolean isNotSubscriptionLockedOrSubscribedByDefault() {
+        return !subscriptionLocked || subscribedByDefault;
     }
 
     @Override

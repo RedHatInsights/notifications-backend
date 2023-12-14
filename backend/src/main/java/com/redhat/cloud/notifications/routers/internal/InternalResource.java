@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.db.repositories.StatusRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -121,6 +122,9 @@ public class InternalResource {
 
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
+
+    @Inject
+    SubscriptionRepository subscriptionRepository;
 
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
     @GET
@@ -362,6 +366,7 @@ public class InternalResource {
         if (rowCount == 0) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else {
+            subscriptionRepository.resubscribeAllUsersIfNeeded(eventTypeId);
             return Response.ok().build();
         }
     }

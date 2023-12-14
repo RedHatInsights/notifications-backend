@@ -208,13 +208,14 @@ public class ApplicationRepository {
 
     @Transactional
     public int updateEventType(UUID id, EventType eventType) {
-        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault WHERE id = :id";
+        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked WHERE id = :id";
         int rowCount = entityManager.createQuery(eventTypeQuery)
                 .setParameter("name", eventType.getName())
                 .setParameter("fullyQualifiedName", eventType.getFullyQualifiedName())
                 .setParameter("displayName", eventType.getDisplayName())
                 .setParameter("description", eventType.getDescription())
                 .setParameter("subscribedByDefault", eventType.isSubscribedByDefault())
+                .setParameter("subscriptionLocked", eventType.isSubscriptionLocked())
                 .setParameter("id", id)
                 .executeUpdate();
         String eventQuery = "UPDATE Event SET eventTypeDisplayName = :displayName WHERE eventType.id = :eventTypeId";

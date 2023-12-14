@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -66,6 +67,9 @@ import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -103,6 +107,9 @@ public class InternalResourceTest extends DbIsolatedTest {
 
     @Inject
     EntityManager entityManager;
+
+    @InjectMock
+    SubscriptionRepository subscriptionRepository;
 
     @Test
     void testCreateNullBundle() {
@@ -145,10 +152,12 @@ public class InternalResourceTest extends DbIsolatedTest {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
         String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
-        createEventType(identity, buildEventType(null, "i-am-valid", "I am valid", NOT_USED, false), BAD_REQUEST);
-        createEventType(identity, buildEventType(appId, null, "I am valid", NOT_USED, false), BAD_REQUEST);
-        createEventType(identity, buildEventType(appId, "i-am-valid", null, NOT_USED, false), BAD_REQUEST);
-        createEventType(identity, buildEventType(appId, "I violate the @Pattern constraint", "I am valid", NOT_USED, false), BAD_REQUEST);
+        createEventType(identity, buildEventType(null, "i-am-valid", "I am valid", NOT_USED, false, false), BAD_REQUEST);
+        createEventType(identity, buildEventType(appId, null, "I am valid", NOT_USED, false, false), BAD_REQUEST);
+        createEventType(identity, buildEventType(appId, "i-am-valid", null, NOT_USED, false, false), BAD_REQUEST);
+        createEventType(identity, buildEventType(appId, "I violate the @Pattern constraint", "I am valid", NOT_USED, false, false), BAD_REQUEST);
+        // When EventType#subscriptionLocked is true, EventType#subscribedByDefault has to be true as well.
+        createEventType(identity, buildEventType(appId, "i-am-valid", "I am valid", NOT_USED, false, true), BAD_REQUEST);
     }
 
     @Test
@@ -183,8 +192,8 @@ public class InternalResourceTest extends DbIsolatedTest {
         String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
         // Double event type creation with the same name.
         String nonUniqueEventTypeName = "event-type-name";
-        createEventType(identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, false, OK);
-        createEventType(identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, false, INTERNAL_SERVER_ERROR);
+        createEventType(identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, false, false, OK);
+        createEventType(identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, false, false, INTERNAL_SERVER_ERROR);
     }
 
     @Test
@@ -242,7 +251,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     void testAddEventTypeToUnknownApp() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
-        createEventType(identity, unknownAppId, NOT_USED, NOT_USED, NOT_USED, false, NOT_FOUND);
+        createEventType(identity, unknownAppId, NOT_USED, NOT_USED, NOT_USED, false, false, NOT_FOUND);
     }
 
     @Test
@@ -314,14 +323,15 @@ public class InternalResourceTest extends DbIsolatedTest {
         String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
 
         // First, we create two event types with different names. Only the second one will be used after that.
-        createEventType(identity, appId, "event-type-1-name", "Event type 1", "Description 1", false, OK);
-        String eventTypeId = createEventType(identity, appId, "event-type-2-name", "Event type 2", "Description 2", false, OK).get();
+        createEventType(identity, appId, "event-type-1-name", "Event type 1", "Description 1", false, false, OK);
+        String eventTypeId = createEventType(identity, appId, "event-type-2-name", "Event type 2", "Description 2", false, false, OK).get();
 
         // The app should contain two event types.
         getEventTypes(identity, appId, OK, 2);
 
         // Let's test the event type update API.
-        updateEventType(identity, appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", true, OK);
+        updateEventType(identity, appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", true, true, OK);
+        verify(subscriptionRepository, times(1)).resubscribeAllUsersIfNeeded(any(UUID.class));
 
         checkEventTypeVisibility(eventTypeId, true);
         updateEventTypeVisibility(identity, eventTypeId, false, OK);
@@ -424,8 +434,8 @@ public class InternalResourceTest extends DbIsolatedTest {
         String app1Id = createApp(adminIdentity, bundleId, app1Name, NOT_USED, null, OK).get();
         String app2Id = createApp(adminIdentity, bundleId, app2Name, NOT_USED, null, OK).get();
 
-        createEventType(adminIdentity, app1Id, event1Name, NOT_USED, NOT_USED, false, OK);
-        String eventType2Id = createEventType(adminIdentity, app2Id, event2Name, NOT_USED, NOT_USED, false, OK).get();
+        createEventType(adminIdentity, app1Id, event1Name, NOT_USED, NOT_USED, false, false, OK);
+        String eventType2Id = createEventType(adminIdentity, app2Id, event2Name, NOT_USED, NOT_USED, false, false, OK).get();
 
         // Gives access to `appIdentity` to `app1`
         createInternalRoleAccess(adminIdentity, appRole, app1Id, OK);
@@ -454,13 +464,15 @@ public class InternalResourceTest extends DbIsolatedTest {
         updateApp(otherAppIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
         updateApp(otherAppIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
 
-        String newEventTypeId = createEventType(appIdentity, app1Id, "new-name-1", NOT_USED, NOT_USED, false, OK).get();
-        createEventType(appIdentity, app2Id, "new-name-2", NOT_USED, NOT_USED, false, FORBIDDEN);
-        createEventType(otherAppIdentity, app1Id, "new-name-3", NOT_USED, NOT_USED, false, FORBIDDEN);
-        createEventType(otherAppIdentity, app2Id, "new-name-4", NOT_USED, NOT_USED, false, FORBIDDEN);
+        String newEventTypeId = createEventType(appIdentity, app1Id, "new-name-1", NOT_USED, NOT_USED, false, false, OK).get();
+        createEventType(appIdentity, app2Id, "new-name-2", NOT_USED, NOT_USED, false, false, FORBIDDEN);
+        createEventType(otherAppIdentity, app1Id, "new-name-3", NOT_USED, NOT_USED, false, false, FORBIDDEN);
+        createEventType(otherAppIdentity, app2Id, "new-name-4", NOT_USED, NOT_USED, false, false, FORBIDDEN);
 
-        updateEventType(otherAppIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, FORBIDDEN);
-        updateEventType(appIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, OK);
+        updateEventType(otherAppIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, FORBIDDEN);
+        verify(subscriptionRepository, times(0)).resubscribeAllUsersIfNeeded(any(UUID.class));
+        updateEventType(appIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, OK);
+        verify(subscriptionRepository, times(1)).resubscribeAllUsersIfNeeded(any(UUID.class));
 
         updateEventTypeVisibility(otherAppIdentity, newEventTypeId, true, FORBIDDEN);
         updateEventTypeVisibility(adminIdentity, newEventTypeId, true, OK);
@@ -588,7 +600,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         // Ensure that the sent payload to the engine matches the one that was
         // sent to the handler under test.
         final ArgumentCaptor<TriggerDailyDigestRequest> capturedPayload = ArgumentCaptor.forClass(TriggerDailyDigestRequest.class);
-        Mockito.verify(this.dailyDigestService).triggerDailyDigest(capturedPayload.capture());
+        verify(this.dailyDigestService).triggerDailyDigest(capturedPayload.capture());
 
         final TriggerDailyDigestRequest capturedDto = capturedPayload.getValue();
         Assertions.assertEquals(triggerDailyDigestRequest.getApplicationName(), capturedDto.getApplicationName());
