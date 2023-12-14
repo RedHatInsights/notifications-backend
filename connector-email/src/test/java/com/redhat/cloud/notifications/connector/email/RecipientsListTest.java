@@ -13,6 +13,8 @@ import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockserver.mock.action.ExpectationResponseCallback;
 import org.mockserver.model.HttpRequest;
 import java.util.ArrayList;
@@ -29,6 +31,7 @@ import static com.redhat.cloud.notifications.connector.email.constants.Routes.SE
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SPLIT_AND_SEND;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -99,33 +102,51 @@ public class RecipientsListTest extends CamelQuarkusTestSupport {
         successEndpoint.assertIsSatisfied();
     }
 
-    @Test
-    void testNotEmpty() throws Exception {
-        Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
-        String strUsers = objectMapper.writeValueAsString(users);
-        ExpectationResponseCallback verifyEmptyRequest = req -> response().withBody(strUsers).withStatusCode(200);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testNotEmpty(boolean emailsInternalOnlyEnabled) throws Exception {
+        try {
+            emailConnectorConfig.setEmailsInternalOnlyEnabled(emailsInternalOnlyEnabled);
+            Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
+            String strUsers = objectMapper.writeValueAsString(users);
+            ExpectationResponseCallback verifyEmptyRequest = req -> response().withBody(strUsers).withStatusCode(200);
 
-        Exchange exchange = test(verifyEmptyRequest);
-        MockEndpoint successEndpoint = getMockEndpoint("mock:direct:" + SUCCESS);
-        MockEndpoint splitRoute = getMockEndpoint("mock:direct:" + SPLIT_AND_SEND);
-        MockEndpoint bopRoute = getMockEndpoint("mock:direct:" + SEND_EMAIL_BOP);
+            Exchange exchange = test(verifyEmptyRequest);
+            Set<String> emailRecipients = new HashSet<>();
+            emailRecipients.add("redhat_user@redhat.com");
+            emailRecipients.add("external_user@noway.com");
+            exchange.setProperty(EMAIL_RECIPIENTS, emailRecipients);
+            int usersAndRecipientsTotalNumber = emailRecipients.size() + users.size();
 
-        splitRoute.expectedMessageCount(1);
-        successEndpoint.expectedMessageCount(1);
-        bopRoute.expectedMessageCount(3);
+            MockEndpoint successEndpoint = getMockEndpoint("mock:direct:" + SUCCESS);
+            MockEndpoint splitRoute = getMockEndpoint("mock:direct:" + SPLIT_AND_SEND);
+            MockEndpoint bopRoute = getMockEndpoint("mock:direct:" + SEND_EMAIL_BOP);
 
-        producerTemplate.send("seda:" + ENGINE_TO_CONNECTOR, exchange);
-        splitRoute.assertIsSatisfied();
-        successEndpoint.assertIsSatisfied();
-        bopRoute.assertIsSatisfied();
-        List<Exchange> receivedExchanges  = bopRoute.getReceivedExchanges();
-        Set<String> receivedEmails = new HashSet<>();
-        for (Exchange  receivedExchange : receivedExchanges) {
-            Set<String> receivedEmailsOnExchangeMsg = receivedExchange.getIn().getBody(Set.class);
-            assertTrue(receivedEmailsOnExchangeMsg.size() == 1 || receivedEmailsOnExchangeMsg.size() == 3);
-            receivedEmails.addAll(receivedEmailsOnExchangeMsg);
+            splitRoute.expectedMessageCount(1);
+            successEndpoint.expectedMessageCount(1);
+            bopRoute.expectedMessageCount(3);
+
+            producerTemplate.send("seda:" + ENGINE_TO_CONNECTOR, exchange);
+            splitRoute.assertIsSatisfied();
+            successEndpoint.assertIsSatisfied();
+            bopRoute.assertIsSatisfied();
+            List<Exchange> receivedExchanges = bopRoute.getReceivedExchanges();
+            Set<String> receivedEmails = new HashSet<>();
+            for (Exchange receivedExchange : receivedExchanges) {
+                Set<String> receivedEmailsOnExchangeMsg = receivedExchange.getIn().getBody(Set.class);
+                assertTrue(receivedEmailsOnExchangeMsg.size() <= 3);
+                receivedEmails.addAll(receivedEmailsOnExchangeMsg);
+            }
+            if (emailsInternalOnlyEnabled) {
+                assertFalse(receivedEmails.contains("external_user@noway.com"));
+                assertEquals(usersAndRecipientsTotalNumber - 1, receivedEmails.size());
+            } else {
+                assertTrue(receivedEmails.contains("external_user@noway.com"));
+                assertEquals(usersAndRecipientsTotalNumber, receivedEmails.size());
+            }
+        } finally {
+            emailConnectorConfig.setEmailsInternalOnlyEnabled(false);
         }
-        assertEquals(users.size(), receivedEmails.size());
     }
 
     private HttpRequest getMockHttpRequest(String path, String method, ExpectationResponseCallback expectationResponseCallback) {

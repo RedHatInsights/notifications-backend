@@ -1,12 +1,15 @@
 package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import io.quarkus.runtime.configuration.ProfileManager;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
+
+import static io.quarkus.runtime.LaunchMode.TEST;
 
 @ApplicationScoped
 /*
@@ -95,5 +98,21 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     public boolean isEmailsInternalOnlyEnabled() {
         return emailsInternalOnlyEnabled;
+    }
+
+    public void setEmailsInternalOnlyEnabled(boolean emailsInternalOnlyEnabled) {
+        checkTestLaunchMode();
+        this.emailsInternalOnlyEnabled = emailsInternalOnlyEnabled;
+    }
+
+    /**
+     * This method throws an {@link IllegalStateException} if it is invoked with a launch mode different from
+     * {@link io.quarkus.runtime.LaunchMode#TEST TEST}. It should be added to methods that allow overriding a
+     * config value from tests only, preventing doing so from runtime code.
+     */
+    private static void checkTestLaunchMode() {
+        if (ProfileManager.getLaunchMode() != TEST) {
+            throw new IllegalStateException("Illegal config value override detected");
+        }
     }
 }
