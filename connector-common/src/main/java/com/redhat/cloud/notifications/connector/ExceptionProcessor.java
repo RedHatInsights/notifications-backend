@@ -34,6 +34,9 @@ public class ExceptionProcessor implements Processor {
     @Inject
     ProducerTemplate producerTemplate;
 
+    @Inject
+    ContinueOnErrorPredicate continueOnErrorPredicate;
+
     @Override
     public void process(Exchange exchange) {
 
@@ -55,7 +58,9 @@ public class ExceptionProcessor implements Processor {
         exchangeCopy.removeProperty(FAILURE_ENDPOINT);
         exchangeCopy.removeProperty(FAILURE_ROUTE_ID);
         exchangeCopy.removeProperty(FATAL_FALLBACK_ERROR_HANDLER);
-        producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchangeCopy);
+        if (!continueOnErrorPredicate.matches(exchange)) {
+            producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchangeCopy);
+        }
     }
 
     protected final void logDefault(Throwable t, Exchange exchange) {

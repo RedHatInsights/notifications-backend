@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import com.redhat.cloud.notifications.connector.email.aggregation.ErrorAggregationStrategy;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
@@ -16,7 +17,8 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
+import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
+import static com.redhat.cloud.notifications.connector.ContinueOnErrorPredicate.MUST_CONTINUE_ON_EXCEPTION;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
@@ -68,13 +70,15 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .choice().when(shouldSkipEmail())
                 .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .otherwise()
+                .setProperty(MUST_CONTINUE_ON_EXCEPTION, constant(true))
                 .to(direct(Routes.SPLIT_AND_SEND))
+                .setProperty(MUST_CONTINUE_ON_EXCEPTION, constant(false))
             .end()
-            .to(direct(SUCCESS));
+            .to(direct(CONNECTOR_TO_ENGINE));
 
         from(direct(Routes.SPLIT_AND_SEND))
             .routeId(Routes.SPLIT_AND_SEND)
-            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERS))
+            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERS), new ErrorAggregationStrategy())
                 .to(direct(Routes.SEND_EMAIL_BOP))
             .end();
 

@@ -6,7 +6,6 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import java.util.Map;
 
 import static io.quarkus.runtime.LaunchMode.TEST;
@@ -94,6 +93,11 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     public int getMaxRecipientsPerEmail() {
         return maxRecipientsPerEmail;
+    }
+
+    public void setBopURL(String bopURL) {
+        checkTestLaunchMode();
+        this.bopURL = bopURL;
     }
 
     public boolean isEmailsInternalOnlyEnabled() {
