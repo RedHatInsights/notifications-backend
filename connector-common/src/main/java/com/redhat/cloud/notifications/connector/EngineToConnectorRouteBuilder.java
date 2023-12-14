@@ -45,6 +45,9 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
     RedeliveryPredicate redeliveryPredicate;
 
     @Inject
+    ContinueOnErrorPredicate continueOnErrorPredicate;
+
+    @Inject
     Instance<CamelComponentConfigurator> camelComponentsConfigurators;
 
     @Override
@@ -55,17 +58,26 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
 
         onException(Throwable.class)
                 .onWhen(redeliveryPredicate::matches)
-                .handled(true)
+                .onWhen(continueOnErrorPredicate::matches)
                 .maximumRedeliveries(connectorConfig.getRedeliveryMaxAttempts())
                 .redeliveryDelay(connectorConfig.getRedeliveryDelay())
                 .retryAttemptedLogLevel(DEBUG)
                 .onRedelivery(redeliveryCounterProcessor)
-                .process(exceptionProcessor);
+                .process(exceptionProcessor)
+                .continued(true);
 
         onException(Throwable.class)
-                .onWhen(redeliveryPredicate::doesNotMatch)
-                .handled(true)
-                .process(exceptionProcessor);
+                .onWhen(redeliveryPredicate::matches)
+                .maximumRedeliveries(connectorConfig.getRedeliveryMaxAttempts())
+                .redeliveryDelay(connectorConfig.getRedeliveryDelay())
+                .retryAttemptedLogLevel(DEBUG)
+                .onRedelivery(redeliveryCounterProcessor)
+                .process(exceptionProcessor)
+                .handled(true);
+
+        onException(Throwable.class)
+                .process(exceptionProcessor)
+                .handled(true);
 
         from(buildKafkaEndpoint())
                 .routeId(ENGINE_TO_CONNECTOR)

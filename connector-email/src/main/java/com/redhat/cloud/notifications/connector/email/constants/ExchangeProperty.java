@@ -46,4 +46,7 @@ public class ExchangeProperty {
     public static final String RENDERED_SUBJECT = "rendered_subject";
 
     public static final String RECIPIENTS_SIZE = "recipientsSize";
+
+    public static final String RECIPIENTS_WITH_EMAIL_ERROR = "recipientsWithEmailError";
+
 }

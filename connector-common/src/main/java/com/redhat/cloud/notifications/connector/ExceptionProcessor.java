@@ -39,6 +39,9 @@ public class ExceptionProcessor implements Processor {
     @Inject
     ProducerTemplate producerTemplate;
 
+    @Inject
+    ContinueOnErrorPredicate continueOnErrorPredicate;
+
     @Override
     public void process(Exchange exchange) {
 
@@ -61,17 +64,18 @@ public class ExceptionProcessor implements Processor {
         exchangeCopy.removeProperty(FAILURE_ROUTE_ID);
         exchangeCopy.removeProperty(FATAL_FALLBACK_ERROR_HANDLER);
 
-        // Attempt reinjecting the message to the incoming Kafka queue as a way
-        // of improving our fault tolerance. After a few attempts we should
-        // give up and acknowledge the failure.
-        final String route;
-        if (exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, int.class) < this.connectorConfig.getKafkaMaximumReinjections()) {
-            route = String.format("direct:%s", KAFKA_REINJECTION);
-        } else {
-            route = String.format("direct:%s", CONNECTOR_TO_ENGINE);
+        if (!continueOnErrorPredicate.matches(exchange)) {
+            // Attempt reinjecting the message to the incoming Kafka queue as a way
+            // of improving our fault tolerance. After a few attempts we should
+            // give up and acknowledge the failure.
+            final String route;
+            if (exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, int.class) < this.connectorConfig.getKafkaMaximumReinjections()) {
+                route = String.format("direct:%s", KAFKA_REINJECTION);
+            } else {
+                route = String.format("direct:%s", CONNECTOR_TO_ENGINE);
+            }
+            producerTemplate.send(route, exchangeCopy);
         }
-
-        this.producerTemplate.send(route, exchangeCopy);
     }
 
     protected final void logDefault(Throwable t, Exchange exchange) {
