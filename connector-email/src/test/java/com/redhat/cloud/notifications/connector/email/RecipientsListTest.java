@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.connector.email;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
-import com.redhat.cloud.notifications.connector.email.model.bop.SendEmailsRequest;
 import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
