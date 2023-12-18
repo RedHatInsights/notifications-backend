@@ -47,7 +47,7 @@ jobs:
         run: ./mvnw clean verify --no-transfer-progress
       - name: Pushes coverage
         run: bash <(curl -s https://codecov.io/bash)
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         name: Upload openapi.json
         with:
           name: openapi
