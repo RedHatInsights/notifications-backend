@@ -289,6 +289,7 @@ export namespace Schemas {
     id?: UUID | undefined | null;
     name: string;
     subscribed_by_default?: boolean | undefined | null;
+    subscription_locked?: boolean | undefined | null;
   };
 
   export const EventTypeBehavior = zodSchemaEventTypeBehavior();
@@ -904,6 +905,7 @@ export namespace Schemas {
           id: zodSchemaUUID().optional().nullable(),
           name: z.string(),
           subscribed_by_default: z.boolean().optional().nullable(),
+          subscription_locked: z.boolean().optional().nullable(),
       })
       .nonstrict();
   }

@@ -10,6 +10,7 @@ export type CreateEventType = {
     name: string;
     fullyQualifiedName: string;
     subscribedByDefault: boolean;
+    subscriptionLocked: boolean;
 }
 
 const actionCreator =  (params: CreateEventType) => {
@@ -22,7 +23,8 @@ const actionCreator =  (params: CreateEventType) => {
                 display_name: params.displayName,
                 name: params.name,
                 fully_qualified_name: params.fullyQualifiedName,
-                subscribed_by_default: params.subscribedByDefault
+                subscribed_by_default: params.subscribedByDefault,
+                subscription_locked: params.subscriptionLocked
             }
         });
     }
@@ -36,7 +38,8 @@ const actionCreator =  (params: CreateEventType) => {
             display_name: params.displayName,
             name: params.name,
             fully_qualified_name: params.fullyQualifiedName,
-            subscribed_by_default: params.subscribedByDefault
+            subscribed_by_default: params.subscribedByDefault,
+            subscription_locked: params.subscriptionLocked
         }
     });
 };

@@ -67,6 +67,7 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
                 <Th>Name</Th>
                 <Th>Instant email</Th>
                 <Th>Subscribed by default?</Th>
+                <Th>Subscription locked?</Th>
                 <Th />
             </Thead>
             <Tbody>
@@ -111,6 +112,9 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     </Td>
                     <Td>
                         {eventType.subscribedByDefault ? <CheckCircleIcon /> : <TimesIcon />}
+                    </Td>
+                    <Td>
+                        {eventType.subscriptionLocked ? <CheckCircleIcon /> : <TimesIcon />}
                     </Td>
                     <Td>
                         <ActionList isIconList>
