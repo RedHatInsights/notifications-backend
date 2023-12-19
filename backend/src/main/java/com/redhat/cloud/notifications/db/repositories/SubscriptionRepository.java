@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -47,6 +48,24 @@ public class SubscriptionRepository {
             .setParameter("subscriptionType", subscriptionType.name())
             .setParameter("subscribed", subscribed)
             .executeUpdate();
+    }
+
+    /**
+     * Resubscribes all users to the event type identified by {@code eventTypeId}
+     * if that event type is subscribed by default with subscriptions locked.
+     * @param eventTypeId the event type identifier
+     */
+    @Transactional
+    public void resubscribeAllUsersIfNeeded(UUID eventTypeId) {
+        EventType eventType = entityManager.find(EventType.class, eventTypeId);
+        if (eventType != null && eventType.isSubscribedByDefault() && eventType.isSubscriptionLocked()) {
+            // We're not actually subscribing the users but rather removing any existing unsubscriptions from the DB.
+            String hql = "DELETE FROM EventTypeEmailSubscription " +
+                    "WHERE eventType.id = :eventTypeId AND NOT subscribed";
+            entityManager.createQuery(hql)
+                    .setParameter("eventTypeId", eventTypeId)
+                    .executeUpdate();
+        }
     }
 
     public List<EventTypeEmailSubscription> getEmailSubscriptionByEventType(String orgId, String username, String bundleName, String applicationName) {

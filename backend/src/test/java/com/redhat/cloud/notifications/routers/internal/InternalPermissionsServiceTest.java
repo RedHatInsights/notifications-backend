@@ -60,7 +60,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         assertEquals(List.of(appRole, otherRole), permissions.getRoles());
 
         // Can't create an event type without the permission
-        CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", false, 403);
+        CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", false, false, 403);
 
         // non admins can't create a role
         CrudTestHelpers.createInternalRoleAccess(turnpikeAppDev, appRole, appId, 403);
@@ -79,7 +79,7 @@ public class InternalPermissionsServiceTest extends DbIsolatedTest {
         assertEquals(List.of(appRole, otherRole), permissions.getRoles());
 
         // We can create the event type now
-        String eventTypeId = CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", false, 200).get();
+        String eventTypeId = CrudTestHelpers.createEventType(turnpikeAppDev, appId, "my-event", "My event", "Event description", false, false, 200).get();
 
         List<Map> roleAccessList = given()
                 .header(turnpikeAdminHeader)

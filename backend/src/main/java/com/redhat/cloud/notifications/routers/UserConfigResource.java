@@ -106,7 +106,7 @@ public class UserConfigResource {
                     // foreach event Type
                     applicationSettingsValue.eventTypes.forEach((eventTypeName, eventTypeValue) -> {
                         Optional<EventType> eventType = eventTypeRepository.find(app.getId(), eventTypeName);
-                        if (eventType.isPresent()) {
+                        if (eventType.isPresent() && !eventType.get().isSubscriptionLocked()) {
                             // for each email subscription
                             eventTypeValue.emailSubscriptionTypes.forEach((subscriptionType, subscribed) -> {
                                 if (subscribed) {
@@ -211,6 +211,7 @@ public class UserConfigResource {
                 SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
                 eventTypeSettingsValue.displayName = eventType.getDisplayName();
                 eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
+                eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
                 for (SubscriptionType subscriptionType : SubscriptionType.values()) {
                     if (featureFlipper.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
                         boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), subscriptionType);

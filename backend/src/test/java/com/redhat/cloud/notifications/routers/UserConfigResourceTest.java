@@ -52,6 +52,7 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -232,41 +233,50 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         featureFlipper.setInstantEmailsEnabled(true);
 
         // Daily and Instant to false
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false, true);
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
 
         // Daily to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, false, true);
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER));
 
         // Instant to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true, true);
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER));
 
         // Both to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, true);
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
+
+        // Before this line, we're subscribed to everything. Now, we're locking the subscriptions.
+        lockOrUnlockSubscriptionToPoliciesEventType(true);
+        // Let's try to unsubscribe from everything. The subscriptions should remain the same.
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, emptyList(), List.of(DAILY, INSTANT, DRAWER));
+        // We're now unlocking the subscriptions.
+        lockOrUnlockSubscriptionToPoliciesEventType(false);
+        // Unsubscribing from everything should work this time.
+        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, emptyList(), emptyList());
 
         if (featureFlipper.isDrawerEnabled()) {
             // Daily, Instant and drawer to false
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false, false);
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, emptyList(), emptyList());
 
             // Daily to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, false, false);
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY), List.of(DAILY));
 
             // Instant to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true, false);
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(INSTANT), List.of(INSTANT));
 
             // Daily and instant to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, false);
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT), List.of(DAILY, INSTANT));
 
             // Daily and Instant to false, drawer to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, false, true);
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
 
             // Daily to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, false, true);
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER));
 
             // Instant to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, false, true, true);
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER));
 
             // Daily and instant to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, true, true, true);
+            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
         }
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database
@@ -345,15 +355,20 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         }
     }
 
-    private void updateAndCheckUserPreference(String path, Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
-        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer);
+    private void updateAndCheckUserPreference(String path, Header identityHeader, String bundle, String application, String eventType, List<SubscriptionType> subscriptionsToSet, List<SubscriptionType> expectedResult) {
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, subscriptionsToSet.contains(DAILY), subscriptionsToSet.contains(INSTANT), subscriptionsToSet.contains(DRAWER));
         postPreferencesByEventType(path, identityHeader, settingsValues, 200);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(path, identityHeader);
         final SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
         Map<SubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
 
-        assertEquals(initialValues, settingsValues.bundles.get(bundle).applications.get(application).eventTypes.get(eventType).emailSubscriptionTypes);
+        assertEquals(expectedResult.contains(DAILY), initialValues.get(DAILY));
+        assertEquals(expectedResult.contains(INSTANT), initialValues.get(INSTANT));
+        if (featureFlipper.isDrawerEnabled()) {
+            assertEquals(expectedResult.contains(DRAWER), initialValues.get(DRAWER));
+        }
+
         final SettingsValueByEventTypeJsonForm.Application preferences = given()
             .header(identityHeader)
             .when().get(String.format(path + "/%s/%s", bundle, application))
@@ -364,18 +379,29 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         assertNotNull(preferences);
         Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
-        assertEquals(daily, notificationPreferenes.get(DAILY));
-        assertEquals(instant, notificationPreferenes.get(INSTANT));
+        assertEquals(expectedResult.contains(DAILY), notificationPreferenes.get(DAILY));
+        assertEquals(expectedResult.contains(INSTANT), notificationPreferenes.get(INSTANT));
         if (featureFlipper.isDrawerEnabled()) {
-            assertEquals(drawer, notificationPreferenes.get(DRAWER));
+            assertEquals(expectedResult.contains(DRAWER), notificationPreferenes.get(DRAWER));
         }
     }
 
     @Transactional
     void updatePoliciesEventTypeVisibility(boolean visible) {
-        entityManager.createQuery("UPDATE EventType SET visible= :visible where name='policy-triggered'")
+        entityManager.createQuery("UPDATE EventType SET visible = :visible where name='policy-triggered'")
             .setParameter("visible", visible)
             .executeUpdate();
+    }
+
+    @Transactional
+    void lockOrUnlockSubscriptionToPoliciesEventType(boolean locked) {
+        String hql = "UPDATE EventType " +
+                "SET subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked " +
+                "WHERE name = 'policy-triggered'";
+        entityManager.createQuery(hql)
+                .setParameter("subscribedByDefault", locked)
+                .setParameter("subscriptionLocked", locked)
+                .executeUpdate();
     }
 
     private void postPreferencesByEventType(String path, Header identityHeader, SettingsValuesByEventType settingsValues, int expectedStatusCode) {
