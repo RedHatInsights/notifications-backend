@@ -36,7 +36,7 @@ jobs:
         id: admin-console-changed
         uses: tj-actions/changed-files@v40.2.2
         with:
-          files: admin-console
+          files: admin-console/**
       - name: Build admin-console
         if: steps.admin-console-changed.outputs.any_changed == 'true'
         run: ./mvnw clean verify -Padmin-console -pl :checkstyle,:notifications-admin-console --no-transfer-progress
