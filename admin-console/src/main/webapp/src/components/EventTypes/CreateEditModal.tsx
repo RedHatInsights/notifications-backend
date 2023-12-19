@@ -100,6 +100,15 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             onChange={ (isChecked) => setEventType(prev => ({...prev, subscribedByDefault: isChecked})) }
                         />
                     </FormGroup>
+                    <FormGroup label='Subscription locked?' fieldId='subscriptionLocked'
+                        helperText='Should the subscription be locked, preventing the users from unsubscribing?'>
+                        <Checkbox
+                            id='subscriptionLocked'
+                            name='subscriptionLocked'
+                            isChecked={ eventType.subscriptionLocked }
+                            onChange={ (isChecked) => setEventType(prev => ({...prev, subscriptionLocked: isChecked})) }
+                        />
+                    </FormGroup>
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             isLoading={ props.isLoading } isDisabled={ props.isLoading }

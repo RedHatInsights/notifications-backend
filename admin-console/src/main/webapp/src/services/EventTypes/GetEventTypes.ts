@@ -15,7 +15,8 @@ const validateResponse = validationResponseTransformer(
                 description: value.description ?? '',
                 applicationId: value.application_id,
                 fullyQualifiedName: value.fully_qualified_name ?? '',
-                subscribedByDefault: !!value.subscribed_by_default
+                subscribedByDefault: !!value.subscribed_by_default,
+                subscriptionLocked: !!value.subscription_locked
             }));
 
             return validatedResponse(
