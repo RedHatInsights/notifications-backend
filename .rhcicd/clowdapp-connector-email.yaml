@@ -34,6 +34,19 @@ objects:
           limits:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
+        volumes:
+          - name: bop-keystore
+            secret:
+              secretName: bop-secrets
+              items:
+                - key: keystore
+                  path: bop-keystore.jks
+              defaultMode: 420
+              optional: true
+        volumesMounts:
+          - name: bop-keystore
+            readOnly: true
+            mountPath: /mnt/secrets
         readinessProbe:
           httpGet:
             path: /q/health/ready
@@ -87,6 +100,14 @@ objects:
             secretKeyRef:
               name: backoffice
               key: client-id
+        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_KEY_STORE_LOCATION
+          value: ${NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_KEY_STORE_LOCATION}
+        - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_KEY_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bop-secrets
+              key: keystore-password
+              optional: true
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_ENV
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_URL
@@ -192,6 +213,9 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
   description: Maximum capacity of the SEDA queue
   value: "1"
+- name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_KEY_STORE_LOCATION
+  description: Location of the key store for the BOP endpoint.
+  value: "/path/to/keystore.jks"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
