@@ -155,6 +155,13 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         httpComponent.setSslContextParameters(scp);
 
         final String fullURL = this.emailConnectorConfig.getBopURL();
-        return httpComponent.createEndpoint(String.format("https:%s", fullURL.replace("https://", "")));
+        String endpointUri;
+        if (fullURL.startsWith("https")) {
+            endpointUri = String.format("https:%s", fullURL.replace("https://", ""));
+        } else {
+            endpointUri = String.format("http:%s", fullURL.replace("http://", ""));
+        }
+        Log.infof("Building BOP endpoint with URI: %s", endpointUri);
+        return httpComponent.createEndpoint(endpointUri);
     }
 }
