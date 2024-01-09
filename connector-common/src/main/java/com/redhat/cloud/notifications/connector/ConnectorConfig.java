@@ -5,6 +5,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -30,6 +31,12 @@ public class ConnectorConfig {
     private static final String SEDA_CONCURRENT_CONSUMERS = "notifications.connector.seda.concurrent-consumers";
     private static final String SEDA_QUEUE_SIZE = "notifications.connector.seda.queue-size";
     private static final String SUPPORTED_CONNECTOR_HEADERS = "notifications.connector.supported-connector-headers";
+
+    private static final String REINJECTION_DURATION_BEFORE_FIRST_ATTEMPT = "notifications.connector.reinjection-duration-before-first-attempt";
+
+    private static final String REINJECTION_DURATION_BEFORE_SECOND_ATTEMPT = "notifications.connector.reinjection-duration-before-second-attempt";
+
+    private static final String REINJECTION_DURATION_BEFORE_THIRD_ATTEMPT = "notifications.connector.reinjection-duration-before-third-attempt";
 
     @ConfigProperty(name = ENDPOINT_CACHE_MAX_SIZE, defaultValue = "100")
     int endpointCacheMaxSize;
@@ -80,6 +87,15 @@ public class ConnectorConfig {
     @ConfigProperty(name = SUPPORTED_CONNECTOR_HEADERS)
     List<String> supportedConnectorHeaders;
 
+    @ConfigProperty(name = REINJECTION_DURATION_BEFORE_FIRST_ATTEMPT, defaultValue = "10S")
+    Duration reinjectionDelayBeforeFistAttempt;
+
+    @ConfigProperty(name = REINJECTION_DURATION_BEFORE_SECOND_ATTEMPT, defaultValue = "30S")
+    Duration reinjectionDelayBeforeSecondAttempt;
+
+    @ConfigProperty(name = REINJECTION_DURATION_BEFORE_THIRD_ATTEMPT, defaultValue = "1M")
+    Duration reinjectionDelayBeforeThirdAttempt;
+
     public void log() {
         Log.info("=== Connector configuration ===");
         for (Entry<String, Object> configEntry : getLoggedConfiguration().entrySet()) {
@@ -104,6 +120,9 @@ public class ConnectorConfig {
         config.put(SEDA_CONCURRENT_CONSUMERS, sedaConcurrentConsumers);
         config.put(SEDA_QUEUE_SIZE, sedaQueueSize);
         config.put(SUPPORTED_CONNECTOR_HEADERS, supportedConnectorHeaders);
+        config.put(REINJECTION_DURATION_BEFORE_FIRST_ATTEMPT, reinjectionDelayBeforeFistAttempt);
+        config.put(REINJECTION_DURATION_BEFORE_SECOND_ATTEMPT, reinjectionDelayBeforeSecondAttempt);
+        config.put(REINJECTION_DURATION_BEFORE_THIRD_ATTEMPT, reinjectionDelayBeforeThirdAttempt);
         return config;
     }
 
@@ -165,5 +184,17 @@ public class ConnectorConfig {
 
     public List<String> getSupportedConnectorHeaders() {
         return supportedConnectorHeaders;
+    }
+
+    public Duration getReinjectionDelayBeforeFistAttempt() {
+        return reinjectionDelayBeforeFistAttempt;
+    }
+
+    public Duration getReinjectionDelayBeforeSecondAttempt() {
+        return reinjectionDelayBeforeSecondAttempt;
+    }
+
+    public Duration getReinjectionDelayBeforeThirdAttempt() {
+        return reinjectionDelayBeforeThirdAttempt;
     }
 }

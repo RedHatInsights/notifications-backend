@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfi
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.constants.Routes;
 import com.redhat.cloud.notifications.connector.email.metrics.EmailMetricsProcessor;
+import com.redhat.cloud.notifications.connector.email.processors.SelectOutputProcessor;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
@@ -17,9 +18,9 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ContinueOnErrorPredicate.MUST_CONTINUE_ON_EXCEPTION;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.KAFKA_REINJECTION_COUNT;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
@@ -55,6 +56,9 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     EmailMetricsProcessor emailMetricsProcessor;
 
+    @Inject
+    SelectOutputProcessor outputProcessor;
+
     /**
      * Configures the flow for this connector.
      */
@@ -69,11 +73,15 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
-            .process(recipientsResolverRequestPreparer)
-            .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-                .to(setupRecipientResolverEndpoint())
-            .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-            .process(recipientsResolverResponseProcessor)
+            .log(INFO, getClass().getName(), "Route started ${exchangeProperty." + KAFKA_REINJECTION_COUNT + "}")
+            .choice()
+            .when(simpleF("${exchangeProperty.%s} == 0", KAFKA_REINJECTION_COUNT))
+                .process(recipientsResolverRequestPreparer)
+                .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                    .to(emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
+                .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                .process(recipientsResolverResponseProcessor)
+            .end()
             .choice().when(shouldSkipEmail())
                 .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .otherwise()
@@ -81,7 +89,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                 .to(direct(Routes.SPLIT_AND_SEND))
                 .setProperty(MUST_CONTINUE_ON_EXCEPTION, constant(false))
             .end()
-            .to(direct(CONNECTOR_TO_ENGINE));
+            .process(outputProcessor);
 
         from(direct(Routes.SPLIT_AND_SEND))
             .routeId(Routes.SPLIT_AND_SEND)

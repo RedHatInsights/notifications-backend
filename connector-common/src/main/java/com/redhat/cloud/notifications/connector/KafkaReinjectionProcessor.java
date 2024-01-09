@@ -1,18 +1,18 @@
 package com.redhat.cloud.notifications.connector;
 
+import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.KAFKA_REINJECTION_COUNT;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.KAFKA_REINJECTION_DELAY;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 
 @ApplicationScoped
+@DefaultBean
 public class KafkaReinjectionProcessor implements Processor {
     @Inject
     ConnectorConfig connectorConfig;
@@ -31,9 +31,9 @@ public class KafkaReinjectionProcessor implements Processor {
         final int reinjectionCount = exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, int.class);
 
         final long reinjectionDelay = switch (reinjectionCount) {
-            case 0 -> TimeUnit.SECONDS.toMillis(10);
-            case 1 -> TimeUnit.SECONDS.toMillis(30);
-            case 2 -> TimeUnit.MINUTES.toMillis(1);
+            case 0 -> connectorConfig.getReinjectionDelayBeforeFistAttempt().toMillis();
+            case 1 -> connectorConfig.getReinjectionDelayBeforeSecondAttempt().toMillis();
+            case 2 -> connectorConfig.getReinjectionDelayBeforeThirdAttempt().toMillis();
             default -> this.connectorConfig.getIncomingKafkaMaxPollIntervalMs() / 2;
         };
 

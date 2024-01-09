@@ -5,12 +5,10 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.SUCCESSFUL;
-import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RECIPIENTS_WITH_EMAIL_ERROR;
 
 @ApplicationScoped
@@ -21,7 +19,7 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
 
     @Override
     public void process(Exchange exchange) throws Exception {
-        int totalRecipients = exchange.getProperty(FILTERED_USERS, Set.class).stream().mapToInt(i -> ((List<String>) i).size()).sum();
+        int totalRecipients = exchange.getProperty(TOTAL_RECIPIENTS_KEY, Integer.class);
         Optional<Set<String>> recipientsWithError = Optional.ofNullable(exchange.getProperty(RECIPIENTS_WITH_EMAIL_ERROR, Set.class));
         exchange.setProperty(SUCCESSFUL, recipientsWithError.isEmpty() || recipientsWithError.get().size() == 0);
         super.process(exchange);

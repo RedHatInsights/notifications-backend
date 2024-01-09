@@ -25,14 +25,14 @@ public class ErrorAggregationStrategy implements AggregationStrategy {
             return newExchange;
         }
 
-        Set<String> recipientsWithError = oldExchange.getProperty(RECIPIENTS_WITH_EMAIL_ERROR, Set.class);
-        if (recipientsWithError == null) {
-            recipientsWithError = new HashSet<>();
-        }
         if (newExchange.getProperty(RECIPIENTS_WITH_EMAIL_ERROR, Set.class) != null) {
+            Set<String> recipientsWithError = oldExchange.getProperty(RECIPIENTS_WITH_EMAIL_ERROR, Set.class);
+            if (recipientsWithError == null) {
+                recipientsWithError = new HashSet<>();
+            }
             recipientsWithError.addAll(newExchange.getProperty(RECIPIENTS_WITH_EMAIL_ERROR, Set.class));
+            oldExchange.setProperty(RECIPIENTS_WITH_EMAIL_ERROR, recipientsWithError);
         }
-        oldExchange.setProperty(RECIPIENTS_WITH_EMAIL_ERROR, recipientsWithError);
 
         return oldExchange;
     }
