@@ -52,7 +52,7 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
         final Map<String, Object> headers = exchange.getMessage().getHeaders();
         assertEquals(HttpMethods.POST, headers.get(Exchange.HTTP_METHOD));
         assertEquals("/v1/sendEmails", headers.get(Exchange.HTTP_PATH));
-        assertEquals("application/json", headers.get(Exchange.CONTENT_TYPE));
+        assertEquals("application/json; charset=utf-8", headers.get(Exchange.CONTENT_TYPE));
         assertEquals(this.emailConnectorConfig.getBopApiToken(), headers.get(Constants.BOP_API_TOKEN_HEADER));
         assertEquals(this.emailConnectorConfig.getBopClientId(), headers.get(Constants.BOP_CLIENT_ID_HEADER));
         assertEquals(this.emailConnectorConfig.getBopEnv(), headers.get(Constants.BOP_ENV_HEADER));

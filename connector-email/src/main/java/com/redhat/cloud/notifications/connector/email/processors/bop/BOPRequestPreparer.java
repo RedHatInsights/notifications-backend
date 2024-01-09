@@ -56,7 +56,7 @@ public class BOPRequestPreparer implements Processor {
         exchange.getMessage().setHeader(Exchange.HTTP_PATH, "/v1/sendEmails");
 
         // Specify the payload's content type.
-        exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, "application/json");
+        exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, "application/json; charset=utf-8");
 
         // Specify the authentication details required by BOP.
         exchange.getMessage().setHeader(Constants.BOP_API_TOKEN_HEADER, this.emailConnectorConfig.getBopApiToken());
