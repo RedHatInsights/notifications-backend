@@ -22,54 +22,41 @@ public class KafkaSaslInitializer {
     private static final String KAFKA_SECURITY_PROTOCOL = "kafka.security.protocol";
     private static final String KAFKA_SSL_TRUSTSTORE_LOCATION = "kafka.ssl.truststore.location";
     private static final String KAFKA_SSL_TRUSTSTORE_TYPE = "kafka.ssl.truststore.type";
-    private static final String PLAIN = "PLAIN";
     private static final String SASL_SSL = "SASL_SSL";
-    private static final String SCRAM_SHA_512 = "SCRAM-SHA-512";
+    private static final String SSL = "SSL";
 
     void init(@Observes @Priority(PLATFORM_BEFORE) StartupEvent event) {
         Config config = ConfigProvider.getConfig();
         config.getOptionalValue(KAFKA_SECURITY_PROTOCOL, String.class).ifPresent(securityProtocol -> {
+            setValue(KAFKA_SECURITY_PROTOCOL, securityProtocol);
             switch (securityProtocol) {
-                case SASL_SSL:
-                    Log.info("Initializing Kafka SASL configuration...");
-                    String saslMechanism = config.getValue(KAFKA_SASL_MECHANISM, String.class);
-                    String saslJaasConfig = config.getValue(KAFKA_SASL_JAAS_CONFIG, String.class);
-                    switch (saslMechanism) {
-                        case PLAIN:
-                            configurePlainAuthentication(securityProtocol, saslMechanism, saslJaasConfig);
-                            break;
-                        case SCRAM_SHA_512:
-                            configureScramAuthentication(securityProtocol, saslMechanism, saslJaasConfig);
-                            config.getOptionalValue(KAFKA_SSL_TRUSTSTORE_LOCATION, String.class).ifPresent(truststoreLocation -> {
-                                String truststoreType = config.getValue(KAFKA_SSL_TRUSTSTORE_TYPE, String.class);
-                                configureTruststore(truststoreLocation, truststoreType);
-                            });
-                            break;
-                        default:
-                            throw new IllegalStateException("Unexpected Kafka SASL mechanism: " + saslMechanism);
-                    }
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected Kafka security protocol: " + securityProtocol);
+                case SSL -> {
+                    Log.info("Initializing Kafka SSL configuration...");
+                    configureTruststoreIfPresent(config);
+                }
+                case SASL_SSL -> {
+                    Log.info("Initializing Kafka SASL_SSL configuration...");
+                    configureSasl(config);
+                    configureTruststoreIfPresent(config);
+                }
+                default -> throw new IllegalStateException("Unexpected Kafka security protocol: " + securityProtocol);
             }
         });
     }
 
-    private static void configurePlainAuthentication(String securityProtocol, String saslMechanism, String saslJaasConfig) {
-        setValue(KAFKA_SECURITY_PROTOCOL, securityProtocol);
-        setValue(KAFKA_SASL_MECHANISM, saslMechanism);
+    private static void configureSasl(Config config) {
+        String saslMechanism = config.getValue(KAFKA_SASL_MECHANISM, String.class);
+        String saslJaasConfig = config.getValue(KAFKA_SASL_JAAS_CONFIG, String.class);
+        setValue(KAFKA_SASL_MECHANISM, saslMechanism); // PLAIN or SCRAM-SHA-512
         setValue(KAFKA_SASL_JAAS_CONFIG, saslJaasConfig);
     }
 
-    private static void configureScramAuthentication(String securityProtocol, String saslMechanism, String saslJaasConfig) {
-        setValue(KAFKA_SECURITY_PROTOCOL, securityProtocol);
-        setValue(KAFKA_SASL_MECHANISM, saslMechanism);
-        setValue(KAFKA_SASL_JAAS_CONFIG, saslJaasConfig);
-    }
-
-    private static void configureTruststore(String truststoreLocation, String truststoreType) {
-        setValue(KAFKA_SSL_TRUSTSTORE_LOCATION, truststoreLocation);
-        setValue(KAFKA_SSL_TRUSTSTORE_TYPE, truststoreType);
+    private static void configureTruststoreIfPresent(Config config) {
+        config.getOptionalValue(KAFKA_SSL_TRUSTSTORE_LOCATION, String.class).ifPresent(truststoreLocation -> {
+            String truststoreType = config.getValue(KAFKA_SSL_TRUSTSTORE_TYPE, String.class);
+            setValue(KAFKA_SSL_TRUSTSTORE_LOCATION, truststoreLocation);
+            setValue(KAFKA_SSL_TRUSTSTORE_TYPE, truststoreType);
+        });
     }
 
     private static void setValue(String configKey, String configValue) {
