@@ -12,8 +12,8 @@ public class ConsolePrincipalFactory {
     private static final String MISSING_ORG_ID_MSG = "The org_id field is missing or blank in the " + X_RH_IDENTITY_HEADER + " header";
 
     public static ConsolePrincipal<?> fromIdentity(ConsoleIdentity identity) throws IllegalIdentityHeaderException {
-        if (identity instanceof RhIdentity) {
-            RhIdPrincipal principal = new RhIdPrincipal((RhIdentity) identity);
+        if (identity instanceof RhIdentity rhIdentity) {
+            RhIdPrincipal principal = new RhIdPrincipal(rhIdentity);
             if (principal.getOrgId() == null || principal.getOrgId().isBlank()) {
                 throw new IllegalIdentityHeaderException(MISSING_ORG_ID_MSG);
             }
