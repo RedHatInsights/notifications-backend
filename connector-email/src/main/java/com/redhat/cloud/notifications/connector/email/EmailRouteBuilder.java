@@ -11,10 +11,8 @@ import com.redhat.cloud.notifications.connector.email.processors.recipients.Reci
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.camel.Endpoint;
 import org.apache.camel.Predicate;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
-import org.apache.camel.component.http.HttpComponent;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
@@ -84,7 +82,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * insecure one.
          */
         try {
-            final Endpoint endpoint = this.setUpSecuredBOPEndpoint();
+            final HttpEndpointBuilderFactory.HttpEndpointBuilder endpoint = this.setUpSecuredBOPEndpoint();
 
             from(direct(Routes.SEND_EMAIL_BOP))
                 .routeId(Routes.SEND_EMAIL_BOP)
@@ -137,10 +135,8 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      * Creates the endpoint for the BOP service. It makes Apache Camel trust
      * the service's certificate.
      * @return the created endpoint.
-     * @throws Exception if the endpoint could not be created due to an
-     * unexpected error.
      */
-    private Endpoint setUpSecuredBOPEndpoint() throws Exception {
+    private HttpEndpointBuilderFactory.HttpEndpointBuilder setUpSecuredBOPEndpoint() {
         final KeyStoreParameters ksp = new KeyStoreParameters();
         ksp.setResource(this.emailConnectorConfig.getBopKeyStoreLocation());
         ksp.setPassword(this.emailConnectorConfig.getBopKeyStorePassword());
@@ -151,17 +147,16 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         final SSLContextParameters scp = new SSLContextParameters();
         scp.setTrustManagers(tmp);
 
-        final HttpComponent httpComponent = this.getCamelContext().getComponent("https", HttpComponent.class);
-        httpComponent.setSslContextParameters(scp);
+        // TODO Uncomment below if the call to recipients-resolver fails with an SslHandshakeException
+        //final HttpComponent httpComponent = this.getCamelContext().getComponent("https", HttpComponent.class);
+        //httpComponent.setSslContextParameters(scp);
 
         final String fullURL = this.emailConnectorConfig.getBopURL();
-        String endpointUri;
         if (fullURL.startsWith("https")) {
-            endpointUri = String.format("https:%s", fullURL.replace("https://", ""));
+            return https(fullURL.replace("https://", ""))
+                    .sslContextParameters(scp);
         } else {
-            endpointUri = String.format("http:%s", fullURL.replace("http://", ""));
+            return http(fullURL.replace("http://", ""));
         }
-        Log.infof("Building BOP endpoint with URI: %s", endpointUri);
-        return httpComponent.createEndpoint(endpointUri);
     }
 }
