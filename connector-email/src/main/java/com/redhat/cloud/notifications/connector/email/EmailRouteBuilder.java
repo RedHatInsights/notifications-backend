@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.connector.email.metrics.EmailMetricsProces
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Predicate;
@@ -55,10 +54,16 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     @Override
     public void configureRoutes() {
 
+        /*
+         * Prepares the payload accepted by BOP and sends the request to
+         * the service.
+         */
+        final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpoint = this.setUpBOPEndpoint();
+
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
             .process(recipientsResolverRequestPreparer)
-            .to(createRecipientResolverEndpoint())
+            .to(setupRecipientResolverEndpoint())
             .process(recipientsResolverResponseProcessor)
             .choice().when(shouldSkipEmail())
                 .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
@@ -73,36 +78,14 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                 .to(direct(Routes.SEND_EMAIL_BOP))
             .end();
 
-        /*
-         * Attempt setting up a secured BOP endpoint. If any error occurs
-         * during the creation of the secure endpoint, we fall back to an
-         * insecure one.
-         */
-        try {
-            final HttpEndpointBuilderFactory.HttpEndpointBuilder endpoint = this.setUpSecuredBOPEndpoint();
-
-            from(direct(Routes.SEND_EMAIL_BOP))
-                .routeId(Routes.SEND_EMAIL_BOP)
-                // Clear all the headers that may come from the previous route.
-                .removeHeaders("*")
-                .process(this.BOPRequestPreparer)
-                .to(endpoint)
-                .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-                .process(emailMetricsProcessor);
-        } catch (final Exception e) {
-            Log.info("Unable to set up a secured BOP endpoint. Setting an insecure one instead", e);
-
-            final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpoint = this.setUpBOPEndpoint();
-
-            from(direct(Routes.SEND_EMAIL_BOP))
-                .routeId(Routes.SEND_EMAIL_BOP)
-                // Clear all the headers that may come from the previous route.
-                .removeHeaders("*")
-                .process(this.BOPRequestPreparer)
-                .to(bopEndpoint)
-                .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-                .process(emailMetricsProcessor);
-        }
+        from(direct(Routes.SEND_EMAIL_BOP))
+            .routeId(Routes.SEND_EMAIL_BOP)
+            // Clear all the headers that may come from the previous route.
+            .removeHeaders("*")
+            .process(this.BOPRequestPreparer)
+            .to(bopEndpoint)
+            .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+            .process(emailMetricsProcessor);
     }
 
     private Predicate shouldSkipEmail() {
@@ -128,36 +111,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         }
     }
 
-    /**
-     * Creates the endpoint for the BOP service. It makes Apache Camel trust
-     * the service's certificate.
-     * @return the created endpoint.
-     */
-    private HttpEndpointBuilderFactory.HttpEndpointBuilder setUpSecuredBOPEndpoint() {
-        /*final KeyStoreParameters ksp = new KeyStoreParameters();
-        ksp.setResource(this.emailConnectorConfig.getBopKeyStoreLocation());
-        ksp.setPassword(this.emailConnectorConfig.getBopKeyStorePassword());
-
-        final TrustManagersParameters tmp = new TrustManagersParameters();
-        tmp.setKeyStore(ksp);
-
-        final SSLContextParameters scp = new SSLContextParameters();
-        scp.setTrustManagers(tmp);*/
-
-        // TODO Uncomment below if the call to recipients-resolver fails with an SslHandshakeException
-        //final HttpComponent httpComponent = this.getCamelContext().getComponent("https", HttpComponent.class);
-        //httpComponent.setSslContextParameters(scp);
-
-        final String fullURL = this.emailConnectorConfig.getBopURL();
-        if (fullURL.startsWith("https")) {
-            return https(fullURL.replace("https://", ""));
-                    //.sslContextParameters(scp);
-        } else {
-            return http(fullURL.replace("http://", ""));
-        }
-    }
-
-    private HttpEndpointBuilderFactory.HttpEndpointBuilder createRecipientResolverEndpoint() {
+    private HttpEndpointBuilderFactory.HttpEndpointBuilder setupRecipientResolverEndpoint() {
         final String fullURL = emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver";
         if (fullURL.startsWith("https")) {
             return https(fullURL.replace("https://", ""))

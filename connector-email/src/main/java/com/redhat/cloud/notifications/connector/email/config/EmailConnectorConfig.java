@@ -21,8 +21,6 @@ import static io.quarkus.runtime.LaunchMode.TEST;
 public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_API_TOKEN = "notifications.connector.user-provider.bop.api_token";
     private static final String BOP_CLIENT_ID = "notifications.connector.user-provider.bop.client_id";
-    private static final String BOP_KEY_STORE_LOCATION = "notifications.connector.user-provider.bop.key-store-location";
-    private static final String BOP_KEY_STORE_PASSWORD = "notifications.connector.user-provider.bop.key-store-password";
     private static final String BOP_ENV = "notifications.connector.user-provider.bop.env";
     private static final String BOP_URL = "notifications.connector.user-provider.bop.url";
     private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
@@ -38,12 +36,6 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     @ConfigProperty(name = BOP_ENV)
     String bopEnv;
-
-    @ConfigProperty(name = BOP_KEY_STORE_LOCATION)
-    String bopKeyStoreLocation;
-
-    @ConfigProperty(name = BOP_KEY_STORE_PASSWORD)
-    String bopKeyStorePassword;
 
     @ConfigProperty(name = BOP_URL)
     String bopURL;
@@ -67,7 +59,6 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
          */
 
         config.put(BOP_ENV, this.bopEnv);
-        config.put(BOP_KEY_STORE_LOCATION, this.bopKeyStoreLocation);
         config.put(BOP_URL, this.bopURL);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
@@ -103,14 +94,6 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     public int getMaxRecipientsPerEmail() {
         return maxRecipientsPerEmail;
-    }
-
-    public String getBopKeyStoreLocation() {
-        return this.bopKeyStoreLocation;
-    }
-
-    public String getBopKeyStorePassword() {
-        return this.bopKeyStorePassword;
     }
 
     public boolean isEmailsInternalOnlyEnabled() {
