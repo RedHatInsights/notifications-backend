@@ -13,9 +13,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Predicate;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
-import org.apache.camel.support.jsse.KeyStoreParameters;
-import org.apache.camel.support.jsse.SSLContextParameters;
-import org.apache.camel.support.jsse.TrustManagersParameters;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import java.util.Set;
@@ -137,7 +134,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      * @return the created endpoint.
      */
     private HttpEndpointBuilderFactory.HttpEndpointBuilder setUpSecuredBOPEndpoint() {
-        final KeyStoreParameters ksp = new KeyStoreParameters();
+        /*final KeyStoreParameters ksp = new KeyStoreParameters();
         ksp.setResource(this.emailConnectorConfig.getBopKeyStoreLocation());
         ksp.setPassword(this.emailConnectorConfig.getBopKeyStorePassword());
 
@@ -145,7 +142,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         tmp.setKeyStore(ksp);
 
         final SSLContextParameters scp = new SSLContextParameters();
-        scp.setTrustManagers(tmp);
+        scp.setTrustManagers(tmp);*/
 
         // TODO Uncomment below if the call to recipients-resolver fails with an SslHandshakeException
         //final HttpComponent httpComponent = this.getCamelContext().getComponent("https", HttpComponent.class);
@@ -153,8 +150,8 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
         final String fullURL = this.emailConnectorConfig.getBopURL();
         if (fullURL.startsWith("https")) {
-            return https(fullURL.replace("https://", ""))
-                    .sslContextParameters(scp);
+            return https(fullURL.replace("https://", ""));
+                    //.sslContextParameters(scp);
         } else {
             return http(fullURL.replace("http://", ""));
         }
