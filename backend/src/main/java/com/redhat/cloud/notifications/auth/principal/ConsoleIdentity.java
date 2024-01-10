@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
+import com.redhat.cloud.notifications.auth.principal.rhid.RhServiceAccountIdentity;
+import com.redhat.cloud.notifications.auth.principal.rhid.RhUserIdentity;
 import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdentity;
 import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeX509Identity;
 
@@ -23,7 +24,8 @@ import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeX509Identi
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = RhIdentity.class, name = "User"),
+    @JsonSubTypes.Type(value = RhUserIdentity.class, name = "User"),
+    @JsonSubTypes.Type(value = RhServiceAccountIdentity.class, name = "ServiceAccount"),
     @JsonSubTypes.Type(value = TurnpikeX509Identity.class, name = "X509"),
     @JsonSubTypes.Type(value = TurnpikeSamlIdentity.class, name = "Associate"),
 })
