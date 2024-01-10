@@ -229,6 +229,10 @@ public class DrawerTemplateMigrationService {
                 warnings, "console", "rbac", List.of("request-access"),
                 "Rbac/requestAccess", "html", "Rbac platform group to custom drawer body"
         );
+        createDrawerIntegrationTemplate(
+                warnings, "console", "rbac", List.of("rh-new-tam-request-created"),
+                "Rbac/tamAccessRequest", "html", "Rbac tam access request drawer body"
+        );
 
         // Sources
         createDrawerIntegrationTemplate(
