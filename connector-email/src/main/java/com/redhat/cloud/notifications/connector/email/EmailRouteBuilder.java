@@ -8,11 +8,15 @@ import com.redhat.cloud.notifications.connector.email.metrics.EmailMetricsProces
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Predicate;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory;
+import org.apache.camel.support.jsse.KeyStoreParameters;
+import org.apache.camel.support.jsse.SSLContextParameters;
+import org.apache.camel.support.jsse.TrustManagersParameters;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import java.util.Set;
@@ -25,6 +29,7 @@ import static com.redhat.cloud.notifications.connector.email.constants.ExchangeP
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static org.apache.camel.LoggingLevel.DEBUG;
 import static org.apache.camel.LoggingLevel.INFO;
+import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.HttpEndpointBuilder;
 
 @ApplicationScoped
 public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
@@ -74,7 +79,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * Prepares the payload accepted by BOP and sends the request to
          * the service.
          */
-        final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpointV1 = setUpBOPEndpointV1();
+        final HttpEndpointBuilder bopEndpointV1 = setUpBOPEndpointV1();
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
@@ -142,12 +147,29 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         }
     }
 
-    private HttpEndpointBuilderFactory.HttpEndpointBuilder setupRecipientResolverEndpoint() {
+    private HttpEndpointBuilder setupRecipientResolverEndpoint() {
         final String fullURL = emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver";
+
         if (fullURL.startsWith("https")) {
-            return https(fullURL.replace("https://", ""))
-                    .sslContextParameters(getSslContextParameters())
-                    .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
+            HttpEndpointBuilder endpointBuilder = https(fullURL.replace("https://", ""));
+            if (emailConnectorConfig.getRecipientsResolverTrustStorePath().isPresent() && emailConnectorConfig.getRecipientsResolverTrustStorePassword().isPresent() && emailConnectorConfig.getRecipientsResolverTrustStoreType().isPresent()) {
+
+                KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
+                keyStoreParameters.setResource(emailConnectorConfig.getRecipientsResolverTrustStorePath().get());
+                keyStoreParameters.setPassword(emailConnectorConfig.getRecipientsResolverTrustStorePassword().get());
+                keyStoreParameters.setType(emailConnectorConfig.getRecipientsResolverTrustStoreType().get());
+
+                TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
+                trustManagersParameters.setKeyStore(keyStoreParameters);
+
+                SSLContextParameters sslContextParameters = new SSLContextParameters();
+                sslContextParameters.setTrustManagers(trustManagersParameters);
+
+                endpointBuilder.sslContextParameters(sslContextParameters);
+            } else {
+                Log.warn("TLS is enabled for recipients-resolver but the trust store could not be used to build the Camel endpoint because the trust store path, password or type are missing in the Clowder configuration");
+            }
+            return endpointBuilder;
         } else {
             return http(fullURL.replace("http://", ""));
         }
