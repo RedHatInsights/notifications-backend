@@ -43,6 +43,12 @@ objects:
           limits:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
+        volumes:
+        - name: service-ca
+          emptyDir: {}
+        volumeMounts:
+        - name: service-ca
+          mountPath: /tmp
         readinessProbe:
           httpGet:
             path: /q/health/ready
