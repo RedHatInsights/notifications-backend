@@ -63,7 +63,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
             .process(recipientsResolverRequestPreparer)
-            .to(emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
+            .to(setupRecipientResolverEndpoint())
             .process(recipientsResolverResponseProcessor)
             .choice().when(shouldSkipEmail())
                 .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
@@ -106,6 +106,17 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             return https(fullURL.replace("https://", ""))
                 .sslContextParameters(getSslContextParameters())
                 .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
+        } else {
+            return http(fullURL.replace("http://", ""));
+        }
+    }
+
+    private HttpEndpointBuilderFactory.HttpEndpointBuilder setupRecipientResolverEndpoint() {
+        final String fullURL = emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver";
+        if (fullURL.startsWith("https")) {
+            return https(fullURL.replace("https://", ""))
+                    .sslContextParameters(getSslContextParameters())
+                    .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
         } else {
             return http(fullURL.replace("http://", ""));
         }
