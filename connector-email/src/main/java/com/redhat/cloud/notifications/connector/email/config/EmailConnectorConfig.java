@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static io.quarkus.runtime.LaunchMode.TEST;
 
@@ -25,6 +26,9 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
     private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
     private static final String NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED = "notifications.emails-internal-only.enabled";
+    private static final String RECIPIENTS_RESOLVER_TRUST_STORE_PATH = "clowder.endpoints.notifications-recipients-resolver-service.trust-store-path";
+    private static final String RECIPIENTS_RESOLVER_TRUST_STORE_PASSWORD = "clowder.endpoints.notifications-recipients-resolver-service.trust-store-password";
+    private static final String RECIPIENTS_RESOLVER_TRUST_STORE_TYPE = "clowder.endpoints.notifications-recipients-resolver-service.trust-store-type";
 
     @ConfigProperty(name = BOP_API_TOKEN)
     String bopApiToken;
@@ -64,7 +68,14 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, defaultValue = "false")
     boolean emailsInternalOnlyEnabled;
 
-    private String enableBopEmailServiceWithSslChecks;
+    @ConfigProperty(name = RECIPIENTS_RESOLVER_TRUST_STORE_PATH)
+    Optional<String> recipientsResolverTrustStorePath;
+
+    @ConfigProperty(name = RECIPIENTS_RESOLVER_TRUST_STORE_PASSWORD)
+    Optional<String> recipientsResolverTrustStorePassword;
+
+    @ConfigProperty(name = RECIPIENTS_RESOLVER_TRUST_STORE_TYPE)
+    Optional<String> recipientsResolverTrustStoreType;
 
     @PostConstruct
     void emailConnectorPostConstruct() {
@@ -90,6 +101,8 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
+        config.put(RECIPIENTS_RESOLVER_TRUST_STORE_PATH, recipientsResolverTrustStorePath);
+        config.put(RECIPIENTS_RESOLVER_TRUST_STORE_TYPE, recipientsResolverTrustStoreType);
         config.put(enableBopEmailServiceWithSslChecks + " for all orgIds", isEnableBopServiceWithSslChecks(null));
 
         /*
@@ -151,6 +164,18 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     public void setEmailsInternalOnlyEnabled(boolean emailsInternalOnlyEnabled) {
         checkTestLaunchMode();
         this.emailsInternalOnlyEnabled = emailsInternalOnlyEnabled;
+    }
+
+    public Optional<String> getRecipientsResolverTrustStorePath() {
+        return recipientsResolverTrustStorePath;
+    }
+
+    public Optional<String> getRecipientsResolverTrustStorePassword() {
+        return recipientsResolverTrustStorePassword;
+    }
+
+    public Optional<String> getRecipientsResolverTrustStoreType() {
+        return recipientsResolverTrustStoreType;
     }
 
     public boolean isEnableBopServiceWithSslChecks(String orgId) {
