@@ -64,7 +64,7 @@
         <mockserver-netty-no-dependencies.version>5.15.0</mockserver-netty-no-dependencies.version>
 
         <insights-notification-schemas-java.version>0.21</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>2.0.0</clowder-quarkus-config-source.version>
+        <clowder-quarkus-config-source.version>2.2.0</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.6.0</quarkus-logging-cloudwatch.version>
         <quarkus-logging-sentry.version>2.0.4</quarkus-logging-sentry.version>
