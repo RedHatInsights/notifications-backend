@@ -8,6 +8,7 @@ import jakarta.enterprise.inject.Alternative;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static io.quarkus.runtime.LaunchMode.TEST;
 
@@ -19,14 +20,17 @@ import static io.quarkus.runtime.LaunchMode.TEST;
 @Alternative
 @Priority(0) // The value doesn't matter.
 public class EmailConnectorConfig extends HttpConnectorConfig {
+
     private static final String BOP_API_TOKEN = "notifications.connector.user-provider.bop.api_token";
     private static final String BOP_CLIENT_ID = "notifications.connector.user-provider.bop.client_id";
     private static final String BOP_ENV = "notifications.connector.user-provider.bop.env";
     private static final String BOP_URL = "notifications.connector.user-provider.bop.url";
     private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
     private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
-
     private static final String NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED = "notifications.emails-internal-only.enabled";
+    private static final String RECIPIENTS_RESOLVER_TRUST_STORE_PATH = "clowder.endpoints.notifications-recipients-resolver-service.trust-store-path";
+    private static final String RECIPIENTS_RESOLVER_TRUST_STORE_PASSWORD = "clowder.endpoints.notifications-recipients-resolver-service.trust-store-password";
+    private static final String RECIPIENTS_RESOLVER_TRUST_STORE_TYPE = "clowder.endpoints.notifications-recipients-resolver-service.trust-store-type";
 
     @ConfigProperty(name = BOP_API_TOKEN)
     String bopApiToken;
@@ -49,6 +53,15 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, defaultValue = "false")
     boolean emailsInternalOnlyEnabled;
 
+    @ConfigProperty(name = RECIPIENTS_RESOLVER_TRUST_STORE_PATH)
+    Optional<String> recipientsResolverTrustStorePath;
+
+    @ConfigProperty(name = RECIPIENTS_RESOLVER_TRUST_STORE_PASSWORD)
+    Optional<String> recipientsResolverTrustStorePassword;
+
+    @ConfigProperty(name = RECIPIENTS_RESOLVER_TRUST_STORE_TYPE)
+    Optional<String> recipientsResolverTrustStoreType;
+
     @Override
     protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = super.getLoggedConfiguration();
@@ -63,6 +76,8 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
+        config.put(RECIPIENTS_RESOLVER_TRUST_STORE_PATH, recipientsResolverTrustStorePath);
+        config.put(RECIPIENTS_RESOLVER_TRUST_STORE_TYPE, recipientsResolverTrustStoreType);
 
         /*
          * /!\ WARNING /!\
@@ -103,6 +118,18 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     public void setEmailsInternalOnlyEnabled(boolean emailsInternalOnlyEnabled) {
         checkTestLaunchMode();
         this.emailsInternalOnlyEnabled = emailsInternalOnlyEnabled;
+    }
+
+    public Optional<String> getRecipientsResolverTrustStorePath() {
+        return recipientsResolverTrustStorePath;
+    }
+
+    public Optional<String> getRecipientsResolverTrustStorePassword() {
+        return recipientsResolverTrustStorePassword;
+    }
+
+    public Optional<String> getRecipientsResolverTrustStoreType() {
+        return recipientsResolverTrustStoreType;
     }
 
     /**
