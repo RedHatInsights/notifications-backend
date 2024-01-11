@@ -17,6 +17,7 @@ USER root
 RUN microdnf update --refresh --nodocs && microdnf clean all
 # Temporary workaround for packages affected by a CVE and not needed to run our app which is why we're removing them from the base image
 RUN rpm -e --nodeps platform-python-setuptools
+RUN microdnf install python3-pip
 USER jboss
 
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
