@@ -30,12 +30,13 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
     static final String GROUP_DELETED = "group-deleted";
     static final String PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM = "platform-default-group-turned-into-custom";
     static final String REQUEST_ACCESS = "request-access";
+    static final String RH_TAM_ACCESS_REQUESTED = "rh-new-tam-request-created";
 
     static String[] RBAC_EVENT_TYPE_NAMES() {
         return new String[]{RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED,
             CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS,
             CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM,
-            REQUEST_ACCESS};
+            REQUEST_ACCESS, RH_TAM_ACCESS_REQUESTED};
     }
 
     @Override
@@ -115,6 +116,9 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
             case REQUEST_ACCESS:
                 assertEquals("Instant notification - Request access - User Access - Console", result);
                 break;
+            case RH_TAM_ACCESS_REQUESTED:
+                assertEquals("Instant notification - New TAM access request created - User Access - Console", result);
+                break;
             default:
                 break;
         }
@@ -193,6 +197,12 @@ public class TestRbacTemplate extends EmailTemplatesInDbHelper {
                 assertTrue(result.contains("https://console.redhat.com/stuff"));
                 assertTrue(result.contains("I want access to stuff"));
                 assertTrue(result.contains("testUser AT somewhere"));
+                assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+                break;
+            case RH_TAM_ACCESS_REQUESTED:
+                assertTrue(result.contains("New TAM Access Request"));
+                assertTrue(result.contains("A technical account manager requested to access your account."));
+                assertTrue(result.contains("Check the request in Insights"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             default:

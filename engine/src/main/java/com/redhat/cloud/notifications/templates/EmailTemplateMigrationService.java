@@ -445,6 +445,11 @@ public class EmailTemplateMigrationService {
                     "Rbac/requestAccessEmailTitle", "txt", "Rbac request access email title",
                     "Rbac/requestAccessEmailBody", "html", "Rbac request access email body"
             );
+            createInstantEmailTemplate(
+                    warnings, "console", "rbac", List.of("rh-new-tam-request-created"),
+                    "Rbac/tamAccessRequestEmailTitle", "txt", "Rbac tam access request email title",
+                    "Rbac/tamAccessRequestEmailBody", "html", "Rbac tam access request email body"
+            );
 
             /*
              * Former src/main/resources/templates/ResourceOptimization folder.

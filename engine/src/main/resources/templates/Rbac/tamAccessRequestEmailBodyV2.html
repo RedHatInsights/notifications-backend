@@ -1,0 +1,18 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    User Access - Console
+{/content-title}
+{#content-title-section1}
+    New TAM Access Request
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        A technical account manager requested to access your account.
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/iam/user-access/access-requests/{action.events[0].payload.request_id}">Check the request in Insights</a>
+{/content-button-section1}
+{/include}
