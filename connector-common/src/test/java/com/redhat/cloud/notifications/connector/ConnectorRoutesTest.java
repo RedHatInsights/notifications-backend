@@ -168,7 +168,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testRedeliveredNotification() throws Exception {
+    protected void testRedeliveredNotification() throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
         mockRemoteServerNetworkFailure();

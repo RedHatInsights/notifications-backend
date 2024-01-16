@@ -29,7 +29,7 @@ import static org.apache.camel.LoggingLevel.INFO;
 public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
 
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
-    private static final String APPLICATION_JSON = "application/json";
+    private static final String APPLICATION_JSON = "application/json; charset=utf-8";
 
     static final String ENDPOINT_RESPONSE_TIME_METRIC = "micrometer:timer:webhook.endpoint.response.time";
     static final String TIMER_ACTION_START = "?action=start";

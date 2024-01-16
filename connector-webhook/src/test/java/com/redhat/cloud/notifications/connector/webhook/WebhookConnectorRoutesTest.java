@@ -107,7 +107,7 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
             }
 
             return outgoingPayload.equals(incomingPayload.getString("payload"))
-                && outgoingContentType.equals("application/json")
+                && outgoingContentType.equals("application/json; charset=utf-8")
                 && checkInsightsToken
                 && checkBearerToken
                 && checkBasicAuth;
