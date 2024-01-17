@@ -16,6 +16,10 @@ import static org.apache.camel.LoggingLevel.INFO;
 @ApplicationScoped
 public class TeamsRouteBuilder extends EngineToConnectorRouteBuilder {
 
+    static final String TEAMS_RESPONSE_TIME_METRIC = "micrometer:timer:teams.response.time";
+    static final String TIMER_ACTION_START = "?action=start";
+    static final String TIMER_ACTION_STOP = "?action=stop";
+
     @Inject
     HttpConnectorConfig connectorConfig;
 
@@ -25,7 +29,9 @@ public class TeamsRouteBuilder extends EngineToConnectorRouteBuilder {
                 .routeId(connectorConfig.getConnectorName())
                 .setHeader(HTTP_METHOD, constant("POST"))
                 .setHeader(CONTENT_TYPE, constant("application/json"))
-                .toD("${exchangeProperty." + TARGET_URL + "}", connectorConfig.getEndpointCacheMaxSize())
+                .to(TEAMS_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                    .toD("${exchangeProperty." + TARGET_URL + "}", connectorConfig.getEndpointCacheMaxSize())
+                .to(TEAMS_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
                 .log(INFO, getClass().getName(), "Sent Microsoft Teams notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
                 .to(direct(SUCCESS));
     }

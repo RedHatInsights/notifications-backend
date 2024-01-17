@@ -15,6 +15,10 @@ import static org.apache.camel.LoggingLevel.INFO;
 @ApplicationScoped
 public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
 
+    static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "micrometer:timer:drawer.recipients_resolver.response.time";
+    static final String TIMER_ACTION_START = "?action=start";
+    static final String TIMER_ACTION_STOP = "?action=stop";
+
     @Inject
     DrawerConnectorConfig drawerConnectorConfig;
 
@@ -34,7 +38,9 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(drawerConnectorConfig.getConnectorName())
             .process(recipientsResolverPreparer)
-            .to(drawerConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
+            .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                .to(drawerConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
+            .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .process(recipientsResolverResponseProcessor)
             .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.RESOLVED_RECIPIENT_LIST))
                 .process(drawerPayloadBuilder)

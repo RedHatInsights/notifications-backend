@@ -21,6 +21,10 @@ import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.H
 @ApplicationScoped
 public class SplunkRouteBuilder extends EngineToConnectorRouteBuilder {
 
+    static final String SPLUNK_RESPONSE_TIME_METRIC = "micrometer:timer:splunk.response.time";
+    static final String TIMER_ACTION_START = "?action=start";
+    static final String TIMER_ACTION_STOP = "?action=stop";
+
     @Inject
     HttpConnectorConfig connectorConfig;
 
@@ -35,6 +39,7 @@ public class SplunkRouteBuilder extends EngineToConnectorRouteBuilder {
                 // Events are split to be sent in batch to Splunk HEC.
                 .process(eventsSplitter)
                 .setHeader("Authorization", simple("Splunk ${exchangeProperty." + AUTHENTICATION_TOKEN + "}"))
+                .to(SPLUNK_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                 // SSL certificates may or may not be verified depending on the integration settings.
                 .choice()
                 .when(exchangeProperty(TRUST_ALL))
@@ -43,6 +48,7 @@ public class SplunkRouteBuilder extends EngineToConnectorRouteBuilder {
                 .otherwise()
                         .toD(buildSplunkEndpoint(false), connectorConfig.getEndpointCacheMaxSize())
                 .end()
+                .to(SPLUNK_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
                 .log(INFO, getClass().getName(), "Delivered event ${exchangeProperty." + ID + "} " +
                         "(orgId ${exchangeProperty." + ORG_ID + "} account ${exchangeProperty." + ACCOUNT_ID + "}) " +
                         "to ${exchangeProperty." + TARGET_URL + "}")
