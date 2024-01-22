@@ -42,14 +42,14 @@ jobs:
         run: echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
       - if: matrix.language == 'java'
         name: Cache Maven dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           # The cache key is changed every month to prevent unlimited growth.
           key: maven-cache-${{ steps.cache-key.outputs.date }}
       - if: matrix.language == 'javascript'
         name: Cache Yarn dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/yarn
           # The cache key is changed every month to prevent unlimited growth.
