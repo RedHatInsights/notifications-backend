@@ -15,6 +15,10 @@ import static org.apache.camel.LoggingLevel.INFO;
 @ApplicationScoped
 public class SlackRouteBuilder extends EngineToConnectorRouteBuilder {
 
+    static final String SLACK_RESPONSE_TIME_METRIC = "micrometer:timer:slack.response.time";
+    static final String TIMER_ACTION_START = "?action=start";
+    static final String TIMER_ACTION_STOP = "?action=stop";
+
     @Inject
     ConnectorConfig connectorConfig;
 
@@ -22,7 +26,9 @@ public class SlackRouteBuilder extends EngineToConnectorRouteBuilder {
     public void configureRoutes() {
         from(seda(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
-                .toD(slack("${exchangeProperty." + CHANNEL + "}").webhookUrl("${exchangeProperty." + TARGET_URL + "}"), connectorConfig.getEndpointCacheMaxSize())
+                .to(SLACK_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                    .toD(slack("${exchangeProperty." + CHANNEL + "}").webhookUrl("${exchangeProperty." + TARGET_URL + "}"), connectorConfig.getEndpointCacheMaxSize())
+                .to(SLACK_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
                 .log(INFO, getClass().getName(), "Sent Slack notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
                 .to(direct(SUCCESS));
     }

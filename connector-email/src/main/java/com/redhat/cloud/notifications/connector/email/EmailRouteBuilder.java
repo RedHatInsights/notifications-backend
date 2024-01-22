@@ -26,6 +26,11 @@ import static org.apache.camel.LoggingLevel.INFO;
 @ApplicationScoped
 public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
+    static final String BOP_RESPONSE_TIME_METRIC = "micrometer:timer:email.bop.response.time";
+    static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "micrometer:timer:email.recipients_resolver.response.time";
+    static final String TIMER_ACTION_START = "?action=start";
+    static final String TIMER_ACTION_STOP = "?action=stop";
+
     /**
      * Holds all the configuration parameters required to run the connector.
      */
@@ -63,7 +68,9 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
             .process(recipientsResolverRequestPreparer)
-            .to(setupRecipientResolverEndpoint())
+            .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                .to(setupRecipientResolverEndpoint())
+            .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
             .process(recipientsResolverResponseProcessor)
             .choice().when(shouldSkipEmail())
                 .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
@@ -75,7 +82,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         from(direct(Routes.SPLIT_AND_SEND))
             .routeId(Routes.SPLIT_AND_SEND)
             .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.FILTERED_USERS))
-                .to(direct(Routes.SEND_EMAIL_BOP))
+            .to(direct(Routes.SEND_EMAIL_BOP))
             .end();
 
         from(direct(Routes.SEND_EMAIL_BOP))
@@ -83,7 +90,9 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
             .process(this.BOPRequestPreparer)
-            .to(bopEndpoint)
+            .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                .to(bopEndpoint)
+            .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .process(emailMetricsProcessor);
     }
