@@ -464,6 +464,35 @@ public class EmailTemplateMigrationService {
             );
 
             /*
+             * Former src/main/resources/templates/Tasks folder.
+             */
+            createInstantEmailTemplate(
+                warnings, "rhel", "tasks", List.of("executed-task-completed"),
+                "Tasks/executedTaskCompletedEmailTitle", "txt", "Executed task completed email title",
+                "Tasks/executedTaskCompletedEmailBody", "html", "Executed task completed email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "rhel", "tasks", List.of("executed-task-started"),
+                "Tasks/executedTaskStartedEmailTitle", "txt", "Executed task started email title",
+                "Tasks/executedTaskStartedEmailBody", "html", "Executed task started email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "rhel", "tasks", List.of("job-completed"),
+                "Tasks/jobCompletedEmailTitle", "txt", "Job completed email title",
+                "Tasks/jobCompletedEmailBody", "html", "Job completed email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "rhel", "tasks", List.of("job-failed"),
+                "Tasks/jobFailedEmailTitle", "txt", "Job failed email title",
+                "Tasks/jobFailedEmailBody", "html", "Job failed email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "rhel", "tasks", List.of("job-started"),
+                "Tasks/jobStartedEmailTitle", "txt", "Job started email title",
+                "Tasks/jobStartedEmailBody", "html", "Job started email body"
+            );
+
+            /*
              * Former src/main/resources/templates/Vulnerability folder.
              */
             createInstantEmailTemplate(

@@ -1,0 +1,20 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Tasks - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Job failed
+{/content-title-section1}
+{#content-body-section1}
+{#let payload=action.events[0].payload}
+    <p>
+        Job <b>{payload.display_name}</b> from task <b>{payload.task_name}</b> has failed with status {payload.status}.
+    </p>
+{/let}
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/insights/tasks/{action.events[0].payload.executed_task_id}">Check this task in Insights</a>
+{/content-button-section1}
+{/include}
