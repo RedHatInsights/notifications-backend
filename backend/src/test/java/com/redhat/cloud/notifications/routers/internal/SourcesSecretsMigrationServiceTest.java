@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.routers.internal;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -118,14 +118,14 @@ public class SourcesSecretsMigrationServiceTest {
             final Endpoint endpoint = entry.getValue();
 
             if (endpoint.getProperties() instanceof SourcesSecretable properties) {
-                final BasicAuthentication basicAuthentication = properties.getBasicAuthentication();
+                final BasicAuthenticationLegacy basicAuthenticationLegacy = properties.getBasicAuthenticationLegacy();
 
-                if (!this.isBasicAuthNullOrBlank(basicAuthentication)) {
+                if (!this.isBasicAuthNullOrBlank(basicAuthenticationLegacy)) {
                     final Secret stubbedBasicAuthSecret = new Secret();
                     stubbedBasicAuthSecret.id = random.nextLong(1, Long.MAX_VALUE);
                     stubbedBasicAuthSecret.authenticationType = Secret.TYPE_BASIC_AUTH;
-                    stubbedBasicAuthSecret.password = properties.getBasicAuthentication().getPassword();
-                    stubbedBasicAuthSecret.username = properties.getBasicAuthentication().getUsername();
+                    stubbedBasicAuthSecret.password = properties.getBasicAuthenticationLegacy().getPassword();
+                    stubbedBasicAuthSecret.username = properties.getBasicAuthenticationLegacy().getUsername();
 
                     // Store the generated stub for later checks.
                     generatedSecrets.put(stubbedBasicAuthSecret.id, stubbedBasicAuthSecret);
@@ -139,7 +139,7 @@ public class SourcesSecretsMigrationServiceTest {
                 final Secret stubbedSecretTokenSecret = new Secret();
                 stubbedSecretTokenSecret.id = random.nextLong(1, Long.MAX_VALUE);
                 stubbedSecretTokenSecret.authenticationType = Secret.TYPE_SECRET_TOKEN;
-                stubbedSecretTokenSecret.password = properties.getSecretToken();
+                stubbedSecretTokenSecret.password = properties.getSecretTokenLegacy();
 
                 // Store the generated stub for later checks.
                 generatedSecrets.put(stubbedSecretTokenSecret.id, stubbedSecretTokenSecret);
@@ -199,17 +199,17 @@ public class SourcesSecretsMigrationServiceTest {
 
             if (entry.getValue().getProperties() instanceof SourcesSecretable properties) {
                 final Long basicAuthSourcesId = properties.getBasicAuthenticationSourcesId();
-                final BasicAuthentication basicAuthentication = properties.getBasicAuthentication();
+                final BasicAuthenticationLegacy basicAuthenticationLegacy = properties.getBasicAuthenticationLegacy();
 
                 // There might be null or blank basic authentications. In these
                 // cases, just check the secret tokens...
-                if (!this.isBasicAuthNullOrBlank(basicAuthentication)) {
+                if (!this.isBasicAuthNullOrBlank(basicAuthenticationLegacy)) {
                     final Secret basicAuthSecret = generatedSecrets.get(basicAuthSourcesId);
                     Assertions.assertNotNull(basicAuthSecret, "the stubbed basic authentication secret specified by the Sources reference was not found");
 
                     Assertions.assertEquals(basicAuthSecret.authenticationType, Secret.TYPE_BASIC_AUTH);
-                    Assertions.assertEquals(basicAuthentication.getUsername(), basicAuthSecret.username);
-                    Assertions.assertEquals(basicAuthentication.getPassword(), basicAuthSecret.password);
+                    Assertions.assertEquals(basicAuthenticationLegacy.getUsername(), basicAuthSecret.username);
+                    Assertions.assertEquals(basicAuthenticationLegacy.getPassword(), basicAuthSecret.password);
 
                     updatedSecretReferencesInDatabase++;
                 }
@@ -218,7 +218,7 @@ public class SourcesSecretsMigrationServiceTest {
                 // not blank, at least in this test case.
                 final long secretTokenSourcesId = properties.getSecretTokenSourcesId();
 
-                final String secretToken = properties.getSecretToken();
+                final String secretToken = properties.getSecretTokenLegacy();
                 final Secret secretTokenSecret = generatedSecrets.get(secretTokenSourcesId);
 
                 Assertions.assertNotNull(secretTokenSecret, "the stubbed secret token secret specified by the Sources reference was not found");
@@ -342,15 +342,15 @@ public class SourcesSecretsMigrationServiceTest {
     /**
      * Checks if the provided basic authentication is null or if its elements
      * are blank.
-     * @param basicAuthentication the basic authentication to check.
+     * @param basicAuthenticationLegacy the basic authentication to check.
      * @return true if the basic authentication is null or its elements are
      * blank.
      */
     @Deprecated(forRemoval = true)
-    private boolean isBasicAuthNullOrBlank(final BasicAuthentication basicAuthentication) {
-        return basicAuthentication == null
-            || (basicAuthentication.getPassword() == null || basicAuthentication.getPassword().isBlank())
-            || (basicAuthentication.getUsername() == null || basicAuthentication.getUsername().isBlank());
+    private boolean isBasicAuthNullOrBlank(final BasicAuthenticationLegacy basicAuthenticationLegacy) {
+        return basicAuthenticationLegacy == null
+            || (basicAuthenticationLegacy.getPassword() == null || basicAuthenticationLegacy.getPassword().isBlank())
+            || (basicAuthenticationLegacy.getUsername() == null || basicAuthenticationLegacy.getUsername().isBlank());
     }
 
     /**

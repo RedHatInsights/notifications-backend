@@ -2,13 +2,13 @@ package com.redhat.cloud.notifications.models;
 
 import java.util.Objects;
 
-public class BasicAuthentication {
+public class BasicAuthenticationLegacy {
     private String username;
     private String password;
 
-    public BasicAuthentication() { }
+    public BasicAuthenticationLegacy() { }
 
-    public BasicAuthentication(String username, String password) {
+    public BasicAuthenticationLegacy(String username, String password) {
         this.username = username;
         this.password = password;
     }
@@ -30,8 +30,8 @@ public class BasicAuthentication {
         if (this == o) {
             return true;
         }
-        if (o instanceof BasicAuthentication) {
-            BasicAuthentication other = (BasicAuthentication) o;
+        if (o instanceof BasicAuthenticationLegacy) {
+            BasicAuthenticationLegacy other = (BasicAuthenticationLegacy) o;
             return Objects.equals(username, other.username) &&
                     Objects.equals(password, other.password);
         }

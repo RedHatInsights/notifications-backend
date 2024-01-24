@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
@@ -28,8 +29,10 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     @NotNull
     private Boolean disableSslVerification = Boolean.FALSE;
 
+    @Column(name = "secret_token")
+    @Deprecated
     @Size(max = 255)
-    private String secretToken; // TODO Should be optional
+    private String secretTokenLegacy; // TODO Should be optional
 
     /**
      * The ID of the "secret token" secret in the Sources backend.
@@ -38,9 +41,12 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     @JsonIgnore
     private Long secretTokenSourcesId;
 
+    @Column(name = "basic_authentication")
     @Convert(converter = BasicAuthenticationConverter.class)
+    @Deprecated(forRemoval = true)
+    @JsonProperty("basic_authentication")
     @Valid
-    private BasicAuthentication basicAuthentication;
+    private BasicAuthenticationLegacy basicAuthenticationLegacy;
 
     /**
      * The ID of the "basic authentication" secret in the Sources backend.
@@ -68,12 +74,14 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
         this.url = url;
     }
 
-    public void setSecretToken(String secretToken) {
-        this.secretToken = secretToken;
+    @Deprecated(forRemoval = true)
+    public void setSecretTokenLegacy(String secretToken) {
+        this.secretTokenLegacy = secretToken;
     }
 
-    public String getSecretToken() {
-        return secretToken;
+    @Deprecated(forRemoval = true)
+    public String getSecretTokenLegacy() {
+        return secretTokenLegacy;
     }
 
     public Long getSecretTokenSourcesId() {
@@ -84,12 +92,14 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
         this.secretTokenSourcesId = secretTokenSourcesId;
     }
 
-    public BasicAuthentication getBasicAuthentication() {
-        return basicAuthentication;
+    @Deprecated(forRemoval = true)
+    public BasicAuthenticationLegacy getBasicAuthenticationLegacy() {
+        return basicAuthenticationLegacy;
     }
 
-    public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
-        this.basicAuthentication = basicAuthentication;
+    @Deprecated(forRemoval = true)
+    public void setBasicAuthenticationLegacy(BasicAuthenticationLegacy basicAuthenticationLegacy) {
+        this.basicAuthenticationLegacy = basicAuthenticationLegacy;
     }
 
     public Long getBasicAuthenticationSourcesId() {
@@ -108,11 +118,13 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
         // do nothing here
     }
 
-    public String getBearerAuthentication() {
+    @Deprecated(forRemoval = true)
+    public String getBearerAuthenticationLegacy() {
         return null;
     }
 
-    public void setBearerAuthentication(String bearerAuthentication) {
+    @Deprecated(forRemoval = true)
+    public void setBearerAuthenticationLegacy(String bearerAuthentication) {
         // do nothing here
     }
 

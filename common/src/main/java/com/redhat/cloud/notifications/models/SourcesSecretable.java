@@ -9,13 +9,15 @@ public interface SourcesSecretable {
      * Get the contents of the secret token.
      * @return the contents of the secret token.
      */
-    String getSecretToken();
+    @Deprecated(forRemoval = true)
+    String getSecretTokenLegacy();
 
     /**
      * Set the contents of the secret token.
      * @param secretToken the contents of the secret token.
      */
-    void setSecretToken(String secretToken);
+    @Deprecated(forRemoval = true)
+    void setSecretTokenLegacy(String secretToken);
 
     /**
      * Get the ID of the "secret token" secret stored in Sources.
@@ -33,13 +35,15 @@ public interface SourcesSecretable {
      * Get the basic authentication object.
      * @return the basic authentication object.
      */
-    BasicAuthentication getBasicAuthentication();
+    @Deprecated(forRemoval = true)
+    BasicAuthenticationLegacy getBasicAuthenticationLegacy();
 
     /**
      * Set the basic authentication object.
-     * @param basicAuthentication the basic authentication object to be set.
+     * @param basicAuthenticationLegacy the basic authentication object to be set.
      */
-    void setBasicAuthentication(BasicAuthentication basicAuthentication);
+    @Deprecated(forRemoval = true)
+    void setBasicAuthenticationLegacy(BasicAuthenticationLegacy basicAuthenticationLegacy);
 
 
     /**
@@ -58,7 +62,9 @@ public interface SourcesSecretable {
 
     void setBearerAuthenticationSourcesId(Long bearerAuthenticationSourcesId);
 
-    String getBearerAuthentication();
+    @Deprecated(forRemoval = true)
+    String getBearerAuthenticationLegacy();
 
-    void setBearerAuthentication(String bearerAuthentication);
+    @Deprecated(forRemoval = true)
+    void setBearerAuthenticationLegacy(String bearerAuthentication);
 }

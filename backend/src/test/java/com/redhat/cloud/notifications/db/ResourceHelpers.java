@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -358,8 +358,8 @@ public class ResourceHelpers {
 
                 // Maybe set a basic authentication, maybe not...
                 if (i % 3 == 0) {
-                    camelProperties.setBasicAuthentication(
-                        new BasicAuthentication(
+                    camelProperties.setBasicAuthenticationLegacy(
+                        new BasicAuthenticationLegacy(
                             UUID.randomUUID().toString(),
                             UUID.randomUUID().toString()
                         )
@@ -368,7 +368,7 @@ public class ResourceHelpers {
 
                 // Maybe set a secret token, maybe not...
                 if (i % 3 == 0) {
-                    camelProperties.setSecretToken(UUID.randomUUID().toString());
+                    camelProperties.setSecretTokenLegacy(UUID.randomUUID().toString());
                 }
 
                 camelProperties.setBasicAuthenticationSourcesId(random.nextLong());
@@ -385,8 +385,8 @@ public class ResourceHelpers {
 
                 // Maybe set a basic authentication, maybe not...
                 if (i % 3 == 0) {
-                    webhookProperties.setBasicAuthentication(
-                        new BasicAuthentication(
+                    webhookProperties.setBasicAuthenticationLegacy(
+                        new BasicAuthenticationLegacy(
                             UUID.randomUUID().toString(),
                             UUID.randomUUID().toString()
                         )
@@ -395,7 +395,7 @@ public class ResourceHelpers {
 
                 // Maybe set a secret token, maybe not...
                 if (i % 3 == 0) {
-                    webhookProperties.setSecretToken(UUID.randomUUID().toString());
+                    webhookProperties.setSecretTokenLegacy(UUID.randomUUID().toString());
                 }
 
                 webhookProperties.setBasicAuthenticationSourcesId(random.nextLong());
@@ -431,10 +431,10 @@ public class ResourceHelpers {
             camelProperties.setDisableSslVerification(random.nextBoolean());
             camelProperties.setUrl("https://example.org");
 
-            camelProperties.setBasicAuthentication(
-                new BasicAuthentication(UUID.randomUUID().toString(), UUID.randomUUID().toString())
+            camelProperties.setBasicAuthenticationLegacy(
+                new BasicAuthenticationLegacy(UUID.randomUUID().toString(), UUID.randomUUID().toString())
             );
-            camelProperties.setSecretToken(UUID.randomUUID().toString());
+            camelProperties.setSecretTokenLegacy(UUID.randomUUID().toString());
 
             final Endpoint endpoint = new Endpoint();
             endpoint.setDescription(UUID.randomUUID().toString());
@@ -456,10 +456,10 @@ public class ResourceHelpers {
             webhookProperties.setMethod(HttpType.GET);
             webhookProperties.setUrl("https://example.org");
 
-            webhookProperties.setBasicAuthentication(
-                new BasicAuthentication(UUID.randomUUID().toString(), UUID.randomUUID().toString())
+            webhookProperties.setBasicAuthenticationLegacy(
+                new BasicAuthenticationLegacy(UUID.randomUUID().toString(), UUID.randomUUID().toString())
             );
-            webhookProperties.setSecretToken(UUID.randomUUID().toString());
+            webhookProperties.setSecretTokenLegacy(UUID.randomUUID().toString());
 
             final Endpoint endpoint = new Endpoint();
             endpoint.setDescription(UUID.randomUUID().toString());
@@ -479,7 +479,7 @@ public class ResourceHelpers {
     /**
      * Generates five endpoints which contain either {@link CamelProperties} or
      * {@link WebhookProperties} properties, but that have either a null
-     * or empty {@link BasicAuthentication}, mimicking what current basic
+     * or empty {@link BasicAuthenticationLegacy}, mimicking what current basic
      * authentications look like right now in the database. The properties
      * always contain a secret token. They should be fetchable by
      * {@link EndpointRepository#findEndpointWithPropertiesWithStoredSecrets()}
@@ -496,11 +496,11 @@ public class ResourceHelpers {
 
         // Generates an empty basic authentication or a null one, replicating
         // what we currently have in the database.
-        final Supplier<BasicAuthentication> getRandomBasicAuth = () -> {
+        final Supplier<BasicAuthenticationLegacy> getRandomBasicAuth = () -> {
             if (random.nextBoolean()) {
-                return new BasicAuthentication("", "");
+                return new BasicAuthenticationLegacy("", "");
             } else {
-                return new BasicAuthentication(null, null);
+                return new BasicAuthenticationLegacy(null, null);
             }
         };
 
@@ -516,9 +516,9 @@ public class ResourceHelpers {
                 endpoint.setSubType("dromedary");
 
                 final CamelProperties camelProperties = new CamelProperties();
-                camelProperties.setBasicAuthentication(getRandomBasicAuth.get());
+                camelProperties.setBasicAuthenticationLegacy(getRandomBasicAuth.get());
                 camelProperties.setDisableSslVerification(random.nextBoolean());
-                camelProperties.setSecretToken(UUID.randomUUID().toString());
+                camelProperties.setSecretTokenLegacy(UUID.randomUUID().toString());
                 camelProperties.setUrl("https://example.org");
 
                 endpoint.setProperties(camelProperties);
@@ -526,10 +526,10 @@ public class ResourceHelpers {
                 endpoint.setType(EndpointType.WEBHOOK);
 
                 final WebhookProperties webhookProperties = new WebhookProperties();
-                webhookProperties.setBasicAuthentication(getRandomBasicAuth.get());
+                webhookProperties.setBasicAuthenticationLegacy(getRandomBasicAuth.get());
                 webhookProperties.setDisableSslVerification(random.nextBoolean());
                 webhookProperties.setMethod(HttpType.GET);
-                webhookProperties.setSecretToken(UUID.randomUUID().toString());
+                webhookProperties.setSecretTokenLegacy(UUID.randomUUID().toString());
                 webhookProperties.setUrl("https://example.org");
 
                 endpoint.setProperties(webhookProperties);

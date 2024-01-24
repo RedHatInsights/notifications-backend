@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers.sources;
 
-import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.WebhookProperties;
@@ -89,14 +89,14 @@ public class SecretUtilsTest {
         final var props = (SourcesSecretable) endpoint.getProperties();
 
         // Assert the results.
-        final BasicAuthentication basicAuth = props.getBasicAuthentication();
+        final BasicAuthenticationLegacy basicAuth = props.getBasicAuthenticationLegacy();
         Assertions.assertEquals(BASIC_AUTH_PASSWORD, basicAuth.getPassword(), "the basic authentication's password field doesn't match");
         Assertions.assertEquals(BASIC_AUTH_USERNAME, basicAuth.getUsername(), "the basic authentication's username field doesn't match");
 
-        final String secretToken = props.getSecretToken();
+        final String secretToken = props.getSecretTokenLegacy();
         Assertions.assertEquals(SECRET_TOKEN, secretToken, "the secret token doesn't match");
 
-        final String secretBearer = props.getBearerAuthentication();
+        final String secretBearer = props.getBearerAuthenticationLegacy();
         Assertions.assertEquals(BEARER_AUTHENTICATION, secretBearer, "the secret bearer doesn't match");
 
         // Assert that the underlying function was called exactly three times,
@@ -147,11 +147,11 @@ public class SecretUtilsTest {
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
-        BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
+        BasicAuthenticationLegacy basicAuth = new BasicAuthenticationLegacy(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
 
-        webhookProperties.setBasicAuthentication(basicAuth);
-        webhookProperties.setSecretToken(SECRET_TOKEN);
-        webhookProperties.setBearerAuthentication(BEARER_AUTHENTICATION);
+        webhookProperties.setBasicAuthenticationLegacy(basicAuth);
+        webhookProperties.setSecretTokenLegacy(SECRET_TOKEN);
+        webhookProperties.setBearerAuthenticationLegacy(BEARER_AUTHENTICATION);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
@@ -205,8 +205,8 @@ public class SecretUtilsTest {
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
-        webhookProperties.setSecretToken(SECRET_TOKEN);
-        webhookProperties.setBearerAuthentication(BEARER_AUTHENTICATION);
+        webhookProperties.setSecretTokenLegacy(SECRET_TOKEN);
+        webhookProperties.setBearerAuthenticationLegacy(BEARER_AUTHENTICATION);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
@@ -254,14 +254,14 @@ public class SecretUtilsTest {
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
-        webhookProperties.setSecretToken(SECRET_TOKEN);
+        webhookProperties.setSecretTokenLegacy(SECRET_TOKEN);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Create a basic authentication with blank fields.
-        BasicAuthentication basicAuthentication = new BasicAuthentication("     ", "     ");
-        webhookProperties.setBasicAuthentication(basicAuthentication);
+        BasicAuthenticationLegacy basicAuthenticationLegacy = new BasicAuthenticationLegacy("     ", "     ");
+        webhookProperties.setBasicAuthenticationLegacy(basicAuthenticationLegacy);
 
         // Set up the mock call for the "create" call from the REST Client. In this case, since the basic
         // authentication is null, only the secret token should be created.
@@ -303,9 +303,9 @@ public class SecretUtilsTest {
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
-        BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
+        BasicAuthenticationLegacy basicAuth = new BasicAuthenticationLegacy(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
 
-        webhookProperties.setBasicAuthentication(basicAuth);
+        webhookProperties.setBasicAuthenticationLegacy(basicAuth);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
@@ -350,15 +350,15 @@ public class SecretUtilsTest {
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
-        BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
+        BasicAuthenticationLegacy basicAuth = new BasicAuthenticationLegacy(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
 
-        webhookProperties.setBasicAuthentication(basicAuth);
+        webhookProperties.setBasicAuthenticationLegacy(basicAuth);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
 
         // Set the secret token to blank.
-        webhookProperties.setSecretToken("     ");
+        webhookProperties.setSecretTokenLegacy("     ");
 
         // Set up the mock call for the "create" call from the REST Client. Since only the "basic authentication"
         // secret is supposed to be created, that's the one we are expecting to get from the mocked service.
@@ -416,14 +416,14 @@ public class SecretUtilsTest {
         final String updatedSecretToken = String.format("%s-updated", SECRET_TOKEN);
         final String updatedBearer = String.format("%s-updated", BEARER_AUTHENTICATION);
 
-        BasicAuthentication basicAuth = new BasicAuthentication(updatedUsername, updatedPassword);
-        webhookProperties.setBasicAuthentication(basicAuth);
+        BasicAuthenticationLegacy basicAuth = new BasicAuthenticationLegacy(updatedUsername, updatedPassword);
+        webhookProperties.setBasicAuthenticationLegacy(basicAuth);
         webhookProperties.setBasicAuthenticationSourcesId(BASIC_AUTH_SOURCES_ID);
 
-        webhookProperties.setSecretToken(updatedSecretToken);
+        webhookProperties.setSecretTokenLegacy(updatedSecretToken);
         webhookProperties.setSecretTokenSourcesId(SECRET_TOKEN_SOURCES_ID);
 
-        webhookProperties.setBearerAuthentication(updatedBearer);
+        webhookProperties.setBearerAuthenticationLegacy(updatedBearer);
         webhookProperties.setBearerAuthenticationSourcesId(BEARER_TOKEN_SOURCES_ID);
 
         endpoint.setProperties(webhookProperties);
@@ -447,14 +447,14 @@ public class SecretUtilsTest {
         final var props = (SourcesSecretable) endpoint.getProperties();
 
         // Assert the results.
-        final BasicAuthentication basicAuthResult = props.getBasicAuthentication();
+        final BasicAuthenticationLegacy basicAuthResult = props.getBasicAuthenticationLegacy();
         Assertions.assertEquals(updatedPassword, basicAuthResult.getPassword(), "the updated basic authentication's password doesn't match");
         Assertions.assertEquals(updatedUsername, basicAuthResult.getUsername(), "the updated basic authentication's username doesn't match");
 
-        final String secretToken = props.getSecretToken();
+        final String secretToken = props.getSecretTokenLegacy();
         Assertions.assertEquals(updatedSecretToken, secretToken, "the updated secret token doesn't match");
 
-        final String bearerToken = props.getBearerAuthentication();
+        final String bearerToken = props.getBearerAuthenticationLegacy();
         Assertions.assertEquals(updatedBearer, bearerToken, "the updated bearer doesn't match");
 
         // Assert that the underlying "update" function was called exactly two times, since we are expecting that both
@@ -518,14 +518,14 @@ public class SecretUtilsTest {
         Mockito.verifyNoInteractions(this.sourcesServiceMock);
 
         // Set the basic authentication as having blank values. It should also be a NOOP.
-        final BasicAuthentication basicAuthentication = new BasicAuthentication("     ", "     ");
-        webhookProperties.setBasicAuthentication(basicAuthentication);
+        final BasicAuthenticationLegacy basicAuthenticationLegacy = new BasicAuthenticationLegacy("     ", "     ");
+        webhookProperties.setBasicAuthenticationLegacy(basicAuthenticationLegacy);
         this.secretUtils.updateSecretsForEndpoint(endpoint);
 
         Mockito.verifyNoInteractions(this.sourcesServiceMock);
 
         // Set the secret token as a blank value. It should also be a NOOP.
-        webhookProperties.setSecretToken("     ");
+        webhookProperties.setSecretTokenLegacy("     ");
         this.secretUtils.updateSecretsForEndpoint(endpoint);
 
         Mockito.verifyNoInteractions(this.sourcesServiceMock);
@@ -550,11 +550,11 @@ public class SecretUtilsTest {
 
         Endpoint endpoint = new Endpoint();
         WebhookProperties webhookProperties = new WebhookProperties();
-        BasicAuthentication basicAuth = new BasicAuthentication(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
+        BasicAuthenticationLegacy basicAuth = new BasicAuthenticationLegacy(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD);
 
-        webhookProperties.setBasicAuthentication(basicAuth);
-        webhookProperties.setSecretToken(SECRET_TOKEN);
-        webhookProperties.setBearerAuthentication(BEARER_AUTHENTICATION);
+        webhookProperties.setBasicAuthenticationLegacy(basicAuth);
+        webhookProperties.setSecretTokenLegacy(SECRET_TOKEN);
+        webhookProperties.setBearerAuthenticationLegacy(BEARER_AUTHENTICATION);
 
         endpoint.setProperties(webhookProperties);
         endpoint.setOrgId(orgId);
@@ -642,7 +642,7 @@ public class SecretUtilsTest {
      */
     @Test
     void isBasicAuthNullOrBlankTest() {
-        final var basicAuth = new BasicAuthentication("username", "password");
+        final var basicAuth = new BasicAuthenticationLegacy("username", "password");
 
         Assertions.assertFalse(this.secretUtils.isBasicAuthNullOrBlank(basicAuth), "the basic authentication should have not been considered as blank");
     }
@@ -653,16 +653,16 @@ public class SecretUtilsTest {
      */
     @Test
     void itIsBasicAuthNullOrBlankTest() {
-        final var blankBasicAuths = new ArrayList<BasicAuthentication>();
+        final var blankBasicAuths = new ArrayList<BasicAuthenticationLegacy>();
 
-        blankBasicAuths.add(new BasicAuthentication());
-        blankBasicAuths.add(new BasicAuthentication(null, null));
-        blankBasicAuths.add(new BasicAuthentication(null, ""));
-        blankBasicAuths.add(new BasicAuthentication("", null));
-        blankBasicAuths.add(new BasicAuthentication("", ""));
-        blankBasicAuths.add(new BasicAuthentication(null, "     "));
-        blankBasicAuths.add(new BasicAuthentication("     ", null));
-        blankBasicAuths.add(new BasicAuthentication("     ", "     "));
+        blankBasicAuths.add(new BasicAuthenticationLegacy());
+        blankBasicAuths.add(new BasicAuthenticationLegacy(null, null));
+        blankBasicAuths.add(new BasicAuthenticationLegacy(null, ""));
+        blankBasicAuths.add(new BasicAuthenticationLegacy("", null));
+        blankBasicAuths.add(new BasicAuthenticationLegacy("", ""));
+        blankBasicAuths.add(new BasicAuthenticationLegacy(null, "     "));
+        blankBasicAuths.add(new BasicAuthenticationLegacy("     ", null));
+        blankBasicAuths.add(new BasicAuthenticationLegacy("     ", "     "));
 
         for (final var basicAuth : blankBasicAuths) {
             Assertions.assertTrue(this.secretUtils.isBasicAuthNullOrBlank(basicAuth), "the basic authentication should have been considered as blank");

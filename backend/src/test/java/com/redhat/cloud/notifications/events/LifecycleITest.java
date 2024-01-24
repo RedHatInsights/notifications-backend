@@ -513,7 +513,7 @@ public class LifecycleITest extends DbIsolatedTest {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
-        properties.setSecretToken(secretToken);
+        properties.setSecretTokenLegacy(secretToken);
         properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
 
         Endpoint endpoint = new Endpoint();
@@ -549,8 +549,8 @@ public class LifecycleITest extends DbIsolatedTest {
         jsonWebhookProperties.mapTo(WebhookProperties.class);
         assertEquals(properties.getMethod().name(), jsonWebhookProperties.getString("method"));
         assertEquals(properties.getDisableSslVerification(), jsonWebhookProperties.getBoolean("disable_ssl_verification"));
-        if (properties.getSecretToken() != null) {
-            assertEquals(properties.getSecretToken(), jsonWebhookProperties.getString("secret_token"));
+        if (properties.getSecretTokenLegacy() != null) {
+            assertEquals(properties.getSecretTokenLegacy(), jsonWebhookProperties.getString("secret_token"));
         }
         assertEquals(properties.getUrl(), jsonWebhookProperties.getString("url"));
 

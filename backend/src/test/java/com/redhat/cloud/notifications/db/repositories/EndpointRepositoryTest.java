@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -249,10 +249,10 @@ public class EndpointRepositoryTest {
     @Deprecated(forRemoval = true)
     private Endpoint createCamelEndpointWithCamelProperties() {
         final CamelProperties camelProperties = new CamelProperties();
-        camelProperties.setBasicAuthentication(new BasicAuthentication("a", "b"));
+        camelProperties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("a", "b"));
         camelProperties.setDisableSslVerification(true);
         camelProperties.setExtras(Map.of("a", "b"));
-        camelProperties.setSecretToken("secret token!");
+        camelProperties.setSecretTokenLegacy("secret token!");
         camelProperties.setUrl("https://example.com");
 
         final Endpoint camelEndpoint = new Endpoint();
@@ -277,10 +277,10 @@ public class EndpointRepositoryTest {
     @Deprecated(forRemoval = true)
     private Endpoint createWebhookEndpointWithWebhookProperties() {
         final WebhookProperties webhookProperties = new WebhookProperties();
-        webhookProperties.setBasicAuthentication(new BasicAuthentication("a", "b"));
+        webhookProperties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("a", "b"));
         webhookProperties.setDisableSslVerification(true);
         webhookProperties.setMethod(HttpType.GET);
-        webhookProperties.setSecretToken("secret token!");
+        webhookProperties.setSecretTokenLegacy("secret token!");
         webhookProperties.setUrl("https://example.com");
 
         final Endpoint webhookEndpoint = new Endpoint();

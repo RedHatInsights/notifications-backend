@@ -249,7 +249,7 @@ public class LifecycleITest {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
         properties.setDisableSslVerification(true);
-        properties.setSecretToken(secretToken);
+        properties.setSecretTokenLegacy(secretToken);
         properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
         return createEndpoint(accountId, WEBHOOK, "endpoint", "Endpoint", properties);
     }

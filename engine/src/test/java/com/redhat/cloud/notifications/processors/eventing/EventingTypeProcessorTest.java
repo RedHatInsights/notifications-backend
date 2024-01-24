@@ -12,7 +12,7 @@ import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
@@ -177,8 +177,8 @@ class EventingTypeProcessorTest {
         assertEquals(properties1.getUrl(), notifMetadata.getString("url"));
         assertEquals(endpoint1.getSubType(), notifMetadata.getString("type"));
 
-        assertEquals(properties1.getSecretToken(), notifMetadata.getString(TOKEN_HEADER));
-        checkBasicAuthentication(notifMetadata, properties1.getBasicAuthentication());
+        assertEquals(properties1.getSecretTokenLegacy(), notifMetadata.getString(TOKEN_HEADER));
+        checkBasicAuthentication(notifMetadata, properties1.getBasicAuthenticationLegacy());
 
         // Finally, we need to check the Kafka message metadata.
         UUID historyId = result.get(0).getId();
@@ -241,13 +241,13 @@ class EventingTypeProcessorTest {
     }
 
     private static Endpoint buildCamelEndpoint(String accountId) {
-        BasicAuthentication basicAuth = new BasicAuthentication(FIXTURE_CAMEL_BASIC_AUTH_USERNAME, FIXTURE_CAMEL_BASIC_AUTH_PASSWORD);
+        BasicAuthenticationLegacy basicAuth = new BasicAuthenticationLegacy(FIXTURE_CAMEL_BASIC_AUTH_USERNAME, FIXTURE_CAMEL_BASIC_AUTH_PASSWORD);
 
         CamelProperties properties = new CamelProperties();
         properties.setUrl(FIXTURE_CAMEL_URL);
         properties.setDisableSslVerification(FIXTURE_CAMEL_SSL_VERIFICATION);
-        properties.setSecretToken(FIXTURE_CAMEL_SECRET_TOKEN);
-        properties.setBasicAuthentication(basicAuth);
+        properties.setSecretTokenLegacy(FIXTURE_CAMEL_SECRET_TOKEN);
+        properties.setBasicAuthenticationLegacy(basicAuth);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
@@ -258,7 +258,7 @@ class EventingTypeProcessorTest {
         return endpoint;
     }
 
-    private void checkBasicAuthentication(JsonObject notifMetadata, BasicAuthentication expectedBasicAuth) {
+    private void checkBasicAuthentication(JsonObject notifMetadata, BasicAuthenticationLegacy expectedBasicAuth) {
         String credentials = expectedBasicAuth.getUsername() + ":" + expectedBasicAuth.getPassword();
         String expectedBase64Credentials = Base64Utils.encode(credentials);
         assertEquals(expectedBase64Credentials, notifMetadata.getString("basicAuth"));

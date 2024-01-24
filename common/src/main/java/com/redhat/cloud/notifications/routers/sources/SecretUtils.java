@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers.sources;
 
-import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
@@ -48,8 +48,8 @@ public class SecretUtils {
             if (basicAuthSourcesId != null) {
                 Secret secret = loadSecretFromSources(endpoint, basicAuthSourcesId);
 
-                props.setBasicAuthentication(
-                    new BasicAuthentication(
+                props.setBasicAuthenticationLegacy(
+                    new BasicAuthenticationLegacy(
                         secret.username,
                         secret.password
                     )
@@ -59,13 +59,13 @@ public class SecretUtils {
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
             if (secretTokenSourcesId != null) {
                 Secret secret = loadSecretFromSources(endpoint, secretTokenSourcesId);
-                props.setSecretToken(secret.password);
+                props.setSecretTokenLegacy(secret.password);
             }
 
             final Long bearerSourcesId = props.getBearerAuthenticationSourcesId();
             if (bearerSourcesId != null) {
                 Secret secret = loadSecretFromSources(endpoint, bearerSourcesId);
-                props.setBearerAuthentication(secret.password);
+                props.setBearerAuthenticationLegacy(secret.password);
             }
         }
     }
@@ -94,7 +94,7 @@ public class SecretUtils {
         if (endpointProperties instanceof SourcesSecretable) {
             var props = (SourcesSecretable) endpointProperties;
 
-            final BasicAuthentication basicAuth = props.getBasicAuthentication();
+            final BasicAuthenticationLegacy basicAuth = props.getBasicAuthenticationLegacy();
             if (!this.isBasicAuthNullOrBlank(basicAuth)) {
                 final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
 
@@ -103,7 +103,7 @@ public class SecretUtils {
                 props.setBasicAuthenticationSourcesId(id);
             }
 
-            final String secretToken = props.getSecretToken();
+            final String secretToken = props.getSecretTokenLegacy();
             if (secretToken != null && !secretToken.isBlank()) {
                 final long id = this.createSecretTokenSecret(secretToken, Secret.TYPE_SECRET_TOKEN, endpoint.getOrgId());
 
@@ -112,7 +112,7 @@ public class SecretUtils {
                 props.setSecretTokenSourcesId(id);
             }
 
-            final String bearerToken = props.getBearerAuthentication();
+            final String bearerToken = props.getBearerAuthenticationLegacy();
             if (bearerToken != null && !bearerToken.isBlank()) {
                 final long id = this.createSecretTokenSecret(secretToken, Secret.TYPE_BEARER_AUTHENTICATION, endpoint.getOrgId());
                 Log.infof("[secret_id: %s] Secret bearer token created in Sources", id);
@@ -141,7 +141,7 @@ public class SecretUtils {
         if (endpointProperties instanceof SourcesSecretable) {
             var props = (SourcesSecretable) endpointProperties;
 
-            final BasicAuthentication basicAuth = props.getBasicAuthentication();
+            final BasicAuthenticationLegacy basicAuth = props.getBasicAuthenticationLegacy();
             final Long basicAuthId = props.getBasicAuthenticationSourcesId();
             if (basicAuthId != null) {
                 if (this.isBasicAuthNullOrBlank(basicAuth)) {
@@ -173,11 +173,11 @@ public class SecretUtils {
                 }
             }
 
-            final String secretToken = props.getSecretToken();
+            final String secretToken = props.getSecretTokenLegacy();
             final Long secretTokenId = props.getSecretTokenSourcesId();
             props.setSecretTokenSourcesId(updateSecretToken(endpoint, secretToken, secretTokenId, Secret.TYPE_SECRET_TOKEN, "Secret token secret"));
 
-            final String bearerToken = props.getBearerAuthentication();
+            final String bearerToken = props.getBearerAuthenticationLegacy();
             final Long bearerTokenId = props.getBearerAuthenticationSourcesId();
             props.setBearerAuthenticationSourcesId(updateSecretToken(endpoint, bearerToken, bearerTokenId, Secret.TYPE_BEARER_AUTHENTICATION, "Bearer token"));
         }
@@ -257,16 +257,16 @@ public class SecretUtils {
 
     /**
      * Creates a "basic authentication" secret in Sources.
-     * @param basicAuthentication the contents of the "basic authentication" secret.
+     * @param basicAuthenticationLegacy the contents of the "basic authentication" secret.
      * @param orgId the organization id related to this operation for the tenant identification.
      * @return the id of the created secret.
      */
-    private long createBasicAuthentication(final BasicAuthentication basicAuthentication, final String orgId) {
+    private long createBasicAuthentication(final BasicAuthenticationLegacy basicAuthenticationLegacy, final String orgId) {
         Secret secret = new Secret();
 
         secret.authenticationType = Secret.TYPE_BASIC_AUTH;
-        secret.password = basicAuthentication.getPassword();
-        secret.username = basicAuthentication.getUsername();
+        secret.password = basicAuthenticationLegacy.getPassword();
+        secret.username = basicAuthenticationLegacy.getUsername();
 
         return createSecret(orgId, secret);
     }
@@ -297,18 +297,18 @@ public class SecretUtils {
     }
 
     /**
-     * Checks whether the provided {@link BasicAuthentication} object is null, or if its inner password and username
+     * Checks whether the provided {@link BasicAuthenticationLegacy} object is null, or if its inner password and username
      * fields are blank. If any of the username or password fields contain a non-blank string, then it is assumed that
      * the object is not blank.
-     * @param basicAuthentication the object to check.
+     * @param basicAuthenticationLegacy the object to check.
      * @return {@code true} if the object is null, or if the password and the username are blank.
      */
-    protected boolean isBasicAuthNullOrBlank(final BasicAuthentication basicAuthentication) {
-        if (basicAuthentication == null) {
+    protected boolean isBasicAuthNullOrBlank(final BasicAuthenticationLegacy basicAuthenticationLegacy) {
+        if (basicAuthenticationLegacy == null) {
             return true;
         }
 
-        return (basicAuthentication.getPassword() == null || basicAuthentication.getPassword().isBlank()) &&
-                (basicAuthentication.getUsername() == null || basicAuthentication.getUsername().isBlank());
+        return (basicAuthenticationLegacy.getPassword() == null || basicAuthenticationLegacy.getPassword().isBlank()) &&
+                (basicAuthenticationLegacy.getUsername() == null || basicAuthenticationLegacy.getUsername().isBlank());
     }
 }

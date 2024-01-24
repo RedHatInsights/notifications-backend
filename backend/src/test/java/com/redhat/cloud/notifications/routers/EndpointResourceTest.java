@@ -9,7 +9,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
@@ -163,7 +163,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(POST);
         properties.setDisableSslVerification(false);
-        properties.setSecretToken("my-super-secret-token");
+        properties.setSecretTokenLegacy("my-super-secret-token");
         properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
@@ -283,7 +283,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             WebhookProperties properties = new WebhookProperties();
             properties.setMethod(POST);
             properties.setDisableSslVerification(false);
-            properties.setSecretToken("my-super-secret-token");
+            properties.setSecretTokenLegacy("my-super-secret-token");
             properties.setUrl(getMockServerUrl());
 
             Endpoint endpoint1 = new Endpoint();
@@ -337,9 +337,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             // Different endpoint type with same name
             CamelProperties camelProperties = new CamelProperties();
-            camelProperties.setBasicAuthentication(new BasicAuthentication());
+            camelProperties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy());
             camelProperties.setExtras(Map.of());
-            camelProperties.setSecretToken("secret");
+            camelProperties.setSecretTokenLegacy("secret");
             camelProperties.setUrl("http://nowhere");
 
             ep = new Endpoint();
@@ -424,7 +424,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(POST);
         properties.setDisableSslVerification(false);
-        properties.setSecretToken("my-super-secret-token");
+        properties.setSecretTokenLegacy("my-super-secret-token");
         properties.setUrl(getMockServerUrl());
 
         // Test with properties, but without endpoint type
@@ -478,7 +478,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
-        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        cAttr.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
         cAttr.setExtras(extras);
@@ -550,7 +550,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
-        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        cAttr.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
         cAttr.setExtras(extras);
@@ -757,7 +757,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(POST);
         properties.setDisableSslVerification(false);
-        properties.setSecretToken("my-super-secret-token");
+        properties.setSecretTokenLegacy("my-super-secret-token");
         properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
@@ -861,7 +861,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(POST);
         properties.setDisableSslVerification(false);
-        properties.setSecretToken("my-super-secret-token");
+        properties.setSecretTokenLegacy("my-super-secret-token");
         properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
@@ -889,7 +889,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Add Camel
         CamelProperties camelProperties = new CamelProperties();
         camelProperties.setDisableSslVerification(false);
-        camelProperties.setSecretToken("my-super-secret-token");
+        camelProperties.setSecretTokenLegacy("my-super-secret-token");
         camelProperties.setUrl(getMockServerUrl());
         camelProperties.setExtras(new HashMap<>());
 
@@ -1085,9 +1085,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(POST);
         properties.setDisableSslVerification(false);
-        properties.setSecretToken("my-super-secret-token");
-        properties.setBasicAuthentication(new BasicAuthentication("myuser", "mypassword"));
-        properties.setBearerAuthentication("my-test-bearer-token");
+        properties.setSecretTokenLegacy("my-super-secret-token");
+        properties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("myuser", "mypassword"));
+        properties.setBearerAuthenticationLegacy("my-test-bearer-token");
         properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
@@ -1124,7 +1124,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         attr.mapTo(WebhookProperties.class);
         assertNotNull(attr.getJsonObject("basic_authentication"));
         assertEquals("mypassword", attr.getJsonObject("basic_authentication").getString("password"));
-        assertEquals(properties.getBearerAuthentication(), attr.getString("bearer_authentication"));
+        assertEquals(properties.getBearerAuthenticationLegacy(), attr.getString("bearer_authentication"));
     }
 
     @Test
@@ -1278,7 +1278,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         WebhookProperties webhookProperties = new WebhookProperties();
         webhookProperties.setMethod(POST);
         webhookProperties.setDisableSslVerification(false);
-        webhookProperties.setSecretToken("my-super-secret-token");
+        webhookProperties.setSecretTokenLegacy("my-super-secret-token");
         webhookProperties.setUrl(getMockServerUrl());
         ep.setProperties(webhookProperties);
 
@@ -1444,7 +1444,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         WebhookProperties webhookProperties = new WebhookProperties();
         webhookProperties.setMethod(POST);
         webhookProperties.setDisableSslVerification(false);
-        webhookProperties.setSecretToken("my-super-secret-token");
+        webhookProperties.setSecretTokenLegacy("my-super-secret-token");
         webhookProperties.setUrl(getMockServerUrl());
         ep.setProperties(webhookProperties);
 
@@ -1587,7 +1587,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             WebhookProperties properties = new WebhookProperties();
             properties.setMethod(POST);
             properties.setDisableSslVerification(false);
-            properties.setSecretToken("my-super-secret-token");
+            properties.setSecretTokenLegacy("my-super-secret-token");
             properties.setUrl(getMockServerUrl());
 
             Endpoint ep = new Endpoint();
@@ -1787,15 +1787,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
         final var camelProperties = new CamelProperties();
-        camelProperties.setBasicAuthentication(new BasicAuthentication("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
+        camelProperties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
         camelProperties.setDisableSslVerification(false);
-        camelProperties.setSecretToken("endpoint-invalid-urls-secret-token");
+        camelProperties.setSecretTokenLegacy("endpoint-invalid-urls-secret-token");
 
         final var webhookProperties = new WebhookProperties();
-        webhookProperties.setBasicAuthentication(new BasicAuthentication("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
+        webhookProperties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
         webhookProperties.setDisableSslVerification(false);
         webhookProperties.setMethod(POST);
-        webhookProperties.setSecretToken("endpoint-invalid-urls-secret-token");
+        webhookProperties.setSecretTokenLegacy("endpoint-invalid-urls-secret-token");
 
         // Create an endpoint without the type and the properties set.
         final var endpoint = new Endpoint();
@@ -1923,15 +1923,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
         final var camelProperties = new CamelProperties();
-        camelProperties.setBasicAuthentication(new BasicAuthentication(username, password));
+        camelProperties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy(username, password));
         camelProperties.setDisableSslVerification(disableSslVerification);
-        camelProperties.setSecretToken(secretToken);
+        camelProperties.setSecretTokenLegacy(secretToken);
 
         final var webhookProperties = new WebhookProperties();
-        webhookProperties.setBasicAuthentication(new BasicAuthentication(username, password));
+        webhookProperties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy(username, password));
         webhookProperties.setDisableSslVerification(disableSslVerification);
         webhookProperties.setMethod(method);
-        webhookProperties.setSecretToken(secretToken);
+        webhookProperties.setSecretTokenLegacy(secretToken);
 
         // Create an endpoint without the type and the properties set.
         final var name = "endpoint-invalid-urls-name";
@@ -1996,7 +1996,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(POST);
         properties.setDisableSslVerification(false);
-        properties.setSecretToken("my-super-secret-token");
+        properties.setSecretTokenLegacy("my-super-secret-token");
         properties.setUrl(getMockServerUrl());
 
         Endpoint ep = new Endpoint();
@@ -2020,7 +2020,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
-        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        cAttr.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
         cAttr.setExtras(extras);
@@ -2249,9 +2249,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             // Now update the endpoint by setting the "basic authentication"
             // and the "secret token".
-            properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
-            properties.setSecretToken("my-super-secret-token");
-            properties.setBearerAuthentication("my-super-bearer-token");
+            properties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("basic-auth-user", "basic-auth-password"));
+            properties.setSecretTokenLegacy("my-super-secret-token");
+            properties.setBearerAuthenticationLegacy("my-super-bearer-token");
 
             // The below two secrets will be returned when we simulate that
             // we have called sources to create these secrets.
@@ -2326,9 +2326,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
             // Create the endpoint that we will attempt to modify.
             final WebhookProperties properties = new WebhookProperties();
             properties.setDisableSslVerification(false);
-            properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
+            properties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("basic-auth-user", "basic-auth-password"));
             properties.setMethod(HttpType.GET);
-            properties.setSecretToken("my-super-secret-token");
+            properties.setSecretTokenLegacy("my-super-secret-token");
             properties.setUrl(getMockServerUrl());
 
             final Endpoint endpoint = new Endpoint();
@@ -2379,8 +2379,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             // Now update the endpoint by setting its "basic authentication" to
             // null, which triggers the secret deletion in Sources.
-            properties.setBasicAuthentication(null);
-            properties.setSecretToken(null);
+            properties.setBasicAuthenticationLegacy(null);
+            properties.setSecretTokenLegacy(null);
 
             given()
                 .header(identityHeader)
@@ -2437,10 +2437,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             // Create the endpoint that we will attempt to modify.
             final WebhookProperties properties = new WebhookProperties();
-            properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
+            properties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("basic-auth-user", "basic-auth-password"));
             properties.setDisableSslVerification(false);
             properties.setMethod(HttpType.GET);
-            properties.setSecretToken("my-super-secret-token ");
+            properties.setSecretTokenLegacy("my-super-secret-token ");
             properties.setUrl(getMockServerUrl());
 
             final Endpoint endpoint = new Endpoint();
@@ -2498,8 +2498,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             // Now update the endpoint by updating its "basic authentication"
             // and "secret token".
-            properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
-            properties.setSecretToken("my-super-secret-token");
+            properties.setBasicAuthenticationLegacy(new BasicAuthenticationLegacy("basic-auth-user", "basic-auth-password"));
+            properties.setSecretTokenLegacy("my-super-secret-token");
 
             // The below two secrets will be returned when we simulate that
             // we have called sources to update these secrets. This should
@@ -2644,7 +2644,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             WebhookProperties properties = new WebhookProperties();
             properties.setMethod(POST);
             properties.setDisableSslVerification(false);
-            properties.setSecretToken("my-super-secret-token");
+            properties.setSecretTokenLegacy("my-super-secret-token");
             properties.setUrl(getMockServerUrl() + "/" + i);
 
             Endpoint ep = new Endpoint();

@@ -213,10 +213,10 @@ public class EndpointRepository {
         String endpointQuery = "UPDATE Endpoint SET name = :name, description = :description, enabled = :enabled, serverErrors = 0 " +
                 "WHERE orgId = :orgId AND id = :id";
         String webhookQuery = "UPDATE WebhookProperties SET url = :url, method = :method, " +
-                "disableSslVerification = :disableSslVerification, secretToken = :secretToken, basicAuthentication = :basicAuthentication WHERE endpoint.id = :endpointId";
+                "disableSslVerification = :disableSslVerification, secretTokenLegacy = :secretToken, basicAuthenticationLegacy = :basicAuthentication WHERE endpoint.id = :endpointId";
         String camelQuery = "UPDATE CamelProperties SET url = :url, extras = :extras, " +
-                "basicAuthentication = :basicAuthentication, " +
-                "disableSslVerification = :disableSslVerification, secretToken = :secretToken WHERE endpoint.id = :endpointId";
+                "basicAuthenticationLegacy = :basicAuthentication, " +
+                "disableSslVerification = :disableSslVerification, secretTokenLegacy = :secretToken WHERE endpoint.id = :endpointId";
 
         if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
             throw new RuntimeException("Unable to update a system endpoint of type " + endpoint.getType());
@@ -243,8 +243,8 @@ public class EndpointRepository {
                             .setParameter("url", properties.getUrl())
                             .setParameter("method", properties.getMethod())
                             .setParameter("disableSslVerification", properties.getDisableSslVerification())
-                            .setParameter("secretToken", properties.getSecretToken())
-                            .setParameter("basicAuthentication", properties.getBasicAuthentication())
+                            .setParameter("secretToken", properties.getSecretTokenLegacy())
+                            .setParameter("basicAuthentication", properties.getBasicAuthenticationLegacy())
                             .setParameter("endpointId", endpoint.getId())
                             .executeUpdate() > 0;
                 case CAMEL:
@@ -252,10 +252,10 @@ public class EndpointRepository {
                     return entityManager.createQuery(camelQuery)
                             .setParameter("url", cAttr.getUrl())
                             .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
-                            .setParameter("secretToken", cAttr.getSecretToken())
+                            .setParameter("secretToken", cAttr.getSecretTokenLegacy())
                             .setParameter("endpointId", endpoint.getId())
                             .setParameter("extras", cAttr.getExtras())
-                            .setParameter("basicAuthentication", cAttr.getBasicAuthentication())
+                            .setParameter("basicAuthentication", cAttr.getBasicAuthenticationLegacy())
                             .executeUpdate() > 0;
                 default:
                     return true;
@@ -384,11 +384,11 @@ public class EndpointRepository {
                 "WHERE EXISTS ( " +
                     "SELECT cp FROM CamelProperties cp " +
                     "WHERE cp.id = e.id AND cp.basicAuthenticationSourcesId IS NULL AND cp.secretTokenSourcesId IS NULL " +
-                "AND (cp.basicAuthentication IS NOT NULL OR cp.secretToken IS NOT NULL) " +
+                "AND (cp.basicAuthenticationLegacy IS NOT NULL OR cp.secretTokenLegacy IS NOT NULL) " +
                 ") OR EXISTS ( " +
                     "SELECT wp FROM WebhookProperties wp " +
                     "WHERE wp.id = e.id AND wp.basicAuthenticationSourcesId IS NULL AND wp.secretTokenSourcesId IS NULL " +
-                    "AND (wp.basicAuthentication IS NOT NULL OR wp.secretToken IS NOT NULL) " +
+                    "AND (wp.basicAuthenticationLegacy IS NOT NULL OR wp.secretTokenLegacy IS NOT NULL) " +
                 ")";
 
         final List<Endpoint> endpoints =  this.entityManager

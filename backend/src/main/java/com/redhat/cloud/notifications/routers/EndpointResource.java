@@ -473,9 +473,9 @@ public class EndpointResource {
                 var incomingEndpointProps = (SourcesSecretable) endpointProperties;
                 var databaseEndpointProps = (SourcesSecretable) databaseEndpointProperties;
 
-                databaseEndpointProps.setBasicAuthentication(incomingEndpointProps.getBasicAuthentication());
-                databaseEndpointProps.setSecretToken(incomingEndpointProps.getSecretToken());
-                databaseEndpointProps.setBearerAuthentication(incomingEndpointProps.getBearerAuthentication());
+                databaseEndpointProps.setBasicAuthenticationLegacy(incomingEndpointProps.getBasicAuthenticationLegacy());
+                databaseEndpointProps.setSecretTokenLegacy(incomingEndpointProps.getSecretTokenLegacy());
+                databaseEndpointProps.setBearerAuthenticationLegacy(incomingEndpointProps.getBearerAuthenticationLegacy());
                 this.secretUtils.updateSecretsForEndpoint(dbEndpoint);
             }
         }

@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.processors.eventing;
 import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
@@ -91,19 +91,19 @@ public class EventingProcessor extends EndpointTypeProcessor {
     }
 
     private static Optional<String> getSecretToken(CamelProperties properties) {
-        if (properties.getSecretToken() == null || properties.getSecretToken().isBlank()) {
+        if (properties.getSecretTokenLegacy() == null || properties.getSecretTokenLegacy().isBlank()) {
             return Optional.empty();
         } else {
-            return Optional.of(properties.getSecretToken());
+            return Optional.of(properties.getSecretTokenLegacy());
         }
     }
 
     private static Optional<String> getBasicAuth(CamelProperties properties) {
-        BasicAuthentication basicAuthentication = properties.getBasicAuthentication();
-        if (basicAuthentication == null || basicAuthentication.getUsername() == null || basicAuthentication.getPassword() == null) {
+        BasicAuthenticationLegacy basicAuthenticationLegacy = properties.getBasicAuthenticationLegacy();
+        if (basicAuthenticationLegacy == null || basicAuthenticationLegacy.getUsername() == null || basicAuthenticationLegacy.getPassword() == null) {
             return Optional.empty();
         } else {
-            String credentials = basicAuthentication.getUsername() + ":" + basicAuthentication.getPassword();
+            String credentials = basicAuthenticationLegacy.getUsername() + ":" + basicAuthenticationLegacy.getPassword();
             return Optional.of(Base64Utils.encode(credentials));
         }
     }

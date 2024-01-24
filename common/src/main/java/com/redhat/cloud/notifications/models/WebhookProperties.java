@@ -33,9 +33,11 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
     @JsonProperty("disable_ssl_verification")
     private Boolean disableSslVerification = Boolean.FALSE;
 
+    @Column(name = "secret_token")
+    @Deprecated(forRemoval = true)
     @Size(max = 255)
     @JsonProperty("secret_token")
-    private String secretToken; // TODO Should be optional
+    private String secretTokenLegacy; // TODO Should be optional
 
     /**
      * The ID of the "secret token" secret in the Sources backend.
@@ -44,10 +46,12 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
     @JsonIgnore
     private Long secretTokenSourcesId;
 
+    @Column(name = "basic_authentication")
     @Convert(converter = BasicAuthenticationConverter.class)
+    @Deprecated(forRemoval = true)
     @JsonProperty("basic_authentication")
     @Valid
-    private BasicAuthentication basicAuthentication;
+    private BasicAuthenticationLegacy basicAuthenticationLegacy;
 
     /**
      * The ID of the "basic authentication" secret in the Sources backend.
@@ -60,8 +64,10 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
     @JsonIgnore
     private Long bearerAuthenticationSourcesId;
 
+    @Column(name = "bearer_authentication")
+    @Deprecated(forRemoval = true)
     @JsonProperty("bearer_authentication")
-    private String bearerAuthentication;
+    private String bearerAuthenticationLegacy;
 
     public String getUrl() {
         return url;
@@ -87,12 +93,14 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
         this.disableSslVerification = disableSslVerification;
     }
 
-    public String getSecretToken() {
-        return secretToken;
+    @Deprecated(forRemoval = true)
+    public String getSecretTokenLegacy() {
+        return secretTokenLegacy;
     }
 
-    public void setSecretToken(String secretToken) {
-        this.secretToken = secretToken;
+    @Deprecated(forRemoval = true)
+    public void setSecretTokenLegacy(String secretToken) {
+        this.secretTokenLegacy = secretToken;
     }
 
     public Long getSecretTokenSourcesId() {
@@ -103,12 +111,14 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
         this.secretTokenSourcesId = secretTokenSourcesId;
     }
 
-    public BasicAuthentication getBasicAuthentication() {
-        return basicAuthentication;
+    @Deprecated(forRemoval = true)
+    public BasicAuthenticationLegacy getBasicAuthenticationLegacy() {
+        return basicAuthenticationLegacy;
     }
 
-    public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
-        this.basicAuthentication = basicAuthentication;
+    @Deprecated(forRemoval = true)
+    public void setBasicAuthenticationLegacy(BasicAuthenticationLegacy basicAuthenticationLegacy) {
+        this.basicAuthenticationLegacy = basicAuthenticationLegacy;
     }
 
     public Long getBasicAuthenticationSourcesId() {
@@ -127,11 +137,13 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
         this.bearerAuthenticationSourcesId = bearerAuthenticationSourcesId;
     }
 
-    public String getBearerAuthentication() {
-        return bearerAuthentication;
+    @Deprecated(forRemoval = true)
+    public String getBearerAuthenticationLegacy() {
+        return bearerAuthenticationLegacy;
     }
 
-    public void setBearerAuthentication(String bearerAuthentication) {
-        this.bearerAuthentication = bearerAuthentication;
+    @Deprecated(forRemoval = true)
+    public void setBearerAuthenticationLegacy(String bearerAuthentication) {
+        this.bearerAuthenticationLegacy = bearerAuthentication;
     }
 }
