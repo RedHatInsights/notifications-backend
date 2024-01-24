@@ -1,0 +1,128 @@
+    <a href="#{action.context.application}-section1">{#insert content-title-section1}{/}</a><span class="pf-c-badge">{#insert content-title-right-part-section1}{/}</span>
+     <!-- next section -->
+    {#if renderSection2.or(false) && renderButtonSection3.or(false)}
+    <a href="#{action.context.application}-section2">{#insert content-title-section2}{/}</a><span class="pf-c-badge" >{#insert content-title-right-part-section2}{/}</span>
+        {/if}
+                    <!-- Body section -->
+                    {#if renderSection1.or(false)}
+                        <tr id="{action.context.application}-section1">
+                            <td class="rh-body">
+                                <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td>
+                                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                <tr>
+                                                    <td {#if renderSection1AsIncident.or(false)} style="height: 4px;background-color: #C9190B" {#else}style="height: 4px;background-color: #0066cc"{/if}></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="rh-masthead__section__head">
+                                                        <p><span {#if renderSection1AsIncident.or(false)}style="color: #A30000"{/if}>{#insert content-title-section1}{/}</span><span class="pf-c-badge" >{#insert content-title-right-part-section1}{/}</span><br/>
+                                                            <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section1}{/}</span>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                    </tr>
+                                    <tr>
+                                        <td class="rh-content__block">
+                                            {#insert content-body-section1}{/}
+                                        </td>
+                                    </tr>
+                                    {#if renderButtonSection1.or(false)}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 24px 0px;">
+                                                <table align="center">
+                                                    <tr>
+                                                        <td class="rh-cta-link" align="center">
+                                                            {#insert content-button-section1}{/}
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    {#else if renderButtonSection2.or(false) && !renderButtonSection3.or(false)}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 24px 0px;">
+                                                <table align="center">
+                                                    <tr>
+                                                        <td class="rh-cta-link" align="center">
+                                                            {#insert content-button-section2}{/}
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    {#else}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                        </tr>
+                                    {/if}
+                                </table>
+                            </td>
+                        </tr>
+                    {/if}
+                    {#if renderSection2.or(false) && renderButtonSection3.or(false)}
+                        <tr id="{action.context.application}-section2">
+                            <td class="rh-body">
+                                <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td>
+                                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                <tr>
+                                                    <td {#if renderSection2AsIncident.or(false)} style="height: 2px;background-color: #C9190B" {#else}style="height: 2px;background-color: #0066cc"{/if}></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="rh-masthead__section__head">
+                                                        <p>{#insert content-title-section2}{/} <span class="pf-c-badge" >{#insert content-title-right-part-section2}{/}</span><br/>
+                                                            <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section2}{/}</span>
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                    </tr>
+                                    <tr>
+                                        <td class="rh-content__block">
+                                            {#insert content-body-section2}{/}
+                                        </td>
+                                    </tr>
+                                    {#if renderButtonSection2.or(false)}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 24px 0px;">
+                                                <table align="center">
+                                                    <tr>
+                                                        <td class="rh-cta-link" align="center">
+                                                            {#insert content-button-section2}{/}
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    {#else if renderButtonSection3.or(false)}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 24px 0px;">
+                                                <table align="center">
+                                                    <tr>
+                                                        <td class="rh-cta-link" align="center">
+                                                            {#insert content-button-section3}{/}
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    {#else}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                        </tr>
+                                    {/if}
+                                </table>
+                            </td>
+                        </tr>
+                    {/if}

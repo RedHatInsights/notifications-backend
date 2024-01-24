@@ -513,6 +513,9 @@ public class EmailTemplateMigrationService {
             );
 
             getOrCreateTemplate("Common/insightsEmailBody", "html", "Common Insights email body");
+            getOrCreateTemplate("Common/insightsEmailBodyLight", "html", "Common Insights email body to render applications section only");
+            getOrCreateTemplate("Common/insightsDailyEmailBody", "html", "Common Insights email body for single daily email");
+
         }
         Log.debug("Migration ended");
 

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -25,6 +26,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,6 +41,9 @@ public class DailyEmailAggregationJob {
     public static final String BUNDLE_NAME = "console";
     public static final String APP_NAME = "notifications";
     public static final String EVENT_TYPE_NAME = "aggregation";
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     @Inject
     EmailAggregationRepository emailAggregationResources;
@@ -73,9 +78,13 @@ public class DailyEmailAggregationJob {
 
             aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
-
-            aggregationCommands.stream().forEach(aggregationCommand -> sendIt(aggregationCommand));
-
+            Log.infof("found %s commands", aggregationCommands.size());
+            if (!featureFlipper.isSingleDailyDigestEnabled()) {
+                aggregationCommands.stream().forEach(aggregationCommand -> sendIt(List.of(aggregationCommand)));
+            } else {
+                aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
+                    .forEach((orIdKey, aggregationCommandsForOneOrgId) -> sendIt(aggregationCommandsForOneOrgId));
+            }
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
             emailAggregationResources.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
 
@@ -115,23 +124,27 @@ public class DailyEmailAggregationJob {
         return pendingAggregationCommands;
     }
 
-    private void sendIt(AggregationCommand aggregationCommand) {
+    private void sendIt(List<AggregationCommand> aggregationCommands) {
 
-        Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
-        Map<String, Object> payload = JsonObject.mapFrom(aggregationCommand).getMap();
-        payload.forEach(payloadBuilder::withAdditionalProperty);
+        List<Event> eventList = new ArrayList<>();
+        aggregationCommands.stream().forEach(aggregationCommand -> {
+            Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
+            Map<String, Object> payload = JsonObject.mapFrom(aggregationCommand).getMap();
+            payload.forEach(payloadBuilder::withAdditionalProperty);
+
+            eventList.add(new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(payloadBuilder.build())
+                .build());
+        });
 
         Action action = new Action.ActionBuilder()
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
             .withEventType(EVENT_TYPE_NAME)
-            .withOrgId(aggregationCommand.getAggregationKey().getOrgId())
+            .withOrgId(aggregationCommands.get(0).getAggregationKey().getOrgId())
             .withTimestamp(LocalDateTime.now(UTC))
-            .withEvents(List.of(
-                    new Event.EventBuilder()
-                        .withMetadata(new Metadata.MetadataBuilder().build())
-                        .withPayload(payloadBuilder.build())
-                        .build()))
+            .withEvents(eventList)
             .build();
 
         String encodedAction = Parser.encode(action);

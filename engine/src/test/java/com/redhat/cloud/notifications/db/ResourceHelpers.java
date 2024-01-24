@@ -50,6 +50,14 @@ public class ResourceHelpers {
             .getSingleResult();
     }
 
+    @Transactional
+    public void deleteApp(String bundleName, String appName) {
+        entityManager.createQuery("DELETE FROM Application WHERE name = :appName AND bundle.name = :bundleName")
+            .setParameter("appName", appName)
+            .setParameter("bundleName", bundleName)
+            .executeUpdate();
+    }
+
     public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setOrgId(orgId);

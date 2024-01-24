@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -106,6 +107,7 @@ public class EndpointRepository {
         return endpoints;
     }
 
+    @CacheResult(cacheName = "aggregation-target-email-subscription-endpoints")
     public List<Endpoint> getTargetEmailSubscriptionEndpoints(String orgId, UUID eventTypeId) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
                 "WHERE e.enabled AND b.eventType.id = :eventTypeId AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
