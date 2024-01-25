@@ -119,7 +119,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                     } catch (IllegalIdentityHeaderException e) {
                                         return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
                                     }
-                                    if (identity instanceof RhIdentity) {
+                                    if (identity instanceof RhIdentity rhIdentity) {
                                         return rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
                                                 /*
                                                  * RBAC server calls fail regularly because of RBAC instability so we need to retry.
@@ -151,7 +151,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                                                     if (rbacRaw.canWrite("integrations", "endpoints")) {
                                                         builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
                                                     }
-                                                    routingContext.put("x-rh-rbac-org-id", ((RhIdentity) identity).getOrgId());
+                                                    routingContext.put("x-rh-rbac-org-id", rhIdentity.getOrgId());
                                                     return builder.build();
                                                 });
                                     } else if (identity instanceof TurnpikeSamlIdentity) {

@@ -37,6 +37,10 @@ public class SecurityContextUtil {
         return principal.getName();
     }
 
+    public static Boolean isServiceAccountAuthentication(SecurityContext securityContext) {
+        return "ServiceAccount".equals(((RhIdPrincipal) securityContext.getUserPrincipal()).getType());
+    }
+
     public void hasPermissionForRole(SecurityContext securityContext, String role) {
         if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)) {
             return;

@@ -23,6 +23,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServiceAccountAuthentication;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -83,6 +85,7 @@ public class UserConfigResource {
     @Tag(name = OApiFilter.PRIVATE)
     @Transactional
     public Response saveSettingsByEventType(@Context SecurityContext sec, @NotNull @Valid SettingsValuesByEventType userSettings) {
+        forbidAccessInCaseOfServiceAccountAuthentication(sec);
 
         final String userName = getUsername(sec);
         final String orgId = getOrgId(sec);
@@ -132,6 +135,7 @@ public class UserConfigResource {
     @Produces(APPLICATION_JSON)
     @Tag(name = OApiFilter.PRIVATE)
     public Response getSettingsSchemaByEventType(@Context SecurityContext sec) {
+        forbidAccessInCaseOfServiceAccountAuthentication(sec);
 
         final String name = getUsername(sec);
         String orgId = getOrgId(sec);
@@ -151,6 +155,7 @@ public class UserConfigResource {
     @Tag(name = OApiFilter.PRIVATE)
     public Response getPreferencesByEventType(
             @Context SecurityContext sec, @RestPath String bundleName, @RestPath String applicationName) {
+        forbidAccessInCaseOfServiceAccountAuthentication(sec);
 
         final String name = getUsername(sec);
         String orgId = getOrgId(sec);
@@ -266,5 +271,11 @@ public class UserConfigResource {
 
         patchWithUserPreferencesIfExists(settingsValues, emailSubscriptions);
         return settingsValues;
+    }
+
+    private static void forbidAccessInCaseOfServiceAccountAuthentication(SecurityContext sec) {
+        if (isServiceAccountAuthentication(sec)) {
+            throw new ForbiddenException("This api can't be used with a service account authentication");
+        }
     }
 }
