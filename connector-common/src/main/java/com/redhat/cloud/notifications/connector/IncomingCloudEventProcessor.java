@@ -30,7 +30,7 @@ public class IncomingCloudEventProcessor implements Processor {
     public void process(Exchange exchange) throws Exception {
         JsonObject cloudEvent = new JsonObject(exchange.getIn().getBody(String.class));
 
-        exchange.setProperty(ORIGINAL_CLOUD_EVENT, exchange.getMessage().getBody());
+        exchange.setProperty(ORIGINAL_CLOUD_EVENT, exchange.getIn().getBody());
 
         exchange.setProperty(ID, cloudEvent.getString(CLOUD_EVENT_ID));
         exchange.setProperty(TYPE, cloudEvent.getString(CLOUD_EVENT_TYPE));
