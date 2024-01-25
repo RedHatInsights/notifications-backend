@@ -13,7 +13,7 @@ public class IncomingKafkaReinjectionHeadersProcessor implements Processor {
      */
     @Override
     public void process(final Exchange exchange) {
-        final int reinjectionCount = exchange.getMessage().getHeader(KafkaHeader.REINJECTION_COUNT, 0, Integer.class);
+        final int reinjectionCount = exchange.getIn().getHeader(KafkaHeader.REINJECTION_COUNT, 0, int.class);
 
         exchange.setProperty(ExchangeProperty.KAFKA_REINJECTION_COUNT, reinjectionCount);
     }
