@@ -65,7 +65,7 @@ public class ExceptionProcessor implements Processor {
         // of improving our fault tolerance. After a few attempts we should
         // give up and acknowledge the failure.
         final String route;
-        if (exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, Integer.class) < this.connectorConfig.getKafkaMaximumReinjections()) {
+        if (exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, int.class) < this.connectorConfig.getKafkaMaximumReinjections()) {
             route = String.format("direct:%s", KAFKA_REINJECTION);
         } else {
             route = String.format("direct:%s", CONNECTOR_TO_ENGINE);
