@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.events.ConnectorReceiver.INTEGRATION_FAILED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
@@ -255,11 +254,6 @@ public class EmailTemplateMigrationService {
             /*
              * Former src/main/resources/templates/Integrations folder.
              */
-            createInstantEmailTemplate(
-                warnings, "console", "integrations", List.of(INTEGRATION_FAILED_EVENT_TYPE),
-                "Integrations/failedIntegrationTitle", "txt", "Integrations failed integration email title",
-                "Integrations/failedIntegrationBody", "html", "Integrations failed integration email body"
-            );
             createInstantEmailTemplate(
                 warnings, "console", "integrations", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
                 "Integrations/integrationDisabledTitle", "txt", "Integrations disabled integration email title",

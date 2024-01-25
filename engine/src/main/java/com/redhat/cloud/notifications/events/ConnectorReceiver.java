@@ -2,12 +2,6 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
-import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
-import com.redhat.cloud.notifications.ingress.Event;
-import com.redhat.cloud.notifications.ingress.Parser;
-import com.redhat.cloud.notifications.ingress.Payload;
-import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
 import io.micrometer.core.instrument.Counter;
@@ -21,13 +15,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
-import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -42,7 +30,6 @@ public class ConnectorReceiver {
     public static final String MESSAGES_ERROR_COUNTER_NAME = "camel.messages.error";
     public static final String MESSAGES_PROCESSED_COUNTER_NAME = "camel.messages.processed";
     public static final String EGRESS_CHANNEL = "egress";
-    public static final String INTEGRATION_FAILED_EVENT_TYPE = "integration-failed";
 
     @Inject
     NotificationHistoryRepository notificationHistoryRepository;
@@ -65,9 +52,6 @@ public class ConnectorReceiver {
         messagesErrorCounter = meterRegistry.counter(MESSAGES_ERROR_COUNTER_NAME);
     }
 
-    @Channel(EGRESS_CHANNEL)
-    Emitter<String> emitter;
-
     @Inject
     FeatureFlipper featureFlipper;
 
@@ -86,7 +70,6 @@ public class ConnectorReceiver {
             String historyId = (String) decodedPayload.get("historyId");
             final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId);
 
-            reinjectIfNeeded(endpoint, decodedPayload);
             if (featureFlipper.isDrawerConnectorEnabled()) {
                 drawerProcessor.manageConnectorDrawerReturnsIfNeeded(decodedPayload, UUID.fromString(historyId));
             }
@@ -101,51 +84,6 @@ public class ConnectorReceiver {
         } finally {
             messagesProcessedCounter.increment();
         }
-    }
-
-    private void reinjectIfNeeded(Endpoint endpoint, Map<String, Object> payloadMap) {
-        if (!featureFlipper.isEnableReInject() || (payloadMap.containsKey("successful") && ((Boolean) payloadMap.get("successful")))) {
-            return;
-        }
-
-        String historyId = (String) payloadMap.get("historyId");
-        Log.infof("Notification with id %s was not successful, resubmitting for further processing", historyId);
-
-        Event event = new Event();
-        Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
-        payloadMap.forEach(payloadBuilder::withAdditionalProperty);
-
-        // TODO augment with details from Endpoint and original event
-        event.setPayload(payloadBuilder.build());
-
-        // Save the original id, as we may need it in the future.
-        Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
-        contextBuilder.withAdditionalProperty("original-id", historyId);
-        if (endpoint != null) { // TODO For the current tests. EP should not be null in real life
-            contextBuilder.withAdditionalProperty("failed-integration", endpoint.getName());
-        }
-
-        Action action = new Action.ActionBuilder()
-                .withId(UUID.randomUUID())
-                .withBundle("console")
-                .withApplication("integrations")
-                .withEventType(INTEGRATION_FAILED_EVENT_TYPE)
-                .withAccountId(endpoint != null ? endpoint.getAccountId() : "")
-                .withOrgId(endpoint != null && endpoint.getOrgId() != null ? endpoint.getOrgId() : "")
-                .withContext(contextBuilder.build())
-                .withTimestamp(LocalDateTime.now(ZoneOffset.UTC))
-                .withEvents(Collections.singletonList(event))
-                .withRecipients(Collections.singletonList(
-                        new Recipient.RecipientBuilder()
-                                .withOnlyAdmins(true)
-                                .withIgnoreUserPreferences(true)
-                                .build()))
-                .build();
-
-        String ser = Parser.encode(action);
-        // Add the message id in Kafka header for the de-duplicator
-        Message<String> message = KafkaMessageWithIdBuilder.build(ser);
-        emitter.send(message);
     }
 
     private Map<String, Object> decodeItem(String s) {

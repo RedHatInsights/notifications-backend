@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.redhat.cloud.notifications.events.ConnectorReceiver.INTEGRATION_FAILED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -125,11 +124,6 @@ public class DrawerTemplateMigrationService {
         );
 
         // Integrations
-        createDrawerIntegrationTemplate(
-            warnings, "console", "integrations", List.of(INTEGRATION_FAILED_EVENT_TYPE),
-            "Integrations/failedIntegrationDrawerBody", "html", "Integrations failed integration drawer body"
-        );
-
         createDrawerIntegrationTemplate(
             warnings, "console", "integrations", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
             "Integrations/integrationDisabledDrawerBody", "html", "Integrations disabled integration drawer body"

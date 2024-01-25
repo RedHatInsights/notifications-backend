@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.events.ConnectorReceiver.INTEGRATION_FAILED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
@@ -123,7 +122,6 @@ public class EmailTemplateMigrationServiceTest {
         Bundle console = findOrCreateBundle("console");
         // App: integrations
         Application integrations = findOrCreateApplication("integrations", console);
-        EventType integrationFailed = findOrCreateEventType(INTEGRATION_FAILED_EVENT_TYPE, integrations);
         EventType integrationDisabled = findOrCreateEventType(INTEGRATION_DISABLED_EVENT_TYPE, integrations);
         // App: sources
         Application sources = resourceHelpers.createApp(console.getId(), "sources");
@@ -221,7 +219,6 @@ public class EmailTemplateMigrationServiceTest {
          * Bundle: console
          */
         // App: integrations
-        findAndCompileInstantEmailTemplate(integrationFailed.getId());
         findAndCompileInstantEmailTemplate(integrationDisabled.getId());
         assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), integrations.getName(), DAILY).isEmpty());
         // App: sources
