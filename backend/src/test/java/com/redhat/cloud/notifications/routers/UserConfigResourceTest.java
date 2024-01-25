@@ -507,6 +507,46 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     }
 
+    @Test
+    void testUserPreferencesFromServiceAccountAuth() {
+        String userId = UUID.randomUUID().toString();
+        final String identityHeaderValue = TestHelpers.encodeRHServiceAccountIdentityInfo("123456", "johndoe", userId);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        String response = given()
+            .header(identityHeader)
+            .when().get(String.format("/user-config/notification-preference/%s/%s", "rhel", "policies"))
+            .then()
+            .statusCode(403)
+            .contentType(JSON)
+            .extract().body().asString();
+
+        assertTrue(response.contains("service account authentication"));
+
+        String path = "/user-config/notification-event-type-preference";
+        SettingsValuesByEventType settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", "eventType", true, true, true);
+        response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(settingsValues))
+            .post(path)
+            .then()
+            .statusCode(403)
+            .extract().body().asString();
+        assertTrue(response.contains("service account authentication"));
+
+        response = given()
+            .header(identityHeader)
+            .when().get(path)
+            .then()
+            .statusCode(403)
+            .contentType(JSON)
+            .extract().body().asString();
+        assertTrue(response.contains("service account authentication"));
+    }
+
     private void updateAndCheckUserPreferenceUsingDeprecatedApi(String path, Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
         SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer);
         postPreferencesByEventType(path, identityHeader, settingsValues, 200);

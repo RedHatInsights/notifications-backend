@@ -29,13 +29,13 @@ public class RhServiceAccountIdentity extends RhIdentity {
         @JsonProperty("client_id")
         private String clientId;
 
-        public String getUsername() {
-            return username;
+        public String getClientId() {
+            return clientId;
         }
     }
 
     @Override
     public String getName() {
-        return getServiceAccount().getUsername();
+        return getServiceAccount().getClientId();
     }
 }

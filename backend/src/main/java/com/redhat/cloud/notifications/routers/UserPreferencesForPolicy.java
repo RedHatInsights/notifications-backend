@@ -21,6 +21,7 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServiceAccountAuthentication;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class UserPreferencesForPolicy {
@@ -43,6 +44,9 @@ public class UserPreferencesForPolicy {
     @Deprecated
     public UserConfigPreferences getPreferences(
         @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName) {
+        if (isServiceAccountAuthentication(sec)) {
+            throw new ForbiddenException("This api can't be used form a service account authentication");
+        }
         if (!bundleName.equals("rhel") || !applicationName.equals("policies")) {
             Log.warnf("Deprecated api '/notification-preference/{bundleName}/{applicationName}' was requested for bundle '%s' and application '%s'", bundleName, applicationName);
             throw new ForbiddenException(String.format("This api can't be used for bundle '%s' and application '%s'", bundleName, applicationName));

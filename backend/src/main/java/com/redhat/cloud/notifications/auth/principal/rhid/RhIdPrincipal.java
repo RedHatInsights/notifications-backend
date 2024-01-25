@@ -15,4 +15,8 @@ public class RhIdPrincipal extends ConsolePrincipal<RhIdentity> {
     public String getOrgId() {
         return getIdentity().getOrgId();
     }
+
+    public String getType() {
+        return getIdentity().type;
+    }
 }
