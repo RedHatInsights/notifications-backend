@@ -28,7 +28,7 @@ public class KafkaReinjectionProcessor implements Processor {
      */
     @Override
     public void process(final Exchange exchange) {
-        final int reinjectionCount = exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, Integer.class);
+        final int reinjectionCount = exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, int.class);
 
         final long reinjectionDelay = switch (reinjectionCount) {
             case 0 -> TimeUnit.SECONDS.toMillis(10);
