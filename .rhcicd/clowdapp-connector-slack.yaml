@@ -139,7 +139,7 @@ parameters:
   value: "100"
 - name: NOTIFICATIONS_CONNECTOR_KAFKA_MAXIMUM_REINJECTIONS
   description: Maximum times a message will be reinjected in the incoming queue after having failed to deliver the notification
-  value: "3"
+  value: "0"
 - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
   description: Delay in milliseconds between two redelivery attempts
   value: "1000"
