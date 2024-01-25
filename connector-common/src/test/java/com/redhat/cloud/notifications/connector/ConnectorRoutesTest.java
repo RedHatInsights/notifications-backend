@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
+import org.apache.camel.builder.AdviceWith;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
@@ -15,12 +16,16 @@ import org.junit.jupiter.api.Test;
 import org.mockserver.model.HttpResponse;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
+import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.KAFKA_REINJECTION;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_DATA;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_ID;
@@ -188,6 +193,43 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), this.connectorConfig.getRedeliveryMaxAttempts());
     }
 
+    /**
+     * Tests that when a notification fails to be delivered, the original Cloud
+     * Event is reinjected to the incoming Kafka queue.
+     * @throws Exception if the incoming source Kafka endpoint or the
+     * reinjection route's endpoint cannot be adviced.
+     */
+    @Test
+    protected void testSendReinjectionRoute() throws Exception {
+        mockKafkaSourceEndpoint(); // This is the entry point of the connector.
+        mockRemoteServerNetworkFailure();
+
+        JsonObject incomingPayload = buildIncomingPayload(getMockServerUrl());
+
+        // Mock the "to" Kafka endpoint in the reinjection route.
+        AdviceWith.adviceWith(this.context(), KAFKA_REINJECTION, a -> a.mockEndpointsAndSkip(
+            String.format("kafka:%s", this.connectorConfig.getIncomingKafkaTopic())
+        ));
+
+        // Make sure we wait for the exchange more than the delay time
+        // specified in the KafkaReinjectionProcessor, as otherwise the test
+        // will fail.
+        final MockEndpoint incomingMockedKafkaEndpoint = this.getMockEndpoint(String.format("mock:kafka:%s", this.connectorConfig.getIncomingKafkaTopic()));
+        incomingMockedKafkaEndpoint.expectedMessageCount(1);
+        incomingMockedKafkaEndpoint.setResultWaitTime(TimeUnit.SECONDS.toMillis(15));
+
+        // Send the message to the route under test.
+        this.sendMessageToKafkaSource(incomingPayload, true);
+
+        // Assert that we received the exchange in the incoming queue again,
+        // which signals that the reinjection was successful.
+        incomingMockedKafkaEndpoint.assertIsSatisfied();
+
+        // Assert that before reinjecting the original Cloud Event we did retry
+        // sending the notification.
+        getClient().verify(request().withMethod("POST").withPath(getRemoteServerPath()), atLeast(3));
+    }
+
     protected void saveRoutesMetrics(String... routeIds) {
         for (String routeId : routeIds) {
             micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest("CamelExchangesFailuresHandled", "routeId", routeId);
@@ -249,16 +291,46 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return kafkaEndpoint;
     }
 
-    protected String sendMessageToKafkaSource(JsonObject incomingPayload) {
+    /**
+     * Sends the message to the mocked incoming Kafka queue.
+     * @param incomingPayload the payload to be sent to the incoming queue.
+     */
+    protected String sendMessageToKafkaSource(final JsonObject incomingPayload) {
+        return this.sendMessageToKafkaSource(incomingPayload, false);
+    }
 
-        String cloudEventId = UUID.randomUUID().toString();
+    /**
+     * Sends the message to the mocked incoming Kafka queue.
+     * @param incomingPayload the payload to be sent to the incoming queue.
+     * @param reinjectToKafka if set to {@code true}, the message will be sent
+     *                        to the Kafka reinjection route instead of the
+     *                        connector to engine route.
+     * @return the created Cloud Event's {@link UUID}.
+     */
+    protected String sendMessageToKafkaSource(final JsonObject incomingPayload, final boolean reinjectToKafka) {
+        final String cloudEventId = UUID.randomUUID().toString();
 
-        JsonObject cloudEvent = new JsonObject();
+        final JsonObject cloudEvent = new JsonObject();
         cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
         cloudEvent.put(CLOUD_EVENT_TYPE, "com.redhat.console.notification.toCamel." + connectorConfig.getConnectorName());
         cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(incomingPayload));
 
-        template.sendBodyAndHeader(KAFKA_SOURCE_MOCK, cloudEvent.encode(), X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connectorConfig.getConnectorName());
+        // Make sure that we specify the connector's name so that the
+        // IncomingCloudEventFilter accepts the exchange.
+        //
+        // Also, for the majority of the tests we want to simulate that we
+        // already exhausted the reinjection attempts, so that we can test
+        // that the metrics are correctly asserted.
+        final Map<String, Object> headers = new HashMap<>();
+        headers.put(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, this.connectorConfig.getConnectorName());
+
+        if (reinjectToKafka) {
+            headers.put(KafkaHeader.REINJECTION_COUNT, 0);
+        } else {
+            headers.put(KafkaHeader.REINJECTION_COUNT, this.connectorConfig.getKafkaMaximumReinjections() + 1);
+        }
+
+        this.template.sendBodyAndHeaders(KAFKA_SOURCE_MOCK, cloudEvent.encode(), headers);
 
         return cloudEventId;
     }

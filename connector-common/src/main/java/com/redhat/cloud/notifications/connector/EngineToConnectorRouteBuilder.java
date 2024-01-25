@@ -4,12 +4,17 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
 
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.KAFKA_REINJECTION_DELAY;
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static org.apache.camel.LoggingLevel.DEBUG;
+import static org.apache.camel.LoggingLevel.INFO;
 import static org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory.KafkaEndpointConsumerBuilder;
 
 public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder {
 
     public static final String ENGINE_TO_CONNECTOR = "engine-to-connector";
+    public static final String KAFKA_REINJECTION = "kafka-reinjection";
 
     @Inject
     ConnectorConfig connectorConfig;
@@ -19,6 +24,16 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
 
     @Inject
     IncomingCloudEventProcessor incomingCloudEventProcessor;
+
+    /**
+     * Responsible for extracting the reinjection count from the Kafka header,
+     * if it is present.
+     */
+    @Inject
+    IncomingKafkaReinjectionHeadersProcessor incomingKafkaReinjectionHeadersProcessor;
+
+    @Inject
+    KafkaReinjectionProcessor kafkaReinjectionProcessor;
 
     @Inject
     RedeliveryCounterProcessor redeliveryCounterProcessor;
@@ -56,11 +71,26 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .routeId(ENGINE_TO_CONNECTOR)
                 .to(log(getClass().getName()).level("DEBUG").showHeaders(true).showBody(true))
                 .filter(incomingCloudEventFilter)
+                .process(this.incomingKafkaReinjectionHeadersProcessor)
                 // Headers coming from Kafka must not be forwarded to external services.
                 .removeHeaders("*")
                 .process(incomingCloudEventProcessor)
                 .to(log(getClass().getName()).level("DEBUG").showProperties(true))
                 .to(seda(ENGINE_TO_CONNECTOR));
+
+        /*
+         * Defines a route to reinject the messages to the incoming queue,
+         * after determining a proper delay. The delay for the reinjection is
+         * asynchronously applied, so that we do not block the thread waiting.
+         */
+        from(direct(KAFKA_REINJECTION))
+            .routeId(KAFKA_REINJECTION)
+            .process(this.kafkaReinjectionProcessor)
+            .delay(simpleF("${exchangeProperty.%s}", KAFKA_REINJECTION_DELAY))
+                .asyncDelayed()
+            .end()
+            .log(INFO, this.getClass().getName(), "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}, delay=${exchangeProperty." + KAFKA_REINJECTION_DELAY + "}] Message reinjected to Kafka")
+            .to(kafka(this.connectorConfig.getIncomingKafkaTopic()));
 
         configureRoutes();
     }

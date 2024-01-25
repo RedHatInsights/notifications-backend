@@ -63,6 +63,8 @@ objects:
           value: ${KAFKA_MAX_POLL_RECORDS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_POLL_ON_ERROR
           value: ${KAFKA_POLL_ON_ERROR}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_MAXIMUM_REINJECTIONS
+          value: ${NOTIFICATIONS_CONNECTOR_KAFKA_MAXIMUM_REINJECTIONS}
         - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
           value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY}
         - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
@@ -135,6 +137,9 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
   description: Maximum size of the Camel endpoints cache
   value: "100"
+- name: NOTIFICATIONS_CONNECTOR_KAFKA_MAXIMUM_REINJECTIONS
+  description: Maximum times a message will be reinjected in the incoming queue after having failed to deliver the notification
+  value: "0"
 - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
   description: Delay in milliseconds between two redelivery attempts
   value: "1000"

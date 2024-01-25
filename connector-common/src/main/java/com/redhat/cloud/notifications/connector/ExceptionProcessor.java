@@ -9,7 +9,9 @@ import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
+import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.KAFKA_REINJECTION;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.KAFKA_REINJECTION_COUNT;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.SUCCESSFUL;
@@ -30,6 +32,9 @@ import static org.apache.camel.Exchange.FATAL_FALLBACK_ERROR_HANDLER;
 public class ExceptionProcessor implements Processor {
 
     private static final String DEFAULT_LOG_MSG = "Message sending failed on %s: [orgId=%s, historyId=%s, targetUrl=%s]";
+
+    @Inject
+    ConnectorConfig connectorConfig;
 
     @Inject
     ProducerTemplate producerTemplate;
@@ -55,7 +60,18 @@ public class ExceptionProcessor implements Processor {
         exchangeCopy.removeProperty(FAILURE_ENDPOINT);
         exchangeCopy.removeProperty(FAILURE_ROUTE_ID);
         exchangeCopy.removeProperty(FATAL_FALLBACK_ERROR_HANDLER);
-        producerTemplate.send("direct:" + CONNECTOR_TO_ENGINE, exchangeCopy);
+
+        // Attempt reinjecting the message to the incoming Kafka queue as a way
+        // of improving our fault tolerance. After a few attempts we should
+        // give up and acknowledge the failure.
+        final String route;
+        if (exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, int.class) < this.connectorConfig.getKafkaMaximumReinjections()) {
+            route = String.format("direct:%s", KAFKA_REINJECTION);
+        } else {
+            route = String.format("direct:%s", CONNECTOR_TO_ENGINE);
+        }
+
+        this.producerTemplate.send(route, exchangeCopy);
     }
 
     protected final void logDefault(Throwable t, Exchange exchange) {
