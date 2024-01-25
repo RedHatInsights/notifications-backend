@@ -545,6 +545,15 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .extract().body().asString();
         assertTrue(response.contains("service account authentication"));
+
+        response = given()
+            .header(identityHeader)
+            .when().get(path + "/bundle/app")
+            .then()
+            .statusCode(403)
+            .contentType(JSON)
+            .extract().body().asString();
+        assertTrue(response.contains("service account authentication"));
     }
 
     private void updateAndCheckUserPreferenceUsingDeprecatedApi(String path, Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {

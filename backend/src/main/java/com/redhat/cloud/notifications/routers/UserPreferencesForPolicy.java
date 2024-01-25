@@ -45,7 +45,7 @@ public class UserPreferencesForPolicy {
     public UserConfigPreferences getPreferences(
         @Context SecurityContext sec, @PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName) {
         if (isServiceAccountAuthentication(sec)) {
-            throw new ForbiddenException("This api can't be used form a service account authentication");
+            throw new ForbiddenException("This api can't be used with a service account authentication");
         }
         if (!bundleName.equals("rhel") || !applicationName.equals("policies")) {
             Log.warnf("Deprecated api '/notification-preference/{bundleName}/{applicationName}' was requested for bundle '%s' and application '%s'", bundleName, applicationName);

@@ -155,6 +155,7 @@ public class UserConfigResource {
     @Tag(name = OApiFilter.PRIVATE)
     public Response getPreferencesByEventType(
             @Context SecurityContext sec, @RestPath String bundleName, @RestPath String applicationName) {
+        forbidAccessInCaseOfServiceAccountAuthentication(sec);
 
         final String name = getUsername(sec);
         String orgId = getOrgId(sec);
@@ -274,7 +275,7 @@ public class UserConfigResource {
 
     private static void forbidAccessInCaseOfServiceAccountAuthentication(SecurityContext sec) {
         if (isServiceAccountAuthentication(sec)) {
-            throw new ForbiddenException("This api can't be used form a service account authentication");
+            throw new ForbiddenException("This api can't be used with a service account authentication");
         }
     }
 }
