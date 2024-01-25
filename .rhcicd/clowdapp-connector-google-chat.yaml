@@ -75,6 +75,8 @@ objects:
           value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
         - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
           value: ${NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE}
+        - name: NOTIFICATIONS_CONNECTOR_HTTP_DISABLE_FAULTY_ENDPOINTS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTP_DISABLE_FAULTY_ENDPOINTS}
         - name: QUARKUS_HTTP_PORT
           value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -160,6 +162,9 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
+- name: NOTIFICATIONS_CONNECTOR_HTTP_DISABLE_FAULTY_ENDPOINTS
+  description: Add flags on connector response to let engine disable endpoint regarding HTTP error type
+  value: "true"
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port, defaulting to the default Clowder private port
   value: "9000"

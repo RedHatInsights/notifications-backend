@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.webhook;
+package com.redhat.cloud.notifications.connector.http;
 
 import com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder;
 import io.vertx.core.json.JsonObject;
@@ -11,9 +11,8 @@ import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTT
 import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_STATUS_CODE;
 
 @ApplicationScoped
-public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
+public class HttpOutgoingCloudEventBuilder extends OutgoingCloudEventBuilder {
 
-    public static final String STATUS_CODE = "HttpStatusCode";
     public static final String DISABLE_ENDPOINT_CLIENT_ERRORS = "disableEndpointClientErrors";
     public static final String INCREMENT_ENDPOINT_SERVER_ERRORS = "incrementEndpointServerErrors";
 
@@ -27,7 +26,7 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
             Message in = exchange.getIn();
             JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
             JsonObject data = new JsonObject(cloudEvent.getString("data"));
-            data.getJsonObject("details").put(STATUS_CODE, exchange.getProperty(HTTP_STATUS_CODE));
+            data.getJsonObject("details").put(HTTP_STATUS_CODE, exchange.getProperty(HTTP_STATUS_CODE));
             if (clientError) {
                 data.put(DISABLE_ENDPOINT_CLIENT_ERRORS, exchange.getProperty(HTTP_CLIENT_ERROR));
             } else {

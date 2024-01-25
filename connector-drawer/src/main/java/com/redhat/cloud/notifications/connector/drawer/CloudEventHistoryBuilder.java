@@ -3,11 +3,15 @@ package com.redhat.cloud.notifications.connector.drawer;
 import com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder;
 import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
 import io.vertx.core.json.JsonObject;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 
 @ApplicationScoped
+@Alternative
+@Priority(0) // The value doesn't matter.
 public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
 
     @Override
