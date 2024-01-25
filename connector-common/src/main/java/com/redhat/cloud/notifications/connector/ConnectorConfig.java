@@ -21,7 +21,7 @@ public class ConnectorConfig {
     private static final String KAFKA_INCOMING_MAX_POLL_RECORDS = "notifications.connector.kafka.incoming.max-poll-records";
     private static final String KAFKA_INCOMING_POLL_ON_ERROR = "notifications.connector.kafka.incoming.poll-on-error";
     private static final String KAFKA_INCOMING_TOPIC = "notifications.connector.kafka.incoming.topic";
-    private static final String KAFKA_MAXIMUM_REINJECTIONS = "notifications.connector.kafka.maximum.reinjections";
+    private static final String KAFKA_MAXIMUM_REINJECTIONS = "notifications.connector.kafka.maximum-reinjections";
     private static final String KAFKA_OUTGOING_TOPIC = "notifications.connector.kafka.outgoing.topic";
     private static final String NAME = "notifications.connector.name";
     private static final String REDELIVERY_COUNTER_NAME = "notifications.connector.redelivery.counter-name";
