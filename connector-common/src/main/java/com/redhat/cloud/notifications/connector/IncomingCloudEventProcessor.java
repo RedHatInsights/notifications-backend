@@ -28,7 +28,7 @@ public class IncomingCloudEventProcessor implements Processor {
 
     @Override
     public void process(Exchange exchange) throws Exception {
-        JsonObject cloudEvent = new JsonObject(exchange.getMessage().getBody(String.class));
+        JsonObject cloudEvent = new JsonObject(exchange.getIn().getBody(String.class));
 
         exchange.setProperty(ORIGINAL_CLOUD_EVENT, exchange.getMessage().getBody());
 
