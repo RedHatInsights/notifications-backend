@@ -86,7 +86,9 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
         from(direct(KAFKA_REINJECTION))
             .routeId(KAFKA_REINJECTION)
             .process(this.kafkaReinjectionProcessor)
-            .delay(simpleF("${exchangeProperty.%s}", KAFKA_REINJECTION_DELAY)).asyncDelayed()
+            .delay(simpleF("${exchangeProperty.%s}", KAFKA_REINJECTION_DELAY))
+                .asyncDelayed()
+            .end()
             .log(INFO, this.getClass().getName(), "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}, delay=${exchangeProperty." + KAFKA_REINJECTION_DELAY + "}] Message reinjected to Kafka")
             .to(kafka(this.connectorConfig.getIncomingKafkaTopic()));
 
