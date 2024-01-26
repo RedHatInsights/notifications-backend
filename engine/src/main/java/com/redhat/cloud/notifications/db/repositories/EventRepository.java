@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
-
 @ApplicationScoped
 public class EventRepository {
 
@@ -97,12 +95,6 @@ public class EventRepository {
                 .setParameter("renderedDrawerNotification", event.getRenderedDrawerNotification())
                 .setParameter("id", event.getId())
                 .executeUpdate();
-    }
-
-    // A new transaction is required because this method is executed from a worker thread.
-    @Transactional(REQUIRES_NEW)
-    public void updateEventDisplayNameWithNewTransaction(UUID eventId, String eventTypeDisplayName) {
-        updateEventDisplayName(eventId, eventTypeDisplayName);
     }
 
     @Transactional

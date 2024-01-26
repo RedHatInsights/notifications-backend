@@ -29,7 +29,7 @@ public class AsyncAggregation implements Runnable {
     @Override
     @ActivateRequestContext
     public void run() {
-        emailSubscriptionTypeProcessor.processAggregationSync(event, true);
+        emailSubscriptionTypeProcessor.processAggregationAsync(event);
     }
 
     @PreDestroy

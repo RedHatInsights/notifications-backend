@@ -38,6 +38,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
 import java.time.LocalDateTime;
@@ -49,6 +50,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
 
 /*
  * This class needs more cleanup but this will be done later to make the reviews easier.
@@ -178,12 +181,16 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                         asyncAggregations.destroy(asyncAggregation);
                     });
         } else {
-            processAggregationSync(event, false);
+            processAggregationSync(event);
         }
     }
 
-    public void processAggregationSync(Event event, boolean async) {
+    @Transactional(REQUIRES_NEW)
+    public void processAggregationAsync(Event event) {
+        processAggregationSync(event);
+    }
 
+    public void processAggregationSync(Event event) {
         AggregationCommand aggregationCommand;
         Timer.Sample consumedTimer = Timer.start(registry);
 
@@ -208,13 +215,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                         app.get().getDisplayName(),
                         app.get().getBundle().getDisplayName()
                 );
-                if (async) {
-                    eventRepository.updateEventDisplayNameWithNewTransaction(event.getId(), eventTypeDisplayName);
-                } else {
-                    eventRepository.updateEventDisplayName(event.getId(), eventTypeDisplayName);
-                }
+                eventRepository.updateEventDisplayName(event.getId(), eventTypeDisplayName);
             }
-            processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event), async);
+            processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event));
         } catch (Exception e) {
             Log.warn("Error while processing aggregation", e);
             failedAggregationCommandCount.increment();
@@ -227,7 +230,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
     }
 
-    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Optional<Event> aggregatorEvent, boolean async) {
+    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Optional<Event> aggregatorEvent) {
         TemplateInstance subject = null;
         TemplateInstance body = null;
 
@@ -241,12 +244,8 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
             body = templateService.compileTemplate(bodyData, "body");
         }
 
-        Endpoint endpoint;
-        if (async) {
-            endpoint = endpointRepository.getOrCreateDefaultSystemSubscriptionWithNewTransaction(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
-        } else {
-            endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
-        }
+        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+
         Event event;
         if (aggregatorEvent.isEmpty()) {
             event = new Event();

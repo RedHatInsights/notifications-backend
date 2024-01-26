@@ -30,19 +30,12 @@ import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
-import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @ApplicationScoped
 public class EndpointRepository {
 
     @Inject
     EntityManager entityManager;
-
-    // A new transaction is required because this method is executed from a worker thread.
-    @Transactional(REQUIRES_NEW)
-    public Endpoint getOrCreateDefaultSystemSubscriptionWithNewTransaction(String accountId, String orgId, EndpointType endpointType) {
-        return getOrCreateDefaultSystemSubscription(accountId, orgId, endpointType);
-    }
 
     /**
      * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION or DRAWER endpoint with empty properties. This
