@@ -2,7 +2,9 @@ package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder;
 import io.vertx.core.json.JsonObject;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import java.util.Optional;
@@ -12,6 +14,8 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.SUCCESSF
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.RECIPIENTS_WITH_EMAIL_ERROR;
 
 @ApplicationScoped
+@Alternative
+@Priority(0) // The value doesn't matter.
 public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
 
     public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
