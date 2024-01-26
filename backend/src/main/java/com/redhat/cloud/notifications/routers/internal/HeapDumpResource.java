@@ -29,7 +29,7 @@ public class HeapDumpResource {
     @GET
     @Path("{hostname}")
     @Produces(APPLICATION_OCTET_STREAM)
-    public Response getHeapDump(@PathParam("hostname") String hostname) {
+    public Response getHeapDump(@RestPath String hostname) {
         if (!this.hostname.equals(hostname)) {
             Log.infof("%s doesn't match with this host (%s)", hostname, this.hostname);
             return Response.status(HttpStatus.SC_SEE_OTHER).build();
