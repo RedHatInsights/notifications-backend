@@ -5,11 +5,11 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.resteasy.reactive.RestPath;
 import javax.management.MBeanServer;
 import java.io.File;
 import java.io.IOException;
@@ -43,12 +43,16 @@ public class HeapDumpResource {
 
         Log.infof("Heap dump will be generated on %s", fullPathTmpFile);
         try {
-            dumpHeap(fullPathTmpFile, true);
+            dumpHeap(fullPathTmpFile);
         } catch (IOException ie) {
             Log.error("Error generating heap dump", ie);
         }
         file = new File(fullPathTmpFile);
-
+        try {
+            file.deleteOnExit();
+        } catch (SecurityException e) {
+            Log.warn("Delete on exit of the notifications heap dump file denied by the security manager", e);
+        }
         Response.ResponseBuilder response = Response.ok(file);
         response.header("Content-Disposition", "attachment; filename=\"" + tmpFileName + "\"");
         return response.build();
