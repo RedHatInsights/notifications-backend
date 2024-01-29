@@ -44,9 +44,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.enforce-integration-name-unicity", defaultValue = "false")
     boolean enforceIntegrationNameUnicity;
 
-    @ConfigProperty(name = "reinject.enabled", defaultValue = "false")
-    boolean enableReInject;
-
     @ConfigProperty(name = "notifications.kafka-consumed-total-checker.enabled", defaultValue = "false")
     boolean kafkaConsumedTotalCheckerEnabled;
 
@@ -93,7 +90,6 @@ public class FeatureFlipper {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
         Log.infof("The integrations unique name constraint is %s", enforceIntegrationNameUnicity ? "enabled" : "disabled");
-        Log.infof("The actions reinjection in case of Camel integration error is %s", enableReInject ? "enabled" : "disabled");
         Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
         Log.infof("The use of default templates is %s", useDefaultTemplate ? "enabled" : "disabled");
         Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
@@ -126,10 +122,6 @@ public class FeatureFlipper {
     public void setEnforceIntegrationNameUnicity(boolean enforceIntegrationNameUnicity) {
         checkTestLaunchMode();
         this.enforceIntegrationNameUnicity = enforceIntegrationNameUnicity;
-    }
-
-    public boolean isEnableReInject() {
-        return enableReInject;
     }
 
     public boolean isKafkaConsumedTotalCheckerEnabled() {
