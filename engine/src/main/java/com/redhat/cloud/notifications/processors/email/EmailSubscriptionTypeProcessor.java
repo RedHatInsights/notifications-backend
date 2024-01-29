@@ -22,6 +22,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
+import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
@@ -245,7 +246,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
     }
 
-    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Event aggregatorEvent, boolean async) {
+    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Event aggregatorEvent) {
 
         Log.infof("Processing received aggregation command: %s", aggregationCommand);
         Optional<Application> app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
@@ -335,7 +336,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
     }
 
-    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent, boolean async) {
+    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent) {
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
         // Patch event display name for event log rendering
         Optional<Bundle> bundle = bundleRepository.getBundle(bundleName);
