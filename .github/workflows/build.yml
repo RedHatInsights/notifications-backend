@@ -34,7 +34,7 @@ jobs:
           java-version: 17
       - name: Verify if admin-console changed
         id: admin-console-changed
-        uses: tj-actions/changed-files@v42.0.0
+        uses: tj-actions/changed-files@v42.0.2
         with:
           files: admin-console/**
       - name: Build admin-console
