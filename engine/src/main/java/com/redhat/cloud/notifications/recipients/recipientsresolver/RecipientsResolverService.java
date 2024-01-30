@@ -8,7 +8,6 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import java.util.Set;
 
@@ -19,6 +18,5 @@ public interface RecipientsResolverService {
     @Path("/internal/recipients-resolver")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Retry
     Set<User> getRecipients(RecipientsQuery resolversQuery);
 }
