@@ -4421,7 +4421,38 @@ data:
                 ]
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Success"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failure"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -4449,7 +4480,7 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-email-service\", routeId=\"email_subscription\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-email-service\", routeId=\"success\"}[5m]))",
               "legendFormat": "Success",
               "range": true,
               "refId": "Success"
@@ -4610,7 +4641,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-webhook-service\", routeId=\"webhook\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-webhook-service\", routeId=\"success\"}[5m]))",
               "instant": false,
               "legendFormat": "Success",
               "range": true,
@@ -4776,7 +4807,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-microsoft-teams-service\", routeId=\"teams\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-microsoft-teams-service\", routeId=\"success\"}[5m]))",
               "instant": false,
               "legendFormat": "Success",
               "range": true,
@@ -4941,7 +4972,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-servicenow-service\", routeId=\"servicenow\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-servicenow-service\", routeId=\"success\"}[5m]))",
               "instant": false,
               "legendFormat": "Success",
               "range": true,
@@ -5272,7 +5303,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-splunk-service\", routeId=\"splunk\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-splunk-service\", routeId=\"success\"}[5m]))",
               "instant": false,
               "legendFormat": "Success",
               "range": true,
@@ -5438,7 +5469,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-google-chat-service\", routeId=\"google_chat\"}[5m]))",
+              "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-google-chat-service\", routeId=\"success\"}[5m]))",
               "instant": false,
               "legendFormat": "Success",
               "range": true,
@@ -7680,7 +7711,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 1,
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap
