@@ -139,7 +139,7 @@ public class EventConsumerTest {
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, true);
-        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
+        verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
     }
 
     @Test
@@ -165,7 +165,7 @@ public class EventConsumerTest {
                 MESSAGE_ID_INVALID_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
+        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
     }
 
     @Test
@@ -189,7 +189,7 @@ public class EventConsumerTest {
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
         verify(endpointProcessor, never()).process(any(Event.class));
-        verify(kafkaMessageDeduplicator, never()).registerMessageId(any(UUID.class));
+        verify(kafkaMessageDeduplicator, never()).isNew(any(UUID.class));
     }
 
     @Test
@@ -215,7 +215,7 @@ public class EventConsumerTest {
                 MESSAGE_ID_INVALID_COUNTER_NAME
         );
         verify(endpointProcessor, never()).process(any(Event.class));
-        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
+        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
     }
 
     @Test
@@ -241,7 +241,7 @@ public class EventConsumerTest {
                 MESSAGE_ID_INVALID_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
+        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
     }
 
     @Test
@@ -270,7 +270,7 @@ public class EventConsumerTest {
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(messageId);
+        verify(kafkaMessageDeduplicator, times(2)).isNew(messageId);
     }
 
     @Test
@@ -297,7 +297,7 @@ public class EventConsumerTest {
                 MESSAGE_ID_INVALID_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
+        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
     }
 
     @Test
@@ -324,7 +324,7 @@ public class EventConsumerTest {
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).registerMessageId(null);
+        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {

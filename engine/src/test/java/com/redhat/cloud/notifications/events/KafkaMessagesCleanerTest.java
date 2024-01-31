@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -35,18 +34,23 @@ public class KafkaMessagesCleanerTest {
     }
 
     private Integer deleteAllKafkaMessages() {
-        return entityManager.createQuery("DELETE FROM KafkaMessage")
+        String sql = "DELETE FROM kafka_message";
+        return entityManager.createNativeQuery(sql)
                 .executeUpdate();
     }
 
     private void createKafkaMessage(LocalDateTime created) {
-        KafkaMessage kafkaMessage = new KafkaMessage(UUID.randomUUID());
-        kafkaMessage.setCreated(created);
-        entityManager.persist(kafkaMessage);
+        String sql = "INSERT INTO kafka_message(id, created) " +
+                "VALUES (:messageId, :created)";
+        entityManager.createNativeQuery(sql)
+                .setParameter("messageId", UUID.randomUUID())
+                .setParameter("created", created)
+                .executeUpdate();
     }
 
     private Long count() {
-        return entityManager.createQuery("SELECT COUNT(*) FROM KafkaMessage", Long.class)
+        String sql = "SELECT COUNT(*) FROM kafka_message";
+        return (Long) entityManager.createNativeQuery(sql, Long.class)
                 .getSingleResult();
     }
 
