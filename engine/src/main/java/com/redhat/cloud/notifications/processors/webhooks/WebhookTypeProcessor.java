@@ -18,8 +18,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
+import static com.redhat.cloud.notifications.processors.webhooks.AuthenticationType.BASIC;
+import static com.redhat.cloud.notifications.processors.webhooks.AuthenticationType.BEARER;
+import static com.redhat.cloud.notifications.processors.webhooks.AuthenticationType.SECRET_TOKEN;
 
 @ApplicationScoped
 public class WebhookTypeProcessor extends EndpointTypeProcessor {
@@ -72,18 +76,50 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
         final JsonObject payload = transformer.toJsonObject(event);
 
+        loadLegacyAuthData(endpoint);
+
+        final JsonObject connectorData = new JsonObject();
+
+        // TODO RHCLOUD-24930 Stop sending all properties while only "method", "url" and "disable_ssl_verification" are needed in the connector.
+        connectorData.put("endpoint_properties", JsonObject.mapFrom(properties));
+        connectorData.put("payload", payload);
+
+        getAuthentication(properties).ifPresent(authentication -> {
+            connectorData.put("authentication", authentication);
+        });
+
+        connectorSender.send(event, endpoint, connectorData);
+    }
+
+    // TODO RHCLOUD-24930 Remove this method after the migration is done.
+    @Deprecated(forRemoval = true)
+    private void loadLegacyAuthData(Endpoint endpoint) {
         /*
          * Get the basic authentication and secret token secrets from Sources.
          */
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
             this.secretUtils.loadSecretsForEndpoint(endpoint);
         }
+    }
 
-        final JsonObject connectorData = new JsonObject();
-
-        connectorData.put("endpoint_properties", JsonObject.mapFrom(properties));
-        connectorData.put("payload", payload);
-
-        connectorSender.send(event, endpoint, connectorData);
+    private static Optional<JsonObject> getAuthentication(WebhookProperties properties) {
+        if (properties.getBasicAuthenticationSourcesId() != null) {
+            return Optional.of(JsonObject.of(
+                "type", BASIC,
+                "secretId", properties.getBasicAuthenticationSourcesId()
+            ));
+        } else if (properties.getBearerAuthenticationSourcesId() != null) {
+            return Optional.of(JsonObject.of(
+                "type", BEARER,
+                "secretId", properties.getBearerAuthenticationSourcesId()
+            ));
+        } else if (properties.getSecretTokenSourcesId() != null) {
+            return Optional.of(JsonObject.of(
+                "type", SECRET_TOKEN,
+                "secretId", properties.getSecretTokenSourcesId()
+            ));
+        } else {
+            return Optional.empty();
+        }
     }
 }

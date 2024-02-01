@@ -12,6 +12,8 @@ objects:
     envName: ${ENV_NAME}
     testing:
       iqePlugin: eventing
+    dependencies:
+    - sources-api
     optionalDependencies:
     - drift
     - notifications-backend
@@ -79,6 +81,13 @@ objects:
           value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY}
         - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
           value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS}
+        - name: NOTIFICATIONS_CONNECTOR_SECRETS_LOADER_ENABLED
+          value: ${NOTIFICATIONS_CONNECTOR_SECRETS_LOADER_ENABLED}
+        - name: NOTIFICATIONS_CONNECTOR_SECRETS_LOADER_SOURCES_API_PSK
+          valueFrom:
+            secretKeyRef:
+              name: sources-api-psk
+              key: psk
         - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
           value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
         - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
@@ -164,6 +173,8 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
   description: Maximum number of redelivery attempts (initial call not included)
   value: "2"
+- name: NOTIFICATIONS_CONNECTOR_SECRETS_LOADER_ENABLED
+  value: "false"
 - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
   description: Number of concurrent threads processing exchanges with SEDA
   value: "20"

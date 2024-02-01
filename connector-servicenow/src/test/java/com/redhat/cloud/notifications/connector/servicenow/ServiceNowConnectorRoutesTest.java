@@ -2,27 +2,37 @@ package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.ConnectorRoutesTest;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
+import com.redhat.cloud.notifications.connector.secrets.SecretsLoader;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
+import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_ID;
+import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.AUTHENTICATION_TOKEN;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.servicenow.ServiceNowCloudEventDataExtractor.NOTIF_METADATA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
+
+    @InjectMock
+    SecretsLoader secretsLoader;
 
     @Override
     protected String getMockEndpointPattern() {
@@ -37,10 +47,14 @@ public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
     @Override
     protected JsonObject buildIncomingPayload(String targetUrl) {
 
+        JsonObject authentication = new JsonObject();
+        authentication.put("secretId", 123L);
+
         JsonObject metadata = new JsonObject();
         metadata.put("url", targetUrl);
         metadata.put("X-Insight-Token", "super-secret-token");
         metadata.put("trustAll", "true");
+        metadata.put("authentication", authentication);
 
         JsonObject payload = new JsonObject();
         payload.put(NOTIF_METADATA, metadata);
@@ -64,10 +78,11 @@ public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
 
             assertEquals(DEFAULT_ORG_ID, exchange.getProperty(ORG_ID, String.class));
             assertEquals(DEFAULT_ACCOUNT_ID, exchange.getProperty(ACCOUNT_ID, String.class));
-            assertEquals("super-secret-token", exchange.getProperty(AUTHENTICATION_TOKEN, String.class));
+            assertEquals("super-secret-token", exchange.getProperty(SECRET_PASSWORD, String.class));
             assertTrue(exchange.getProperty(TRUST_ALL, Boolean.class));
             assertEquals(exchange.getProperty(TARGET_URL, String.class), "https://" + exchange.getProperty(TARGET_URL_NO_SCHEME, String.class));
             assertEquals(expectedPayload.encode(), outgoingPayload);
+            assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
 
             // In case of assertion failure, this return value won't be used.
             return true;
@@ -77,5 +92,10 @@ public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
     @Override
     protected boolean useHttps() {
         return true;
+    }
+
+    @Override
+    protected void afterKafkaSinkSuccess() {
+        verify(secretsLoader, times(1)).process(any(Exchange.class));
     }
 }

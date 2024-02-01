@@ -2,9 +2,7 @@ package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
-import com.redhat.cloud.notifications.connector.webhook.authentication.BasicAuthenticationProcessor;
-import com.redhat.cloud.notifications.connector.webhook.authentication.BearerTokenAuthenticationProcessor;
-import com.redhat.cloud.notifications.connector.webhook.authentication.InsightsTokenAuthenticationProcessor;
+import com.redhat.cloud.notifications.connector.secrets.SecretsLoader;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
@@ -17,9 +15,6 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TYPE;
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.BASIC_AUTH_USERNAME;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.BEARER_TOKEN;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.INSIGHT_TOKEN_HEADER;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.TRUST_ALL;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
@@ -38,6 +33,12 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     HttpConnectorConfig connectorConfig;
 
+    @Inject
+    SecretsLoader secretsLoader;
+
+    @Inject
+    AuthenticationProcessor authenticationProcessor;
+
     @Override
     public void configureRoutes() {
         getContext().addRoutePolicyFactory(new MicrometerRoutePolicyFactory());
@@ -45,17 +46,8 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
         from(seda(ENGINE_TO_CONNECTOR))
             .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
             .routeId(connectorConfig.getConnectorName())
-            .choice()
-                .when(exchangeProperty(INSIGHT_TOKEN_HEADER))
-                    .process(new InsightsTokenAuthenticationProcessor())
-                .endChoice()
-                .when(exchangeProperty(BASIC_AUTH_USERNAME))
-                    .process(new BasicAuthenticationProcessor())
-                .endChoice()
-                .when(exchangeProperty(BEARER_TOKEN))
-                    .process(new BearerTokenAuthenticationProcessor())
-                .endChoice()
-            .end()
+            .process(secretsLoader)
+            .process(authenticationProcessor)
             // SSL certificates may or may not be verified depending on the integration settings.
             .choice()
                 .when(exchangeProperty(TRUST_ALL))

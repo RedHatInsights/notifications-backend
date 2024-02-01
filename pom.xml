@@ -17,6 +17,7 @@
         <module>common-aggregator</module>
         <module>connector-common</module>
         <module>connector-common-http</module>
+        <module>connector-common-secrets-loader</module>
         <module>connector-drawer</module>
         <module>connector-email</module>
         <module>connector-google-chat</module>

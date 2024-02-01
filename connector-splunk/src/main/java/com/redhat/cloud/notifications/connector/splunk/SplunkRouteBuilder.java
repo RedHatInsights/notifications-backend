@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import com.redhat.cloud.notifications.connector.secrets.SecretsLoader;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -11,8 +12,8 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
+import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.AUTHENTICATION_TOKEN;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
 import static org.apache.camel.LoggingLevel.INFO;
@@ -31,14 +32,19 @@ public class SplunkRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     EventsSplitter eventsSplitter;
 
+    @Inject
+    SecretsLoader secretsLoader;
+
     @Override
     public void configureRoutes() {
 
         from(seda(ENGINE_TO_CONNECTOR))
                 .routeId(connectorConfig.getConnectorName())
+                // Splunk requires a secret. It is loaded from Sources.
+                .process(secretsLoader)
                 // Events are split to be sent in batch to Splunk HEC.
                 .process(eventsSplitter)
-                .setHeader("Authorization", simple("Splunk ${exchangeProperty." + AUTHENTICATION_TOKEN + "}"))
+                .setHeader("Authorization", simpleF("Splunk ${exchangeProperty.%s}", SECRET_PASSWORD))
                 .to(SPLUNK_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                 // SSL certificates may or may not be verified depending on the integration settings.
                 .choice()

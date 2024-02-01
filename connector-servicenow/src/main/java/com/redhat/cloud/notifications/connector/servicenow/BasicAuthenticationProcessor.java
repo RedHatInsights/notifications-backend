@@ -11,7 +11,7 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.protocol.BasicHttpContext;
 
-import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.AUTHENTICATION_TOKEN;
+import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
 
 public class BasicAuthenticationProcessor implements Processor {
 
@@ -19,7 +19,7 @@ public class BasicAuthenticationProcessor implements Processor {
 
     public void process(Exchange exchange) throws AuthenticationException {
 
-        String token = exchange.getProperty(AUTHENTICATION_TOKEN, String.class);
+        String token = exchange.getProperty(SECRET_PASSWORD, String.class);
         if (token == null || token.isBlank()) {
             return;
         }

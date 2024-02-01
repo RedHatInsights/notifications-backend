@@ -13,8 +13,9 @@ import org.junit.jupiter.api.Test;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
+import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_ID;
+import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.AUTHENTICATION_TOKEN;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.servicenow.ServiceNowCloudEventDataExtractor.NOTIF_METADATA;
@@ -120,15 +121,20 @@ public class ServiceNowCloudEventDataExtractorTest extends CamelQuarkusTestSuppo
         assertEquals(cloudEventDataCopy.getString("account_id"), exchange.getProperty(ACCOUNT_ID, String.class));
         assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("url"), exchange.getProperty(TARGET_URL, String.class));
         assertTrue(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("url").endsWith(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class)));
-        assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("X-Insight-Token"), exchange.getProperty(AUTHENTICATION_TOKEN, String.class));
+        assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("X-Insight-Token"), exchange.getProperty(SECRET_PASSWORD, String.class));
         assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("trustAll"), exchange.getProperty(TRUST_ALL, Boolean.class).toString());
+        assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getJsonObject("authentication").getLong("secretId"), exchange.getProperty(SECRET_ID, Long.class));
     }
 
     private JsonObject createCloudEventData(String url, boolean trustAll) {
+        JsonObject authentication = new JsonObject();
+        authentication.put("secretId", 123L);
+
         JsonObject metadata = new JsonObject();
         metadata.put("url", url);
         metadata.put("trustAll", Boolean.toString(trustAll));
         metadata.put("X-Insights-Token", "super-secret-token");
+        metadata.put("authentication", authentication);
 
         JsonObject cloudEventData = new JsonObject();
         cloudEventData.put("org_id", DEFAULT_ORG_ID);
