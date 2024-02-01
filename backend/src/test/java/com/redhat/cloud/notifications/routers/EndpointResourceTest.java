@@ -21,6 +21,7 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.secrets.BasicAuthentication;
 import com.redhat.cloud.notifications.models.secrets.BearerToken;
 import com.redhat.cloud.notifications.models.secrets.SecretToken;
+import com.redhat.cloud.notifications.models.secrets.SecretType;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
@@ -2273,6 +2274,134 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     /**
+     * Tests that when the integrations don't support secrets partially or
+     * whatsoever, the creation, update and delete endpoints return a bad
+     * request response.
+     */
+    @Test
+    public void testIntegrationsNotSupportingSecrets() {
+        // Create a Camel endpoint to test the secrets that are not supported
+        // by it.
+        final CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setExtras(Map.of("channel", "#invalid-channel"));
+        camelProperties.setDisableSslVerification(false);
+        camelProperties.setUrl("https://redhat.com");
+
+        final Endpoint camelEndpoint = new Endpoint();
+        camelEndpoint.setDescription("needle in the haystack");
+        camelEndpoint.setEnabled(true);
+        camelEndpoint.setName("endpoint to create");
+        camelEndpoint.setProperties(camelProperties);
+        camelEndpoint.setServerErrors(0);
+        camelEndpoint.setSubType("slack");
+        camelEndpoint.setType(EndpointType.CAMEL);
+
+        // Prepare the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        final String createdCamelEndpointResponse = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(camelEndpoint))
+            .post("/endpoints")
+            .then()
+            .statusCode(200)
+            .extract()
+            .asString();
+
+        Assertions.assertTrue(createdCamelEndpointResponse != null && !createdCamelEndpointResponse.isBlank(), "the response for when an integration gets created should not be empty");
+        final JsonObject createdResponseJson = new JsonObject(createdCamelEndpointResponse);
+        final UUID createdCamelEndpointUuid = UUID.fromString(createdResponseJson.getString("id"));
+
+        // Prepare a Drawer endpoint since it does not support any secrets.
+        final String drawerResponse = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(new SystemSubscriptionProperties()))
+            .post("/endpoints/system/drawer_subscription")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract()
+            .asString();
+
+        Assertions.assertTrue(drawerResponse != null && !drawerResponse.isBlank(), "the response for when a drawer subscription gets created should not be empty");
+        final JsonObject createdDrawerResponseJson = new JsonObject(drawerResponse);
+        final UUID createdDrawerIntegrationUuid = UUID.fromString(createdDrawerResponseJson.getString("id"));
+
+        // Finally, prepare an email subscription endpoint which also does not
+        // support any secrets.
+        final String emailSubscriptionResponse = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(new SystemSubscriptionProperties()))
+            .post("/endpoints/system/email_subscription")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract()
+            .asString();
+
+        Assertions.assertTrue(emailSubscriptionResponse != null && !emailSubscriptionResponse.isBlank(), "the response for when a email subscription gets created should not be empty");
+        final JsonObject createdEmailSubscriptionResponseJson = new JsonObject(emailSubscriptionResponse);
+        final UUID createdEmailIntegrationUuid = UUID.fromString(createdEmailSubscriptionResponseJson.getString("id"));
+
+        // Prepare the test cases for the integrations.
+        record TestCase(
+            UUID integrationUuid,
+            String testPath,
+            EndpointType endpointType,
+            SecretType secretType,
+            Object secret
+        ) { }
+
+        final List<TestCase> testCases = List.of(
+            new TestCase(createdCamelEndpointUuid, "secret-token", EndpointType.CAMEL, SecretType.SECRET_TOKEN, new SecretToken("secret-token")),
+            new TestCase(createdDrawerIntegrationUuid, "basic-authentication", EndpointType.DRAWER, SecretType.BASIC_AUTHENTICATION, new BasicAuthentication("username", "password")),
+            new TestCase(createdDrawerIntegrationUuid, "bearer-token", EndpointType.DRAWER, SecretType.BEARER_TOKEN, new BearerToken("bearer-token")),
+            new TestCase(createdDrawerIntegrationUuid, "secret-token", EndpointType.DRAWER, SecretType.SECRET_TOKEN, new SecretToken("secret-token")),
+            new TestCase(createdEmailIntegrationUuid, "basic-authentication", EndpointType.EMAIL_SUBSCRIPTION, SecretType.BASIC_AUTHENTICATION, new BasicAuthentication("username", "password")),
+            new TestCase(createdEmailIntegrationUuid, "bearer-token", EndpointType.EMAIL_SUBSCRIPTION, SecretType.BEARER_TOKEN, new BearerToken("bearer-token")),
+            new TestCase(createdEmailIntegrationUuid, "secret-token", EndpointType.EMAIL_SUBSCRIPTION, SecretType.SECRET_TOKEN, new SecretToken("secret-token"))
+        );
+
+        // Send the requests to the "secrets" paths to test that they return
+        // "bad request" responses every time.
+        for (final TestCase testCase : testCases) {
+            final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(testCase.secret()))
+                .pathParam("uuid", testCase.integrationUuid())
+                .pathParam("secret-type-path", testCase.testPath())
+                .put("/endpoints/{uuid}/secrets/{secret-type-path}")
+                .then()
+                .statusCode(400)
+                .extract()
+                .asString();
+
+            Assertions.assertTrue(response != null && !response.isBlank(), "the response for when receiving a bad request for an incompatible integration type which does not support secrets should not be empty");
+            final JsonObject jsonResponse = new JsonObject(response);
+            final String error = jsonResponse.getString("error");
+
+            Assertions.assertEquals(
+                String.format(
+                    "%s credentials are not compatible with the specified integration",
+                    testCase.secretType().getDisplayName()
+                ),
+                error,
+                "unexpected response message when attempting to create or update a secret for an endpoint which does not support the secret type"
+            );
+        }
+    }
+
+    /**
      * Tests that endpoints with secrets can be created using the legacy
      * structure for the secrets.
      * @deprecated once we remove the old properties from the model this test
@@ -2544,6 +2673,66 @@ public class EndpointResourceTest extends DbIsolatedTest {
             final JsonObject secretsSecretToken = secrets.getJsonObject("secret_token");
             Assertions.assertNotNull(secretsSecretToken, "the secret token secret object should not be empty");
             Assertions.assertTrue(secretsSecretToken.getBoolean("is_present"), "the secret token secret should have been marked as present, since it was created in the request");
+        } finally {
+            this.featureFlipper.setSourcesSecretsBackend(wasSourcesEnabled);
+        }
+    }
+
+    /**
+     * Tests that attempting to create endpoints with secrets that are
+     * unsupported for that endpoint return a "bad request" response.
+     */
+    @Test
+    public void testCreateEndpointBadRequestUnsupported() {
+        // Store the original value of this feature to reset it to what it was
+        // after the test.
+        final boolean wasSourcesEnabled = this.featureFlipper.isSourcesUsedAsSecretsBackend();
+
+        try {
+            this.featureFlipper.setSourcesSecretsBackend(true);
+
+            // Attempt creating a Camel endpoint with a "secret token" secret,
+            // which is unsupported.
+            final CamelProperties camelPropertiesLegacy = new CamelProperties();
+            camelPropertiesLegacy.setDisableSslVerification(true);
+            camelPropertiesLegacy.setExtras(Map.of("channel", "#invalid-channel"));
+            camelPropertiesLegacy.setSecretTokenLegacy("secret-token");
+            camelPropertiesLegacy.setUrl("https://redhat.com");
+
+            final Endpoint camelEndpointLegacy = new Endpoint();
+            camelEndpointLegacy.setDescription("Needle in the haystack");
+            camelEndpointLegacy.setEnabled(true);
+            camelEndpointLegacy.setName("endpoint to create");
+            camelEndpointLegacy.setProperties(camelPropertiesLegacy);
+            camelEndpointLegacy.setServerErrors(0);
+            camelEndpointLegacy.setSubType("slack");
+            camelEndpointLegacy.setType(EndpointType.CAMEL);
+
+            // Prepare the identity header.
+            final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user");
+            final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+            final String response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(camelEndpointLegacy))
+                .post("/endpoints")
+                .then()
+                .statusCode(400)
+                .extract()
+                .asString();
+
+            Assertions.assertTrue(response != null && !response.isBlank(), "the response for when receiving a bad request for an incompatible integration type which does not support secrets should not be empty");
+            final JsonObject jsonResponse = new JsonObject(response);
+            final String error = jsonResponse.getString("error");
+
+            Assertions.assertEquals(
+                "secret token credentials are not compatible with the specified integration",
+                error,
+                "unexpected response message when attempting to create an endpoint with a secret token secret, which is unsupported"
+            );
         } finally {
             this.featureFlipper.setSourcesSecretsBackend(wasSourcesEnabled);
         }

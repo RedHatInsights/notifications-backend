@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.secrets.BasicAuthentication;
 import com.redhat.cloud.notifications.models.secrets.BearerToken;
 import com.redhat.cloud.notifications.models.secrets.SecretToken;
+import com.redhat.cloud.notifications.models.secrets.SecretType;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
@@ -250,7 +251,7 @@ public class EndpointResource {
     @Operation(summary = "Create a new endpoint", description = "Creates a new endpoint by providing data such as a description, a name, and the endpoint properties. Use this endpoint to create endpoints for integration with third-party services such as webhooks, Slack, or Google Chat.")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Endpoint.class))),
-        @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
+        @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition, Endpoint.properties are empty or the specified secrets are incompatible with the specified endpoint type")
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     @Transactional
@@ -286,6 +287,20 @@ public class EndpointResource {
          * for more details.
          */
         if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
+            if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
+                if (sourcesSecretable.getBasicAuthentication() != null || sourcesSecretable.getBasicAuthenticationLegacy() != null) {
+                    this.doesIntegrationSupportSecret(endpoint, SecretType.BASIC_AUTHENTICATION);
+                }
+
+                if (sourcesSecretable.getBearerToken() != null || sourcesSecretable.getBearerAuthenticationLegacy() != null) {
+                    this.doesIntegrationSupportSecret(endpoint, SecretType.BEARER_TOKEN);
+                }
+
+                if (sourcesSecretable.getSecretToken() != null || sourcesSecretable.getSecretTokenLegacy() != null) {
+                    this.doesIntegrationSupportSecret(endpoint, SecretType.SECRET_TOKEN);
+                }
+            }
+
             this.secretUtils.createSecretsForEndpoint(endpoint);
         }
 
@@ -582,6 +597,8 @@ public class EndpointResource {
             throw new NotFoundException("integration not found");
         }
 
+        this.doesIntegrationSupportSecret(endpoint, SecretType.BASIC_AUTHENTICATION);
+
         this.secretUtils.createUpdateBasicAuthenticationSecret(endpoint, basicAuthentication);
     }
 
@@ -611,6 +628,8 @@ public class EndpointResource {
         if (endpoint == null) {
             throw new NotFoundException("integration not found");
         }
+
+        this.doesIntegrationSupportSecret(endpoint, SecretType.BEARER_TOKEN);
 
         this.secretUtils.createUpdateBearerTokenSecret(endpoint, bearerToken);
     }
@@ -642,6 +661,8 @@ public class EndpointResource {
             throw new NotFoundException("integration not found");
         }
 
+        this.doesIntegrationSupportSecret(endpoint, SecretType.SECRET_TOKEN);
+
         this.secretUtils.createUpdateSecretTokenSecret(endpoint, secretToken);
     }
 
@@ -671,6 +692,8 @@ public class EndpointResource {
             throw new NotFoundException("integration not found");
         }
 
+        this.doesIntegrationSupportSecret(endpoint, SecretType.BASIC_AUTHENTICATION);
+
         this.secretUtils.deleteBasicAuthenticationSecret(endpoint);
     }
 
@@ -699,6 +722,8 @@ public class EndpointResource {
         if (endpoint == null) {
             throw new NotFoundException("integration not found");
         }
+
+        this.doesIntegrationSupportSecret(endpoint, SecretType.BEARER_TOKEN);
 
         this.secretUtils.deleteBearerTokenSecret(endpoint);
     }
@@ -730,6 +755,40 @@ public class EndpointResource {
             throw new NotFoundException("integration not found");
         }
 
+        this.doesIntegrationSupportSecret(endpoint, SecretType.SECRET_TOKEN);
+
         this.secretUtils.deleteSecretTokenSecret(endpoint);
+    }
+
+    /**
+     * Check if the given endpoint supports the given secret type. Throws a
+     * {@link BadRequestException} if it doesn't.
+     * @param endpoint the endpoint to check.
+     * @param secretType the secret type to check.
+     */
+    protected void doesIntegrationSupportSecret(final Endpoint endpoint, final SecretType secretType) {
+        final EndpointType endpointType = endpoint.getType();
+
+        final String errorMessage = String.format(
+            "{\"error\": \"%s credentials are not compatible with the specified integration\"}",
+            secretType.getDisplayName()
+        );
+
+        // The Camel based endpoints only support "basic authentication" and
+        // "secret token" secrets.
+        if (endpointType == EndpointType.CAMEL) {
+            if (secretType == SecretType.SECRET_TOKEN) {
+                throw new BadRequestException(errorMessage);
+            } else {
+                return;
+            }
+        }
+
+        // All the endpoints which are not of Ansible or webhook type at this
+        // point in this function's code, simply don't support secrets. The
+        // Ansible and webhook endpoints support them all.
+        if (!(endpointType == EndpointType.ANSIBLE || endpointType == EndpointType.WEBHOOK)) {
+            throw new BadRequestException(errorMessage);
+        }
     }
 }
