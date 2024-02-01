@@ -121,7 +121,7 @@ public class SourcesSecretsMigrationService {
         }
 
         // Pick up errors to delete the secrets
-        this.secretUtils.createSecretsForEndpoint(endpoint);
+        this.secretUtils.createSecretsForEndpointLegacy(endpoint);
 
         this.processedEndpoints.put(endpoint.getId(), endpoint);
     }

@@ -16,6 +16,9 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
+import com.redhat.cloud.notifications.models.secrets.BasicAuthentication;
+import com.redhat.cloud.notifications.models.secrets.BearerToken;
+import com.redhat.cloud.notifications.models.secrets.SecretToken;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
@@ -550,5 +553,183 @@ public class EndpointResource {
 
     private boolean isEndpointTypeAllowed(EndpointType endpointType) {
         return !featureFlipper.isEmailsOnlyMode() || endpointType.isSystemEndpointType;
+    }
+
+    @APIResponse(responseCode = "204", description = "The basic authentication secret was created or updated for the given integration")
+    @APIResponse(responseCode = "400", description = "The integration does not support the basic authentication secrets or the basic authentication object is invalid")
+    @APIResponse(responseCode = "404", description = "The specified integration could not be found")
+    @Consumes(APPLICATION_JSON)
+    @Operation(summary = "Create or update the basic authentication secret for the integration", description = "Creates a basic authentication secret for the integration if it wasn't created already. If the integration already had a basic authentication secret, it will update it.")
+    @Parameters(
+        {
+            @Parameter(
+                name = "uuid",
+                in = ParameterIn.PATH,
+                description = "The UUID of the endpoint to create or update the secret for.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+        }
+    )
+    @Path("/{integrationUuid}/secrets/basic-authentication")
+    @PUT
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Transactional
+    public void createUpdateEndpointSecretsBasicAuthentication(@Context SecurityContext securityContext, @RestPath UUID integrationUuid, @RequestBody final BasicAuthentication basicAuthentication) {
+        final String orgId = SecurityContextUtil.getOrgId(securityContext);
+
+        final Endpoint endpoint = this.endpointRepository.getEndpoint(orgId, integrationUuid);
+        if (endpoint == null) {
+            throw new NotFoundException("integration not found");
+        }
+
+        this.secretUtils.createUpdateBasicAuthenticationSecret(endpoint, basicAuthentication);
+    }
+
+    @APIResponse(responseCode = "204", description = "The bearer token secret was created or updated for the given integration")
+    @APIResponse(responseCode = "400", description = "The integration does not support the bearer token secrets or the bearer token object is invalid")
+    @APIResponse(responseCode = "404", description = "The specified integration could not be found")
+    @Consumes(APPLICATION_JSON)
+    @Operation(summary = "Create or update the bearer token secret for the integration", description = "Creates a bearer token secret for the integration if it wasn't created already. If the integration already had a bearer token secret, it will update it.")
+    @Parameters(
+        {
+            @Parameter(
+                name = "uuid",
+                in = ParameterIn.PATH,
+                description = "The UUID of the endpoint to create or update the secret for.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+        }
+    )
+    @Path("/{integrationUuid}/secrets/bearer-token")
+    @PUT
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Transactional
+    public void createUpdateEndpointSecretsBearerToken(@Context SecurityContext securityContext, @RestPath UUID integrationUuid, @RequestBody final BearerToken bearerToken) {
+        final String orgId = SecurityContextUtil.getOrgId(securityContext);
+
+        final Endpoint endpoint = this.endpointRepository.getEndpoint(orgId, integrationUuid);
+        if (endpoint == null) {
+            throw new NotFoundException("integration not found");
+        }
+
+        this.secretUtils.createUpdateBearerTokenSecret(endpoint, bearerToken);
+    }
+
+    @APIResponse(responseCode = "204", description = "The secret token secret was created or updated for the given integration")
+    @APIResponse(responseCode = "400", description = "The integration does not support the secret token secrets or the secret token object is invalid")
+    @APIResponse(responseCode = "404", description = "The specified integration could not be found")
+    @Consumes(APPLICATION_JSON)
+    @Operation(summary = "Create or update the secret token secret for the integration", description = "Creates a secret token secret for the integration if it wasn't created already. If the integration already had a secret token secret, it will update it.")
+    @Parameters(
+        {
+            @Parameter(
+                name = "uuid",
+                in = ParameterIn.PATH,
+                description = "The UUID of the endpoint to create or update the secret for.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+        }
+    )
+    @Path("/{integrationUuid}/secrets/secret-token")
+    @PUT
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Transactional
+    public void createUpdateEndpointSecretsSecretToken(@Context SecurityContext securityContext, @RestPath UUID integrationUuid, @RequestBody final SecretToken secretToken) {
+        final String orgId = SecurityContextUtil.getOrgId(securityContext);
+
+        final Endpoint endpoint = this.endpointRepository.getEndpoint(orgId, integrationUuid);
+        if (endpoint == null) {
+            throw new NotFoundException("integration not found");
+        }
+
+        this.secretUtils.createUpdateSecretTokenSecret(endpoint, secretToken);
+    }
+
+    @APIResponse(responseCode = "204", description = "The basic authentication secret was deleted for the given integration")
+    @APIResponse(responseCode = "400", description = "The integration does not support basic authentication secrets")
+    @APIResponse(responseCode = "404", description = "The specified integration could not be found")
+    @DELETE
+    @Operation(summary = "Delete the basic authentication secret for the integration.", description = "Deletes the basic authentication secret for the integration.")
+    @Parameters(
+        {
+            @Parameter(
+                name = "uuid",
+                in = ParameterIn.PATH,
+                description = "The UUID of the endpoint to delete the secret for.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+        }
+    )
+    @Path("/{integrationUuid}/secrets/basic-authentication")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Transactional
+    public void deleteBasicAuthenticationSecret(@Context SecurityContext securityContext, @RestPath UUID integrationUuid) {
+        final String orgId = SecurityContextUtil.getOrgId(securityContext);
+
+        final Endpoint endpoint = this.endpointRepository.getEndpoint(orgId, integrationUuid);
+        if (endpoint == null) {
+            throw new NotFoundException("integration not found");
+        }
+
+        this.secretUtils.deleteBasicAuthenticationSecret(endpoint);
+    }
+
+    @APIResponse(responseCode = "204", description = "The bearer token secret was deleted for the given integration")
+    @APIResponse(responseCode = "400", description = "The integration does not support the bearer token secrets")
+    @APIResponse(responseCode = "404", description = "The specified integration could not be found")
+    @DELETE
+    @Operation(summary = "Delete the bearer token secret for the integration.", description = "Deletes the bearer token secret for the integration.")
+    @Parameters(
+        {
+            @Parameter(
+                name = "uuid",
+                in = ParameterIn.PATH,
+                description = "The UUID of the endpoint to delete the secret for.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+        }
+    )
+    @Path("/{integrationUuid}/secrets/bearer-token")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Transactional
+    public void deleteBearerTokenSecret(@Context SecurityContext securityContext, @RestPath UUID integrationUuid) {
+        final String orgId = SecurityContextUtil.getOrgId(securityContext);
+
+        final Endpoint endpoint = this.endpointRepository.getEndpoint(orgId, integrationUuid);
+        if (endpoint == null) {
+            throw new NotFoundException("integration not found");
+        }
+
+        this.secretUtils.deleteBearerTokenSecret(endpoint);
+    }
+
+    @APIResponse(responseCode = "204", description = "The secret token secret was deleted for the given integration")
+    @APIResponse(responseCode = "400", description = "The integration does not support the secret token secrets")
+    @APIResponse(responseCode = "404", description = "The specified integration could not be found")
+    @DELETE
+    @Consumes(APPLICATION_JSON)
+    @Operation(summary = "Delete the secret token secret for the integration.", description = "Deletes the secret token secret for the integration.")
+    @Parameters(
+        {
+            @Parameter(
+                name = "uuid",
+                in = ParameterIn.PATH,
+                description = "The UUID of the endpoint to delete the secret for.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+        }
+    )
+    @Path("/{integrationUuid}/secrets/secret-token")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    @Transactional
+    public void deleteSecretTokenSecret(@Context SecurityContext securityContext, @RestPath UUID integrationUuid) {
+        final String orgId = SecurityContextUtil.getOrgId(securityContext);
+
+        final Endpoint endpoint = this.endpointRepository.getEndpoint(orgId, integrationUuid);
+        if (endpoint == null) {
+            throw new NotFoundException("integration not found");
+        }
+
+        this.secretUtils.deleteSecretTokenSecret(endpoint);
     }
 }

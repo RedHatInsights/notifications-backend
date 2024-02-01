@@ -1,16 +1,22 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
+import com.redhat.cloud.notifications.models.secrets.BasicAuthentication;
+import com.redhat.cloud.notifications.models.secrets.BearerToken;
+import com.redhat.cloud.notifications.models.secrets.SecretToken;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,6 +34,9 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
 
     @NotNull
     private Boolean disableSslVerification = Boolean.FALSE;
+
+    @Transient
+    Secrets secrets = new Secrets();
 
     @Column(name = "secret_token")
     @Deprecated
@@ -75,11 +84,13 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     }
 
     @Deprecated(forRemoval = true)
+    @JsonGetter("secret_token")
     public void setSecretTokenLegacy(String secretToken) {
         this.secretTokenLegacy = secretToken;
     }
 
     @Deprecated(forRemoval = true)
+    @JsonSetter("secret_token")
     public String getSecretTokenLegacy() {
         return secretTokenLegacy;
     }
@@ -93,11 +104,13 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     }
 
     @Deprecated(forRemoval = true)
+    @JsonGetter("basic_authentication")
     public BasicAuthenticationLegacy getBasicAuthenticationLegacy() {
         return basicAuthenticationLegacy;
     }
 
     @Deprecated(forRemoval = true)
+    @JsonSetter("basic_authentication")
     public void setBasicAuthenticationLegacy(BasicAuthenticationLegacy basicAuthenticationLegacy) {
         this.basicAuthenticationLegacy = basicAuthenticationLegacy;
     }
@@ -119,13 +132,51 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     }
 
     @Deprecated(forRemoval = true)
+    @JsonGetter("bearer_token")
     public String getBearerAuthenticationLegacy() {
         return null;
     }
 
     @Deprecated(forRemoval = true)
+    @JsonSetter("bearer_token")
     public void setBearerAuthenticationLegacy(String bearerAuthentication) {
         // do nothing here
+    }
+
+    @Override
+    public Secrets getSecrets() {
+        return this.secrets;
+    }
+
+    @Override
+    public BasicAuthentication getBasicAuthentication() {
+        return this.secrets.getBasicAuthentication();
+    }
+
+    @Override
+    public void setBasicAuthentication(final BasicAuthentication basicAuthentication) {
+        this.secrets.setBasicAuthentication(basicAuthentication);
+    }
+
+    @Override
+    public BearerToken getBearerToken() {
+        // Not supported for Camel endpoints.
+        return null;
+    }
+
+    @Override
+    public void setBearerToken(final BearerToken bearerToken) {
+        // Not supported for Camel endpoints.
+    }
+
+    @Override
+    public SecretToken getSecretToken() {
+        return this.secrets.getSecretToken();
+    }
+
+    @Override
+    public void setSecretToken(final SecretToken secretToken) {
+        this.secrets.setSecretToken(secretToken);
     }
 
     @Override
