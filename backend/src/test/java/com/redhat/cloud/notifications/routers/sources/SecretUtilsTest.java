@@ -1,9 +1,16 @@
 package com.redhat.cloud.notifications.routers.sources;
 
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.models.BasicAuthenticationLegacy;
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.models.secrets.BasicAuthentication;
+import com.redhat.cloud.notifications.models.secrets.BearerToken;
+import com.redhat.cloud.notifications.models.secrets.SecretToken;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -11,9 +18,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 @QuarkusTest
 public class SecretUtilsTest {
@@ -385,10 +395,387 @@ public class SecretUtilsTest {
     }
 
     /**
+     * Tests that the function under test creates a basic authentication secret
+     * in Sources when there is no Sources reference stored for it.
+     */
+    @Test
+    void testCreateBasicAuthenticationSecret() {
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(new WebhookProperties());
+
+        final String username = "username";
+        final String password = "password";
+
+        // Mock the response from Sources.
+        final Secret mockedSecret = new Secret();
+        mockedSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        mockedSecret.authenticationType = Secret.TYPE_BASIC_AUTH;
+        mockedSecret.username = username;
+        mockedSecret.password = password;
+
+        Mockito.when(
+            this.sourcesServiceMock.create(Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(this.sourcesPsk), Mockito.any())
+        ).thenReturn(
+            mockedSecret
+        );
+
+        // Call the function under test.
+        this.secretUtils.createUpdateBasicAuthenticationSecret(
+            endpoint,
+            new BasicAuthentication(username, password)
+        );
+
+        // Capture the secret that was about to be sent to Sources.
+        final ArgumentCaptor<Secret> secretArgumentCaptor = ArgumentCaptor.forClass(Secret.class);
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).create(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            secretArgumentCaptor.capture()
+        );
+
+        final Secret sentSecret = secretArgumentCaptor.getValue();
+
+        // Assert that the values are the expected ones.
+        Assertions.assertEquals(mockedSecret.id, endpoint.getProperties(WebhookProperties.class).getBasicAuthenticationSourcesId(), "unexpected ID stored for the created secret in Sources");
+        Assertions.assertEquals(Secret.TYPE_BASIC_AUTH, sentSecret.authenticationType, "unexpected value for the authentication type when creating a new basic authentication secret in Sources");
+        Assertions.assertEquals(username, sentSecret.username, "unexpected username for the basic authentication object to be created");
+        Assertions.assertEquals(password, sentSecret.password, "unexpected password for the basic authentication object to be created");
+    }
+
+    /**
+     * Tests that the function under test updates a basic authentication secret
+     * in Sources when there is a Sources reference stored for it.
+     */
+    @Test
+    void testUpdateBasicAuthenticationSecret() {
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setBasicAuthenticationSourcesId(new Random().nextLong(1, Long.MAX_VALUE));
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(webhookProperties);
+
+        final String username = "new-username";
+        final String password = "new-password";
+
+        // Call the function under test.
+        this.secretUtils.createUpdateBasicAuthenticationSecret(
+            endpoint,
+            new BasicAuthentication(username, password)
+        );
+
+        // Capture the secret that was about to be sent to Sources.
+        final ArgumentCaptor<Secret> secretArgumentCaptor = ArgumentCaptor.forClass(Secret.class);
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).update(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            Mockito.eq(webhookProperties.getBasicAuthenticationSourcesId()),
+            secretArgumentCaptor.capture()
+        );
+
+        final Secret sentSecret = secretArgumentCaptor.getValue();
+
+        // Assert that the values are the expected ones.
+        Assertions.assertEquals(Secret.TYPE_BASIC_AUTH, sentSecret.authenticationType, "unexpected value for the authentication type when updating an existing basic authentication secret in Sources");
+        Assertions.assertEquals(username, sentSecret.username, "unexpected username for the basic authentication object to be updated");
+        Assertions.assertEquals(password, sentSecret.password, "unexpected password for the basic authentication object to be updated");
+    }
+
+    /**
+     * Tests that the function under test deletes a basic authentication secret
+     * in Sources when there is a Sources reference stored for it.
+     */
+    @Test
+    void testDeleteBasicAuthenticationSecret() {
+        // Set the Sources reference ID in a new statement because the function
+        // under test removes it from the endpoint's properties.
+        final long sourcesReferenceId = new Random().nextLong(1, Long.MAX_VALUE);
+
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setBasicAuthenticationSourcesId(sourcesReferenceId);
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(webhookProperties);
+
+        // Call the function under test.
+        this.secretUtils.deleteBasicAuthenticationSecret(
+            endpoint
+        );
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).delete(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            Mockito.eq(sourcesReferenceId)
+        );
+    }
+
+    /**
+     * Tests that the function under test creates a bearer token secret in
+     * Sources when there is no Sources reference stored for it.
+     */
+    @Test
+    void testCreateBearerTokenSecret() {
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(new WebhookProperties());
+
+        final String bearerToken = "bearer-token";
+
+        // Mock the response from Sources.
+        final Secret mockedSecret = new Secret();
+        mockedSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        mockedSecret.authenticationType = Secret.TYPE_BEARER_AUTHENTICATION;
+        mockedSecret.password = bearerToken;
+
+        Mockito.when(
+            this.sourcesServiceMock.create(Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(this.sourcesPsk), Mockito.any())
+        ).thenReturn(
+            mockedSecret
+        );
+
+        // Call the function under test.
+        this.secretUtils.createUpdateBearerTokenSecret(
+            endpoint,
+            new BearerToken(bearerToken)
+        );
+
+        // Capture the secret that was about to be sent to Sources.
+        final ArgumentCaptor<Secret> secretArgumentCaptor = ArgumentCaptor.forClass(Secret.class);
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).create(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            secretArgumentCaptor.capture()
+        );
+
+        final Secret sentSecret = secretArgumentCaptor.getValue();
+
+        // Assert that the values are the expected ones.
+        Assertions.assertEquals(mockedSecret.id, endpoint.getProperties(WebhookProperties.class).getBearerAuthenticationSourcesId(), "unexpected ID stored for the created secret in Sources");
+        Assertions.assertEquals(Secret.TYPE_BEARER_AUTHENTICATION, sentSecret.authenticationType, "unexpected value for the authentication type when creating a new bearer token secret in Sources");
+        Assertions.assertEquals(bearerToken, sentSecret.password, "unexpected token for the bearer token object to be created");
+    }
+
+    /**
+     * Tests that the function under test updates a bearer token secret in
+     * Sources when there is a Sources reference stored for it.
+     */
+    @Test
+    void testUpdateBearerTokenSecret() {
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setBearerAuthenticationSourcesId(new Random().nextLong(1, Long.MAX_VALUE));
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(webhookProperties);
+
+        final String bearerToken = "new-bearer-token";
+
+        // Call the function under test.
+        this.secretUtils.createUpdateBearerTokenSecret(
+            endpoint,
+            new BearerToken(bearerToken)
+        );
+
+        // Capture the secret that was about to be sent to Sources.
+        final ArgumentCaptor<Secret> secretArgumentCaptor = ArgumentCaptor.forClass(Secret.class);
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).update(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            Mockito.eq(webhookProperties.getBearerAuthenticationSourcesId()),
+            secretArgumentCaptor.capture()
+        );
+
+        final Secret sentSecret = secretArgumentCaptor.getValue();
+
+        // Assert that the values are the expected ones.
+        Assertions.assertEquals(Secret.TYPE_BEARER_AUTHENTICATION, sentSecret.authenticationType, "unexpected value for the authentication type when updating an existing bearer token secret in Sources");
+        Assertions.assertEquals(bearerToken, sentSecret.password, "unexpected token for the bearer token object to be updated");
+    }
+
+    /**
+     * Tests that the function under test deletes a bearer token secret in
+     * Sources when there is a Sources reference stored for it.
+     */
+    @Test
+    void testDeleteBearerTokenSecret() {
+        // Set the Sources reference ID in a new statement because the function
+        // under test removes it from the endpoint's properties.
+        final long sourcesReferenceId = new Random().nextLong(1, Long.MAX_VALUE);
+
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setBearerAuthenticationSourcesId(sourcesReferenceId);
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(webhookProperties);
+
+        // Call the function under test.
+        this.secretUtils.deleteBearerTokenSecret(
+            endpoint
+        );
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).delete(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            Mockito.eq(sourcesReferenceId)
+        );
+    }
+
+    /**
+     * Tests that the function under test creates a secret token secret in
+     * Sources when there is no Sources reference stored for it.
+     */
+    @Test
+    void testCreateSecretTokenSecret() {
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(new WebhookProperties());
+
+        final String secretToken = "secret-token";
+
+        // Mock the response from Sources.
+        final Secret mockedSecret = new Secret();
+        mockedSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        mockedSecret.authenticationType = Secret.TYPE_SECRET_TOKEN;
+        mockedSecret.password = secretToken;
+
+        Mockito.when(
+            this.sourcesServiceMock.create(Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(this.sourcesPsk), Mockito.any())
+        ).thenReturn(
+            mockedSecret
+        );
+
+        // Call the function under test.
+        this.secretUtils.createUpdateSecretTokenSecret(
+            endpoint,
+            new SecretToken(secretToken)
+        );
+
+        // Capture the secret that was about to be sent to Sources.
+        final ArgumentCaptor<Secret> secretArgumentCaptor = ArgumentCaptor.forClass(Secret.class);
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).create(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            secretArgumentCaptor.capture()
+        );
+
+        final Secret sentSecret = secretArgumentCaptor.getValue();
+
+        // Assert that the values are the expected ones.
+        Assertions.assertEquals(mockedSecret.id, endpoint.getProperties(WebhookProperties.class).getSecretTokenSourcesId(), "unexpected ID stored for the created secret in Sources");
+        Assertions.assertEquals(Secret.TYPE_SECRET_TOKEN, sentSecret.authenticationType, "unexpected value for the authentication type when creating a new secret token secret in Sources");
+        Assertions.assertEquals(secretToken, sentSecret.password, "unexpected token for the secret token object to be created");
+    }
+
+    /**
+     * Tests that the function under test updates a secret token secret in
+     * Sources when there is a Sources reference stored for it.
+     */
+    @Test
+    void testUpdateSecretsTokenSecret() {
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setSecretTokenSourcesId(new Random().nextLong(1, Long.MAX_VALUE));
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(webhookProperties);
+
+        final String secretToken = "new-secret-token";
+
+        // Call the function under test.
+        this.secretUtils.createUpdateSecretTokenSecret(
+            endpoint,
+            new SecretToken(secretToken)
+        );
+
+        // Capture the secret that was about to be sent to Sources.
+        final ArgumentCaptor<Secret> secretArgumentCaptor = ArgumentCaptor.forClass(Secret.class);
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).update(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            Mockito.eq(webhookProperties.getSecretTokenSourcesId()),
+            secretArgumentCaptor.capture()
+        );
+
+        final Secret sentSecret = secretArgumentCaptor.getValue();
+
+        // Assert that the values are the expected ones.
+        Assertions.assertEquals(Secret.TYPE_SECRET_TOKEN, sentSecret.authenticationType, "unexpected value for the authentication type when updating an existing secret token secret in Sources");
+        Assertions.assertEquals(secretToken, sentSecret.password, "unexpected token for the secret token object to be updated");
+    }
+
+    /**
+     * Tests that the function under test deletes a secret token secret in
+     * Sources when there is a Sources reference stored for it.
+     */
+    @Test
+    void testDeleteSecretTokenSecret() {
+        // Set the Sources reference ID in a new statement because the function
+        // under test removes it from the endpoint's properties.
+        final long sourcesReferenceId = new Random().nextLong(1, Long.MAX_VALUE);
+
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setSecretTokenSourcesId(sourcesReferenceId);
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(TestConstants.DEFAULT_ORG_ID);
+        endpoint.setProperties(webhookProperties);
+
+        // Call the function under test.
+        this.secretUtils.deleteSecretTokenSecret(
+            endpoint
+        );
+
+        Mockito.verify(
+            this.sourcesServiceMock,
+            Mockito.times(1)
+        ).delete(
+            Mockito.eq(TestConstants.DEFAULT_ORG_ID),
+            Mockito.eq(this.sourcesPsk),
+            Mockito.eq(sourcesReferenceId)
+        );
+    }
+
+    /**
      * Tests that the function under test calls "update" upon Sources two times, one for the "basic authentication" and
      * another one for the "secret token". It also checks that the responses are properly marshalled into the right
      * endpoint properties.
+     * @deprecated because the function will get removed once the old model
+     * gets removed too.
      */
+    @Deprecated(forRemoval = true)
     @Test
     void updateSecretsForEndpointTest() {
         // Create a "Basic Authentication" secret mock.
@@ -468,7 +855,10 @@ public class SecretUtilsTest {
     /**
      * Tests that when the user provides a {@code null} "basic authentication" and "secret token" secret for an
      * endpoint which has secrets stored in Sources, the deletion process for those secrets is triggered.
+     * @deprecated because the function will get removed once the old model
+     * gets removed too.
      */
+    @Deprecated(forRemoval = true)
     @Test
     void updateSecretsForEndpointDeleteTest() {
         // Create an endpoint that contains the expected data by the function under test.
@@ -505,7 +895,10 @@ public class SecretUtilsTest {
      * Tests that when the client updates an endpoint, but there are no secrets stored in Sources, or no valid secrets
      * provided by the client, basically a NOP happens. For a valid secret we understand it as a secret token that is
      * not blank.
+     * @deprecated because the function will get removed once the old model
+     * gets removed too.
      */
+    @Deprecated(forRemoval = true)
     @Test
     void updateSecretsForEndpointNopTest() {
         // Create an endpoint that contains the expected data by the function under test.
@@ -531,6 +924,11 @@ public class SecretUtilsTest {
         Mockito.verifyNoInteractions(this.sourcesServiceMock);
     }
 
+    /**
+     * @deprecated because the function will get removed once the old model
+     * gets removed too.
+     */
+    @Deprecated(forRemoval = true)
     @Test
     void updateSecretsForEndpointCreateTest() {
         // Set the ID for the basic authentication secret that is supposed that is created in Sources.
@@ -639,7 +1037,9 @@ public class SecretUtilsTest {
 
     /**
      * Tests that when a valid "basic authentication" object is passed, the function returns that it isn't blank.
+     * @deprecated because the check for the legacy version of the basic authentication model is going to be removed.
      */
+    @Deprecated(forRemoval = true)
     @Test
     void isBasicAuthNullOrBlankTest() {
         final var basicAuth = new BasicAuthenticationLegacy("username", "password");
@@ -650,7 +1050,9 @@ public class SecretUtilsTest {
     /**
      * Tests that when a blank "password" and "username" combination is given, the "basic authentication" object is
      * considered blank.
+     * @deprecated because the check for the legacy version of the basic authentication model is going to be removed.
      */
+    @Deprecated(forRemoval = true)
     @Test
     void itIsBasicAuthNullOrBlankTest() {
         final var blankBasicAuths = new ArrayList<BasicAuthenticationLegacy>();
@@ -667,5 +1069,205 @@ public class SecretUtilsTest {
         for (final var basicAuth : blankBasicAuths) {
             Assertions.assertTrue(this.secretUtils.isBasicAuthNullOrBlank(basicAuth), "the basic authentication should have been considered as blank");
         }
+    }
+
+    /**
+     * Tests that when a valid "basic authentication" object is passed, the
+     * function returns that it isn't blank.
+     */
+    @Test
+    void testIsBasicAuthenticationNullOrBlankIsNotBlank() {
+        final BasicAuthentication basicAuth = new BasicAuthentication("username", "password");
+
+        Assertions.assertFalse(this.secretUtils.isBasicAuthenticationNullOrBlank(basicAuth), "the basic authentication should have not been considered as blank");
+    }
+
+    /**
+     * Tests that when a blank "password" and "username" combination is given, the "basic authentication" object is
+     * considered blank.
+     */
+    @Test
+    void testIsBasicAuthenticationNullOrBlankIsBlank() {
+        final List<BasicAuthentication> blankBasicAuths = new ArrayList<>();
+
+        blankBasicAuths.add(new BasicAuthentication());
+        blankBasicAuths.add(new BasicAuthentication(null, null));
+        blankBasicAuths.add(new BasicAuthentication(null, ""));
+        blankBasicAuths.add(new BasicAuthentication("", null));
+        blankBasicAuths.add(new BasicAuthentication("", ""));
+        blankBasicAuths.add(new BasicAuthentication(null, "     "));
+        blankBasicAuths.add(new BasicAuthentication("     ", null));
+        blankBasicAuths.add(new BasicAuthentication("     ", "     "));
+
+        for (final BasicAuthentication basicAuth : blankBasicAuths) {
+            Assertions.assertTrue(this.secretUtils.isBasicAuthenticationNullOrBlank(basicAuth), "the basic authentication should have been considered as blank");
+        }
+    }
+
+    /**
+     * Tests that the properties that support Sources secrets are correctly
+     * identified as such.
+     */
+    @Test
+    void testInstanceOfSourcesSecretable() {
+        final Endpoint camelEndpoint = new Endpoint();
+        camelEndpoint.setProperties(new CamelProperties());
+
+        final Endpoint webhookEndpoint = new Endpoint();
+        webhookEndpoint.setProperties(new WebhookProperties());
+
+        final List<Endpoint> testCases = List.of(
+            camelEndpoint,
+            webhookEndpoint
+        );
+
+        for (final Endpoint testCase : testCases) {
+            Assertions.assertTrue(SecretUtils.isSourcesSecretable(testCase), "the endpoint should have been identified as 'SourcesSecretable'");
+        }
+    }
+
+    /**
+     * Tests that the properties that do not support Sources secrets are
+     * correctly identified as such.
+     */
+    @Test
+    void testNotInstanceOfSourcesSecretable() {
+        final Endpoint systemEndpoint = new Endpoint();
+        systemEndpoint.setProperties(new SystemSubscriptionProperties());
+
+        Assertions.assertFalse(SecretUtils.isSourcesSecretable(systemEndpoint), "the system endpoint should have been flagged as non 'SourcesSecretable'");
+
+        final Endpoint endpoint = new Endpoint();
+        Assertions.assertFalse(SecretUtils.isSourcesSecretable(endpoint), "the endpoint with no properties should have been flagged as non 'SourcesSecretable'");
+    }
+
+    /**
+     * Test that when syncing properties, and both the legacy and the new ones
+     * are specified, the legacy ones get overridden by the new ones.
+     * @deprecated because the function under test will go away as soon as we
+     * remove the legacy properties from the model.
+     */
+    @Deprecated
+    @Test
+    void testSyncLegacyPropertiesBothSecretsPresent() {
+        final SourcesSecretable sourcesSecretable = new WebhookProperties();
+
+        final BasicAuthenticationLegacy bal = new BasicAuthenticationLegacy(
+            "username",
+            "password"
+        );
+
+        final BasicAuthentication ba = new BasicAuthentication(
+            "new-username",
+            "new-password"
+        );
+
+        sourcesSecretable.setBasicAuthenticationLegacy(bal);
+        sourcesSecretable.setBasicAuthentication(ba);
+
+        final String bearerTokenLegacy = "bearerToken";
+        final BearerToken bearerToken = new BearerToken("new-bearer-token");
+
+        sourcesSecretable.setBearerAuthenticationLegacy(bearerTokenLegacy);
+        sourcesSecretable.setBearerToken(bearerToken);
+
+        final String secretTokenLegacy = "secretToken";
+        final SecretToken secretToken = new SecretToken("new-secret-token");
+
+        sourcesSecretable.setSecretTokenLegacy(secretTokenLegacy);
+        sourcesSecretable.setSecretToken(secretToken);
+
+        // Call the function under test.
+        this.secretUtils.legacySyncProperties((EndpointProperties) sourcesSecretable);
+
+        // Assert that the legacy basic authentication got overridden.
+        Assertions.assertEquals(sourcesSecretable.getBasicAuthentication().getPassword(), sourcesSecretable.getBasicAuthenticationLegacy().getPassword(), "the password property for the legacy basic authentication object should have the same value as the new object when both properties are specified");
+        Assertions.assertEquals(sourcesSecretable.getBasicAuthentication().getUsername(), sourcesSecretable.getBasicAuthenticationLegacy().getUsername(), "the username property for the legacy basic authentication object should have the same value as the new object when both properties are specified");
+
+        // Assert that the legacy bearer token got overridden.
+        Assertions.assertEquals(sourcesSecretable.getBearerToken().getToken(), sourcesSecretable.getBearerAuthenticationLegacy(), "the value for the legacy bearer token object should have the same value as the new object when both properties are specified");
+
+        // Assert that the legacy secret token got overridden.
+        Assertions.assertEquals(sourcesSecretable.getSecretToken().getToken(), sourcesSecretable.getSecretTokenLegacy(), "the value for the legacy secret token object should have the same value as the new object when both properties are specified");
+    }
+
+    /**
+     * Test that when syncing properties, and only the legacy ones are
+     * specified, the new ones are created.
+     * @deprecated because the function under test will go away as soon as we
+     * remove the legacy properties from the model.
+     */
+    @Deprecated
+    @Test
+    void testSyncLegacyPropertiesOnlyLegacySecretsPresent() {
+        final SourcesSecretable sourcesSecretable = new WebhookProperties();
+
+        final BasicAuthenticationLegacy bal = new BasicAuthenticationLegacy(
+            "username",
+            "password"
+        );
+
+        sourcesSecretable.setBasicAuthenticationLegacy(bal);
+
+        final String bearerTokenLegacy = "bearerToken";
+
+        sourcesSecretable.setBearerAuthenticationLegacy(bearerTokenLegacy);
+
+        final String secretTokenLegacy = "secretToken";
+
+        sourcesSecretable.setSecretTokenLegacy(secretTokenLegacy);
+
+        // Call the function under test.
+        this.secretUtils.legacySyncProperties((EndpointProperties) sourcesSecretable);
+
+        // Assert that the new basic authentication got created.
+        Assertions.assertEquals(sourcesSecretable.getBasicAuthenticationLegacy().getPassword(), sourcesSecretable.getBasicAuthentication().getPassword(), "the password property for the new basic authentication object should have been created when only the legacy basic authentication object was specified");
+        Assertions.assertEquals(sourcesSecretable.getBasicAuthenticationLegacy().getUsername(), sourcesSecretable.getBasicAuthentication().getUsername(), "the username property for the new basic authentication object should have been created when only the legacy basic authentication object was specified");
+
+        // Assert that the new bearer token got created.
+        Assertions.assertEquals(sourcesSecretable.getBearerAuthenticationLegacy(), sourcesSecretable.getBearerToken().getToken(), "the new bearer token object should have been created when only the legacy one was specified");
+
+        // Assert that the legacy secret token got overridden.
+        Assertions.assertEquals(sourcesSecretable.getSecretTokenLegacy(), sourcesSecretable.getSecretToken().getToken(), "the new secret token object should have been created when only the legacy one was specified");
+    }
+
+    /**
+     * Test that when syncing properties, and only the new ones are specified,
+     * the legacy ones get created.
+     * @deprecated because the function under test will go away as soon as we
+     * remove the legacy properties from the model.
+     */
+    @Deprecated
+    @Test
+    void testSyncLegacyPropertiesOnlyNewOnesPresent() {
+        final SourcesSecretable sourcesSecretable = new WebhookProperties();
+
+        final BasicAuthentication ba = new BasicAuthentication(
+            "new-username",
+            "new-password"
+        );
+
+        sourcesSecretable.setBasicAuthentication(ba);
+
+        final BearerToken bearerToken = new BearerToken("new-bearer-token");
+
+        sourcesSecretable.setBearerToken(bearerToken);
+
+        final SecretToken secretToken = new SecretToken("new-secret-token");
+
+        sourcesSecretable.setSecretToken(secretToken);
+
+        // Call the function under test.
+        this.secretUtils.legacySyncProperties((EndpointProperties) sourcesSecretable);
+
+        // Assert that the new basic authentication got created.
+        Assertions.assertEquals(sourcesSecretable.getBasicAuthentication().getPassword(), sourcesSecretable.getBasicAuthenticationLegacy().getPassword(), "the password property for the legacy basic authentication object should have been created when only the new basic authentication object was specified");
+        Assertions.assertEquals(sourcesSecretable.getBasicAuthentication().getUsername(), sourcesSecretable.getBasicAuthenticationLegacy().getUsername(), "the password property for the legacy basic authentication object should have been created when only the new basic authentication object was specified");
+
+        // Assert that the new bearer token got created.
+        Assertions.assertEquals(sourcesSecretable.getBearerToken().getToken(), sourcesSecretable.getBearerAuthenticationLegacy(), "the legacy bearer token object should have been created when only the new one was specified");
+
+        // Assert that the new secret token got created.
+        Assertions.assertEquals(sourcesSecretable.getSecretToken().getToken(), sourcesSecretable.getSecretTokenLegacy(), "the legacy secret token object should have been created when only the new one was specified");
     }
 }
