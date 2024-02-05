@@ -550,7 +550,7 @@ public class LifecycleITest extends DbIsolatedTest {
         assertEquals(properties.getMethod().name(), jsonWebhookProperties.getString("method"));
         assertEquals(properties.getDisableSslVerification(), jsonWebhookProperties.getBoolean("disable_ssl_verification"));
         if (properties.getSecretToken() != null) {
-            assertEquals(properties.getSecretToken(), jsonWebhookProperties.getString("secret_token"));
+            assertEquals("[REDACTED CREDENTIAL]", jsonWebhookProperties.getString("secret_token"));
         }
         assertEquals(properties.getUrl(), jsonWebhookProperties.getString("url"));
 

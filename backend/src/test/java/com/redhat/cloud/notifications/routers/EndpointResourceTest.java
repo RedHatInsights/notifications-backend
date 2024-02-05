@@ -479,6 +479,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
         cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        cAttr.setSecretToken("secret-token");
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
         cAttr.setExtras(extras);
@@ -522,9 +523,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(basicAuth);
             String user = basicAuth.getString("username");
             String pass = basicAuth.getString("password");
-            assertEquals("testuser", user);
-            assertEquals("secret", pass);
+            assertEquals("[REDACTED CREDENTIAL]", user);
+            assertEquals("[REDACTED CREDENTIAL]", pass);
 
+            assertEquals("[REDACTED CREDENTIAL]", properties.getString("secret_token"));
         } finally {
 
             given()
@@ -834,7 +836,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         JsonObject attrSingleUpdated = updatedEndpoint.getJsonObject("properties");
         attrSingleUpdated.mapTo(WebhookProperties.class);
         assertEquals("endpoint found", updatedEndpoint.getString("name"));
-        assertEquals("not-so-secret-anymore", attrSingleUpdated.getString("secret_token"));
+        assertEquals("[REDACTED CREDENTIAL]", attrSingleUpdated.getString("secret_token"));
         assertEquals(0, updatedEndpoint.getInteger("server_errors"));
     }
 
@@ -1123,8 +1125,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
         JsonObject attr = responsePointSingle.getJsonObject("properties");
         attr.mapTo(WebhookProperties.class);
         assertNotNull(attr.getJsonObject("basic_authentication"));
-        assertEquals("mypassword", attr.getJsonObject("basic_authentication").getString("password"));
-        assertEquals(properties.getBearerAuthentication(), attr.getString("bearer_authentication"));
+        assertEquals("[REDACTED CREDENTIAL]", attr.getJsonObject("basic_authentication").getString("username"));
+        assertEquals("[REDACTED CREDENTIAL]", attr.getJsonObject("basic_authentication").getString("password"));
+        assertEquals("[REDACTED CREDENTIAL]", attr.getString("bearer_authentication"));
+        assertEquals("[REDACTED CREDENTIAL]", attr.getString("secret_token"));
     }
 
     @Test
