@@ -193,10 +193,10 @@ parameters:
   value: "2"
 - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
   description: Number of concurrent threads processing exchanges with SEDA
-  value: "1"
+  value: "10"
 - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
   description: Maximum capacity of the SEDA queue
-  value: "1"
+  value: "10"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO

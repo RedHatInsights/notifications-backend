@@ -290,7 +290,7 @@ parameters:
   description: Memory request
   value: 250Mi
 - name: MIN_REPLICAS
-  value: "1"
+  value: "3"
 - name: MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED
   value: "true"
 - name: MP_MESSAGING_INCOMING_INGRESS_ENABLED
