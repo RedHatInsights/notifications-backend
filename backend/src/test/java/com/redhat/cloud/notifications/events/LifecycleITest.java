@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.routers.EndpointResource;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
@@ -550,7 +551,7 @@ public class LifecycleITest extends DbIsolatedTest {
         assertEquals(properties.getMethod().name(), jsonWebhookProperties.getString("method"));
         assertEquals(properties.getDisableSslVerification(), jsonWebhookProperties.getBoolean("disable_ssl_verification"));
         if (properties.getSecretToken() != null) {
-            assertEquals("[REDACTED CREDENTIAL]", jsonWebhookProperties.getString("secret_token"));
+            assertEquals(EndpointResource.REDACTED_CREDENTIAL, jsonWebhookProperties.getString("secret_token"));
         }
         assertEquals(properties.getUrl(), jsonWebhookProperties.getString("url"));
 

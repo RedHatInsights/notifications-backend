@@ -82,6 +82,7 @@ public class EndpointResource {
 
     public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
+    public static final String REDACTED_CREDENTIAL = "*****";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -575,18 +576,18 @@ public class EndpointResource {
         if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
             final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
             if (basicAuthentication != null) {
-                basicAuthentication.setPassword("[REDACTED CREDENTIAL]");
-                basicAuthentication.setUsername("[REDACTED CREDENTIAL]");
+                basicAuthentication.setPassword(REDACTED_CREDENTIAL);
+                basicAuthentication.setUsername(REDACTED_CREDENTIAL);
             }
 
             final String bearerToken = sourcesSecretable.getBearerAuthentication();
             if (bearerToken != null) {
-                sourcesSecretable.setBearerAuthentication("[REDACTED CREDENTIAL]");
+                sourcesSecretable.setBearerAuthentication(REDACTED_CREDENTIAL);
             }
 
             final String secretToken = sourcesSecretable.getSecretToken();
             if (secretToken != null) {
-                sourcesSecretable.setSecretToken("[REDACTED CREDENTIAL]");
+                sourcesSecretable.setSecretToken(REDACTED_CREDENTIAL);
             }
         }
     }
