@@ -292,7 +292,7 @@ parameters:
   description: Memory request
   value: 250Mi
 - name: MIN_REPLICAS
-  value: "1"
+  value: "3"
 - name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
   value: "false"
 - name: NOTIFICATIONS_LOG_LEVEL
