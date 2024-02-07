@@ -131,10 +131,12 @@ public class EventConsumer {
 
             /*
              * Step 3
-             * It's time to check if the message ID is already known. For now, messages without an ID
-             * (messageId == null) are always considered new.
+             * It's time to check if the message ID is already known.
+             * If the ID is new, it will be persisted and the current message
+             * will never be processed again as long as its ID stays in the DB.
+             * For now, messages without an ID (messageId == null) are always considered new.
              */
-            if (kafkaMessageDeduplicator.isDuplicate(messageId)) {
+            if (!kafkaMessageDeduplicator.isNew(messageId)) {
                 /*
                  * The message ID is already known which means we already processed the current
                  * message and sent notifications. The message is therefore ignored.
@@ -143,12 +145,6 @@ public class EventConsumer {
             } else {
                 /*
                  * Step 4
-                 * The message ID is new. Let's persist it. The current message will never be processed again as
-                 * long as its ID stays in the DB.
-                 */
-                kafkaMessageDeduplicator.registerMessageId(messageId);
-                /*
-                 * Step 5
                  * We need to retrieve an EventType from the DB using the bundle/app/eventType triplet from the
                  * parsed Action.
                  */
@@ -184,7 +180,7 @@ public class EventConsumer {
                     throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventWrapperToProcess.getKey()));
                 }
                 /*
-                 * Step 6
+                 * Step 5
                  * The EventType was found. It's time to create an Event from the current message and persist it.
                  */
                 Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
@@ -195,7 +191,7 @@ public class EventConsumer {
                 }
                 eventRepository.create(event);
                 /*
-                 * Step 7
+                 * Step 6
                  * The Event and the Action it contains are processed by all relevant endpoint processors.
                  */
                 try {

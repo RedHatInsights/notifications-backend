@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.models.EventTypeKey;
-import com.redhat.cloud.notifications.models.KafkaMessage;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -9,7 +8,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 
 import java.util.Optional;
@@ -78,32 +76,24 @@ public class KafkaMessageDeduplicator {
     /**
      * Verifies that another Kafka consumer didn't already process the given message and then failed to commit its
      * offset. Such failure can happen when a consumer is kicked out of its consumer group because it didn't poll new
-     * messages fast enough. We experienced that already on production.
+     * messages fast enough. We experienced that already in production.
      */
-    public boolean isDuplicate(UUID messageId) {
+    @Transactional
+    public boolean isNew(UUID messageId) {
         if (messageId == null) {
             /*
              * For now, messages without an ID are always considered new. This is necessary to give the onboarded apps
              * time to change their integration and start sending the new header. The message ID may become mandatory later.
              */
-            return false;
+            return true;
         } else {
-            String hql = "SELECT TRUE FROM KafkaMessage WHERE id = :messageId";
-            try {
-                return entityManager.createQuery(hql, Boolean.class)
-                        .setParameter("messageId", messageId)
-                        .getSingleResult();
-            } catch (NoResultException e) {
-                return false;
-            }
-        }
-    }
-
-    @Transactional
-    public void registerMessageId(UUID messageId) {
-        if (messageId != null) {
-            KafkaMessage kafkaMessage = new KafkaMessage(messageId);
-            entityManager.persist(kafkaMessage);
+            String sql = "INSERT INTO kafka_message(id) " +
+                    "VALUES (:messageId) " +
+                    "ON CONFLICT DO NOTHING";
+            int rowCount = entityManager.createNativeQuery(sql)
+                    .setParameter("messageId", messageId)
+                    .executeUpdate();
+            return rowCount > 0;
         }
     }
 }
