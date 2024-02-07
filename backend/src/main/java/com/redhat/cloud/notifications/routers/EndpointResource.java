@@ -238,6 +238,10 @@ public class EndpointResource {
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
                 this.secretUtils.loadSecretsForEndpoint(endpoint);
             }
+
+            // Redact the secrets for the endpoint if the user does not have
+            // permission.
+            this.redactSecretsForEndpoint(sec, endpoint);
         }
 
         return new EndpointPage(endpoints, new HashMap<>(), new Meta(count));
@@ -288,12 +292,7 @@ public class EndpointResource {
             this.secretUtils.createSecretsForEndpoint(endpoint);
         }
 
-        final Endpoint createdEndpoint = this.endpointRepository.createEndpoint(endpoint);
-        // Redact all the secrets for the given endpoint so that we don't
-        // return them to the clients.
-        this.redactSecretsForEndpoint(endpoint);
-
-        return createdEndpoint;
+        return endpointRepository.createEndpoint(endpoint);
     }
 
     private String checkSlackChannel(CamelProperties camelProperties) {
@@ -373,7 +372,7 @@ public class EndpointResource {
             }
 
             // Redact all the credentials from the endpoint's properties.
-            this.redactSecretsForEndpoint(endpoint);
+            this.redactSecretsForEndpoint(sec, endpoint);
 
             return endpoint;
         }
@@ -490,10 +489,6 @@ public class EndpointResource {
             }
         }
 
-        // Redact all the secrets for the given endpoint so that we don't
-        // return them to the clients.
-        this.redactSecretsForEndpoint(endpoint);
-
         return Response.ok().build();
     }
 
@@ -572,22 +567,28 @@ public class EndpointResource {
      * @param endpoint the endpoint to redact the secrets from.
      */
     @Deprecated(forRemoval = true)
-    protected void redactSecretsForEndpoint(final Endpoint endpoint) {
-        if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
-            final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
-            if (basicAuthentication != null) {
-                basicAuthentication.setPassword(REDACTED_CREDENTIAL);
-                basicAuthentication.setUsername(REDACTED_CREDENTIAL);
-            }
+    protected void redactSecretsForEndpoint(final SecurityContext securityContext, final Endpoint endpoint) {
+        // Only redact the secrets for those users who have read only permissions.
+        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+            || securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+            || securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS)
+        ) {
+            if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
+                final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
+                if (basicAuthentication != null) {
+                    basicAuthentication.setPassword(REDACTED_CREDENTIAL);
+                    basicAuthentication.setUsername(REDACTED_CREDENTIAL);
+                }
 
-            final String bearerToken = sourcesSecretable.getBearerAuthentication();
-            if (bearerToken != null) {
-                sourcesSecretable.setBearerAuthentication(REDACTED_CREDENTIAL);
-            }
+                final String bearerToken = sourcesSecretable.getBearerAuthentication();
+                if (bearerToken != null) {
+                    sourcesSecretable.setBearerAuthentication(REDACTED_CREDENTIAL);
+                }
 
-            final String secretToken = sourcesSecretable.getSecretToken();
-            if (secretToken != null) {
-                sourcesSecretable.setSecretToken(REDACTED_CREDENTIAL);
+                final String secretToken = sourcesSecretable.getSecretToken();
+                if (secretToken != null) {
+                    sourcesSecretable.setSecretToken(REDACTED_CREDENTIAL);
+                }
             }
         }
     }

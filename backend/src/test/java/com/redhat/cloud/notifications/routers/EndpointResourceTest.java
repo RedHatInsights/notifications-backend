@@ -523,10 +523,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(basicAuth);
             String user = basicAuth.getString("username");
             String pass = basicAuth.getString("password");
-            assertEquals(EndpointResource.REDACTED_CREDENTIAL, user);
-            assertEquals(EndpointResource.REDACTED_CREDENTIAL, pass);
+            assertEquals("testuser", user);
+            assertEquals("secret", pass);
 
-            assertEquals(EndpointResource.REDACTED_CREDENTIAL, properties.getString("secret_token"));
+            assertEquals("secret-token", properties.getString("secret_token"));
         } finally {
 
             given()
