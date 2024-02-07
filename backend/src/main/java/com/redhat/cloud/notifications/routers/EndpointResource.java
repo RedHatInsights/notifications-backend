@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
+import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -81,6 +82,7 @@ public class EndpointResource {
 
     public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
+    public static final String REDACTED_CREDENTIAL = "*****";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -236,6 +238,10 @@ public class EndpointResource {
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
                 this.secretUtils.loadSecretsForEndpoint(endpoint);
             }
+
+            // Redact the secrets for the endpoint if the user does not have
+            // permission.
+            this.redactSecretsForEndpoint(sec, endpoint);
         }
 
         return new EndpointPage(endpoints, new HashMap<>(), new Meta(count));
@@ -364,6 +370,9 @@ public class EndpointResource {
             if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
                 this.secretUtils.loadSecretsForEndpoint(endpoint);
             }
+
+            // Redact all the credentials from the endpoint's properties.
+            this.redactSecretsForEndpoint(sec, endpoint);
 
             return endpoint;
         }
@@ -550,5 +559,34 @@ public class EndpointResource {
 
     private boolean isEndpointTypeAllowed(EndpointType endpointType) {
         return !featureFlipper.isEmailsOnlyMode() || endpointType.isSystemEndpointType;
+    }
+
+    /**
+     * Removes the secrets from the endpoint's properties when returning them
+     * to the client.
+     * @param endpoint the endpoint to redact the secrets from.
+     */
+    @Deprecated(forRemoval = true)
+    protected void redactSecretsForEndpoint(final SecurityContext securityContext, final Endpoint endpoint) {
+        // Only redact the secrets for those users who have read only permissions.
+        if (!securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)) {
+            if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
+                final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
+                if (basicAuthentication != null) {
+                    basicAuthentication.setPassword(REDACTED_CREDENTIAL);
+                    basicAuthentication.setUsername(REDACTED_CREDENTIAL);
+                }
+
+                final String bearerToken = sourcesSecretable.getBearerAuthentication();
+                if (bearerToken != null) {
+                    sourcesSecretable.setBearerAuthentication(REDACTED_CREDENTIAL);
+                }
+
+                final String secretToken = sourcesSecretable.getSecretToken();
+                if (secretToken != null) {
+                    sourcesSecretable.setSecretToken(REDACTED_CREDENTIAL);
+                }
+            }
+        }
     }
 }

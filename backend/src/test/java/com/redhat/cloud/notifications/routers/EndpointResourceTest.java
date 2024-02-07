@@ -479,6 +479,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
         cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        cAttr.setSecretToken("secret-token");
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
         cAttr.setExtras(extras);
@@ -525,6 +526,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertEquals("testuser", user);
             assertEquals("secret", pass);
 
+            assertEquals("secret-token", properties.getString("secret_token"));
         } finally {
 
             given()
