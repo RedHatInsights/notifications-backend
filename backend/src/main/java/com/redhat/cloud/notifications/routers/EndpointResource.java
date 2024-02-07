@@ -569,10 +569,7 @@ public class EndpointResource {
     @Deprecated(forRemoval = true)
     protected void redactSecretsForEndpoint(final SecurityContext securityContext, final Endpoint endpoint) {
         // Only redact the secrets for those users who have read only permissions.
-        if (securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-            || securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-            || securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS)
-        ) {
+        if (!securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)) {
             if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
                 final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
                 if (basicAuthentication != null) {

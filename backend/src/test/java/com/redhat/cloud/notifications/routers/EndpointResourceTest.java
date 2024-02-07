@@ -836,7 +836,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         JsonObject attrSingleUpdated = updatedEndpoint.getJsonObject("properties");
         attrSingleUpdated.mapTo(WebhookProperties.class);
         assertEquals("endpoint found", updatedEndpoint.getString("name"));
-        assertEquals(EndpointResource.REDACTED_CREDENTIAL, attrSingleUpdated.getString("secret_token"));
+        assertEquals("not-so-secret-anymore", attrSingleUpdated.getString("secret_token"));
         assertEquals(0, updatedEndpoint.getInteger("server_errors"));
     }
 
@@ -1125,10 +1125,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         JsonObject attr = responsePointSingle.getJsonObject("properties");
         attr.mapTo(WebhookProperties.class);
         assertNotNull(attr.getJsonObject("basic_authentication"));
-        assertEquals(EndpointResource.REDACTED_CREDENTIAL, attr.getJsonObject("basic_authentication").getString("username"));
-        assertEquals(EndpointResource.REDACTED_CREDENTIAL, attr.getJsonObject("basic_authentication").getString("password"));
-        assertEquals(EndpointResource.REDACTED_CREDENTIAL, attr.getString("bearer_authentication"));
-        assertEquals(EndpointResource.REDACTED_CREDENTIAL, attr.getString("secret_token"));
+        assertEquals("mypassword", attr.getJsonObject("basic_authentication").getString("password"));
+        assertEquals(properties.getBearerAuthentication(), attr.getString("bearer_authentication"));
     }
 
     @Test
