@@ -1,20 +1,26 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class EmailActorsResolver {
+    public static final String RH_INSIGHTS_SENDER = "\"Red Hat Insights\" noreply@redhat.com";
     /**
-     * Standard "Red Hat Insights" sender that the vast majority of the
+     * Standard "Red Hat Hybrid Cloud Console" sender that the vast majority of the
      * ConsoleDot applications will use.
      */
-    public static final String RH_INSIGHTS_SENDER = "\"Red Hat Insights\" noreply@redhat.com";
+    public static final String RH_HCC_SENDER = "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com";
     public static final String OPENSHIFT_SENDER_STAGE = "\"Red Hat OpenShift (staging)\" no-reply@openshift.com";
     public static final String OPENSHIFT_SENDER_PROD = "\"Red Hat OpenShift\" no-reply@openshift.com";
 
     private static final String STAGE_ENVIRONMENT = "stage";
+
+    @Inject
+    FeatureFlipper featureFlipper;
 
     /**
      * Determines which sender should be set in the email from the given event.
@@ -35,10 +41,19 @@ public class EmailActorsResolver {
                     return OPENSHIFT_SENDER_PROD;
                 }
             } else {
-                return RH_INSIGHTS_SENDER;
+                return getDefaultEmailSender();
             }
         } catch (Exception e) {
-            Log.warnf(e, "Something went wrong while determining the email sender, falling back to default value: %s", RH_INSIGHTS_SENDER);
+            String emailSender = getDefaultEmailSender();
+            Log.warnf(e, "Something went wrong while determining the email sender, falling back to default value: %s", emailSender);
+            return emailSender;
+        }
+    }
+
+    private String getDefaultEmailSender() {
+        if (featureFlipper.isHccEmailSenderNameEnabled()) {
+            return RH_HCC_SENDER;
+        } else {
             return RH_INSIGHTS_SENDER;
         }
     }

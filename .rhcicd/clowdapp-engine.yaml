@@ -115,6 +115,8 @@ objects:
           value: ${NOTIFICATIONS_AGGREGATION_MAX_PAGE_SIZE}
         - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
           value: ${NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE}
+        - name: NOTIFICATIONS_EMAIL_HCC_SENDER_NAME_ENABLED
+          value: ${NOTIFICATIONS_EMAIL_HCC_SENDER_NAME_ENABLED}
         - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
           value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
@@ -315,6 +317,8 @@ parameters:
   description: Maximum number of aggregation records loaded from the DB at once
   value: "100"
 - name: NOTIFICATIONS_DISABLE_WEBHOOK_ENDPOINTS_ON_FAILURE
+  value: "false"
+- name: NOTIFICATIONS_EMAIL_HCC_SENDER_NAME_ENABLED
   value: "false"
 - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
   description: When this is true, all integration types except emails are disabled
