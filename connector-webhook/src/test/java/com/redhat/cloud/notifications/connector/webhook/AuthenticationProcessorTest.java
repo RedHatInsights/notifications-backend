@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_USERNAME;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_USERNAME;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BEARER;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.webhook.AuthenticationProcessor.X_INSIGHT_TOKEN_HEADER;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.BASIC;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.BEARER;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.AUTHENTICATION_TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;

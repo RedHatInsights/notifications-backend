@@ -1,9 +1,10 @@
 package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
-import io.quarkus.logging.Log;
+import com.redhat.cloud.notifications.connector.authentication.AuthenticationDataExtractor;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.component.http.HttpMethods;
 
@@ -12,13 +13,12 @@ import java.net.URL;
 import java.util.MissingResourceException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_USERNAME;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.BASIC;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.BEARER;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.AUTHENTICATION_TYPE;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_USERNAME;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BEARER;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.TRUST_ALL;
 
@@ -29,6 +29,9 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
     public static final String PAYLOAD = "payload";
 
     public static final String BASIC_AUTHENTICATION = "basic_authentication";
+
+    @Inject
+    AuthenticationDataExtractor authenticationDataExtractor;
 
     @Override
     public void extract(Exchange exchange, JsonObject cloudEventData) throws MalformedURLException {
@@ -43,21 +46,7 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
         extractLegacyAuthData(exchange, endpointProperties);
 
         JsonObject authentication = cloudEventData.getJsonObject("authentication");
-        if (authentication != null) {
-            String type = authentication.getString("type");
-            if (type != null) {
-                try {
-                    AuthenticationType authType = AuthenticationType.valueOf(type);
-                    exchange.setProperty(AUTHENTICATION_TYPE, authType);
-                    Long secretId = authentication.getLong("secretId");
-                    if (secretId != null) {
-                        exchange.setProperty(SECRET_ID, secretId);
-                    }
-                } catch (IllegalArgumentException e) {
-                    Log.errorf("Unknown authentication type: %s", type);
-                }
-            }
-        }
+        authenticationDataExtractor.extract(exchange, authentication);
         cloudEventData.remove("authentication");
 
         exchange.getIn().setBody(cloudEventData.getJsonObject(PAYLOAD).encode());

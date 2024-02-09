@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.ConnectorRoutesTest;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
-import com.redhat.cloud.notifications.connector.secrets.SecretsLoader;
+import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -15,8 +15,9 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
@@ -48,6 +49,7 @@ public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
     protected JsonObject buildIncomingPayload(String targetUrl) {
 
         JsonObject authentication = new JsonObject();
+        authentication.put("type", SECRET_TOKEN.name());
         authentication.put("secretId", 123L);
 
         JsonObject metadata = new JsonObject();

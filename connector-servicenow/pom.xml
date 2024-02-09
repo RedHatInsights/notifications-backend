@@ -56,12 +56,12 @@
         <!-- Notifications modules -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
-            <artifactId>notifications-connector-common-http</artifactId>
+            <artifactId>notifications-connector-common-authentication</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
-            <artifactId>notifications-connector-common-secrets-loader</artifactId>
+            <artifactId>notifications-connector-common-http</artifactId>
             <version>${project.version}</version>
         </dependency>
 

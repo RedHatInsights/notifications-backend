@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.secrets;
+package com.redhat.cloud.notifications.connector.authentication.secrets;
 
 import io.quarkus.rest.client.reactive.ClientExceptionMapper;
 import jakarta.validation.constraints.NotBlank;
@@ -23,7 +23,7 @@ import org.jboss.resteasy.reactive.RestPath;
  * <p>Please be aware of the following:</p>
  *
  * <ul>
- *     <li>If sources is using a database backend, only the {@link Secret#password} field will get encrypted.</li>
+ *     <li>If sources is using a database backend, only the {@link SourcesSecret#password} field will get encrypted.</li>
  *     <li>On the other hand, if sources is using the AWS Secrets Manager, then the whole secret will get encrypted.</li>
  * </ul>
  *
@@ -40,12 +40,12 @@ public interface SourcesClient {
      * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
      * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param id the secret id.
-     * @return a {@link Secret} instance.
+     * @return a {@link SourcesSecret} instance.
      */
     @GET
     @Path("/internal/v2.0/secrets/{id}")
     @Retry
-    Secret getById(
+    SourcesSecret getById(
         @HeaderParam("x-rh-sources-org-id") @NotBlank String xRhSourcesOrgId,
         @HeaderParam("x-rh-sources-psk") @NotBlank String xRhSourcesPsk,
         @RestPath long id

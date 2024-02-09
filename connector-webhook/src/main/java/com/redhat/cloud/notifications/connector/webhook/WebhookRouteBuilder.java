@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
-import com.redhat.cloud.notifications.connector.secrets.SecretsLoader;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;

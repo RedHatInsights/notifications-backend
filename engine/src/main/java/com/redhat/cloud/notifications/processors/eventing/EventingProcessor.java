@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
+import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
 
 @ApplicationScoped
 public class EventingProcessor extends EndpointTypeProcessor {
@@ -80,6 +81,7 @@ public class EventingProcessor extends EndpointTypeProcessor {
         setLegacyAuthData(endpoint, properties, metaData);
         if (properties.getSecretTokenSourcesId() != null) {
             JsonObject authentication = JsonObject.of(
+                "type", SECRET_TOKEN,
                 "secretId", properties.getSecretTokenSourcesId()
             );
             metaData.put("authentication", authentication);

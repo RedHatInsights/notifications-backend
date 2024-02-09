@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.webhook;
+package com.redhat.cloud.notifications.processors;
 
 public enum AuthenticationType {
     BASIC,

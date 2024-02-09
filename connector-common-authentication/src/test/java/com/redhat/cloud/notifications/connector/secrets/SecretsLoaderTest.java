@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.connector.secrets;
 
+import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
+import com.redhat.cloud.notifications.connector.authentication.secrets.SourcesClient;
+import com.redhat.cloud.notifications.connector.authentication.secrets.SourcesSecret;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -9,9 +12,9 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_USERNAME;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_USERNAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -62,10 +65,10 @@ public class SecretsLoaderTest extends CamelQuarkusTestSupport {
     void testWithSecretId() {
         secretsLoader.setEnabled(true);
 
-        Secret secret = new Secret();
-        secret.username = "john_doe";
-        secret.password = "passw0rd";
-        when(sourcesClient.getById(anyString(), anyString(), anyLong())).thenReturn(secret);
+        SourcesSecret sourcesSecret = new SourcesSecret();
+        sourcesSecret.username = "john_doe";
+        sourcesSecret.password = "passw0rd";
+        when(sourcesClient.getById(anyString(), anyString(), anyLong())).thenReturn(sourcesSecret);
 
         Exchange exchange = createExchangeWithBody("");
         exchange.setProperty(ORG_ID, "org-id");
@@ -73,7 +76,7 @@ public class SecretsLoaderTest extends CamelQuarkusTestSupport {
         secretsLoader.process(exchange);
 
         verify(sourcesClient, times(1)).getById(anyString(), anyString(), anyLong());
-        assertEquals(secret.username, exchange.getProperty(SECRET_USERNAME, String.class));
-        assertEquals(secret.password, exchange.getProperty(SECRET_PASSWORD, String.class));
+        assertEquals(sourcesSecret.username, exchange.getProperty(SECRET_USERNAME, String.class));
+        assertEquals(sourcesSecret.password, exchange.getProperty(SECRET_PASSWORD, String.class));
     }
 }

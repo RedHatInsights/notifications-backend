@@ -2,7 +2,8 @@ package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.ConnectorRoutesTest;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
-import com.redhat.cloud.notifications.connector.secrets.SecretsLoader;
+import com.redhat.cloud.notifications.connector.authentication.AuthenticationType;
+import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -19,15 +20,15 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BEARER;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_STATUS_CODE;
 import static com.redhat.cloud.notifications.connector.http.HttpOutgoingCloudEventBuilder.DISABLE_ENDPOINT_CLIENT_ERRORS;
 import static com.redhat.cloud.notifications.connector.http.HttpOutgoingCloudEventBuilder.INCREMENT_ENDPOINT_SERVER_ERRORS;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_ID;
 import static com.redhat.cloud.notifications.connector.webhook.AuthenticationProcessor.X_INSIGHT_TOKEN_HEADER;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.BASIC;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.BEARER;
-import static com.redhat.cloud.notifications.connector.webhook.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.webhook.WebhookCloudEventDataExtractor.BASIC_AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.webhook.WebhookCloudEventDataExtractor.ENDPOINT_PROPERTIES;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -71,13 +72,13 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
         if (addInsightsToken) {
             endpointProperties.put("secret_token", "mySuperSecretInsightToken");
 
-            authentication.put("type", SECRET_TOKEN);
+            authentication.put("type", SECRET_TOKEN.name());
             authentication.put("secretId", 123L);
         }
         if (addBearerToken) {
             endpointProperties.put("bearer_token", "mySuperSecretBearerToken");
 
-            authentication.put("type", BEARER);
+            authentication.put("type", BEARER.name());
             authentication.put("secretId", 456L);
         }
         if (addBasicAuth) {
@@ -86,7 +87,7 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
             basicAuthProperties.put("password", RandomStringUtils.randomAlphanumeric(10));
             endpointProperties.put(BASIC_AUTHENTICATION, basicAuthProperties);
 
-            authentication.put("type", BASIC_AUTHENTICATION);
+            authentication.put("type", BASIC.name());
             authentication.put("secretId", 789L);
         }
         JsonObject eventPayload = new JsonObject();
@@ -96,7 +97,9 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
         JsonObject fullPayload = new JsonObject();
         fullPayload.put("endpoint_properties", endpointProperties);
         fullPayload.put("payload", eventPayload);
-        fullPayload.put("authentication", authentication);
+        if (!authentication.isEmpty()) {
+            fullPayload.put("authentication", authentication);
+        }
 
         return fullPayload;
     }

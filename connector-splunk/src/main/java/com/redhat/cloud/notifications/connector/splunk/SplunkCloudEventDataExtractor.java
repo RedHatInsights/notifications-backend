@@ -1,15 +1,16 @@
 package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
+import com.redhat.cloud.notifications.connector.authentication.AuthenticationDataExtractor;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.ProtocolException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
@@ -28,6 +29,9 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
     private static final UrlValidator HTTP_URL_VALIDATOR = new UrlValidator(new String[] {"http"}, ALLOW_LOCAL_URLS);
     private static final UrlValidator HTTPS_URL_VALIDATOR = new UrlValidator(new String[] {"https"}, ALLOW_LOCAL_URLS);
 
+    @Inject
+    AuthenticationDataExtractor authenticationDataExtractor;
+
     @Override
     public void extract(Exchange exchange, JsonObject cloudEventData) throws Exception {
 
@@ -39,12 +43,7 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(TRUST_ALL, Boolean.valueOf(metadata.getString("trustAll")));
 
         JsonObject authentication = metadata.getJsonObject("authentication");
-        if (authentication != null) {
-            Long secretId = authentication.getLong("secretId");
-            if (secretId != null) {
-                exchange.setProperty(SECRET_ID, secretId);
-            }
-        }
+        authenticationDataExtractor.extract(exchange, authentication);
 
         cloudEventData.remove(NOTIF_METADATA);
 

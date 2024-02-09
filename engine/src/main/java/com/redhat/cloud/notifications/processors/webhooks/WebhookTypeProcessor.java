@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
-import static com.redhat.cloud.notifications.processors.webhooks.AuthenticationType.BASIC;
-import static com.redhat.cloud.notifications.processors.webhooks.AuthenticationType.BEARER;
-import static com.redhat.cloud.notifications.processors.webhooks.AuthenticationType.SECRET_TOKEN;
+import static com.redhat.cloud.notifications.processors.AuthenticationType.BASIC;
+import static com.redhat.cloud.notifications.processors.AuthenticationType.BEARER;
+import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
 
 @ApplicationScoped
 public class WebhookTypeProcessor extends EndpointTypeProcessor {

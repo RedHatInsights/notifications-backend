@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
+import com.redhat.cloud.notifications.connector.authentication.AuthenticationType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
@@ -13,8 +14,10 @@ import org.junit.jupiter.api.Test;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.secrets.SecretsExchangeProperty.SECRET_PASSWORD;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
@@ -144,14 +147,20 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         assertTrue(exchange.getProperty(TARGET_URL, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
         // Trailing slashes should be removed before we modify the target URL path.
         assertFalse(exchange.getProperty(TARGET_URL, String.class).endsWith("/" + SERVICES_COLLECTOR_EVENT));
-        assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("X-Insight-Token"), exchange.getProperty(SECRET_PASSWORD, String.class));
-        assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getString("trustAll"), exchange.getProperty(TRUST_ALL, Boolean.class).toString());
         assertTrue(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
-        assertEquals(cloudEventDataCopy.getJsonObject(NOTIF_METADATA).getJsonObject("authentication").getLong("secretId"), exchange.getProperty(SECRET_ID, Long.class));
+
+        JsonObject expectedMetadata = cloudEventDataCopy.getJsonObject(NOTIF_METADATA);
+        assertEquals(expectedMetadata.getString("X-Insight-Token"), exchange.getProperty(SECRET_PASSWORD, String.class));
+        assertEquals(expectedMetadata.getString("trustAll"), exchange.getProperty(TRUST_ALL, Boolean.class).toString());
+
+        JsonObject expectedAuthentication = expectedMetadata.getJsonObject("authentication");
+        assertEquals(expectedAuthentication.getString("type"), exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class).name());
+        assertEquals(expectedAuthentication.getLong("secretId"), exchange.getProperty(SECRET_ID, Long.class));
     }
 
     private JsonObject createCloudEventData(String url, boolean trustAll) {
         JsonObject authentication = new JsonObject();
+        authentication.put("type", SECRET_TOKEN);
         authentication.put("secretId", 123L);
 
         JsonObject metadata = new JsonObject();
