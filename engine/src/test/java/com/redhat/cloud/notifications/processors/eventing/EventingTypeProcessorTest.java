@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.eventing;
 
-import com.redhat.cloud.notifications.Base64Utils;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
@@ -12,7 +11,6 @@ import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
@@ -41,10 +39,10 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
+import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.NOTIF_METADATA_KEY;
-import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.TOKEN_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -88,9 +86,6 @@ class EventingTypeProcessorTest {
      */
     private static final String FIXTURE_CAMEL_URL = "https://redhat.com";
     private static final Boolean FIXTURE_CAMEL_SSL_VERIFICATION = true;
-    private static final String FIXTURE_CAMEL_SECRET_TOKEN = "top-secret";
-    private static final String FIXTURE_CAMEL_BASIC_AUTH_USERNAME = "john";
-    private static final String FIXTURE_CAMEL_BASIC_AUTH_PASSWORD = "doe";
 
     @Inject
     @Any
@@ -177,8 +172,8 @@ class EventingTypeProcessorTest {
         assertEquals(properties1.getUrl(), notifMetadata.getString("url"));
         assertEquals(endpoint1.getSubType(), notifMetadata.getString("type"));
 
-        assertEquals(properties1.getSecretToken(), notifMetadata.getString(TOKEN_HEADER));
-        checkBasicAuthentication(notifMetadata, properties1.getBasicAuthentication());
+        assertEquals(SECRET_TOKEN.name(), notifMetadata.getJsonObject("authentication").getString("type"));
+        assertEquals(properties1.getSecretTokenSourcesId(), notifMetadata.getJsonObject("authentication").getLong("secretId"));
 
         // Finally, we need to check the Kafka message metadata.
         UUID historyId = result.get(0).getId();
@@ -241,13 +236,11 @@ class EventingTypeProcessorTest {
     }
 
     private static Endpoint buildCamelEndpoint(String accountId) {
-        BasicAuthentication basicAuth = new BasicAuthentication(FIXTURE_CAMEL_BASIC_AUTH_USERNAME, FIXTURE_CAMEL_BASIC_AUTH_PASSWORD);
 
         CamelProperties properties = new CamelProperties();
         properties.setUrl(FIXTURE_CAMEL_URL);
         properties.setDisableSslVerification(FIXTURE_CAMEL_SSL_VERIFICATION);
-        properties.setSecretToken(FIXTURE_CAMEL_SECRET_TOKEN);
-        properties.setBasicAuthentication(basicAuth);
+        properties.setSecretTokenSourcesId(123L);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setAccountId(accountId);
@@ -256,12 +249,6 @@ class EventingTypeProcessorTest {
         endpoint.setSubType(SUB_TYPE);
         endpoint.setProperties(properties);
         return endpoint;
-    }
-
-    private void checkBasicAuthentication(JsonObject notifMetadata, BasicAuthentication expectedBasicAuth) {
-        String credentials = expectedBasicAuth.getUsername() + ":" + expectedBasicAuth.getPassword();
-        String expectedBase64Credentials = Base64Utils.encode(credentials);
-        assertEquals(expectedBase64Credentials, notifMetadata.getString("basicAuth"));
     }
 
     private void checkCloudEventMetadata(Message<JsonObject> message, UUID expectedId, String expectedAccountId, String expectedOrgId, String expectedSubType) {

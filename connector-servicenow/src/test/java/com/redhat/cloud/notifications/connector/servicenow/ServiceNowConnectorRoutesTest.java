@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.ConnectorRoutesTest;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
+import com.redhat.cloud.notifications.connector.authentication.AuthenticationType;
 import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -15,8 +16,8 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
@@ -54,7 +55,6 @@ public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
 
         JsonObject metadata = new JsonObject();
         metadata.put("url", targetUrl);
-        metadata.put("X-Insight-Token", "super-secret-token");
         metadata.put("trustAll", "true");
         metadata.put("authentication", authentication);
 
@@ -80,11 +80,11 @@ public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
 
             assertEquals(DEFAULT_ORG_ID, exchange.getProperty(ORG_ID, String.class));
             assertEquals(DEFAULT_ACCOUNT_ID, exchange.getProperty(ACCOUNT_ID, String.class));
-            assertEquals("super-secret-token", exchange.getProperty(SECRET_PASSWORD, String.class));
             assertTrue(exchange.getProperty(TRUST_ALL, Boolean.class));
             assertEquals(exchange.getProperty(TARGET_URL, String.class), "https://" + exchange.getProperty(TARGET_URL_NO_SCHEME, String.class));
             assertEquals(expectedPayload.encode(), outgoingPayload);
             assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
+            assertEquals(SECRET_TOKEN, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
 
             // In case of assertion failure, this return value won't be used.
             return true;

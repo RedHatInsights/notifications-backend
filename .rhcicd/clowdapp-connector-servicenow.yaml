@@ -63,8 +63,6 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
-        - name: NOTIFICATIONS_CONNECTOR_AUTHENTICATION_SECRETS_LOADER_ENABLED
-          value: ${NOTIFICATIONS_CONNECTOR_AUTHENTICATION_SECRETS_LOADER_ENABLED}
         - name: NOTIFICATIONS_CONNECTOR_AUTHENTICATION_SECRETS_LOADER_SOURCES_API_PSK
           valueFrom:
             secretKeyRef:
@@ -155,8 +153,6 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: "3"
-- name: NOTIFICATIONS_CONNECTOR_AUTHENTICATION_SECRETS_LOADER_ENABLED
-  value: "false"
 - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
   description: Maximum size of the Camel endpoints cache
   value: "100"

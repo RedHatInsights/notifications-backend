@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -38,9 +37,6 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     @Inject
     MeterRegistry registry;
-
-    @Inject
-    SecretUtils secretUtils;
 
     private Counter processedWebhookCount;
 
@@ -76,8 +72,6 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
         final JsonObject payload = transformer.toJsonObject(event);
 
-        loadLegacyAuthData(endpoint);
-
         final JsonObject connectorData = new JsonObject();
 
         // TODO RHCLOUD-24930 Stop sending all properties while only "method", "url" and "disable_ssl_verification" are needed in the connector.
@@ -89,17 +83,6 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         });
 
         connectorSender.send(event, endpoint, connectorData);
-    }
-
-    // TODO RHCLOUD-24930 Remove this method after the migration is done.
-    @Deprecated(forRemoval = true)
-    private void loadLegacyAuthData(Endpoint endpoint) {
-        /*
-         * Get the basic authentication and secret token secrets from Sources.
-         */
-        if (this.featureFlipper.isSourcesUsedAsSecretsBackend()) {
-            this.secretUtils.loadSecretsForEndpoint(endpoint);
-        }
     }
 
     private static Optional<JsonObject> getAuthentication(WebhookProperties properties) {

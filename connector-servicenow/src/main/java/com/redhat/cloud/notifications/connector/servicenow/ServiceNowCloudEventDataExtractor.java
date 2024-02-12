@@ -10,7 +10,6 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.ProtocolException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
@@ -34,7 +33,6 @@ public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
 
         JsonObject metadata = cloudEventData.getJsonObject(NOTIF_METADATA);
         exchange.setProperty(TARGET_URL, metadata.getString("url"));
-        extractLegacyAuthData(exchange, metadata);
         exchange.setProperty(TRUST_ALL, Boolean.valueOf(metadata.getString("trustAll")));
 
         JsonObject authentication = metadata.getJsonObject("authentication");
@@ -55,11 +53,5 @@ public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
         } else if (!HTTPS_URL_VALIDATOR.isValid(targetUrl)) {
             throw new IllegalArgumentException("URL validation failed");
         }
-    }
-
-    // TODO RHCLOUD-24930 Remove this method after the migration is done.
-    @Deprecated(forRemoval = true)
-    private void extractLegacyAuthData(Exchange exchange, JsonObject metadata) {
-        exchange.setProperty(SECRET_PASSWORD, metadata.getString("X-Insight-Token"));
     }
 }
