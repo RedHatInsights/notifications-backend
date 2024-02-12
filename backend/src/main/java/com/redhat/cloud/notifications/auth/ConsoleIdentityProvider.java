@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdenti
 import com.redhat.cloud.notifications.auth.rbac.RbacServer;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.netty.channel.ConnectTimeoutException;
+import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
@@ -107,76 +108,79 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         }
         // Retrieve the identity header from the authentication request
         return Uni.createFrom().item(() -> (String) rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER))
-                .onItem().transformToUni(xRhIdHeader ->
-                        // Start building a QuarkusSecurityIdentity
-                        Uni.createFrom().item(QuarkusSecurityIdentity.builder())
-                                .onItem().transformToUni(builder -> {
-                                    // Decode the header and deserialize the resulting JSON
-                                    ConsoleIdentity identity = getRhIdentityFromString(xRhIdHeader);
-                                    try {
-                                        ConsolePrincipal<?> principal = ConsolePrincipalFactory.fromIdentity(identity);
-                                        builder.setPrincipal(principal);
-                                    } catch (IllegalIdentityHeaderException e) {
-                                        return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
-                                    }
-                                    if (identity instanceof RhIdentity rhIdentity) {
-                                        return rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
-                                                /*
-                                                 * RBAC server calls fail regularly because of RBAC instability so we need to retry.
-                                                 * IOException is thrown when the connection between us and RBAC is reset during an RBAC call execution.
-                                                 * ConnectTimeoutException is thrown when RBAC does not respond at all to our call.
-                                                 */
-                                                .onFailure(failure -> failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class)
-                                                .retry()
-                                                .withBackOff(initialBackOff, maxBackOff)
-                                                .atMost(maxRetryAttempts)
-                                                // After we're done retrying, an RBAC server call failure will cause an authentication failure
-                                                .onFailure().transform(failure -> {
-                                                    throw new AuthenticationFailedException("RBAC authentication call failed", failure);
-                                                })
-                                                // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
-                                                .onItem().transform(rbacRaw -> {
-                                                    if (rbacRaw.canRead("notifications", "events")) {
-                                                        builder.addRole(RBAC_READ_NOTIFICATIONS_EVENTS);
-                                                    }
-                                                    if (rbacRaw.canRead("notifications", "notifications")) {
-                                                        builder.addRole(RBAC_READ_NOTIFICATIONS);
-                                                    }
-                                                    if (rbacRaw.canWrite("notifications", "notifications")) {
-                                                        builder.addRole(RBAC_WRITE_NOTIFICATIONS);
-                                                    }
-                                                    if (rbacRaw.canRead("integrations", "endpoints")) {
-                                                        builder.addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS);
-                                                    }
-                                                    if (rbacRaw.canWrite("integrations", "endpoints")) {
-                                                        builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
-                                                    }
-                                                    routingContext.put("x-rh-rbac-org-id", rhIdentity.getOrgId());
-                                                    return builder.build();
-                                                });
-                                    } else if (identity instanceof TurnpikeSamlIdentity) {
-                                        builder.addRole(RBAC_INTERNAL_USER);
-                                        for (String role : ((TurnpikeSamlIdentity) identity).associate.roles) {
-                                            if (role.equals(adminRole)) {
-                                                builder.addRole(RBAC_INTERNAL_ADMIN);
-                                            }
+                .onItem().transformToUni(xRhIdHeader -> buildQuarkusUni(xRhIdHeader));
+    }
 
-                                            String internalRole = InternalRoleAccess.getInternalRole(role);
-                                            builder.addRole(internalRole);
-                                        }
+    @CacheResult(cacheName = "rbac-cache")
+    protected Uni<QuarkusSecurityIdentity> buildQuarkusUni(String xRhIdHeader) {
+        // Start building a QuarkusSecurityIdentity
+        return Uni.createFrom().item(QuarkusSecurityIdentity.builder())
+            .onItem().transformToUni(builder -> {
+                // Decode the header and deserialize the resulting JSON
+                ConsoleIdentity identity = getRhIdentityFromString(xRhIdHeader);
+                try {
+                    ConsolePrincipal<?> principal = ConsolePrincipalFactory.fromIdentity(identity);
+                    builder.setPrincipal(principal);
+                } catch (IllegalIdentityHeaderException e) {
+                    return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
+                }
+                if (identity instanceof RhIdentity rhIdentity) {
+                    return rbacServer.getRbacInfo("notifications,integrations", xRhIdHeader)
+                        /*
+                         * RBAC server calls fail regularly because of RBAC instability so we need to retry.
+                         * IOException is thrown when the connection between us and RBAC is reset during an RBAC call execution.
+                         * ConnectTimeoutException is thrown when RBAC does not respond at all to our call.
+                         */
+                        .onFailure(failure -> failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class)
+                        .retry()
+                        .withBackOff(initialBackOff, maxBackOff)
+                        .atMost(maxRetryAttempts)
+                        // After we're done retrying, an RBAC server call failure will cause an authentication failure
+                        .onFailure().transform(failure -> {
+                            throw new AuthenticationFailedException("RBAC authentication call failed", failure);
+                        })
+                        // Otherwise, we can finish building the QuarkusSecurityIdentity and return the result
+                        .onItem().transform(rbacRaw -> {
+                            if (rbacRaw.canRead("notifications", "events")) {
+                                builder.addRole(RBAC_READ_NOTIFICATIONS_EVENTS);
+                            }
+                            if (rbacRaw.canRead("notifications", "notifications")) {
+                                builder.addRole(RBAC_READ_NOTIFICATIONS);
+                            }
+                            if (rbacRaw.canWrite("notifications", "notifications")) {
+                                builder.addRole(RBAC_WRITE_NOTIFICATIONS);
+                            }
+                            if (rbacRaw.canRead("integrations", "endpoints")) {
+                                builder.addRole(RBAC_READ_INTEGRATIONS_ENDPOINTS);
+                            }
+                            if (rbacRaw.canWrite("integrations", "endpoints")) {
+                                builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
+                            }
+                            routingContext.put("x-rh-rbac-org-id", rhIdentity.getOrgId());
+                            return builder.build();
+                        });
+                } else if (identity instanceof TurnpikeSamlIdentity) {
+                    builder.addRole(RBAC_INTERNAL_USER);
+                    for (String role : ((TurnpikeSamlIdentity) identity).associate.roles) {
+                        if (role.equals(adminRole)) {
+                            builder.addRole(RBAC_INTERNAL_ADMIN);
+                        }
 
-                                        return Uni.createFrom().item(builder.build());
-                                    } else {
-                                        Log.warnf("Unprocessed identity found. type: %s and name: %s", identity.type, identity.getName());
-                                        return Uni.createFrom().failure(new AuthenticationFailedException());
-                                    }
-                                })
-                                // A failure will cause an authentication failure
-                                .onFailure().transform(throwable -> {
-                                    Log.error("Error while processing identity", throwable);
-                                    return new AuthenticationFailedException(throwable);
-                                })
-                );
+                        String internalRole = InternalRoleAccess.getInternalRole(role);
+                        builder.addRole(internalRole);
+                    }
+
+                    return Uni.createFrom().item(builder.build());
+                } else {
+                    Log.warnf("Unprocessed identity found. type: %s and name: %s", identity.type, identity.getName());
+                    return Uni.createFrom().failure(new AuthenticationFailedException());
+                }
+            })
+            // A failure will cause an authentication failure
+            .onFailure().transform(throwable -> {
+                Log.error("Error while processing identity", throwable);
+                return new AuthenticationFailedException(throwable);
+            });
     }
 
     private static ConsoleIdentity getRhIdentityFromString(String xRhIdHeader) {
