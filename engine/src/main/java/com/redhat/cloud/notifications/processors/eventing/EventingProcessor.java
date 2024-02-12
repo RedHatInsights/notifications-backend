@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
+import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
 
 @ApplicationScoped
 public class EventingProcessor extends EndpointTypeProcessor {
@@ -77,17 +78,30 @@ public class EventingProcessor extends EndpointTypeProcessor {
         metaData.put("url", properties.getUrl());
         metaData.put("type", endpoint.getSubType());
 
+        setLegacyAuthData(endpoint, properties, metaData);
+        if (properties.getSecretTokenSourcesId() != null) {
+            JsonObject authentication = JsonObject.of(
+                "type", SECRET_TOKEN,
+                "secretId", properties.getSecretTokenSourcesId()
+            );
+            metaData.put("authentication", authentication);
+        }
+
+        final JsonObject payload = baseTransformer.toJsonObject(event);
+        payload.put(NOTIF_METADATA_KEY, metaData);
+
+        return payload;
+    }
+
+    // TODO RHCLOUD-24930 Remove this method after the migration is done.
+    @Deprecated(forRemoval = true)
+    private void setLegacyAuthData(Endpoint endpoint, CamelProperties properties, JsonObject metaData) {
         if (featureFlipper.isSourcesUsedAsSecretsBackend()) {
             // Get the basic authentication and secret token secrets from Sources.
             secretUtils.loadSecretsForEndpoint(endpoint);
         }
         getSecretToken(properties).ifPresent(secretToken -> metaData.put(TOKEN_HEADER, secretToken));
         getBasicAuth(properties).ifPresent(basicAuth -> metaData.put("basicAuth", basicAuth));
-
-        final JsonObject payload = baseTransformer.toJsonObject(event);
-        payload.put(NOTIF_METADATA_KEY, metaData);
-
-        return payload;
     }
 
     private static Optional<String> getSecretToken(CamelProperties properties) {

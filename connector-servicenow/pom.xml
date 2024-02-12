@@ -53,7 +53,12 @@
 
         <!-- Scope: compile -->
 
-        <!-- Notifications module -->
+        <!-- Notifications modules -->
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-connector-common-authentication</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
             <artifactId>notifications-connector-common-http</artifactId>
@@ -69,6 +74,13 @@
 
         <!-- Scope: test -->
         <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
+
+        <!-- Quarkus -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5-mockito</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Camel -->
         <dependency>

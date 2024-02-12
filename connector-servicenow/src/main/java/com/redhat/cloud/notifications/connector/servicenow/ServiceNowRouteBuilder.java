@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
+import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -27,12 +28,20 @@ public class ServiceNowRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     HttpConnectorConfig connectorConfig;
 
+    @Inject
+    SecretsLoader secretsLoader;
+
+    @Inject
+    AuthenticationProcessor authenticationProcessor;
+
     @Override
     public void configureRoutes() {
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(connectorConfig.getConnectorName())
-            .process(new BasicAuthenticationProcessor())
+            // ServiceNow requires a secret. It is loaded from Sources.
+            .process(secretsLoader)
+            .process(authenticationProcessor)
             .to(SNOW_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                 // SSL certificates may or may not be verified depending on the integration settings.
                 .choice()

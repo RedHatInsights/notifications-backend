@@ -120,6 +120,8 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         remoteServerMockEndpoint.assertIsSatisfied();
         assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, true, targetUrl + getRemoteServerPath(), "Event " + cloudEventId + " sent successfully");
 
+        afterKafkaSinkSuccess();
+
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 0, 1, 1);
         checkRouteMetrics(connectorConfig.getConnectorName(), 0, 1, 1);
         checkRouteMetrics(SUCCESS, 0, 1, 1);
@@ -333,6 +335,12 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         this.template.sendBodyAndHeaders(KAFKA_SOURCE_MOCK, cloudEvent.encode(), headers);
 
         return cloudEventId;
+    }
+
+    /**
+     * Override this method to run any checks after the Kafka sink successfully received a message.
+     */
+    protected void afterKafkaSinkSuccess() {
     }
 
     protected static JsonObject assertKafkaSinkIsSatisfied(String cloudEventId, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful, String expectedTargetUrl, String... expectedOutcomeStarts) throws InterruptedException {
