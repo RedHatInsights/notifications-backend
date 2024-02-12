@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_PROD;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_STAGE;
+import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.RH_HCC_SENDER;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.RH_INSIGHTS_SENDER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -19,13 +21,26 @@ public class EmailActorsResolverTest {
     @Inject
     EmailActorsResolver emailActorsResolver;
 
+    @Inject
+    FeatureFlipper featureFlipper;
+
     /**
      * Tests that the "Red Hat Insights" sender is returned by default.
      */
     @Test
-    void testDefaultEmailSender() {
+    void testDefaultEmailSenderInsights() {
         Event event = new Event();
         assertEquals(RH_INSIGHTS_SENDER, this.emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+    }
+
+    /**
+     * Tests that the "Red Hat Hybrid Cloud Console" sender is returned by default.
+     */
+    @Test
+    void testDefaultEmailSenderHCC() {
+        featureFlipper.setHccEmailSenderNameEnabled(true);
+        Event event = new Event();
+        assertEquals(RH_HCC_SENDER, this.emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
     }
 
     /**

@@ -86,6 +86,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "processor.email.aggregation.use-recipients-resolver-clowdapp.enabled", defaultValue = "false")
     boolean useRecipientsResolverClowdappForDailyDigestEnabled;
 
+    @ConfigProperty(name = "notifications.email.hcc-sender-name.enabled", defaultValue = "false")
+    boolean hccEmailSenderNameEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -104,6 +107,7 @@ public class FeatureFlipper {
         Log.infof("The drawer connector is %s", drawerConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The async aggregation is %s", asyncAggregation ? "enabled" : "disabled");
         Log.infof("The Recipients resolver usage for daily digest is %s", useRecipientsResolverClowdappForDailyDigestEnabled ? "enabled" : "disabled");
+        Log.infof("HCC sender name is %s in emails", hccEmailSenderNameEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -249,6 +253,15 @@ public class FeatureFlipper {
     public void setUseRecipientsResolverClowdappForDailyDigestEnabled(boolean useRecipientsResolverClowdappForDailyDigestEnabled) {
         checkTestLaunchMode();
         this.useRecipientsResolverClowdappForDailyDigestEnabled = useRecipientsResolverClowdappForDailyDigestEnabled;
+    }
+
+    public boolean isHccEmailSenderNameEnabled() {
+        return hccEmailSenderNameEnabled;
+    }
+
+    public void setHccEmailSenderNameEnabled(boolean hccEmailSenderNameEnabled) {
+        checkTestLaunchMode();
+        this.hccEmailSenderNameEnabled = hccEmailSenderNameEnabled;
     }
 
     /**
