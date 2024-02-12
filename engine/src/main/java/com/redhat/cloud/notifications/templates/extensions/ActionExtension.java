@@ -15,9 +15,7 @@ import io.quarkus.qute.TemplateExtension;
 public class ActionExtension {
 
 
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-                                                            .registerModule(new Jdk8Module())
-                                                            .registerModule(new JavaTimeModule());
+    private static final ObjectMapper objectMapper = new ObjectMapper().registerModules(new Jdk8Module(), new JavaTimeModule());
 
     @TemplateExtension(matchName = TemplateExtension.ANY)
     public static Object getFromContext(Context context, String key) {
