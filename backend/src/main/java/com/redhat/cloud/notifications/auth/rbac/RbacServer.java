@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.auth.rbac;
 
-import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Uni;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -27,7 +26,6 @@ public interface RbacServer {
     @Path("/access/") // trailing slash is required by api
     @Consumes("application/json")
     @Produces("application/json")
-    @CacheResult(cacheName = "rbac-cache")
     Uni<RbacRaw> getRbacInfo(@QueryParam("application") String application,
                              @HeaderParam(X_RH_IDENTITY_HEADER) String rhIdentity
 
