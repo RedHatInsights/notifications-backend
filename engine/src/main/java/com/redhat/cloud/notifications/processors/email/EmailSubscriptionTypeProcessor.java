@@ -234,7 +234,8 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                 consumedTimer.stop(registry.timer(
                     AGGREGATION_CONSUMED_TIMER_NAME,
                     TAG_KEY_BUNDLE, bundle,
-                    TAG_KEY_APPLICATION, aggregationCommands.get(0).getAggregationKey().getApplication()
+                    TAG_KEY_APPLICATION, aggregationCommands.get(0).getAggregationKey().getApplication(),
+                    TAG_KEY_ORG_ID, event.getOrgId()
                 ));
             } else {
                 consumedTimer.stop(registry.timer(

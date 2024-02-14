@@ -88,7 +88,7 @@ public class TemplateRepository {
             Template template = entityManager.createQuery(hql, Template.class)
                 .setParameter("templateName", templateName)
                 .getSingleResult();
-            return Optional.of(emailTemplate);
+            return Optional.of(template);
         } catch (NoResultException e) {
             return Optional.empty();
         }
