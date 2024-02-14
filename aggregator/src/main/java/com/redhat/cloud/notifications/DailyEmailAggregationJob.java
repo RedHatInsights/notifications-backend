@@ -83,7 +83,7 @@ public class DailyEmailAggregationJob {
                 aggregationCommands.stream().forEach(aggregationCommand -> sendIt(List.of(aggregationCommand)));
             } else {
                 aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
-                    .forEach((orIdKey, aggregationCommandsForOneOrgId) -> sendIt(aggregationCommandsForOneOrgId));
+                    .values().forEach(this::sendIt);
             }
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
             emailAggregationResources.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
