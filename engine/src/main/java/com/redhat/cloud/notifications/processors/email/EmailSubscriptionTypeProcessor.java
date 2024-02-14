@@ -340,9 +340,8 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
         // Patch event display name for event log rendering
         Optional<Bundle> bundle = bundleRepository.getBundle(bundleName);
-        String eventTypeDisplayName;
         if (bundle.isPresent()) {
-            eventTypeDisplayName = String.format("%s - %s",
+            String eventTypeDisplayName = String.format("%s - %s",
                 aggregatorEvent.getEventTypeDisplayName(),
                 bundle.get().getDisplayName());
             eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
