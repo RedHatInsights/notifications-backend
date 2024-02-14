@@ -85,7 +85,7 @@ public class TemplateRepository {
     public Optional<Template> findTemplateByName(String templateName) {
         String hql = "FROM Template t where t.name = :templateName ";
         try {
-            Template emailTemplate = entityManager.createQuery(hql, Template.class)
+            Template template = entityManager.createQuery(hql, Template.class)
                 .setParameter("templateName", templateName)
                 .getSingleResult();
             return Optional.of(emailTemplate);
