@@ -361,8 +361,8 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                     applicationAggregationCommand.getEnd());
 
                 applicationAggregatedContextByUser.entrySet().stream().forEach(userAggregation -> {
-                    userData.computeIfAbsent(userAggregation.getKey(), unused -> new ArrayList<>());
-                    userData.get(userAggregation.getKey()).add(new ApplicationAggregatedData(userAggregation.getValue(), applicationAggregationCommand.getAggregationKey().getApplication()));
+                    userData.computeIfAbsent(userAggregation.getKey(), unused -> new ArrayList<>())
+                        .add(new ApplicationAggregatedData(userAggregation.getValue(), applicationAggregationCommand.getAggregationKey().getApplication()));
                 });
             } catch (Exception ex) {
                 Log.error("Error processing " + applicationAggregationCommand.getAggregationKey(), ex);
