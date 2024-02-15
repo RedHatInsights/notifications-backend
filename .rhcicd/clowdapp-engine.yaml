@@ -418,7 +418,7 @@ parameters:
 - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
   value: "false"
 - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
-  value: "false"
+  value: "true"
 - name: PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS
   description: max accepted number of errors before an endpoint is eligible to be disabled
   value: "10"
