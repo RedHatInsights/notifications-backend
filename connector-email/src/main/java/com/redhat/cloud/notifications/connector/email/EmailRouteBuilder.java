@@ -155,7 +155,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             if (emailConnectorConfig.getRecipientsResolverTrustStorePath().isPresent() && emailConnectorConfig.getRecipientsResolverTrustStorePassword().isPresent() && emailConnectorConfig.getRecipientsResolverTrustStoreType().isPresent()) {
 
                 KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
-                keyStoreParameters.setResource(emailConnectorConfig.getRecipientsResolverTrustStorePath().get());
+                keyStoreParameters.setResource("file:" + emailConnectorConfig.getRecipientsResolverTrustStorePath().get());
                 keyStoreParameters.setPassword(emailConnectorConfig.getRecipientsResolverTrustStorePassword().get());
                 keyStoreParameters.setType(emailConnectorConfig.getRecipientsResolverTrustStoreType().get());
 
