@@ -106,18 +106,14 @@ public class EndpointRepository {
         return endpoints;
     }
 
-    public List<Endpoint> getTargetEmailSubscriptionEndpoints(String orgId, String bundleName, String applicationName, String eventTypeName) {
-        // TODO Replace `e.enabled` with `e.enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
+    public List<Endpoint> getTargetEmailSubscriptionEndpoints(String orgId, UUID eventTypeId) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled AND b.eventType.name = :eventTypeName AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
-                "AND b.eventType.application.name = :applicationName AND b.eventType.application.bundle.name = :bundleName " +
+                "WHERE e.enabled AND b.eventType.id = :eventTypeId AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL) " +
                 "AND e.compositeType.type = :endpointType";
 
         List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
-                .setParameter("applicationName", applicationName)
-                .setParameter("eventTypeName", eventTypeName)
+                .setParameter("eventTypeId", eventTypeId)
                 .setParameter("orgId", orgId)
-                .setParameter("bundleName", bundleName)
                 .setParameter("endpointType", EMAIL_SUBSCRIPTION)
                 .getResultList();
         loadProperties(endpoints);

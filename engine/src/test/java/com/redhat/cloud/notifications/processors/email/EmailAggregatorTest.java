@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
@@ -110,7 +111,7 @@ class EmailAggregatorTest {
         endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
-        when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), anyString(), anyString(), anyString())).thenReturn(List.of(endpoint));
+        when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), any(UUID.class))).thenReturn(List.of(endpoint));
 
         if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
             when(recipientsResolverService.getRecipients(any(RecipientsQuery.class))).then(parameters -> {
@@ -171,7 +172,7 @@ class EmailAggregatorTest {
         endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
-        when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), anyString(), anyString(), anyString())).thenReturn(List.of(endpoint));
+        when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), any(UUID.class))).thenReturn(List.of(endpoint));
 
         when(recipientsResolverService.getRecipients(any())).thenThrow(RuntimeException.class);
 
