@@ -11,10 +11,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
-
-import java.util.Base64;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
@@ -29,9 +26,6 @@ import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTT
 import static com.redhat.cloud.notifications.connector.http.HttpOutgoingCloudEventBuilder.DISABLE_ENDPOINT_CLIENT_ERRORS;
 import static com.redhat.cloud.notifications.connector.http.HttpOutgoingCloudEventBuilder.INCREMENT_ENDPOINT_SERVER_ERRORS;
 import static com.redhat.cloud.notifications.connector.webhook.AuthenticationProcessor.X_INSIGHT_TOKEN_HEADER;
-import static com.redhat.cloud.notifications.connector.webhook.WebhookCloudEventDataExtractor.BASIC_AUTHENTICATION;
-import static com.redhat.cloud.notifications.connector.webhook.WebhookCloudEventDataExtractor.ENDPOINT_PROPERTIES;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,29 +61,6 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
         endpointProperties.put("url", targetUrl);
         endpointProperties.put("method", "POST");
 
-        JsonObject authentication = new JsonObject();
-
-        if (addInsightsToken) {
-            endpointProperties.put("secret_token", "mySuperSecretInsightToken");
-
-            authentication.put("type", SECRET_TOKEN.name());
-            authentication.put("secretId", 123L);
-        }
-        if (addBearerToken) {
-            endpointProperties.put("bearer_token", "mySuperSecretBearerToken");
-
-            authentication.put("type", BEARER.name());
-            authentication.put("secretId", 456L);
-        }
-        if (addBasicAuth) {
-            JsonObject basicAuthProperties = new JsonObject();
-            basicAuthProperties.put("username", RandomStringUtils.randomAlphanumeric(10));
-            basicAuthProperties.put("password", RandomStringUtils.randomAlphanumeric(10));
-            endpointProperties.put(BASIC_AUTHENTICATION, basicAuthProperties);
-
-            authentication.put("type", BASIC.name());
-            authentication.put("secretId", 789L);
-        }
         JsonObject eventPayload = new JsonObject();
         eventPayload.put("orgId", DEFAULT_ORG_ID);
         eventPayload.put("message", "This is a test!");
@@ -97,6 +68,20 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
         JsonObject fullPayload = new JsonObject();
         fullPayload.put("endpoint_properties", endpointProperties);
         fullPayload.put("payload", eventPayload);
+
+        JsonObject authentication = new JsonObject();
+        if (addInsightsToken) {
+            authentication.put("type", SECRET_TOKEN.name());
+            authentication.put("secretId", 123L);
+        }
+        if (addBearerToken) {
+            authentication.put("type", BEARER.name());
+            authentication.put("secretId", 456L);
+        }
+        if (addBasicAuth) {
+            authentication.put("type", BASIC.name());
+            authentication.put("secretId", 789L);
+        }
         if (!authentication.isEmpty()) {
             fullPayload.put("authentication", authentication);
         }
@@ -109,36 +94,27 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
         return exchange -> {
             String outgoingPayload = exchange.getIn().getBody(String.class);
             String outgoingContentType = exchange.getIn().getHeader(Exchange.CONTENT_TYPE, String.class);
-            Boolean checkInsightsToken;
+            boolean checkInsightsToken;
             String outgoingInsightToken = exchange.getIn().getHeader(X_INSIGHT_TOKEN_HEADER, String.class);
             if (addInsightsToken) {
-                checkInsightsToken = outgoingInsightToken.equals(incomingPayload.getJsonObject(ENDPOINT_PROPERTIES).getString("secret_token"));
-
-                assertEquals(SECRET_TOKEN, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
-                assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
+                checkInsightsToken = exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class) == SECRET_TOKEN &&
+                    exchange.getProperty(SECRET_ID, Long.class).equals(123L);
             } else {
                 checkInsightsToken = outgoingInsightToken == null;
             }
-            Boolean checkBearerToken;
+            boolean checkBearerToken;
             String outgoingAuthorization = exchange.getIn().getHeader(AUTHORIZATION, String.class);
             if (addBearerToken) {
-                checkBearerToken = outgoingAuthorization.equals("Bearer " + incomingPayload.getJsonObject(ENDPOINT_PROPERTIES).getString("bearer_token"));
-
-                assertEquals(BEARER, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
-                assertEquals(456L, exchange.getProperty(SECRET_ID, Long.class));
+                checkBearerToken = exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class) == BEARER &&
+                    exchange.getProperty(SECRET_ID, Long.class).equals(456L);
             } else {
                 checkBearerToken = outgoingAuthorization == null || !outgoingAuthorization.startsWith("Bearer ");
             }
 
-            Boolean checkBasicAuth;
+            boolean checkBasicAuth;
             if (addBasicAuth) {
-                String username = incomingPayload.getJsonObject(ENDPOINT_PROPERTIES).getJsonObject(BASIC_AUTHENTICATION).getString("username");
-                String password = incomingPayload.getJsonObject(ENDPOINT_PROPERTIES).getJsonObject(BASIC_AUTHENTICATION).getString("password");
-                String decodedAuthentication = new String(Base64.getDecoder().decode(outgoingAuthorization.replace("Basic ", "").getBytes(UTF_8)), UTF_8);
-                checkBasicAuth = decodedAuthentication.equals(username + ":" + password);
-
-                assertEquals(BASIC, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
-                assertEquals(789L, exchange.getProperty(SECRET_ID, Long.class));
+                checkBasicAuth = exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class) == BASIC &&
+                    exchange.getProperty(SECRET_ID, Long.class).equals(789L);
             } else {
                 checkBasicAuth = outgoingAuthorization == null || !outgoingAuthorization.startsWith("Basic ");
             }

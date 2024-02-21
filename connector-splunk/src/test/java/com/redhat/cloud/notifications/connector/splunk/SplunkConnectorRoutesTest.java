@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.ConnectorRoutesTest;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
+import com.redhat.cloud.notifications.connector.authentication.AuthenticationType;
 import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -15,8 +16,8 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
@@ -56,7 +57,6 @@ public class SplunkConnectorRoutesTest extends ConnectorRoutesTest {
 
         JsonObject metadata = new JsonObject();
         metadata.put("url", targetUrl);
-        metadata.put("X-Insight-Token", "super-secret-token");
         metadata.put("trustAll", "true");
         metadata.put("authentication", authentication);
 
@@ -79,13 +79,13 @@ public class SplunkConnectorRoutesTest extends ConnectorRoutesTest {
 
             assertEquals(DEFAULT_ORG_ID, exchange.getProperty(ORG_ID, String.class));
             assertEquals(DEFAULT_ACCOUNT_ID, exchange.getProperty(ACCOUNT_ID, String.class));
-            assertEquals("super-secret-token", exchange.getProperty(SECRET_PASSWORD, String.class));
             assertTrue(exchange.getProperty(TRUST_ALL, Boolean.class));
             assertNotNull(exchange.getProperty(TARGET_URL, String.class));
             assertNotNull(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class));
             assertTrue(exchange.getProperty(TARGET_URL, String.class).endsWith("/services/collector/event"));
             assertEquals(exchange.getProperty(TARGET_URL, String.class), "https://" + exchange.getProperty(TARGET_URL_NO_SCHEME, String.class));
             assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
+            assertEquals(SECRET_TOKEN, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
 
             JsonObject event1 = buildSplitEvent("event-1-key", "event-1-value");
             JsonObject event2 = buildSplitEvent("event-2-key", "event-2-value");

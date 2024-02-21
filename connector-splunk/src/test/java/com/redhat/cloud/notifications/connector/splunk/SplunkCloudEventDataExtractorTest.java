@@ -16,7 +16,6 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
@@ -138,7 +137,7 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         JsonObject cloudEventData = createCloudEventData(url, trustAll);
         /*
          * The 'extract' method will modify 'cloudEventData'.
-         * We need to run assertions on the original JsonObject so we're making a copy of it.
+         * We need to run assertions on the original JsonObject, so we're making a copy of it.
          */
         JsonObject cloudEventDataCopy = cloudEventData.copy();
         splunkCloudEventDataExtractor.extract(exchange, cloudEventData);
@@ -150,7 +149,6 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         assertTrue(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
 
         JsonObject expectedMetadata = cloudEventDataCopy.getJsonObject(NOTIF_METADATA);
-        assertEquals(expectedMetadata.getString("X-Insight-Token"), exchange.getProperty(SECRET_PASSWORD, String.class));
         assertEquals(expectedMetadata.getString("trustAll"), exchange.getProperty(TRUST_ALL, Boolean.class).toString());
 
         JsonObject expectedAuthentication = expectedMetadata.getJsonObject("authentication");
@@ -166,7 +164,6 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         JsonObject metadata = new JsonObject();
         metadata.put("url", url);
         metadata.put("trustAll", Boolean.toString(trustAll));
-        metadata.put("X-Insights-Token", "super-secret-token");
         metadata.put("authentication", authentication);
 
         JsonObject cloudEventData = new JsonObject();

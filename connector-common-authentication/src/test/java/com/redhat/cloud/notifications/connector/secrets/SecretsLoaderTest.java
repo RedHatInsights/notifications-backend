@@ -39,20 +39,7 @@ public class SecretsLoaderTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testDisabled() {
-        secretsLoader.setEnabled(false);
-
-        Exchange exchange = createExchangeWithBody("");
-        exchange.setProperty(ORG_ID, "org-id");
-        exchange.setProperty(SECRET_ID, 123L);
-        secretsLoader.process(exchange);
-
-        verify(sourcesClient, never()).getById(anyString(), anyString(), anyLong());
-    }
-
-    @Test
     void testNoSecretId() {
-        secretsLoader.setEnabled(true);
 
         Exchange exchange = createExchangeWithBody("");
         exchange.setProperty(ORG_ID, "org-id");
@@ -63,7 +50,6 @@ public class SecretsLoaderTest extends CamelQuarkusTestSupport {
 
     @Test
     void testWithSecretId() {
-        secretsLoader.setEnabled(true);
 
         SourcesSecret sourcesSecret = new SourcesSecret();
         sourcesSecret.username = "john_doe";

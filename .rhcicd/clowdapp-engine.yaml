@@ -18,7 +18,6 @@ objects:
     - rbac
     - notifications-recipients-resolver
     optionalDependencies:
-    - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
     - export-service
     database:
       sharedDbAppName: notifications-backend
@@ -208,16 +207,8 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
-        - name: SOURCES_PSK
-          valueFrom:
-            secretKeyRef:
-              name: sources-api-psk
-              key: psk
-              optional: true
         - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
-        - name: NOTIFICATIONS_USE_SOURCES_SECRETS_BACKEND
-          value: ${SOURCES_ENABLED}
         - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
           value: ${NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED}
         - name: MP_MESSAGING_INCOMING_EXPORTREQUESTS_ENABLED
@@ -370,9 +361,6 @@ parameters:
   description: Enable Sentry (or not)
   value: "false"
 - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
-  value: "false"
-- name: SOURCES_ENABLED
-  description: Is the Sources integration enabled? This makes the backend store the endpoint properties' secrets there.
   value: "false"
 - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
   description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
