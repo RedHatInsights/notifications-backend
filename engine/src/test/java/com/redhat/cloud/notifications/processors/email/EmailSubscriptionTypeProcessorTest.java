@@ -27,7 +27,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,9 +83,6 @@ class EmailSubscriptionTypeProcessorTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
-
-    @Inject
-    EntityManager entityManager;
 
     @BeforeEach
     void beforeEach() {
