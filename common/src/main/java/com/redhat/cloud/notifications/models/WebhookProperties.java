@@ -3,13 +3,13 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.db.converters.BasicAuthenticationConverter;
 import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -35,7 +35,8 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
 
     @Size(max = 255)
     @JsonProperty("secret_token")
-    private String secretToken; // TODO Should be optional
+    @Transient
+    private String secretToken;
 
     /**
      * The ID of the "secret token" secret in the Sources backend.
@@ -44,8 +45,8 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
     @JsonIgnore
     private Long secretTokenSourcesId;
 
-    @Convert(converter = BasicAuthenticationConverter.class)
     @JsonProperty("basic_authentication")
+    @Transient
     @Valid
     private BasicAuthentication basicAuthentication;
 

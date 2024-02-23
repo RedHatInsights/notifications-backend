@@ -21,6 +21,9 @@ import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequ
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
+import com.redhat.cloud.notifications.routers.sources.Secret;
+import com.redhat.cloud.notifications.routers.sources.SourcesService;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
@@ -30,14 +33,17 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -86,6 +92,15 @@ public class LifecycleITest extends DbIsolatedTest {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    /**
+     * We mock the sources service's REST client because there are a few tests
+     * that enable the integration, but we don't want to attempt to hit the
+     * real service.
+     */
+    @InjectMock
+    @RestClient
+    SourcesService sourcesServiceMock;
 
     @BeforeEach
     void beforeEach() {
@@ -522,6 +537,23 @@ public class LifecycleITest extends DbIsolatedTest {
         endpoint.setDescription("Endpoint");
         endpoint.setEnabled(true);
         endpoint.setProperties(properties);
+
+        // Mock the Sources service calls.
+        final Secret secretTokenSecret = new Secret();
+        secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        secretTokenSecret.password = properties.getSecretToken();
+
+        // The SecretUtils class follows the "basic authentication", "secret
+        // token" and "bearer token" order, so that is why we make the returns
+        // in that order for the mock.
+        Mockito
+            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+            .thenReturn(secretTokenSecret);
+
+        // Make sure that when the secrets are loaded when we fetch the
+        // endpoint again for checking the assertions, we simulate fetching
+        // the secrets from Sources too.
+        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
 
         String responseBody = given()
                 .basePath(API_INTEGRATIONS_V_1_0)
