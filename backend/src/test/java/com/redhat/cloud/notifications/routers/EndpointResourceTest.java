@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
@@ -78,6 +79,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -139,6 +144,25 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @ConfigProperty(name = "sources.psk")
     String sourcesPsk;
 
+    // Mock the Sources service calls.
+    private Secret mockSources(SourcesSecretable properties) {
+
+        final Secret secret = new Secret();
+        secret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        secret.password = properties.getSecretToken();
+
+        when(sourcesServiceMock.create(anyString(), anyString(), any(Secret.class)))
+                .thenReturn(secret);
+
+        // Make sure that when the secrets are loaded when we fetch the
+        // endpoint again for checking the assertions, we simulate fetching
+        // the secrets from Sources too.
+        when(sourcesServiceMock.getById(anyString(), anyString(), eq(secret.id)))
+                .thenReturn(secret);
+
+        return secret;
+    }
+
     @Test
     void testEndpointAdding() {
         String accountId = "empty";
@@ -174,19 +198,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(properties);
         ep.setServerErrors(3);
 
-        // Mock the Sources service calls.
-        final Secret secretTokenSecret = new Secret();
-        secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-        secretTokenSecret.password = properties.getSecretToken();
-
-        Mockito
-            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
-            .thenReturn(secretTokenSecret);
-
-        // Make sure that when the secrets are loaded when we fetch the
-        // endpoint again for checking the assertions, we simulate fetching
-        // the secrets from Sources too.
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+        mockSources(properties);
 
         Response response = given()
                 .header(identityHeader)
@@ -308,22 +320,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             endpoint1.setProperties(properties);
             endpoint1.setServerErrors(3);
 
-            // Mock the Sources service calls.
-            final Secret secretTokenSecret = new Secret();
-            secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-            secretTokenSecret.password = properties.getSecretToken();
-
-            // The SecretUtils class follows the "basic authentication", "secret
-            // token" and "bearer token" order, so that is why we make the returns
-            // in that order for the mock.
-            Mockito
-                .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
-                .thenReturn(secretTokenSecret);
-
-            // Make sure that when the secrets are loaded when we fetch the
-            // endpoint again for checking the assertions, we simulate fetching
-            // the secrets from Sources too.
-            Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+            mockSources(properties);
 
             Response response = given()
                     .header(identityHeader)
@@ -529,14 +526,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
         basicAuthSecret.password = cAttr.getBasicAuthentication().getPassword();
         basicAuthSecret.username = cAttr.getBasicAuthentication().getUsername();
 
-        Mockito
-            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+        when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
             .thenReturn(basicAuthSecret);
 
         // Make sure that when the secrets are loaded when we fetch the
         // endpoint again for checking the assertions, we simulate fetching
         // the secrets from Sources too.
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(basicAuthSecret.id))).thenReturn(basicAuthSecret);
+        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(basicAuthSecret.id))).thenReturn(basicAuthSecret);
 
         String responseBody = given()
                 .header(identityHeader)
@@ -816,22 +812,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(properties);
         ep.setServerErrors(7);
 
-        // Mock the Sources service calls.
-        final Secret secretTokenSecret = new Secret();
-        secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-        secretTokenSecret.password = properties.getSecretToken();
-
-        // The SecretUtils class follows the "basic authentication", "secret
-        // token" and "bearer token" order, so that is why we make the returns
-        // in that order for the mock.
-        Mockito
-            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
-            .thenReturn(secretTokenSecret);
-
-        // Make sure that when the secrets are loaded when we fetch the
-        // endpoint again for checking the assertions, we simulate fetching
-        // the secrets from Sources too.
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+        Secret secretTokenSecret = mockSources(properties);
 
         Response response = given()
                 .header(identityHeader)
@@ -907,7 +888,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Make sure that when the secrets are loaded when we fetch the
         // endpoint again for checking the assertions, we simulate fetching
         // the secrets from Sources too.
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(updatedSecretTokenSecret);
+        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(updatedSecretTokenSecret);
 
         // Fetch single one again to see that the updates were done
         JsonObject updatedEndpoint = fetchSingle(responsePointSingle.getString("id"), identityHeader);
@@ -951,19 +932,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        // Mock the Sources service calls.
-        final Secret secretTokenSecret = new Secret();
-        secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-        secretTokenSecret.password = properties.getSecretToken();
-
-        Mockito
-            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
-            .thenReturn(secretTokenSecret);
-
-        // Make sure that when the secrets are loaded when we fetch the
-        // endpoint again for checking the assertions, we simulate fetching
-        // the secrets from Sources too.
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+        mockSources(properties);
 
         Response response = given()
                 .header(identityHeader)
@@ -1208,16 +1177,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // The SecretUtils class follows the "basic authentication", "secret
         // token" and "bearer token" order, so that is why we make the returns
         // in that order for the mock.
-        Mockito
-            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+        when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
             .thenReturn(basicAuthSecret, secretTokenSecret, bearerTokenSecret);
 
         // Make sure that when the secrets are loaded when we fetch the
         // endpoint again for checking the assertions, we simulate fetching
         // the secrets from Sources too.
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(basicAuthSecret.id))).thenReturn(basicAuthSecret);
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(bearerTokenSecret.id))).thenReturn(bearerTokenSecret);
+        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(basicAuthSecret.id))).thenReturn(basicAuthSecret);
+        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(bearerTokenSecret.id))).thenReturn(bearerTokenSecret);
 
         Response response = given()
                 .header(identityHeader)
@@ -1719,22 +1687,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             ep.setEnabled(true);
             ep.setProperties(properties);
 
-            // Mock the Sources service calls.
-            final Secret secretTokenSecret = new Secret();
-            secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-            secretTokenSecret.password = properties.getSecretToken();
-
-            // The SecretUtils class follows the "basic authentication", "secret
-            // token" and "bearer token" order, so that is why we make the returns
-            // in that order for the mock.
-            Mockito
-                .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
-                .thenReturn(secretTokenSecret);
-
-            // Make sure that when the secrets are loaded when we fetch the
-            // endpoint again for checking the assertions, we simulate fetching
-            // the secrets from Sources too.
-            Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+            mockSources(properties);
 
             Response response = given()
                     .header(identityHeader)
@@ -2093,8 +2046,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         secret.password = "test-endpoint-valid-urls-password";
         secret.username = "test-endpoint-valid-urls-username";
 
-        Mockito
-            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+        when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
             .thenReturn(secret);
 
         for (final var url : ValidNonPrivateUrlValidatorTest.validUrls) {
@@ -2408,11 +2360,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Secret mockedSecretBearer = new Secret();
         mockedSecretBearer.id = 75L;
 
-        Mockito.when(
+        when(
             this.sourcesServiceMock.create(
-                Mockito.eq(DEFAULT_ORG_ID),
-                Mockito.eq(this.sourcesPsk),
-                Mockito.any()
+                eq(DEFAULT_ORG_ID),
+                eq(this.sourcesPsk),
+                any()
             )
         ).thenReturn(
             mockedBasicAuthenticationSecret,
@@ -2431,9 +2383,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Verify that both secrets were created in Sources.
         Mockito.verify(this.sourcesServiceMock, Mockito.times(3)).create(
-            Mockito.eq(DEFAULT_ORG_ID),
-            Mockito.eq(this.sourcesPsk),
-            Mockito.any()
+            eq(DEFAULT_ORG_ID),
+            eq(this.sourcesPsk),
+            any()
         );
 
         // Make sure that the properties got updated in the database too.
@@ -2482,11 +2434,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Secret mockedSecretTokenSecret = new Secret();
         mockedSecretTokenSecret.id = 50L;
 
-        Mockito.when(
+        when(
             this.sourcesServiceMock.create(
-                Mockito.eq(DEFAULT_ORG_ID),
-                Mockito.eq(this.sourcesPsk),
-                Mockito.any()
+                eq(DEFAULT_ORG_ID),
+                eq(this.sourcesPsk),
+                any()
             )
         ).thenReturn(
             mockedBasicAuthenticationSecret,
@@ -2584,11 +2536,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Secret mockedSecretTokenSecret = new Secret();
         mockedSecretTokenSecret.id = 50L;
 
-        Mockito.when(
+        when(
             this.sourcesServiceMock.create(
-                Mockito.eq(DEFAULT_ORG_ID),
-                Mockito.eq(this.sourcesPsk),
-                Mockito.any()
+                eq(DEFAULT_ORG_ID),
+                eq(this.sourcesPsk),
+                any()
             )
         ).thenReturn(
             mockedBasicAuthenticationSecret,
@@ -2634,12 +2586,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Secret mockedSecretTokenUpdatedSecret = new Secret();
         mockedSecretTokenSecret.id = 100L;
 
-        Mockito.when(
+        when(
             this.sourcesServiceMock.update(
-                Mockito.eq(DEFAULT_ORG_ID),
-                Mockito.eq(this.sourcesPsk),
+                eq(DEFAULT_ORG_ID),
+                eq(this.sourcesPsk),
                 Mockito.anyLong(),
-                Mockito.any()
+                any()
             )
         ).thenReturn(
             mockedBasicAuthenticationUpdatedSecret,
@@ -2657,10 +2609,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Verify that both secrets were updated in Sources.
         Mockito.verify(this.sourcesServiceMock, Mockito.times(2)).update(
-            Mockito.eq(DEFAULT_ORG_ID),
-            Mockito.eq(this.sourcesPsk),
+            eq(DEFAULT_ORG_ID),
+            eq(this.sourcesPsk),
             Mockito.anyLong(),
-            Mockito.any()
+            any()
         );
 
         // Make sure that the references to the secrets didn't get updated
@@ -2774,22 +2726,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             ep.setEnabled(true);
             ep.setProperties(properties);
 
-            // Mock the Sources service calls.
-            final Secret secretTokenSecret = new Secret();
-            secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-            secretTokenSecret.password = properties.getSecretToken();
-
-            // The SecretUtils class follows the "basic authentication", "secret
-            // token" and "bearer token" order, so that is why we make the returns
-            // in that order for the mock.
-            Mockito
-                .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
-                .thenReturn(secretTokenSecret);
-
-            // Make sure that when the secrets are loaded when we fetch the
-            // endpoint again for checking the assertions, we simulate fetching
-            // the secrets from Sources too.
-            Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+            mockSources(properties);
 
             Response response = given()
                     .header(identityHeader)

@@ -28,8 +28,6 @@ import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
-import com.redhat.cloud.notifications.routers.sources.Secret;
-import com.redhat.cloud.notifications.routers.sources.SourcesService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -42,7 +40,6 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -52,7 +49,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -110,15 +106,6 @@ public class LifecycleITest {
 
     @Inject
     ResourceHelpers resourceHelpers;
-
-    /**
-     * We mock the sources service's REST client because there are a few tests
-     * that enable the integration, but we don't want to attempt to hit the
-     * real service.
-     */
-    @InjectMock
-    @RestClient
-    SourcesService sourcesServiceMock;
 
     @Test
     void test() {
@@ -264,17 +251,6 @@ public class LifecycleITest {
         properties.setDisableSslVerification(true);
         properties.setSecretToken(secretToken);
         properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
-
-        // Mock the Sources service calls.
-        final Secret secretTokenSecret = new Secret();
-        secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-        secretTokenSecret.password = secretToken;
-
-        Mockito
-            .when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id)))
-            .thenReturn(secretTokenSecret);
-
-        properties.setSecretTokenSourcesId(secretTokenSecret.id);
         return createEndpoint(accountId, WEBHOOK, "endpoint", "Endpoint", properties);
     }
 
