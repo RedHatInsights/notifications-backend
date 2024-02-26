@@ -16,16 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestTasksTemplate extends EmailTemplatesInDbHelper  {
 
-    private DriftEmailPayloadAggregator aggregator;
-
     private static final String EVENT_TYPE_EXECUTED_TASK_COMPLETED = "executed-task-completed";
 
     private static final String EVENT_TYPE_JOB_FAILED = "job-failed";
-
-    @BeforeEach
-    void setUp() {
-        aggregator = new DriftEmailPayloadAggregator();
-    }
 
     @Override
     protected String getApp() {
