@@ -62,6 +62,7 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
     private Long bearerAuthenticationSourcesId;
 
     @JsonProperty("bearer_authentication")
+    @Transient
     private String bearerAuthentication;
 
     public String getUrl() {
