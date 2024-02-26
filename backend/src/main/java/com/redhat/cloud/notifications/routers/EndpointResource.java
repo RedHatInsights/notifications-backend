@@ -18,6 +18,8 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
+import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
@@ -62,6 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -88,6 +91,9 @@ public class EndpointResource {
 
     @Inject
     EndpointRepository endpointRepository;
+
+    @Inject
+    EndpointMapper endpointMapper;
 
     @Inject
     @RestClient
@@ -235,6 +241,7 @@ public class EndpointResource {
                 .getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query);
         count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly);
 
+        final List<EndpointDTO> endpointDTOS = new ArrayList<>(endpoints.size());
         for (Endpoint endpoint: endpoints) {
             // Fetch the secrets from Sources.
             this.secretUtils.loadSecretsForEndpoint(endpoint);
@@ -242,9 +249,13 @@ public class EndpointResource {
             // Redact the secrets for the endpoint if the user does not have
             // permission.
             this.redactSecretsForEndpoint(sec, endpoint);
+
+            endpointDTOS.add(
+                this.endpointMapper.toDTO(endpoint)
+            );
         }
 
-        return new EndpointPage(endpoints, new HashMap<>(), new Meta(count));
+        return new EndpointPage(endpointDTOS, new HashMap<>(), new Meta(count));
     }
 
     @POST
@@ -256,12 +267,16 @@ public class EndpointResource {
         @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Endpoint createEndpoint(
+    public EndpointDTO createEndpoint(
         @Context                                        SecurityContext sec,
-        @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint
+        @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
     ) {
+        final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
+
         try {
-            return this.internalCreateEndpoint(sec, endpoint);
+            return this.endpointMapper.toDTO(
+                this.internalCreateEndpoint(sec, endpoint)
+            );
         } catch (final Exception e) {
             // Clean up the secrets from Sources if any were created.
             this.secretUtils.deleteSecretsForEndpoint(endpoint);
@@ -306,18 +321,9 @@ public class EndpointResource {
 
         endpoint.setStatus(EndpointStatus.READY);
 
-        /*
-         * Create the secrets in Sources.
-         *
-         * TODO: if there's a failure in the "createEndpoint" function below,
-         * we might end up with dangling secrets in Sources. Using a "try/catch"
-         * block wouldn't do it here because of the "@Transactional" annotation
-         * above. Check <a href="https://issues.redhat.com/browse/RHCLOUD-22971">RHCLOUD-22971</a>
-         * for more details.
-         */
         this.secretUtils.createSecretsForEndpoint(endpoint);
 
-        return endpointRepository.createEndpoint(endpoint);
+        return this.endpointRepository.createEndpoint(endpoint);
     }
 
     private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {
@@ -345,9 +351,11 @@ public class EndpointResource {
     @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the role-based access control (RBAC) group that will receive email notifications. Use this endpoint in behavior groups to send emails when an action linked to the behavior group is triggered.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
-    public Endpoint getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec,
+    public EndpointDTO getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec,
                      @RequestBody(required = true) @NotNull @Valid RequestSystemSubscriptionProperties requestProps) {
-        return getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION);
+        return this.endpointMapper.toDTO(
+                getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION)
+        );
     }
 
     @POST
@@ -357,9 +365,11 @@ public class EndpointResource {
     @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the role-based access control (RBAC) group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Transactional
-    public Endpoint getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec,
+    public EndpointDTO getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec,
                                                          @RequestBody(required = true) @NotNull @Valid RequestSystemSubscriptionProperties requestProps) {
-        return getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER);
+        return this.endpointMapper.toDTO(
+            getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER)
+        );
     }
 
     private Endpoint getOrCreateSystemSubscriptionEndpoint(SecurityContext sec, RequestSystemSubscriptionProperties requestProps, EndpointType endpointType) {
@@ -395,7 +405,7 @@ public class EndpointResource {
     @Produces(APPLICATION_JSON)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
-    public Endpoint getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
         if (endpoint == null) {
@@ -407,7 +417,7 @@ public class EndpointResource {
             // Redact all the credentials from the endpoint's properties.
             this.redactSecretsForEndpoint(sec, endpoint);
 
-            return endpoint;
+            return this.endpointMapper.toDTO(endpoint);
         }
     }
 
@@ -479,7 +489,9 @@ public class EndpointResource {
     @Transactional
     public Response updateEndpoint(@Context SecurityContext sec,
                                    @PathParam("id") UUID id,
-                                   @RequestBody(required = true) @NotNull @Valid Endpoint endpoint) {
+                                   @RequestBody(required = true) @NotNull @Valid EndpointDTO endpointDTO) {
+        final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
+
         if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
