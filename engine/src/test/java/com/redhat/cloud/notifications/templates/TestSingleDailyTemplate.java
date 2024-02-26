@@ -115,7 +115,28 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         assertNotNull(bodyTemplate);
         Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result);
 
-        String tmp = generateEmail(bodyTemplate, mapData);
+        String templateResult = generateEmail(bodyTemplate, mapData);
+        assertTrue(templateResult.contains("\"#advisor-section1\""));
+        assertTrue(templateResult.contains("\"#compliance-section1\""));
+        assertTrue(templateResult.contains("\"#drift-section1\""));
+        assertTrue(templateResult.contains("\"#image-builder-section1\""));
+        assertTrue(templateResult.contains("\"#image-builder-section2\""));
+        assertTrue(templateResult.contains("\"#inventory-section1\""));
+        assertTrue(templateResult.contains("\"#patch-section1\""));
+        assertTrue(templateResult.contains("\"#policies-section1\""));
+        assertTrue(templateResult.contains("\"#resource-optimization-section1\""));
+        assertTrue(templateResult.contains("\"#vulnerability-section1\""));
+
+        assertTrue(templateResult.contains("\"advisor-section1\""));
+        assertTrue(templateResult.contains("\"compliance-section1\""));
+        assertTrue(templateResult.contains("\"drift-section1\""));
+        assertTrue(templateResult.contains("\"image-builder-section1\""));
+        assertTrue(templateResult.contains("\"image-builder-section2\""));
+        assertTrue(templateResult.contains("\"inventory-section1\""));
+        assertTrue(templateResult.contains("\"patch-section1\""));
+        assertTrue(templateResult.contains("\"policies-section1\""));
+        assertTrue(templateResult.contains("\"resource-optimization-section1\""));
+        assertTrue(templateResult.contains("\"vulnerability-section1\""));
     }
 
     private void addItem(Map<String, DailyDigestSection> dataMap, String applicationName, String payload) {
