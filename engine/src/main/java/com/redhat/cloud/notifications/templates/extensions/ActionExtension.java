@@ -1,10 +1,9 @@
 package com.redhat.cloud.notifications.templates.extensions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Parser;
@@ -15,7 +14,10 @@ import io.quarkus.qute.TemplateExtension;
 public class ActionExtension {
 
 
-    private static final ObjectMapper objectMapper = new ObjectMapper().registerModules(new Jdk8Module(), new JavaTimeModule());
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    // Add Jdk8Module on cloudEvent parser library since jackson dependency bumped to 2.16.1
+    private static final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser(ConsoleCloudEventParser.buildObjectMapper().registerModules(new Jdk8Module()));
 
     @TemplateExtension(matchName = TemplateExtension.ANY)
     public static Object getFromContext(Context context, String key) {
@@ -51,19 +53,10 @@ public class ActionExtension {
     @TemplateExtension
     public static String toPrettyJson(NotificationsConsoleCloudEvent event) {
         try {
-            String encodedAction = toJson(event);
+            String encodedAction = consoleCloudEventParser.toJson(event);
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(encodedAction));
         } catch (JsonProcessingException jpe) {
             throw new RuntimeException("Error while transforming action to json", jpe);
-        }
-    }
-
-    public static String toJson(NotificationsConsoleCloudEvent consoleCloudEvent) {
-        try {
-            JsonNode node = objectMapper.valueToTree(consoleCloudEvent);
-            return objectMapper.writeValueAsString(node);
-        } catch (JsonProcessingException var3) {
-            throw new RuntimeException("Cloud event serialization failed consoleCloudEvent: " + consoleCloudEvent, var3);
         }
     }
 }
