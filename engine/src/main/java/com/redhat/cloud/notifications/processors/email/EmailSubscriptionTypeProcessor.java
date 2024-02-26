@@ -219,7 +219,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
         final String bundle  = aggregationCommands.get(0).getAggregationKey().getBundle();
 
-        processedAggregationCommandCount.increment();
+        processedAggregationCommandCount.increment(aggregationCommands.size());
         try {
             if (!featureFlipper.isSingleDailyDigestEnabled()) {
                 processAggregateEmailsByAggregationKey(aggregationCommands.get(0), event);
