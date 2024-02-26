@@ -83,9 +83,8 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getTargetEndpoints(String orgId, EventType eventType) {
-        // TODO Replace `e.enabled` with `e.enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +
-                "WHERE e.enabled AND e.status = :status AND b.eventType = :eventType " +
+                "WHERE e.enabled IS TRUE AND e.status = :status AND b.eventType = :eventType " +
                 "AND (bga.behaviorGroup.orgId = :orgId OR bga.behaviorGroup.orgId IS NULL)";
 
         List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
@@ -143,8 +142,7 @@ public class EndpointRepository {
                  * The endpoint exceeded the max server errors allowed from configuration.
                  * It is therefore disabled.
                  */
-                // TODO Replace `enabled` with `enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
-                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled";
+                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
                 int updated = entityManager.createQuery(hql)
                         .setParameter("id", endpointId)
                         .executeUpdate();
@@ -242,8 +240,7 @@ public class EndpointRepository {
      */
     @Transactional
     public boolean disableEndpoint(UUID endpointId) {
-        // TODO Replace `enabled` with `enabled IS TRUE` when Quarkus depends on Hibernate ORM 6.3.0 or newer.
-        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled";
+        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
         int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();
