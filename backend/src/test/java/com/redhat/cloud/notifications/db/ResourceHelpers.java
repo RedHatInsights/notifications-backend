@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.db.model.Stats;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
@@ -176,9 +177,9 @@ public class ResourceHelpers {
         return endpointRepository.createEndpoint(endpoint);
     }
 
-    public int[] createTestEndpoints(String accountId, String orgId, int count) {
-        int[] statsValues = new int[3];
-        statsValues[0] = count;
+    public Stats createTestEndpoints(String accountId, String orgId, int count) {
+        final Stats stats = new Stats(count);
+
         for (int i = 0; i < count; i++) {
             // Add new endpoints
             WebhookProperties properties = new WebhookProperties();
@@ -191,11 +192,11 @@ public class ResourceHelpers {
             ep.setDescription("Automatically generated");
             boolean enabled = (i % (count / 5)) != 0;
             if (!enabled) {
-                statsValues[1]++;
+                stats.increaseDisabledCount();
             }
             ep.setEnabled(enabled);
             if (i > 0) {
-                statsValues[2]++;
+                stats.increaseWebhookCount();
                 ep.setProperties(properties);
             }
 
@@ -203,7 +204,7 @@ public class ResourceHelpers {
             ep.setOrgId(orgId);
             endpointRepository.createEndpoint(ep);
         }
-        return statsValues;
+        return stats;
     }
 
     public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, NotificationStatus status) {
@@ -354,7 +355,7 @@ public class ResourceHelpers {
 
                 final CamelProperties camelProperties = new CamelProperties();
                 camelProperties.setDisableSslVerification(random.nextBoolean());
-                camelProperties.setUrl("https://example.org");
+                camelProperties.setUrl("https://redhat.com");
 
                 // Maybe set a basic authentication, maybe not...
                 if (i % 3 == 0) {
@@ -381,7 +382,7 @@ public class ResourceHelpers {
                 final WebhookProperties webhookProperties = new WebhookProperties();
                 webhookProperties.setDisableSslVerification(random.nextBoolean());
                 webhookProperties.setMethod(HttpType.GET);
-                webhookProperties.setUrl("https://example.org");
+                webhookProperties.setUrl("https://redhat.com");
 
                 // Maybe set a basic authentication, maybe not...
                 if (i % 3 == 0) {
@@ -429,7 +430,7 @@ public class ResourceHelpers {
         for (int i = 0; i < 5; i++) {
             final CamelProperties camelProperties = new CamelProperties();
             camelProperties.setDisableSslVerification(random.nextBoolean());
-            camelProperties.setUrl("https://example.org");
+            camelProperties.setUrl("https://redhat.com");
 
             camelProperties.setBasicAuthentication(
                 new BasicAuthentication(UUID.randomUUID().toString(), UUID.randomUUID().toString())
@@ -454,7 +455,7 @@ public class ResourceHelpers {
             final WebhookProperties webhookProperties = new WebhookProperties();
             webhookProperties.setDisableSslVerification(random.nextBoolean());
             webhookProperties.setMethod(HttpType.GET);
-            webhookProperties.setUrl("https://example.org");
+            webhookProperties.setUrl("https://redhat.com");
 
             webhookProperties.setBasicAuthentication(
                 new BasicAuthentication(UUID.randomUUID().toString(), UUID.randomUUID().toString())
@@ -519,7 +520,7 @@ public class ResourceHelpers {
                 camelProperties.setBasicAuthentication(getRandomBasicAuth.get());
                 camelProperties.setDisableSslVerification(random.nextBoolean());
                 camelProperties.setSecretToken(UUID.randomUUID().toString());
-                camelProperties.setUrl("https://example.org");
+                camelProperties.setUrl("https://redhat.com");
 
                 endpoint.setProperties(camelProperties);
             } else {
@@ -530,7 +531,7 @@ public class ResourceHelpers {
                 webhookProperties.setDisableSslVerification(random.nextBoolean());
                 webhookProperties.setMethod(HttpType.GET);
                 webhookProperties.setSecretToken(UUID.randomUUID().toString());
-                webhookProperties.setUrl("https://example.org");
+                webhookProperties.setUrl("https://redhat.com");
 
                 endpoint.setProperties(webhookProperties);
             }

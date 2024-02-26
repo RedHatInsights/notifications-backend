@@ -41,6 +41,9 @@
     </profiles>
 
     <properties>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <json-schema-validator.version>1.3.3</json-schema-validator.version>
+
         <enforcer-plugin.version>3.4.1</enforcer-plugin.version>
         <maven-minimum-version>3.8.4</maven-minimum-version>
         <java-version>17</java-version>

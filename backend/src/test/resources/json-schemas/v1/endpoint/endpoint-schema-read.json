@@ -1,0 +1,210 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Schema for the expected payload to receive when fetching an endpoint from Notifications",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "description",
+    "created",
+    "enabled",
+    "status",
+    "server_errors",
+    "type",
+    "properties"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Endpoint's identifier",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Name of the endpoint",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "title": "Description of the endpoint",
+      "type": "string"
+    },
+    "enabled": {
+      "title": "Is the endpoint enabled?",
+      "type": "boolean"
+    },
+    "status": {
+      "enum": [
+        "DELETING",
+        "FAILED",
+        "NEW",
+        "PROVISIONING",
+        "READY",
+        "UNKNOWN"
+      ],
+      "title": "Status of the endpoint"
+    },
+    "server_errors": {
+      "minimum": 0,
+      "title": "Number of server errors that the endpoint suffered from when contacting the remote servers",
+      "type": "integer"
+    },
+    "type": {
+      "enum": [
+        "ansible",
+        "camel",
+        "drawer",
+        "email_subscription",
+        "webhook"
+      ],
+      "title": "Type of the endpoint",
+      "type": "string"
+    },
+    "sub_type": {
+      "enum": [
+        "ansible",
+        "google_chat",
+        "slack",
+        "teams"
+      ],
+      "title": "Subtype of the endpoint",
+      "type": "string"
+    },
+    "created": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1,12}$",
+      "title": "Creation timestamp of the endpoint",
+      "type": "string"
+    },
+    "properties": {
+      "title": "Properties of the endpoint",
+      "type": "object",
+      "oneOf": [
+        {
+          "title": "Camel properties",
+          "type": "object",
+          "required": [
+            "disable_ssl_verification",
+            "url"
+          ],
+          "properties": {
+            "disable_ssl_verification": {
+              "$ref": "#/definitions/disable_ssl_verification"
+            },
+            "url": {
+              "$ref": "#/definitions/url"
+            },
+            "basic_authentication": {
+              "$ref": "#/definitions/basic-authentication"
+            },
+            "secret_token": {
+              "$ref": "#/definitions/secret-token"
+            }
+          }
+        },
+        {
+          "title": "System subscription properties",
+          "type": "object",
+          "required": [
+            "ignore_preferences",
+            "only_admins"
+          ],
+          "properties": {
+            "ignore_preferences": {
+              "title": "Ignore the user preferences?",
+              "type": "boolean"
+            },
+            "only_admins": {
+              "title": "Is the email only for administrators",
+              "type": "boolean"
+            },
+            "group_id": {
+              "format": "uuid",
+              "title": "The identifier of the group to send the email to",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "title": "Webhook properties",
+          "type": "object",
+          "required": [
+            "disable_ssl_verification",
+            "method",
+            "url"
+          ],
+          "properties": {
+            "disable_ssl_verification": {
+              "$ref": "#/definitions/disable_ssl_verification"
+            },
+            "method": {
+              "$ref": "#/definitions/http-method"
+            },
+            "url": {
+              "$ref": "#/definitions/url"
+            },
+            "basic_authentication": {
+              "$ref": "#/definitions/basic-authentication"
+            },
+            "bearer_authentication": {
+              "$ref": "#/definitions/bearer-authentication"
+            },
+            "secret_token": {
+              "$ref": "#/definitions/secret-token"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "disable_ssl_verification": {
+      "title": "Definition of the endpoint properties' disable ssl verification object",
+      "type": "boolean"
+    },
+    "http-method": {
+      "enum": [
+        "get",
+        "post",
+        "put"
+      ],
+      "title": "Definition of the endpoint properties' HTTP method object",
+      "type": "string"
+    },
+    "url": {
+      "format": "url",
+      "title": "Definition of the endpoint properties' URL object",
+      "type": "string"
+    },
+    "basic-authentication": {
+      "title": "Definition of the endpoint properties' basic authentication object",
+      "type": "object",
+      "required": [
+        "username",
+        "password"
+      ],
+      "properties": {
+        "username": {
+          "minLength": 1,
+          "title": "Username of the basic authentication object",
+          "type": "string"
+        },
+        "password": {
+          "minLength": 1,
+          "title": "Password of the basic authentication object",
+          "type": "string"
+        }
+      }
+    },
+    "bearer-authentication": {
+      "minLength": 1,
+      "title": "Definition of the endpoint properties' bearer token object",
+      "type": "string"
+    },
+    "secret-token": {
+      "minLength": 1,
+      "title": "Definition of the endpoint properties' secret token object",
+      "type": "string"
+    }
+  }
+}
