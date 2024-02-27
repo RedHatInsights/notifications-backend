@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.eventing;
 
 import com.redhat.cloud.notifications.DelayedThrower;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -37,9 +38,12 @@ public class EventingProcessor extends EndpointTypeProcessor {
     @Inject
     ConnectorSender connectorSender;
 
+    @Inject
+    EngineConfig engineConfig;
+
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (featureFlipper.isEmailsOnlyMode()) {
+        if (engineConfig.isEmailsOnlyMode()) {
             Log.warn("Skipping event processing because Notifications is running in emails only mode");
             return;
         }

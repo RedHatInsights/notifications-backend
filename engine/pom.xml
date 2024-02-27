@@ -126,6 +126,13 @@
             <version>${quarkus-logging-cloudwatch.version}</version>
         </dependency>
 
+        <!-- Unleash -->
+        <dependency>
+            <groupId>io.quarkiverse.unleash</groupId>
+            <artifactId>quarkus-unleash</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+
         <!-- Retries -->
         <dependency>
             <groupId>dev.failsafe</groupId>
