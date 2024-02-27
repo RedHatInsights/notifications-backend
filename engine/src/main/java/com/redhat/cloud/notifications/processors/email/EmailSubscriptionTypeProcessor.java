@@ -206,10 +206,19 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         Timer.Sample consumedTimer = Timer.start(registry);
 
+        Boolean isSingleDailyDigestEnabled = false;
         try {
             Action action = actionParser.fromJsonString(event.getPayload());
+            if (null != action.getContext() && null != action.getContext().getAdditionalProperties()) {
+                isSingleDailyDigestEnabled = (Boolean) action.getContext().getAdditionalProperties().getOrDefault("single_daily_digest_enabled", false);
+            }
             for (com.redhat.cloud.notifications.ingress.Event actionEvent : action.getEvents()) {
-                aggregationCommands.add(objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class));
+                try {
+                    aggregationCommands.add(objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class));
+                } catch (Exception e) {
+                    Log.error("Kafka aggregation payload parsing failed for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
+                    rejectedAggregationCommandCount.increment();
+                }
             }
         } catch (Exception e) {
             Log.error("Kafka aggregation payload parsing failed for event " + event.getId(), e);
@@ -221,10 +230,10 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
         processedAggregationCommandCount.increment(aggregationCommands.size());
         try {
-            if (!featureFlipper.isSingleDailyDigestEnabled()) {
-                processAggregateEmailsByAggregationKey(aggregationCommands.get(0), event);
-            } else {
+            if (null != isSingleDailyDigestEnabled && isSingleDailyDigestEnabled) {
                 processBundleAggregation(aggregationCommands, event);
+            } else {
+                processAggregateEmailsByAggregationKey(aggregationCommands.get(0), event);
             }
         } catch (Exception e) {
             Log.warn("Error while processing aggregation", e);
@@ -380,7 +389,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
             Map<String, DailyDigestSection> dataMap  = new HashMap<>();
             for (ApplicationAggregatedData applicationAggregatedData : listApplicationWithUserCollection.getKey()) {
                 try {
-                    generateAggregatedEmailBody(bundleName, applicationAggregatedData.appName, applicationAggregatedData.aggregatedData, dataMap);
+                    dataMap.put(applicationAggregatedData.appName, generateAggregatedEmailBody(bundleName, applicationAggregatedData.appName, applicationAggregatedData.aggregatedData, dataMap));
                 } catch (Exception ex) {
                     Log.error("Error rendering application template for " + applicationAggregatedData.appName, ex);
                 }
@@ -435,23 +444,24 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
     }
 
-    protected void generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context, Map<String, DailyDigestSection> dataMap) {
+    protected DailyDigestSection generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context, Map<String, DailyDigestSection> dataMap) {
         context.put("application", app);
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(bundle, app, SubscriptionType.DAILY).get();
         String emailBody = emailTemplate.getBodyTemplate().getData().replace("Common/insightsEmailBody", "Common/insightsEmailBodyLight");
         TemplateInstance templateInstance = templateService.compileTemplate(emailBody, emailTemplate.getBodyTemplate().getName());
-        Map<String, Object> action =  Map.of("context", context, "bundle", bundle, "timestamp", LocalDateTime.now());
+        Map<String, Object> action =  Map.of("context", context, "bundle", bundle);
 
         String result = templateService.renderTemplate(action, templateInstance);
 
-        addItem(dataMap, app, result);
+        return addItem(result);
     }
 
-    private void addItem(Map<String, DailyDigestSection> dataMap, String applicationName, String payload) {
-        String titleData = payload.split("<!-- Body section -->")[0];
+    private DailyDigestSection addItem(String template) {
+        String titleData = template.split("<!-- Body section -->")[0];
+        String bodyData = template.split("<!-- Body section -->")[1];
         String[] sections = titleData.split("<!-- next section -->");
 
-        dataMap.put(applicationName, new DailyDigestSection(payload.split("<!-- Body section -->")[1], Arrays.stream(sections).filter(e -> !e.isBlank()).collect(Collectors.toList())));
+        return new DailyDigestSection(bodyData, Arrays.stream(sections).filter(e -> !e.isBlank()).collect(Collectors.toList()));
     }
 
     public class ApplicationAggregatedData {

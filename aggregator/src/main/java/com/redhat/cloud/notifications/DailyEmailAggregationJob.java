@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
@@ -145,6 +146,9 @@ public class DailyEmailAggregationJob {
             .withOrgId(aggregationCommands.get(0).getAggregationKey().getOrgId())
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(eventList)
+            .withContext(new Context.ContextBuilder()
+                .withAdditionalProperty("single_daily_digest_enabled", featureFlipper.isSingleDailyDigestEnabled())
+                .build())
             .build();
 
         String encodedAction = Parser.encode(action);

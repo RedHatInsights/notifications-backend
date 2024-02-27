@@ -89,9 +89,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.email.hcc-sender-name.enabled", defaultValue = "false")
     boolean hccEmailSenderNameEnabled;
 
-    @ConfigProperty(name = "notifications.bundle.level.digest.enabled", defaultValue = "false")
-    boolean singleDailyDigestEnabled;
-
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -111,7 +108,6 @@ public class FeatureFlipper {
         Log.infof("The async aggregation is %s", asyncAggregation ? "enabled" : "disabled");
         Log.infof("The Recipients resolver usage for daily digest is %s", useRecipientsResolverClowdappForDailyDigestEnabled ? "enabled" : "disabled");
         Log.infof("HCC sender name is %s in emails", hccEmailSenderNameEnabled ? "enabled" : "disabled");
-        Log.infof("The Single daily digest is %s", singleDailyDigestEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -266,15 +262,6 @@ public class FeatureFlipper {
     public void setHccEmailSenderNameEnabled(boolean hccEmailSenderNameEnabled) {
         checkTestLaunchMode();
         this.hccEmailSenderNameEnabled = hccEmailSenderNameEnabled;
-    }
-
-    public boolean isSingleDailyDigestEnabled() {
-        return singleDailyDigestEnabled;
-    }
-
-    public void setSingleDailyDigestEnabled(boolean singleDailyDigestEnabled) {
-        checkTestLaunchMode();
-        this.singleDailyDigestEnabled = singleDailyDigestEnabled;
     }
 
     /**

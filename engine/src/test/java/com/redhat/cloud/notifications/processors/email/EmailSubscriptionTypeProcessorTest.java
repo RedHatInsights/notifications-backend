@@ -3,11 +3,11 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.PatchTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
@@ -38,6 +38,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
@@ -97,9 +98,6 @@ class EmailSubscriptionTypeProcessorTest {
     MicrometerAssertionHelper micrometerAssertionHelper;
 
     @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
     ResourceHelpers resourceHelpers;
 
     @Inject
@@ -137,78 +135,74 @@ class EmailSubscriptionTypeProcessorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients(boolean singleDailyDigestEnabled) {
+    @NullSource // Test null to simulate an old aggregator calling a new engine
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients(Boolean singleDailyDigestEnabled) {
+
+        // Because this test will use a real Payload Aggregator
+        AggregationCommand aggregationCommand1 = new AggregationCommand(
+            new EmailAggregationKey("org-1", "rhel", "policies"),
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(1),
+            LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
+            DAILY
+        );
+
+        AggregationCommand aggregationCommand2 = new AggregationCommand(
+            new EmailAggregationKey("org-2", "bundle-2", "app-2"),
+            LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
+            LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
+            DAILY
+        );
+
+        AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
         try {
-            featureFlipper.setSingleDailyDigestEnabled(singleDailyDigestEnabled);
+            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
 
-            // Because this test will use a real Payload Aggregator
-            AggregationCommand aggregationCommand1 = new AggregationCommand(
-                new EmailAggregationKey("org-1", "rhel", "policies"),
-                LocalDateTime.now(ZoneOffset.UTC).minusDays(1),
-                LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
-                DAILY
-            );
+            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand1, singleDailyDigestEnabled));
+            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand2, singleDailyDigestEnabled));
 
-            AggregationCommand aggregationCommand2 = new AggregationCommand(
-                new EmailAggregationKey("org-2", "bundle-2", "app-2"),
-                LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
-                LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
-                DAILY
-            );
+            micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
+            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
+            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
+            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
-            AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
-            try {
-                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-                emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
+            checkAggregationCommandUsages(aggregationCommand1, aggregationCommand2);
 
-                inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand1));
-                inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand2));
-
-                micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-                micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
-                micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
-                micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
-
-                checkAggregationCommandUsages(aggregationCommand1, aggregationCommand2);
-
-                ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
-                verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
-                List<JsonObject> capturedPayloads = argumentCaptor.getAllValues();
-                assertTrue(
-                    capturedPayloads.stream().anyMatch(capturedPayload -> {
-                        EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                        Collection<String> subscribers = capturedEmailRequest.subscribers();
-                        return subscribers.size() == 2 && subscribers.contains(user1.getUsername()) && subscribers.contains(user2.getUsername());
-                    })
-                );
-                assertTrue(
-                    capturedPayloads.stream().anyMatch(capturedPayload -> {
-                        EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                        Collection<String> subscribers = capturedEmailRequest.subscribers();
-                        return subscribers.size() == 1 && subscribers.contains(user3.getUsername());
-                    })
-                );
-
-                capturedPayloads.stream().forEach(capturedPayload -> {
+            ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+            verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+            List<JsonObject> capturedPayloads = argumentCaptor.getAllValues();
+            assertTrue(
+                capturedPayloads.stream().anyMatch(capturedPayload -> {
                     EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                    if (featureFlipper.isSingleDailyDigestEnabled()) {
-                        assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
-                        assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
-                        assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
-                    } else {
-                        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
-                        assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Policies - Red Hat Enterprise Linux"));
-                        assertFalse(capturedEmailRequest.emailBody().contains("Jump to details"));
-                    }
-                });
+                    Collection<String> subscribers = capturedEmailRequest.subscribers();
+                    return subscribers.size() == 2 && subscribers.contains(user1.getUsername()) && subscribers.contains(user2.getUsername());
+                })
+            );
+            assertTrue(
+                capturedPayloads.stream().anyMatch(capturedPayload -> {
+                    EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
+                    Collection<String> subscribers = capturedEmailRequest.subscribers();
+                    return subscribers.size() == 1 && subscribers.contains(user3.getUsername());
+                })
+            );
 
-            } finally {
-                if (null != blankAgg2) {
-                    resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
+            capturedPayloads.stream().forEach(capturedPayload -> {
+                EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
+                if (null != singleDailyDigestEnabled && singleDailyDigestEnabled) {
+                    assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
+                    assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
+                    assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
+                } else {
+                    assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
+                    assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Policies - Red Hat Enterprise Linux"));
+                    assertFalse(capturedEmailRequest.emailBody().contains("Jump to details"));
                 }
-            }
+            });
+
         } finally {
-            featureFlipper.setSingleDailyDigestEnabled(false);
+            if (null != blankAgg2) {
+                resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
+            }
         }
     }
 
@@ -243,7 +237,6 @@ class EmailSubscriptionTypeProcessorTest {
     @Test
     void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipientsWithTwoApps() {
         try {
-            featureFlipper.setSingleDailyDigestEnabled(true);
 
             // Because this test will use a real Payload Aggregator
             EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
@@ -257,7 +250,7 @@ class EmailSubscriptionTypeProcessorTest {
             emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
             emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
 
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2)));
+            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2), true));
 
             validateCommonAssertions(aggregationKey1, aggregationKey2);
 
@@ -296,7 +289,6 @@ class EmailSubscriptionTypeProcessorTest {
 
             micrometerAssertionHelper.clearSavedValues();
         } finally {
-            featureFlipper.setSingleDailyDigestEnabled(false);
             resourceHelpers.deleteApp("rhel", "patch");
         }
     }
@@ -304,8 +296,6 @@ class EmailSubscriptionTypeProcessorTest {
     @Test
     void shouldSuccessfullySendOneAggEmailWithOneAppHandlingAggregationError() {
         try {
-            featureFlipper.setSingleDailyDigestEnabled(true);
-
             // Because this test will use a real Payload Aggregator
             EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
             EmailAggregationKey aggregationKey2 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
@@ -322,7 +312,7 @@ class EmailSubscriptionTypeProcessorTest {
             emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
             emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
 
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2)));
+            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2), true));
 
             validateCommonAssertions(aggregationKey1, aggregationKey1);
 
@@ -346,7 +336,6 @@ class EmailSubscriptionTypeProcessorTest {
 
             micrometerAssertionHelper.clearSavedValues();
         } finally {
-            featureFlipper.setSingleDailyDigestEnabled(false);
             resourceHelpers.deleteApp("rhel", "patch");
         }
     }
@@ -355,8 +344,6 @@ class EmailSubscriptionTypeProcessorTest {
     @Test
     void shouldSuccessfullySendOneAggEmailWithOneAppHandlingTemplateError() {
         try {
-            featureFlipper.setSingleDailyDigestEnabled(true);
-
             when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
 
             when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY)))
@@ -390,10 +377,10 @@ class EmailSubscriptionTypeProcessorTest {
             emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
             emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
 
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2)));
+            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2), true));
 
             micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
+            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
             micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
             micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
@@ -440,52 +427,44 @@ class EmailSubscriptionTypeProcessorTest {
 
             micrometerAssertionHelper.clearSavedValues();
         } finally {
-            featureFlipper.setSingleDailyDigestEnabled(false);
             resourceHelpers.deleteApp("rhel", "patch");
         }
     }
 
     @Test
     void shouldNotSendAggEmailBecauseNoAppSucceedToRender() {
-        try {
-            featureFlipper.setSingleDailyDigestEnabled(true);
+        when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
 
-            when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
+        // Because this test will use a real Payload Aggregator
+        EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
 
-            // Because this test will use a real Payload Aggregator
-            EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
+        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
 
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+        EmailAggregation errorOnPoliciesPayload = TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10));
+        errorOnPoliciesPayload.getPayload().getMap().put("events", "Wrong format");
+        emailAggregationRepository.addEmailAggregation(errorOnPoliciesPayload);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1), true));
 
-            EmailAggregation errorOnPoliciesPayload = TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10));
-            errorOnPoliciesPayload.getPayload().getMap().put("events", "Wrong format");
-            emailAggregationRepository.addEmailAggregation(errorOnPoliciesPayload);
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1)));
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
+        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
+        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
-            micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
-            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
-            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
+        // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
+        verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
+            eq(aggregationKey1),
+            any(LocalDateTime.class),
+            any(LocalDateTime.class),
+            eq(0),
+            anyInt()
+        );
 
-            // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-            verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
-                eq(aggregationKey1),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class),
-                eq(0),
-                anyInt()
-            );
+        verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
+            eq(aggregationKey1),
+            any(LocalDateTime.class)
+        );
 
-            verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
-                eq(aggregationKey1),
-                any(LocalDateTime.class)
-            );
-
-            verifyNoInteractions(connectorSender);
-
-        } finally {
-            featureFlipper.setSingleDailyDigestEnabled(false);
-        }
+        verifyNoInteractions(connectorSender);
     }
 
     private void mockUsers(User user1, User user2, User user3) {
@@ -510,11 +489,11 @@ class EmailSubscriptionTypeProcessorTest {
         }
     }
 
-    private String buildAggregatorAction(AggregationCommand aggregationCommand) {
-        return buildAggregatorAction(List.of(aggregationCommand));
+    private String buildAggregatorAction(AggregationCommand aggregationCommand, Boolean singleDailyDigestEnabled) {
+        return buildAggregatorAction(List.of(aggregationCommand), singleDailyDigestEnabled);
     }
 
-    private String buildAggregatorActionFromKey(List<EmailAggregationKey> aggregationKeys) {
+    private String buildAggregatorActionFromKey(List<EmailAggregationKey> aggregationKeys, Boolean singleDailyDigestEnabled) {
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         for (EmailAggregationKey aggregationKey : aggregationKeys) {
             AggregationCommand aggregationCommand = new AggregationCommand(
@@ -525,10 +504,10 @@ class EmailSubscriptionTypeProcessorTest {
             );
             aggregationCommands.add(aggregationCommand);
         }
-        return buildAggregatorAction(aggregationCommands);
+        return buildAggregatorAction(aggregationCommands, singleDailyDigestEnabled);
     }
 
-    private String buildAggregatorAction(List<AggregationCommand> aggregationCommands) {
+    private String buildAggregatorAction(List<AggregationCommand> aggregationCommands, Boolean singleDailyDigestEnabled) {
 
         String orgId = aggregationCommands.get(0).getOrgId();
 
@@ -546,16 +525,21 @@ class EmailSubscriptionTypeProcessorTest {
                         .build());
         }
 
-        Action action = new Action.ActionBuilder()
+        Action.ActionBuilder actionBuilder = (Action.ActionBuilder) new Action.ActionBuilder()
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
             .withEventType(EVENT_TYPE_NAME)
             .withOrgId(orgId)
             .withTimestamp(LocalDateTime.now(UTC))
-            .withEvents(events)
-            .build();
+            .withEvents(events);
 
-        return Parser.encode(action);
+        if (null != singleDailyDigestEnabled) {
+            actionBuilder.withContext(new Context.ContextBuilder()
+                .withAdditionalProperty("single_daily_digest_enabled", singleDailyDigestEnabled)
+                .build());
+        }
+
+        return Parser.encode(actionBuilder.build());
     }
 
     protected void initData(String app, String eventTypeToCreate) {
@@ -570,7 +554,7 @@ class EmailSubscriptionTypeProcessorTest {
 
     private void validateCommonAssertions(EmailAggregationKey aggregationKey1, EmailAggregationKey aggregationKey2) {
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
+        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
         micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
         micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
