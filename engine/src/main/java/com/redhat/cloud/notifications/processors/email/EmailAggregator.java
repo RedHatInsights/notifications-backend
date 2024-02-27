@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.util.Map.Entry;
@@ -69,13 +70,13 @@ public class EmailAggregator {
     @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
     int maxPageSize;
 
-    public Map<User, Map<String, Object>> getAggregated(EmailAggregationKey aggregationKey, SubscriptionType subscriptionType, LocalDateTime start, LocalDateTime end) {
+    public Map<User, Map<String, Object>> getAggregated(UUID appId, EmailAggregationKey aggregationKey, SubscriptionType subscriptionType, LocalDateTime start, LocalDateTime end) {
 
         Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
         Map<String, Set<String>> subscribersByEventType = subscriptionRepository
-                .getSubscribersByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), subscriptionType);
+                .getSubscribersByEventType(aggregationKey.getOrgId(), appId, subscriptionType);
         Map<String, Set<String>> unsubscribersByEventType = subscriptionRepository
-                .getUnsubscribersByEventType(aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), subscriptionType);
+                .getUnsubscribersByEventType(aggregationKey.getOrgId(), appId, subscriptionType);
 
         int offset = 0;
         int totalAggregatedElements = 0;

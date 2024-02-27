@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.Application;
+import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -13,6 +14,7 @@ public class ApplicationRepository {
     @Inject
     EntityManager entityManager;
 
+    @CacheResult(cacheName = "get-app-by-name")
     public Optional<Application> getApplication(String bundleName, String applicationName) {
         String query = "FROM Application WHERE bundle.name = :bundleName AND name = :applicationName";
         try {

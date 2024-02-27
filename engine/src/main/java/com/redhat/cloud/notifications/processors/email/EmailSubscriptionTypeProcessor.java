@@ -259,15 +259,18 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Event aggregatorEvent) {
 
         Log.infof("Processing received aggregation command: %s", aggregationCommand);
-        Optional<Application> app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
-        if (app.isPresent()) {
-            String eventTypeDisplayName = String.format("%s - %s - %s",
-                aggregatorEvent.getEventTypeDisplayName(),
-                app.get().getDisplayName(),
-                app.get().getBundle().getDisplayName()
-            );
-            eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
-        }
+        Application app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication())
+                .orElseThrow(() -> {
+                    String exceptionMsg = String.format("Application not found: %s/%s", aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
+                    return new IllegalArgumentException(exceptionMsg);
+                });
+
+        String eventTypeDisplayName = String.format("%s - %s - %s",
+            aggregatorEvent.getEventTypeDisplayName(),
+            app.getDisplayName(),
+            app.getBundle().getDisplayName()
+        );
+        eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
 
         TemplateInstance subject = null;
         TemplateInstance body = null;
@@ -297,7 +300,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         }
 
         if (subject != null && body != null) {
-            Map<User, Map<String, Object>> aggregationsByUsers = emailAggregator.getAggregated(aggregationKey,
+            Map<User, Map<String, Object>> aggregationsByUsers = emailAggregator.getAggregated(app.getId(), aggregationKey,
                                                                         aggregationCommand.getSubscriptionType(),
                                                                         aggregationCommand.getStart(),
                                                                         aggregationCommand.getEnd());
@@ -349,13 +352,16 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent) {
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
         // Patch event display name for event log rendering
-        Optional<Bundle> bundle = bundleRepository.getBundle(bundleName);
-        if (bundle.isPresent()) {
-            String eventTypeDisplayName = String.format("%s - %s",
-                aggregatorEvent.getEventTypeDisplayName(),
-                bundle.get().getDisplayName());
-            eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
-        }
+        Bundle bundle = bundleRepository.getBundle(bundleName)
+                .orElseThrow(() -> {
+                    String exceptionMsg = String.format("Bundle not found: %s", bundleName);
+                    return new IllegalArgumentException(exceptionMsg);
+                });
+
+        String eventTypeDisplayName = String.format("%s - %s",
+            aggregatorEvent.getEventTypeDisplayName(),
+            bundle.getDisplayName());
+        eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
 
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregatorEvent.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
@@ -364,7 +370,13 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
         for (AggregationCommand applicationAggregationCommand : aggregationCommands) {
             try {
-                Map<User, Map<String, Object>> applicationAggregatedContextByUser = emailAggregator.getAggregated(applicationAggregationCommand.getAggregationKey(),
+                Application app = applicationRepository.getApplication(applicationAggregationCommand.getAggregationKey().getBundle(), applicationAggregationCommand.getAggregationKey().getApplication())
+                        .orElseThrow(() -> {
+                            String exceptionMsg = String.format("Application not found: %s/%s",
+                                    applicationAggregationCommand.getAggregationKey().getBundle(), applicationAggregationCommand.getAggregationKey().getApplication());
+                            return new IllegalArgumentException(exceptionMsg);
+                        });
+                Map<User, Map<String, Object>> applicationAggregatedContextByUser = emailAggregator.getAggregated(app.getId(), applicationAggregationCommand.getAggregationKey(),
                     applicationAggregationCommand.getSubscriptionType(),
                     applicationAggregationCommand.getStart(),
                     applicationAggregationCommand.getEnd());
@@ -382,7 +394,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameAggregatedData = userData.keySet().stream()
             .collect(Collectors.groupingBy(userData::get, Collectors.toSet()));
 
-        String emailTitle = "Daily digest - " + bundle.get().getDisplayName();
+        String emailTitle = "Daily digest - " + bundle.getDisplayName();
 
         // for each set of users, generate email subject + body and send it to email connector
         usersWithSameAggregatedData.entrySet().stream().forEach(listApplicationWithUserCollection -> {
@@ -400,7 +412,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                 List<DailyDigestSection> result = dataMap.entrySet().stream()
                     .sorted(Map.Entry.comparingByKey())
                     .map(Map.Entry::getValue)
-                    .collect(Collectors.toList());
+                    .toList();
 
                 // get single daily template
                 Optional<Template> dailyTemplate = templateRepository.findTemplateByName("Common/insightsDailyEmailBody");
