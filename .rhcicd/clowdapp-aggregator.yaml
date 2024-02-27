@@ -61,6 +61,8 @@ objects:
           value: ${ENV_NAME}
         - name: PROMETHEUS_PUSHGATEWAY_URL
           value: ${PROMETHEUS_PUSHGATEWAY}
+        - name: NOTIFICATIONS_BUNDLE_LEVEL_DIGEST_ENABLED
+          value: ${NOTIFICATIONS_BUNDLE_LEVEL_DIGEST_ENABLED}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -101,4 +103,6 @@ parameters:
   value: "300"
 - name: SUSPEND_AGGREGATION_JOB
   description: Should the aggregation cron job be disabled?
+  value: "false"
+- name: NOTIFICATIONS_BUNDLE_LEVEL_DIGEST_ENABLED
   value: "false"

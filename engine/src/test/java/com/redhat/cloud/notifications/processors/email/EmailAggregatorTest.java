@@ -97,9 +97,9 @@ class EmailAggregatorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void shouldTestRecipientsFromSubscription(boolean UseRecipientsResolverClowdappForDailyDigestEnabled) {
+    void shouldTestRecipientsFromSubscription(boolean useRecipientsResolverClowdappForDailyDigestEnabled) {
 
-        featureFlipper.setUseRecipientsResolverClowdappForDailyDigestEnabled(UseRecipientsResolverClowdappForDailyDigestEnabled);
+        featureFlipper.setUseRecipientsResolverClowdappForDailyDigestEnabled(useRecipientsResolverClowdappForDailyDigestEnabled);
         // init test environment
         Application application = resourceHelpers.findApp("rhel", "policies");
         eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);

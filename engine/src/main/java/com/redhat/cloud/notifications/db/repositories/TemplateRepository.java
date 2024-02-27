@@ -82,6 +82,18 @@ public class TemplateRepository {
         }
     }
 
+    public Optional<Template> findTemplateByName(String templateName) {
+        String hql = "FROM Template t where t.name = :templateName ";
+        try {
+            Template template = entityManager.createQuery(hql, Template.class)
+                .setParameter("templateName", templateName)
+                .getSingleResult();
+            return Optional.of(template);
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
+    }
+
     private Optional<InstantEmailTemplate> getDefaultEmailTemplate() {
         if (defaultEmailTemplate != null) {
             return defaultEmailTemplate;

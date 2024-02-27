@@ -41,6 +41,10 @@ public class AggregationCommand {
         return subscriptionType;
     }
 
+    public String getOrgId() {
+        return aggregationKey.getOrgId();
+    }
+
     @Override
     public String toString() {
         return "AggregationCommand{" +

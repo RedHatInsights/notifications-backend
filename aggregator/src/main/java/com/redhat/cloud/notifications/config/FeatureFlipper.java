@@ -5,6 +5,7 @@ import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.configuration.ProfileManager;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import static io.quarkus.runtime.LaunchMode.TEST;
 
@@ -37,8 +38,22 @@ import static io.quarkus.runtime.LaunchMode.TEST;
 @ApplicationScoped
 public class FeatureFlipper {
 
+    @ConfigProperty(name = "notifications.bundle.level.digest.enabled", defaultValue = "false")
+    boolean singleDailyDigestEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
+        Log.infof("The daily digest at bundle level is %s", singleDailyDigestEnabled ? "enabled" : "disabled");
+
+    }
+
+    public boolean isSingleDailyDigestEnabled() {
+        return singleDailyDigestEnabled;
+    }
+
+    public void setSingleDailyDigestEnabled(boolean singleDailyDigestEnabled) {
+        checkTestLaunchMode();
+        this.singleDailyDigestEnabled = singleDailyDigestEnabled;
     }
 
     /**

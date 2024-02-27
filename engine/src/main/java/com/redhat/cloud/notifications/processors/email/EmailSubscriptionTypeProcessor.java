@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -13,6 +14,7 @@ import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -20,12 +22,14 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
+import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
+import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
@@ -43,12 +47,15 @@ import org.eclipse.microprofile.context.ManagedExecutor;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
@@ -67,6 +74,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     public static final String AGGREGATION_CONSUMED_TIMER_NAME = "aggregation.time.consumed";
     protected static final String TAG_KEY_BUNDLE = "bundle";
     protected static final String TAG_KEY_APPLICATION = "application";
+    protected static final String TAG_KEY_ORG_ID = "orgid";
 
     @Inject
     EmailAggregationRepository emailAggregationRepository;
@@ -106,6 +114,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
     @Inject
     EventRepository eventRepository;
+
+    @Inject
+    BundleRepository bundleRepository;
 
     // This executor is used to run a task asynchronously using a worker thread from a threads pool managed by Quarkus.
     @Inject
@@ -191,46 +202,73 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     }
 
     public void processAggregationSync(Event event) {
-        AggregationCommand aggregationCommand;
+
+        List<AggregationCommand> aggregationCommands = new ArrayList<>();
         Timer.Sample consumedTimer = Timer.start(registry);
 
+        Boolean isSingleDailyDigestEnabled = false;
         try {
             Action action = actionParser.fromJsonString(event.getPayload());
-            Map<String, Object> map = action.getEvents().get(0).getPayload().getAdditionalProperties();
-            aggregationCommand = objectMapper.convertValue(map, AggregationCommand.class);
+            if (null != action.getContext() && null != action.getContext().getAdditionalProperties()) {
+                isSingleDailyDigestEnabled = (Boolean) action.getContext().getAdditionalProperties().getOrDefault("single_daily_digest_enabled", false);
+            }
+            for (com.redhat.cloud.notifications.ingress.Event actionEvent : action.getEvents()) {
+                try {
+                    aggregationCommands.add(objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class));
+                } catch (Exception e) {
+                    Log.error("Kafka aggregation payload parsing failed for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
+                    rejectedAggregationCommandCount.increment();
+                }
+            }
         } catch (Exception e) {
             Log.error("Kafka aggregation payload parsing failed for event " + event.getId(), e);
             rejectedAggregationCommandCount.increment();
             return;
         }
 
-        Log.infof("Processing received aggregation command: %s", aggregationCommand);
-        processedAggregationCommandCount.increment();
+        final String bundle  = aggregationCommands.get(0).getAggregationKey().getBundle();
 
+        processedAggregationCommandCount.increment(aggregationCommands.size());
         try {
-            Optional<Application> app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
-            if (app.isPresent()) {
-                String eventTypeDisplayName = String.format("%s - %s - %s",
-                        event.getEventTypeDisplayName(),
-                        app.get().getDisplayName(),
-                        app.get().getBundle().getDisplayName()
-                );
-                eventRepository.updateEventDisplayName(event.getId(), eventTypeDisplayName);
+            if (null != isSingleDailyDigestEnabled && isSingleDailyDigestEnabled) {
+                processBundleAggregation(aggregationCommands, event);
+            } else {
+                processAggregateEmailsByAggregationKey(aggregationCommands.get(0), event);
             }
-            processAggregateEmailsByAggregationKey(aggregationCommand, Optional.of(event));
         } catch (Exception e) {
             Log.warn("Error while processing aggregation", e);
             failedAggregationCommandCount.increment();
         } finally {
-            consumedTimer.stop(registry.timer(
+            if (aggregationCommands.size() == 1) {
+                consumedTimer.stop(registry.timer(
                     AGGREGATION_CONSUMED_TIMER_NAME,
-                    TAG_KEY_BUNDLE, aggregationCommand.getAggregationKey().getBundle(),
-                    TAG_KEY_APPLICATION, aggregationCommand.getAggregationKey().getApplication()
-            ));
+                    TAG_KEY_BUNDLE, bundle,
+                    TAG_KEY_APPLICATION, aggregationCommands.get(0).getAggregationKey().getApplication(),
+                    TAG_KEY_ORG_ID, event.getOrgId()
+                ));
+            } else {
+                consumedTimer.stop(registry.timer(
+                    AGGREGATION_CONSUMED_TIMER_NAME,
+                    TAG_KEY_BUNDLE, bundle,
+                    TAG_KEY_ORG_ID, event.getOrgId()
+                ));
+            }
         }
     }
 
-    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Optional<Event> aggregatorEvent) {
+    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Event aggregatorEvent) {
+
+        Log.infof("Processing received aggregation command: %s", aggregationCommand);
+        Optional<Application> app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
+        if (app.isPresent()) {
+            String eventTypeDisplayName = String.format("%s - %s - %s",
+                aggregatorEvent.getEventTypeDisplayName(),
+                app.get().getDisplayName(),
+                app.get().getBundle().getDisplayName()
+            );
+            eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
+        }
+
         TemplateInstance subject = null;
         TemplateInstance body = null;
 
@@ -246,13 +284,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
-        Event event;
-        if (aggregatorEvent.isEmpty()) {
-            event = new Event();
-            event.setId(UUID.randomUUID());
-        } else {
-            event = aggregatorEvent.get();
-        }
+        Event event = aggregatorEvent;
 
         Action action = new Action();
         action.setEvents(List.of());
@@ -311,6 +343,168 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         // Delete on daily
         if (aggregationCommand.getSubscriptionType().equals(SubscriptionType.DAILY)) {
             emailAggregationRepository.purgeOldAggregation(aggregationKey, aggregationCommand.getEnd());
+        }
+    }
+
+    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent) {
+        final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
+        // Patch event display name for event log rendering
+        Optional<Bundle> bundle = bundleRepository.getBundle(bundleName);
+        if (bundle.isPresent()) {
+            String eventTypeDisplayName = String.format("%s - %s",
+                aggregatorEvent.getEventTypeDisplayName(),
+                bundle.get().getDisplayName());
+            eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
+        }
+
+        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregatorEvent.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+
+        //Store every aggregated application data for each user
+        Map<User, List<ApplicationAggregatedData>> userData = new HashMap<>();
+
+        for (AggregationCommand applicationAggregationCommand : aggregationCommands) {
+            try {
+                Map<User, Map<String, Object>> applicationAggregatedContextByUser = emailAggregator.getAggregated(applicationAggregationCommand.getAggregationKey(),
+                    applicationAggregationCommand.getSubscriptionType(),
+                    applicationAggregationCommand.getStart(),
+                    applicationAggregationCommand.getEnd());
+
+                applicationAggregatedContextByUser.entrySet().stream().forEach(userAggregation -> {
+                    userData.computeIfAbsent(userAggregation.getKey(), unused -> new ArrayList<>())
+                        .add(new ApplicationAggregatedData(userAggregation.getValue(), applicationAggregationCommand.getAggregationKey().getApplication()));
+                });
+            } catch (Exception ex) {
+                Log.error("Error processing " + applicationAggregationCommand.getAggregationKey(), ex);
+            }
+        }
+
+        // Group users with same aggregated data
+        Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameAggregatedData = userData.keySet().stream()
+            .collect(Collectors.groupingBy(userData::get, Collectors.toSet()));
+
+        String emailTitle = "Daily digest - " + bundle.get().getDisplayName();
+
+        // for each set of users, generate email subject + body and send it to email connector
+        usersWithSameAggregatedData.entrySet().stream().forEach(listApplicationWithUserCollection -> {
+            Map<String, DailyDigestSection> dataMap  = new HashMap<>();
+            for (ApplicationAggregatedData applicationAggregatedData : listApplicationWithUserCollection.getKey()) {
+                try {
+                    dataMap.put(applicationAggregatedData.appName, generateAggregatedEmailBody(bundleName, applicationAggregatedData.appName, applicationAggregatedData.aggregatedData, dataMap));
+                } catch (Exception ex) {
+                    Log.error("Error rendering application template for " + applicationAggregatedData.appName, ex);
+                }
+            }
+
+            if (!dataMap.isEmpty()) {
+                // sort application by name
+                List<DailyDigestSection> result = dataMap.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(Map.Entry::getValue)
+                    .collect(Collectors.toList());
+
+                // get single daily template
+                Optional<Template> dailyTemplate = templateRepository.findTemplateByName("Common/insightsDailyEmailBody");
+                TemplateInstance SingleBodyTemplate = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
+
+                Map<String, Object> action = Map.of("context", Map.of("title", emailTitle, "items", result),
+                    "bundle", bundle);
+
+                // build final body
+                String bodyStr = templateService.renderTemplate(action, SingleBodyTemplate);
+
+                // Format data to send to the connector.
+                Set<String> recipientsUsernames = listApplicationWithUserCollection.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
+                Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(aggregatorEvent, List.of(endpoint));
+
+                // Prepare all the data to be sent to the connector.
+                final EmailNotification emailNotification = new EmailNotification(
+                    bodyStr,
+                    emailTitle,
+                    this.emailActorsResolver.getEmailSender(aggregatorEvent),
+                    aggregatorEvent.getOrgId(),
+                    recipientSettings,
+                    /*
+                     * The recipients are determined at an earlier stage (see EmailAggregator) using the
+                     * recipients-resolver app and the subscription records from the database.
+                     * The subscribedByDefault value below simply means that recipients-resolver will consider
+                     * the subscribers passed in the request as the recipients candidates of the aggregation email.
+                     */
+                    recipientsUsernames,
+                    Collections.emptySet(),
+                    false
+                );
+
+                connectorSender.send(aggregatorEvent, endpoint, JsonObject.mapFrom(emailNotification));
+            }
+        });
+
+        for (AggregationCommand applicationAggregationCommand : aggregationCommands) {
+            emailAggregationRepository.purgeOldAggregation(applicationAggregationCommand.getAggregationKey(), applicationAggregationCommand.getEnd());
+        }
+    }
+
+    protected DailyDigestSection generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context, Map<String, DailyDigestSection> dataMap) {
+        context.put("application", app);
+        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(bundle, app, SubscriptionType.DAILY).get();
+        String emailBody = emailTemplate.getBodyTemplate().getData().replace("Common/insightsEmailBody", "Common/insightsEmailBodyLight");
+        TemplateInstance templateInstance = templateService.compileTemplate(emailBody, emailTemplate.getBodyTemplate().getName());
+        Map<String, Object> action =  Map.of("context", context, "bundle", bundle);
+
+        String result = templateService.renderTemplate(action, templateInstance);
+
+        return addItem(result);
+    }
+
+    private DailyDigestSection addItem(String template) {
+        String titleData = template.split("<!-- Body section -->")[0];
+        String bodyData = template.split("<!-- Body section -->")[1];
+        String[] sections = titleData.split("<!-- next section -->");
+
+        return new DailyDigestSection(bodyData, Arrays.stream(sections).filter(e -> !e.isBlank()).collect(Collectors.toList()));
+    }
+
+    public class ApplicationAggregatedData {
+        Map<String, Object> aggregatedData;
+        String appName;
+
+        public ApplicationAggregatedData(Map<String, Object> aggregatedData, String appName) {
+            this.aggregatedData = aggregatedData;
+            this.appName = appName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ApplicationAggregatedData that = (ApplicationAggregatedData) o;
+            return Objects.equals(aggregatedData, that.aggregatedData) && Objects.equals(appName, that.appName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(aggregatedData, appName);
+        }
+    }
+
+    public static class ApplicationRenderedHtmlBody {
+        Set<User> users;
+        String htmlBody;
+
+        public ApplicationRenderedHtmlBody(Set<User> users, String htmlBody) {
+            this.users = users;
+            this.htmlBody = htmlBody;
+        }
+
+        public Set<User> getUsers() {
+            return users;
+        }
+
+        public String getHtmlBody() {
+            return htmlBody;
         }
     }
 }
