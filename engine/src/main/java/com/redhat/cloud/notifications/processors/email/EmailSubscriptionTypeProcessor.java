@@ -407,8 +407,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                 TemplateInstance SingleBodyTemplate = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
 
                 Map<String, Object> action = Map.of("context", Map.of("title", emailTitle, "items", result),
-                    "bundle", bundle,
-                    "timestamp", LocalDateTime.now());
+                    "bundle", bundle);
 
                 // build final body
                 String bodyStr = templateService.renderTemplate(action, SingleBodyTemplate);
