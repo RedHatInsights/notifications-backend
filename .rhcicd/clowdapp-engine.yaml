@@ -413,7 +413,7 @@ parameters:
   value: "false"
 - name: UNLEASH_SECRET_NAME
   description: Unleash secret name
-  value: ""
+  value: "OVERRIDDEN_AT_DEPLOYMENT_TIME"
 - name: UNLEASH_URL
   description: Unleash API URL
   value: ""
