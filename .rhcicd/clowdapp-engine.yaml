@@ -244,7 +244,7 @@ objects:
               key: CLIENT_ACCESS_TOKEN
               optional: true
         - name: QUARKUS_UNLEASH_URL
-          value: ${UNLEASH_URL}/client
+          value: ${UNLEASH_URL}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
