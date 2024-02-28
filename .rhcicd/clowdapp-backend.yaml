@@ -219,6 +219,8 @@ objects:
               ) AS "Actively used"
             FROM
               endpoints AS e
+            WHERE
+              e.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
           ) AS sub
         GROUP BY
           sub."Endpoint type",
@@ -242,6 +244,8 @@ objects:
           applications AS a ON a.id = et.application_id
         INNER JOIN
           bundles AS b ON b.id = a.bundle_id
+        WHERE
+          es.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
         GROUP BY
           b.display_name,
           a.display_name,
@@ -336,6 +340,9 @@ parameters:
   description: Disable Floorist cronjob execution
   required: true
   value: 'true'
+- name: FLOORIST_INTERNAL_ORG_IDS_FILTER
+  description: A list of comma separated ORG IDs to filter from the queries, in order to avoid yielding results that include internal accounts.
+  value: "'12345', '67890'"
 - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
   value: "false"
 - name: NOTIFICATIONS_DRAWER_ENABLED
