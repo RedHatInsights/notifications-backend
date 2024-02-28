@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.cronutils.utils.StringUtils;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
@@ -41,7 +41,7 @@ public class EmailTemplateMigrationService {
     EntityManager entityManager;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     /*
      * Templates from resources may evolve after the first migration to DB templates, before we enable DB templates
@@ -63,7 +63,7 @@ public class EmailTemplateMigrationService {
         List<String> warnings = new ArrayList<>();
 
         Log.debug("Migration starting");
-        if (featureFlipper.isUseSecuredEmailTemplates()) {
+        if (engineConfig.isSecuredEmailTemplatesEnabled()) {
             getOrCreateTemplate("Secure/Common/insightsEmailBody", "html", "Common Insights email body");
             createDailyEmailTemplate(
                 warnings, "rhel", "advisor",
@@ -590,7 +590,7 @@ public class EmailTemplateMigrationService {
             String subjectTemplateName, String subjectTemplateExtension, String subjectTemplateDescription,
             String bodyTemplateName, String bodyTemplateExtension, String bodyTemplateDescription) {
 
-        if (!featureFlipper.isUseSecuredEmailTemplates()) {
+        if (!engineConfig.isSecuredEmailTemplatesEnabled()) {
             subjectTemplateName += "V2";
             bodyTemplateName += "V2";
         }
@@ -649,7 +649,7 @@ public class EmailTemplateMigrationService {
     private void createDailyEmailTemplate(List<String> warnings, String bundleName, String appName,
                                           String subjectTemplateName, String subjectTemplateExtension, String subjectTemplateDescription,
                                           String bodyTemplateName, String bodyTemplateExtension, String bodyTemplateDescription) {
-        if (!featureFlipper.isUseSecuredEmailTemplates()) {
+        if (!engineConfig.isSecuredEmailTemplatesEnabled()) {
             subjectTemplateName += "V2";
             bodyTemplateName += "V2";
         }

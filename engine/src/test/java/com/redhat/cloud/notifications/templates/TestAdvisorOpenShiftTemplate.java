@@ -2,11 +2,8 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,12 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestAdvisorOpenShiftTemplate extends EmailTemplatesInDbHelper {
 
     static final String NEW_RECOMMENDATION = "new-recommendation";
-
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
-    EntityManager entityManager;
 
     @Override
     protected String getApp() {

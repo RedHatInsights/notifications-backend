@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
@@ -34,7 +34,7 @@ public class TemplateRepository {
     EntityManager entityManager;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     private Optional<InstantEmailTemplate> defaultEmailTemplate = null;
 
@@ -58,7 +58,7 @@ public class TemplateRepository {
                     .getSingleResult();
             return Optional.of(emailTemplate);
         } catch (NoResultException e) {
-            if (featureFlipper.isUseDefaultTemplate()) {
+            if (engineConfig.isDefaultTemplateEnabled()) {
                 return getDefaultEmailTemplate();
             }
 

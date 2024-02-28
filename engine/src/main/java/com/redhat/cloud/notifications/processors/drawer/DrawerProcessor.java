@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.processors.drawer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -81,7 +81,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     EventRepository eventRepository;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     @Inject
     @Channel(DRAWER_CHANNEL)
@@ -106,7 +106,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (!featureFlipper.isDrawerEnabled()) {
+        if (!engineConfig.isDrawerEnabled()) {
             return;
         }
         if (endpoints == null || endpoints.isEmpty()) {
@@ -123,7 +123,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         // get default endpoint
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
 
-        if (featureFlipper.isDrawerConnectorEnabled()) {
+        if (engineConfig.isDrawerConnectorEnabled()) {
             DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
 
             final Set<String> unsubscribers =

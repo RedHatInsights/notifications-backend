@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.webhooks;
 
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.WebhookProperties;
@@ -33,7 +33,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     BaseTransformer transformer;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     @Inject
     MeterRegistry registry;
@@ -50,7 +50,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (featureFlipper.isEmailsOnlyMode()) {
+        if (engineConfig.isEmailsOnlyModeEnabled()) {
             Log.warn("Skipping event processing because Notifications is running in emails only mode");
             return;
         }

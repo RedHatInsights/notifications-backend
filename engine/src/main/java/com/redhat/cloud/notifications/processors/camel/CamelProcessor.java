@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.processors.camel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -28,7 +28,7 @@ import static com.redhat.cloud.notifications.models.IntegrationTemplate.Template
 public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     @Inject
     BaseTransformer baseTransformer;
@@ -50,7 +50,7 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (featureFlipper.isEmailsOnlyMode()) {
+        if (engineConfig.isEmailsOnlyModeEnabled()) {
             Log.warn("Skipping event processing because Notifications is running in emails only mode");
             return;
         }

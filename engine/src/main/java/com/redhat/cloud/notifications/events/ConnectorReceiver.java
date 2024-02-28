@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
@@ -53,7 +53,7 @@ public class ConnectorReceiver {
     }
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     @Inject
     DrawerProcessor drawerProcessor;
@@ -70,7 +70,7 @@ public class ConnectorReceiver {
             String historyId = (String) decodedPayload.get("historyId");
             final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId);
 
-            if (featureFlipper.isDrawerConnectorEnabled()) {
+            if (engineConfig.isDrawerConnectorEnabled()) {
                 drawerProcessor.manageConnectorDrawerReturnsIfNeeded(decodedPayload, UUID.fromString(historyId));
             }
             boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);

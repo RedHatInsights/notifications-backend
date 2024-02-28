@@ -26,7 +26,7 @@ public class EventingProcessor extends EndpointTypeProcessor {
     public static final String NOTIF_METADATA_KEY = "notif-metadata";
 
     @Inject
-    EngineConfig configuration;
+    EngineConfig engineConfig;
 
     @Inject
     BaseTransformer baseTransformer;
@@ -39,7 +39,7 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (configuration.isEmailsOnlyMode()) {
+        if (engineConfig.isEmailsOnlyModeEnabled()) {
             Log.warn("Skipping event processing because Notifications is running in emails only mode");
             return;
         }

@@ -236,6 +236,10 @@ objects:
           value: ${NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED}
         - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
           value: ${NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED}
+        - name: NOTIFICATIONS_UNLEASH_ENABLED
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
+        - name: QUARKUS_UNLEASH_ACTIVE
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -314,6 +318,8 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
+- name: NOTIFICATIONS_UNLEASH_ENABLED
+  value: "false"
 - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
   value: "false"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
@@ -399,6 +405,4 @@ parameters:
 - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
   value: "false"
 - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
-  value: "false"
-- name: UNLEASH_ENABLED
   value: "false"

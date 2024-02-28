@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -67,6 +68,9 @@ class EmailAggregatorTest {
     @Inject
     FeatureFlipper featureFlipper;
 
+    @Inject
+    EngineConfig engineConfig;
+
     @InjectSpy
     EmailAggregator emailAggregator;
 
@@ -114,7 +118,7 @@ class EmailAggregatorTest {
 
         when(endpointRepository.getTargetEmailSubscriptionEndpoints(anyString(), any(UUID.class))).thenReturn(List.of(endpoint));
 
-        if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
+        if (engineConfig.isAggregationWithRecipientsResolverEnabled()) {
             when(recipientsResolverService.getRecipients(any(RecipientsQuery.class))).then(parameters -> {
                 RecipientsQuery query = parameters.getArgument(0);
                 Set<String> users = query.subscribers;
@@ -198,7 +202,7 @@ class EmailAggregatorTest {
     }
 
     private void verifyRecipientsResolverInteractions(int legacyRecipientResolverInvocations) {
-        if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
+        if (engineConfig.isAggregationWithRecipientsResolverEnabled()) {
             verify(recipientsResolverService, times(1)).getRecipients(any());
             verifyNoInteractions(recipientResolver);
         } else {
