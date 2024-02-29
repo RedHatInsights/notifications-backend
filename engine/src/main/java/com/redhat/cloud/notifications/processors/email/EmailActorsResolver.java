@@ -92,8 +92,7 @@ public class EmailActorsResolver {
         }
     }
 
-    protected String addDateOnPendoMessage(String pendoPattern) {
-
+    public String addDateOnPendoMessage(String pendoPattern) {
         return String.format(pendoPattern, showPendoUntil.format(dateFormat));
     }
 

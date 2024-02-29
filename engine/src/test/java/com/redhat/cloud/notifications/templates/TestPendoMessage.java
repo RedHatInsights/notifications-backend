@@ -4,8 +4,10 @@ import com.redhat.cloud.notifications.DriftTestHelpers;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.processors.email.EmailActorsResolver;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 
@@ -29,21 +31,28 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
         return List.of(EVENT_TYPE_NAME);
     }
 
+    @Inject
+    EmailActorsResolver emailActorsResolver;
+
     @Test
     public void testInstantEmailBody() {
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, emailActorsResolver.addDateOnPendoMessage(GENERAL_PENDO_MESSAGE));
+
         Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
         String result = generateEmailBody(EVENT_TYPE_NAME, action);
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains("Machine 1"));
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertFalse(result.contains(GENERAL_PENDO_MESSAGE));
-
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
+        commonValidations(result);
+        assertFalse(result.contains(emailPendo.getPendoTitle()));
+        assertFalse(result.contains(emailPendo.getPendoMessage()));
 
         result = generateEmailBody(EVENT_TYPE_NAME, action, emailPendo);
+        commonValidations(result);
+        assertTrue(result.contains(emailPendo.getPendoTitle()));
+        assertTrue(result.contains(emailPendo.getPendoMessage()));
+    }
+
+    private static void commonValidations(String result) {
         assertTrue(result.contains("baseline_01"));
         assertTrue(result.contains("Machine 1"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains(GENERAL_PENDO_MESSAGE));
     }
 }

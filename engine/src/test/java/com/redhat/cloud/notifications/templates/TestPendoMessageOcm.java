@@ -4,8 +4,10 @@ import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.OcmTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.processors.email.EmailActorsResolver;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 
@@ -29,23 +31,31 @@ public class TestPendoMessageOcm extends EmailTemplatesInDbHelper  {
         return "cluster-manager";
     }
 
+    @Inject
+    EmailActorsResolver emailActorsResolver;
+
     protected List<String> getUsedEventTypeNames() {
         return List.of(CLUSTER_LIFECYCLE);
     }
 
     @Test
     public void testInstantEmailBody() {
+        EmailPendo emailPendo = new EmailPendo(OCM_PENDO_TITLE, emailActorsResolver.addDateOnPendoMessage(OCM_PENDO_MESSAGE));
+
         Action action = OcmTestHelpers.createOcmAction("Batcave", "OSD", "<b>Batmobile</b> need a revision", "Awesome subject");
         String result = generateEmailBody(CLUSTER_LIFECYCLE, action);
-        assertTrue(result.contains("Batmobile"));
-        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertFalse(result.contains(OCM_PENDO_MESSAGE));
-
-        EmailPendo emailPendo = new EmailPendo(OCM_PENDO_TITLE, OCM_PENDO_MESSAGE);
+        commonValidations(result);
+        assertFalse(result.contains(emailPendo.getPendoTitle()));
+        assertFalse(result.contains(emailPendo.getPendoMessage()));
 
         result = generateEmailBody(CLUSTER_LIFECYCLE, action, emailPendo);
+        commonValidations(result);
+        assertTrue(result.contains(emailPendo.getPendoTitle()));
+        assertTrue(result.contains(emailPendo.getPendoMessage()));
+    }
+
+    private static void commonValidations(String result) {
         assertTrue(result.contains("Batmobile"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains(OCM_PENDO_MESSAGE));
     }
 }

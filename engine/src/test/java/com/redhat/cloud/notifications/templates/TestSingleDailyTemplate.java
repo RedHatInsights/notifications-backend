@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Template;
+import com.redhat.cloud.notifications.processors.email.EmailActorsResolver;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
@@ -20,6 +21,7 @@ import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPay
 import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,6 +61,9 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
     protected String getApp() {
         return myCurrentApp;
     }
+
+    @Inject
+    EmailActorsResolver emailActorsResolver;
 
     @Override
     @BeforeEach
@@ -119,16 +124,17 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         assertNotNull(bodyTemplate);
         Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result);
 
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, emailActorsResolver.addDateOnPendoMessage(GENERAL_PENDO_MESSAGE));
+
         String templateResult = generateEmailFromContextMap(bodyTemplate, mapData, null);
         templateResultChecks(templateResult);
-        assertFalse(templateResult.contains(GENERAL_PENDO_TITLE));
-        assertFalse(templateResult.contains(GENERAL_PENDO_MESSAGE));
+        assertFalse(templateResult.contains(emailPendo.getPendoTitle()));
+        assertFalse(templateResult.contains(emailPendo.getPendoMessage()));
 
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
         templateResult = generateEmailFromContextMap(bodyTemplate, mapData, emailPendo);
         templateResultChecks(templateResult);
-        assertTrue(templateResult.contains(GENERAL_PENDO_TITLE));
-        assertTrue(templateResult.contains(GENERAL_PENDO_MESSAGE));
+        assertTrue(templateResult.contains(emailPendo.getPendoTitle()));
+        assertTrue(templateResult.contains(emailPendo.getPendoMessage()));
     }
 
     private static void templateResultChecks(String templateResult) {

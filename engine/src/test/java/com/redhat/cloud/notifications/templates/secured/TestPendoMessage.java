@@ -3,9 +3,11 @@ package com.redhat.cloud.notifications.templates.secured;
 import com.redhat.cloud.notifications.DriftTestHelpers;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.processors.email.EmailActorsResolver;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -19,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestPendoMessage extends EmailTemplatesInDbHelper  {
 
+    @Inject
+    EmailActorsResolver emailActorsResolver;
 
     @Override
     protected String getApp() {
@@ -47,24 +51,25 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
         String resultSubject = generateAggregatedEmailSubject(drift);
         assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", resultSubject);
 
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, emailActorsResolver.addDateOnPendoMessage(GENERAL_PENDO_MESSAGE));
+
         String resultBody = generateAggregatedEmailBody(drift, null);
-        assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
-        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(resultBody.contains("baseline_01"));
-        assertTrue(resultBody.contains("baseline_02"));
-        assertTrue(resultBody.contains("baseline_03"));
-        assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertFalse(resultBody.contains(GENERAL_PENDO_MESSAGE));
+        commonValidations(resultBody);
+        assertFalse(resultBody.contains(emailPendo.getPendoTitle()));
+        assertFalse(resultBody.contains(emailPendo.getPendoMessage()));
 
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
         resultBody = generateAggregatedEmailBody(drift, emailPendo);
+        commonValidations(resultBody);
+        assertTrue(resultBody.contains(emailPendo.getPendoTitle()));
+        assertTrue(resultBody.contains(emailPendo.getPendoMessage()));
+    }
+
+    private static void commonValidations(String resultBody) {
         assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
         assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(resultBody.contains("baseline_01"));
         assertTrue(resultBody.contains("baseline_02"));
         assertTrue(resultBody.contains("baseline_03"));
         assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(resultBody.contains(GENERAL_PENDO_MESSAGE));
-
     }
 }
