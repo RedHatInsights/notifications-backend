@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.processors.eventing;
 
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.EngineConfig;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
@@ -27,7 +26,7 @@ public class EventingProcessor extends EndpointTypeProcessor {
     public static final String NOTIF_METADATA_KEY = "notif-metadata";
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig configuration;
 
     @Inject
     BaseTransformer baseTransformer;
@@ -38,12 +37,9 @@ public class EventingProcessor extends EndpointTypeProcessor {
     @Inject
     ConnectorSender connectorSender;
 
-    @Inject
-    EngineConfig engineConfig;
-
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (engineConfig.isEmailsOnlyMode()) {
+        if (configuration.isEmailsOnlyMode()) {
             Log.warn("Skipping event processing because Notifications is running in emails only mode");
             return;
         }
