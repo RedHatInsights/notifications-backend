@@ -317,7 +317,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
                 Set<String> recipientsUsernames = aggregation.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
                 String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
-                String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body);
+                String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body, emailActorsResolver.getPendoEmailMessage(event));
 
                 Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
 
@@ -325,7 +325,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                 final EmailNotification emailNotification = new EmailNotification(
                     bodyStr,
                     subjectStr,
-                    this.emailActorsResolver.getEmailSender(event),
+                    emailActorsResolver.getEmailSender(event),
                     event.getOrgId(),
                     recipientSettings,
                     /*

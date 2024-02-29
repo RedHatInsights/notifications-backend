@@ -233,7 +233,7 @@ public class FeatureFlipper {
      * {@link io.quarkus.runtime.LaunchMode#TEST TEST}. It should be added to methods that allow overriding a
      * config value from tests only, preventing doing so from runtime code.
      */
-    private static void checkTestLaunchMode() {
+    public static void checkTestLaunchMode() {
         if (ProfileManager.getLaunchMode() != TEST) {
             throw new IllegalStateException("Illegal config value override detected");
         }

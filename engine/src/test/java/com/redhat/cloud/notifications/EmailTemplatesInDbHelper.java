@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
+import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import com.redhat.cloud.notifications.templates.TemplateService;
@@ -115,59 +116,71 @@ public abstract class EmailTemplatesInDbHelper {
     private String generateEmailSubject(String eventTypeStr, Object event) {
         InstantEmailTemplate emailTemplate = templateRepository.findInstantEmailTemplate(eventTypes.get(eventTypeStr)).get();
         TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
-        return generateEmail(subjectTemplate, event);
+        return generateEmail(subjectTemplate, event, null);
     }
 
     protected String generateEmailBody(String eventTypeStr, Action action) {
         return generateEmailBody(eventTypeStr, (Object) action);
     }
 
+    protected String generateEmailBody(String eventTypeStr, Action action, EmailPendo pendo) {
+        return generateEmailBody(eventTypeStr, (Object) action, pendo);
+    }
+
     protected String generateEmailBody(String eventTypeStr, NotificationsConsoleCloudEvent event) {
         return generateEmailBody(eventTypeStr, (Object) event);
     }
 
-    private String generateEmailBody(String eventTypeStr, Object event) {
+    private String generateEmailBody(String eventTypeStr, Object event, EmailPendo pendo) {
         InstantEmailTemplate emailTemplate = templateRepository.findInstantEmailTemplate(eventTypes.get(eventTypeStr)).get();
         TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-        return generateEmail(bodyTemplate, event);
+        return generateEmail(bodyTemplate, event, pendo);
+    }
+
+    private String generateEmailBody(String eventTypeStr, Object event) {
+        return generateEmailBody(eventTypeStr, event, null);
     }
 
     protected String generateAggregatedEmailSubject(Map<String, Object> context) {
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
         TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
-        return generateEmail(subjectTemplate, context);
+        return generateEmailFromContextMap(subjectTemplate, context, null);
     }
 
     protected String generateAggregatedEmailSubject(Action action) {
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
         TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
-        return generateEmail(subjectTemplate, action);
+        return generateEmail(subjectTemplate, action, null);
     }
 
     protected String generateAggregatedEmailBody(Map<String, Object> context) {
+        return generateAggregatedEmailBody(context, null);
+    }
+
+    protected String generateAggregatedEmailBody(Map<String, Object> context, EmailPendo emailPendo) {
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
         TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-        return generateEmail(bodyTemplate, context);
+        return generateEmailFromContextMap(bodyTemplate, context, emailPendo);
     }
 
     protected String generateAggregatedEmailBody(Action action) {
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
         TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-        return generateEmail(bodyTemplate, action);
+        return generateEmail(bodyTemplate, action, null);
     }
 
-    protected String generateEmail(TemplateInstance template, Object actionOrEvent) {
+    protected String generateEmail(TemplateInstance template, Object actionOrEvent, EmailPendo pendo) {
 
-        String result = templateService.renderTemplate(createUser(), actionOrEvent, template);
+        String result = templateService.renderTemplate(actionOrEvent, template, pendo);
         writeOrSendEmailTemplate(result, template.getTemplate().getId() + ".html");
 
         return result;
     }
 
-    protected String generateEmail(TemplateInstance templateInstance, Map<String, Object> context) {
+    protected String generateEmailFromContextMap(TemplateInstance templateInstance, Map<String, Object> context, EmailPendo emailPendo) {
         Map<String, Object> action =  Map.of("context", context, "bundle", getBundle(), "timestamp", LocalDateTime.now());
 
-        String result = templateService.renderTemplate(createUser(), action, templateInstance);
+        String result = templateService.renderTemplate(action, templateInstance, emailPendo);
         writeOrSendEmailTemplate(result, templateInstance.getTemplate().getId() + ".html");
 
         return result;
