@@ -15,7 +15,7 @@ public class BundleRepository {
     @Inject
     EntityManager entityManager;
 
-    @CacheResult(cacheName = "bundle-by-id")
+    @CacheResult(cacheName = "get-bundle-by-id")
     public Bundle getBundle(UUID id) {
         return entityManager.find(Bundle.class, id);
     }

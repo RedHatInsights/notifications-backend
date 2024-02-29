@@ -36,22 +36,21 @@ public class SubscriptionRepository {
                 .getResultList();
     }
 
-    public Map<String, Set<String>> getSubscribersByEventType(String orgId, String bundleName, String applicationName, SubscriptionType subscriptionType) {
-        return getSubscriptionsByEventType(orgId, bundleName, applicationName, subscriptionType, true);
+    public Map<String, Set<String>> getSubscribersByEventType(String orgId, UUID appId, SubscriptionType subscriptionType) {
+        return getSubscriptionsByEventType(orgId, appId, subscriptionType, true);
     }
 
-    public Map<String, Set<String>> getUnsubscribersByEventType(String orgId, String bundleName, String applicationName, SubscriptionType subscriptionType) {
-        return getSubscriptionsByEventType(orgId, bundleName, applicationName, subscriptionType, false);
+    public Map<String, Set<String>> getUnsubscribersByEventType(String orgId, UUID appId, SubscriptionType subscriptionType) {
+        return getSubscriptionsByEventType(orgId, appId, subscriptionType, false);
     }
 
-    public Map<String, Set<String>> getSubscriptionsByEventType(String orgId, String bundleName, String applicationName, SubscriptionType subscriptionType, boolean subscribed) {
-        String query = "SELECT eventType.name, es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId AND eventType.application.bundle.name = :bundleName " +
-            "AND eventType.application.name = :applicationName AND id.subscriptionType = :subscriptionType AND subscribed = :subscribed";
+    public Map<String, Set<String>> getSubscriptionsByEventType(String orgId, UUID appId, SubscriptionType subscriptionType, boolean subscribed) {
+        String query = "SELECT eventType.name, es.id.userId FROM EventTypeEmailSubscription es WHERE id.orgId = :orgId " +
+                "AND eventType.application.id = :appId AND id.subscriptionType = :subscriptionType AND subscribed = :subscribed";
 
         List<Object[]> records = entityManager.createQuery(query, Object[].class)
             .setParameter("orgId", orgId)
-            .setParameter("bundleName", bundleName)
-            .setParameter("applicationName", applicationName)
+            .setParameter("appId", appId)
             .setParameter("subscriptionType", subscriptionType)
             .setParameter("subscribed", subscribed)
             .getResultList();

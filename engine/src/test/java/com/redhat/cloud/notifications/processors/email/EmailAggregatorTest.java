@@ -76,6 +76,7 @@ class EmailAggregatorTest {
     @InjectMock
     EndpointRepository endpointRepository;
 
+    Application application;
     EventType eventType1;
     EventType eventType2;
     final EmailAggregationKey aggregationKey = new EmailAggregationKey("org-1", "rhel", "policies");
@@ -101,7 +102,7 @@ class EmailAggregatorTest {
 
         featureFlipper.setUseRecipientsResolverClowdappForDailyDigestEnabled(useRecipientsResolverClowdappForDailyDigestEnabled);
         // init test environment
-        Application application = resourceHelpers.findApp("rhel", "policies");
+        application = resourceHelpers.findApp("rhel", "policies");
         eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);
         eventType2 = resourceHelpers.findOrCreateEventType(application.getId(), "not-used");
         resourceHelpers.findOrCreateEventType(application.getId(), "event-type-2");
@@ -162,7 +163,7 @@ class EmailAggregatorTest {
 
         featureFlipper.setUseRecipientsResolverClowdappForDailyDigestEnabled(true);
         // init test environment
-        Application application = resourceHelpers.findApp("rhel", "policies");
+        application = resourceHelpers.findApp("rhel", "policies");
         eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);
         eventType2 = resourceHelpers.findOrCreateEventType(application.getId(), "not-used");
         resourceHelpers.findOrCreateEventType(application.getId(), "event-type-2");
@@ -214,7 +215,7 @@ class EmailAggregatorTest {
         emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
 
         emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-        result.putAll(emailAggregator.getAggregated(aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
+        result.putAll(emailAggregator.getAggregated(application.getId(), aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
         return result;
     }
 
