@@ -21,6 +21,7 @@ objects:
     - export-service
     database:
       sharedDbAppName: notifications-backend
+    featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.ingress
       partitions: 3
@@ -237,14 +238,6 @@ objects:
           value: ${NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED}
         - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
           value: ${NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED}
-        - name: QUARKUS_UNLEASH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: ${UNLEASH_SECRET_NAME}
-              key: CLIENT_ACCESS_TOKEN
-              optional: true
-        - name: QUARKUS_UNLEASH_URL
-          value: ${UNLEASH_URL}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -411,9 +404,5 @@ parameters:
   value: "false"
 - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
   value: "false"
-- name: UNLEASH_SECRET_NAME
-  description: Unleash secret name
-  value: "overridden-at-deployment-time"
-- name: UNLEASH_URL
-  description: Unleash API URL
-  value: ""
+- name: UNLEASH_ENABLED
+  value: "false"
