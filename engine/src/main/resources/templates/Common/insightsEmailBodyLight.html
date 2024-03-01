@@ -5,8 +5,9 @@
     {/if}
     <!-- Body section -->
     {#if renderSection1.or(false)}
-        <tr id="{action.context.application}-section1">
+        <tr>
             <td class="rh-body">
+                <a id="{action.context.application}-section1" name="{action.context.application}-section1"></a>
                 <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
                     <tr>
                         <td>
@@ -16,9 +17,8 @@
                                 </tr>
                                 <tr>
                                     <td class="rh-masthead__section__head">
-                                        <p><span {#if renderSection1AsIncident.or(false)}style="color: #A30000"{/if}>{#insert content-title-section1}{/}</span><span class="pf-c-badge" >{#insert content-title-right-part-section1}{/}</span><br/>
-                                            <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section1}{/}</span>
-                                        </p>
+                                        <span {#if renderSection1AsIncident.or(false)}style="color: #A30000"{/if}>{#insert content-title-section1}{/}</span><span class="pf-c-badge" >{#insert content-title-right-part-section1}{/}</span><br/>
+                                        <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section1}{/}</span>
                                     </td>
                                 </tr>
                             </table>
@@ -63,11 +63,12 @@
                     {/if}
                 </table>
             </td>
-        </tr>
+        </a>
     {/if}
     {#if renderSection2.or(false) && renderButtonSection3.or(false)}
-        <tr id="{action.context.application}-section2">
+        <tr>
             <td class="rh-body">
+                <a id="{action.context.application}-section2" name="{action.context.application}-section2"></a>
                 <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
                     <tr>
                         <td>
@@ -77,9 +78,8 @@
                                 </tr>
                                 <tr>
                                     <td class="rh-masthead__section__head">
-                                        <p>{#insert content-title-section2}{/} <span class="pf-c-badge" >{#insert content-title-right-part-section2}{/}</span><br/>
-                                            <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section2}{/}</span>
-                                        </p>
+                                        {#insert content-title-section2}{/} <span class="pf-c-badge" >{#insert content-title-right-part-section2}{/}</span><br/>
+                                        <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section2}{/}</span>
                                     </td>
                                 </tr>
                             </table>
