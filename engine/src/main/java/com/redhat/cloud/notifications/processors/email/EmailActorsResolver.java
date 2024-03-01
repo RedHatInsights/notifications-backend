@@ -61,7 +61,7 @@ public class EmailActorsResolver {
 
     public EmailPendo getPendoEmailMessage(final Event event) {
 
-        if (!isPendoMEssageEnable()) {
+        if (!isPendoMessageEnabled()) {
             return null;
         } else {
             String pendoMessage = GENERAL_PENDO_MESSAGE;
@@ -96,7 +96,7 @@ public class EmailActorsResolver {
         return String.format(pendoPattern, showPendoUntil.format(dateFormat));
     }
 
-    private boolean isPendoMEssageEnable() {
+    private boolean isPendoMessageEnabled() {
         return LocalDate.now(ZoneId.of("UTC")).isBefore(showPendoUntil);
     }
 
