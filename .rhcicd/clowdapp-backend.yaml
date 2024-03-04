@@ -183,6 +183,38 @@ objects:
       secretName: ${FLOORIST_BUCKET_SECRET_NAME}
     suspend: ${{FLOORIST_SUSPEND}}
     queries:
+    # Count the number of behavior groups associated to event types per
+    # organization, and also show the bundle and the application they are
+    # associated to.
+    - prefix: insights/notifications/behavior_groups_event_types_org_id
+      query: >-
+        SELECT
+          bun.display_name AS bundle,
+          apps.display_name AS application,
+          et.display_name AS event_type,
+          bg.org_id,
+          COUNT(bg.*) AS "count"
+        FROM
+          event_type_behavior AS etb
+        INNER JOIN
+          event_type AS et
+           ON et.id = etb.event_type_id
+        INNER JOIN
+          applications AS apps
+            ON apps.id = et.application_id
+        INNER JOIN
+          behavior_group AS bg
+            ON bg.id = etb.behavior_group_id
+        INNER JOIN
+          bundles AS bun
+            ON bun.id = bg.bundle_id
+        WHERE
+            bg.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
+        GROUP BY
+            bun.display_name,
+            apps.display_name,
+            et.display_name,
+            bg.org_id
     # Count the number of created endpoints per endpoint type. Raw total, which
     # includes the disabled ones or the ones not assigned in a behavior group.
     - prefix: insights/notifications/endpoint_types
