@@ -19,7 +19,6 @@ import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
-import static com.redhat.cloud.notifications.processors.drawer.DrawerProcessor.DRAWER_CHANNEL;
 import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
@@ -57,7 +56,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(EXPORT_CHANNEL));
-        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DRAWER_CHANNEL));
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;

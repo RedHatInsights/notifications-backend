@@ -71,9 +71,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-mbop-for-fetching-users", defaultValue = "false")
     boolean useMBOPForFetchingUsers;
 
-    @ConfigProperty(name = "notifications.drawer-connector.enabled", defaultValue = "false")
-    boolean drawerConnectorEnabled;
-
     @ConfigProperty(name = "notifications.async-aggregation.enabled", defaultValue = "true")
     boolean asyncAggregation;
 
@@ -96,7 +93,6 @@ public class FeatureFlipper {
         Log.infof("The integration with the export service is %s", exportServiceIntegrationEnabled ? "enabled" : "disabled");
         Log.infof("Drawer feature is %s", drawerEnabled ? "enabled" : "disabled");
         Log.infof("The use of BOP/MBOP for fetching users is %s", useMBOPForFetchingUsers ? "enabled" : "disabled");
-        Log.infof("The drawer connector is %s", drawerConnectorEnabled ? "enabled" : "disabled");
         Log.infof("The async aggregation is %s", asyncAggregation ? "enabled" : "disabled");
         Log.infof("The Recipients resolver usage for daily digest is %s", useRecipientsResolverClowdappForDailyDigestEnabled ? "enabled" : "disabled");
         Log.infof("HCC sender name is %s in emails", hccEmailSenderNameEnabled ? "enabled" : "disabled");
@@ -190,15 +186,6 @@ public class FeatureFlipper {
     public void setUseMBOPForFetchingUsers(final boolean useMBOPForFetchingUsers) {
         checkTestLaunchMode();
         this.useMBOPForFetchingUsers = useMBOPForFetchingUsers;
-    }
-
-    public boolean isDrawerConnectorEnabled() {
-        return drawerConnectorEnabled;
-    }
-
-    public void setDrawerConnectorEnabled(boolean drawerConnectorEnabled) {
-        checkTestLaunchMode();
-        this.drawerConnectorEnabled = drawerConnectorEnabled;
     }
 
     public boolean isAsyncAggregation() {

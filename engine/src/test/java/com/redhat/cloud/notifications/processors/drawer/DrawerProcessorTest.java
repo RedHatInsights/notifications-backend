@@ -11,7 +11,6 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.DrawerNotification;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -33,11 +32,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +40,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
-import static com.redhat.cloud.notifications.processors.drawer.DrawerProcessor.DRAWER_CHANNEL;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -85,21 +79,12 @@ class DrawerProcessorTest {
     @Any
     InMemoryConnector inMemoryConnector;
 
-    protected InMemorySink<JsonObject> inMemorySink;
     protected InMemorySink<JsonObject> inMemoryToCamelSink;
 
     @PostConstruct
     void postConstruct() {
-        inMemorySink = inMemoryConnector.sink(DRAWER_CHANNEL);
         inMemoryToCamelSink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
     }
-
-    @BeforeEach
-    @AfterEach
-    void clearInMemorySink() {
-        inMemorySink.clear();
-    }
-
 
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
@@ -113,9 +98,8 @@ class DrawerProcessorTest {
         verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldCreateTwoDrawerNotifications(boolean shouldUseConnector) {
+    @Test
+    void shouldCreateTwoDrawerNotifications() {
         User user1 = new User();
         user1.setId("foo");
         user1.setUsername("foo");
@@ -126,42 +110,31 @@ class DrawerProcessorTest {
         when(recipientResolver.recipientUsers(any(), any(), any(), eq(true)))
             .thenReturn(Set.of(user1, user2));
 
-        Event createdEvent = createEvent(shouldUseConnector);
+        Event createdEvent = createEvent();
 
         Endpoint endpoint = new Endpoint();
         endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.DRAWER);
         try {
             featureFlipper.setDrawerEnabled(true);
-            featureFlipper.setDrawerConnectorEnabled(shouldUseConnector);
             testee.process(createdEvent, List.of(endpoint));
         } finally {
             featureFlipper.setDrawerEnabled(false);
-            featureFlipper.setDrawerConnectorEnabled(false);
         }
 
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
 
-        // The DrawerNotification element will be created when we will proceed connector's response
-        if (!shouldUseConnector) {
-            verify(drawerNotificationRepository, times(1)).create(any(Event.class), any(String.class));
-            List<DrawerNotification> drawerList = entityManager.createQuery("SELECT d FROM DrawerNotification d WHERE d.event.id = :eventId", DrawerNotification.class).setParameter("eventId", createdEvent.getId()).getResultList();
-            assertEquals(2, drawerList.size());
-        }
         assertEquals("1 event triggered", createdEvent.getRenderedDrawerNotification());
         Event event = entityManager.createQuery("SELECT e FROM Event e WHERE e.id = :eventId", Event.class).setParameter("eventId", createdEvent.getId()).getSingleResult();
         assertNotNull(event);
         assertEquals(createdEvent.getRenderedDrawerNotification(), event.getRenderedDrawerNotification());
 
         Message<JsonObject> message;
-        if (shouldUseConnector) {
-            // only one event must be send to the connector, because engine is no more fetching users
-            await().until(() -> inMemoryToCamelSink.received().size() == 1);
-            message = inMemoryToCamelSink.received().get(0);
-        } else {
-            await().until(() -> inMemorySink.received().size() == 2);
-            message = inMemorySink.received().get(0);
-        }
+
+        // only one event must be send to the connector, because engine is no more fetching users
+        await().until(() -> inMemoryToCamelSink.received().size() == 1);
+        message = inMemoryToCamelSink.received().get(0);
+
         assertNotNull(message);
         assertFalse(message.getPayload().isEmpty());
 
@@ -174,10 +147,10 @@ class DrawerProcessorTest {
     }
 
     @Transactional
-    Event createEvent(boolean shouldUseConnector) {
-        Bundle createdBundle = resourceHelpers.createBundle("test-drawer-engine-event-bundle" + shouldUseConnector);
-        Application createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-drawer-engine-event-application" + shouldUseConnector);
-        EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-engine-event-type" + shouldUseConnector);
+    Event createEvent() {
+        Bundle createdBundle = resourceHelpers.createBundle("test-drawer-engine-event-bundle");
+        Application createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-drawer-engine-event-application");
+        EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-engine-event-type");
         Event createdEvent = new Event();
         createdEvent.setEventType(createdEventType);
         createdEvent.setId(UUID.randomUUID());
