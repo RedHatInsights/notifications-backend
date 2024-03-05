@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.HttpType;
@@ -12,9 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.security.SecureRandom;
@@ -40,19 +37,6 @@ public class EndpointRepositoryTest {
 
     @Inject
     EntityManager entityManager;
-
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    @BeforeEach
-    void beforeEach() {
-        featureFlipper.setDisableWebhookEndpointsOnFailure(true);
-    }
-
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setDisableWebhookEndpointsOnFailure(false);
-    }
 
     @Test
     void testIncrementEndpointServerErrors() {
