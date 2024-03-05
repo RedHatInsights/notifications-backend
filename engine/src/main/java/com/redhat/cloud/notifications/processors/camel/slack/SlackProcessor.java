@@ -29,7 +29,9 @@ public class SlackProcessor extends CamelProcessor {
 
         SlackNotification notification = new SlackNotification();
         notification.webhookUrl = properties.getUrl();
-        notification.channel = properties.getExtras().get("channel");
+        if (properties.getExtras() != null &&  properties.getExtras().containsKey("channel")) {
+            notification.channel = properties.getExtras().get("channel");
+        }
         notification.message = message;
         return notification;
     }

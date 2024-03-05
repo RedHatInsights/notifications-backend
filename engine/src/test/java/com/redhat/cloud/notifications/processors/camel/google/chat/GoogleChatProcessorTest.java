@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.camel.google.chat;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessorTest;
+import com.redhat.cloud.notifications.templates.models.EnvironmentTest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -20,8 +21,8 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
             "from {data.bundle}/{data.application}. " +
             "<{data.environment_url}/insights/{data.application}|Open {data.application}>\"}";
 
-    private static final String GOOGLE_CHAT_EXPECTED_MSG = "{\"text\":\"<//insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
-            "triggered 1 event from rhel/policies. <//insights/policies|Open policies>\"}";
+    private final String GOOGLE_CHAT_EXPECTED_MSG = "{\"text\":\"<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
+            "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>\"}";
 
     @Inject
     GoogleChatProcessor googleSpacesProcessor;

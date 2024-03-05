@@ -12,7 +12,7 @@ public class Environment {
     @ConfigProperty(name = "env.name", defaultValue = LOCAL_ENV)
     String environment;
 
-    @ConfigProperty(name = "env.base.url", defaultValue = "/")
+    @ConfigProperty(name = "env.base.url", defaultValue = "https://local-dev")
     String url;
 
     public String name() {

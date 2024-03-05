@@ -12,6 +12,8 @@ public class EnvironmentTest {
     @Inject
     Environment environment;
 
+    public static final String expectedTestEnvUrlValue = "https://local-dev";
+
     /**
      * Tests that the default value for the "Environment" is "local-dev".
      */
@@ -25,12 +27,10 @@ public class EnvironmentTest {
     }
 
     /**
-     * Tests that the default value for the "URL" is "/".
+     * Tests that the default value for the "URL" is "https://local-dev".
      */
     @Test
     void testUrlDefaultValue() {
-        final String expectedValue = "/";
-
-        Assertions.assertEquals(expectedValue, this.environment.url(), "unexpected default value for the environment's URL");
+        Assertions.assertEquals(expectedTestEnvUrlValue, this.environment.url(), "unexpected default value for the environment's URL");
     }
 }
