@@ -50,9 +50,6 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.use-default-template", defaultValue = "false")
     boolean useDefaultTemplate;
 
-    @ConfigProperty(name = "notifications.disable-webhook-endpoints-on-failure", defaultValue = "false")
-    boolean disableWebhookEndpointsOnFailure;
-
     @ConfigProperty(name = "notifications.use-rbac-for-fetching-users", defaultValue = "false")
     boolean useRbacForFetchingUsers;
 
@@ -92,7 +89,6 @@ public class FeatureFlipper {
         Log.infof("The integrations unique name constraint is %s", enforceIntegrationNameUnicity ? "enabled" : "disabled");
         Log.infof("The Kafka outage detector is %s", kafkaConsumedTotalCheckerEnabled ? "enabled" : "disabled");
         Log.infof("The use of default templates is %s", useDefaultTemplate ? "enabled" : "disabled");
-        Log.infof("The deactivation of webhook endpoints on failure is %s", disableWebhookEndpointsOnFailure ? "enabled" : "disabled");
         Log.infof("The use of rbac for fetching users is %s", useRbacForFetchingUsers ? "enabled" : "disabled");
         Log.infof("Emails only mode is %s", emailsOnlyMode ? "enabled" : "disabled");
         Log.infof("The use of secured email templates is %s", useSecuredEmailTemplates ? "enabled" : "disabled");
@@ -140,15 +136,6 @@ public class FeatureFlipper {
     public void setUseDefaultTemplate(boolean useDefaultTemplate) {
         checkTestLaunchMode();
         this.useDefaultTemplate = useDefaultTemplate;
-    }
-
-    public boolean isDisableWebhookEndpointsOnFailure() {
-        return disableWebhookEndpointsOnFailure;
-    }
-
-    public void setDisableWebhookEndpointsOnFailure(boolean disableWebhookEndpointsOnFailure) {
-        checkTestLaunchMode();
-        this.disableWebhookEndpointsOnFailure = disableWebhookEndpointsOnFailure;
     }
 
     public boolean isUseRbacForFetchingUsers() {
