@@ -32,6 +32,7 @@ import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
@@ -39,6 +40,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
@@ -68,6 +70,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
+import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static com.redhat.cloud.notifications.routers.EndpointResource.EMPTY_SLACK_CHANNEL_ERROR;
 import static io.restassured.RestAssured.given;
@@ -115,7 +118,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Inject
     FeatureFlipper featureFlipper;
 
-    @Inject
+    @InjectSpy
     EndpointRepository endpointRepository;
 
     @Inject
@@ -2701,6 +2704,97 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .get("/endpoints/{id}")
                 .then()
                 .statusCode(404);
+    }
+
+    /**
+     * Test that when an endpoint creation fails, and therefore it doesn't get
+     * stored in the database, its created secrets in Sources are cleaned up.
+     */
+    @Test
+    void testSourcesSecretsDeletedWhenEndpointCreationFails() {
+        WebhookProperties properties = new WebhookProperties();
+        properties.setBasicAuthentication(new BasicAuthentication("username", "password"));
+        properties.setBearerAuthentication("bearer-authentication");
+        properties.setDisableSslVerification(false);
+        properties.setMethod(POST);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl("https://redhat.com");
+
+        final Endpoint webhookEndpoint = new Endpoint();
+        webhookEndpoint.setDescription("My Ansible endpoint");
+        webhookEndpoint.setName("ansible-endpoint");
+        webhookEndpoint.setOrgId(DEFAULT_ORG_ID);
+        webhookEndpoint.setProperties(properties);
+        webhookEndpoint.setType(WEBHOOK);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Sources service calls.
+        final Secret basicAuthSecret = new Secret();
+        basicAuthSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        basicAuthSecret.authenticationType = Secret.TYPE_BASIC_AUTH;
+        basicAuthSecret.password = properties.getBasicAuthentication().getPassword();
+        basicAuthSecret.username = properties.getBasicAuthentication().getUsername();
+
+        final Secret bearerAuthentication = new Secret();
+        bearerAuthentication.id = new Random().nextLong(1, Long.MAX_VALUE);
+        bearerAuthentication.authenticationType = Secret.TYPE_BEARER_AUTHENTICATION;
+        bearerAuthentication.password = properties.getBearerAuthentication();
+
+        final Secret secretToken = new Secret();
+        secretToken.id = new Random().nextLong(1, Long.MAX_VALUE);
+        secretToken.authenticationType = Secret.TYPE_SECRET_TOKEN;
+        secretToken.password = properties.getSecretToken();
+
+        Mockito.when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(
+            basicAuthSecret,
+            bearerAuthentication,
+            secretToken
+        );
+
+        // Simulate that creating the endpoint in the database fails.
+        Mockito.doThrow(new RuntimeException()).when(this.endpointRepository).createEndpoint(Mockito.any());
+
+        // Call the endpoint under test.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(webhookEndpoint))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            .contentType(JSON);
+
+        // Verify that all the secrets were created in Sources.
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(3)).create(
+            eq(DEFAULT_ORG_ID),
+            eq(this.sourcesPsk),
+            any()
+        );
+
+        // Assert that the basic authentication secret is deleted.
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).delete(
+            eq(DEFAULT_ORG_ID),
+            eq(this.sourcesPsk),
+            eq(basicAuthSecret.id)
+        );
+
+        // Assert that the bearer authentication secret is deleted.
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).delete(
+            eq(DEFAULT_ORG_ID),
+            eq(this.sourcesPsk),
+            eq(bearerAuthentication.id)
+        );
+
+        // Assert that the secret token secret is deleted.
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).delete(
+            eq(DEFAULT_ORG_ID),
+            eq(this.sourcesPsk),
+            eq(secretToken.id)
+        );
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {

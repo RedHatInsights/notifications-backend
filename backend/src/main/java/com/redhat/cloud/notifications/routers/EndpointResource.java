@@ -255,9 +255,36 @@ public class EndpointResource {
         @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
     })
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    public Endpoint createEndpoint(
+        @Context                                        SecurityContext sec,
+        @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint
+    ) {
+        try {
+            return this.internalCreateEndpoint(sec, endpoint);
+        } catch (final Exception e) {
+            // Clean up the secrets from Sources if any were created.
+            this.secretUtils.deleteSecretsForEndpoint(endpoint);
+
+            throw e;
+        }
+    }
+
+    /**
+     * Internal function which creates the given endpoint. The reason why there
+     * is this internal function is so that we can wrap it with a "try/catch"
+     * block, so that if any Sources secrets are created and an exception is
+     * raised upon saving the endpoint, we can call Sources again to clean up
+     * the secrets, as otherwise we would be leaving dangling secrets in
+     * Sources.
+     * @param sec the security context of the request.
+     * @param endpoint the endpoint to be created.
+     * @return the created endpoint in the database.
+     */
     @Transactional
-    public Endpoint createEndpoint(@Context SecurityContext sec,
-                                   @RequestBody(required = true) @NotNull @Valid Endpoint endpoint) {
+    public Endpoint internalCreateEndpoint(
+            @Context                                        SecurityContext sec,
+            @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint
+    )  {
         if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
