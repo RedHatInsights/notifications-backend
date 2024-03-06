@@ -7,6 +7,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
+import java.util.Objects;
 
 
 @Embeddable
@@ -18,7 +19,7 @@ public class DrawerNotificationId implements Serializable {
 
     @NotNull
     @Size(max = 50)
-    public String userId;
+    private String userId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id")
@@ -49,5 +50,22 @@ public class DrawerNotificationId implements Serializable {
 
     public void setEvent(Event event) {
         this.event = event;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DrawerNotificationId that = (DrawerNotificationId) o;
+        return orgId.equals(that.orgId) && userId.equals(that.userId) && event.equals(that.event);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(orgId, userId, event);
     }
 }
