@@ -193,12 +193,20 @@ objects:
           apps.display_name AS application,
           et.display_name AS event_type,
           bg.org_id,
-          COUNT(bg.*) AS "count"
+          EXISTS (
+            SELECT
+              1
+            FROM
+              behavior_group_action AS bga
+            WHERE
+              bga.behavior_group_id = etb.behavior_group_id
+          ) AS actively_used,
+          count(bg.*) AS "count"
         FROM
           event_type_behavior AS etb
         INNER JOIN
           event_type AS et
-           ON et.id = etb.event_type_id
+            ON et.id = etb.event_type_id
         INNER JOIN
           applications AS apps
             ON apps.id = et.application_id
@@ -211,10 +219,11 @@ objects:
         WHERE
             bg.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
         GROUP BY
-            bun.display_name,
-            apps.display_name,
-            et.display_name,
-            bg.org_id
+          bun.display_name,
+          apps.display_name,
+          et.display_name,
+          bg.org_id,
+          actively_used
     # Count the number of created endpoints per endpoint type. Raw total, which
     # includes the disabled ones or the ones not assigned in a behavior group.
     - prefix: insights/notifications/endpoint_types
