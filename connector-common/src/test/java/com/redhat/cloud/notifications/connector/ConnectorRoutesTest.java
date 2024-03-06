@@ -105,6 +105,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
         JsonObject incomingPayload = buildIncomingPayload(targetUrl);
         remoteServerMockEndpoint.expectedMessagesMatches(checkOutgoingPayload(incomingPayload));
+        remoteServerMockEndpoint.expectedMessageCount(1);
 
         String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 

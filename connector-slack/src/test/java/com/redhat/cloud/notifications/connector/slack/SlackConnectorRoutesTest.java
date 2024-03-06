@@ -6,7 +6,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import org.apache.camel.Predicate;
-
+import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -28,12 +28,18 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
         return "mock:https:foo.bar";
     }
 
+    private boolean testWithoutChannel = false;
+
     @Override
     protected JsonObject buildIncomingPayload(String targetUrl) {
         JsonObject payload = new JsonObject();
         payload.put("orgId", DEFAULT_ORG_ID);
         payload.put("webhookUrl", targetUrl);
-        payload.put("channel", SLACK_CHANNEL);
+        if (!testWithoutChannel) {
+            payload.put("channel", SLACK_CHANNEL);
+        } else {
+            payload.put("channel", null);
+        }
         payload.put("message", "This is a test!");
         return payload;
     }
@@ -41,8 +47,23 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
     @Override
     protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
         return exchange -> {
-            String outgoingPayload = exchange.getIn().getBody(String.class);
-            return outgoingPayload.equals(incomingPayload.getString("message"));
+            JsonObject outgoingPayload = new JsonObject(exchange.getIn().getBody(String.class));
+            boolean textMessageMatch = outgoingPayload.getString("text").equals(incomingPayload.getString("message"));
+            if (!testWithoutChannel) {
+                return textMessageMatch && outgoingPayload.getString(ExchangeProperty.CHANNEL).equals(incomingPayload.getString(ExchangeProperty.CHANNEL));
+            }
+            return textMessageMatch && !outgoingPayload.containsKey(ExchangeProperty.CHANNEL);
         };
+    }
+
+    @Test
+    protected void testSuccessfulNotificationWithoutChannel() throws Exception {
+        try {
+            testWithoutChannel = true;
+            testSuccessfulNotification();
+        } finally {
+            testWithoutChannel = false;
+        }
+
     }
 }
