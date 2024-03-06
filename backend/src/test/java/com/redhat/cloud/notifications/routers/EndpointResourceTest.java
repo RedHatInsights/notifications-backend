@@ -69,6 +69,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
+import static com.redhat.cloud.notifications.routers.EndpointResource.DEPRECATED_SLACK_CHANNEL_ERROR;
 import static com.redhat.cloud.notifications.routers.EndpointResource.EMPTY_SLACK_CHANNEL_ERROR;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -684,6 +685,81 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().asString();
 
         assertEquals(EMPTY_SLACK_CHANNEL_ERROR, responseBody);
+    }
+
+    @Test
+    void testForbidSlackChannelUsage() {
+        try {
+            featureFlipper.setSlackForbidChannelUsageEnabled(true);
+            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "user");
+            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+            Map<String, String> extras = new HashMap<>(Map.of("channel", "")); // Having a channel value is invalid.
+            CamelProperties camelProperties = new CamelProperties();
+            camelProperties.setUrl("https://foo.com");
+            camelProperties.setExtras(extras);
+
+            Endpoint endpoint = new Endpoint();
+            endpoint.setType(EndpointType.CAMEL);
+            endpoint.setSubType("slack");
+            endpoint.setName("name");
+            endpoint.setDescription("description");
+            endpoint.setProperties(camelProperties);
+
+            String responseBody = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+
+            assertEquals(DEPRECATED_SLACK_CHANNEL_ERROR, responseBody);
+
+            extras.remove("channel");
+
+            String createdEndpoint = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+
+            final JsonObject jsonResponse = new JsonObject(createdEndpoint);
+            final String endpointUuidRaw = jsonResponse.getString("id");
+
+            // try to update endpoint without channel
+            given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("id", endpointUuidRaw)
+                .body(Json.encode(endpoint))
+                .when()
+                .put("/endpoints/{id}")
+                .then()
+                .statusCode(200);
+
+            // try to update endpoint with channel
+            extras.put("channel", "refused");
+            given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("id", endpointUuidRaw)
+                .body(Json.encode(endpoint))
+                .when()
+                .put("/endpoints/{id}")
+                .then()
+                .statusCode(400);
+
+        } finally {
+            featureFlipper.setSlackForbidChannelUsageEnabled(false);
+        }
     }
 
     @Test
