@@ -89,7 +89,7 @@ public class EngineConfig {
             return featureFlipper.isDrawerEnabled();
         }
     }
-    
+
     public boolean isEmailsOnlyModeEnabled() {
         if (unleashEnabled) {
             return unleash.isEnabled(EMAILS_ONLY_MODE_ENABLED, true);
