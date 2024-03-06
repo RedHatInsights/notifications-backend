@@ -226,6 +226,47 @@ objects:
           sub."Endpoint type",
           sub."Enabled",
           sub."Actively used";
+    - prefix: insights/notifications/endpoint_types_by_org_id
+      query: >-
+        SELECT
+            sub.endpoint_type,
+            sub.org_id,
+            COUNT(*) AS "count",
+            sub.enabled,
+            sub.actively_used
+        FROM
+          (
+            SELECT
+            CASE
+              WHEN
+                e.endpoint_type_v2 = 'CAMEL'
+              THEN
+                LOWER(e.endpoint_sub_type)
+              ELSE
+                LOWER(e.endpoint_type_v2)
+            END AS endpoint_type,
+            e.org_id,
+            e.enabled AS enabled,
+            EXISTS (
+              SELECT
+                1
+              FROM
+                behavior_group_action AS bga
+              INNER JOIN
+                event_type_behavior AS etb ON etb.behavior_group_id = bga.behavior_group_id
+              WHERE
+                bga.endpoint_id = e.id
+              ) AS actively_used
+            FROM
+              endpoints AS e
+            WHERE
+              e.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
+          ) AS sub
+        GROUP BY
+          sub.endpoint_type,
+          sub.org_id,
+          sub.enabled,
+          sub.actively_used;
       # Count the number of email subscriptions, and group them by application
       # and subscription type.
     - prefix: insights/notifications/email_subscriptions
