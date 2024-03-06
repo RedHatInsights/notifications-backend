@@ -2,7 +2,7 @@
 apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
-  name: notifications-backend
+  name: notifications-floorist
 objects:
 - apiVersion: metrics.console.redhat.com/v1alpha1
   kind: FloorPlan
