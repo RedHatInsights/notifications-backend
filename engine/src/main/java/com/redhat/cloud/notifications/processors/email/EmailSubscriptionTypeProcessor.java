@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
@@ -101,7 +101,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     TemplateService templateService;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     @Inject
     ActionParser actionParser;
@@ -175,7 +175,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
     }
 
     public void processAggregation(Event event) {
-        if (featureFlipper.isAsyncAggregation()) {
+        if (engineConfig.isAsyncAggregationEnabled()) {
             /*
              * The aggregation process is long-running task. To avoid blocking the thread used to consume
              * Kafka messages from the ingress topic, we're performing the aggregation from a worker thread.

@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
@@ -44,9 +43,6 @@ public class EmailTemplateMigrationServiceTest {
 
     @Inject
     TemplateService templateService;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @Test
     void testMigration() {

@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
@@ -58,7 +58,7 @@ public class EmailAggregator {
     SubscriptionRepository subscriptionRepository;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     @Inject
     EventTypeRepository eventTypeRepository;
@@ -115,7 +115,7 @@ public class EmailAggregator {
                 Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
 
                 Set<User> recipients;
-                if (featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled()) {
+                if (engineConfig.isAggregationWithRecipientsResolverEnabled()) {
                     try {
                         Log.info("Start calling external resolver service ");
                         recipients = externalRecipientsResolver.recipientUsers(

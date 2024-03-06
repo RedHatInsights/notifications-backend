@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,7 +20,7 @@ public class EmailActorsResolver {
     private static final String STAGE_ENVIRONMENT = "stage";
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     /**
      * Determines which sender should be set in the email from the given event.
@@ -51,7 +51,7 @@ public class EmailActorsResolver {
     }
 
     private String getDefaultEmailSender() {
-        if (featureFlipper.isHccEmailSenderNameEnabled()) {
+        if (engineConfig.isHccEmailSenderNameEnabled()) {
             return RH_HCC_SENDER;
         } else {
             return RH_INSIGHTS_SENDER;

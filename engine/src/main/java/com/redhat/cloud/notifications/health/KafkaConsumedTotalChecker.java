@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.health;
 
+import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,6 +18,9 @@ public class KafkaConsumedTotalChecker {
 
     @Inject
     FeatureFlipper featureFlipper;
+
+    @Inject
+    EngineConfig engineConfig;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -39,7 +43,7 @@ public class KafkaConsumedTotalChecker {
 
     @Scheduled(every = "${notifications.kafka-consumed-total-checker.period:5m}", delayed = "${notifications.kafka-consumed-total-checker.initial-delay:5m}")
     public void periodicCheck() {
-        if (featureFlipper.isKafkaConsumedTotalCheckerEnabled()) {
+        if (engineConfig.isKafkaConsumedTotalCheckerEnabled()) {
             double currentTotal = consumedTotalCounter.count();
             if (currentTotal == previousTotal) {
                 Log.debugf("Kafka records consumed total check failed for topic '%s'", INGRESS_TOPIC);

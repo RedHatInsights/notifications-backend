@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -39,9 +38,6 @@ public class DbQuteEngineTest {
 
     @Inject
     TemplateService templateService;
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @Test
     void testIncludeExistingTemplate() {

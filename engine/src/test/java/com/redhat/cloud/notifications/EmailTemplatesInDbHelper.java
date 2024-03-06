@@ -57,6 +57,9 @@ public abstract class EmailTemplatesInDbHelper {
     FeatureFlipper featureFlipper;
 
     @Inject
+    EngineConfig engineConfig;
+
+    @Inject
     EmailTemplateMigrationService emailTemplateMigrationService;
 
     protected final Map<String, UUID> eventTypes = new HashMap<>();
@@ -86,7 +89,7 @@ public abstract class EmailTemplatesInDbHelper {
             eventTypes.put(eventTypeToCreate, eventType.getId());
         }
         featureFlipper.setUseSecuredEmailTemplates(useSecuredTemplates());
-        if (featureFlipper.isUseSecuredEmailTemplates()) {
+        if (engineConfig.isSecuredEmailTemplatesEnabled()) {
             emailTemplateMigrationService.deleteAllTemplates();
         }
         migrate();
