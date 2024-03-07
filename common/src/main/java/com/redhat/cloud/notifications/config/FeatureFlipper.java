@@ -77,7 +77,7 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.async-aggregation.enabled", defaultValue = "true")
     boolean asyncAggregation;
 
-    @ConfigProperty(name = "processor.email.aggregation.use-recipients-resolver-clowdapp.enabled", defaultValue = "false")
+    @ConfigProperty(name = "processor.email.aggregation.use-recipients-resolver-clowdapp.enabled", defaultValue = "true")
     boolean useRecipientsResolverClowdappForDailyDigestEnabled;
 
     @ConfigProperty(name = "notifications.email.hcc-sender-name.enabled", defaultValue = "false")

@@ -405,4 +405,4 @@ parameters:
 - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
   value: "false"
 - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
-  value: "false"
+  value: "true"
