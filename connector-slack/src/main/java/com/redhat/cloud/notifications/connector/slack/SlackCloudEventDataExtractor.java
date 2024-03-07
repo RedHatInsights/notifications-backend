@@ -13,7 +13,6 @@ public class SlackCloudEventDataExtractor extends CloudEventDataExtractor {
 
     @Override
     public void extract(Exchange exchange, JsonObject cloudEventData) {
-        System.out.println(cloudEventData);
         exchange.setProperty(TARGET_URL, cloudEventData.getString("webhookUrl"));
         JsonObject message = new JsonObject();
         message.put("text", cloudEventData.getString("message"));
