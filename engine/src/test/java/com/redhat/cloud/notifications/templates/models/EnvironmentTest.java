@@ -27,7 +27,7 @@ public class EnvironmentTest {
     }
 
     /**
-     * Tests that the default value for the "URL" is "https://local-dev".
+     * Tests that the default value for the "URL" is "https://localhost".
      */
     @Test
     void testUrlDefaultValue() {
