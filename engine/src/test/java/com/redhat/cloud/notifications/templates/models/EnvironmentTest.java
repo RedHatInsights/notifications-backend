@@ -12,7 +12,7 @@ public class EnvironmentTest {
     @Inject
     Environment environment;
 
-    public static final String expectedTestEnvUrlValue = "https://local-dev";
+    public static final String expectedTestEnvUrlValue = "https://localhost";
 
     /**
      * Tests that the default value for the "Environment" is "local-dev".

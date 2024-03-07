@@ -21,7 +21,7 @@ public class TeamsProcessorTest extends CamelProcessorTest {
             "from {data.bundle}/{data.application}. " +
             "<{data.environment_url}/insights/{data.application}|Open {data.application}>";
 
-    private final String TEAMS_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
+    private static final String TEAMS_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
             "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>";
 
     @Inject

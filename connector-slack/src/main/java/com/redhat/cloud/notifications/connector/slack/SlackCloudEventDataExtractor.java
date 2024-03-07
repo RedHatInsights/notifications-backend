@@ -6,7 +6,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.slack.ExchangeProperty.CHANNEL;
 
 @ApplicationScoped
 public class SlackCloudEventDataExtractor extends CloudEventDataExtractor {
