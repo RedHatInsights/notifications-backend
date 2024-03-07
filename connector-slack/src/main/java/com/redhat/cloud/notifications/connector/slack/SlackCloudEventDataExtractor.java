@@ -17,7 +17,7 @@ public class SlackCloudEventDataExtractor extends CloudEventDataExtractor {
         JsonObject message = new JsonObject();
         message.put("text", cloudEventData.getString("message"));
         if (cloudEventData.getValue("channel") != null) {
-            message.put(CHANNEL, cloudEventData.getString("channel"));
+            message.put("channel", cloudEventData.getString("channel"));
         }
         exchange.getIn().setBody(message.toString());
     }
