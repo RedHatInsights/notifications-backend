@@ -181,11 +181,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         JsonObject outcomingPayload = assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, null, RECIPIENTS_RESOLVER_EXCEPTION_MESSAGE);
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
-        if (isConnectorRouteFailureHandled()) {
-            checkRouteMetrics(connectorConfig.getConnectorName(), 1, 1, 1);
-        } else {
-            checkRouteMetrics(connectorConfig.getConnectorName(), 0, 0, 1);
-        }
+        checkRouteMetrics(connectorConfig.getConnectorName(), 1, 1, 1);
         checkRouteMetrics(SUCCESS, 0, 0, 0);
         checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
         micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), maxExpectedRedeliveries);

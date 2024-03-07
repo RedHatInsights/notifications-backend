@@ -63,15 +63,6 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
     protected abstract Predicate checkOutgoingPayload(JsonObject incomingPayload);
 
-    /*
-     * This is a workaround for the Slack connector where metrics are incremented in a different way
-     * than all other connectors. This weird behavior is caused by the exception thrown by the Slack
-     * component from Camel. It may or may not be fixed in our code in the future...
-     */
-    protected boolean isConnectorRouteFailureHandled() {
-        return true;
-    }
-
     protected boolean useHttps() {
         return false;
     }
@@ -114,6 +105,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
         JsonObject incomingPayload = buildIncomingPayload(targetUrl);
         remoteServerMockEndpoint.expectedMessagesMatches(checkOutgoingPayload(incomingPayload));
+        remoteServerMockEndpoint.expectedMessageCount(1);
 
         String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 
@@ -163,11 +155,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         JsonObject outcomingPayload = assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, getMockServerUrl() + getRemoteServerPath(), "HTTP operation failed", "Error POSTing to Slack API");
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
-        if (isConnectorRouteFailureHandled()) {
-            checkRouteMetrics(connectorConfig.getConnectorName(), 1, 1, 1);
-        } else {
-            checkRouteMetrics(connectorConfig.getConnectorName(), 0, 0, 1);
-        }
+        checkRouteMetrics(connectorConfig.getConnectorName(), 1, 1, 1);
         checkRouteMetrics(SUCCESS, 0, 0, 0);
         checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
         micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), maxRedeliveriesCount);
