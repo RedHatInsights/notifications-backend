@@ -1,13 +1,11 @@
 package com.redhat.cloud.notifications.models;
 
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 
 @Embeddable
@@ -21,9 +19,8 @@ public class DrawerNotificationId implements Serializable {
     @Size(max = 50)
     private String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_id")
-    private Event event;
+    @NotNull
+    private UUID eventId;
 
     public DrawerNotificationId() {
     }
@@ -44,12 +41,8 @@ public class DrawerNotificationId implements Serializable {
         this.orgId = orgId;
     }
 
-    public Event getEvent() {
-        return event;
-    }
-
-    public void setEvent(Event event) {
-        this.event = event;
+    public void setEventId(UUID eventId) {
+        this.eventId = eventId;
     }
 
     @Override
@@ -61,11 +54,11 @@ public class DrawerNotificationId implements Serializable {
             return false;
         }
         DrawerNotificationId that = (DrawerNotificationId) o;
-        return orgId.equals(that.orgId) && userId.equals(that.userId) && event.equals(that.event);
+        return orgId.equals(that.orgId) && userId.equals(that.userId) && eventId.equals(that.eventId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgId, userId, event);
+        return Objects.hash(orgId, userId, eventId);
     }
 }

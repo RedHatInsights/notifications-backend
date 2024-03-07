@@ -198,7 +198,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
 
     @Transactional
     void createDrawerNotification(String userId, Event createdEvent) {
-        DrawerNotification notificationDrawer = new DrawerNotification(DEFAULT_ORG_ID, userId, createdEvent);
+        DrawerNotification notificationDrawer = new DrawerNotification(DEFAULT_ORG_ID, userId, entityManager.find(Event.class, createdEvent.getId()));
         notificationDrawer.setCreated(createdEvent.getCreated());
         entityManager.persist(notificationDrawer);
     }

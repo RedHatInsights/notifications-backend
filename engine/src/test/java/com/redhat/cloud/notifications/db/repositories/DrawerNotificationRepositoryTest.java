@@ -74,12 +74,11 @@ public class DrawerNotificationRepositoryTest {
     @Test
     @Transactional
     void testSimpleCreateGetCascadeDelete() {
-        DrawerNotification notificationDrawer1 = new DrawerNotification(DEFAULT_ORG_ID, "user-1", createdEvent);
-        notificationDrawer1.setEventId(createdEvent.getId());
+        Event createdEventFromPersistenceContext = entityManager.find(Event.class, createdEvent.getId());
+        DrawerNotification notificationDrawer1 = new DrawerNotification(DEFAULT_ORG_ID, "user-1", createdEventFromPersistenceContext);
         createDrawerNotification(notificationDrawer1);
 
-        DrawerNotification notificationDrawer2 = new DrawerNotification(DEFAULT_ORG_ID, "user-2", createdEvent);
-        notificationDrawer2.setEventId(createdEvent.getId());
+        DrawerNotification notificationDrawer2 = new DrawerNotification(DEFAULT_ORG_ID, "user-2", createdEventFromPersistenceContext);
         createDrawerNotification(notificationDrawer2);
 
         List<DrawerNotification> drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
@@ -89,7 +88,7 @@ public class DrawerNotificationRepositoryTest {
         assertNotNull(drawerNotificationUser1.get(0).getCreated());
         assertEquals(0, drawerNotificationUser3.size());
 
-        entityManager.createQuery("DELETE FROM Event WHERE id = :uuid").setParameter("uuid", createdEvent.getId()).executeUpdate();
+        entityManager.createQuery("DELETE FROM Event WHERE id = :uuid").setParameter("uuid", createdEventFromPersistenceContext.getId()).executeUpdate();
         drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
         assertEquals(0, drawerNotificationUser1.size());
     }
@@ -130,7 +129,7 @@ public class DrawerNotificationRepositoryTest {
     }
 
     public List<DrawerNotification> getDrawerNotificationsByEventId(UUID eventId) {
-        String query = "SELECT dn FROM DrawerNotification dn WHERE dn.id.event.id = :eventId";
+        String query = "SELECT dn FROM DrawerNotification dn WHERE dn.id.eventId = :eventId";
         return entityManager.createQuery(query, DrawerNotification.class)
             .setParameter("eventId", eventId)
             .getResultList();

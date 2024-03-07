@@ -3,12 +3,14 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.Map;
-import java.util.UUID;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
@@ -29,9 +31,10 @@ public class DrawerNotification extends CreationTimestamped {
     @EmbeddedId
     private DrawerNotificationId id;
 
-    @NotNull
-    @Transient
-    private UUID eventId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId("eventId")
+    @JoinColumn(name = "event_id")
+    private Event event;
 
     @NotNull
     private boolean read;
@@ -41,10 +44,9 @@ public class DrawerNotification extends CreationTimestamped {
 
     public DrawerNotification(String orgId, String userId, Event event) {
         id = new DrawerNotificationId();
-        id.setEvent(event);
         id.setUserId(userId);
         id.setOrgId(orgId);
-        setEventId(event.getId());
+        setEvent(event);
     }
 
     public String getUserId() {
@@ -64,11 +66,11 @@ public class DrawerNotification extends CreationTimestamped {
     }
 
     public Event getEvent() {
-        return id.getEvent();
+        return event;
     }
 
     public void setEvent(Event event) {
-        id.setEvent(event);
+        this.event = event;
     }
 
     public boolean isRead() {
@@ -79,12 +81,5 @@ public class DrawerNotification extends CreationTimestamped {
         this.read = read;
     }
 
-    public UUID getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(UUID eventId) {
-        this.eventId = eventId;
-    }
 
 }
