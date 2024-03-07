@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.EngineConfig;
+import com.redhat.cloud.notifications.config.FeatureFlipper;
 import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,7 +31,7 @@ public class EmailActorsResolver {
     @Inject
     EngineConfig engineConfig;
 
-    @ConfigProperty(name = "notifications.email.show.pendo.until.date", defaultValue = "2024-04-15")
+    @ConfigProperty(name = "notifications.email.show.pendo.until.date", defaultValue = "2020-01-01")
     LocalDate showPendoUntil;
 
     /**
