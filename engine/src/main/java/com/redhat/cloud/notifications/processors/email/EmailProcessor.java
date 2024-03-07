@@ -97,13 +97,13 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
 
         final String subject = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
-        final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate);
+        final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailActorsResolver.getPendoEmailMessage(event));
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
             body,
             subject,
-            this.emailActorsResolver.getEmailSender(event),
+            emailActorsResolver.getEmailSender(event),
             event.getOrgId(),
             recipientSettings,
             subscribers,
@@ -113,7 +113,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
-        final Endpoint endpoint = this.endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+        final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
         this.connectorSender.send(event, endpoint, payload);
     }

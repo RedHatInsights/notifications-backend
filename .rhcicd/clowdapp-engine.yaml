@@ -240,6 +240,8 @@ objects:
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_UNLEASH_ACTIVE
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
+        - name: NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE
+          value: ${NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -404,5 +406,7 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
   value: "false"
+- name: NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE
+  value: "2020-01-01"
 - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
   value: "false"

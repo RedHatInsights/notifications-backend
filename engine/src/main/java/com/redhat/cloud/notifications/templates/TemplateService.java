@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.models.Environment;
-import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import io.quarkus.qute.Engine;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.scheduler.Scheduled;
@@ -31,21 +31,16 @@ public class TemplateService {
         return engine.parse(template, null, name).instance();
     }
 
-    @Deprecated(forRemoval = true)
-    public String renderTemplate(User user, Object event, TemplateInstance templateInstance) {
-        return templateInstance
-                .data("action", event)
-                .data("event", event)
-                .data("user", user)
-                .data("environment", environment)
-                .render();
+    public String renderTemplate(Object event, TemplateInstance templateInstance) {
+        return renderTemplate(event, templateInstance, null);
     }
 
-    public String renderTemplate(Object event, TemplateInstance templateInstance) {
+    public String renderTemplate(Object event, TemplateInstance templateInstance, EmailPendo pendoMessage) {
         return templateInstance
             .data("action", event)
             .data("event", event)
             .data("environment", environment)
+            .data("pendo_message", pendoMessage)
             .render();
     }
 }

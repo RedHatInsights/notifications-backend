@@ -11,6 +11,8 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Template;
+import com.redhat.cloud.notifications.processors.email.EmailActorsResolver;
+import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.ImageBuilderAggregator;
@@ -19,6 +21,7 @@ import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPay
 import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +35,8 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.GENERAL_PENDO_MESSAGE;
+import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.GENERAL_PENDO_TITLE;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
@@ -40,6 +45,7 @@ import static com.redhat.cloud.notifications.processors.email.aggregators.Adviso
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_3;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_4;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_6;
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,6 +61,9 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
     protected String getApp() {
         return myCurrentApp;
     }
+
+    @Inject
+    EmailActorsResolver emailActorsResolver;
 
     @Override
     @BeforeEach
@@ -115,7 +124,20 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         assertNotNull(bodyTemplate);
         Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result);
 
-        String templateResult = generateEmail(bodyTemplate, mapData);
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, emailActorsResolver.addDateOnPendoMessage(GENERAL_PENDO_MESSAGE));
+
+        String templateResult = generateEmailFromContextMap(bodyTemplate, mapData, null);
+        templateResultChecks(templateResult);
+        assertFalse(templateResult.contains(emailPendo.getPendoTitle()));
+        assertFalse(templateResult.contains(emailPendo.getPendoMessage()));
+
+        templateResult = generateEmailFromContextMap(bodyTemplate, mapData, emailPendo);
+        templateResultChecks(templateResult);
+        assertTrue(templateResult.contains(emailPendo.getPendoTitle()));
+        assertTrue(templateResult.contains(emailPendo.getPendoMessage()));
+    }
+
+    private static void templateResultChecks(String templateResult) {
         assertTrue(templateResult.contains("\"#advisor-section1\""));
         assertTrue(templateResult.contains("\"#compliance-section1\""));
         assertTrue(templateResult.contains("\"#drift-section1\""));
@@ -151,7 +173,7 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), app, DAILY).get();
         emailTemplate.getBodyTemplate().setData(emailTemplate.getBodyTemplate().getData().replace("Common/insightsEmailBody", "Common/insightsEmailBodyLight"));
         TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-        addItem(dataMap, app, generateEmail(bodyTemplate, context));
+        addItem(dataMap, app, generateEmailFromContextMap(bodyTemplate, context, null));
     }
 
     private static Map<String, Object> buildMapFromAction(Action action) {

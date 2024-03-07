@@ -330,7 +330,7 @@ public class EmailProcessorTest {
         final String stubbedRenderedSubject = "test-missing-subscribers-rendered-subject";
         final String stubbedRenderedBody = "test-missing-subscribers-rendered-body";
         Mockito.when(this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplateInstance)).thenReturn(stubbedRenderedSubject);
-        Mockito.when(this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplateInstance)).thenReturn(stubbedRenderedBody);
+        Mockito.when(this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplateInstance, null)).thenReturn(stubbedRenderedBody);
 
         // Mock a list of subscribers that simulate the ones that should be
         // notified for the event.
@@ -356,7 +356,7 @@ public class EmailProcessorTest {
 
         // Verify that the rendering functions were called.
         Mockito.verify(this.templateService, Mockito.times(1)).renderTemplate(event.getEventWrapper().getEvent(), subjectTemplateInstance);
-        Mockito.verify(this.templateService, Mockito.times(1)).renderTemplate(event.getEventWrapper().getEvent(), bodyTemplateInstance);
+        Mockito.verify(this.templateService, Mockito.times(1)).renderTemplate(event.getEventWrapper().getEvent(), bodyTemplateInstance, null);
 
         // Verify that the endpoint repository was called to fetch the result
         // endpoint.
