@@ -21,6 +21,7 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CLIENT_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CONSOLE_BUNDLE;
+import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ENDPOINT_CATEGORY_PROPERTY;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ENDPOINT_ID_PROPERTY;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ENDPOINT_NAME_PROPERTY;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ERRORS_COUNT_PROPERTY;
@@ -29,6 +30,7 @@ import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.SERVER_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.STATUS_CODE_PROPERTY;
+import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -91,6 +93,7 @@ public class IntegrationDisabledNotifierTest {
         assertEquals(expectedErrorType, contextProperties.get(ERROR_TYPE_PROPERTY));
         assertEquals(endpoint.getId().toString(), contextProperties.get(ENDPOINT_ID_PROPERTY));
         assertEquals(endpoint.getName(), contextProperties.get(ENDPOINT_NAME_PROPERTY));
+        assertEquals("Communications", contextProperties.get(ENDPOINT_CATEGORY_PROPERTY));
         assertEquals(expectedErrorsCount, contextProperties.get(ERRORS_COUNT_PROPERTY));
         if (expectedStatusCode > 0) {
             assertEquals(expectedStatusCode, contextProperties.get(STATUS_CODE_PROPERTY));
@@ -102,6 +105,8 @@ public class IntegrationDisabledNotifierTest {
         endpoint.setId(UUID.randomUUID());
         endpoint.setOrgId("org-id");
         endpoint.setName("My webhook");
+        endpoint.setType(CAMEL);
+        endpoint.setSubType("slack");
         return endpoint;
     }
 }
