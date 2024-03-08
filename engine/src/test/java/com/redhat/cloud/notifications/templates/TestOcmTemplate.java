@@ -5,9 +5,9 @@ import com.redhat.cloud.notifications.OcmTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
