@@ -9,16 +9,17 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class OcmTestHelpers {
 
     public static Action createOcmAction(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject) {
-        return createOcmAction(clusterDisplayName, subscriptionPlan, logDescription, subject, null, null);
+        return createOcmAction(clusterDisplayName, subscriptionPlan, logDescription, subject, null, Optional.empty());
     }
 
-    public static Action createOcmAction(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject, String templateSubType, String title) {
+    public static Action createOcmAction(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject, String title, Optional<Map<String, Object>> specificGlobalVars) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle("openshift");
         emailActionMessage.setApplication("cluster-manager");
@@ -31,16 +32,17 @@ public class OcmTestHelpers {
                         .withAdditionalProperty("tags", List.of())
                         .build()
         );
-        Map<String, String> globalVars = new HashMap<>();
+        Map<String, Object> globalVars = new HashMap<>();
         globalVars.put("cluster_display_name", clusterDisplayName);
         globalVars.put("subscription_id", "2XqNHRdLNEAzshh7MkkOql6fx6I");
         globalVars.put("subscription_plan", subscriptionPlan);
         globalVars.put("log_description", logDescription);
         globalVars.put("internal_cluster_id", "fekelklflef");
 
-        if (null != templateSubType) {
-            globalVars.put("template_sub_type", templateSubType);
+        if (specificGlobalVars.isPresent()) {
+            globalVars.putAll(specificGlobalVars.get());
         }
+
         emailActionMessage.setEvents(List.of(
                 new Event.EventBuilder()
                         .withMetadata(new Metadata.MetadataBuilder().build())
