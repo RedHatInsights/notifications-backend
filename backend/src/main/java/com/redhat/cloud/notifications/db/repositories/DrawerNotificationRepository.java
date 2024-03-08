@@ -26,7 +26,7 @@ public class DrawerNotificationRepository {
     public Integer updateReadStatus(String orgId, String username, Set<UUID> notificationIds, Boolean readStatus) {
 
         String hql = "UPDATE DrawerNotification SET read = :readStatus "
-            + "WHERE orgId = :orgId and userId = :userId and id in (:notificationIds)";
+            + "WHERE id.orgId = :orgId and id.userId = :userId and id.eventId in (:notificationIds)";
 
         return entityManager.createQuery(hql)
             .setParameter("orgId", orgId)
@@ -41,9 +41,9 @@ public class DrawerNotificationRepository {
         query.setSortFields(DrawerNotification.SORT_FIELDS);
         query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
-        String hql = "SELECT dn.id, dn.read, " +
+        String hql = "SELECT dn.id.eventId, dn.read, " +
             "dn.event.bundleDisplayName, dn.event.applicationDisplayName, dn.event.eventTypeDisplayName, dn.created, dn.event.renderedDrawerNotification, bundle.name "
-            + "FROM DrawerNotification dn join Bundle bundle on dn.event.bundleId = bundle.id where dn.orgId = :orgId and dn.userId = :userid";
+            + "FROM DrawerNotification dn join Bundle bundle on dn.event.bundleId = bundle.id where dn.id.orgId = :orgId and dn.id.userId = :userid";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
         if (sort.isPresent()) {
@@ -64,8 +64,8 @@ public class DrawerNotificationRepository {
 
     public Long count(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                       LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
-        String hql = "SELECT count(dn.id) FROM DrawerNotification dn "
-                        + "where dn.orgId = :orgId and dn.userId = :userid";
+        String hql = "SELECT count(dn.id.userId) FROM DrawerNotification dn "
+                        + "where dn.id.orgId = :orgId and dn.id.userId = :userid";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
 

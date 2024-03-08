@@ -181,10 +181,10 @@ public class DrawerResourceTest extends DbIsolatedTest {
         assertEquals(3, page.getData().size());
 
         // only notification recipient can update read status
-        Integer nbUpdates = updateDrawerEntriesReadStatus(identityHeaderUser2, Set.of(page.getData().get(0).getId()), true);
+        Integer nbUpdates = updateDrawerEntriesReadStatus(identityHeaderUser2, Set.of(page.getData().get(0).getEventId()), true);
         assertEquals(0, nbUpdates);
 
-        nbUpdates = updateDrawerEntriesReadStatus(defaultIdentityHeader, Set.of(page.getData().get(0).getId()), true);
+        nbUpdates = updateDrawerEntriesReadStatus(defaultIdentityHeader, Set.of(page.getData().get(0).getEventId()), true);
         assertEquals(1, nbUpdates);
 
         // should return 1 result
@@ -198,13 +198,9 @@ public class DrawerResourceTest extends DbIsolatedTest {
 
     @Transactional
     void createDrawerNotification(String userId, Event createdEvent) {
-        DrawerNotification notificationDrawer1 = new DrawerNotification();
-        notificationDrawer1.setUserId(userId);
-        notificationDrawer1.setEventId(createdEvent.getId());
-        notificationDrawer1.setEvent(createdEvent);
-        notificationDrawer1.setOrgId(DEFAULT_ORG_ID);
-        notificationDrawer1.setCreated(createdEvent.getCreated());
-        entityManager.persist(notificationDrawer1);
+        DrawerNotification notificationDrawer = new DrawerNotification(DEFAULT_ORG_ID, userId, entityManager.find(Event.class, createdEvent.getId()));
+        notificationDrawer.setCreated(createdEvent.getCreated());
+        entityManager.persist(notificationDrawer);
     }
 
     @Transactional

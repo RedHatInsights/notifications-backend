@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.drawer.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,7 +14,9 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DrawerEntryPayload {
 
-    private UUID id;
+    // have to be mapped as id because of UI constraint
+    @JsonProperty("id")
+    private UUID eventId;
 
     private String description;
 
@@ -31,12 +34,12 @@ public class DrawerEntryPayload {
     public DrawerEntryPayload() {
     }
 
-    public UUID getId() {
-        return id;
+    public UUID getEventId() {
+        return eventId;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
+    public void setEventId(UUID eventId) {
+        this.eventId = eventId;
     }
 
     public boolean isRead() {

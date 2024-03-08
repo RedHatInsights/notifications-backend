@@ -33,7 +33,6 @@ import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBui
 import static com.redhat.cloud.notifications.connector.drawer.DrawerRouteBuilder.CONNECTOR_TO_DRAWER;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockserver.model.HttpResponse.response;
@@ -98,7 +97,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         String orgId = "123456";
         DrawerEntryPayload drawerEntryPayload = new DrawerEntryPayload();
         drawerEntryPayload.setDescription("DataToSend");
-        drawerEntryPayload.setId(UUID.fromString("3ccfb747-610d-42e9-97de-05d43d07319d"));
+        drawerEntryPayload.setEventId(UUID.fromString("3ccfb747-610d-42e9-97de-05d43d07319d"));
         drawerEntryPayload.setSource("My app");
         drawerEntryPayload.setTitle("the title");
         drawerEntryPayload.setBundle("My Bundle");
@@ -124,7 +123,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
 
         getMockHttpRequest("/internal/recipients-resolver", verifyEmptyRequest);
 
-        JsonObject jsonObject = testSuccessfulDrawerNotification(0);
+        JsonObject jsonObject = testSuccessfulDrawerNotification(0, 0);
         JsonObject data = new JsonObject(jsonObject.getString("data"));
         JsonArray recipientsList = data.getJsonObject("details").getJsonArray(ExchangeProperty.RESOLVED_RECIPIENT_LIST);
         assertEquals(0, recipientsList.size());
@@ -134,10 +133,8 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
     void testSuccessFulNotificationWithTwoRecipients() throws Exception {
 
         DrawerUser user1 = new DrawerUser();
-        user1.setId(UUID.randomUUID().toString());
         user1.setUsername("username-1");
         DrawerUser user2 = new DrawerUser();
-        user2.setId(UUID.randomUUID().toString());
         user2.setUsername("username-2");
 
         ExpectationResponseCallback verifyEmptyRequest = req -> {
@@ -148,7 +145,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
 
         getMockHttpRequest("/internal/recipients-resolver", verifyEmptyRequest);
 
-        JsonObject jsonObject = testSuccessfulDrawerNotification(2);
+        JsonObject jsonObject = testSuccessfulDrawerNotification(1, 2);
         JsonObject data = new JsonObject(jsonObject.getString("data"));
         JsonArray recipientsList = data.getJsonObject("details").getJsonArray(ExchangeProperty.RESOLVED_RECIPIENT_LIST);
         assertEquals(2, recipientsList.size());
@@ -188,7 +185,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         return outcomingPayload;
     }
 
-    private JsonObject testSuccessfulDrawerNotification(int expectedMessagesOnDrawerTopic) throws Exception {
+    private JsonObject testSuccessfulDrawerNotification(int expectedMessagesOnDrawerTopic, int expectedNumberOfUsers) throws Exception {
 
         mockKafkaSourceEndpoint(); // This is the entry point of the connector.
         MockEndpoint kafkaSinkMockEndpointDrawer = mockKafkaSinkEndpointDrawer(expectedMessagesOnDrawerTopic); // This is where the return message to the engine is sent.
@@ -199,7 +196,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 
         JsonObject jsonObject = assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, true, null, "Event " + cloudEventId + " sent successfully");
-        assertKafkaSinkDrawerIsSatisfied(kafkaSinkMockEndpointDrawer);
+        assertKafkaSinkDrawerIsSatisfied(kafkaSinkMockEndpointDrawer, expectedNumberOfUsers);
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 0, 1, 1);
         checkRouteMetrics(connectorConfig.getConnectorName(), 0, 1, 1);
@@ -222,7 +219,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         return kafkaEndpoint;
     }
 
-    protected static void assertKafkaSinkDrawerIsSatisfied(MockEndpoint kafkaSinkMockDrawerEndpoint) throws InterruptedException {
+    protected static void assertKafkaSinkDrawerIsSatisfied(MockEndpoint kafkaSinkMockDrawerEndpoint, int expectedNumberOfUsers) throws InterruptedException {
 
         // We need a timeout here because SEDA processes the exchange from a different thread and a race condition may happen.
         kafkaSinkMockDrawerEndpoint.assertIsSatisfied(2000L);
@@ -239,11 +236,10 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
             JsonObject data = payload.getJsonObject("data");
 
             assertEquals(1, data.getJsonArray("organizations").size());
-            assertEquals(1, data.getJsonArray("users").size());
+            assertEquals(expectedNumberOfUsers, data.getJsonArray("users").size());
 
             JsonObject secondPayloadLevel = data.getJsonObject("payload");
             assertNotNull(secondPayloadLevel.getString("id"));
-            assertNotEquals(payload.getString("id"), secondPayloadLevel.getString("id"));
             assertEquals(false, secondPayloadLevel.getBoolean("read"));
             assertEquals("My Bundle", secondPayloadLevel.getString("bundle"));
 

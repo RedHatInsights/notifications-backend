@@ -74,18 +74,11 @@ public class DrawerNotificationRepositoryTest {
     @Test
     @Transactional
     void testSimpleCreateGetCascadeDelete() {
-        DrawerNotification notificationDrawer1 = new DrawerNotification();
-        notificationDrawer1.setUserId("user-1");
-        notificationDrawer1.setEvent(createdEvent);
-        notificationDrawer1.setEventId(createdEvent.getId());
-        notificationDrawer1.setOrgId(DEFAULT_ORG_ID);
+        Event createdEventFromPersistenceContext = entityManager.find(Event.class, createdEvent.getId());
+        DrawerNotification notificationDrawer1 = new DrawerNotification(DEFAULT_ORG_ID, "user-1", createdEventFromPersistenceContext);
         createDrawerNotification(notificationDrawer1);
 
-        DrawerNotification notificationDrawer2 = new DrawerNotification();
-        notificationDrawer2.setUserId("user-2");
-        notificationDrawer2.setEvent(createdEvent);
-        notificationDrawer2.setEventId(createdEvent.getId());
-        notificationDrawer2.setOrgId(DEFAULT_ORG_ID);
+        DrawerNotification notificationDrawer2 = new DrawerNotification(DEFAULT_ORG_ID, "user-2", createdEventFromPersistenceContext);
         createDrawerNotification(notificationDrawer2);
 
         List<DrawerNotification> drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
@@ -95,7 +88,7 @@ public class DrawerNotificationRepositoryTest {
         assertNotNull(drawerNotificationUser1.get(0).getCreated());
         assertEquals(0, drawerNotificationUser3.size());
 
-        entityManager.createQuery("DELETE FROM Event WHERE id = :uuid").setParameter("uuid", createdEvent.getId()).executeUpdate();
+        entityManager.createQuery("DELETE FROM Event WHERE id = :uuid").setParameter("uuid", createdEventFromPersistenceContext.getId()).executeUpdate();
         drawerNotificationUser1 = getDrawerNotificationsByUserId("user-1");
         assertEquals(0, drawerNotificationUser1.size());
     }
@@ -104,34 +97,41 @@ public class DrawerNotificationRepositoryTest {
     @Transactional
     void testThousandsCreations() {
         List<String> users = new ArrayList<>();
+        Event thousandsDrawerNotificationsEvent = resourceHelpers.createEvent(createdEventType);
         final int LIMIT = 10000;
         for (int i = 0; i < LIMIT; i++) {
-            users.add("'user-" + i + "'");
+            users.add("user-" + i);
         }
+
         String usrList = users.stream().collect(Collectors.joining(","));
-        List<UUID> uuidList = new ArrayList<>();
         Instant before = Instant.now();
-        List<DrawerNotification> drawerNotifications = drawerNotificationsRepository.create(createdEvent, usrList);
+        drawerNotificationsRepository.create(thousandsDrawerNotificationsEvent, usrList);
         Instant after = Instant.now();
         long duration = Duration.between(before, after).toMillis();
         assertTrue(duration < 2000, String.format("Injection duration should be lower than 2 sec but was %s mills", duration));
         Log.infof("data injection ended after %s Millis ", Duration.between(before, after).toMillis());
-        assertEquals(LIMIT, drawerNotifications.size());
-        assertNotNull(drawerNotifications.get(0).getId());
-        uuidList.addAll(drawerNotifications.stream().map(e -> e.getId()).collect(Collectors.toList()));
+
+        List<DrawerNotification> createdNotifications =  getDrawerNotificationsByEventId(thousandsDrawerNotificationsEvent.getId());
+        assertEquals(LIMIT, createdNotifications.size());
 
         Log.info("Try to insert twice same records");
-        drawerNotifications = drawerNotificationsRepository.create(createdEvent, usrList);
-        assertEquals(LIMIT, drawerNotifications.size());
-        List<UUID> newUuidList = drawerNotifications.stream().map(e -> e.getId()).collect(Collectors.toList());
-        assertEquals(uuidList, newUuidList, "Uuid list must be the same");
+        drawerNotificationsRepository.create(thousandsDrawerNotificationsEvent, usrList);
+        createdNotifications =  getDrawerNotificationsByEventId(thousandsDrawerNotificationsEvent.getId());
+        assertEquals(LIMIT, createdNotifications.size());
     }
 
     public List<DrawerNotification> getDrawerNotificationsByUserId(String userId) {
-        String query = "SELECT dn FROM DrawerNotification dn WHERE dn.userId = :userId and dn.orgId = :orgId";
+        String query = "SELECT dn FROM DrawerNotification dn WHERE dn.id.userId = :userId and dn.id.orgId = :orgId";
         return entityManager.createQuery(query, DrawerNotification.class)
             .setParameter("userId", userId)
             .setParameter("orgId", DEFAULT_ORG_ID)
+            .getResultList();
+    }
+
+    public List<DrawerNotification> getDrawerNotificationsByEventId(UUID eventId) {
+        String query = "SELECT dn FROM DrawerNotification dn WHERE dn.id.eventId = :eventId";
+        return entityManager.createQuery(query, DrawerNotification.class)
+            .setParameter("eventId", eventId)
             .getResultList();
     }
 }

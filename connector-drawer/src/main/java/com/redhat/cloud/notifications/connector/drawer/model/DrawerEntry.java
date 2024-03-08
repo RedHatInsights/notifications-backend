@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.connector.drawer.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.List;
+import java.util.Set;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
@@ -12,7 +13,7 @@ public class DrawerEntry {
 
     private List<String> organizations;
 
-    private List<String> users;
+    private Set<String> users;
 
     private DrawerEntryPayload payload;
 
@@ -24,11 +25,11 @@ public class DrawerEntry {
         return organizations;
     }
 
-    public void setUsers(List<String> users) {
+    public void setUsers(Set<String> users) {
         this.users = users;
     }
 
-    public List<String> getUsers() {
+    public Set<String> getUsers() {
         return users;
     }
 

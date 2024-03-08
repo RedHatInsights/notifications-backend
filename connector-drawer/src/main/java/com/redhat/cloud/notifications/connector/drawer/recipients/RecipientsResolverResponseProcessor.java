@@ -9,8 +9,8 @@ import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RecipientsResolverResponseProcessor implements Processor {
@@ -30,6 +30,6 @@ public class RecipientsResolverResponseProcessor implements Processor {
         final String body = exchange.getMessage().getBody(String.class);
         final List<DrawerUser> recipientsList = Arrays.asList(this.objectMapper.readValue(body, DrawerUser[].class));
 
-        exchange.setProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, new HashSet<>(recipientsList));
+        exchange.setProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, recipientsList.stream().map(DrawerUser::getUsername).collect(Collectors.toSet()));
     }
 }

@@ -2,14 +2,16 @@ package com.redhat.cloud.notifications.connector.drawer;
 
 import com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder;
 import com.redhat.cloud.notifications.connector.drawer.config.DrawerConnectorConfig;
-import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.drawer.recipients.RecipientsResolverPreparer;
 import com.redhat.cloud.notifications.connector.drawer.recipients.RecipientsResolverResponseProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.apache.camel.Predicate;
+import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.*;
+import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.RESOLVED_RECIPIENT_LIST;
 import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
@@ -42,17 +44,23 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
                 .to(drawerConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
             .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .process(recipientsResolverResponseProcessor)
-            .split(simpleF("${exchangeProperty.%s}", ExchangeProperty.RESOLVED_RECIPIENT_LIST))
+            .choice().when(hasRecipients())
                 .process(drawerPayloadBuilder)
                 .to(log(getClass().getName()).level("INFO").showHeaders(true).showBody(true))
                 .to(direct(CONNECTOR_TO_DRAWER))
+                .log(INFO, getClass().getName(), "Sent Drawer notification " +
+                    "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .end()
-            .log(INFO, getClass().getName(), "Sent Drawer notification " +
-                "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .to(direct(SUCCESS));
 
         from(direct(CONNECTOR_TO_DRAWER))
             .routeId(CONNECTOR_TO_DRAWER)
             .to(kafka(drawerConnectorConfig.getOutgoingDrawerTopic()));
     }
+
+
+    private Predicate hasRecipients() {
+        return exchange -> !exchange.getProperty(RESOLVED_RECIPIENT_LIST, Set.class).isEmpty();
+    }
+
 }

@@ -70,7 +70,7 @@ public class ConnectorReceiver {
             String historyId = (String) decodedPayload.get("historyId");
             final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId);
 
-            if (engineConfig.isDrawerConnectorEnabled()) {
+            if (engineConfig.isDrawerEnabled()) {
                 drawerProcessor.manageConnectorDrawerReturnsIfNeeded(decodedPayload, UUID.fromString(historyId));
             }
             boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);

@@ -1,22 +1,17 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
 import java.util.Map;
-import java.util.UUID;
 
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
 
@@ -33,24 +28,11 @@ public class DrawerNotification extends CreationTimestamped {
         "read", "dn.read"
     );
 
-    @Id
-    @GeneratedValue
-    @JsonProperty(access = READ_ONLY)
-    private UUID id;
-
-    @NotNull
-    @Size(max = 50)
-    private String orgId;
-
-    @NotNull
-    @Size(max = 50)
-    public String userId;
-
-    @NotNull
-    @Transient
-    private UUID eventId;
+    @EmbeddedId
+    private DrawerNotificationId id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId("eventId")
     @JoinColumn(name = "event_id")
     private Event event;
 
@@ -60,28 +42,27 @@ public class DrawerNotification extends CreationTimestamped {
     public DrawerNotification() {
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
+    public DrawerNotification(String orgId, String userId, Event event) {
+        id = new DrawerNotificationId();
+        id.setUserId(userId);
+        id.setOrgId(orgId);
+        setEvent(event);
     }
 
     public String getUserId() {
-        return userId;
+        return id.getUserId();
     }
 
     public void setUserId(String userId) {
-        this.userId = userId;
+        id.setUserId(userId);
     }
 
     public String getOrgId() {
-        return orgId;
+        return id.getOrgId();
     }
 
     public void setOrgId(String orgId) {
-        this.orgId = orgId;
+        id.setOrgId(orgId);
     }
 
     public Event getEvent() {
@@ -98,14 +79,6 @@ public class DrawerNotification extends CreationTimestamped {
 
     public void setRead(boolean read) {
         this.read = read;
-    }
-
-    public UUID getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(UUID eventId) {
-        this.eventId = eventId;
     }
 
 }

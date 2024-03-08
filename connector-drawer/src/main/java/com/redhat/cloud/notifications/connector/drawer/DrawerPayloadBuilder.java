@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.connector.drawer;
 import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntry;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
@@ -11,6 +10,7 @@ import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static java.time.ZoneOffset.UTC;
@@ -23,14 +23,13 @@ public class DrawerPayloadBuilder implements Processor {
 
     @Override
     public void process(Exchange exchange) {
-        DrawerUser entry = exchange.getMessage().getBody(DrawerUser.class);
         final DrawerEntryPayload entryPayloadModel = exchange.getProperty(ExchangeProperty.DRAWER_ENTRY_PAYLOAD, DrawerEntryPayload.class);
-        entryPayloadModel.setId(entry.getDrawerNotificationUuid());
 
         DrawerEntry drawerEntry = new DrawerEntry();
         drawerEntry.setPayload(entryPayloadModel);
+        drawerEntry.setUsers(exchange.getProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, Set.class));
+        // TODO : for the moment we need the org id for test purpose, because chrome service do not handle usernames yet
         drawerEntry.setOrganizations(List.of(exchange.getProperty(ORG_ID, String.class)));
-        drawerEntry.setUsers(List.of(entry.getId()));
         JsonObject myPayload = JsonObject.mapFrom(drawerEntry);
 
         Message in = exchange.getIn();
@@ -48,7 +47,7 @@ public class DrawerPayloadBuilder implements Processor {
         outgoingCloudEvent.put("specversion", CE_SPEC_VERSION);
         outgoingCloudEvent.put("datacontenttype", "application/json");
         outgoingCloudEvent.put("source", "urn:redhat:source:notifications:drawer");
-        outgoingCloudEvent.put("id", entry.getId());
+        outgoingCloudEvent.put("id", entryPayloadModel.getEventId());
         outgoingCloudEvent.put("time", ZonedDateTime.now(UTC).toString());
         outgoingCloudEvent.put("data", myPayload);
 

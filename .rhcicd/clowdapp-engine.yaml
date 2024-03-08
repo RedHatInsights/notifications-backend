@@ -109,8 +109,6 @@ objects:
           value: ${MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED}
         - name: MP_MESSAGING_OUTGOING_TOCAMEL_MAX_REQUEST_SIZE
           value: ${MP_MESSAGING_OUTGOING_TOCAMEL_MAX_REQUEST_SIZE}
-        - name: MP_MESSAGING_OUTGOING_DRAWER_ENABLED
-          value: ${MP_MESSAGING_OUTGOING_DRAWER_ENABLED}
         - name: NOTIFICATIONS_AGGREGATION_MAX_PAGE_SIZE
           value: ${NOTIFICATIONS_AGGREGATION_MAX_PAGE_SIZE}
         - name: NOTIFICATIONS_EMAIL_HCC_SENDER_NAME_ENABLED
@@ -232,8 +230,6 @@ objects:
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
         - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
           value: ${NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS}
-        - name: NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED
-          value: ${NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED}
         - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
           value: ${NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
@@ -307,8 +303,6 @@ parameters:
 - name: MP_MESSAGING_OUTGOING_TOCAMEL_MAX_REQUEST_SIZE
   description: Maximum size of a request (which can include several messages) in bytes (default is 1048576). Uncompressed messages that exceed this value will trigger a RecordTooLargeException, even if their size after compression is lower than the value.
   value: "10485760"
-- name: MP_MESSAGING_OUTGOING_DRAWER_ENABLED
-  value: "false"
 - name: NOTIFICATIONS_AGGREGATION_MAX_PAGE_SIZE
   description: Maximum number of aggregation records loaded from the DB at once
   value: "100"
@@ -400,9 +394,6 @@ parameters:
 - name: NOTIFICATIONS_DRAWER_ENABLED
   value: "false"
 - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
-  value: "false"
-- name: NOTIFICATIONS_DRAWER_CONNECTOR_ENABLED
-  description: Is the drawer connector enabled to process them instead of in the engine?
   value: "false"
 - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
   value: "false"
