@@ -51,10 +51,10 @@ public class EmailActorsResolver {
                     return OPENSHIFT_SENDER_PROD;
                 }
             } else {
-                return getDefaultEmailSender();
+                return getDefaultEmailSender(event.getOrgId());
             }
         } catch (Exception e) {
-            String emailSender = getDefaultEmailSender();
+            String emailSender = getDefaultEmailSender(event.getOrgId());
             Log.warnf(e, "Something went wrong while determining the email sender, falling back to default value: %s", emailSender);
             return emailSender;
         }
@@ -85,8 +85,8 @@ public class EmailActorsResolver {
         return "openshift".equals(bundle) && "cluster-manager".equals(application);
     }
 
-    private String getDefaultEmailSender() {
-        if (engineConfig.isHccEmailSenderNameEnabled()) {
+    private String getDefaultEmailSender(String orgId) {
+        if (engineConfig.isHccEmailSenderNameEnabled(orgId)) {
             return RH_HCC_SENDER;
         } else {
             return RH_INSIGHTS_SENDER;
