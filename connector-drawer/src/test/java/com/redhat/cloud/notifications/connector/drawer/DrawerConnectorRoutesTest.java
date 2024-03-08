@@ -97,7 +97,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         String orgId = "123456";
         DrawerEntryPayload drawerEntryPayload = new DrawerEntryPayload();
         drawerEntryPayload.setDescription("DataToSend");
-        drawerEntryPayload.setId(UUID.fromString("3ccfb747-610d-42e9-97de-05d43d07319d"));
+        drawerEntryPayload.setEventId(UUID.fromString("3ccfb747-610d-42e9-97de-05d43d07319d"));
         drawerEntryPayload.setSource("My app");
         drawerEntryPayload.setTitle("the title");
         drawerEntryPayload.setBundle("My Bundle");

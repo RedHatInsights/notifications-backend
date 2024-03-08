@@ -15,7 +15,7 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DrawerEntryPayload {
 
-    private UUID id;
+    private UUID eventId;
 
     private String description;
 
@@ -35,7 +35,7 @@ public class DrawerEntryPayload {
     }
 
     public DrawerEntryPayload(Object[] rawDrawerEntry) {
-        id = (UUID) rawDrawerEntry[0];
+        eventId = (UUID) rawDrawerEntry[0];
         read = (boolean) rawDrawerEntry[1];
         source = String.format("%s - %s", rawDrawerEntry[2], rawDrawerEntry[3]);
         title = (String) rawDrawerEntry[4];
@@ -44,12 +44,12 @@ public class DrawerEntryPayload {
         bundle = (String) rawDrawerEntry[7];
     }
 
-    public UUID getId() {
-        return id;
+    public UUID getEventId() {
+        return eventId;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
+    public void setEventId(UUID eventId) {
+        this.eventId = eventId;
     }
 
     public boolean isRead() {

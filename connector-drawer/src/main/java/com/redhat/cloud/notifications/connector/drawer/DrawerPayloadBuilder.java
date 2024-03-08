@@ -47,7 +47,7 @@ public class DrawerPayloadBuilder implements Processor {
         outgoingCloudEvent.put("specversion", CE_SPEC_VERSION);
         outgoingCloudEvent.put("datacontenttype", "application/json");
         outgoingCloudEvent.put("source", "urn:redhat:source:notifications:drawer");
-        outgoingCloudEvent.put("id", entryPayloadModel.getId());
+        outgoingCloudEvent.put("id", entryPayloadModel.getEventId());
         outgoingCloudEvent.put("time", ZonedDateTime.now(UTC).toString());
         outgoingCloudEvent.put("data", myPayload);
 

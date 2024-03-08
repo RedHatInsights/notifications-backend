@@ -97,7 +97,7 @@ public class DrawerNotificationRepositoryTest {
     @Transactional
     void testThousandsCreations() {
         List<String> users = new ArrayList<>();
-        Event ThousandsDrawerNotificationsEvent = resourceHelpers.createEvent(createdEventType);
+        Event thousandsDrawerNotificationsEvent = resourceHelpers.createEvent(createdEventType);
         final int LIMIT = 10000;
         for (int i = 0; i < LIMIT; i++) {
             users.add("user-" + i);
@@ -105,18 +105,18 @@ public class DrawerNotificationRepositoryTest {
 
         String usrList = users.stream().collect(Collectors.joining(","));
         Instant before = Instant.now();
-        drawerNotificationsRepository.create(ThousandsDrawerNotificationsEvent, usrList);
+        drawerNotificationsRepository.create(thousandsDrawerNotificationsEvent, usrList);
         Instant after = Instant.now();
         long duration = Duration.between(before, after).toMillis();
         assertTrue(duration < 2000, String.format("Injection duration should be lower than 2 sec but was %s mills", duration));
         Log.infof("data injection ended after %s Millis ", Duration.between(before, after).toMillis());
 
-        List<DrawerNotification> createdNotifications =  getDrawerNotificationsByEventId(ThousandsDrawerNotificationsEvent.getId());
+        List<DrawerNotification> createdNotifications =  getDrawerNotificationsByEventId(thousandsDrawerNotificationsEvent.getId());
         assertEquals(LIMIT, createdNotifications.size());
 
         Log.info("Try to insert twice same records");
-        drawerNotificationsRepository.create(ThousandsDrawerNotificationsEvent, usrList);
-        createdNotifications =  getDrawerNotificationsByEventId(ThousandsDrawerNotificationsEvent.getId());
+        drawerNotificationsRepository.create(thousandsDrawerNotificationsEvent, usrList);
+        createdNotifications =  getDrawerNotificationsByEventId(thousandsDrawerNotificationsEvent.getId());
         assertEquals(LIMIT, createdNotifications.size());
     }
 

@@ -81,5 +81,4 @@ public class DrawerNotification extends CreationTimestamped {
         this.read = read;
     }
 
-
 }

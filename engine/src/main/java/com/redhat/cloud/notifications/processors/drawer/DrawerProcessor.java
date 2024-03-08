@@ -116,7 +116,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         drawerEntryPayload.setCreated(event.getCreated());
         drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
         drawerEntryPayload.setBundle(bundleRepository.getBundle(event.getBundleId()).getName());
-        drawerEntryPayload.setId(event.getId());
+        drawerEntryPayload.setEventId(event.getId());
         return drawerEntryPayload;
     }
 
@@ -149,12 +149,12 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         Map<String, Object> details = (HashMap<String, Object>) decodedPayload.get("details");
         if (null != details && "com.redhat.console.notification.toCamel.drawer".equals(details.get("type"))) {
             com.redhat.cloud.notifications.models.Event event = notificationHistoryRepository.getEventIdFromHistoryId(historyId);
-            List<String> drawerNotifications = (List<String>) details.get("resolved_recipient_list");
-            if (null != drawerNotifications && drawerNotifications.size() > 0) {
-                String drawerNotificationIds = String.join(",", drawerNotifications);
+            List<String> recipients = (List<String>) details.get("resolved_recipient_list");
+            if (null != recipients && recipients.size() > 0) {
+                String drawerNotificationIds = String.join(",", recipients);
                 drawerNotificationRepository.create(event, drawerNotificationIds);
                 details.remove("resolved_recipient_list");
-                details.put("new_drawer_entry_counter", drawerNotifications.size());
+                details.put("new_drawer_entry_counter", recipients.size());
             }
         }
     }

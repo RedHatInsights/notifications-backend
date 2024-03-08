@@ -13,7 +13,7 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DrawerEntryPayload {
 
-    private UUID id;
+    private UUID eventId;
 
     private String description;
 
@@ -31,12 +31,12 @@ public class DrawerEntryPayload {
     public DrawerEntryPayload() {
     }
 
-    public UUID getId() {
-        return id;
+    public UUID getEventId() {
+        return eventId;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
+    public void setEventId(UUID eventId) {
+        this.eventId = eventId;
     }
 
     public boolean isRead() {

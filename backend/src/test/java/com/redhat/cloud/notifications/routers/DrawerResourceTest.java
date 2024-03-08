@@ -181,10 +181,10 @@ public class DrawerResourceTest extends DbIsolatedTest {
         assertEquals(3, page.getData().size());
 
         // only notification recipient can update read status
-        Integer nbUpdates = updateDrawerEntriesReadStatus(identityHeaderUser2, Set.of(page.getData().get(0).getId()), true);
+        Integer nbUpdates = updateDrawerEntriesReadStatus(identityHeaderUser2, Set.of(page.getData().get(0).getEventId()), true);
         assertEquals(0, nbUpdates);
 
-        nbUpdates = updateDrawerEntriesReadStatus(defaultIdentityHeader, Set.of(page.getData().get(0).getId()), true);
+        nbUpdates = updateDrawerEntriesReadStatus(defaultIdentityHeader, Set.of(page.getData().get(0).getEventId()), true);
         assertEquals(1, nbUpdates);
 
         // should return 1 result

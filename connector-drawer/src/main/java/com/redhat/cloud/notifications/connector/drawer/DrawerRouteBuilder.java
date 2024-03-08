@@ -44,7 +44,7 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
                 .to(drawerConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
             .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .process(recipientsResolverResponseProcessor)
-            .choice().when(shouldDrawerPayloadGenAndSend())
+            .choice().when(hasRecipients())
                 .process(drawerPayloadBuilder)
                 .to(log(getClass().getName()).level("INFO").showHeaders(true).showBody(true))
                 .to(direct(CONNECTOR_TO_DRAWER))
@@ -59,7 +59,7 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
     }
 
 
-    private Predicate shouldDrawerPayloadGenAndSend() {
+    private Predicate hasRecipients() {
         return exchange -> !exchange.getProperty(RESOLVED_RECIPIENT_LIST, Set.class).isEmpty();
     }
 
