@@ -30,6 +30,7 @@ public class IntegrationDisabledNotifier {
     public static final String ERROR_TYPE_PROPERTY = "error_type";
     public static final String ENDPOINT_ID_PROPERTY = "endpoint_id";
     public static final String ENDPOINT_NAME_PROPERTY = "endpoint_name";
+    public static final String ENDPOINT_CATEGORY_PROPERTY = "endpoint_category";
     public static final String STATUS_CODE_PROPERTY = "status_code";
     public static final String ERRORS_COUNT_PROPERTY = "errors_count";
 
@@ -56,6 +57,7 @@ public class IntegrationDisabledNotifier {
                 .withAdditionalProperty(ERROR_TYPE_PROPERTY, errorType)
                 .withAdditionalProperty(ENDPOINT_ID_PROPERTY, endpoint.getId())
                 .withAdditionalProperty(ENDPOINT_NAME_PROPERTY, endpoint.getName())
+                .withAdditionalProperty(ENDPOINT_CATEGORY_PROPERTY, getFrontendCategory(endpoint))
                 .withAdditionalProperty(ERRORS_COUNT_PROPERTY, errorsCount);
 
         if (statusCode > 0) {
@@ -82,5 +84,32 @@ public class IntegrationDisabledNotifier {
                 .withEvents(List.of(event))
                 .withRecipients(List.of(recipients))
                 .build();
+    }
+
+    /*
+     * The following code is a problem for several reasons:
+     * - the endpoints category is a frontend key that shouldn't appear in the backend code
+     * - the endpoints subtype no longer makes sense, we should only have the type
+     * TODO Let's improve that and fix problems ASAP!
+     */
+    private static String getFrontendCategory(Endpoint endpoint) {
+        return switch (endpoint.getType()) {
+            case ANSIBLE -> "Reporting";
+            case CAMEL -> {
+                yield switch (endpoint.getSubType()) {
+                        case "google_chat", "slack", "teams" -> "Communications";
+                        case "servicenow", "splunk" -> "Reporting";
+                        default -> {
+                            // The frontend will show the Cloud tab by default if we return an empty string.
+                            yield "";
+                        }
+                    };
+            }
+            case WEBHOOK -> "Webhooks";
+            default -> {
+                // The frontend will show the Cloud tab by default if we return an empty string.
+                yield "";
+            }
+        };
     }
 }

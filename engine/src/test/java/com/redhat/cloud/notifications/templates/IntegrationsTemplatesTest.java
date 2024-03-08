@@ -15,6 +15,7 @@ import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.SERVER_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.buildIntegrationDisabledAction;
+import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -67,6 +68,8 @@ public class IntegrationsTemplatesTest extends EmailTemplatesInDbHelper {
         endpoint.setId(UUID.randomUUID());
         endpoint.setName("Unreliable integration");
         endpoint.setOrgId(DEFAULT_ORG_ID);
+        endpoint.setType(CAMEL);
+        endpoint.setSubType("slack");
         return endpoint;
     }
 
