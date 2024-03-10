@@ -32,7 +32,7 @@ public class LogLevelManager {
     private static final String UNLEASH_TOGGLE_NAME = "notifications-engine.custom-log-levels";
     private static final String INHERITED = "INHERITED";
 
-    @ConfigProperty(name = "hostname", defaultValue = "localhost")
+    @ConfigProperty(name = "notifications.hostname", defaultValue = "localhost")
     String hostName;
 
     @Inject
