@@ -86,7 +86,7 @@ public class LogLevelManager {
                     Logger logger = Logger.getLogger(logConfig.category);
 
                     Level currentLevel = logger.getLevel();
-                    if (!currentLevel.equals(newLevel.get())) {
+                    if (!newLevel.get().equals(currentLevel)) {
                         previousLogLevels.put(logConfig.category, currentLevel);
                         logger.setLevel(newLevel.get());
                         logUpdated(logConfig.category, currentLevel, newLevel.get());
