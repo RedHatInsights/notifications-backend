@@ -238,6 +238,8 @@ objects:
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE
           value: ${NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE}
+        - name: HOSTNAME
+          value: ${HOSTNAME}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
