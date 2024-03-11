@@ -32,6 +32,10 @@ public class LogLevelManager {
     private static final String UNLEASH_TOGGLE_NAME = "notifications-engine.custom-log-levels";
     private static final String INHERITED = "INHERITED";
 
+    // TODO Remove this when we're fully migrated to Unleash in all environments.
+    @ConfigProperty(name = "notifications.unleash.enabled", defaultValue = "false")
+    boolean unleashEnabled;
+
     @ConfigProperty(name = "notifications.hostname", defaultValue = "localhost")
     String hostName;
 
@@ -44,70 +48,77 @@ public class LogLevelManager {
     private final Map<String, Level> previousLogLevels = new HashMap<>();
 
     @Scheduled(every = "${notifications.log-level-manager.scheduler-period:1m}")
-    void updateLogLevels() {
-
-        Variant variant = unleash.getVariant(UNLEASH_TOGGLE_NAME);
-        if (variant.isEnabled()) {
-            Optional<Payload> payload = variant.getPayload();
-
-            if (payload.isEmpty()) {
-                Log.warn("Variant ignored because of an empty payload");
-                return;
-            }
-
-            if (!payload.get().getType().equals("json")) {
-                Log.warnf("Variant ignored because of a wrong payload type [expected=json, actual=%s]", payload.get().getType());
-                return;
-            }
-
-            if (payload.get().getValue() == null) {
-                Log.warn("Variant ignored because of a null payload value");
-                return;
-            }
-
-            LogConfig[] logConfigs;
+    void run() {
+        if (unleashEnabled) {
             try {
-                logConfigs = objectMapper.readValue(payload.get().getValue(), LogConfig[].class);
-            } catch (JsonProcessingException e) {
-                Log.warn("Variant payload deserialization failed", e);
-                return;
-            }
 
-            for (LogConfig logConfig : logConfigs) {
-                if (logConfig.hostName == null || logConfig.hostName.equals(hostName)) {
+                Variant variant = unleash.getVariant(UNLEASH_TOGGLE_NAME);
+                if (variant.isEnabled()) {
+                    Optional<Payload> payload = variant.getPayload();
 
-                    Optional<Level> newLevel = getLogLevel(logConfig.level);
-
-                    if (newLevel.isEmpty()) {
-                        Log.warnf("Log config ignored because the level is unknown: %s", logConfig.level);
-                        continue;
+                    if (payload.isEmpty()) {
+                        Log.warn("Variant ignored because of an empty payload");
+                        return;
                     }
 
-                    Logger logger = Logger.getLogger(logConfig.category);
-
-                    Level currentLevel = logger.getLevel();
-                    if (!newLevel.get().equals(currentLevel)) {
-                        previousLogLevels.put(logConfig.category, currentLevel);
-                        logger.setLevel(newLevel.get());
-                        logUpdated(logConfig.category, currentLevel, newLevel.get());
+                    if (!payload.get().getType().equals("json")) {
+                        Log.warnf("Variant ignored because of a wrong payload type [expected=json, actual=%s]", payload.get().getType());
+                        return;
                     }
+
+                    if (payload.get().getValue() == null) {
+                        Log.warn("Variant ignored because of a null payload value");
+                        return;
+                    }
+
+                    LogConfig[] logConfigs;
+                    try {
+                        logConfigs = objectMapper.readValue(payload.get().getValue(), LogConfig[].class);
+                    } catch (JsonProcessingException e) {
+                        Log.warn("Variant payload deserialization failed", e);
+                        return;
+                    }
+
+                    for (LogConfig logConfig : logConfigs) {
+                        if (logConfig.hostName == null || logConfig.hostName.equals(hostName)) {
+
+                            Optional<Level> newLevel = getLogLevel(logConfig.level);
+
+                            if (newLevel.isEmpty()) {
+                                Log.warnf("Log config ignored because the level is unknown: %s", logConfig.level);
+                                continue;
+                            }
+
+                            Logger logger = Logger.getLogger(logConfig.category);
+
+                            Level currentLevel = logger.getLevel();
+                            if (!newLevel.get().equals(currentLevel)) {
+                                previousLogLevels.put(logConfig.category, currentLevel);
+                                logger.setLevel(newLevel.get());
+                                logUpdated(logConfig.category, currentLevel, newLevel.get());
+                            }
+                        }
+                    }
+
+                    Set<String> categories = Arrays.stream(logConfigs)
+                            .map(logConfig -> logConfig.category)
+                            .collect(toSet());
+                    previousLogLevels.entrySet().removeIf(entry -> {
+                        boolean remove = !categories.contains(entry.getKey());
+                        if (remove) {
+                            revertLogLevel(entry.getKey(), entry.getValue());
+                        }
+                        return remove;
+                    });
+
+                } else {
+                    previousLogLevels.forEach(LogLevelManager::revertLogLevel);
+                    previousLogLevels.clear();
                 }
+
+            } catch (Exception e) {
+                Log.error("Scheduled job execution unexpectedly failed", e);
             }
-
-            Set<String> categories = Arrays.stream(logConfigs)
-                    .map(logConfig -> logConfig.category)
-                    .collect(toSet());
-            previousLogLevels.entrySet().removeIf(entry -> {
-                boolean remove = !categories.contains(entry.getKey());
-                if (remove) {
-                    revertLogLevel(entry.getKey(), entry.getValue());
-                }
-                return remove;
-            });
-
-        } else {
-            previousLogLevels.forEach(LogLevelManager::revertLogLevel);
-            previousLogLevels.clear();
         }
     }
 
