@@ -21,10 +21,10 @@ objects:
       - prefix: insights/notifications/behavior_groups_event_types_org_id
         query: >-
           SELECT
-            bun.display_name AS bundle,
-            apps.display_name AS application,
-            et.display_name AS event_type,
-            bg.org_id,
+            bun.display_name::TEXT AS bundle,
+            apps.display_name::TEXT AS application,
+            et.display_name::TEXT AS event_type,
+            bg.org_id::TEXT,
             EXISTS (
               SELECT
                 1
@@ -32,8 +32,8 @@ objects:
                 behavior_group_action AS bga
               WHERE
                 bga.behavior_group_id = etb.behavior_group_id
-            ) AS actively_used,
-            count(bg.*) AS "count"
+            )::BOOLEAN AS actively_used,
+            count(bg.*)::INTEGER AS "count"
           FROM
             event_type_behavior AS etb
           INNER JOIN
@@ -61,10 +61,10 @@ objects:
       - prefix: insights/notifications/endpoint_types
         query: >-
           SELECT
-            sub."Endpoint type"::TEXT,
-            COUNT(*) AS "Count",
-            sub."Enabled"::TEXT,
-            sub."Actively used"::TEXT
+            sub.endpoint_type::TEXT,
+            sub.enabled::BOOLEAN,
+            sub.actively_used::BOOLEAN,
+            COUNT(*)::INTEGER AS "count"
           FROM
             (
               SELECT
@@ -76,8 +76,8 @@ objects:
                   LOWER(e.endpoint_sub_type)
                 ELSE
                   LOWER(e.endpoint_type_v2)
-              END AS "Endpoint type",
-              e.enabled AS "Enabled",
+              END AS endpoint_type,
+              e.enabled AS enabled,
               -- If the endpoint has an associated event type and a behavior
               -- group, then that means that it is actively being used.
               EXISTS (
@@ -89,24 +89,24 @@ objects:
                   event_type_behavior AS etb ON etb.behavior_group_id = bga.behavior_group_id
                 WHERE
                   bga.endpoint_id = e.id
-                ) AS "Actively used"
+                ) AS actively_used
               FROM
                 endpoints AS e
               WHERE
                 e.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
             ) AS sub
           GROUP BY
-            sub."Endpoint type",
-            sub."Enabled",
-            sub."Actively used";
+            sub.endpoint_type,
+            sub.enabled,
+            sub.actively_used;
       - prefix: insights/notifications/endpoint_types_by_org_id
         query: >-
           SELECT
-              sub.endpoint_type,
-              sub.org_id,
-              COUNT(*) AS "count",
-              sub.enabled,
-              sub.actively_used
+            sub.org_id::TEXT,
+            sub.endpoint_type::TEXT,
+            sub.enabled::BOOLEAN,
+            sub.actively_used::BOOLEAN,
+            COUNT(*)::INTEGER AS "count"
           FROM
             (
               SELECT
@@ -145,11 +145,11 @@ objects:
       - prefix: insights/notifications/email_subscriptions
         query: >-
           SELECT
-            b.display_name::TEXT AS "Bundle",
-            a.display_name::TEXT AS "Application",
-            et.display_name::TEXT AS "Event type",
-            es.subscription_type::TEXT AS "Subscription type",
-            COUNT(es.*) AS "Count"
+            b.display_name::TEXT AS bundle,
+            a.display_name::TEXT AS application,
+            et.display_name::TEXT AS event_type,
+            es.subscription_type::TEXT AS subscription_type,
+            COUNT(es.*)::INTEGER AS "count"
           FROM
             email_subscriptions AS es
           INNER JOIN
