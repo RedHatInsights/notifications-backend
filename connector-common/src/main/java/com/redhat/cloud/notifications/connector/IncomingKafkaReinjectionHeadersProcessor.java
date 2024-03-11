@@ -1,10 +1,12 @@
 package com.redhat.cloud.notifications.connector;
 
+import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
 @ApplicationScoped
+@DefaultBean
 public class IncomingKafkaReinjectionHeadersProcessor implements Processor {
     /**
      * Extracts the reinjection count from the Kafka header if it is present.

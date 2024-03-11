@@ -12,7 +12,7 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SendEmailsRequest {
 
-    private final Set<Email> emails = new HashSet<>();
+    public final Set<Email> emails = new HashSet<>();
     private final boolean skipUsersResolution = true;
     private final String emailSender;
     private final String defaultRecipient;

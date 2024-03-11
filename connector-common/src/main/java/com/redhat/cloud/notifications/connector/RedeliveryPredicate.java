@@ -26,7 +26,4 @@ public class RedeliveryPredicate implements Predicate {
         return t instanceof IOException;
     }
 
-    public boolean doesNotMatch(Exchange exchange) {
-        return !matches(exchange);
-    }
 }
