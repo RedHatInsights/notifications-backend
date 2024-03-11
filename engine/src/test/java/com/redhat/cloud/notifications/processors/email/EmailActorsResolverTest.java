@@ -1,13 +1,11 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 
@@ -16,30 +14,32 @@ import static com.redhat.cloud.notifications.processors.email.EmailActorsResolve
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OCM_PENDO_MESSAGE;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OCM_PENDO_TITLE;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_PROD;
+import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_STAGE;
+import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.RH_HCC_SENDER;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.RH_INSIGHTS_SENDER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class EmailActorsResolverTest {
 
-    @Inject
+    @InjectSpy
     EmailActorsResolver emailActorsResolver;
-
-    @InjectMock
-    EngineConfig engineConfig;
 
     /**
      * Tests that the "Red Hat Insights" sender is returned by default.
      */
     @Test
     void testDefaultEmailSenderInsights() {
-        Event event = buildEvent(null, "rhel", "policies");
-        assertEquals(RH_INSIGHTS_SENDER, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        try {
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2050-01-01"));
+            Event event = buildEvent(null, "rhel", "policies");
+            assertEquals(RH_INSIGHTS_SENDER, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        } finally {
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2000-01-01"));
+        }
     }
 
     /**
@@ -47,9 +47,13 @@ public class EmailActorsResolverTest {
      */
     @Test
     void testDefaultEmailSenderHCC() {
-        when(engineConfig.isHccEmailSenderNameEnabled(anyString())).thenReturn(true);
-        Event event = buildEvent(null, "rhel", "policies");
-        assertEquals(RH_HCC_SENDER, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        try {
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2024-01-01"));
+            Event event = buildEvent(null, "rhel", "policies");
+            assertEquals(RH_HCC_SENDER, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        } finally {
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2000-01-01"));
+        }
     }
 
     /**
@@ -58,7 +62,15 @@ public class EmailActorsResolverTest {
     @Test
     void testOpenshiftClusterManagerStageEmailSender() {
         Event event = buildEvent("stage", "openshift", "cluster-manager");
-        assertEquals(OPENSHIFT_SENDER_STAGE, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        assertEquals(OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        try {
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2050-01-01"));
+
+            event = buildEvent("stage", "openshift", "cluster-manager");
+            assertEquals(OPENSHIFT_SENDER_STAGE, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        } finally {
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2000-01-01"));
+        }
     }
 
     /**
@@ -67,7 +79,15 @@ public class EmailActorsResolverTest {
     @Test
     void testOpenshiftClusterManagerDefaultEmailSender() {
         Event event = buildEvent("prod", "openshift", "cluster-manager");
-        assertEquals(OPENSHIFT_SENDER_PROD, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        assertEquals(OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        try {
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2050-01-01"));
+
+            event = buildEvent("prod", "openshift", "cluster-manager");
+            assertEquals(OPENSHIFT_SENDER_PROD, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        } finally {
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2000-01-01"));
+        }
     }
 
     /**
@@ -79,11 +99,11 @@ public class EmailActorsResolverTest {
         assertNull(emailActorsResolver.getPendoEmailMessage(event), "unexpected email pendo message returned from the function under test");
 
         try {
-            emailActorsResolver.setShowPendoUntil(LocalDate.parse("2050-01-01"));
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2050-01-01"));
             assertEquals(String.format(GENERAL_PENDO_MESSAGE, "January 01, 2050"), emailActorsResolver.getPendoEmailMessage(event).getPendoMessage(), "unexpected email pendo message returned from the function under test");
             assertEquals(GENERAL_PENDO_TITLE, emailActorsResolver.getPendoEmailMessage(event).getPendoTitle(), "unexpected email pendo title returned from the function under test");
         } finally {
-            emailActorsResolver.setShowPendoUntil(LocalDate.parse("2000-01-01"));
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2000-01-01"));
         }
     }
 
@@ -96,7 +116,7 @@ public class EmailActorsResolverTest {
         assertNull(emailActorsResolver.getPendoEmailMessage(event), "unexpected email pendo message returned from the function under test");
 
         try {
-            emailActorsResolver.setShowPendoUntil(LocalDate.parse("2050-01-01"));
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2050-01-01"));
             assertEquals(String.format(OCM_PENDO_MESSAGE, "January 01, 2050"), emailActorsResolver.getPendoEmailMessage(event).getPendoMessage(), "unexpected email pendo message returned from the function under test");
             assertEquals(OCM_PENDO_TITLE, emailActorsResolver.getPendoEmailMessage(event).getPendoTitle(), "unexpected email pendo title returned from the function under test");
 
@@ -105,7 +125,7 @@ public class EmailActorsResolverTest {
             assertEquals(OCM_PENDO_TITLE, emailActorsResolver.getPendoEmailMessage(event).getPendoTitle(), "unexpected email pendo title returned from the function under test");
 
         } finally {
-            emailActorsResolver.setShowPendoUntil(LocalDate.parse("2000-01-01"));
+            emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2000-01-01"));
         }
     }
 
