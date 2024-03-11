@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.config.FeatureFlipper;
 import io.getunleash.Unleash;
-import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -95,15 +94,6 @@ public class EngineConfig {
             return unleash.isEnabled(EMAILS_ONLY_MODE_ENABLED, true);
         } else {
             return featureFlipper.isEmailsOnlyMode();
-        }
-    }
-
-    public boolean isHccEmailSenderNameEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContext.builder().addProperty("orgId", orgId).build();
-            return unleash.isEnabled(HCC_EMAIL_SENDER_NAME_ENABLED, unleashContext, false);
-        } else {
-            return featureFlipper.isHccEmailSenderNameEnabled();
         }
     }
 
