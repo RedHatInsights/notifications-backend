@@ -236,6 +236,32 @@ objects:
             et.display_name,
             es.subscription_type,
             es.subscribed
+      # Count the number of events grouped by bundle, application, status and
+      # the organization ID.
+      - prefix: insights/notifications/events_by_bundle_app_status_org_id
+        query: >-
+          SELECT
+            bun.display_name::TEXT AS bundle,
+            apps.display_name::TEXT AS application,
+            e.org_id::TEXT,
+            nh.status::TEXT,
+            count(nh.*)
+          FROM
+            notification_history AS nh
+          INNER JOIN
+            "event" AS e
+              ON e.id = nh.event_id
+          INNER JOIN
+            applications AS apps
+              ON apps.id = e.application_id
+          INNER JOIN
+            bundles AS bun
+              ON bun.id = apps.bundle_id
+          GROUP BY
+            bun.display_name,
+            apps.display_name,
+            e.org_id,
+            nh.status
 parameters:
 - name: FLOORIST_BUCKET_SECRET_NAME
   description: Floorist's S3 bucket's secret name
