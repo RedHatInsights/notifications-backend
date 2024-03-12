@@ -114,12 +114,12 @@ public class TemplateRepository {
         final String instantEmailBodyPath = "templates/Default/instantEmailBody.html";
 
         String templateSubjectData = Files.readString(
-                Paths.get(this.getClass().getClassLoader().getResource(instantEmailSubjectPath).toURI()),
+                Paths.get(Thread.currentThread().getContextClassLoader().getResource(instantEmailSubjectPath).toURI()),
                 StandardCharsets.UTF_8
         );
 
         String templateBodyData = Files.readString(
-                Paths.get(this.getClass().getClassLoader().getResource(instantEmailBodyPath).toURI()),
+                Paths.get(Thread.currentThread().getContextClassLoader().getResource(instantEmailBodyPath).toURI()),
                 StandardCharsets.UTF_8
         );
 
