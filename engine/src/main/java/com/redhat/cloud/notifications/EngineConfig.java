@@ -36,7 +36,6 @@ public class EngineConfig {
     private static final String DEFAULT_TEMPLATE_ENABLED = toggleName("default-template");
     private static final String DRAWER_ENABLED = toggleName("drawer");
     private static final String EMAILS_ONLY_MODE_ENABLED = toggleName("emails-only-mode");
-    private static final String HCC_EMAIL_SENDER_NAME_ENABLED = toggleName("hcc-email-sender-name");
     private static final String KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED = toggleName("kafka-consumed-total-checker");
     private static final String SECURED_EMAIL_TEMPLATES_ENABLED = toggleName("secured-email-templates");
 
