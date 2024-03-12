@@ -24,6 +24,17 @@
 <p>
     {global_vars.log_description}
 </p>
+
+{#if global_vars.doc_references.orEmpty.size > 0}
+    <p>
+        <b>Need help? Check these resources for more information:</b>
+    </p>
+    <ul>
+        {#each global_vars.doc_references}
+            <li><a href="{it}" target="_blank">{it}</a></li>
+        {/each}
+    </ul>
+{/if}
 {/let}
 {/content-body-section1}
 {#content-title-section2}
@@ -55,17 +66,6 @@ More info
 <p>
     Thank you for choosing Red Hat OpenShift{#switch global_vars.subscription_plan}{#case 'OSD'} Dedicated{#case 'OSDTrial'} Dedicated Trial{#case 'MOA'} Service on AWS{/switch}.
 </p>
-
-{#if global_vars.doc_references.orEmpty.size > 0}
-    <p>
-        <b>Need help? Check these resources for more information:</b>
-    </p>
-    <ul>
-        {#each global_vars.doc_references}
-            <li><a href="{it}" target="_blank">{it}</a></li>
-        {/each}
-    </ul>
-{/if}
 {/let}
 {/content-body-section2}
 {/include}

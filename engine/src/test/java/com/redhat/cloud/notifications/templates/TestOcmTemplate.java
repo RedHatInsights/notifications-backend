@@ -53,6 +53,13 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertTrue(result.contains(((Map<String, String>) action.getEvents().get(0).getPayload().getAdditionalProperties().get("global_vars")).get("log_description")));
         assertTrue(result.contains("What can you expect"));
         assertTrue(result.contains("Thank you for choosing Red Hat OpenShift Dedicated Trial."));
+        assertFalse(result.contains("Check these resources for more information"));
+
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template", "doc_references", List.of("https://docs.openshift.com/rosa/ocm/ocm-overview.html", "https://console.redhat.com/openshift"))));
+        result = generateEmailBody(CLUSTER_UPDATE, action);
+        assertTrue(result.contains("Check these resources for more information"));
+        assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
+        assertTrue(result.contains("https://console.redhat.com/openshift"));
     }
 
     @Test

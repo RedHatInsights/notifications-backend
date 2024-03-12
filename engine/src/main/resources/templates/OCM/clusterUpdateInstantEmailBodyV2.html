@@ -33,6 +33,17 @@ Your {global_var.log_description}.
         <strong>For more information, refer to</strong> <a href="https://www.openshift.com/blog/deploying-highly-available-applications-openshift-kubernetes" target="_blank" title="OpenShift HA guide blog">our highly available deployment guide</a>.
     </p>
 {/if}
+
+{#if action.events[0].payload.global_vars.doc_references.orEmpty.size > 0}
+    <p>
+        <b>Need help? Check these resources for more information:</b>
+    </p>
+    <ul>
+        {#each action.events[0].payload.global_vars.doc_references}
+            <li><a href="{it}" target="_blank">{it}</a></li>
+        {/each}
+    </ul>
+{/if}
 {/let}
 {/content-body-section1}
 {#content-title-section2}
@@ -45,16 +56,6 @@ If you have any questions, please <a href="https://access.redhat.com/support/con
 <p>
 Thank you for choosing Red Hat OpenShift{#switch action.events[0].payload.global_vars.subscription_plan}{#case 'OSD'} Dedicated{#case 'OSDTrial'} Dedicated Trial{#case 'MOA'} Service on AWS{/switch}.
 </p>
-{#if action.events[0].payload.global_vars.doc_references.orEmpty.size > 0}
-    <p>
-        <b>Need help? Check these resources for more information:</b>
-    </p>
-    <ul>
-        {#each action.events[0].payload.global_vars.doc_references}
-            <li><a href="{it}" target="_blank">{it}</a></li>
-        {/each}
-    </ul>
-{/if}
 
 {/content-body-section2}
 {/include}
