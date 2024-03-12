@@ -4,7 +4,7 @@ import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -34,7 +34,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -66,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -90,8 +90,8 @@ public class LifecycleITest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    BackendConfig backendConfig;
 
     /**
      * We mock the sources service's REST client because there are a few tests
@@ -104,12 +104,7 @@ public class LifecycleITest extends DbIsolatedTest {
 
     @BeforeEach
     void beforeEach() {
-        featureFlipper.setInstantEmailsEnabled(true);
-    }
-
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setInstantEmailsEnabled(false);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
     }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
@@ -120,7 +115,7 @@ public class LifecycleITest extends DbIsolatedTest {
 
     @Test
     void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent() {
-        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+        if (!backendConfig.isUniqueBgNameEnabled()) {
             // The check is disabled from configuration.
             return;
         }
@@ -546,14 +541,13 @@ public class LifecycleITest extends DbIsolatedTest {
         // The SecretUtils class follows the "basic authentication", "secret
         // token" and "bearer token" order, so that is why we make the returns
         // in that order for the mock.
-        Mockito
-            .when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+        when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
             .thenReturn(secretTokenSecret);
 
         // Make sure that when the secrets are loaded when we fetch the
         // endpoint again for checking the assertions, we simulate fetching
         // the secrets from Sources too.
-        Mockito.when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+        when(this.sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
 
         String responseBody = given()
                 .basePath(API_INTEGRATIONS_V_1_0)

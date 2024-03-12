@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -39,7 +39,7 @@ public class BehaviorGroupRepository {
     EntityManager entityManager;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    BackendConfig backendConfig;
 
     /**
      * Counts all the behavior groups by their org id and event type id.
@@ -207,7 +207,7 @@ public class BehaviorGroupRepository {
     }
 
     private void checkBehaviorGroupDisplayNameDuplicate(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
-        if (!featureFlipper.isEnforceBehaviorGroupNameUnicity()) {
+        if (!backendConfig.isUniqueBgNameEnabled()) {
             // The check is disabled from configuration.
             return;
         }

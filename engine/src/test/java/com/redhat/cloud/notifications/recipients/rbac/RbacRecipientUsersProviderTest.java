@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
 import com.redhat.cloud.notifications.TestConstants;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
@@ -76,8 +76,8 @@ public class RbacRecipientUsersProviderTest {
     @RestClient
     MBOPService mbopService;
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    EngineConfig engineConfig;
 
     @Test
     void getGroupUsersShouldOnlyContainActiveUsers() {
@@ -185,24 +185,20 @@ public class RbacRecipientUsersProviderTest {
 
     @Test
     public void getAllUsersFromDefaultGroupRBAC() {
-        try {
-            featureFlipper.setUseRbacForFetchingUsers(true);
-            RbacGroup defaultGroup = new RbacGroup();
-            defaultGroup.setPlatformDefault(true);
-            defaultGroup.setUuid(UUID.randomUUID());
+        when(engineConfig.isUseRbacForFetchingUsers()).thenReturn(true);
+        RbacGroup defaultGroup = new RbacGroup();
+        defaultGroup.setPlatformDefault(true);
+        defaultGroup.setUuid(UUID.randomUUID());
 
-            int elements = 133;
+        int elements = 133;
 
-            mockGetGroup(defaultGroup);
-            mockGetUsersRBAC(elements, false);
+        mockGetGroup(defaultGroup);
+        mockGetUsersRBAC(elements, false);
 
-            List<User> users = rbacRecipientUsersProvider.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, defaultGroup.getUuid());
-            assertEquals(elements, users.size());
-            for (int i = 0; i < elements; ++i) {
-                assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-            }
-        } finally {
-            featureFlipper.setUseRbacForFetchingUsers(false);
+        List<User> users = rbacRecipientUsersProvider.getGroupUsers(TestConstants.DEFAULT_ORG_ID, false, defaultGroup.getUuid());
+        assertEquals(elements, users.size());
+        for (int i = 0; i < elements; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
         }
     }
 
@@ -240,31 +236,26 @@ public class RbacRecipientUsersProviderTest {
 
     @Test
     public void getAllUsersCacheRBAC() {
-        try {
-            featureFlipper.setUseRbacForFetchingUsers(true);
-            int initialSize = 1095;
-            int updatedSize = 1323;
-            mockGetUsersRBAC(initialSize, false);
+        when(engineConfig.isUseRbacForFetchingUsers()).thenReturn(true);
+        int initialSize = 1095;
+        int updatedSize = 1323;
+        mockGetUsersRBAC(initialSize, false);
 
-            List<User> users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
-            assertEquals(initialSize, users.size());
-            for (int i = 0; i < initialSize; ++i) {
-                assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-            }
-
-            mockGetUsersRBAC(updatedSize, false);
-
-            users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
-            // Should still have the initial size because of the cache
-            assertEquals(initialSize, users.size());
-            clearCached();
-
-            users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
-            assertEquals(updatedSize, users.size());
-        } finally {
-            featureFlipper.setUseRbacForFetchingUsers(false);
+        List<User> users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+        assertEquals(initialSize, users.size());
+        for (int i = 0; i < initialSize; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
         }
 
+        mockGetUsersRBAC(updatedSize, false);
+
+        users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+        // Should still have the initial size because of the cache
+        assertEquals(initialSize, users.size());
+        clearCached();
+
+        users = rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, false);
+        assertEquals(updatedSize, users.size());
     }
 
     @Test
@@ -301,52 +292,48 @@ public class RbacRecipientUsersProviderTest {
      */
     @Test
     void testGetUsersMBOP() {
-        try {
-            this.featureFlipper.setUseMBOPForFetchingUsers(true);
+        when(engineConfig.isUseMBOPForFetchingUsers()).thenReturn(true);
 
-            // Fake a REST call to MBOP.
-            final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
-            final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
-            final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage / 2);
+        // Fake a REST call to MBOP.
+        final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
+        final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage);
+        final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(this.MBOPMaxResultsPerPage / 2);
 
-            final boolean adminsOnly = false;
+        final boolean adminsOnly = false;
 
-            // Return a few pages of results, with the last one being less than
-            // the configured maximum limit, so that we can test that the loop
-            // is working as expected.
-            Mockito
-                .when(this.mbopService.getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), Mockito.anyInt()))
-                .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
+        // Return a few pages of results, with the last one being less than
+        // the configured maximum limit, so that we can test that the loop
+        // is working as expected.
+        Mockito
+            .when(this.mbopService.getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), Mockito.anyInt()))
+            .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
 
-            // Call the function under test.
-            final List<User> result = this.rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, adminsOnly);
+        // Call the function under test.
+        final List<User> result = this.rbacRecipientUsersProvider.getUsers(TestConstants.DEFAULT_ORG_ID, adminsOnly);
 
-            // Verify that the offset argument, which is the one that changes
-            // on each iteration, has been correctly incremented.
-            final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
-            Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), capturedOffset.capture());
+        // Verify that the offset argument, which is the one that changes
+        // on each iteration, has been correctly incremented.
+        final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
+        Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(this.bopApiToken), Mockito.eq(this.bopClientId), Mockito.eq(this.bopEnv), Mockito.eq(TestConstants.DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(RbacRecipientUsersProvider.MBOP_SORT_ORDER), Mockito.eq(this.MBOPMaxResultsPerPage), capturedOffset.capture());
 
-            final List<Integer> capturedValues = capturedOffset.getAllValues();
-            assertIterableEquals(
-                List.of(
-                    0,
-                    this.MBOPMaxResultsPerPage,
-                    this.MBOPMaxResultsPerPage * 2
-                ),
-                capturedValues,
-                "unexpected offset values used when calling MBOP"
-            );
+        final List<Integer> capturedValues = capturedOffset.getAllValues();
+        assertIterableEquals(
+            List.of(
+                0,
+                this.MBOPMaxResultsPerPage,
+                this.MBOPMaxResultsPerPage * 2
+            ),
+            capturedValues,
+            "unexpected offset values used when calling MBOP"
+        );
 
-            // Transform the generated MBOP users in order to check that the
-            // function under test did the transformations as expected.
-            final List<User> mockUsers = this.rbacRecipientUsersProvider.transformMBOPUserToUser(firstPageMBOPUsers);
-            mockUsers.addAll(this.rbacRecipientUsersProvider.transformMBOPUserToUser(secondPageMBOPUsers));
-            mockUsers.addAll(this.rbacRecipientUsersProvider.transformMBOPUserToUser(thirdPageMBOPUsers));
+        // Transform the generated MBOP users in order to check that the
+        // function under test did the transformations as expected.
+        final List<User> mockUsers = this.rbacRecipientUsersProvider.transformMBOPUserToUser(firstPageMBOPUsers);
+        mockUsers.addAll(this.rbacRecipientUsersProvider.transformMBOPUserToUser(secondPageMBOPUsers));
+        mockUsers.addAll(this.rbacRecipientUsersProvider.transformMBOPUserToUser(thirdPageMBOPUsers));
 
-            assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
-        } finally {
-            this.featureFlipper.setUseMBOPForFetchingUsers(false);
-        }
+        assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
     }
 
     private void mockGetUsers(int elements, boolean adminsOnly) {

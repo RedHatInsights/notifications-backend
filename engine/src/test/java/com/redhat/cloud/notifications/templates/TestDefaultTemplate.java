@@ -2,12 +2,11 @@ package com.redhat.cloud.notifications.templates;
 
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,14 +14,15 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class TestDefaultTemplate extends EmailTemplatesInDbHelper {
 
     private static final String EVENT_TYPE_NAME = "event-type-without-template";
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    EngineConfig engineConfig;
 
     @Override
     protected String getApp() {
@@ -36,12 +36,7 @@ public class TestDefaultTemplate extends EmailTemplatesInDbHelper {
 
     @BeforeEach
     void beforeEach() {
-        featureFlipper.setUseDefaultTemplate(true);
-    }
-
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setUseDefaultTemplate(false);
+        when(engineConfig.isDefaultTemplateEnabled()).thenReturn(true);
     }
 
     @Test

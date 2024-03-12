@@ -12,6 +12,7 @@ objects:
     dependencies:
     - notifications-recipients-resolver
     envName: ${ENV_NAME}
+    featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.tocamel
       partitions: 3
@@ -97,6 +98,8 @@ objects:
           value: ${NOTIFICATIONS_CONNECTOR_MAX_RECIPIENTS_PER_EMAIL}
         - name: NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED
           value: ${NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED}
+        - name: NOTIFICATIONS_UNLEASH_ENABLED
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_HTTP_PORT
           value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -123,6 +126,8 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: QUARKUS_UNLEASH_ACTIVE
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -204,6 +209,8 @@ parameters:
   description: If an email has more recipients (to/cc/bcc) than this value, it will be split into several emails with the same content but fewer recipients
   value: "50"
 - name: NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_UNLEASH_ENABLED
   value: "false"
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port, defaulting to the default Clowder private port

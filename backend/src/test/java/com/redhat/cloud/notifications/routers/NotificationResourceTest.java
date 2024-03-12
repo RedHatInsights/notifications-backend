@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -21,6 +21,7 @@ import com.redhat.cloud.notifications.routers.models.Facet;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -31,7 +32,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Size;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -86,19 +87,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    BackendConfig backendConfig;
 
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.clearRbac();
-        featureFlipper.setEnforceBehaviorGroupNameUnicity(true);
-    }
-
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
+        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
     }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
@@ -934,52 +930,47 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testBehaviorGroupSameName() {
-        try {
-            final String BEHAVIOR_GROUP_1_NAME = "BehaviorGroup1";
-            final String BEHAVIOR_GROUP_2_NAME = "BehaviorGroup2";
+        final String BEHAVIOR_GROUP_1_NAME = "BehaviorGroup1";
+        final String BEHAVIOR_GROUP_2_NAME = "BehaviorGroup2";
 
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(true);
-            Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
+        Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
 
-            Bundle bundle1 = helpers.createBundle(TEST_BUNDLE_NAME, "Bundle1");
-            Bundle bundle2 = helpers.createBundle(TEST_BUNDLE_2_NAME, "Bundle2");
+        Bundle bundle1 = helpers.createBundle(TEST_BUNDLE_NAME, "Bundle1");
+        Bundle bundle2 = helpers.createBundle(TEST_BUNDLE_2_NAME, "Bundle2");
 
-            CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
-            createBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_1_NAME;
-            createBehaviorGroupRequest.bundleId = bundle1.getId();
+        CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
+        createBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_1_NAME;
+        createBehaviorGroupRequest.bundleId = bundle1.getId();
 
-            UUID behaviorGroup1Id = createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200).get().id;
-            assertNotNull(behaviorGroup1Id);
+        UUID behaviorGroup1Id = createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200).get().id;
+        assertNotNull(behaviorGroup1Id);
 
-            // same display name in same bundle is not possible
-            createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 400);
+        // same display name in same bundle is not possible
+        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 400);
 
-            // same display name in a different bundle is OK
-            createBehaviorGroupRequest.bundleId = bundle2.getId();
-            createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200);
+        // same display name in a different bundle is OK
+        createBehaviorGroupRequest.bundleId = bundle2.getId();
+        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200);
 
-            // Different display name in bundle1
-            createBehaviorGroupRequest.bundleId = bundle1.getId();
-            createBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_2_NAME;
-            createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200);
+        // Different display name in bundle1
+        createBehaviorGroupRequest.bundleId = bundle1.getId();
+        createBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_2_NAME;
+        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200);
 
-            // Cannot update Behavior Group 1 name to "BehaviorGroup2"  as it already exists
-            UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
-            updateBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_2_NAME;
-            updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 400);
+        // Cannot update Behavior Group 1 name to "BehaviorGroup2"  as it already exists
+        UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
+        updateBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_2_NAME;
+        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 400);
 
-            // Can update other properties without changing the name
-            updateBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_1_NAME;
-            updateBehaviorGroupRequest.eventTypeIds = Set.of();
-            updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 200);
+        // Can update other properties without changing the name
+        updateBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_1_NAME;
+        updateBehaviorGroupRequest.eventTypeIds = Set.of();
+        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 200);
 
-            // Can use other name
-            updateBehaviorGroupRequest.displayName = "OtherName";
-            updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 200);
-
-        } finally {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
-        }
+        // Can use other name
+        updateBehaviorGroupRequest.displayName = "OtherName";
+        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 200);
     }
 
     /**

@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -42,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -58,49 +60,41 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    BackendConfig backendConfig;
 
     @Test
     void shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameOrgId() {
-        try {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(true);
-            Bundle bundle = resourceHelpers.createBundle();
-            BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", bundle.getId());
+        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
+        Bundle bundle = resourceHelpers.createBundle();
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", bundle.getId());
 
-            BehaviorGroup behaviorGroup2 = new BehaviorGroup();
-            behaviorGroup2.setAccountId(behaviorGroup1.getAccountId());
-            behaviorGroup2.setOrgId(behaviorGroup1.getOrgId());
-            behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
-            behaviorGroup2.setBundleId(bundle.getId());
+        BehaviorGroup behaviorGroup2 = new BehaviorGroup();
+        behaviorGroup2.setAccountId(behaviorGroup1.getAccountId());
+        behaviorGroup2.setOrgId(behaviorGroup1.getOrgId());
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+        behaviorGroup2.setBundleId(bundle.getId());
 
-            BadRequestException e = assertThrows(BadRequestException.class, () -> {
-                behaviorGroupRepository.create(behaviorGroup2.getAccountId(), behaviorGroup2.getOrgId(), behaviorGroup2);
-            });
-            assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
-        }  finally {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
-        }
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.create(behaviorGroup2.getAccountId(), behaviorGroup2.getOrgId(), behaviorGroup2);
+        });
+        assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
     }
 
     @Test
     void shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName() {
-        try {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(true);
-            Bundle bundle = resourceHelpers.createBundle();
-            BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName", bundle.getId());
+        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
+        Bundle bundle = resourceHelpers.createBundle();
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName", bundle.getId());
 
-            BehaviorGroup behaviorGroup2 = new BehaviorGroup();
-            behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
-            behaviorGroup2.setBundleId(bundle.getId());
+        BehaviorGroup behaviorGroup2 = new BehaviorGroup();
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+        behaviorGroup2.setBundleId(bundle.getId());
 
-            BadRequestException e = assertThrows(BadRequestException.class, () -> {
-                behaviorGroupRepository.createDefault(behaviorGroup2);
-            });
-            assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
-        }  finally {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
-        }
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.createDefault(behaviorGroup2);
+        });
+        assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
     }
 
     @Test
@@ -119,38 +113,30 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Test
     void shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameOrgId() {
-        try {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(true);
-            Bundle bundle = resourceHelpers.createBundle("name", "displayName");
-            BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName1", bundle.getId());
-            BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(behaviorGroup1.getAccountId(), behaviorGroup1.getOrgId(), "displayName2", bundle.getId());
-            behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
+        Bundle bundle = resourceHelpers.createBundle("name", "displayName");
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName1", bundle.getId());
+        BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(behaviorGroup1.getAccountId(), behaviorGroup1.getOrgId(), "displayName2", bundle.getId());
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
 
-            BadRequestException e = assertThrows(BadRequestException.class, () -> {
-                behaviorGroupRepository.update(behaviorGroup2.getOrgId(), behaviorGroup2);
-            });
-            assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
-        } finally {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
-        }
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.update(behaviorGroup2.getOrgId(), behaviorGroup2);
+        });
+        assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
     }
 
     @Test
     void shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName() {
-        try {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(true);
-            Bundle bundle = resourceHelpers.createBundle("name", "displayName");
-            BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName1", bundle.getId());
-            BehaviorGroup behaviorGroup2 = resourceHelpers.createDefaultBehaviorGroup("displayName2", bundle.getId());
-            behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
+        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
+        Bundle bundle = resourceHelpers.createBundle("name", "displayName");
+        BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName1", bundle.getId());
+        BehaviorGroup behaviorGroup2 = resourceHelpers.createDefaultBehaviorGroup("displayName2", bundle.getId());
+        behaviorGroup2.setDisplayName(behaviorGroup1.getDisplayName());
 
-            BadRequestException e = assertThrows(BadRequestException.class, () -> {
-                behaviorGroupRepository.updateDefault(behaviorGroup2);
-            });
-            assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
-        } finally {
-            featureFlipper.setEnforceBehaviorGroupNameUnicity(false);
-        }
+        BadRequestException e = assertThrows(BadRequestException.class, () -> {
+            behaviorGroupRepository.updateDefault(behaviorGroup2);
+        });
+        assertEquals("A behavior group with display name [" + behaviorGroup1.getDisplayName() + "] already exists", e.getMessage());
     }
 
     @Test

@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.health;
 
-import com.redhat.cloud.notifications.EngineConfig;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -15,9 +14,6 @@ public class KafkaConsumedTotalChecker {
 
     private static final String COUNTER_NAME = "kafka.consumer.fetch.manager.records.consumed.total";
     private static final String INGRESS_TOPIC = "platform.notifications.ingress";
-
-    @Inject
-    FeatureFlipper featureFlipper;
 
     @Inject
     EngineConfig engineConfig;
@@ -35,15 +31,13 @@ public class KafkaConsumedTotalChecker {
                 .tag("client.id", "kafka-consumer-ingress")
                 .functionCounter();
         if (consumedTotalCounter == null) {
-            // This will help prevent a NPE throw if the metrics happens to change in our dependency.
             Log.warnf("%s counter not found, %s is disabled", COUNTER_NAME, KafkaConsumedTotalChecker.class.getSimpleName());
-            featureFlipper.setKafkaConsumedTotalCheckerEnabled(false);
         }
     }
 
     @Scheduled(every = "${notifications.kafka-consumed-total-checker.period:5m}", delayed = "${notifications.kafka-consumed-total-checker.initial-delay:5m}")
     public void periodicCheck() {
-        if (engineConfig.isKafkaConsumedTotalCheckerEnabled()) {
+        if (engineConfig.isKafkaConsumedTotalCheckerEnabled() && consumedTotalCounter != null) {
             double currentTotal = consumedTotalCounter.count();
             if (currentTotal == previousTotal) {
                 Log.debugf("Kafka records consumed total check failed for topic '%s'", INGRESS_TOPIC);

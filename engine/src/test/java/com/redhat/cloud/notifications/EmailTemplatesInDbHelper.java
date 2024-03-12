@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -17,10 +17,10 @@ import com.redhat.cloud.notifications.templates.TemplateService;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.time.LocalDateTime;
@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static org.mockito.Mockito.when;
 
 public abstract class EmailTemplatesInDbHelper {
 
@@ -54,10 +55,7 @@ public abstract class EmailTemplatesInDbHelper {
     @Inject
     protected TemplateService templateService;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
+    @InjectMock
     EngineConfig engineConfig;
 
     @Inject
@@ -89,7 +87,7 @@ public abstract class EmailTemplatesInDbHelper {
             }
             eventTypes.put(eventTypeToCreate, eventType.getId());
         }
-        featureFlipper.setUseSecuredEmailTemplates(useSecuredTemplates());
+        when(engineConfig.isSecuredEmailTemplatesEnabled()).thenReturn(useSecuredTemplates());
         if (engineConfig.isSecuredEmailTemplatesEnabled()) {
             emailTemplateMigrationService.deleteAllTemplates();
         }
@@ -98,11 +96,6 @@ public abstract class EmailTemplatesInDbHelper {
 
     protected void migrate() {
         emailTemplateMigrationService.migrate();
-    }
-
-    @AfterEach
-    void restoreEnv() {
-        featureFlipper.setUseSecuredEmailTemplates(false);
     }
 
     protected String generateEmailSubject(String eventTypeStr, Action action) {

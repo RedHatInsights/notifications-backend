@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.processors.webhook;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -43,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -54,8 +55,8 @@ public class WebhookTest {
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    EngineConfig engineConfig;
 
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
@@ -116,18 +117,13 @@ public class WebhookTest {
 
     @Test
     void testEmailsOnlyMode() {
-        featureFlipper.setEmailsOnlyMode(true);
-        try {
+        when(engineConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
 
-            Event event = new Event();
-            event.setEventWrapper(new EventWrapperAction(buildWebhookAction()));
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(buildWebhookAction()));
 
-            webhookTypeProcessor.process(event, List.of(new Endpoint()));
-            micrometerAssertionHelper.assertCounterIncrement(PROCESSED_WEBHOOK_COUNTER, 0);
-
-        } finally {
-            featureFlipper.setEmailsOnlyMode(false);
-        }
+        webhookTypeProcessor.process(event, List.of(new Endpoint()));
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_WEBHOOK_COUNTER, 0);
     }
 
     private static Action buildWebhookAction() {

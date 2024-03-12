@@ -93,6 +93,11 @@
             <artifactId>quarkus-logging-sentry</artifactId>
             <version>${quarkus-logging-sentry.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.unleash</groupId>
+            <artifactId>quarkus-unleash</artifactId>
+            <version>${quarkus-unleash.version}</version>
+        </dependency>
 
         <!-- Clowder -->
         <dependency>

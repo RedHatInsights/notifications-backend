@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.SubscriptionType;
@@ -23,7 +23,7 @@ public class SubscriptionRepository {
     EntityManager entityManager;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    BackendConfig backendConfig;
 
     public void subscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
         updateSubscription(orgId, username, eventTypeId, subscriptionType, true);
@@ -93,7 +93,7 @@ public class SubscriptionRepository {
     }
 
     private List<SubscriptionType> getAvailableTypes() {
-        if (featureFlipper.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled()) {
             return List.of(INSTANT, DAILY, DRAWER);
         } else {
             return List.of(INSTANT, DAILY);

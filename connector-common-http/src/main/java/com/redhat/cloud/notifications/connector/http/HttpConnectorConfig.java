@@ -12,6 +12,9 @@ import static org.jboss.logging.Logger.Level;
 @ApplicationScoped
 public class HttpConnectorConfig extends ConnectorConfig {
 
+    /*
+     * Env vars configuration
+     */
     private static final String CLIENT_ERROR_LOG_LEVEL = "notifications.connector.http.client-error.log-level";
     private static final String COMPONENTS = "notifications.connector.http.components";
     private static final String CONNECT_TIMEOUT_MS = "notifications.connector.http.connect-timeout-ms";
@@ -21,6 +24,11 @@ public class HttpConnectorConfig extends ConnectorConfig {
     private static final String MAX_TOTAL_CONNECTIONS = "notifications.connector.http.max-total-connections";
     private static final String SERVER_ERROR_LOG_LEVEL = "notifications.connector.http.server-error.log-level";
     private static final String SOCKET_TIMEOUT_MS = "notifications.connector.http.socket-timeout-ms";
+
+    /*
+     * Unleash configuration
+     */
+    private final String disableFaultyEndpointsToggleName = toggleName("disable-faulty-endpoints");
 
     @ConfigProperty(name = CLIENT_ERROR_LOG_LEVEL, defaultValue = "DEBUG")
     Level clientErrorLogLevel;
@@ -35,6 +43,7 @@ public class HttpConnectorConfig extends ConnectorConfig {
     int httpConnectionsPerRoute;
 
     @ConfigProperty(name = DISABLE_FAULTY_ENDPOINTS, defaultValue = "true")
+    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean disableFaultyEndpoints;
 
     @ConfigProperty(name = FOLLOW_REDIRECTS, defaultValue = "false")
@@ -56,7 +65,7 @@ public class HttpConnectorConfig extends ConnectorConfig {
         config.put(COMPONENTS, httpComponents);
         config.put(CONNECT_TIMEOUT_MS, httpConnectTimeout);
         config.put(CONNECTIONS_PER_ROUTE, httpConnectionsPerRoute);
-        config.put(DISABLE_FAULTY_ENDPOINTS, disableFaultyEndpoints);
+        config.put(disableFaultyEndpointsToggleName, isDisableFaultyEndpoints());
         config.put(FOLLOW_REDIRECTS, followRedirects);
         config.put(MAX_TOTAL_CONNECTIONS, httpMaxTotalConnections);
         config.put(SERVER_ERROR_LOG_LEVEL, serverErrorLogLevel);
@@ -81,7 +90,11 @@ public class HttpConnectorConfig extends ConnectorConfig {
     }
 
     public boolean isDisableFaultyEndpoints() {
-        return disableFaultyEndpoints;
+        if (unleashEnabled) {
+            return unleash.isEnabled(disableFaultyEndpointsToggleName, true);
+        } else {
+            return disableFaultyEndpoints;
+        }
     }
 
     public boolean isFollowRedirects() {

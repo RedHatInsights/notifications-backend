@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
@@ -30,7 +30,7 @@ public class UserPreferencesForPolicy {
     SubscriptionRepository subscriptionRepository;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    BackendConfig backendConfig;
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
     public static class V1 extends UserPreferencesForPolicy {
@@ -64,7 +64,7 @@ public class UserPreferencesForPolicy {
             for (EventTypeEmailSubscription subscribedEvent : subscriptionTypes) {
                 if (DAILY == subscribedEvent.getType()) {
                     preferences.setDailyEmail(subscribedEvent.isSubscribed());
-                } else if (featureFlipper.isInstantEmailsEnabled() && INSTANT == subscribedEvent.getType()) {
+                } else if (backendConfig.isInstantEmailsEnabled() && INSTANT == subscribedEvent.getType()) {
                     preferences.setInstantEmail(subscribedEvent.isSubscribed());
                 }
             }

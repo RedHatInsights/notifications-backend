@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.AggregatorConfig;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -44,7 +44,7 @@ public class DailyEmailAggregationJob {
     public static final String EVENT_TYPE_NAME = "aggregation";
 
     @Inject
-    FeatureFlipper featureFlipper;
+    AggregatorConfig aggregatorConfig;
 
     @Inject
     EmailAggregationRepository emailAggregationResources;
@@ -80,7 +80,7 @@ public class DailyEmailAggregationJob {
             aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             Log.infof("found %s commands", aggregationCommands.size());
-            if (!featureFlipper.isSingleDailyDigestEnabled()) {
+            if (!aggregatorConfig.isSingleDailyDigestEnabled()) {
                 aggregationCommands.stream().forEach(aggregationCommand -> sendIt(List.of(aggregationCommand)));
             } else {
                 aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
@@ -147,7 +147,7 @@ public class DailyEmailAggregationJob {
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(eventList)
             .withContext(new Context.ContextBuilder()
-                .withAdditionalProperty("single_daily_digest_enabled", featureFlipper.isSingleDailyDigestEnabled())
+                .withAdditionalProperty("single_daily_digest_enabled", aggregatorConfig.isSingleDailyDigestEnabled())
                 .build())
             .build();
 

@@ -1,8 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.EngineConfig;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -65,10 +64,7 @@ class EmailAggregatorTest {
     @RestClient
     RecipientsResolverService recipientsResolverService;
 
-    @Inject
-    FeatureFlipper featureFlipper;
-
-    @Inject
+    @InjectMock
     EngineConfig engineConfig;
 
     @InjectSpy
@@ -104,7 +100,7 @@ class EmailAggregatorTest {
     @ValueSource(booleans = {true, false})
     void shouldTestRecipientsFromSubscription(boolean useRecipientsResolverClowdappForDailyDigestEnabled) {
 
-        featureFlipper.setUseRecipientsResolverClowdappForDailyDigestEnabled(useRecipientsResolverClowdappForDailyDigestEnabled);
+        when(engineConfig.isAggregationWithRecipientsResolverEnabled()).thenReturn(useRecipientsResolverClowdappForDailyDigestEnabled);
         // init test environment
         application = resourceHelpers.findApp("rhel", "policies");
         eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);
@@ -165,7 +161,7 @@ class EmailAggregatorTest {
     @Test
     void shouldTestFallbackOnLegacyRecipientsResolverFetching() {
 
-        featureFlipper.setUseRecipientsResolverClowdappForDailyDigestEnabled(true);
+        when(engineConfig.isAggregationWithRecipientsResolverEnabled()).thenReturn(true);
         // init test environment
         application = resourceHelpers.findApp("rhel", "policies");
         eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);

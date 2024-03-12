@@ -10,6 +10,7 @@ objects:
     name: notifications-connector-slack
   spec:
     envName: ${ENV_NAME}
+    featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.tocamel
       partitions: 3
@@ -73,6 +74,8 @@ objects:
           value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
         - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
           value: ${NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE}
+        - name: NOTIFICATIONS_UNLEASH_ENABLED
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_HTTP_PORT
           value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -99,6 +102,8 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: QUARKUS_UNLEASH_ACTIVE
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
 parameters:
 - name: CPU_LIMIT
   description: CPU limit
@@ -155,6 +160,8 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
+- name: NOTIFICATIONS_UNLEASH_ENABLED
+  value: "false"
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port, defaulting to the default Clowder private port
   value: "9000"

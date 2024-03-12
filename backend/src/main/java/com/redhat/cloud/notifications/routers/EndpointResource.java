@@ -4,7 +4,7 @@ import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
@@ -100,7 +100,7 @@ public class EndpointResource {
     RbacGroupValidator rbacGroupValidator;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    BackendConfig backendConfig;
 
     /**
      * Used to create the secrets in Sources and update the endpoint's properties' IDs.
@@ -296,7 +296,7 @@ public class EndpointResource {
     private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {
         String channel = camelProperties.getExtras().get("channel");
 
-        if (featureFlipper.isSlackForbidChannelUsageEnabled()) {
+        if (backendConfig.isForbidSlackChannelUsage()) {
             // throw an exception if we receive a channel on endpoint creation
             if (null == previousCamelProperties && channel != null) {
                 throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
@@ -562,7 +562,7 @@ public class EndpointResource {
     }
 
     private boolean isEndpointTypeAllowed(EndpointType endpointType) {
-        return !featureFlipper.isEmailsOnlyMode() || endpointType.isSystemEndpointType;
+        return !backendConfig.isEmailsOnlyModeEnabled() || endpointType.isSystemEndpointType;
     }
 
     /**

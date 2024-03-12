@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.EngineConfig;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -102,7 +101,6 @@ public class EmailActorsResolver {
     }
 
     public void setShowPendoUntil(LocalDate showPendoUntil) {
-        FeatureFlipper.checkTestLaunchMode();
         this.showPendoUntil = showPendoUntil;
     }
 }

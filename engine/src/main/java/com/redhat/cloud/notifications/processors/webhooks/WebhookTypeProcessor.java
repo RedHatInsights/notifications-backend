@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.webhooks;
 
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.EngineConfig;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.WebhookProperties;

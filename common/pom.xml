@@ -44,6 +44,13 @@
             <artifactId>quarkus-smallrye-fault-tolerance</artifactId>
         </dependency>
 
+        <!-- Quarkiverse -->
+        <dependency>
+            <groupId>io.quarkiverse.unleash</groupId>
+            <artifactId>quarkus-unleash</artifactId>
+            <version>${quarkus-unleash.version}</version>
+        </dependency>
+
         <!-- Insights -->
         <dependency>
             <groupId>com.redhat.cloud.common</groupId>

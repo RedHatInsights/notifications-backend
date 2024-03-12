@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.processors.drawer;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
@@ -72,8 +72,8 @@ class DrawerProcessorTest {
     @InjectSpy
     NotificationHistoryRepository notificationHistoryRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    EngineConfig engineConfig;
 
     @Inject
     @Any
@@ -115,12 +115,9 @@ class DrawerProcessorTest {
         Endpoint endpoint = new Endpoint();
         endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.DRAWER);
-        try {
-            featureFlipper.setDrawerEnabled(true);
-            testee.process(createdEvent, List.of(endpoint));
-        } finally {
-            featureFlipper.setDrawerEnabled(false);
-        }
+
+        when(engineConfig.isDrawerEnabled()).thenReturn(true);
+        testee.process(createdEvent, List.of(endpoint));
 
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
 
