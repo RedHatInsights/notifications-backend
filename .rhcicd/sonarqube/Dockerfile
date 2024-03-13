@@ -1,5 +1,5 @@
-# Image available at https://catalog.redhat.com/software/containers/ubi9/openjdk-17-runtime.
-FROM registry.access.redhat.com/ubi9/openjdk-17
+# Image available at https://catalog.redhat.com/software/containers/ubi9/openjdk-21-runtime.
+FROM registry.access.redhat.com/ubi9/openjdk-21
 
 # Switch to the root user to be able to install the required packages.
 USER root
