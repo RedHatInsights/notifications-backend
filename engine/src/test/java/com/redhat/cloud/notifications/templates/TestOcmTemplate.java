@@ -6,8 +6,10 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -36,7 +38,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
 
     @Test
     public void testUpgradeEmailTitle() {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", null, null);
+        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", null, Optional.empty());
 
         String result = generateEmailSubject(CLUSTER_UPDATE, action);
         assertEquals("Awesome subject", result);
@@ -44,24 +46,45 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
 
     @Test
     public void testUpgradeScheduledInstantEmailBody() {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "upgrade-scheduled-template", "Upgrade scheduled");
+        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template")));
         String result = generateEmailBody(CLUSTER_UPDATE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Upgrade scheduled"));
         assertTrue(result.contains(((Map<String, String>) action.getEvents().get(0).getPayload().getAdditionalProperties().get("global_vars")).get("log_description")));
         assertTrue(result.contains("What can you expect"));
         assertTrue(result.contains("Thank you for choosing Red Hat OpenShift Dedicated Trial."));
+        assertFalse(result.contains("Check these resources for more information"));
+
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template", "doc_references", List.of("https://docs.openshift.com/rosa/ocm/ocm-overview.html", "https://console.redhat.com/openshift"))));
+        result = generateEmailBody(CLUSTER_UPDATE, action);
+        assertTrue(result.contains("Check these resources for more information"));
+        assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
+        assertTrue(result.contains("https://console.redhat.com/openshift"));
     }
 
     @Test
     public void testUpgradeEndedInstantEmailBody() {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", "upgrade-ended-template", null);
+        Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "upgrade-ended-template")));
         String result = generateEmailBody(CLUSTER_UPDATE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Awesome subject"));
         assertTrue(result.contains(((Map<String, String>) action.getEvents().get(0).getPayload().getAdditionalProperties().get("global_vars")).get("log_description")));
         assertFalse(result.contains("What can you expect"));
         assertTrue(result.contains("Thank you for choosing Red Hat OpenShift Service on AWS."));
+        assertFalse(result.contains("Check these resources for more information"));
+
+        Map<String, Object> additionalMapParameters = new HashMap<>();
+        additionalMapParameters.put("template_sub_type", "upgrade-ended-template");
+        additionalMapParameters.put("doc_references", null);
+        action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", null, Optional.of(additionalMapParameters));
+        result = generateEmailBody(CLUSTER_UPDATE, action);
+        assertFalse(result.contains("Check these resources for more information"));
+
+        action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.openshift.com/rosa/ocm/ocm-overview.html", "https://console.redhat.com/openshift"))));
+        result = generateEmailBody(CLUSTER_UPDATE, action);
+        assertTrue(result.contains("Check these resources for more information"));
+        assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
+        assertTrue(result.contains("https://console.redhat.com/openshift"));
     }
 
     @Test
@@ -97,7 +120,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_creation subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "osd-trial-creation-template", "Trial creation");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial creation", Optional.of(Map.of("template_sub_type", "osd-trial-creation-template")));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial creation"));
@@ -113,7 +136,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_reminder subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "osd-trial-reminder-template", "Trial reminder");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial reminder", Optional.of(Map.of("template_sub_type", "osd-trial-reminder-template")));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial reminder"));
@@ -129,7 +152,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_delete subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "osd-trial-deletion-template", "Trial delete");
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial delete", Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template")));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial delete"));
@@ -143,5 +166,19 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains("To learn more about the OpenShift Dedicated trial"));
         assertFalse(result.contains("You will be notified once your cluster is deleted"));
         assertTrue(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
+        assertFalse(result.contains("Check these resources for more information"));
+
+        Map<String, Object> additionalMapParameters = new HashMap<>();
+        additionalMapParameters.put("template_sub_type", "osd-trial-deletion-template");
+        additionalMapParameters.put("doc_references", null);
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial delete", Optional.of(additionalMapParameters));
+        result = generateEmailBody(CLUSTER_LIFECYCLE, action);
+        assertFalse(result.contains("Check these resources for more information"));
+
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial delete", Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.openshift.com/rosa/ocm/ocm-overview.html", "https://console.redhat.com/openshift"))));
+        result = generateEmailBody(CLUSTER_LIFECYCLE, action);
+        assertTrue(result.contains("Check these resources for more information"));
+        assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
+        assertTrue(result.contains("https://console.redhat.com/openshift"));
     }
 }
