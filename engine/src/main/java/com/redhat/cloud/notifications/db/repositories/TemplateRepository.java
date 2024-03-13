@@ -134,7 +134,6 @@ public class TemplateRepository {
         InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
         instantEmailTemplate.setSubjectTemplate(templateSubject);
         instantEmailTemplate.setBodyTemplate(templateBody);
-        Log.info("Default template loaded " + templateBody.getData());
         return instantEmailTemplate;
     }
 
