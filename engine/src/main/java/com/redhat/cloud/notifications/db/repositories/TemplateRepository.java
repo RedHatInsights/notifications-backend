@@ -15,13 +15,13 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
 public class TemplateRepository {
@@ -113,14 +113,14 @@ public class TemplateRepository {
         final String instantEmailSubjectPath = "templates/Default/instantEmailTitle.txt";
         final String instantEmailBodyPath = "templates/Default/instantEmailBody.html";
 
-        String templateSubjectData = Files.readString(
-                Paths.get(Thread.currentThread().getContextClassLoader().getResource(instantEmailSubjectPath).toURI()),
-                StandardCharsets.UTF_8
+        String templateSubjectData = new String(
+            Thread.currentThread().getContextClassLoader().getResourceAsStream(instantEmailSubjectPath).readAllBytes(),
+            StandardCharsets.UTF_8
         );
 
-        String templateBodyData = Files.readString(
-                Paths.get(Thread.currentThread().getContextClassLoader().getResource(instantEmailBodyPath).toURI()),
-                StandardCharsets.UTF_8
+        String templateBodyData = new String(
+            Thread.currentThread().getContextClassLoader().getResourceAsStream(instantEmailBodyPath).readAllBytes(),
+            UTF_8
         );
 
         Template templateSubject = new Template();
@@ -134,7 +134,7 @@ public class TemplateRepository {
         InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
         instantEmailTemplate.setSubjectTemplate(templateSubject);
         instantEmailTemplate.setBodyTemplate(templateBody);
-
+        Log.info("Default template loaded " + templateBody.getData());
         return instantEmailTemplate;
     }
 
