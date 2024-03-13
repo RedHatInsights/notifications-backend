@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
 
-    private static final String EVENT_TYPE_NAME = "validation-error";
+    private static final String EVENT_TYPE_VALIDATION_ERROR = "validation-error";
 
     @Override
     protected String getApp() {
@@ -27,13 +27,13 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(EVENT_TYPE_NAME);
+        return List.of(EVENT_TYPE_VALIDATION_ERROR);
     }
 
     @Test
     public void testInstantEmailTitle() {
         Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
-        String result = generateEmailSubject(EVENT_TYPE_NAME, action);
+        String result = generateEmailSubject(EVENT_TYPE_VALIDATION_ERROR, action);
         assertEquals("Instant notification - Validation error - Inventory - Red Hat Enterprise Linux", result);
     }
 
@@ -47,7 +47,7 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testInstantEmailBody() {
         Action action = InventoryTestHelpers.createInventoryAction("", "", "", "FooEvent");
-        String result = generateEmailBody(EVENT_TYPE_NAME, action);
+        String result = generateEmailBody(EVENT_TYPE_VALIDATION_ERROR, action);
         assertTrue(result.contains(InventoryTestHelpers.displayName1), "Body should contain host display name" + InventoryTestHelpers.displayName1);
         assertTrue(result.contains(InventoryTestHelpers.errorMessage1), "Body should contain error message" + InventoryTestHelpers.errorMessage1);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
