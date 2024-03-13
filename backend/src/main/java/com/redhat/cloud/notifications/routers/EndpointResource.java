@@ -465,6 +465,9 @@ public class EndpointResource {
         endpoint.setId(id);
 
         final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
+        if (dbEndpoint == null) {
+            throw new NotFoundException("Endpoint not found");
+        }
         EndpointType endpointType = dbEndpoint.getType();
 
         // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
