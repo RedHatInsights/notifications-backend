@@ -15,6 +15,46 @@ objects:
       secretName: ${FLOORIST_BUCKET_SECRET_NAME}
     suspend: ${{FLOORIST_SUSPEND}}
     queries:
+      # Count the number of behavior groups associated to event types, and also
+      # show the bundle and the application they are associated to. Purposely
+      # not grouping them by organization so that we can have a general
+      # overview of the usage.
+      - prefix: insights/notifications/behavior_groups_event_types
+        query: >-
+          SELECT
+            bun.display_name::TEXT AS bundle,
+            apps.display_name::TEXT AS application,
+            et.display_name::TEXT AS event_type,
+            EXISTS (
+              SELECT
+                1
+              FROM
+                behavior_group_action AS bga
+              WHERE
+                bga.behavior_group_id = etb.behavior_group_id
+            )::BOOLEAN AS actively_used,
+            count(bg.*)::INTEGER AS "count"
+          FROM
+            event_type_behavior AS etb
+          INNER JOIN
+            event_type AS et
+             ON et.id = etb.event_type_id
+          INNER JOIN
+            applications AS apps
+              ON apps.id = et.application_id 
+          INNER JOIN
+            behavior_group AS bg
+              ON bg.id = etb.behavior_group_id
+          INNER JOIN
+            bundles AS bun
+              ON bun.id = bg.bundle_id
+          WHERE
+            bg.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
+          GROUP BY
+            bun.display_name,
+            apps.display_name,
+            et.display_name,
+            actively_used
       # Count the number of behavior groups associated to event types per
       # organization, and also show the bundle and the application they are
       # associated to.
