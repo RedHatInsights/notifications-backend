@@ -4,12 +4,16 @@ import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.InventoryTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.processors.email.aggregators.InventoryEmailAggregator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,8 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
+    @Inject
+    Environment environment;
 
+    private static final String EVENT_TYPE_NEW_SYSTEM_REGISTERED = "new-system-registered";
     private static final String EVENT_TYPE_VALIDATION_ERROR = "validation-error";
+
+    private static final String EMAIL_SUBJECT_NEW_SYSTEM_REGISTERED = "Instant notification - New system registered - Inventory - Red Hat Enterprise Linux";
 
     @Override
     protected String getApp() {
@@ -27,7 +36,7 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(EVENT_TYPE_VALIDATION_ERROR);
+        return List.of(EVENT_TYPE_NEW_SYSTEM_REGISTERED, EVENT_TYPE_VALIDATION_ERROR);
     }
 
     @Test
@@ -65,5 +74,54 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
         assertTrue(result.contains("Error"), "Body should contain 'Error' header");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    /**
+     * Tests that the subject template for the "new system registered" event is
+     * correctly rendered and contains the expected text.
+     */
+    @Test
+    void testInstantNewSystemRegisteredSubject() {
+        final String hostDisplayName = "new-host";
+        final UUID inventoryId = UUID.randomUUID();
+
+        final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_NEW_SYSTEM_REGISTERED, inventoryId, hostDisplayName);
+        final String result = this.generateEmailSubject(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action);
+
+        Assertions.assertEquals(EMAIL_SUBJECT_NEW_SYSTEM_REGISTERED, result);
+    }
+
+    /**
+     * Tests that the subject body for the "new system registered" event is
+     * correctly rendered and contains the expected text.
+     */
+    @Test
+    void testInstantNewSystemRegisteredBody() {
+        final String hostDisplayName = "new-host";
+        final UUID inventoryId = UUID.randomUUID();
+
+        final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_NEW_SYSTEM_REGISTERED, inventoryId, hostDisplayName);
+        final String result = this.generateEmailBody(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action);
+
+        Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
+        Assertions.assertTrue(result.contains("was registered in Inventory."), "the message body should indicate that the system was registered");
+
+        this.assertOpenInventoryInsightsButtonPresent(result);
+    }
+
+    /**
+     * Asserts that the "Open Inventory in Insights" button is present.
+     * @param result the resulting HTML in which we need to perform the
+     *               assertion.
+     */
+    private void assertOpenInventoryInsightsButtonPresent(final String result) {
+        Assertions.assertTrue(
+            result.contains(
+                String.format(
+                    "<a target=\"_blank\" href=\"%s/insights/inventory/\">Open Inventory in Insights</a>",
+                    this.environment.url()
+                )
+            )
+        );
     }
 }
