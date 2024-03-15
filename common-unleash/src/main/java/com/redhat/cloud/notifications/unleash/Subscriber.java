@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.log;
+package com.redhat.cloud.notifications.unleash;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,9 +31,9 @@ import static java.util.stream.Collectors.toSet;
 
 @Singleton
 @Unremovable
-public class LogLevelManager implements UnleashSubscriber {
+public class Subscriber implements UnleashSubscriber {
 
-    private static final String UNLEASH_TOGGLE_NAME = "notifications-engine.custom-log-levels";
+    private static final String UNLEASH_TOGGLE_NAME = "notifications.log-levels";
     private static final String INHERITED = "INHERITED";
 
     // TODO Remove this when we're fully migrated to Unleash in all environments.
@@ -84,7 +84,7 @@ public class LogLevelManager implements UnleashSubscriber {
                     }
 
                     for (LogConfig logConfig : logConfigs) {
-                        if (logConfig.hostName == null || logConfig.hostName.equals(hostName)) {
+                        if (shouldCurrentHostBeUpdated(logConfig)) {
 
                             Optional<Level> newLevel = getLogLevel(logConfig.level);
 
@@ -116,13 +116,24 @@ public class LogLevelManager implements UnleashSubscriber {
                     });
 
                 } else {
-                    previousLogLevels.forEach(LogLevelManager::revertLogLevel);
+                    previousLogLevels.forEach(Subscriber::revertLogLevel);
                     previousLogLevels.clear();
                 }
 
             } catch (Exception e) {
-                Log.error("Scheduled job execution unexpectedly failed", e);
+                Log.errorf(e, "%s payload processing failed", UNLEASH_TOGGLE_NAME);
             }
+        }
+    }
+
+    private boolean shouldCurrentHostBeUpdated(LogConfig logConfig) {
+        if (logConfig.hostName == null) {
+            return true;
+        }
+        if (logConfig.hostName.endsWith("*")) {
+            return hostName.startsWith(logConfig.hostName.substring(0, hostName.length() - 1));
+        } else {
+            return hostName.equals(logConfig.hostName);
         }
     }
 
