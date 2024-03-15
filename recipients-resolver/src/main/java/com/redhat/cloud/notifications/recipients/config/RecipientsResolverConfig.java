@@ -32,7 +32,7 @@ public class RecipientsResolverConfig {
     private static final String FETCH_USERS_WITH_RBAC = toggleName("fetch-users-with-rbac");
 
     private static String toggleName(String feature) {
-        return String.format("notifications-engine.%s.enabled", feature);
+        return String.format("notifications-recipients-resolver.%s.enabled", feature);
     }
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
