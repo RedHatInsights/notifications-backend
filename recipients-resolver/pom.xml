@@ -16,6 +16,13 @@
 
         <!-- Scope: compile -->
 
+        <!-- notifications modules -->
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-common-unleash</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -52,11 +59,6 @@
             <groupId>io.quarkiverse.loggingsentry</groupId>
             <artifactId>quarkus-logging-sentry</artifactId>
             <version>${quarkus-logging-sentry.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkiverse.unleash</groupId>
-            <artifactId>quarkus-unleash</artifactId>
-            <version>${quarkus-unleash.version}</version>
         </dependency>
 
         <!-- Clowder -->

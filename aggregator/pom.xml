@@ -28,6 +28,11 @@
         </dependency>
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-common-unleash</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
             <artifactId>notifications-database</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -60,11 +65,6 @@
             <groupId>io.quarkiverse.logging.cloudwatch</groupId>
             <artifactId>quarkus-logging-cloudwatch</artifactId>
             <version>${quarkus-logging-cloudwatch.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkiverse.unleash</groupId>
-            <artifactId>quarkus-unleash</artifactId>
-            <version>${quarkus-unleash.version}</version>
         </dependency>
 
         <!-- Insights -->
