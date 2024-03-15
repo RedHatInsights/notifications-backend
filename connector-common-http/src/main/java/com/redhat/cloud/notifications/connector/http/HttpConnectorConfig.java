@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.http;
 
 import com.redhat.cloud.notifications.connector.ConnectorConfig;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -24,11 +25,6 @@ public class HttpConnectorConfig extends ConnectorConfig {
     private static final String MAX_TOTAL_CONNECTIONS = "notifications.connector.http.max-total-connections";
     private static final String SERVER_ERROR_LOG_LEVEL = "notifications.connector.http.server-error.log-level";
     private static final String SOCKET_TIMEOUT_MS = "notifications.connector.http.socket-timeout-ms";
-
-    /*
-     * Unleash configuration
-     */
-    private final String disableFaultyEndpointsToggleName = toggleName("disable-faulty-endpoints");
 
     @ConfigProperty(name = CLIENT_ERROR_LOG_LEVEL, defaultValue = "DEBUG")
     Level clientErrorLogLevel;
@@ -57,6 +53,16 @@ public class HttpConnectorConfig extends ConnectorConfig {
 
     @ConfigProperty(name = SOCKET_TIMEOUT_MS, defaultValue = "2500")
     int httpSocketTimeout;
+
+    /*
+     * Unleash configuration
+     */
+    private String disableFaultyEndpointsToggleName;
+
+    @PostConstruct
+    void postConstruct() {
+        disableFaultyEndpointsToggleName = toggleName("disable-faulty-endpoints");
+    }
 
     @Override
     protected Map<String, Object> getLoggedConfiguration() {
