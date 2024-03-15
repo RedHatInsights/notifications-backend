@@ -26,9 +26,6 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.recipients.User;
-import com.redhat.cloud.notifications.recipients.rbac.RbacRecipientUsersProvider;
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
@@ -41,7 +38,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -69,7 +65,6 @@ import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOT
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -95,9 +90,6 @@ public class LifecycleITest {
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
-    @InjectMock
-    RbacRecipientUsersProvider rbacRecipientUsersProvider;
-
     @Inject
     EntityManager entityManager;
 
@@ -116,7 +108,7 @@ public class LifecycleITest {
         Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
         Application app = resourceHelpers.createApp(bundle.getId(), APP_NAME);
         EventType eventType = resourceHelpers.createEventType(app.getId(), EVENT_TYPE_NAME);
-        setupEmailMock(username);
+        setupEmailMock();
 
         // We also need behavior groups.
         BehaviorGroup behaviorGroup1 = createBehaviorGroup(accountId, bundle);
@@ -370,21 +362,8 @@ public class LifecycleITest {
         inMemoryConnector.source("ingress").send(serializedAction);
     }
 
-    private void setupEmailMock(String username) {
+    private void setupEmailMock() {
         resourceHelpers.createBlankInstantEmailTemplate(BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
-
-        User user = new User();
-        user.setUsername(username);
-        user.setAdmin(true);
-        user.setActive(true);
-        user.setEmail("user email");
-        user.setFirstName("user firstname");
-        user.setLastName("user lastname");
-
-        Mockito.when(rbacRecipientUsersProvider.getUsers(
-                eq(DEFAULT_ORG_ID),
-                eq(true)
-        )).thenReturn(List.of(user));
     }
 
     @Transactional

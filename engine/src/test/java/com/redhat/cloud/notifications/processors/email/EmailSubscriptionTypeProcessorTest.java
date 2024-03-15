@@ -20,9 +20,9 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
-import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -65,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -89,7 +90,7 @@ class EmailSubscriptionTypeProcessorTest {
     EmailAggregationRepository emailAggregationRepository;
 
     @InjectMock
-    RecipientResolver recipientResolver;
+    ExternalRecipientsResolver externalRecipientsResolver;
 
     @InjectMock
     ConnectorSender connectorSender;
@@ -152,6 +153,25 @@ class EmailSubscriptionTypeProcessorTest {
             LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
             DAILY
         );
+
+        createAggregatorEventTypeIfNeeded();
+
+        User user1 = new User();
+        user1.setUsername("foo");
+        User user2 = new User();
+        user2.setUsername("bar");
+        User user3 = new User();
+        user3.setUsername("user3");
+
+        when(externalRecipientsResolver.recipientUsers(anyString(), anySet(), anySet(), anySet(), anyBoolean()))
+            .then(invocation -> {
+                    Set<RecipientSettings> list = invocation.getArgument(1);
+                    if (list.isEmpty()) {
+                        return Set.of(user1, user2);
+                    }
+                    return Set.of(user1, user2, user3);
+                }
+            );
 
         AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
         try {
@@ -468,7 +488,7 @@ class EmailSubscriptionTypeProcessorTest {
     }
 
     private void mockUsers(User user1, User user2, User user3) {
-        when(recipientResolver.recipientUsers(any(), anySet(), any()))
+        when(externalRecipientsResolver.recipientUsers(anyString(), anySet(), anySet(), anySet(), anyBoolean()))
             .then(invocation -> {
                     Set<RecipientSettings> list = invocation.getArgument(1);
                     if (list.isEmpty()) {

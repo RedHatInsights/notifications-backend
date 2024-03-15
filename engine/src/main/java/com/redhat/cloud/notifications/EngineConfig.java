@@ -32,7 +32,6 @@ public class EngineConfig {
     }
 
     // Unleash toggles names.
-    private static final String AGGREGATION_WITH_RECIPIENTS_RESOLVER_ENABLED = toggleName("aggregation-with-recipients-resolver");
     private static final String ASYNC_AGGREGATION_ENABLED = toggleName("async-aggregation");
     private static final String DEFAULT_TEMPLATE_ENABLED = toggleName("default-template");
     private static final String DRAWER_ENABLED = toggleName("drawer");
@@ -42,7 +41,6 @@ public class EngineConfig {
     private static final String SECURED_EMAIL_TEMPLATES_ENABLED = toggleName("secured-email-templates");
 
     private final Map<String, Supplier<Boolean>> loggedToggles = Map.of(
-        AGGREGATION_WITH_RECIPIENTS_RESOLVER_ENABLED, this::isAggregationWithRecipientsResolverEnabled,
         ASYNC_AGGREGATION_ENABLED, this::isAsyncAggregationEnabled,
         DEFAULT_TEMPLATE_ENABLED, this::isDefaultTemplateEnabled,
         DRAWER_ENABLED, this::isDrawerEnabled,
@@ -56,14 +54,6 @@ public class EngineConfig {
         loggedToggles.forEach((name, value) -> {
             Log.infof("%s=%s", name, value.get());
         });
-    }
-
-    public boolean isAggregationWithRecipientsResolverEnabled() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(AGGREGATION_WITH_RECIPIENTS_RESOLVER_ENABLED, false);
-        } else {
-            return featureFlipper.isUseRecipientsResolverClowdappForDailyDigestEnabled();
-        }
     }
 
     public boolean isAsyncAggregationEnabled() {
