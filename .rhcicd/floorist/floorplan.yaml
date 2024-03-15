@@ -205,6 +205,37 @@ objects:
             a.display_name,
             et.display_name,
             es.subscription_type;
+        # Count the number of email subscriptions, and group them by
+        # application, subscription type, whether they are subscribed or not
+        # and their org id.
+      - prefix: insights/notifications/email_subscriptions_by_org_id
+        query: >-
+          SELECT
+            bun.display_name::TEXT,
+            apps.display_name::TEXT,
+            et.display_name::TEXT,
+            es.subscription_type::TEXT,
+            es.subscribed::BOOLEAN,
+            count(es.*)::INTEGER AS "count"
+          FROM
+            email_subscriptions AS es
+          INNER JOIN
+            event_type AS et
+              ON et.id = es.event_type_id
+          INNER JOIN
+            applications AS apps
+              ON apps.id = et.application_id
+          INNER JOIN
+            bundles AS bun
+              ON bun.id = apps.bundle_id
+          WHERE
+            es.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
+          GROUP BY
+            bun.display_name,
+            apps.display_name,
+            et.display_name,
+            es.subscription_type,
+            es.subscribed
 parameters:
 - name: FLOORIST_BUCKET_SECRET_NAME
   description: Floorist's S3 bucket's secret name
