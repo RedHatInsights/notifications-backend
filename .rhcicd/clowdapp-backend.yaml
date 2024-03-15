@@ -20,6 +20,7 @@ objects:
     database:
       name: notifications-backend
       version: 15
+    featureFlags: true
     testing:
       iqePlugin: notifications
     jobs:
@@ -118,8 +119,12 @@ objects:
               name: notifications-ephemeral-data
               key: ephemeral_data.json
               optional: true
+        - name: NOTIFICATIONS_UNLEASH_ENABLED
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
           value: ${RBAC_AUTHENTICATION_READ_TIMEOUT}
+        - name: QUARKUS_UNLEASH_ACTIVE
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: INTERNAL_RBAC_ENABLED
           value: ${INTERNAL_RBAC_ENABLED}
         - name: INTERNAL_ADMIN_ROLE
@@ -226,6 +231,8 @@ parameters:
 - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
   description: When this is true, all integration types except emails are disabled
   value: "true"
+- name: NOTIFICATIONS_UNLEASH_ENABLED
+  value: "false"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
   description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT30S

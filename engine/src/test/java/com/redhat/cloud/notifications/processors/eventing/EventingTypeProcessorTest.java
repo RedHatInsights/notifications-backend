@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.processors.eventing;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -103,8 +104,8 @@ class EventingTypeProcessorTest {
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    EngineConfig engineConfig;
 
     private InMemorySink<JsonObject> inMemorySink;
 
@@ -188,15 +189,10 @@ class EventingTypeProcessorTest {
 
     @Test
     void testEmailsOnlyModeCamelProcessor() {
-        featureFlipper.setEmailsOnlyMode(true);
-        try {
+        when(engineConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
 
-            camelProcessor.process(buildEvent(), List.of(new Endpoint()));
-            micrometerAssertionHelper.assertCounterIncrement(EventingProcessor.PROCESSED_COUNTER_NAME, 0);
-
-        } finally {
-            featureFlipper.setEmailsOnlyMode(false);
-        }
+        camelProcessor.process(buildEvent(), List.of(new Endpoint()));
+        micrometerAssertionHelper.assertCounterIncrement(EventingProcessor.PROCESSED_COUNTER_NAME, 0);
     }
 
     private static Event buildEvent() {

@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.eventing;
 
 import com.redhat.cloud.notifications.DelayedThrower;
-import com.redhat.cloud.notifications.EngineConfig;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;

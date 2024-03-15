@@ -61,6 +61,11 @@
             <artifactId>quarkus-logging-cloudwatch</artifactId>
             <version>${quarkus-logging-cloudwatch.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.unleash</groupId>
+            <artifactId>quarkus-unleash</artifactId>
+            <version>${quarkus-unleash.version}</version>
+        </dependency>
 
         <!-- Insights -->
         <dependency>

@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
@@ -29,7 +29,7 @@ public class TemplateRepository {
     EntityManager entityManager;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    BackendConfig backendConfig;
 
     @Transactional
     public Template createTemplate(Template template) {
@@ -317,7 +317,7 @@ public class TemplateRepository {
     public boolean isEmailSubscriptionSupported(String bundleName, String appName, SubscriptionType subscriptionType) {
         switch (subscriptionType) {
             case INSTANT:
-                if (featureFlipper.isUseDefaultTemplate()) {
+                if (backendConfig.isDefaultTemplateEnabled()) {
                     return true;
                 }
 
@@ -330,7 +330,7 @@ public class TemplateRepository {
             case DAILY:
                 return isEmailAggregationSupported(bundleName, appName, List.of(subscriptionType));
             case DRAWER:
-                return featureFlipper.isDrawerEnabled();
+                return backendConfig.isDrawerEnabled();
             default:
                 return false;
         }

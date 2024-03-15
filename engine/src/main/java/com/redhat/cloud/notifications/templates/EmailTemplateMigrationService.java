@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.templates;
 
 import com.cronutils.utils.StringUtils;
-import com.redhat.cloud.notifications.EngineConfig;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;

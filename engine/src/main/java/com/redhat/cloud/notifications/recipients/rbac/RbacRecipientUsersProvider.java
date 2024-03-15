@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.recipients.rbac;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.itservice.ITUserService;
 import com.redhat.cloud.notifications.recipients.itservice.pojo.request.ITUserRequest;
@@ -56,7 +56,7 @@ public class RbacRecipientUsersProvider {
     ITUserService itUserService;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    EngineConfig engineConfig;
 
     @ConfigProperty(name = "recipient-provider.rbac.elements-per-page", defaultValue = "1000")
     Integer rbacElementsPerPage;
@@ -171,10 +171,10 @@ public class RbacRecipientUsersProvider {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
-        if (featureFlipper.isUseRbacForFetchingUsers()) {
+        if (engineConfig.isUseRbacForFetchingUsers()) {
             users = getWithPagination(
                     page -> retryOnRbacError(() -> rbacServiceToService.getUsers(orgId, adminsOnly, page * rbacElementsPerPage, rbacElementsPerPage)));
-        } else if (this.featureFlipper.isUseMBOPForFetchingUsers()) {
+        } else if (engineConfig.isUseMBOPForFetchingUsers()) {
             final List<MBOPUser> mbopUsers = new ArrayList<>();
 
             // Keep the offset to ask for more users in case we need it.

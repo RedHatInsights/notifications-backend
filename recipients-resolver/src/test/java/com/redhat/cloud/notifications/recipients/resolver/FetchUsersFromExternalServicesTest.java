@@ -27,6 +27,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -60,8 +65,20 @@ public class FetchUsersFromExternalServicesTest {
     @RestClient
     MBOPService mbopService;
 
-    @Inject
+    @InjectMock
     RecipientsResolverConfig recipientsResolverConfig;
+
+    @BeforeEach
+    void beforeEach() {
+        // This is the default config. It has to be set because we're mocking RecipientsResolverConfig.
+        when(recipientsResolverConfig.getInitialRetryBackoff()).thenReturn(Duration.ofMillis(100));
+        when(recipientsResolverConfig.getMaxResultsPerPage()).thenReturn(1000);
+        when(recipientsResolverConfig.getMaxRetryAttempts()).thenReturn(3);
+        when(recipientsResolverConfig.getMaxRetryBackoff()).thenReturn(Duration.ofSeconds(1));
+        when(recipientsResolverConfig.getMbopApiToken()).thenReturn("na");
+        when(recipientsResolverConfig.getMbopClientId()).thenReturn("na");
+        when(recipientsResolverConfig.getMbopEnv()).thenReturn("na");
+    }
 
     @Test
     void getGroupUsersShouldOnlyContainActiveUsers() {
@@ -168,24 +185,20 @@ public class FetchUsersFromExternalServicesTest {
 
     @Test
     public void getAllUsersFromDefaultGroupRBAC() {
-        try {
-            recipientsResolverConfig.setFetchUsersWithRBAC(true);
-            RbacGroup defaultGroup = new RbacGroup();
-            defaultGroup.setPlatformDefault(true);
-            defaultGroup.setUuid(UUID.randomUUID());
+        when(recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        RbacGroup defaultGroup = new RbacGroup();
+        defaultGroup.setPlatformDefault(true);
+        defaultGroup.setUuid(UUID.randomUUID());
 
-            int elements = 133;
+        int elements = 133;
 
-            mockGetGroup(defaultGroup);
-            mockGetUsersRBAC(elements, false);
+        mockGetGroup(defaultGroup);
+        mockGetUsersRBAC(elements, false);
 
-            List<User> users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, defaultGroup.getUuid());
-            assertEquals(elements, users.size());
-            for (int i = 0; i < elements; ++i) {
-                assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-            }
-        } finally {
-            recipientsResolverConfig.setFetchUsersWithRBAC(false);
+        List<User> users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, defaultGroup.getUuid());
+        assertEquals(elements, users.size());
+        for (int i = 0; i < elements; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
         }
     }
 
@@ -223,31 +236,27 @@ public class FetchUsersFromExternalServicesTest {
 
     @Test
     public void getAllUsersCacheRBAC() {
-        try {
-            recipientsResolverConfig.setFetchUsersWithRBAC(true);
-            int initialSize = 1095;
-            int updatedSize = 1323;
-            mockGetUsersRBAC(initialSize, false);
+        when(recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
 
-            List<User> users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
-            assertEquals(initialSize, users.size());
-            for (int i = 0; i < initialSize; ++i) {
-                assertEquals(String.format("username-%d", i), users.get(i).getUsername());
-            }
+        int initialSize = 1095;
+        int updatedSize = 1323;
+        mockGetUsersRBAC(initialSize, false);
 
-            mockGetUsersRBAC(updatedSize, false);
-
-            users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
-            // Should still have the initial size because of the cache
-            assertEquals(initialSize, users.size());
-            clearCached();
-
-            users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
-            assertEquals(updatedSize, users.size());
-        } finally {
-            recipientsResolverConfig.setFetchUsersWithRBAC(false);
+        List<User> users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
+        assertEquals(initialSize, users.size());
+        for (int i = 0; i < initialSize; ++i) {
+            assertEquals(String.format("username-%d", i), users.get(i).getUsername());
         }
 
+        mockGetUsersRBAC(updatedSize, false);
+
+        users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
+        // Should still have the initial size because of the cache
+        assertEquals(initialSize, users.size());
+        clearCached();
+
+        users = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
+        assertEquals(updatedSize, users.size());
     }
 
     @Test
@@ -284,52 +293,48 @@ public class FetchUsersFromExternalServicesTest {
      */
     @Test
     void testGetUsersMBOP() {
-        try {
-            this.recipientsResolverConfig.setFetchUsersWithMbop(true);
+        when(recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
 
-            // Fake a REST call to MBOP.
-            final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage());
-            final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage());
-            final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage() / 2);
+        // Fake a REST call to MBOP.
+        final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage());
+        final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage());
+        final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage() / 2);
 
-            final boolean adminsOnly = false;
+        final boolean adminsOnly = false;
 
-            // Return a few pages of results, with the last one being less than
-            // the configured maximum limit, so that we can test that the loop
-            // is working as expected.
-            Mockito
-                .when(this.mbopService.getUsersByOrgId(Mockito.eq(recipientsResolverConfig.getMbopApiToken()), Mockito.eq(recipientsResolverConfig.getMbopClientId()), Mockito.eq(recipientsResolverConfig.getMbopEnv()), Mockito.eq(DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(FetchUsersFromExternalServices.MBOP_SORT_ORDER), Mockito.eq(recipientsResolverConfig.getMaxResultsPerPage()), Mockito.anyInt()))
-                .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
+        // Return a few pages of results, with the last one being less than
+        // the configured maximum limit, so that we can test that the loop
+        // is working as expected.
+        Mockito
+            .when(this.mbopService.getUsersByOrgId(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyString(), anyInt(), anyInt()))
+            .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
 
-            // Call the function under test.
-            final List<User> result = this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, adminsOnly);
+        // Call the function under test.
+        final List<User> result = this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, adminsOnly);
 
-            // Verify that the offset argument, which is the one that changes
-            // on each iteration, has been correctly incremented.
-            final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
-            Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(Mockito.eq(recipientsResolverConfig.getMbopApiToken()), Mockito.eq(recipientsResolverConfig.getMbopClientId()), Mockito.eq(recipientsResolverConfig.getMbopEnv()), Mockito.eq(DEFAULT_ORG_ID), Mockito.eq(adminsOnly), Mockito.eq(FetchUsersFromExternalServices.MBOP_SORT_ORDER), Mockito.eq(recipientsResolverConfig.getMaxResultsPerPage()), capturedOffset.capture());
+        // Verify that the offset argument, which is the one that changes
+        // on each iteration, has been correctly incremented.
+        final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
+        Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyString(), anyInt(), capturedOffset.capture());
 
-            final List<Integer> capturedValues = capturedOffset.getAllValues();
-            assertIterableEquals(
-                List.of(
-                    0,
-                    recipientsResolverConfig.getMaxResultsPerPage(),
-                    recipientsResolverConfig.getMaxResultsPerPage() * 2
-                ),
-                capturedValues,
-                "unexpected offset values used when calling MBOP"
-            );
+        final List<Integer> capturedValues = capturedOffset.getAllValues();
+        assertIterableEquals(
+            List.of(
+                0,
+                recipientsResolverConfig.getMaxResultsPerPage(),
+                recipientsResolverConfig.getMaxResultsPerPage() * 2
+            ),
+            capturedValues,
+            "unexpected offset values used when calling MBOP"
+        );
 
-            // Transform the generated MBOP users in order to check that the
-            // function under test did the transformations as expected.
-            final List<User> mockUsers = this.fetchUsersFromExternalServices.transformMBOPUserToUser(firstPageMBOPUsers);
-            mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(secondPageMBOPUsers));
-            mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(thirdPageMBOPUsers));
+        // Transform the generated MBOP users in order to check that the
+        // function under test did the transformations as expected.
+        final List<User> mockUsers = this.fetchUsersFromExternalServices.transformMBOPUserToUser(firstPageMBOPUsers);
+        mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(secondPageMBOPUsers));
+        mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(thirdPageMBOPUsers));
 
-            assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
-        } finally {
-            this.recipientsResolverConfig.setFetchUsersWithMbop(false);
-        }
+        assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
     }
 
     private void mockGetUsers(int elements, boolean adminsOnly) {

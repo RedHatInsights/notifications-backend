@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.EngineConfig;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;

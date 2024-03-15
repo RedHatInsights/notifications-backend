@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Constants;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
@@ -66,7 +66,7 @@ public class UserConfigResource {
     TemplateRepository templateRepository;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    BackendConfig backendConfig;
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
     public static class V1 extends UserConfigResource {
@@ -92,7 +92,7 @@ public class UserConfigResource {
 
         // If the instant emails are disabled, we need to check that the request
         // does not contain any subscription with SubscriptionType.INSTANT.
-        if (!featureFlipper.isInstantEmailsEnabled() && userSettings.bundles.values().stream()
+        if (!backendConfig.isInstantEmailsEnabled() && userSettings.bundles.values().stream()
                 .flatMap(bundleSettings -> bundleSettings.applications.values().stream())
                 .flatMap(appSettings -> appSettings.eventTypes.values().stream())
                 .flatMap(eventTypeSettings -> eventTypeSettings.emailSubscriptionTypes.keySet().stream())
@@ -218,7 +218,7 @@ public class UserConfigResource {
                 eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
                 eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
                 for (SubscriptionType subscriptionType : SubscriptionType.values()) {
-                    if (featureFlipper.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
+                    if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
                         boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), subscriptionType);
                         if (supported) {
                             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();

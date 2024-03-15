@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.processors.drawer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.EngineConfig;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;

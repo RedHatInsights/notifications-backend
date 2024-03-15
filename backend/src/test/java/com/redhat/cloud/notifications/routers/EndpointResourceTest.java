@@ -5,7 +5,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -41,7 +41,6 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -99,12 +98,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        featureFlipper.setInstantEmailsEnabled(true);
-    }
-
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setInstantEmailsEnabled(false);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
     }
 
     @Inject
@@ -113,8 +107,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    BackendConfig backendConfig;
 
     @Inject
     EndpointRepository endpointRepository;
@@ -296,123 +290,119 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Test
     void testRepeatedEndpointName() {
-        try {
-            featureFlipper.setEnforceIntegrationNameUnicity(true);
-            String orgId = "repeatEndpoint";
-            String userName = "user";
+        when(backendConfig.isUniqueIntegrationNameEnabled()).thenReturn(true);
+        String orgId = "repeatEndpoint";
+        String userName = "user";
 
-            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, orgId, userName);
-            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, orgId, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
-            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-            // Endpoint1
-            WebhookProperties properties = new WebhookProperties();
-            properties.setMethod(POST);
-            properties.setDisableSslVerification(false);
-            properties.setSecretToken("my-super-secret-token");
-            properties.setUrl(getMockServerUrl());
+        // Endpoint1
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(POST);
+        properties.setDisableSslVerification(false);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl(getMockServerUrl());
 
-            Endpoint endpoint1 = new Endpoint();
-            endpoint1.setType(EndpointType.WEBHOOK);
-            endpoint1.setName("Endpoint1");
-            endpoint1.setDescription("needle in the haystack");
-            endpoint1.setEnabled(true);
-            endpoint1.setProperties(properties);
-            endpoint1.setServerErrors(3);
+        Endpoint endpoint1 = new Endpoint();
+        endpoint1.setType(EndpointType.WEBHOOK);
+        endpoint1.setName("Endpoint1");
+        endpoint1.setDescription("needle in the haystack");
+        endpoint1.setEnabled(true);
+        endpoint1.setProperties(properties);
+        endpoint1.setServerErrors(3);
 
-            mockSources(properties);
+        mockSources(properties);
 
-            Response response = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(endpoint1))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(200)
-                    .extract().response();
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint1))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().response();
 
-            String endpoint1Id = new JsonObject(response.getBody().asString()).getString("id");
-            assertNotNull(endpoint1Id);
+        String endpoint1Id = new JsonObject(response.getBody().asString()).getString("id");
+        assertNotNull(endpoint1Id);
 
-            // Trying to add the same endpoint name again results in a 400 error
-            given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(endpoint1))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(400);
+        // Trying to add the same endpoint name again results in a 400 error
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpoint1))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
 
-            // Endpoint2
-            Endpoint ep = new Endpoint();
-            ep.setType(EndpointType.WEBHOOK);
-            ep.setName("Endpoint2");
-            ep.setDescription("needle in the haystack");
-            ep.setEnabled(true);
-            ep.setProperties(properties);
-            ep.setServerErrors(3);
+        // Endpoint2
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.WEBHOOK);
+        ep.setName("Endpoint2");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+        ep.setServerErrors(3);
 
-            given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(ep))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(200);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
 
-            // Different endpoint type with same name
-            CamelProperties camelProperties = new CamelProperties();
-            camelProperties.setBasicAuthentication(new BasicAuthentication());
-            camelProperties.setExtras(Map.of());
-            camelProperties.setSecretToken("secret");
-            camelProperties.setUrl("http://nowhere");
+        // Different endpoint type with same name
+        CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setBasicAuthentication(new BasicAuthentication());
+        camelProperties.setExtras(Map.of());
+        camelProperties.setSecretToken("secret");
+        camelProperties.setUrl("http://nowhere");
 
-            ep = new Endpoint();
-            ep.setType(EndpointType.CAMEL);
-            ep.setSubType("stuff");
-            ep.setName("Endpoint1");
-            ep.setDescription("needle in the haystack");
-            ep.setEnabled(true);
-            ep.setProperties(camelProperties);
-            ep.setServerErrors(3);
+        ep = new Endpoint();
+        ep.setType(EndpointType.CAMEL);
+        ep.setSubType("stuff");
+        ep.setName("Endpoint1");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(camelProperties);
+        ep.setServerErrors(3);
 
-            given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(ep))
-                    .post("/endpoints")
-                    .then()
-                    .statusCode(400);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(400);
 
-            // Updating endpoint1 name is possible
-            endpoint1.setName("Endpoint1-updated");
-            given()
-                    .header(identityHeader)
-                    .contentType(JSON)
-                    .body(Json.encode(endpoint1))
-                    .when()
-                    .put("/endpoints/" + endpoint1Id)
-                    .then()
-                    .statusCode(200);
+        // Updating endpoint1 name is possible
+        endpoint1.setName("Endpoint1-updated");
+        given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .body(Json.encode(endpoint1))
+                .when()
+                .put("/endpoints/" + endpoint1Id)
+                .then()
+                .statusCode(200);
 
-            // Updating to the name of an already existing endpoint is not possible
-            endpoint1.setName("Endpoint2");
-            given()
-                    .header(identityHeader)
-                    .contentType(JSON)
-                    .body(Json.encode(endpoint1))
-                    .when()
-                    .put("/endpoints/" + endpoint1Id)
-                    .then()
-                    .statusCode(400);
-        } finally {
-            featureFlipper.setEnforceIntegrationNameUnicity(false);
-        }
+        // Updating to the name of an already existing endpoint is not possible
+        endpoint1.setName("Endpoint2");
+        given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .body(Json.encode(endpoint1))
+                .when()
+                .put("/endpoints/" + endpoint1Id)
+                .then()
+                .statusCode(400);
     }
 
     private JsonObject fetchSingle(String id, Header identityHeader) {
@@ -689,77 +679,73 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Test
     void testForbidSlackChannelUsage() {
-        try {
-            featureFlipper.setSlackForbidChannelUsageEnabled(true);
-            String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "user");
-            Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-            MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+        when(backendConfig.isForbidSlackChannelUsage()).thenReturn(true);
 
-            Map<String, String> extras = new HashMap<>(Map.of("channel", "")); // Having a channel value is invalid.
-            CamelProperties camelProperties = new CamelProperties();
-            camelProperties.setUrl("https://foo.com");
-            camelProperties.setExtras(extras);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "user");
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-            Endpoint endpoint = new Endpoint();
-            endpoint.setType(EndpointType.CAMEL);
-            endpoint.setSubType("slack");
-            endpoint.setName("name");
-            endpoint.setDescription("description");
-            endpoint.setProperties(camelProperties);
+        Map<String, String> extras = new HashMap<>(Map.of("channel", "")); // Having a channel value is invalid.
+        CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setUrl("https://foo.com");
+        camelProperties.setExtras(extras);
 
-            String responseBody = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(endpoint))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .extract().asString();
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(EndpointType.CAMEL);
+        endpoint.setSubType("slack");
+        endpoint.setName("name");
+        endpoint.setDescription("description");
+        endpoint.setProperties(camelProperties);
 
-            assertEquals(DEPRECATED_SLACK_CHANNEL_ERROR, responseBody);
+        String responseBody = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(endpoint))
+            .post("/endpoints")
+            .then()
+            .statusCode(400)
+            .extract().asString();
 
-            extras.remove("channel");
+        assertEquals(DEPRECATED_SLACK_CHANNEL_ERROR, responseBody);
 
-            String createdEndpoint = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(endpoint))
-                .post("/endpoints")
-                .then()
-                .statusCode(200)
-                .extract().asString();
+        extras.remove("channel");
 
-            final JsonObject jsonResponse = new JsonObject(createdEndpoint);
-            final String endpointUuidRaw = jsonResponse.getString("id");
+        String createdEndpoint = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(endpoint))
+            .post("/endpoints")
+            .then()
+            .statusCode(200)
+            .extract().asString();
 
-            // try to update endpoint without channel
-            given()
-                .header(identityHeader)
-                .contentType(JSON)
-                .pathParam("id", endpointUuidRaw)
-                .body(Json.encode(endpoint))
-                .when()
-                .put("/endpoints/{id}")
-                .then()
-                .statusCode(200);
+        final JsonObject jsonResponse = new JsonObject(createdEndpoint);
+        final String endpointUuidRaw = jsonResponse.getString("id");
 
-            // try to update endpoint with channel
-            extras.put("channel", "refused");
-            given()
-                .header(identityHeader)
-                .contentType(JSON)
-                .pathParam("id", endpointUuidRaw)
-                .body(Json.encode(endpoint))
-                .when()
-                .put("/endpoints/{id}")
-                .then()
-                .statusCode(400);
+        // try to update endpoint without channel
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUuidRaw)
+            .body(Json.encode(endpoint))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(200);
 
-        } finally {
-            featureFlipper.setSlackForbidChannelUsageEnabled(false);
-        }
+        // try to update endpoint with channel
+        extras.put("channel", "refused");
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUuidRaw)
+            .body(Json.encode(endpoint))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(400);
     }
 
     @Test

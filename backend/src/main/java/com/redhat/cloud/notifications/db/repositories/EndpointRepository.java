@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
@@ -41,10 +41,10 @@ public class EndpointRepository {
     EntityManager entityManager;
 
     @Inject
-    FeatureFlipper featureFlipper;
+    BackendConfig backendConfig;
 
     public void checkEndpointNameDuplicate(Endpoint endpoint) {
-        if (!featureFlipper.isEnforceIntegrationNameUnicity()) {
+        if (!backendConfig.isUniqueIntegrationNameEnabled()) {
             // Check disabled from configuration
             return;
         }

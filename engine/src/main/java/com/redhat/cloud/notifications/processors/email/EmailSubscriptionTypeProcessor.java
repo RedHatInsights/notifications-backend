@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.EngineConfig;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;

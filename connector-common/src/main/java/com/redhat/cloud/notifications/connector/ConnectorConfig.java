@@ -1,15 +1,15 @@
 package com.redhat.cloud.notifications.connector;
 
+import io.getunleash.Unleash;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import static java.util.Map.Entry;
 
 @ApplicationScoped
 @DefaultBean
@@ -30,6 +30,11 @@ public class ConnectorConfig {
     private static final String SEDA_CONCURRENT_CONSUMERS = "notifications.connector.seda.concurrent-consumers";
     private static final String SEDA_QUEUE_SIZE = "notifications.connector.seda.queue-size";
     private static final String SUPPORTED_CONNECTOR_HEADERS = "notifications.connector.supported-connector-headers";
+    private static final String UNLEASH = "notifications.unleash.enabled";
+
+    @ConfigProperty(name = UNLEASH, defaultValue = "false")
+    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
+    protected boolean unleashEnabled;
 
     @ConfigProperty(name = ENDPOINT_CACHE_MAX_SIZE, defaultValue = "100")
     int endpointCacheMaxSize;
@@ -80,11 +85,18 @@ public class ConnectorConfig {
     @ConfigProperty(name = SUPPORTED_CONNECTOR_HEADERS)
     List<String> supportedConnectorHeaders;
 
+    @Inject
+    protected Unleash unleash;
+
     public void log() {
-        Log.info("=== Connector configuration ===");
-        for (Entry<String, Object> configEntry : getLoggedConfiguration().entrySet()) {
-            Log.infof("%s=%s", configEntry.getKey(), configEntry.getValue());
-        }
+        Log.info("=== Startup configuration ===");
+        getLoggedConfiguration().forEach((key, value) -> {
+            Log.infof("%s=%s", key, value);
+        });
+    }
+
+    protected String toggleName(String feature) {
+        return String.format("notifications-connector-%s.%s.enabled", getConnectorName(), feature);
     }
 
     protected Map<String, Object> getLoggedConfiguration() {
@@ -104,6 +116,7 @@ public class ConnectorConfig {
         config.put(SEDA_CONCURRENT_CONSUMERS, sedaConcurrentConsumers);
         config.put(SEDA_QUEUE_SIZE, sedaQueueSize);
         config.put(SUPPORTED_CONNECTOR_HEADERS, supportedConnectorHeaders);
+        config.put(UNLEASH, unleashEnabled);
         return config;
     }
 

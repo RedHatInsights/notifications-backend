@@ -6,7 +6,7 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.FeatureFlipper;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -32,7 +33,6 @@ import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,16 +70,11 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
-        featureFlipper.setInstantEmailsEnabled(true);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
     }
 
-    @AfterEach
-    void afterEach() {
-        featureFlipper.setInstantEmailsEnabled(false);
-    }
-
-    @Inject
-    FeatureFlipper featureFlipper;
+    @InjectMock
+    BackendConfig backendConfig;
 
     @Inject
     SubscriptionRepository subscriptionRepository;
@@ -128,7 +123,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
         eventTypeSettingsValue.emailSubscriptionTypes.put(DAILY, daily);
         eventTypeSettingsValue.emailSubscriptionTypes.put(INSTANT, instant);
-        if (featureFlipper.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled()) {
             eventTypeSettingsValue.emailSubscriptionTypes.put(DRAWER, drawer);
         }
 
@@ -151,12 +146,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @Test
     void testSettingsByEventTypeWithDrawerEnabled() {
-        try {
-            featureFlipper.setDrawerEnabled(true);
-            testSettingsByEventType();
-        } finally {
-            featureFlipper.setDrawerEnabled(false);
-        }
+        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        testSettingsByEventType();
     }
 
     void testSettingsByEventType() {
@@ -216,21 +207,21 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
-        featureFlipper.setInstantEmailsEnabled(false);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
         SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, true, true, false);
         postPreferencesByEventType(path, identityHeader, settingsValues, 400);
 
-        featureFlipper.setInstantEmailsEnabled(true);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
         postPreferencesByEventType(path, identityHeader, settingsValues, 200);
 
-        featureFlipper.setInstantEmailsEnabled(false);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
         SettingsValueByEventTypeJsonForm settingsValue = getPreferencesByEventType(path, identityHeader);
         rhelPolicy = rhelPolicyForm(settingsValue);
         boolean instantEmailSettingsReturned = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType)
                 .keySet().stream().anyMatch(INSTANT::equals);
         assertFalse(instantEmailSettingsReturned, "Instant email subscription settings should not be returned when instant emails are disabled");
 
-        featureFlipper.setInstantEmailsEnabled(true);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
 
         // Daily and Instant to false
         updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
@@ -253,7 +244,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         // Unsubscribing from everything should work this time.
         updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, emptyList(), emptyList());
 
-        if (featureFlipper.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled()) {
             // Daily, Instant and drawer to false
             updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, emptyList(), emptyList());
 
@@ -325,7 +316,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
 
-        if (featureFlipper.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled()) {
             assertEquals(2, notificationPreferenes.size());
             assertTrue(notificationPreferenes.containsKey(DRAWER));
         } else {
@@ -343,7 +334,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
         rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
-        if (featureFlipper.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled()) {
             // drawer type will be always supported
             assertNotNull(rhelPolicy);
             assertEquals(1, settingsValueJsonForm.bundles.size());
@@ -365,7 +356,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         assertEquals(expectedResult.contains(DAILY), initialValues.get(DAILY));
         assertEquals(expectedResult.contains(INSTANT), initialValues.get(INSTANT));
-        if (featureFlipper.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled()) {
             assertEquals(expectedResult.contains(DRAWER), initialValues.get(DRAWER));
         }
 
@@ -381,7 +372,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
         assertEquals(expectedResult.contains(DAILY), notificationPreferenes.get(DAILY));
         assertEquals(expectedResult.contains(INSTANT), notificationPreferenes.get(INSTANT));
-        if (featureFlipper.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled()) {
             assertEquals(expectedResult.contains(DRAWER), notificationPreferenes.get(DRAWER));
         }
     }

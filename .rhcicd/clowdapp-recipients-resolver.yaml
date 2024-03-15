@@ -14,6 +14,7 @@ objects:
     envName: ${ENV_NAME}
     dependencies:
     - rbac
+    featureFlags: true
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
@@ -73,6 +74,8 @@ objects:
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED}
+        - name: NOTIFICATIONS_UNLEASH_ENABLED
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
@@ -123,6 +126,8 @@ objects:
           value: ${IT_S2S_READ_TIMEOUT}
         - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
           value: ${RBAC_S2S_READ_TIMEOUT}
+        - name: QUARKUS_UNLEASH_ACTIVE
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
           value: ${RBAC_SERVICE_TO_SERVICE_APP}
         - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
@@ -176,6 +181,8 @@ parameters:
 - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
   description: Users from an organization will be retrieved from RBAC if true
   value: "true"
+- name: NOTIFICATIONS_UNLEASH_ENABLED
+  value: "false"
 - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
   description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
   value: INFO

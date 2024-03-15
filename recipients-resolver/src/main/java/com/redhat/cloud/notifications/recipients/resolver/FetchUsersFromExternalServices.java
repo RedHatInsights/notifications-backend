@@ -82,9 +82,9 @@ public class FetchUsersFromExternalServices {
 
     @PostConstruct
     public void postConstruct() {
-        if (recipientsResolverConfig.isFetchUsersWithRBAC()) {
+        if (recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
             failuresCounter = meterRegistry.counter("rbac.failures");
-        } else if (recipientsResolverConfig.isFetchUsersWithMbop()) {
+        } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
             failuresCounter = meterRegistry.counter("mbop.failures");
         } else {
             failuresCounter = meterRegistry.counter("it.failures");
@@ -106,7 +106,7 @@ public class FetchUsersFromExternalServices {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
-        if (recipientsResolverConfig.isFetchUsersWithRBAC()) {
+        if (recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
             users = getWithPagination(
                 page -> retryOnError(() -> {
                     LocalDateTime startTime = LocalDateTime.now();
@@ -117,7 +117,7 @@ public class FetchUsersFromExternalServices {
                     }
                     return rbacUserPage;
                 }));
-        } else if (recipientsResolverConfig.isFetchUsersWithMbop()) {
+        } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
             users = fetchUsersWithMbop(orgId, adminsOnly);
         } else {
             users = fetchUsersWithItUserService(orgId, adminsOnly);
