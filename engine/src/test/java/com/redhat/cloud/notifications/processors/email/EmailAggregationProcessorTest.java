@@ -157,7 +157,7 @@ class EmailAggregationProcessorTest {
         User user3 = new User();
         user3.setUsername("user3");
 
-        when(externalRecipientsResolver.recipientUsers(any(), anySet(), anySet(), anySet(), anyBoolean()))
+        when(externalRecipientsResolver.recipientUsers(anyString(), anySet(), anySet(), anySet(), anyBoolean()))
             .then(invocation -> {
                     Set<RecipientSettings> list = invocation.getArgument(1);
                     if (list.isEmpty()) {
