@@ -80,6 +80,9 @@ public class FeatureFlipper {
     @ConfigProperty(name = "notifications.email.hcc-sender-name.enabled", defaultValue = "false")
     boolean hccEmailSenderNameEnabled;
 
+    @ConfigProperty(name = "notifications.slack.forbid.channel.usage.enabled", defaultValue = "false")
+    boolean slackForbidChannelUsageEnabled;
+
     void logFeaturesStatusAtStartup(@Observes StartupEvent event) {
         Log.infof("=== %s startup status ===", FeatureFlipper.class.getSimpleName());
         Log.infof("The behavior groups unique name constraint is %s", enforceBehaviorGroupNameUnicity ? "enabled" : "disabled");
@@ -96,6 +99,7 @@ public class FeatureFlipper {
         Log.infof("The async aggregation is %s", asyncAggregation ? "enabled" : "disabled");
         Log.infof("The Recipients resolver usage for daily digest is %s", useRecipientsResolverClowdappForDailyDigestEnabled ? "enabled" : "disabled");
         Log.infof("HCC sender name is %s in emails", hccEmailSenderNameEnabled ? "enabled" : "disabled");
+        Log.infof("The disable of channel field on Slack is %s", slackForbidChannelUsageEnabled ? "enabled" : "disabled");
     }
 
     public boolean isEnforceBehaviorGroupNameUnicity() {
@@ -213,6 +217,15 @@ public class FeatureFlipper {
     public void setHccEmailSenderNameEnabled(boolean hccEmailSenderNameEnabled) {
         checkTestLaunchMode();
         this.hccEmailSenderNameEnabled = hccEmailSenderNameEnabled;
+    }
+
+    public boolean isSlackForbidChannelUsageEnabled() {
+        return slackForbidChannelUsageEnabled;
+    }
+
+    public void setSlackForbidChannelUsageEnabled(boolean slackForbidChannelUsageEnabled) {
+        checkTestLaunchMode();
+        this.slackForbidChannelUsageEnabled = slackForbidChannelUsageEnabled;
     }
 
     /**

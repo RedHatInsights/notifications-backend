@@ -82,6 +82,7 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 public class EndpointResource {
 
     public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
+    public static final String DEPRECATED_SLACK_CHANNEL_ERROR = "The channel field is deprecated";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
     public static final String REDACTED_CREDENTIAL = "*****";
 
@@ -273,7 +274,7 @@ public class EndpointResource {
         }
 
         if (endpoint.getType() == CAMEL && "slack".equals(endpoint.getSubType())) {
-            checkSlackChannel(endpoint.getProperties(CamelProperties.class));
+            checkSlackChannel(endpoint.getProperties(CamelProperties.class), null);
         }
 
         endpoint.setStatus(EndpointStatus.READY);
@@ -292,12 +293,22 @@ public class EndpointResource {
         return endpointRepository.createEndpoint(endpoint);
     }
 
-    private String checkSlackChannel(CamelProperties camelProperties) {
+    private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {
         String channel = camelProperties.getExtras().get("channel");
-        if (channel == null || channel.isBlank()) {
-            throw new BadRequestException(EMPTY_SLACK_CHANNEL_ERROR);
+
+        if (featureFlipper.isSlackForbidChannelUsageEnabled()) {
+            // throw an exception if we receive a channel on endpoint creation
+            if (null == previousCamelProperties && channel != null) {
+                throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
+            // throw an exception if we receive a channel update
+            } else if (channel != null && !channel.equals(previousCamelProperties.getExtras().get("channel"))) {
+                throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
+            }
+        } else {
+            if (channel == null || channel.isBlank()) {
+                throw new BadRequestException(EMPTY_SLACK_CHANNEL_ERROR);
+            }
         }
-        return channel;
     }
 
     @POST
@@ -453,20 +464,25 @@ public class EndpointResource {
         endpoint.setOrgId(orgId);
         endpoint.setId(id);
 
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
+        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
+        if (dbEndpoint == null) {
+            throw new NotFoundException("Endpoint not found");
+        }
+        EndpointType endpointType = dbEndpoint.getType();
+
         // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
         checkSystemEndpoint(endpointType);
 
         if (endpoint.getType() == CAMEL && "slack".equals(endpoint.getSubType())) {
-            checkSlackChannel(endpoint.getProperties(CamelProperties.class));
+            checkSlackChannel(endpoint.getProperties(CamelProperties.class), dbEndpoint.getProperties(CamelProperties.class));
         }
 
         endpointRepository.updateEndpoint(endpoint);
 
         // Update the secrets in Sources.
-        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
+        final Endpoint updatedDbEndpoint = endpointRepository.getEndpoint(orgId, id);
         final EndpointProperties endpointProperties = endpoint.getProperties();
-        final EndpointProperties databaseEndpointProperties = dbEndpoint.getProperties();
+        final EndpointProperties databaseEndpointProperties = updatedDbEndpoint.getProperties();
 
         if (endpointProperties instanceof SourcesSecretable incomingProperties && databaseEndpointProperties instanceof SourcesSecretable dep) {
             // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
@@ -474,7 +490,7 @@ public class EndpointResource {
             dep.setBasicAuthentication(incomingProperties.getBasicAuthentication());
             dep.setSecretToken(incomingProperties.getSecretToken());
             dep.setBearerAuthentication(incomingProperties.getBearerAuthentication());
-            this.secretUtils.updateSecretsForEndpoint(dbEndpoint);
+            this.secretUtils.updateSecretsForEndpoint(updatedDbEndpoint);
         }
 
         return Response.ok().build();

@@ -152,6 +152,8 @@ objects:
           value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
         - name: NOTIFICATIONS_DRAWER_ENABLED
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
+        - name: NOTIFICATIONS_SLACK_FORBID_CHANNEL_USAGE_ENABLED
+          value: ${NOTIFICATIONS_SLACK_FORBID_CHANNEL_USAGE_ENABLED}
         - name: SOURCES_PSK
           valueFrom:
             secretKeyRef:
@@ -250,4 +252,6 @@ parameters:
 - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
   value: "false"
 - name: NOTIFICATIONS_DRAWER_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_SLACK_FORBID_CHANNEL_USAGE_ENABLED
   value: "false"
