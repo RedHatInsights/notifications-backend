@@ -23,7 +23,6 @@ public class RunOnEngineStartup {
 
     @PostConstruct
     void postConstruct() {
-        startupUtils.initAccessLogFilter();
         startupUtils.logGitProperties();
         startupUtils.logExternalServiceUrl("quarkus.rest-client.rbac-s2s.url");
         startupUtils.logExternalServiceUrl("quarkus.rest-client.export-service.url");

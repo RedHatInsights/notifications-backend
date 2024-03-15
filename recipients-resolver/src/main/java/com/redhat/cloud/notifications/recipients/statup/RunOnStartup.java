@@ -12,7 +12,6 @@ public class RunOnStartup {
 
     @PostConstruct
     void postConstruct() {
-        startupUtils.initAccessLogFilter();
         startupUtils.logGitProperties();
     }
 }
