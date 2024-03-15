@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.getunleash.Unleash;
 import io.getunleash.Variant;
+import io.getunleash.event.UnleashSubscriber;
+import io.getunleash.repository.FeatureToggleResponse;
 import io.getunleash.variant.Payload;
+import io.quarkus.arc.Unremovable;
 import io.quarkus.logging.Log;
-import io.quarkus.scheduler.Scheduled;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -19,6 +21,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static io.getunleash.repository.FeatureToggleResponse.Status.CHANGED;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.INFO;
@@ -27,7 +30,8 @@ import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toSet;
 
 @Singleton
-public class LogLevelManager {
+@Unremovable
+public class LogLevelManager implements UnleashSubscriber {
 
     private static final String UNLEASH_TOGGLE_NAME = "notifications-engine.custom-log-levels";
     private static final String INHERITED = "INHERITED";
@@ -47,9 +51,9 @@ public class LogLevelManager {
 
     private final Map<String, Level> previousLogLevels = new HashMap<>();
 
-    @Scheduled(every = "${notifications.log-level-manager.scheduler-period:1m}")
-    void run() {
-        if (unleashEnabled) {
+    @Override
+    public void togglesFetched(FeatureToggleResponse toggleResponse) {
+        if (unleashEnabled && toggleResponse.getStatus() == CHANGED) {
             try {
 
                 Variant variant = unleash.getVariant(UNLEASH_TOGGLE_NAME);
