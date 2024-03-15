@@ -42,6 +42,7 @@ export EXTRA_DEPLOY_ARGS="""
 --set-image-tag notifications-connector-slack=${IMAGE_TAG}
 --set-image-tag notifications-connector-splunk=${IMAGE_TAG}
 --set-image-tag notifications-connector-webhook=${IMAGE_TAG}
+--set-image-tag notifications-recipients-resolver=${IMAGE_TAG}
 """
 # The following components need to be deployed with the proper amount of resources in the Ephemeral environment, as
 # otherwise the deployments fail because of a lack of resources.
