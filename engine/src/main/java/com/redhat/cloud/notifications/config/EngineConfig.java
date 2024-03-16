@@ -26,11 +26,11 @@ public class EngineConfig {
     /*
      * Unleash configuration
      */
-    private static final String AGGREGATION_WITH_RECIPIENTS_RESOLVER = toggleName("aggregation-with-recipients-resolver");
-    private static final String ASYNC_AGGREGATION = toggleName("async-aggregation");
-    private static final String DRAWER = toggleName("drawer");
-    private static final String HCC_EMAIL_SENDER_NAME = toggleName("hcc-email-sender-name");
-    private static final String KAFKA_CONSUMED_TOTAL_CHECKER = toggleName("kafka-consumed-total-checker");
+    public static final String AGGREGATION_WITH_RECIPIENTS_RESOLVER = toggleName("aggregation-with-recipients-resolver");
+    public static final String ASYNC_AGGREGATION = toggleName("async-aggregation");
+    public static final String DRAWER = toggleName("drawer");
+    public static final String HCC_EMAIL_SENDER_NAME = toggleName("hcc-email-sender-name");
+    public static final String KAFKA_CONSUMED_TOTAL_CHECKER = toggleName("kafka-consumed-total-checker");
 
     private static String toggleName(String feature) {
         return String.format("notifications-engine.%s.enabled", feature);

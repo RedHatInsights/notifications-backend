@@ -70,7 +70,7 @@
 
         <quarkus-logging-cloudwatch.version>6.7.1</quarkus-logging-cloudwatch.version>
         <quarkus-logging-sentry.version>2.0.5</quarkus-logging-sentry.version>
-        <quarkus-unleash.version>1.4.0</quarkus-unleash.version>
+        <quarkus-unleash.version>1.5.0</quarkus-unleash.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
