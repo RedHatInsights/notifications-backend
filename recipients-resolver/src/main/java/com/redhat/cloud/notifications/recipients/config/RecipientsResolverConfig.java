@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.recipients.config;
 
+import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
@@ -28,8 +30,8 @@ public class RecipientsResolverConfig {
     /*
      * Unleash configuration
      */
-    private static final String FETCH_USERS_WITH_MBOP = toggleName("fetch-users-with-mbop");
-    private static final String FETCH_USERS_WITH_RBAC = toggleName("fetch-users-with-rbac");
+    private String fetchUsersWithMbopToggle;
+    private String fetchUsersWithRbacToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-recipients-resolver.%s.enabled", feature);
@@ -72,13 +74,22 @@ public class RecipientsResolverConfig {
     String mbopEnv;
 
     @Inject
+    ToggleRegistry toggleRegistry;
+
+    @Inject
     Unleash unleash;
+
+    @PostConstruct
+    void postConstruct() {
+        fetchUsersWithMbopToggle = toggleRegistry.register("fetch-users-with-mbop", true);
+        fetchUsersWithRbacToggle = toggleRegistry.register("fetch-users-with-rbac", true);
+    }
 
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
-        config.put(FETCH_USERS_WITH_MBOP, isFetchUsersWithMbopEnabled());
-        config.put(FETCH_USERS_WITH_RBAC, isFetchUsersWithRbacEnabled());
+        config.put(fetchUsersWithMbopToggle, isFetchUsersWithMbopEnabled());
+        config.put(fetchUsersWithRbacToggle, isFetchUsersWithRbacEnabled());
         config.put(MAX_RESULTS_PER_PAGE, getMaxResultsPerPage());
         config.put(MBOP_ENV, getMbopEnv());
         config.put(RETRY_INITIAL_BACKOFF, getInitialRetryBackoff());
@@ -95,7 +106,7 @@ public class RecipientsResolverConfig {
 
     public boolean isFetchUsersWithMbopEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(FETCH_USERS_WITH_MBOP, false);
+            return unleash.isEnabled(fetchUsersWithMbopToggle, false);
         } else {
             return fetchUsersWithMbopEnabled;
         }
@@ -103,7 +114,7 @@ public class RecipientsResolverConfig {
 
     public boolean isFetchUsersWithRbacEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(FETCH_USERS_WITH_RBAC, false);
+            return unleash.isEnabled(fetchUsersWithRbacToggle, false);
         } else {
             return fetchUsersWithRbacEnabled;
         }

@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.config;
 
+import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
@@ -22,7 +24,7 @@ public class AggregatorConfig {
     /*
      * Unleash configuration
      */
-    private static final String SINGLE_DAILY_DIGEST = toggleName("single-daily-digest");
+    private String singleDailyDigestToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-aggregator.%s.enabled", feature);
@@ -37,12 +39,20 @@ public class AggregatorConfig {
     boolean singleDailyDigestEnabled;
 
     @Inject
+    ToggleRegistry toggleRegistry;
+
+    @Inject
     Unleash unleash;
+
+    @PostConstruct
+    void postConstruct() {
+        singleDailyDigestToggle = toggleRegistry.register("single-daily-digest", true);
+    }
 
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
-        config.put(SINGLE_DAILY_DIGEST, isSingleDailyDigestEnabled());
+        config.put(singleDailyDigestToggle, isSingleDailyDigestEnabled());
         config.put(UNLEASH, unleashEnabled);
 
         Log.info("=== Startup configuration ===");
@@ -53,7 +63,7 @@ public class AggregatorConfig {
 
     public boolean isSingleDailyDigestEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(SINGLE_DAILY_DIGEST, false);
+            return unleash.isEnabled(singleDailyDigestToggle, false);
         } else {
             return singleDailyDigestEnabled;
         }

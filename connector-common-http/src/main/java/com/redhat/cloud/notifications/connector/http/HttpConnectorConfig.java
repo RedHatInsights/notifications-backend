@@ -1,8 +1,10 @@
 package com.redhat.cloud.notifications.connector.http;
 
 import com.redhat.cloud.notifications.connector.ConnectorConfig;
+import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.List;
@@ -25,6 +27,11 @@ public class HttpConnectorConfig extends ConnectorConfig {
     private static final String MAX_TOTAL_CONNECTIONS = "notifications.connector.http.max-total-connections";
     private static final String SERVER_ERROR_LOG_LEVEL = "notifications.connector.http.server-error.log-level";
     private static final String SOCKET_TIMEOUT_MS = "notifications.connector.http.socket-timeout-ms";
+
+    /*
+     * Unleash configuration
+     */
+    private String disableFaultyEndpointsToggle;
 
     @ConfigProperty(name = CLIENT_ERROR_LOG_LEVEL, defaultValue = "DEBUG")
     Level clientErrorLogLevel;
@@ -54,14 +61,12 @@ public class HttpConnectorConfig extends ConnectorConfig {
     @ConfigProperty(name = SOCKET_TIMEOUT_MS, defaultValue = "2500")
     int httpSocketTimeout;
 
-    /*
-     * Unleash configuration
-     */
-    private String disableFaultyEndpointsToggleName;
+    @Inject
+    ToggleRegistry toggleRegistry;
 
     @PostConstruct
     void postConstruct() {
-        disableFaultyEndpointsToggleName = toggleName("disable-faulty-endpoints");
+        disableFaultyEndpointsToggle = toggleRegistry.register("disable-faulty-endpoints", true);
     }
 
     @Override
@@ -71,7 +76,7 @@ public class HttpConnectorConfig extends ConnectorConfig {
         config.put(COMPONENTS, httpComponents);
         config.put(CONNECT_TIMEOUT_MS, httpConnectTimeout);
         config.put(CONNECTIONS_PER_ROUTE, httpConnectionsPerRoute);
-        config.put(disableFaultyEndpointsToggleName, isDisableFaultyEndpoints());
+        config.put(disableFaultyEndpointsToggle, isDisableFaultyEndpoints());
         config.put(FOLLOW_REDIRECTS, followRedirects);
         config.put(MAX_TOTAL_CONNECTIONS, httpMaxTotalConnections);
         config.put(SERVER_ERROR_LOG_LEVEL, serverErrorLogLevel);
@@ -97,7 +102,7 @@ public class HttpConnectorConfig extends ConnectorConfig {
 
     public boolean isDisableFaultyEndpoints() {
         if (unleashEnabled) {
-            return unleash.isEnabled(disableFaultyEndpointsToggleName, true);
+            return unleash.isEnabled(disableFaultyEndpointsToggle, true);
         } else {
             return disableFaultyEndpoints;
         }
