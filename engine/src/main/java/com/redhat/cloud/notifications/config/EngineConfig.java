@@ -1,8 +1,10 @@
 package com.redhat.cloud.notifications.config;
 
+import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
@@ -26,15 +28,11 @@ public class EngineConfig {
     /*
      * Unleash configuration
      */
-    public static final String AGGREGATION_WITH_RECIPIENTS_RESOLVER = toggleName("aggregation-with-recipients-resolver");
-    public static final String ASYNC_AGGREGATION = toggleName("async-aggregation");
-    public static final String DRAWER = toggleName("drawer");
-    public static final String HCC_EMAIL_SENDER_NAME = toggleName("hcc-email-sender-name");
-    public static final String KAFKA_CONSUMED_TOTAL_CHECKER = toggleName("kafka-consumed-total-checker");
-
-    private static String toggleName(String feature) {
-        return String.format("notifications-engine.%s.enabled", feature);
-    }
+    private String aggregationWithRecipientsResolverToggle;
+    private String asyncAggregationToggle;
+    private String drawerToggle;
+    private String hccEmailSenderNameToggle;
+    private String kafkaConsumedTotalCheckerToggle;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -81,17 +79,29 @@ public class EngineConfig {
     boolean useSecuredEmailTemplates;
 
     @Inject
+    ToggleRegistry toggleRegistry;
+
+    @Inject
     Unleash unleash;
+
+    @PostConstruct
+    void postConstruct() {
+        aggregationWithRecipientsResolverToggle = toggleRegistry.register("aggregation-with-recipients-resolver", true);
+        asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
+        drawerToggle = toggleRegistry.register("drawer", true);
+        hccEmailSenderNameToggle = toggleRegistry.register("hcc-email-sender-name", true);
+        kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
+    }
 
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
-        config.put(AGGREGATION_WITH_RECIPIENTS_RESOLVER, isAggregationWithRecipientsResolverEnabled());
-        config.put(ASYNC_AGGREGATION, isAsyncAggregationEnabled());
+        config.put(aggregationWithRecipientsResolverToggle, isAggregationWithRecipientsResolverEnabled());
+        config.put(asyncAggregationToggle, isAsyncAggregationEnabled());
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
-        config.put(DRAWER, isDrawerEnabled());
+        config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
-        config.put(KAFKA_CONSUMED_TOTAL_CHECKER, isKafkaConsumedTotalCheckerEnabled());
+        config.put(kafkaConsumedTotalCheckerToggle, isKafkaConsumedTotalCheckerEnabled());
         config.put(SECURED_EMAIL_TEMPLATES, isSecuredEmailTemplatesEnabled());
         config.put(UNLEASH, unleashEnabled);
 
@@ -103,7 +113,7 @@ public class EngineConfig {
 
     public boolean isAggregationWithRecipientsResolverEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(AGGREGATION_WITH_RECIPIENTS_RESOLVER, false);
+            return unleash.isEnabled(aggregationWithRecipientsResolverToggle, false);
         } else {
             return useRecipientsResolverClowdappForDailyDigestEnabled;
         }
@@ -111,7 +121,7 @@ public class EngineConfig {
 
     public boolean isAsyncAggregationEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(ASYNC_AGGREGATION, false);
+            return unleash.isEnabled(asyncAggregationToggle, false);
         } else {
             return asyncAggregation;
         }
@@ -123,7 +133,7 @@ public class EngineConfig {
 
     public boolean isDrawerEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(DRAWER, false);
+            return unleash.isEnabled(drawerToggle, false);
         } else {
             return drawerEnabled;
         }
@@ -136,7 +146,7 @@ public class EngineConfig {
     public boolean isHccEmailSenderNameEnabled(String orgId) {
         if (unleashEnabled) {
             UnleashContext unleashContext = UnleashContext.builder().addProperty("orgId", orgId).build();
-            return unleash.isEnabled(HCC_EMAIL_SENDER_NAME, unleashContext, false);
+            return unleash.isEnabled(hccEmailSenderNameToggle, unleashContext, false);
         } else {
             return hccEmailSenderNameEnabled;
         }
@@ -144,7 +154,7 @@ public class EngineConfig {
 
     public boolean isKafkaConsumedTotalCheckerEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(KAFKA_CONSUMED_TOTAL_CHECKER, false);
+            return unleash.isEnabled(kafkaConsumedTotalCheckerToggle, false);
         } else {
             return kafkaConsumedTotalCheckerEnabled;
         }

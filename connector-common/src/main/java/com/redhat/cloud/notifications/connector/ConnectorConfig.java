@@ -95,10 +95,6 @@ public class ConnectorConfig {
         });
     }
 
-    protected String toggleName(String feature) {
-        return String.format("notifications-connector-%s.%s.enabled", getConnectorName(), feature);
-    }
-
     protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = new TreeMap<>();
         config.put(ENDPOINT_CACHE_MAX_SIZE, endpointCacheMaxSize);

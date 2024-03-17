@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.config;
 
+import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
@@ -25,10 +27,10 @@ public class BackendConfig {
     /*
      * Unleash configuration
      */
-    private static final String DRAWER = toggleName("drawer");
-    private static final String FORBID_SLACK_CHANNEL_USAGE = toggleName("forbid-slack-channel-usage");
-    private static final String UNIQUE_BG_NAME = toggleName("unique-bg-name");
-    private static final String UNIQUE_INTEGRATION_NAME = toggleName("unique-integration-name");
+    private String drawerToggle;
+    private String forbidSlackChannelUsageToggle;
+    private String uniqueBgNameToggle;
+    private String uniqueIntegrationNameToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -67,18 +69,29 @@ public class BackendConfig {
     boolean instantEmailsEnabled;
 
     @Inject
+    ToggleRegistry toggleRegistry;
+
+    @Inject
     Unleash unleash;
+
+    @PostConstruct
+    void postConstruct() {
+        drawerToggle = toggleRegistry.register("drawer", true);
+        forbidSlackChannelUsageToggle = toggleRegistry.register("forbid-slack-channel-usage", true);
+        uniqueBgNameToggle = toggleRegistry.register("unique-bg-name", true);
+        uniqueIntegrationNameToggle = toggleRegistry.register("unique-integration-name", true);
+    }
 
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
-        config.put(DRAWER, isDrawerEnabled());
+        config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
-        config.put(FORBID_SLACK_CHANNEL_USAGE, isForbidSlackChannelUsage());
-        config.put(UNIQUE_BG_NAME, isUniqueBgNameEnabled());
-        config.put(UNIQUE_INTEGRATION_NAME, isUniqueIntegrationNameEnabled());
+        config.put(forbidSlackChannelUsageToggle, isForbidSlackChannelUsage());
+        config.put(uniqueBgNameToggle, isUniqueBgNameEnabled());
+        config.put(uniqueIntegrationNameToggle, isUniqueIntegrationNameEnabled());
         config.put(UNLEASH, unleashEnabled);
 
         Log.info("=== Startup configuration ===");
@@ -93,7 +106,7 @@ public class BackendConfig {
 
     public boolean isDrawerEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(DRAWER, false);
+            return unleash.isEnabled(drawerToggle, false);
         } else {
             return drawerEnabled;
         }
@@ -105,7 +118,7 @@ public class BackendConfig {
 
     public boolean isForbidSlackChannelUsage() {
         if (unleashEnabled) {
-            return unleash.isEnabled(FORBID_SLACK_CHANNEL_USAGE, false);
+            return unleash.isEnabled(forbidSlackChannelUsageToggle, false);
         } else {
             return slackForbidChannelUsageEnabled;
         }
@@ -117,7 +130,7 @@ public class BackendConfig {
 
     public boolean isUniqueBgNameEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(UNIQUE_BG_NAME, false);
+            return unleash.isEnabled(uniqueBgNameToggle, false);
         } else {
             return enforceBehaviorGroupNameUnicity;
         }
@@ -125,7 +138,7 @@ public class BackendConfig {
 
     public boolean isUniqueIntegrationNameEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(UNIQUE_INTEGRATION_NAME, false);
+            return unleash.isEnabled(uniqueIntegrationNameToggle, false);
         } else {
             return enforceIntegrationNameUnicity;
         }
