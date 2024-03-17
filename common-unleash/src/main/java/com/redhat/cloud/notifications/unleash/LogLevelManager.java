@@ -96,6 +96,7 @@ public class LogLevelManager {
                 }
 
                 Set<String> categories = Arrays.stream(logConfigs)
+                        .filter(this::shouldCurrentHostBeUpdated)
                         .map(logConfig -> logConfig.category)
                         .collect(toSet());
                 previousLogLevels.entrySet().removeIf(entry -> {
@@ -121,7 +122,7 @@ public class LogLevelManager {
             return true;
         }
         if (logConfig.hostName.endsWith("*")) {
-            return hostName.startsWith(logConfig.hostName.substring(0, hostName.length() - 1));
+            return hostName.startsWith(logConfig.hostName.substring(0, logConfig.hostName.length() - 1));
         } else {
             return hostName.equals(logConfig.hostName);
         }
