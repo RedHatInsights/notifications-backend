@@ -48,14 +48,14 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: HOST_NAME
+          value: ${HOSTNAME}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
           value: ${CLOUDWATCH_ENABLED}
-        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
-          value: ${HOSTNAME}
         - name: QUARKUS_LOG_SENTRY
           value: ${SENTRY_ENABLED}
         - name: QUARKUS_LOG_SENTRY_DSN

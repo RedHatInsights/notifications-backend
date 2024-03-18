@@ -64,6 +64,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: HOST_NAME
+          value: ${HOSTNAME}
         - name: NOTIFICATIONS_CONNECTOR_AUTHENTICATION_SECRETS_LOADER_SOURCES_API_PSK
           valueFrom:
             secretKeyRef:
@@ -109,8 +111,6 @@ objects:
           value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
           value: ${QUARKUS_LOG_CLOUDWATCH_ENABLED}
-        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
-          value: ${HOSTNAME}
         - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
           value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT

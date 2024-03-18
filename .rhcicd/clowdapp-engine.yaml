@@ -95,6 +95,8 @@ objects:
           value: ${ENV_BASE_URL}
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: HOST_NAME
+          value: ${HOSTNAME}
         - name: MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED
           value: ${MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED}
         - name: MP_MESSAGING_INCOMING_INGRESS_ENABLED
@@ -192,8 +194,6 @@ objects:
           value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
           value: ${CLOUDWATCH_ENABLED}
-        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
-          value: ${HOSTNAME}
         - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
           value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
@@ -238,8 +238,6 @@ objects:
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE
           value: ${NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE}
-        - name: NOTIFICATIONS_HOSTNAME
-          value: ${HOSTNAME}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment

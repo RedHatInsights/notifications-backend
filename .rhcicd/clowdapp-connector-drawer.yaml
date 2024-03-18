@@ -58,6 +58,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: HOST_NAME
+          value: ${HOSTNAME}
         - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
           value: ${NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS}
         - name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
@@ -90,8 +92,6 @@ objects:
           value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
           value: ${QUARKUS_LOG_CLOUDWATCH_ENABLED}
-        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
-          value: ${HOSTNAME}
         - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
           value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT

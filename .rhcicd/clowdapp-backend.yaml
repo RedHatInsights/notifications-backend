@@ -111,6 +111,8 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: HOST_NAME
+          value: ${HOSTNAME}
         - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
           value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
         - name: NOTIFICATIONS_EPHEMERAL_DATA
@@ -139,8 +141,6 @@ objects:
           value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
           value: ${CLOUDWATCH_ENABLED}
-        - name: QUARKUS_LOG_CLOUDWATCH_LOG_STREAM_NAME
-          value: ${HOSTNAME}
         - name: QUARKUS_LOG_SENTRY
           value: ${SENTRY_ENABLED}
         - name: QUARKUS_LOG_SENTRY_DSN
