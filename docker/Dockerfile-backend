@@ -7,7 +7,7 @@ FROM registry.access.redhat.com/ubi8/openjdk-21:latest AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
-RUN ../mvnw clean package -DskipTests -pl :notifications-backend -am --no-transfer-progress
+RUN mvn clean package -DskipTests -pl :notifications-backend -am --no-transfer-progress
 
 # Build the container
 FROM registry.access.redhat.com/ubi8/openjdk-21-runtime:latest
