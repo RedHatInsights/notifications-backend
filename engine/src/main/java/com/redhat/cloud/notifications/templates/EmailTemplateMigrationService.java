@@ -241,6 +241,11 @@ public class EmailTemplateMigrationService {
              * Former src/main/resources/templates/Inventory folder.
              */
             createInstantEmailTemplate(
+                warnings, "rhel", "inventory", List.of("new-system-registered"),
+                "Inventory/newSystemRegisteredEmailTitle", "txt", "New system registered instant email title",
+                "Inventory/newSystemRegisteredEmailBody", "html", "New system registered instant email body"
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "inventory", List.of("validation-error"),
                 "Inventory/validationErrorEmailTitle", "txt", "Inventory instant email title",
                 "Inventory/validationErrorEmailBody", "html", "Inventory instant email body"
