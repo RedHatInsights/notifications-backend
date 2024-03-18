@@ -32,6 +32,7 @@ import com.redhat.cloud.notifications.routers.internal.models.UpdateApplicationR
 import com.redhat.cloud.notifications.routers.internal.models.dto.ApplicationDTO;
 import com.redhat.cloud.notifications.routers.internal.models.transformer.ApplicationDTOTransformer;
 import io.quarkus.logging.Log;
+import io.quarkus.narayana.jta.runtime.TransactionConfiguration;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -220,6 +221,7 @@ public class InternalResource {
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
     @Transactional
+    @TransactionConfiguration(timeout = 300)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteBundle(@PathParam("bundleId") UUID bundleId) {
         return bundleRepository.deleteBundle(bundleId);
