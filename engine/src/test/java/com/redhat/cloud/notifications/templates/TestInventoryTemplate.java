@@ -25,9 +25,11 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
     Environment environment;
 
     private static final String EVENT_TYPE_NEW_SYSTEM_REGISTERED = "new-system-registered";
+    private static final String EVENT_TYPE_SYSTEM_DELETED = "system-deleted";
     private static final String EVENT_TYPE_VALIDATION_ERROR = "validation-error";
 
     private static final String EMAIL_SUBJECT_NEW_SYSTEM_REGISTERED = "Instant notification - New system registered - Inventory - Red Hat Enterprise Linux";
+    private static final String EMAIL_SUBJECT_SYSTEM_DELETED = "Instant notification - System deleted - Inventory - Red Hat Enterprise Linux";
 
     @Override
     protected String getApp() {
@@ -36,7 +38,11 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(EVENT_TYPE_NEW_SYSTEM_REGISTERED, EVENT_TYPE_VALIDATION_ERROR);
+        return List.of(
+            EVENT_TYPE_SYSTEM_DELETED,
+            EVENT_TYPE_NEW_SYSTEM_REGISTERED,
+            EVENT_TYPE_VALIDATION_ERROR
+        );
     }
 
     @Test
@@ -105,6 +111,39 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
         Assertions.assertTrue(result.contains("was registered in Inventory."), "the message body should indicate that the system was registered");
+
+        this.assertOpenInventoryInsightsButtonPresent(result);
+    }
+
+    /**
+     * Tests that the subject template for the "system deleted" event is
+     * correctly rendered and contains the expected text.
+     */
+    @Test
+    void testInstantSystemDeletedSubject() {
+        final String hostDisplayName = "deleted-host";
+        final UUID inventoryId = UUID.randomUUID();
+
+        final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", "new-system-registered", inventoryId, hostDisplayName);
+        final String result = this.generateEmailSubject(EVENT_TYPE_SYSTEM_DELETED, action);
+
+        Assertions.assertEquals(EMAIL_SUBJECT_SYSTEM_DELETED, result);
+    }
+
+    /**
+     * Tests that the body template for the "system deleted" event is correctly
+     * rendered and contains the expected text.
+     */
+    @Test
+    void testInstantSystemDeletedBody() {
+        final String hostDisplayName = "deleted-host";
+        final UUID inventoryId = UUID.randomUUID();
+
+        final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", "new-system-registered", inventoryId, hostDisplayName);
+        final String result = this.generateEmailBody(EVENT_TYPE_SYSTEM_DELETED, action);
+
+        Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
+        Assertions.assertTrue(result.contains("was deleted from Inventory."), "the message body should indicate that the system was deleted");
 
         this.assertOpenInventoryInsightsButtonPresent(result);
     }

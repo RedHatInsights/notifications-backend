@@ -246,6 +246,11 @@ public class EmailTemplateMigrationService {
                 "Inventory/newSystemRegisteredEmailBody", "html", "New system registered instant email body"
             );
             createInstantEmailTemplate(
+                warnings, "rhel", "inventory", List.of("system-deleted"),
+                "Inventory/systemDeletedEmailTitle", "txt", "System deleted instant email title",
+                "Inventory/systemDeletedEmailBody", "html", "System deleted instant email body"
+            );
+            createInstantEmailTemplate(
                 warnings, "rhel", "inventory", List.of("validation-error"),
                 "Inventory/validationErrorEmailTitle", "txt", "Inventory instant email title",
                 "Inventory/validationErrorEmailBody", "html", "Inventory instant email body"
