@@ -7662,6 +7662,11 @@ data:
             "name": "datasource",
             "options": [
               {
+                "selected": false,
+                "text": "perf",
+                "value": "insights-perf-prometheus"
+              },
+              {
                 "selected": true,
                 "text": "stage",
                 "value": "crcs02ue1-prometheus"
@@ -7672,7 +7677,7 @@ data:
                 "value": "crcp01ue1-prometheus"
               }
             ],
-            "query": "crcs02ue1-prometheus, crcp01ue1-prometheus",
+            "query": "insights-perf-prometheus, crcs02ue1-prometheus, crcp01ue1-prometheus",
             "queryValue": "",
             "skipUrlSync": false,
             "type": "custom"
