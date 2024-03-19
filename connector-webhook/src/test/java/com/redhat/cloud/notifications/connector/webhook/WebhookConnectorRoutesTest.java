@@ -4,10 +4,12 @@ import com.redhat.cloud.notifications.connector.ConnectorRoutesTest;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationType;
 import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
+import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 import org.apache.camel.component.mock.MockEndpoint;
@@ -39,6 +41,9 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
 
     @InjectMock
     SecretsLoader secretsLoader;
+
+    @Inject
+    HttpConnectorConfig connectorConfig;
 
     @Override
     protected String getMockEndpointPattern() {
@@ -139,12 +144,17 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
     }
 
     private void testFailedNotificationAndReturnedFlagsToEngine(int httpReturnCode, String returnedBodyMessage, String flagNameThatShouldBeTrue, final int expectedRedeliveriesCount) throws Exception {
-        mockRemoteServerError(httpReturnCode, returnedBodyMessage);
-        JsonObject returnToEngine = super.testFailedNotification(expectedRedeliveriesCount);
-        JsonObject data = new JsonObject(returnToEngine.getString("data"));
-        assertTrue(data.getBoolean(flagNameThatShouldBeTrue));
-        JsonObject details = data.getJsonObject("details");
-        assertEquals(httpReturnCode, details.getInteger(HTTP_STATUS_CODE));
+        connectorConfig.setDisableFaultyEndpoints(true);
+        try {
+            mockRemoteServerError(httpReturnCode, returnedBodyMessage);
+            JsonObject returnToEngine = super.testFailedNotification(expectedRedeliveriesCount);
+            JsonObject data = new JsonObject(returnToEngine.getString("data"));
+            assertTrue(data.getBoolean(flagNameThatShouldBeTrue));
+            JsonObject details = data.getJsonObject("details");
+            assertEquals(httpReturnCode, details.getInteger(HTTP_STATUS_CODE));
+        } finally {
+            connectorConfig.setDisableFaultyEndpoints(false);
+        }
     }
 
     @Test

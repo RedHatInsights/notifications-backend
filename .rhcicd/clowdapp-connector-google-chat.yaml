@@ -174,7 +174,7 @@ parameters:
   value: INFO
 - name: NOTIFICATIONS_CONNECTOR_HTTP_DISABLE_FAULTY_ENDPOINTS
   description: Add flags on connector response to let engine disable endpoint regarding HTTP error type
-  value: "true"
+  value: "false"
 - name: NOTIFICATIONS_UNLEASH_ENABLED
   value: "false"
 - name: QUARKUS_HTTP_PORT
