@@ -45,7 +45,7 @@ public class HttpConnectorConfig extends ConnectorConfig {
     @ConfigProperty(name = CONNECTIONS_PER_ROUTE, defaultValue = "20")
     int httpConnectionsPerRoute;
 
-    @ConfigProperty(name = DISABLE_FAULTY_ENDPOINTS, defaultValue = "true")
+    @ConfigProperty(name = DISABLE_FAULTY_ENDPOINTS, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean disableFaultyEndpoints;
 
@@ -106,6 +106,11 @@ public class HttpConnectorConfig extends ConnectorConfig {
         } else {
             return disableFaultyEndpoints;
         }
+    }
+
+    @Deprecated(forRemoval = true)
+    public void setDisableFaultyEndpoints(boolean disableFaultyEndpoints) {
+        this.disableFaultyEndpoints = disableFaultyEndpoints;
     }
 
     public boolean isFollowRedirects() {
