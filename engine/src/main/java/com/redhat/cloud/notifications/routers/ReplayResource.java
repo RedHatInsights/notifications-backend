@@ -26,7 +26,7 @@ public class ReplayResource {
     EndpointProcessor endpointProcessor;
 
     public List<Event> getEvents(int firstResult, int maxResults) {
-        String query = "FROM Event WHERE created > :start AND created <= :end";
+        String query = "FROM Event e JOIN FETCH e.eventType WHERE e.created > :start AND e.created <= :end";
         return entityManager.createQuery(query, Event.class)
                 .setParameter("start", LocalDateTime.of(2024, MARCH, 19, 9, 13))
                 .setParameter("end", LocalDateTime.of(2024, MARCH, 19, 14, 23))
