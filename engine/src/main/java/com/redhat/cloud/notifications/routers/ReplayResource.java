@@ -45,7 +45,11 @@ public class ReplayResource {
             events = getEvents(firstResult, MAX_RESULTS);
             firstResult += MAX_RESULTS;
             for (Event event : events) {
-                endpointProcessor.process(event, true);
+                try {
+                    endpointProcessor.process(event, true);
+                } catch (Exception e) {
+                    Log.error("Event replay failed", e);
+                }
             }
         } while (MAX_RESULTS == events.size());
     }
