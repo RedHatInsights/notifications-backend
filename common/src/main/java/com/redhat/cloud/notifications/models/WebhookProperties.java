@@ -1,40 +1,24 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
-import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-
-import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
 @Entity
 @Table(name = "endpoint_webhooks")
-@JsonNaming(SnakeCaseStrategy.class)
 public class WebhookProperties extends EndpointProperties implements SourcesSecretable {
 
-    @NotNull
-    @ValidNonPrivateUrl
     private String url;
 
-    @NotNull
     @Convert(converter = HttpTypeConverter.class)
     private HttpType method;
 
-    @NotNull
-    @JsonProperty("disable_ssl_verification")
     private Boolean disableSslVerification = Boolean.FALSE;
 
-    @Size(max = 255)
-    @JsonProperty("secret_token")
     @Transient
     private String secretToken;
 
@@ -42,10 +26,8 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
      * The ID of the "secret token" secret in the Sources backend.
      */
     @Column(name = "secret_token_id")
-    @JsonIgnore
     private Long secretTokenSourcesId;
 
-    @JsonProperty("basic_authentication")
     @Transient
     @Valid
     private BasicAuthentication basicAuthentication;
@@ -54,14 +36,11 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
      * The ID of the "basic authentication" secret in the Sources backend.
      */
     @Column(name = "basic_authentication_id")
-    @JsonIgnore
     private Long basicAuthenticationSourcesId;
 
     @Column(name = "bearer_authentication_id")
-    @JsonIgnore
     private Long bearerAuthenticationSourcesId;
 
-    @JsonProperty("bearer_authentication")
     @Transient
     private String bearerAuthentication;
 

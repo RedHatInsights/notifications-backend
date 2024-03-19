@@ -1,53 +1,38 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
-import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
 import java.util.Map;
 
 @Entity
 @Table(name = "camel_properties")
-@JsonNaming(SnakeCaseStrategy.class)
 public class CamelProperties extends EndpointProperties implements SourcesSecretable {
 
-    @NotNull
-    @ValidNonPrivateUrl
     private String url;
 
-    @NotNull
     private Boolean disableSslVerification = Boolean.FALSE;
 
     @Transient
-    @Size(max = 255)
     private String secretToken;
 
     /**
      * The ID of the "secret token" secret in the Sources backend.
      */
     @Column(name = "secret_token_id")
-    @JsonIgnore
     private Long secretTokenSourcesId;
 
     @Transient
-    @Valid
     private BasicAuthentication basicAuthentication;
 
     /**
      * The ID of the "basic authentication" secret in the Sources backend.
      */
     @Column(name = "basic_authentication_id")
-    @JsonIgnore
     private Long basicAuthenticationSourcesId;
 
     @Convert(converter = MapConverter.class)

@@ -1,0 +1,21 @@
+{
+  "name": "Camel endpoint",
+  "description": "A JSON structure which represents a camel endpoint",
+  "enabled": true,
+  "status": "READY",
+  "server_errors": 23,
+  "sub_type": "slack",
+  "type": "camel",
+  "properties": {
+    "disable_ssl_verification": true,
+    "extras": {
+      "channel": "my-slack-channel"
+    },
+    "url": "https://redhat.com",
+    "basic_authentication": {
+      "username": "camel-user",
+      "password": "camel-pass"
+    },
+    "secret_token": "c4m3l-up3r-s3cr3t-t0k3n"
+  }
+}

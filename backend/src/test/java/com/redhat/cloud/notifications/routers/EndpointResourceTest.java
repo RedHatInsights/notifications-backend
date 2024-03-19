@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.model.Stats;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -18,6 +19,8 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
+import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
@@ -34,6 +37,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
+import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -109,6 +113,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @InjectMock
     BackendConfig backendConfig;
+
+    @Inject
+    EndpointMapper endpointMapper;
 
     @Inject
     EndpointRepository endpointRepository;
@@ -199,7 +206,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
@@ -207,7 +214,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
         assertEquals(3, responsePoint.getInteger("server_errors"));
         assertEquals(READY.toString(), responsePoint.getString("status"));
@@ -223,7 +230,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        List<Endpoint> endpoints = endpointPage.getData();
+        List<EndpointDTO> endpointDTOS = endpointPage.getData();
+
+        List<Endpoint> endpoints = new ArrayList<>(endpointDTOS.size());
+        for (final EndpointDTO endpointDTO : endpointDTOS) {
+            endpoints.add(
+                this.endpointMapper.toEntity(endpointDTO)
+            );
+        }
+
         assertEquals(1, endpoints.size());
 
         // Fetch single endpoint also and verify
@@ -417,7 +432,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject endpoint = new JsonObject(response.getBody().asString());
-        endpoint.mapTo(Endpoint.class);
+        endpoint.mapTo(EndpointDTO.class);
         return endpoint;
     }
 
@@ -529,15 +544,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
+                .and()
+                .assertThat()
+                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("json-schemas/v1/endpoint/endpoint-schema-read.json"))
                 .extract().asString();
 
         JsonObject responsePoint = new JsonObject(responseBody);
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         String id = responsePoint.getString("id");
         assertNotNull(id);
 
@@ -640,7 +658,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(endpoint))
+                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
                 .post("/endpoints")
                 .then()
                 .statusCode(400)
@@ -654,7 +672,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(endpoint))
+                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
                 .post("/endpoints")
                 .then()
                 .statusCode(400)
@@ -668,7 +686,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(endpoint))
+                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
                 .post("/endpoints")
                 .then()
                 .statusCode(400)
@@ -779,7 +797,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
@@ -787,7 +805,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().asString();
 
         JsonObject responsePoint = new JsonObject(responseBody);
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         String id = responsePoint.getString("id");
         assertNotNull(id);
         assertEquals(READY.toString(), responsePoint.getString("status"));
@@ -810,7 +828,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             responseBody = given()
                     .header(identityHeader)
                     .contentType(JSON)
-                    .body(Json.encode(ep))
+                    .body(Json.encode(this.endpointMapper.toDTO(ep)))
                     .when()
                     .put("/endpoints/" + id)
                     .then()
@@ -880,7 +898,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
@@ -888,7 +906,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
         assertEquals(7, responsePoint.getInteger("server_errors"));
 
@@ -904,7 +922,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        List<Endpoint> endpoints = endpointPage.getData();
+        List<EndpointDTO> endpointDTOS = endpointPage.getData();
+
+        List<Endpoint> endpoints = new ArrayList<>(endpointDTOS.size());
+        for (final EndpointDTO endpointDTO : endpointDTOS) {
+            endpoints.add(
+                    this.endpointMapper.toEntity(endpointDTO)
+            );
+        }
+
         assertEquals(1, endpoints.size());
 
         // Fetch single endpoint also and verify
@@ -1000,7 +1026,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
@@ -1008,7 +1034,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
 
         // Add Camel
@@ -1030,7 +1056,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(camelEp))
+                .body(Json.encode(this.endpointMapper.toDTO(camelEp)))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
@@ -1038,7 +1064,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
 
         // Fetch the list to ensure everything was inserted correctly.
@@ -1052,7 +1078,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        List<Endpoint> endpoints = endpointPage.getData();
+        List<EndpointDTO> endpointDTOS = endpointPage.getData();
+
+        List<Endpoint> endpoints = new ArrayList<>(endpointDTOS.size());
+        for (final EndpointDTO endpointDTO : endpointDTOS) {
+            endpoints.add(
+                    this.endpointMapper.toEntity(endpointDTO)
+            );
+        }
         assertEquals(2, endpoints.size());
 
         // Fetch the list with types
@@ -1067,7 +1100,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        endpoints = endpointPage.getData();
+        endpointDTOS = endpointPage.getData();
+
+        endpoints = new ArrayList<>(endpointDTOS.size());
+        for (final EndpointDTO endpointDTO : endpointDTOS) {
+            endpoints.add(
+                    this.endpointMapper.toEntity(endpointDTO)
+            );
+        }
 
         // Ensure there is only the requested types
         assertEquals(
@@ -1100,7 +1140,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        List<Endpoint> endpoints = endpointPage.getData();
+        List<EndpointDTO> endpointDTOS = endpointPage.getData();
+
+        List<Endpoint> endpoints = new ArrayList<>(endpointDTOS.size());
+        for (final EndpointDTO endpointDTO : endpointDTOS) {
+            endpoints.add(
+                    this.endpointMapper.toEntity(endpointDTO)
+            );
+        }
         assertEquals(10, endpoints.size());
         assertEquals(29, endpointPage.getMeta().getCount());
 
@@ -1117,7 +1164,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        endpoints = endpointPage.getData();
+        endpointDTOS = endpointPage.getData();
+
+        endpoints = new ArrayList<>(endpointDTOS.size());
+        for (final EndpointDTO endpointDTO : endpointDTOS) {
+            endpoints.add(
+                    this.endpointMapper.toEntity(endpointDTO)
+            );
+        }
+
         assertEquals(9, endpoints.size());
         assertEquals(29, endpointPage.getMeta().getCount());
     }
@@ -1133,9 +1188,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Create 50 test-ones with sanely sortable name & enabled & disabled & type
-        int[] stats = helpers.createTestEndpoints(accountId, orgId, 50);
-        int disableCount = stats[1];
-        int webhookCount = stats[2];
+        final Stats stats = helpers.createTestEndpoints(accountId, orgId, 50);
 
         Response response = given()
                 .header(identityHeader)
@@ -1147,8 +1200,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        Endpoint[] endpoints = endpointPage.getData().toArray(new Endpoint[0]);
-        assertEquals(stats[0], endpoints.length);
+
+        List<Endpoint> endpoints = new ArrayList<>(endpointPage.getData().size());
+        for (final EndpointDTO endpointDTO : endpointPage.getData()) {
+            endpoints.add(this.endpointMapper.toEntity(endpointDTO));
+        }
+
+        assertEquals(stats.getCreatedEndpointsCount(), endpoints.size());
 
         response = given()
                 .header(identityHeader)
@@ -1161,17 +1219,22 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        endpoints = endpointPage.getData().toArray(new Endpoint[0]);
-        assertFalse(endpoints[0].isEnabled());
-        assertFalse(endpoints[disableCount - 1].isEnabled());
-        assertTrue(endpoints[disableCount].isEnabled());
-        assertTrue(endpoints[stats[0] - 1].isEnabled());
+
+        endpoints = new ArrayList<>(endpointPage.getData().size());
+        for (final EndpointDTO endpointDTO : endpointPage.getData()) {
+            endpoints.add(this.endpointMapper.toEntity(endpointDTO));
+        }
+
+        assertFalse(endpoints.get(0).isEnabled());
+        assertFalse(endpoints.get(stats.getDisabledCount() - 1).isEnabled());
+        assertTrue(endpoints.get(stats.getDisabledCount()).isEnabled());
+        assertTrue(endpoints.get(stats.getCreatedEndpointsCount() - 1).isEnabled());
 
         response = given()
                 .header(identityHeader)
                 .queryParam("sort_by", "name:desc")
                 .queryParam("limit", "50")
-                .queryParam("offset", stats[0] - 20)
+                .queryParam("offset", stats.getCreatedEndpointsCount() - 20)
                 .when()
                 .get("/endpoints?limit=100")
                 .then()
@@ -1180,11 +1243,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        endpoints = endpointPage.getData().toArray(new Endpoint[0]);
-        assertEquals(20, endpoints.length);
-        assertEquals("Endpoint 1", endpoints[endpoints.length - 1].getName());
-        assertEquals("Endpoint 10", endpoints[endpoints.length - 2].getName());
-        assertEquals("Endpoint 27", endpoints[0].getName());
+
+        endpoints = new ArrayList<>(endpointPage.getData().size());
+        for (final EndpointDTO endpointDTO : endpointPage.getData()) {
+            endpoints.add(this.endpointMapper.toEntity(endpointDTO));
+        }
+
+        assertEquals(20, endpoints.size());
+        assertEquals("Endpoint 1", endpoints.get(endpoints.size() - 1).getName());
+        assertEquals("Endpoint 10", endpoints.get(endpoints.size() - 2).getName());
+        assertEquals("Endpoint 27", endpoints.get(0).getName());
 
         given()
                 .header(identityHeader)
@@ -1253,7 +1321,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
                 .statusCode(200)
@@ -1261,7 +1329,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
 
         // Fetch single endpoint also and verify
@@ -1303,7 +1371,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
                 .statusCode(400)
@@ -1326,7 +1394,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
 
         // It is always enabled
@@ -1347,7 +1415,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertEquals(defaultEndpointId, responsePoint.getString("id"));
 
         // Different properties are different endpoints
@@ -1368,7 +1436,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertFalse(endpointIds.contains(responsePoint.getString("id")));
         endpointIds.add(responsePoint.getString("id"));
 
@@ -1384,7 +1452,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertTrue(endpointIds.contains(responsePoint.getString("id")));
 
         // It is not possible to delete it
@@ -1492,7 +1560,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
 
         // It is always enabled
@@ -1513,7 +1581,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertEquals(defaultEndpointId, responsePoint.getString("id"));
 
         // Different properties are different endpoints
@@ -1534,7 +1602,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertFalse(endpointIds.contains(responsePoint.getString("id")));
         endpointIds.add(responsePoint.getString("id"));
 
@@ -1550,7 +1618,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertTrue(endpointIds.contains(responsePoint.getString("id")));
 
         // It is not possible to delete it
@@ -1642,7 +1710,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         String endpointId = responsePoint.getString("id");
         assertNotNull(endpointId);
 
@@ -1659,7 +1727,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(Endpoint.class);
+        responsePoint.mapTo(EndpointDTO.class);
         assertEquals(endpointId, responsePoint.getString("id"));
 
         // Invalid group is a bad request (i.e. group does not exist)
@@ -1763,7 +1831,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .extract().response();
 
             JsonObject responsePoint = new JsonObject(response.getBody().asString());
-            responsePoint.mapTo(Endpoint.class);
+            responsePoint.mapTo(EndpointDTO.class);
             assertNotNull(responsePoint.getString("id"));
 
             // Fetch the list
@@ -1786,9 +1854,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        // stats[0] is the count
-        // stats[1] are the inactive ones
-        int[] stats = resourceHelpers.createTestEndpoints(TestConstants.DEFAULT_ACCOUNT_ID, orgId, 11);
+        final Stats stats = resourceHelpers.createTestEndpoints(TestConstants.DEFAULT_ACCOUNT_ID, orgId, 11);
 
         // Get all endpoints
         Response response = given()
@@ -1801,8 +1867,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         EndpointPage endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        assertEquals(stats[0], endpointPage.getMeta().getCount());
-        assertEquals(stats[0], endpointPage.getData().size());
+        assertEquals(stats.getCreatedEndpointsCount(), endpointPage.getMeta().getCount());
+        assertEquals(stats.getCreatedEndpointsCount(), endpointPage.getData().size());
 
         // Only active
         response = given()
@@ -1816,8 +1882,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        assertEquals(stats[0] - stats[1], endpointPage.getMeta().getCount());
-        assertEquals(stats[0] - stats[1], endpointPage.getData().size());
+        assertEquals(stats.getCreatedEndpointsCount() - stats.getDisabledCount(), endpointPage.getMeta().getCount());
+        assertEquals(stats.getCreatedEndpointsCount() - stats.getDisabledCount(), endpointPage.getData().size());
 
         // Only inactive
         response = given()
@@ -1831,8 +1897,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         endpointPage = Json.decodeValue(response.getBody().asString(), EndpointPage.class);
-        assertEquals(stats[1], endpointPage.getMeta().getCount());
-        assertEquals(stats[1], endpointPage.getData().size());
+        assertEquals(stats.getDisabledCount(), endpointPage.getMeta().getCount());
+        assertEquals(stats.getDisabledCount(), endpointPage.getData().size());
 
     }
 
@@ -2013,7 +2079,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                             .header(identityHeader)
                             .when()
                             .contentType(JSON)
-                            .body(Json.encode(endpoint))
+                            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
                             .post("/endpoints")
                             .then()
                             .statusCode(400)
@@ -2119,11 +2185,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
             endpoint.setProperties(camelProperties);
             endpoint.setSubType(subType);
 
+            EndpointDTO dto = this.endpointMapper.toDTO(endpoint);
+
             given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(endpoint))
+                .body(Json.encode(dto))
                 .post("/endpoints")
                 .then()
                 .statusCode(200);
@@ -2134,11 +2202,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
             endpoint.setSubType(null);
             endpoint.setProperties(webhookProperties);
 
+            dto = this.endpointMapper.toDTO(endpoint);
+
             given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(endpoint))
+                .body(Json.encode(dto))
                 .post("/endpoints")
                 .then()
                 .statusCode(200);
@@ -2177,7 +2247,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .body(Json.encode(ep))
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
                 .statusCode(400);
@@ -2392,7 +2462,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .body(Json.encode(endpoint))
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
             .statusCode(200)
@@ -2438,7 +2508,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .body(Json.encode(endpoint))
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .put(String.format("/endpoints/%s", endpointUuid))
             .then()
             .statusCode(200);
@@ -2511,7 +2581,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .body(Json.encode(endpoint))
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
             .statusCode(200)
@@ -2613,7 +2683,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .body(Json.encode(endpoint))
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
             .statusCode(200)
@@ -2664,7 +2734,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .body(Json.encode(endpoint))
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .put(String.format("/endpoints/%s", endpointUuid))
             .then()
             .statusCode(200);
@@ -2721,7 +2791,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Check the POST response.
         JsonObject jsonEndpoint = new JsonObject(responseBody);
-        jsonEndpoint.mapTo(Endpoint.class);
+        jsonEndpoint.mapTo(EndpointDTO.class);
         assertNotNull(jsonEndpoint.getString("id"));
         assertEquals(READY.toString(), jsonEndpoint.getString("status"));
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
@@ -2802,7 +2872,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .extract().response();
 
             JsonObject responsePoint = new JsonObject(response.getBody().asString());
-            responsePoint.mapTo(Endpoint.class);
+            responsePoint.mapTo(EndpointDTO.class);
             assertNotNull(responsePoint.getString("id"));
         }
     }
