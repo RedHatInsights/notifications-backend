@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -42,34 +41,34 @@ public class InventoryEmailAggregatorTest {
         this.aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
 
         // Add two new system events.
-        final Map<UUID, String> newSystemsMap = InventoryTestHelpers.addMinimalAggregation(
-            this.aggregator,
-            InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED,
-            Set.of(
-                "new-system-display-name",
-                "new-second-system-display-name"
-            )
+        final Map<UUID, String> newSystemsMap = Map.of(
+            UUID.randomUUID(), "new-system-display-name",
+            UUID.randomUUID(), "new-second-system-display-name"
         );
+
+        for (final Map.Entry<UUID, String> entry : newSystemsMap.entrySet()) {
+            this.aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, entry.getKey(), entry.getValue()));
+        }
 
         // Add two "system became stale" events.
-        final Map<UUID, String> staleSystemsMap = InventoryTestHelpers.addMinimalAggregation(
-            this.aggregator,
-            InventoryEmailAggregator.EVENT_TYPE_SYSTEM_BECAME_STALE,
-            Set.of(
-                "stale-system-display-name",
-                "second-stale-system-display-name"
-            )
+        final Map<UUID, String> staleSystemsMap = Map.of(
+            UUID.randomUUID(), "stale-system-display-name",
+            UUID.randomUUID(), "second-stale-system-display-name"
         );
 
+        for (final Map.Entry<UUID, String> entry : staleSystemsMap.entrySet()) {
+            this.aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_BECAME_STALE, entry.getKey(), entry.getValue()));
+        }
+
         // Add two "system deleted" events.
-        final Map<UUID, String> deletedSystemsMap = InventoryTestHelpers.addMinimalAggregation(
-            this.aggregator,
-            InventoryEmailAggregator.EVENT_TYPE_SYSTEM_DELETED,
-            Set.of(
-                "deleted-system-display-name",
-                "second-deleted-system-display-name"
-            )
+        final Map<UUID, String> deletedSystemsMap = Map.of(
+            UUID.randomUUID(), "deleted-system-display-name",
+            UUID.randomUUID(), "second-deleted-system-display-name"
         );
+
+        for (final Map.Entry<UUID, String> entry : deletedSystemsMap.entrySet()) {
+            this.aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_DELETED, entry.getKey(), entry.getValue()));
+        }
 
         Map<String, Object> context = aggregator.getContext();
         JsonObject inventory = JsonObject.mapFrom(context).getJsonObject("inventory");
