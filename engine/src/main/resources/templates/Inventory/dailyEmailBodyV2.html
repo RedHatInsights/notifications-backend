@@ -1,18 +1,19 @@
 {@boolean renderSection1=true}
-{@boolean renderButtonSection1=true}
+{@boolean renderSection2=true}
+{@boolean renderSection3=true}
+{@boolean renderButtonSection3=true}
 {#include Common/insightsEmailBody}
+
 {#content-title}
     Daily digest - Inventory - Red Hat Enterprise Linux
 {/content-title}
+
 {#content-title-section1}
     Host{#if action.context.inventory.errors.size() > 1}s{/if} with validation error
 {/content-title-section1}
 {#content-title-right-part-section1}
     <a target="_blank" href="{environment.url}/insights/inventory/">{action.context.inventory.errors.size()}</a>
 {/content-title-right-part-section1}
-{#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/inventory/">Open Inventory in Insights</a>
-{/content-button-section1}
 {#content-body-section1}
     <p>
         Red Hat Insights has identified {action.context.inventory.errors.size()} host{#if action.context.inventory.errors.size() > 1}s{/if} that presented a validation error.
@@ -30,7 +31,7 @@
             </tr>
         </thead>
         <tbody>
-            {#each action.context.inventory.errors.take(action.context.inventory.errors.size() > 10 ? 10 : action.context.inventory.errors.size())}
+            {#each action.context.inventory.errors}
             <tr>
                 <td>{#if it.display_name}{it.display_name}{#else}Not available{/if}</td>
                 <td>{it.message}</td>
@@ -40,4 +41,80 @@
     </table>
 
 {/content-body-section1}
+
+{#content-title-section2}
+    Systems
+{/content-title-section2}
+{#content-subtitle-section2}
+    {#let total_systems_state_change=(action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size())}
+        {total_systems_state_change} system{#if total_systems_state_change > 1}s{/if} changed of state
+    {/let}
+{/content-subtitle-section2}
+{#content-title-right-part-section2}
+    <a target="_blank" href="{environment.url}/insights/inventory/">{action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size()}</a>
+{/content-title-right-part-section2}
+{#content-body-section2}
+{#if action.context.inventory.new_systems.size() > 0}
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+                <th>New system registered</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#each action.context.inventory.new_systems}
+            <tr>
+                <td><a target="_blank" href="{environment.url}/insights/inventory/{it.inventory_id}">{it.display_name}</a></td>
+            </tr>
+            {/each}
+        </tbody>
+    </table>
+    {#if action.context.inventory.stale_systems.orEmpty.size() > 0 || action.context.inventory.deleted_systems.orEmpty.size > 0}
+        <div style="height: 24px">&nbsp;</div>
+    {/if}
+{/if}
+{#if action.context.inventory.stale_systems.size() > 0}
+    <table class="rh-data-table-bordered">
+        <thead>
+        <tr>
+            <th>Stale system</th>
+        </tr>
+        </thead>
+        <tbody>
+        {#each action.context.inventory.stale_systems}
+        <tr>
+            <td><a target="_blank" href="{environment.url}/insights/inventory/{it.inventory_id}">{it.display_name}</a></td>
+        </tr>
+        {/each}
+        </tbody>
+    </table>
+    {#if action.context.inventory.deleted_systems.orEmpty.size > 0}
+        <div style="height: 24px">&nbsp;</div>
+    {/if}
+{/if}
+{#if action.context.inventory.deleted_systems.size() > 0}
+    <table class="rh-data-table-bordered">
+        <thead>
+        <tr>
+            <th>System deleted</th>
+        </tr>
+        </thead>
+        <tbody>
+        {#each action.context.inventory.deleted_systems}
+            <tr>
+                <td>{it.display_name}</td>
+            </tr>
+        {/each}
+        </tbody>
+    </table>
+{/if}
+{/content-body-section2}
+{#content-body-section3}
+    <p>
+    If you want to see more details, go to Insights Inventory for Red Hat Enterprise Linux.
+    </p>
+{/content-body-section3}
+{#content-button-section3}
+    <a target="_blank" href="{environment.url}/insights/inventory/">Open Inventory in Insights</a>
+{/content-button-section3}
 {/include}
