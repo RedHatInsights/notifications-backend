@@ -80,10 +80,6 @@ public class EndpointProcessor {
     }
 
     public void process(Event event) {
-        process(event, false);
-    }
-
-    public void process(Event event, boolean skipEmails) {
         processedItems.increment();
         final List<Endpoint> endpoints;
         if (TestEventHelper.isIntegrationTestEvent(event)) {
@@ -127,12 +123,10 @@ public class EndpointProcessor {
                             }
                             break;
                         case EMAIL_SUBSCRIPTION:
-                            if (!skipEmails) {
-                                if (isAggregatorEvent(event)) {
-                                    emailProcessor.processAggregation(event);
-                                } else {
-                                    emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
-                                }
+                            if (isAggregatorEvent(event)) {
+                                emailProcessor.processAggregation(event);
+                            } else {
+                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
                             }
                             break;
                         case WEBHOOK:
