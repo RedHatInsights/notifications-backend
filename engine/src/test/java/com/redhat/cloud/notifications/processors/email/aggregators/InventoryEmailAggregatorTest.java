@@ -37,7 +37,7 @@ public class InventoryEmailAggregatorTest {
 
     @Test
     void validatePayload() {
-        // Create a "validation error" aggregation.
+        // Add a "validation error" event type to the aggregation.
         this.aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
 
         // Add two new system events.
