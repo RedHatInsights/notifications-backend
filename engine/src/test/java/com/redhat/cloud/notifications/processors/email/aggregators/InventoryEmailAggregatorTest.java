@@ -73,7 +73,7 @@ public class InventoryEmailAggregatorTest {
         Map<String, Object> context = aggregator.getContext();
         JsonObject inventory = JsonObject.mapFrom(context).getJsonObject("inventory");
 
-        // Validate the errors.
+        // Validate aggregated data from "validation error" event type.
         JsonArray errors = inventory.getJsonArray("errors");
 
         JsonObject error1 = errors.getJsonObject(0);
