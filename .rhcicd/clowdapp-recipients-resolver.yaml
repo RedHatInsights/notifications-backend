@@ -74,6 +74,20 @@ objects:
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED}
+        - name: MBOP_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: backoffice
+              key: token
+        - name: MBOP_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backoffice
+              key: client-id
+        - name: MBOP_ENV
+          value: ${BACKOFFICE_CLIENT_ENV}
+        - name: MBOP_URL
+          value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
