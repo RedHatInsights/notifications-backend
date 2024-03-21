@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.connector.drawer.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import java.util.List;
 import java.util.Set;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
@@ -11,26 +10,16 @@ import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseS
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DrawerEntry {
 
-    private List<String> organizations;
-
-    private Set<String> users;
+    private Set<String> usernames;
 
     private DrawerEntryPayload payload;
 
-    public void setOrganizations(List<String> organizations) {
-        this.organizations = organizations;
+    public void setUsernames(Set<String> usernames) {
+        this.usernames = usernames;
     }
 
-    public List<String> getOrganizations() {
-        return organizations;
-    }
-
-    public void setUsers(Set<String> users) {
-        this.users = users;
-    }
-
-    public Set<String> getUsers() {
-        return users;
+    public Set<String> getUsernames() {
+        return usernames;
     }
 
     public DrawerEntryPayload getPayload() {

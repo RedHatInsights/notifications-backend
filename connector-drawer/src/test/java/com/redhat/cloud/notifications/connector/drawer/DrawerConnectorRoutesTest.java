@@ -235,8 +235,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
 
             JsonObject data = payload.getJsonObject("data");
 
-            assertEquals(1, data.getJsonArray("organizations").size());
-            assertEquals(expectedNumberOfUsers, data.getJsonArray("users").size());
+            assertEquals(expectedNumberOfUsers, data.getJsonArray("usernames").size());
 
             JsonObject secondPayloadLevel = data.getJsonObject("payload");
             assertNotNull(secondPayloadLevel.getString("id"));
