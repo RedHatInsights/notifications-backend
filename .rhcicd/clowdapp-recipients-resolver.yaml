@@ -238,3 +238,12 @@ parameters:
 - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_WARN_IF_REQUEST_DURATION_EXCEEDS
   description: Log request if it exceed this limit
   value: PT30S
+- name: BACKOFFICE_CLIENT_ENV
+  description: Back-office client environment
+  value: qa
+- name: BACKOFFICE_HOST
+  description: The host of the backoffice proxy
+  value: backoffice-proxy.apps.ext.spoke.preprod.us-west-2.aws.paas.redhat.com
+- name: BACKOFFICE_SCHEME
+  description: The scheme for the backoffice proxy host's URL
+  value: "https"
