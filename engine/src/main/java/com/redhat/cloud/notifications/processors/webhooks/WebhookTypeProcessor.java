@@ -51,7 +51,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (engineConfig.isEmailsOnlyModeEnabled()) {
-            Log.warn("Skipping event processing because Notifications is running in emails only mode");
+            Log.warn("@channel Skipping event processing because Notifications is running in emails only mode");
             return;
         }
         DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
