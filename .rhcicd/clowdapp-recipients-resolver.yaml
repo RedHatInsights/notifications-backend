@@ -88,6 +88,14 @@ objects:
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: QUARKUS_REST_CLIENT_MBOP_URL
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}
+        - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
+        - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: it-services
+              key: it-services-keystorepassword
+              optional: true
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
