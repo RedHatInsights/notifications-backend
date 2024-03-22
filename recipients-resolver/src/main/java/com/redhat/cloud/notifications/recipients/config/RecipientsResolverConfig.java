@@ -20,22 +20,20 @@ public class RecipientsResolverConfig {
      * Env vars configuration
      */
     private static final String MAX_RESULTS_PER_PAGE = "notifications.recipients-resolver.max-results-per-page";
-    private static final String MBOP_ENV = "mbop.env";
     private static final String RETRY_INITIAL_BACKOFF = "notifications.recipients-resolver.retry.initial-backoff";
     private static final String RETRY_MAX_ATTEMPTS = "notifications.recipients-resolver.retry.max-attempts";
     private static final String RETRY_MAX_BACKOFF = "notifications.recipients-resolver.retry.max-backoff";
     private static final String WARN_IF_DURATION_EXCEEDS = "notifications.recipients-resolver.warn-if-request-duration-exceeds";
     private static final String UNLEASH = "notifications.unleash.enabled";
+    public static final String MBOP_APITOKEN = "notifications.recipients-resolver.mbop.apitoken";
+    public static final String MBOP_CLIENT_ID = "notifications.recipients-resolver.mbop.client_id";
+    private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
 
     /*
      * Unleash configuration
      */
     private String fetchUsersWithMbopToggle;
     private String fetchUsersWithRbacToggle;
-
-    private static String toggleName(String feature) {
-        return String.format("notifications-recipients-resolver.%s.enabled", feature);
-    }
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -64,10 +62,10 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = WARN_IF_DURATION_EXCEEDS, defaultValue = "30S")
     Duration logTooLongRequestLimit;
 
-    @ConfigProperty(name = "mbop.apitoken", defaultValue = "na")
+    @ConfigProperty(name = MBOP_APITOKEN, defaultValue = "na")
     String mbopApiToken;
 
-    @ConfigProperty(name = "mbop.client_id", defaultValue = "na")
+    @ConfigProperty(name = MBOP_CLIENT_ID, defaultValue = "na")
     String mbopClientId;
 
     @ConfigProperty(name = MBOP_ENV, defaultValue = "na")
