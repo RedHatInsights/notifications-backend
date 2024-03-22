@@ -32,15 +32,24 @@ public class TemplateService {
     }
 
     public String renderTemplate(Object event, TemplateInstance templateInstance) {
-        return renderTemplate(event, templateInstance, null);
+        return renderTemplate(event, templateInstance, false);
+    }
+
+    public String renderTemplate(Object event, TemplateInstance templateInstance, boolean ignoreUserPreferences) {
+        return renderTemplate(event, templateInstance, null, ignoreUserPreferences);
     }
 
     public String renderTemplate(Object event, TemplateInstance templateInstance, EmailPendo pendoMessage) {
+        return renderTemplate(event, templateInstance, pendoMessage, false);
+    }
+
+    public String renderTemplate(Object event, TemplateInstance templateInstance, EmailPendo pendoMessage, boolean ignoreUserPreferences) {
         return templateInstance
             .data("action", event)
             .data("event", event)
             .data("environment", environment)
             .data("pendo_message", pendoMessage)
+            .data("ignore_user_preferences", ignoreUserPreferences)
             .render();
     }
 }

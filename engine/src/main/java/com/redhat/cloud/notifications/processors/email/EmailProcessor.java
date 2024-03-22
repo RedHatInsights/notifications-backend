@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
@@ -20,10 +19,15 @@ import jakarta.inject.Inject;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
+import static java.util.Map.Entry;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
 public class EmailProcessor extends SystemEndpointTypeProcessor {
@@ -96,25 +100,37 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final TemplateInstance subjectTemplate = this.templateService.compileTemplate(subjectData, "subject");
         final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
 
-        final String subject = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
-        final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailActorsResolver.getPendoEmailMessage(event));
+        Map<Boolean, Set<RecipientSettings>> rsByIgnoreUserPreferences = recipientSettings.stream()
+                .collect(groupingBy(RecipientSettings::isIgnoreUserPreferences, toSet()));
 
-        // Prepare all the data to be sent to the connector.
-        final EmailNotification emailNotification = new EmailNotification(
-            body,
-            subject,
-            emailActorsResolver.getEmailSender(event),
-            event.getOrgId(),
-            recipientSettings,
-            subscribers,
-            unsubscribers,
-            event.getEventType().isSubscribedByDefault()
-        );
+        /*
+         * [VERY UNLIKELY] We may send two different emails if the incoming action or cloud event contains BOTH:
+         * - recipient settings with ignoreUserPreferences set to TRUE
+         * - recipient settings with ignoreUserPreferences set to FALSE
+         * 99.99% of the time, only one email notification should be sent from the code below.
+         */
+        for (Entry<Boolean, Set<RecipientSettings>> entry : rsByIgnoreUserPreferences.entrySet()) {
 
-        final JsonObject payload = JsonObject.mapFrom(emailNotification);
+            final String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate, entry.getKey());
+            final String body = templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailActorsResolver.getPendoEmailMessage(event), entry.getKey());
 
-        final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+            // Prepare all the data to be sent to the connector.
+            final EmailNotification emailNotification = new EmailNotification(
+                    body,
+                    subject,
+                    emailActorsResolver.getEmailSender(event),
+                    event.getOrgId(),
+                    entry.getValue(),
+                    subscribers,
+                    unsubscribers,
+                    event.getEventType().isSubscribedByDefault()
+            );
 
-        this.connectorSender.send(event, endpoint, payload);
+            final JsonObject payload = JsonObject.mapFrom(emailNotification);
+
+            final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EMAIL_SUBSCRIPTION);
+
+            connectorSender.send(event, endpoint, payload);
+        }
     }
 }
