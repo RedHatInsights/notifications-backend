@@ -174,9 +174,7 @@ public class FetchUsersFromExternalServices {
             int finalOffset = offset;
             final List<MBOPUser> receivedUsers = this.retryOnError(() -> {
                     LocalDateTime startTime = LocalDateTime.now();
-                    List<MBOPUser> mbopUserlist = null;
-                    try {
-                        mbopUserlist = mbopService.getUsersByOrgId(
+                    List<MBOPUser> mbopUserlist = mbopService.getUsersByOrgId(
                             recipientsResolverConfig.getMbopApiToken(),
                             recipientsResolverConfig.getMbopClientId(),
                             recipientsResolverConfig.getMbopEnv(),
@@ -186,9 +184,6 @@ public class FetchUsersFromExternalServices {
                             recipientsResolverConfig.getMaxResultsPerPage(),
                             finalOffset
                         );
-                    } catch (Exception ex) {
-                        Log.error("Error calling BOP/MBOP to fetch users", ex);
-                    }
                     Duration duration = Duration.between(startTime, LocalDateTime.now());
                     if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
                         Log.warnf("MBOP service response time was %ds for request OrgId: %s, adminOnly: %s, offset %d ", duration.toSeconds(), orgId, adminsOnly, finalOffset);
