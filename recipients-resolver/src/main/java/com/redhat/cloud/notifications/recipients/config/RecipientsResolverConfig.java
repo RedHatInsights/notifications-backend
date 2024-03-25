@@ -25,7 +25,7 @@ public class RecipientsResolverConfig {
     private static final String RETRY_MAX_BACKOFF = "notifications.recipients-resolver.retry.max-backoff";
     private static final String WARN_IF_DURATION_EXCEEDS = "notifications.recipients-resolver.warn-if-request-duration-exceeds";
     private static final String UNLEASH = "notifications.unleash.enabled";
-    public static final String MBOP_APITOKEN = "notifications.recipients-resolver.mbop.apitoken";
+    public static final String MBOP_APITOKEN = "notifications.recipients-resolver.mbop.api_token";
     public static final String MBOP_CLIENT_ID = "notifications.recipients-resolver.mbop.client_id";
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
 

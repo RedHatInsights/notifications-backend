@@ -157,8 +157,6 @@ objects:
             secretKeyRef:
               name: rbac-psks
               key: psks.json
-        - name: QUARKUS_TLS_TRUST_ALL
-          value: ${QUARKUS_TLS_TRUST_ALL}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -257,6 +255,3 @@ parameters:
 - name: BACKOFFICE_SCHEME
   description: The scheme for the backoffice proxy host's URL
   value: "https"
-- name: QUARKUS_TLS_TRUST_ALL
-  description: FOR STAGE ONLY
-  value: "false"
