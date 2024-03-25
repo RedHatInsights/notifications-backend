@@ -106,7 +106,10 @@ public class FetchUsersFromExternalServices {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
 
         List<User> users;
+        String supplier;
         if (recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
+            Log.debug("Fetching users with RBAC");
+            supplier = "RBAC";
             users = getWithPagination(
                 page -> retryOnError(() -> {
                     LocalDateTime startTime = LocalDateTime.now();
@@ -118,14 +121,18 @@ public class FetchUsersFromExternalServices {
                     return rbacUserPage;
                 }));
         } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
+            Log.debug("Fetching users with BOP/MBOP");
+            supplier = "BOP";
             users = fetchUsersWithMbop(orgId, adminsOnly);
         } else {
+            Log.debug("Fetching users with IT service");
+            supplier = "IT";
             users = fetchUsersWithItUserService(orgId, adminsOnly);
         }
 
         // Micrometer doesn't like when tags are null and throws a NPE.
         String orgIdTag = orgId == null ? "" : orgId;
-        getUsersTotalTimer.stop(meterRegistry.timer("user-provider.get-users.total", "orgId", orgIdTag));
+        getUsersTotalTimer.stop(meterRegistry.timer("user-provider.get-users.total", "supplier", supplier, "orgId", orgIdTag));
         getRbacUsersGauge(orgIdTag).set(users.size());
 
         return users;
