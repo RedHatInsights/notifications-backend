@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.recipients.resolver.mbop;
 
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
@@ -34,14 +35,16 @@ public interface MBOPService {
     @Path("/v3/accounts/{orgId}/users")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     List<MBOPUser> getUsersByOrgId(
         @HeaderParam(Constants.MBOP_APITOKEN_HEADER)    String apiToken,
         @HeaderParam(Constants.MBOP_CLIENT_ID_HEADER)   String clientId,
         @HeaderParam(Constants.MBOP_ENV_HEADER)         String environment,
         @RestPath                                       String orgId,
         @RestQuery("admin_only")                        boolean adminOnly,
-        @RestQuery("sortOrder")                         String sortOrder,
         @RestQuery("limit")                             int limit,
-        @RestQuery("offset")                            int offset
+        @RestQuery("offset")                            int offset,
+        @RestQuery("include_permissions")               boolean includePermissions,
+        @RestQuery("status")                            String status
     );
 }
