@@ -200,7 +200,7 @@ public class FetchUsersFromExternalServices {
                         }
                         return mbopUserlist;
                     } catch (WebApplicationException ex) {
-                        Log.errorf("Bop error with code: %s, body: %s", ex.getResponse().getStatus(), ex.getResponse().readEntity(String.class));
+                        Log.errorf("Bop error with code: %s, body: %s", ex.getResponse().getStatus(), ex.getResponse().hasEntity() ? ex.getResponse().readEntity(Object.class) : "none");
                         throw ex;
                     }
                 }
