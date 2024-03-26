@@ -125,31 +125,8 @@ public class InventoryTestHelpers {
         emailActionMessage.setContext(
             new Context.ContextBuilder()
                 .withAdditionalProperty("inventory_id", inventoryId)
-                .withAdditionalProperty("hostname", String.format("hostname-%s", inventoryId))
                 .withAdditionalProperty("display_name", displayName)
-                .withAdditionalProperty("rhel_version", String.format("rhel-version-%s", inventoryId))
-                .withAdditionalProperty("host_url", "https://redhat.com")
-                .withAdditionalProperty("tags", convertedTags)
                 .build()
-        );
-
-        emailActionMessage.setEvents(
-            List.of(
-                new Event.EventBuilder()
-                    .withMetadata(new Metadata.MetadataBuilder().build())
-                    .withPayload(
-                        new Payload.PayloadBuilder()
-                            .withAdditionalProperty("insights_id", inventoryId)
-                            .withAdditionalProperty("subscription_manager_id", inventoryId)
-                            .withAdditionalProperty("satellite_id", inventoryId)
-                            .withAdditionalProperty("group_id", inventoryId)
-                            .withAdditionalProperty("group_name", String.format("group-name-%s", inventoryId))
-                            .withAdditionalProperty("reporter", String.format("reporter-%s", inventoryId))
-                            .withAdditionalProperty("system_check_in", Instant.now(Clock.systemUTC()))
-                            .build()
-                    )
-                    .build()
-            )
         );
 
         aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
