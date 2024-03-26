@@ -28,6 +28,7 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
@@ -181,21 +182,27 @@ public class FetchUsersFromExternalServices {
             int finalOffset = offset;
             final List<MBOPUser> receivedUsers = this.retryOnError(() -> {
                     LocalDateTime startTime = LocalDateTime.now();
-                    List<MBOPUser> mbopUserlist = mbopService.getUsersByOrgId(
+                    try {
+                        List<MBOPUser> mbopUserlist = mbopService.getUsersByOrgId(
                             recipientsResolverConfig.getMbopApiToken(),
                             recipientsResolverConfig.getMbopClientId(),
                             recipientsResolverConfig.getMbopEnv(),
                             orgId,
                             adminsOnly,
-                            MBOP_SORT_ORDER,
                             recipientsResolverConfig.getMaxResultsPerPage(),
-                            finalOffset
+                            finalOffset,
+                            false,
+                            "enabled"
                         );
-                    Duration duration = Duration.between(startTime, LocalDateTime.now());
-                    if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
-                        Log.warnf("MBOP service response time was %ds for request OrgId: %s, adminOnly: %s, offset %d ", duration.toSeconds(), orgId, adminsOnly, finalOffset);
+                        Duration duration = Duration.between(startTime, LocalDateTime.now());
+                        if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
+                            Log.warnf("MBOP service response time was %ds for request OrgId: %s, adminOnly: %s, offset %d ", duration.toSeconds(), orgId, adminsOnly, finalOffset);
+                        }
+                        return mbopUserlist;
+                    } catch (WebApplicationException ex) {
+                        Log.errorf("Bop error with code: %s, body: %s", ex.getResponse().getStatus(), ex.getResponse().readEntity(String.class));
+                        throw ex;
                     }
-                    return mbopUserlist;
                 }
             );
 

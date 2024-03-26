@@ -306,7 +306,7 @@ public class FetchUsersFromExternalServicesTest {
         // the configured maximum limit, so that we can test that the loop
         // is working as expected.
         Mockito
-            .when(this.mbopService.getUsersByOrgId(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyString(), anyInt(), anyInt()))
+            .when(this.mbopService.getUsersByOrgId(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyInt(), anyInt(), anyBoolean(), anyString()))
             .thenReturn(firstPageMBOPUsers, secondPageMBOPUsers, thirdPageMBOPUsers);
 
         // Call the function under test.
@@ -315,7 +315,7 @@ public class FetchUsersFromExternalServicesTest {
         // Verify that the offset argument, which is the one that changes
         // on each iteration, has been correctly incremented.
         final ArgumentCaptor<Integer> capturedOffset = ArgumentCaptor.forClass(Integer.class);
-        Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyString(), anyInt(), capturedOffset.capture());
+        Mockito.verify(this.mbopService, Mockito.times(3)).getUsersByOrgId(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyInt(), capturedOffset.capture(), anyBoolean(), anyString());
 
         final List<Integer> capturedValues = capturedOffset.getAllValues();
         assertIterableEquals(
