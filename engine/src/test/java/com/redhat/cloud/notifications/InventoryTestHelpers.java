@@ -7,8 +7,8 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -82,6 +82,56 @@ public class InventoryTestHelpers {
         return aggregation;
     }
 
+    /**
+     * Creates a minimal email aggregation, and fills any other fields either
+     * by providing the given {@code inventoryId} or by prefixing that ID with
+     * the name of the field.
+     * @param eventType the type of the event to simulate the aggregation from.
+     * @param inventoryId the inventory ID of the event.
+     * @param displayName the display name of the host.
+     * @return the generated email aggregation.
+     */
+    public static EmailAggregation createMinimalEmailAggregationV2(
+        String eventType,
+        UUID inventoryId,
+        String displayName
+    ) {
+        final EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setBundleName("rhel");
+        aggregation.setApplicationName("inventory");
+        aggregation.setOrgId(DEFAULT_ORG_ID);
+
+        final Action emailActionMessage = new Action();
+        emailActionMessage.setBundle("rhel");
+        emailActionMessage.setApplication("inventory");
+        emailActionMessage.setTimestamp(LocalDateTime.now());
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        // Transform the tags to the expected format.
+        record Tag(String value, String key) { }
+
+        final Map<String, String> tags = Map.of("inventory-id", inventoryId.toString());
+
+        final List<Tag> convertedTags = new ArrayList<>();
+        for (Map.Entry<String, String> entry : tags.entrySet()) {
+            convertedTags.add(
+                new Tag(entry.getKey(), entry.getValue())
+            );
+        }
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("inventory_id", inventoryId)
+                .withAdditionalProperty("display_name", displayName)
+                .build()
+        );
+
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
+
+        return aggregation;
+    }
+
     public static Action createInventoryAction(String tenant, String bundle, String application, String event_name) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
@@ -145,30 +195,5 @@ public class InventoryTestHelpers {
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;
-    }
-
-    public static Event createNewSystemRegisteredEvent(
-        final UUID insightsId,
-        final UUID subscriptionManagerId,
-        final UUID satelliteId,
-        final UUID groupId,
-        final String groupName,
-        final String reporter,
-        final Instant systemCheckIn
-    ) {
-        return new Event.EventBuilder()
-            .withMetadata(null)
-            .withPayload(
-                new Payload.PayloadBuilder()
-                    .withAdditionalProperty("insights_id", insightsId)
-                    .withAdditionalProperty("subscription_manager_id", subscriptionManagerId)
-                    .withAdditionalProperty("satellite_id", satelliteId)
-                    .withAdditionalProperty("group_id", groupId)
-                    .withAdditionalProperty("group_name", groupName)
-                    .withAdditionalProperty("reporter", reporter)
-                    .withAdditionalProperty("system_check_in", systemCheckIn)
-                    .build()
-            )
-            .build();
     }
 }

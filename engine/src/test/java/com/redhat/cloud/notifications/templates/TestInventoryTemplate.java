@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -75,7 +76,39 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testDailyEmailBody() {
         InventoryEmailAggregator aggregator = new InventoryEmailAggregator();
+
+        // Add error events.
         aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
+
+        // Add two new system events.
+        final Map<UUID, String> newSystemsMap = Map.of(
+            UUID.randomUUID(), "new-system-display-name",
+            UUID.randomUUID(), "new-second-system-display-name"
+        );
+
+        for (final Map.Entry<UUID, String> entry : newSystemsMap.entrySet()) {
+            aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, entry.getKey(), entry.getValue()));
+        }
+
+        // Add two "system became stale" events.
+        final Map<UUID, String> staleSystemsMap = Map.of(
+            UUID.randomUUID(), "stale-system-display-name",
+            UUID.randomUUID(), "second-stale-system-display-name"
+        );
+
+        for (final Map.Entry<UUID, String> entry : staleSystemsMap.entrySet()) {
+            aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_BECAME_STALE, entry.getKey(), entry.getValue()));
+        }
+
+        // Add two "system deleted" events.
+        final Map<UUID, String> deletedSystemsMap = Map.of(
+            UUID.randomUUID(), "deleted-system-display-name",
+            UUID.randomUUID(), "second-deleted-system-display-name"
+        );
+
+        for (final Map.Entry<UUID, String> entry : deletedSystemsMap.entrySet()) {
+            aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_DELETED, entry.getKey(), entry.getValue()));
+        }
 
         JsonObject context = new JsonObject(aggregator.getContext());
         String result = generateAggregatedEmailBody(aggregator.getContext());
@@ -84,6 +117,28 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
         assertTrue(result.contains("Error"), "Body should contain 'Error' header");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+
+        // Make sure that the section headline is present.
+        assertTrue(result.contains("Systems"), "the \"Systems\" header was not found as the section title");
+        assertTrue(result.contains(String.format("%s systems changed of state", newSystemsMap.size() + staleSystemsMap.size() + deletedSystemsMap.size())), "the header's subtitle should contain the number of systems that changed of state, but it was not found in the resulting HTML file");
+
+        // Check that the new systems are present in the email.
+        assertTrue(result.contains("New system registered"), "the email should contain the table's header for the new systems");
+        for (final Map.Entry<UUID, String> entry : newSystemsMap.entrySet()) {
+            this.assertSystemIsPresent(result, entry, true);
+        }
+
+        // Check that the stale systems are present in the email.
+        assertTrue(result.contains("Stale system"), "the email should contain the table's header for the stale systems");
+        for (final Map.Entry<UUID, String> entry : staleSystemsMap.entrySet()) {
+            this.assertSystemIsPresent(result, entry, true);
+        }
+
+        // Check that the stale systems are present in the email.
+        assertTrue(result.contains("System deleted"), "the email should contain the table's header for the deleted systems");
+        for (final Map.Entry<UUID, String> entry : deletedSystemsMap.entrySet()) {
+            this.assertSystemIsPresent(result, entry, false);
+        }
     }
 
     /**
@@ -206,5 +261,34 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
                 )
             )
         );
+    }
+
+    /**
+     * Asserts that the given system is present in the resulting HTML string.
+     * @param htmlString the resulting HTML for the email.
+     * @param entry the entry of the aggregated system.
+     * @param isItALink if the flag is given, it will check that the system is
+     *                  surrounded with a link to the system in Inventory.
+     */
+    private void assertSystemIsPresent(final String htmlString, final Map.Entry<UUID, String> entry, final boolean isItALink) {
+        if (isItALink) {
+            assertTrue(
+                htmlString.contains(
+                    String.format(
+                        "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">%s</a>",
+                        this.environment.url(),
+                        entry.getKey(),
+                        entry.getValue()
+                    )
+                ),
+                String.format("the resulting HTML should contain the \"%s\" system with a link to it, but it was not found", entry.getValue())
+            );
+        } else {
+            assertTrue(
+                htmlString.contains(
+                    entry.getValue()), String.format("the resulting HTML should contain the \"%s\" system, but it was not found", entry.getValue()
+                )
+            );
+        }
     }
 }

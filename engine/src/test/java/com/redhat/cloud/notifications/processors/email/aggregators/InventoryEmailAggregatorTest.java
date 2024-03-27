@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
@@ -36,13 +37,44 @@ public class InventoryEmailAggregatorTest {
 
     @Test
     void validatePayload() {
-        aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
+        // Add a "validation error" event type to the aggregation.
+        this.aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
+
+        // Add two new system events.
+        final Map<UUID, String> newSystemsMap = Map.of(
+            UUID.randomUUID(), "new-system-display-name",
+            UUID.randomUUID(), "new-second-system-display-name"
+        );
+
+        for (final Map.Entry<UUID, String> entry : newSystemsMap.entrySet()) {
+            this.aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, entry.getKey(), entry.getValue()));
+        }
+
+        // Add two "system became stale" events.
+        final Map<UUID, String> staleSystemsMap = Map.of(
+            UUID.randomUUID(), "stale-system-display-name",
+            UUID.randomUUID(), "second-stale-system-display-name"
+        );
+
+        for (final Map.Entry<UUID, String> entry : staleSystemsMap.entrySet()) {
+            this.aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_BECAME_STALE, entry.getKey(), entry.getValue()));
+        }
+
+        // Add two "system deleted" events.
+        final Map<UUID, String> deletedSystemsMap = Map.of(
+            UUID.randomUUID(), "deleted-system-display-name",
+            UUID.randomUUID(), "second-deleted-system-display-name"
+        );
+
+        for (final Map.Entry<UUID, String> entry : deletedSystemsMap.entrySet()) {
+            this.aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_DELETED, entry.getKey(), entry.getValue()));
+        }
 
         Map<String, Object> context = aggregator.getContext();
         JsonObject inventory = JsonObject.mapFrom(context).getJsonObject("inventory");
-        JsonArray errors = inventory.getJsonArray("errors");
 
-        System.out.println(inventory.toString());
+        // Validate aggregated data from "validation error" event type.
+        JsonArray errors = inventory.getJsonArray("errors");
 
         JsonObject error1 = errors.getJsonObject(0);
         JsonObject error2 = errors.getJsonObject(1);
@@ -52,5 +84,42 @@ public class InventoryEmailAggregatorTest {
         Assertions.assertEquals(error1.getString(MESSAGE), InventoryTestHelpers.errorMessage1);
         Assertions.assertEquals(error2.getString(DISPLAY_NAME), InventoryTestHelpers.displayName2);
         Assertions.assertEquals(error2.getString(MESSAGE), InventoryTestHelpers.errorMessage2);
+
+        // Validate the systems' array.
+        final JsonArray deletedSystems = inventory.getJsonArray(InventoryEmailAggregator.DELETED_SYSTEMS);
+        final JsonArray newSystems = inventory.getJsonArray(InventoryEmailAggregator.NEW_SYSTEMS);
+        final JsonArray staleSystems = inventory.getJsonArray(InventoryEmailAggregator.STALE_SYSTEMS);
+
+        this.assertInventoryContainsExpectedElements(deletedSystemsMap, deletedSystems, "deleted systems");
+        this.assertInventoryContainsExpectedElements(newSystemsMap, newSystems, "new systems");
+        this.assertInventoryContainsExpectedElements(staleSystemsMap, staleSystems, "stale systems");
+    }
+
+    /**
+     * Asserts that the expected elements are found in the provided JSON array,
+     * which should contain the aggregated results of the different systems in
+     * their corresponding status.
+     * @param expectedElements the expected elements to be found in the JSON
+     *                         array.
+     * @param resultingElements the resulting JSON array from the aggregation.
+     * @param arrayType the kind of array type we are evaluating. Helpful for
+     *                  having more accurate error messages.
+     */
+    private void assertInventoryContainsExpectedElements(final Map<UUID, String> expectedElements, final JsonArray resultingElements, final String arrayType) {
+        Assertions.assertEquals(expectedElements.size(), resultingElements.size(), String.format("unexpected number of %s in the resulting JSON array", arrayType));
+
+        for (final Object ds : resultingElements) {
+            final JsonObject jsonSystem = (JsonObject) ds;
+            final String jsonId = jsonSystem.getString(InventoryEmailAggregator.INVENTORY_ID_KEY);
+            Assertions.assertNotNull(jsonId, String.format("unable to extract the '%s' key from the resulting %s array", InventoryEmailAggregator.INVENTORY_ID_KEY, arrayType));
+
+            final String displayName = expectedElements.get(
+                UUID.fromString(
+                    jsonSystem.getString(InventoryEmailAggregator.INVENTORY_ID_KEY)
+                )
+            );
+
+            Assertions.assertEquals(displayName, jsonSystem.getString(InventoryEmailAggregator.DISPLAY_NAME_KEY), String.format("unexpected associated display name '%s' for system with ID '%s'", displayName, jsonId));
+        }
     }
 }
