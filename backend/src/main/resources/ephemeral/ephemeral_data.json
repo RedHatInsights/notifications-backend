@@ -17,6 +17,38 @@
       ]
     },
     {
+      "name": "console",
+      "display_name": "Console",
+      "applications": [
+        {
+          "name": "rbac",
+          "display_name": "User Access",
+          "event_types": [
+            {
+              "name": "group-created",
+              "display_name": "Group created",
+              "description": "Group created"
+            },
+            {
+              "name": "group-updated",
+              "display_name": "Group updated",
+              "description": "Group updated"
+            },
+            {
+              "name": "platform-default-group-turned-into-custom",
+              "display_name": "platform-default-group-turned-into-custom",
+              "description": "platform-default-group-turned-into-custom"
+            },
+            {
+              "name": "custom-default-access-updated",
+              "display_name": "custom-default-access-updated",
+              "description": "custom-default-access-updated"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "openshift",
       "display_name": "OpenShift",
       "applications": [
