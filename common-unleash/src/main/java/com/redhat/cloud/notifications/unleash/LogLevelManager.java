@@ -42,82 +42,44 @@ public class LogLevelManager {
     @Inject
     ObjectMapper objectMapper;
 
-    private final Map<String, Level> previousLogLevels = new HashMap<>();
+    private final Map<String, Level> originalLoggerLevels = new HashMap<>();
 
     public void process(@Observes ToggleCollection toggleCollection) {
-        try {
-
-            Variant variant = unleash.getVariant(UNLEASH_TOGGLE_NAME);
-            if (variant.isEnabled()) {
-                Optional<Payload> payload = variant.getPayload();
-
-                if (payload.isEmpty()) {
-                    Log.warn("Variant ignored because of an empty payload");
-                    return;
+        LogConfig[] logConfigs = getLogConfigs();
+        for (LogConfig logConfig : logConfigs) {
+            try {
+                if (shouldThisHostBeUpdated(logConfig)) {
+                    setLoggerLevel(logConfig.category, logConfig.level);
                 }
-
-                if (!payload.get().getType().equals("json")) {
-                    Log.warnf("Variant ignored because of a wrong payload type [expected=json, actual=%s]", payload.get().getType());
-                    return;
-                }
-
-                if (payload.get().getValue() == null) {
-                    Log.warn("Variant ignored because of a null payload value");
-                    return;
-                }
-
-                LogConfig[] logConfigs;
-                try {
-                    logConfigs = objectMapper.readValue(payload.get().getValue(), LogConfig[].class);
-                } catch (JsonProcessingException e) {
-                    Log.warn("Variant payload deserialization failed", e);
-                    return;
-                }
-
-                for (LogConfig logConfig : logConfigs) {
-                    if (shouldCurrentHostBeUpdated(logConfig)) {
-
-                        Optional<Level> newLevel = getLogLevel(logConfig.level);
-
-                        if (newLevel.isEmpty()) {
-                            Log.warnf("Log config ignored because the level is unknown: %s", logConfig.level);
-                            continue;
-                        }
-
-                        Logger logger = Logger.getLogger(logConfig.category);
-
-                        Level currentLevel = logger.getLevel();
-                        if (!newLevel.get().equals(currentLevel)) {
-                            previousLogLevels.put(logConfig.category, currentLevel);
-                            logger.setLevel(newLevel.get());
-                            logUpdated(logConfig.category, currentLevel, newLevel.get());
-                        }
-                    }
-                }
-
-                Set<String> categories = Arrays.stream(logConfigs)
-                        .filter(this::shouldCurrentHostBeUpdated)
-                        .map(logConfig -> logConfig.category)
-                        .collect(toSet());
-                previousLogLevels.entrySet().removeIf(entry -> {
-                    boolean remove = !categories.contains(entry.getKey());
-                    if (remove) {
-                        revertLogLevel(entry.getKey(), entry.getValue());
-                    }
-                    return remove;
-                });
-
-            } else {
-                previousLogLevels.forEach(LogLevelManager::revertLogLevel);
-                previousLogLevels.clear();
+            } catch (Exception e) {
+                Log.error("Could not the set level of a logger", e);
             }
-
-        } catch (Exception e) {
-            Log.errorf(e, "%s payload processing failed", UNLEASH_TOGGLE_NAME);
         }
+        revertLoggersLevel(logConfigs);
     }
 
-    private boolean shouldCurrentHostBeUpdated(LogConfig logConfig) {
+    private LogConfig[] getLogConfigs() {
+        Variant variant = unleash.getVariant(UNLEASH_TOGGLE_NAME);
+        if (variant.isEnabled()) {
+            Optional<Payload> payload = variant.getPayload();
+            if (payload.isEmpty()) {
+                Log.warn("Variant ignored because of an empty payload");
+            } else if (!payload.get().getType().equals("json")) {
+                Log.warnf("Variant ignored because of a wrong payload type [expected=json, actual=%s]", payload.get().getType());
+            } else if (payload.get().getValue() == null) {
+                Log.warn("Variant ignored because of a null payload value");
+            } else {
+                try {
+                    return objectMapper.readValue(payload.get().getValue(), LogConfig[].class);
+                } catch (JsonProcessingException e) {
+                    Log.error("Variant payload deserialization failed", e);
+                }
+            }
+        }
+        return new LogConfig[0];
+    }
+
+    private boolean shouldThisHostBeUpdated(LogConfig logConfig) {
         if (logConfig.hostName == null) {
             return true;
         }
@@ -128,13 +90,49 @@ public class LogLevelManager {
         }
     }
 
-    /**
-     * Converts a Quarkus log level into a JUL log level.
-     * @param level the Quarkus log level
-     * @return the JUL log level
-     */
-    private static Optional<Level> getLogLevel(String level) {
-        return switch (level) {
+    private void setLoggerLevel(String loggerName, String levelName) {
+        Optional<Level> newLevel = convertLevel(levelName);
+        if (newLevel.isEmpty()) {
+            Log.warnf("Log config ignored because the level is unknown: %s", levelName);
+        } else {
+            Logger logger = Logger.getLogger(loggerName);
+            Level currentLevel = logger.getLevel();
+            if (!newLevel.get().equals(currentLevel)) {
+                originalLoggerLevels.putIfAbsent(loggerName, currentLevel);
+                logger.setLevel(newLevel.get());
+                logUpdated(loggerName, currentLevel, newLevel.get());
+            }
+        }
+    }
+
+    private void revertLoggersLevel(LogConfig[] logConfigs) {
+        if (logConfigs.length == 0) {
+            originalLoggerLevels.forEach(this::revertLoggerLevel);
+            originalLoggerLevels.clear();
+        } else {
+            Set<String> knownLoggers = Arrays.stream(logConfigs)
+                    .filter(this::shouldThisHostBeUpdated)
+                    .map(logConfig -> logConfig.category)
+                    .collect(toSet());
+            originalLoggerLevels.entrySet().removeIf(entry -> {
+                boolean remove = !knownLoggers.contains(entry.getKey());
+                if (remove) {
+                    revertLoggerLevel(entry.getKey(), entry.getValue());
+                }
+                return remove;
+            });
+        }
+    }
+
+    private void revertLoggerLevel(String category, Level previousLevel) {
+        Logger logger = Logger.getLogger(category);
+        Level currentLevel = logger.getLevel();
+        logger.setLevel(previousLevel);
+        logUpdated(category, currentLevel, previousLevel);
+    }
+
+    private static Optional<Level> convertLevel(String levelName) {
+        return switch (levelName) {
             case "TRACE" -> Optional.of(FINER);
             case "DEBUG" -> Optional.of(FINE);
             case "INFO" -> Optional.of(INFO);
@@ -142,13 +140,6 @@ public class LogLevelManager {
             case "ERROR" -> Optional.of(SEVERE);
             default -> Optional.empty();
         };
-    }
-
-    private static void revertLogLevel(String category, Level previousLevel) {
-        Logger logger = Logger.getLogger(category);
-        Level currentLevel = logger.getLevel();
-        logger.setLevel(previousLevel);
-        logUpdated(category, currentLevel, previousLevel);
     }
 
     private static void logUpdated(String category, Level oldLevel, Level newLevel) {
