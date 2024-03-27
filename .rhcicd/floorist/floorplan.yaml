@@ -54,6 +54,37 @@ objects:
             et.display_name,
             bg.org_id,
             actively_used
+        # Count the number of email subscriptions, and group them by
+        # application, subscription type, whether they are subscribed or not
+        # and their org id.
+      - prefix: insights/notifications/email_subscriptions_by_org_id
+        query: >-
+          SELECT
+            bun.display_name::TEXT,
+            apps.display_name::TEXT,
+            es.org_id::TEXT,
+            et.display_name::TEXT,
+            es.subscription_type::TEXT,
+            es.subscribed::BOOLEAN,
+            count(es.*)::INTEGER AS "count"
+          FROM
+            email_subscriptions AS es
+          INNER JOIN
+            event_type AS et
+              ON et.id = es.event_type_id
+          INNER JOIN
+            applications AS apps
+              ON apps.id = et.application_id
+          INNER JOIN
+            bundles AS bun
+              ON bun.id = apps.bundle_id
+          GROUP BY
+            bun.display_name,
+            apps.display_name,
+            es.org_id,
+            et.display_name,
+            es.subscription_type,
+            es.subscribed
       # Count the number of created endpoints per endpoint type, and group them
       # by organization ID.
       - prefix: insights/notifications/endpoint_types_by_org_id
@@ -95,37 +126,6 @@ objects:
             sub.org_id,
             sub.enabled,
             sub.actively_used;
-        # Count the number of email subscriptions, and group them by
-        # application, subscription type, whether they are subscribed or not
-        # and their org id.
-      - prefix: insights/notifications/email_subscriptions_by_org_id
-        query: >-
-          SELECT
-            bun.display_name::TEXT,
-            apps.display_name::TEXT,
-            es.org_id::TEXT,
-            et.display_name::TEXT,
-            es.subscription_type::TEXT,
-            es.subscribed::BOOLEAN,
-            count(es.*)::INTEGER AS "count"
-          FROM
-            email_subscriptions AS es
-          INNER JOIN
-            event_type AS et
-              ON et.id = es.event_type_id
-          INNER JOIN
-            applications AS apps
-              ON apps.id = et.application_id
-          INNER JOIN
-            bundles AS bun
-              ON bun.id = apps.bundle_id
-          GROUP BY
-            bun.display_name,
-            apps.display_name,
-            es.org_id,
-            et.display_name,
-            es.subscription_type,
-            es.subscribed
       # Count the number of events grouped by bundle, application, status and
       # the organization ID.
       - prefix: insights/notifications/events_by_bundle_app_status_org_id
