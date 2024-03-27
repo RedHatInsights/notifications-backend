@@ -207,6 +207,7 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
+    @TransactionConfiguration(timeout = 300)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Response updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
         int rowCount = bundleRepository.updateBundle(bundleId, bundle);
@@ -332,6 +333,7 @@ public class InternalResource {
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
     @Transactional
+    @TransactionConfiguration(timeout = 300)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId) {
         return applicationRepository.deleteApplication(appId);
@@ -361,6 +363,7 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
+    @TransactionConfiguration(timeout = 300)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response updateEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
         securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
@@ -391,6 +394,7 @@ public class InternalResource {
     @Path("/eventTypes/{eventTypeId}")
     @Produces(APPLICATION_JSON)
     @Transactional
+    @TransactionConfiguration(timeout = 300)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public boolean deleteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
