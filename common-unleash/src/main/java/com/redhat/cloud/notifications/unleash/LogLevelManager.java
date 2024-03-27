@@ -42,7 +42,7 @@ public class LogLevelManager {
     @Inject
     ObjectMapper objectMapper;
 
-    private final Map<String, Level> previousLoggerLevels = new HashMap<>();
+    private final Map<String, Level> originalLoggerLevels = new HashMap<>();
 
     public void process(@Observes ToggleCollection toggleCollection) {
         LogConfig[] logConfigs = getLogConfigs();
@@ -98,7 +98,7 @@ public class LogLevelManager {
             Logger logger = Logger.getLogger(loggerName);
             Level currentLevel = logger.getLevel();
             if (!newLevel.get().equals(currentLevel)) {
-                previousLoggerLevels.put(loggerName, currentLevel);
+                originalLoggerLevels.putIfAbsent(loggerName, currentLevel);
                 logger.setLevel(newLevel.get());
                 logUpdated(loggerName, currentLevel, newLevel.get());
             }
@@ -107,14 +107,14 @@ public class LogLevelManager {
 
     private void revertLoggersLevel(LogConfig[] logConfigs) {
         if (logConfigs.length == 0) {
-            previousLoggerLevels.forEach(this::revertLoggerLevel);
-            previousLoggerLevels.clear();
+            originalLoggerLevels.forEach(this::revertLoggerLevel);
+            originalLoggerLevels.clear();
         } else {
             Set<String> knownLoggers = Arrays.stream(logConfigs)
                     .filter(this::shouldThisHostBeUpdated)
                     .map(logConfig -> logConfig.category)
                     .collect(toSet());
-            previousLoggerLevels.entrySet().removeIf(entry -> {
+            originalLoggerLevels.entrySet().removeIf(entry -> {
                 boolean remove = !knownLoggers.contains(entry.getKey());
                 if (remove) {
                     revertLoggerLevel(entry.getKey(), entry.getValue());
