@@ -109,6 +109,15 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             onChange={ (isChecked) => setEventType(prev => ({...prev, subscriptionLocked: isChecked})) }
                         />
                     </FormGroup>
+                    <FormGroup label='is visible?' fieldId='visible'
+                               helperText='Should the event type be visible by users?'>
+                        <Checkbox
+                            id='visible'
+                            name='visible'
+                            isChecked={ eventType.visible }
+                            onChange={ (isChecked) => setEventType(prev => ({...prev, visible: isChecked})) }
+                        />
+                    </FormGroup>
                     <ActionGroup>
                         <Button variant='primary' type='submit'
                             isLoading={ props.isLoading } isDisabled={ props.isLoading }

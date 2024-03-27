@@ -50,6 +50,7 @@ export interface EventType {
     fullyQualifiedName: string;
     subscribedByDefault: boolean;
     subscriptionLocked: boolean;
+    visible: boolean;
 }
 
 type InstantEmailTemplateRow = {

@@ -121,7 +121,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
             fullyQualifiedName: eventType.fullyQualifiedName ?? '',
             applicationId,
             subscribedByDefault: eventType.subscribedByDefault,
-            subscriptionLocked: eventType.subscriptionLocked
+            subscriptionLocked: eventType.subscriptionLocked,
+            visible: eventType.visible
 
         }).then (eventTypesQuery.reload);
 
