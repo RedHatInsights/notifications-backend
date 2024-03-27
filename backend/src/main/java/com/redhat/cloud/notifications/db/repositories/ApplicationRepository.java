@@ -191,7 +191,7 @@ public class ApplicationRepository {
     }
 
     public List<EventType> getEventTypes(UUID appId) {
-        String query = "FROM EventType WHERE application.id = :appId";
+        String query = "FROM EventType WHERE application.id = :appId order by name";
         Application app = entityManager.find(Application.class, appId);
         if (app == null) {
             throw new NotFoundException();
@@ -208,7 +208,7 @@ public class ApplicationRepository {
 
     @Transactional
     public int updateEventType(UUID id, EventType eventType) {
-        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked WHERE id = :id";
+        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked, visible = :visible WHERE id = :id";
         int rowCount = entityManager.createQuery(eventTypeQuery)
                 .setParameter("name", eventType.getName())
                 .setParameter("fullyQualifiedName", eventType.getFullyQualifiedName())
@@ -216,6 +216,7 @@ public class ApplicationRepository {
                 .setParameter("description", eventType.getDescription())
                 .setParameter("subscribedByDefault", eventType.isSubscribedByDefault())
                 .setParameter("subscriptionLocked", eventType.isSubscriptionLocked())
+                .setParameter("visible", eventType.isVisible())
                 .setParameter("id", id)
                 .executeUpdate();
         String eventQuery = "UPDATE Event SET eventTypeDisplayName = :displayName WHERE eventType.id = :eventTypeId";

@@ -107,7 +107,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setEventTypes({});
+        setEventTypes({visible:true});
     };
 
     const handleSubmit = React.useCallback((eventType) => {

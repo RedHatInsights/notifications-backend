@@ -110,7 +110,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                         />
                     </FormGroup>
                     <FormGroup label='is visible?' fieldId='visible'
-                               helperText='Should the event type be visible by users?'>
+                        helperText='Should the event type be visible by users?'>
                         <Checkbox
                             id='visible'
                             name='visible'
