@@ -314,7 +314,7 @@ public class TemplateRepository {
         return template;
     }
 
-    public boolean isEmailSubscriptionSupported(String bundleName, String appName, SubscriptionType subscriptionType) {
+    public boolean isEmailSubscriptionSupported(String bundleName, String appName, UUID eventTypeId, SubscriptionType subscriptionType) {
         switch (subscriptionType) {
             case INSTANT:
                 if (backendConfig.isDefaultTemplateEnabled()) {
@@ -322,10 +322,9 @@ public class TemplateRepository {
                 }
 
                 String hql = "SELECT COUNT(*) FROM InstantEmailTemplate " +
-                    "WHERE eventType.application.bundle.name = :bundleName AND eventType.application.name = :appName";
+                    "WHERE eventType.id =: eventTypeId";
                 return entityManager.createQuery(hql, Long.class)
-                    .setParameter("bundleName", bundleName)
-                    .setParameter("appName", appName)
+                    .setParameter("eventTypeId", eventTypeId)
                     .getSingleResult() > 0;
             case DAILY:
                 return isEmailAggregationSupported(bundleName, appName, List.of(subscriptionType));
