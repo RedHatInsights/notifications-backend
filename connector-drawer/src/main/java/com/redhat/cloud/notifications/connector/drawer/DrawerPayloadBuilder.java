@@ -9,10 +9,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
@@ -27,9 +25,7 @@ public class DrawerPayloadBuilder implements Processor {
 
         DrawerEntry drawerEntry = new DrawerEntry();
         drawerEntry.setPayload(entryPayloadModel);
-        drawerEntry.setUsers(exchange.getProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, Set.class));
-        // TODO : for the moment we need the org id for test purpose, because chrome service do not handle usernames yet
-        drawerEntry.setOrganizations(List.of(exchange.getProperty(ORG_ID, String.class)));
+        drawerEntry.setUsernames(exchange.getProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, Set.class));
         JsonObject myPayload = JsonObject.mapFrom(drawerEntry);
 
         Message in = exchange.getIn();
