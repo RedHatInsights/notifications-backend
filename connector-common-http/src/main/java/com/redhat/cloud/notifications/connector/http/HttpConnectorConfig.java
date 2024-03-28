@@ -102,7 +102,7 @@ public class HttpConnectorConfig extends ConnectorConfig {
 
     public boolean isDisableFaultyEndpoints() {
         if (unleashEnabled) {
-            return unleash.isEnabled(disableFaultyEndpointsToggle, true);
+            return unleash.isEnabled(disableFaultyEndpointsToggle, false);
         } else {
             return disableFaultyEndpoints;
         }
