@@ -15,46 +15,6 @@ objects:
       secretName: ${FLOORIST_BUCKET_SECRET_NAME}
     suspend: ${{FLOORIST_SUSPEND}}
     queries:
-      # Count the number of behavior groups associated to event types, and also
-      # show the bundle and the application they are associated to. Purposely
-      # not grouping them by organization so that we can have a general
-      # overview of the usage.
-      - prefix: insights/notifications/behavior_groups_event_types
-        query: >-
-          SELECT
-            bun.display_name::TEXT AS bundle,
-            apps.display_name::TEXT AS application,
-            et.display_name::TEXT AS event_type,
-            EXISTS (
-              SELECT
-                1
-              FROM
-                behavior_group_action AS bga
-              WHERE
-                bga.behavior_group_id = etb.behavior_group_id
-            )::BOOLEAN AS actively_used,
-            count(bg.*)::INTEGER AS "count"
-          FROM
-            event_type_behavior AS etb
-          INNER JOIN
-            event_type AS et
-             ON et.id = etb.event_type_id
-          INNER JOIN
-            applications AS apps
-              ON apps.id = et.application_id 
-          INNER JOIN
-            behavior_group AS bg
-              ON bg.id = etb.behavior_group_id
-          INNER JOIN
-            bundles AS bun
-              ON bun.id = bg.bundle_id
-          WHERE
-            bg.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
-          GROUP BY
-            bun.display_name,
-            apps.display_name,
-            et.display_name,
-            actively_used
       # Count the number of behavior groups associated to event types per
       # organization, and also show the bundle and the application they are
       # associated to.
@@ -88,57 +48,45 @@ objects:
           INNER JOIN
             bundles AS bun
               ON bun.id = bg.bundle_id
-          WHERE
-              bg.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
           GROUP BY
             bun.display_name,
             apps.display_name,
             et.display_name,
             bg.org_id,
             actively_used
-      # Count the number of created endpoints per endpoint type. Raw total, which
-      # includes the disabled ones or the ones not assigned in a behavior group.
-      - prefix: insights/notifications/endpoint_types
+        # Count the number of email subscriptions, and group them by
+        # application, subscription type, whether they are subscribed or not
+        # and their org id.
+      - prefix: insights/notifications/email_subscriptions_by_org_id
         query: >-
           SELECT
-            sub.endpoint_type::TEXT,
-            sub.enabled::BOOLEAN,
-            sub.actively_used::BOOLEAN,
-            COUNT(*)::INTEGER AS "count"
+            bun.display_name::TEXT,
+            apps.display_name::TEXT,
+            es.org_id::TEXT,
+            et.display_name::TEXT,
+            es.subscription_type::TEXT,
+            es.subscribed::BOOLEAN,
+            count(es.*)::INTEGER AS "count"
           FROM
-            (
-              SELECT
-              -- When the endpoint is a Camel endpoint, get its subtype instead.
-              CASE
-                WHEN
-                  e.endpoint_type_v2 = 'CAMEL'
-                THEN
-                  LOWER(e.endpoint_sub_type)
-                ELSE
-                  LOWER(e.endpoint_type_v2)
-              END AS endpoint_type,
-              e.enabled AS enabled,
-              -- If the endpoint has an associated event type and a behavior
-              -- group, then that means that it is actively being used.
-              EXISTS (
-                SELECT
-                  1
-                FROM
-                  behavior_group_action AS bga
-                INNER JOIN
-                  event_type_behavior AS etb ON etb.behavior_group_id = bga.behavior_group_id
-                WHERE
-                  bga.endpoint_id = e.id
-                ) AS actively_used
-              FROM
-                endpoints AS e
-              WHERE
-                e.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
-            ) AS sub
+            email_subscriptions AS es
+          INNER JOIN
+            event_type AS et
+              ON et.id = es.event_type_id
+          INNER JOIN
+            applications AS apps
+              ON apps.id = et.application_id
+          INNER JOIN
+            bundles AS bun
+              ON bun.id = apps.bundle_id
           GROUP BY
-            sub.endpoint_type,
-            sub.enabled,
-            sub.actively_used;
+            bun.display_name,
+            apps.display_name,
+            es.org_id,
+            et.display_name,
+            es.subscription_type,
+            es.subscribed
+      # Count the number of created endpoints per endpoint type, and group them
+      # by organization ID.
       - prefix: insights/notifications/endpoint_types_by_org_id
         query: >-
           SELECT
@@ -172,70 +120,12 @@ objects:
                 ) AS actively_used
               FROM
                 endpoints AS e
-              WHERE
-                e.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
             ) AS sub
           GROUP BY
             sub.endpoint_type,
             sub.org_id,
             sub.enabled,
             sub.actively_used;
-        # Count the number of email subscriptions, and group them by application
-        # and subscription type.
-      - prefix: insights/notifications/email_subscriptions
-        query: >-
-          SELECT
-            b.display_name::TEXT AS bundle,
-            a.display_name::TEXT AS application,
-            et.display_name::TEXT AS event_type,
-            es.subscription_type::TEXT AS subscription_type,
-            COUNT(es.*)::INTEGER AS "count"
-          FROM
-            email_subscriptions AS es
-          INNER JOIN
-            event_type AS et ON et.id = es.event_type_id
-          INNER JOIN
-            applications AS a ON a.id = et.application_id
-          INNER JOIN
-            bundles AS b ON b.id = a.bundle_id
-          WHERE
-            es.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
-          GROUP BY
-            b.display_name,
-            a.display_name,
-            et.display_name,
-            es.subscription_type;
-        # Count the number of email subscriptions, and group them by
-        # application, subscription type, whether they are subscribed or not
-        # and their org id.
-      - prefix: insights/notifications/email_subscriptions_by_org_id
-        query: >-
-          SELECT
-            bun.display_name::TEXT,
-            apps.display_name::TEXT,
-            et.display_name::TEXT,
-            es.subscription_type::TEXT,
-            es.subscribed::BOOLEAN,
-            count(es.*)::INTEGER AS "count"
-          FROM
-            email_subscriptions AS es
-          INNER JOIN
-            event_type AS et
-              ON et.id = es.event_type_id
-          INNER JOIN
-            applications AS apps
-              ON apps.id = et.application_id
-          INNER JOIN
-            bundles AS bun
-              ON bun.id = apps.bundle_id
-          WHERE
-            es.org_id NOT IN (${FLOORIST_INTERNAL_ORG_IDS_FILTER})
-          GROUP BY
-            bun.display_name,
-            apps.display_name,
-            et.display_name,
-            es.subscription_type,
-            es.subscribed
       # Count the number of events grouped by bundle, application, status and
       # the organization ID.
       - prefix: insights/notifications/events_by_bundle_app_status_org_id
@@ -270,9 +160,6 @@ parameters:
 - name: FLOORIST_DB_SECRET_NAME
   description: The database's secret name specification for the Floorist operator.
   value: notifications-backend-db
-- name: FLOORIST_INTERNAL_ORG_IDS_FILTER
-  description: A list of comma separated ORG IDs to filter from the queries, in order to avoid yielding results that include internal accounts.
-  value: "'12345', '67890'"
 - name: FLOORIST_LOGLEVEL
   description: Floorist loglevel config
   value: 'INFO'
