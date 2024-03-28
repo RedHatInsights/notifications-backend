@@ -65,6 +65,8 @@ public class EmailTemplateMigrationService {
         Log.debug("Migration starting");
         if (engineConfig.isSecuredEmailTemplatesEnabled()) {
             getOrCreateTemplate("Secure/Common/insightsEmailBody", "html", "Common Insights email body");
+            getOrCreateTemplate("Secure/Common/insightsEmailBodyLight", "html", "Common Insights email body to render applications section only");
+            getOrCreateTemplate("Secure/Common/insightsDailyEmailBody", "html", "Common Insights email body for single daily email");
             createDailyEmailTemplate(
                 warnings, "rhel", "advisor",
                 "Secure/Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
