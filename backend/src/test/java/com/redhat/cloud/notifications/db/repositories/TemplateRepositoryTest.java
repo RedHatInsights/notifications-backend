@@ -35,6 +35,7 @@ public class TemplateRepositoryTest extends DbIsolatedTest {
     private Application app1;
     private Application app2;
     private EventType eventType1;
+    private EventType eventType2;
     private Template subjectTemplate;
     private Template bodyTemplate;
 
@@ -44,6 +45,7 @@ public class TemplateRepositoryTest extends DbIsolatedTest {
 
         app1 = resourceHelpers.createApplication(bundle.getId(), "app-1-" + UUID.randomUUID(), "app-1-display-name");
         eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1-" + UUID.randomUUID(), "event-type-1-display-name", "event-type-1-description");
+        eventType2 = resourceHelpers.createEventType(app1.getId(), "event-type-2-" + UUID.randomUUID(), "event-type-2-display-name", "event-type-2-description");
 
         app2 = resourceHelpers.createApplication(bundle.getId(), "app-2-" + UUID.randomUUID(), "app-2-display-name");
 
@@ -85,15 +87,17 @@ public class TemplateRepositoryTest extends DbIsolatedTest {
                                                     boolean app2Daily, boolean unknownAppInstant, boolean unknownAppDaily) {
 
         // bundle / app-1 / event-type-1
-        assertEquals(app1Instant, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app1.getName(), INSTANT));
-        assertEquals(app1Daily, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app1.getName(), DAILY));
+        assertEquals(app1Instant, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app1.getName(), eventType1.getId(), INSTANT));
+        assertEquals(false, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app1.getName(), eventType2.getId(), INSTANT));
+        assertEquals(app1Daily, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app1.getName(), eventType1.getId(), DAILY));
+        assertEquals(app1Daily, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app1.getName(), eventType2.getId(), DAILY));
 
         // bundle / app-2 / event-type-2
-        assertEquals(app2Instant, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app2.getName(), INSTANT));
-        assertEquals(app2Daily, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app2.getName(), DAILY));
+        assertEquals(app2Instant, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app2.getName(), null, INSTANT));
+        assertEquals(app2Daily, templateRepository.isEmailSubscriptionSupported(bundle.getName(), app2.getName(), null, DAILY));
 
         // unknown-bundle / unknown-app
-        assertEquals(unknownAppInstant, templateRepository.isEmailSubscriptionSupported("unknown-bundle", "unknown-app", INSTANT));
-        assertEquals(unknownAppDaily, templateRepository.isEmailSubscriptionSupported("unknown-bundle", "unknown-app", DAILY));
+        assertEquals(unknownAppInstant, templateRepository.isEmailSubscriptionSupported("unknown-bundle", "unknown-app", UUID.randomUUID(), INSTANT));
+        assertEquals(unknownAppDaily, templateRepository.isEmailSubscriptionSupported("unknown-bundle", "unknown-app", UUID.randomUUID(), DAILY));
     }
 }

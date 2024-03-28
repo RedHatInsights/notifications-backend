@@ -6,9 +6,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @JsonAutoDetect(fieldVisibility = Visibility.ANY)
 public class SettingsValueByEventTypeJsonForm {
@@ -81,6 +83,7 @@ public class SettingsValueByEventTypeJsonForm {
     private static Application buildEventTypes(String bundleName, String applicationName, SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue) {
         final Application application = new Application();
         application.label = applicationSettingsValue.displayName;
+        List<EventType> eventTypes = new ArrayList<>();
         applicationSettingsValue.eventTypes.forEach((eventTypeName, eventTypeSettingsValue) -> {
             EventType formEventType = new EventType();
             formEventType.name = eventTypeName;
@@ -115,8 +118,10 @@ public class SettingsValueByEventTypeJsonForm {
                 }
                 formEventType.fields.add(field);
             });
-            application.eventTypes.add(formEventType);
+            eventTypes.add(formEventType);
         });
+        application.eventTypes =
+            eventTypes.stream().sorted(Comparator.comparing(evt -> evt.label)).collect(Collectors.toList());
         return application;
     }
 }
