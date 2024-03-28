@@ -76,7 +76,6 @@ public class EventType {
     @JsonIgnore
     private boolean filterOutApplication;
 
-    @JsonIgnore
     private boolean visible = true;
 
     private boolean subscribedByDefault;
@@ -165,6 +164,10 @@ public class EventType {
 
     public boolean isVisible() {
         return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     public boolean isSubscribedByDefault() {

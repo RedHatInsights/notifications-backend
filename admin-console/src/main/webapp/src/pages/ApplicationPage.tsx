@@ -107,7 +107,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setEventTypes({});
+        setEventTypes({visible:true});
     };
 
     const handleSubmit = React.useCallback((eventType) => {
@@ -121,7 +121,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
             fullyQualifiedName: eventType.fullyQualifiedName ?? '',
             applicationId,
             subscribedByDefault: eventType.subscribedByDefault,
-            subscriptionLocked: eventType.subscriptionLocked
+            subscriptionLocked: eventType.subscriptionLocked,
+            visible: eventType.visible
 
         }).then (eventTypesQuery.reload);
 

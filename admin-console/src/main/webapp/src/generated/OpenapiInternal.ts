@@ -290,6 +290,7 @@ export namespace Schemas {
     name: string;
     subscribed_by_default?: boolean | undefined | null;
     subscription_locked?: boolean | undefined | null;
+    visible?: boolean | undefined | null;
   };
 
   export const EventTypeBehavior = zodSchemaEventTypeBehavior();
@@ -906,6 +907,7 @@ export namespace Schemas {
           name: z.string(),
           subscribed_by_default: z.boolean().optional().nullable(),
           subscription_locked: z.boolean().optional().nullable(),
+          visible: z.boolean().optional().nullable(),
       })
       .nonstrict();
   }
