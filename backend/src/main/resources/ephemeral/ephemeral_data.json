@@ -36,8 +36,8 @@
             },
             {
               "name": "platform-default-group-turned-into-custom",
-              "display_name": "platform-default-group-turned-into-custom",
-              "description": "platform-default-group-turned-into-custom"
+              "display_name": "Platform default access group turned into custom",
+              "description": "Platform default access group turned into custom"
             },
             {
               "name": "custom-default-access-updated",
