@@ -41,8 +41,8 @@
             },
             {
               "name": "custom-default-access-updated",
-              "display_name": "custom-default-access-updated",
-              "description": "custom-default-access-updated"
+              "display_name": "Custom platform default access group updated",
+              "description": "Custom platform default access group updated"
             }
           ]
         }
