@@ -45,6 +45,17 @@
               "description": "Custom platform default access group updated"
             }
           ]
+        },
+        {
+          "name": "integrations",
+          "display_name": "Integrations",
+          "event_types": [
+            {
+              "name": "integration-test",
+              "display_name": "Integration test",
+              "description": "A test event type whose only purpose is to be used when sending test actions and events to clients"
+            }
+          ]
         }
       ]
     },
