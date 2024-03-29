@@ -208,6 +208,10 @@ public class InternalResource {
     @Produces(TEXT_PLAIN)
     @Transactional
     @TransactionConfiguration(timeout = 300)
+    /*
+     * We need to increase the transaction timeout for this method because it involves
+     * an update of 'event' table records based on 'bundleId' column which is not indexed.
+     */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public Response updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
         int rowCount = bundleRepository.updateBundle(bundleId, bundle);
@@ -223,6 +227,10 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @Transactional
     @TransactionConfiguration(timeout = 300)
+    /*
+     * We need to increase the transaction timeout for this method because it involves
+     * a full scan of 'event' table based on 'bundleId' column which is not indexed.
+     */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteBundle(@PathParam("bundleId") UUID bundleId) {
         return bundleRepository.deleteBundle(bundleId);
@@ -334,6 +342,10 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @Transactional
     @TransactionConfiguration(timeout = 300)
+    /*
+     * We need to increase the transaction timeout for this method because it involves
+     * a cascade delete action on 'event' table based on 'applicationId' column which is not indexed.
+     */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId) {
         return applicationRepository.deleteApplication(appId);
@@ -364,6 +376,10 @@ public class InternalResource {
     @Produces(TEXT_PLAIN)
     @Transactional
     @TransactionConfiguration(timeout = 300)
+    /*
+     * We need to increase the transaction timeout for this method because it involves
+     * an update of 'event' table records based on 'eventTypeId' column which is not indexed.
+     */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response updateEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
         securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
@@ -395,6 +411,10 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @Transactional
     @TransactionConfiguration(timeout = 300)
+    /*
+     * We need to increase the transaction timeout for this method because it involves
+     * a full scan of 'event' table based on 'eventTypeId' column which is not indexed.
+     */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public boolean deleteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
