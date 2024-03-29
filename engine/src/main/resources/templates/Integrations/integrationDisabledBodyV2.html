@@ -8,23 +8,22 @@
     Integration disabled
 {/content-title-section1}
 {#content-body-section1}
-    {#if action.context.error_type == "client"}
+    {#if action.context.error_type == "HTTP_4XX"}
         <p>
-            Integration <a href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">{action.context.endpoint_name}</a>
-            was disabled because the remote endpoint responded with an HTTP status code {action.context.status_code}.
+            Integration <a href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">{action.context.endpoint_name}</a> was disabled because the remote endpoint responded with an HTTP status code {action.context.status_code}.
         </p>
         <p>
-            Please review the integration configuration from <a href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a>
-            to troubleshoot and re-enable the integration.
+            Please review the integration configuration from <a href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a> to troubleshoot and re-enable the integration.
         </p>
     {#else}
         <p>
-            Integration <a href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">{action.context.endpoint_name}</a>
-            was disabled because the remote endpoint responded {action.context.errors_count} times with a server error (HTTP status code 5xx).
+            Integration <a href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">{action.context.endpoint_name}</a> was disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after {action.context.errors_count} attempts.
         </p>
         <p>
-            Please re-enable the integration from <a href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a>
-            if the remote endpoint is ready.
+            The latest error was: {action.context.error_details}{#if action.context.error_type == "HTTP_5XX"} {action.context.status_code}{/if}.
+        </p>
+        <p>
+            Please review the integration configuration from <a href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a> to troubleshoot and re-enable the integration.
         </p>
     {/if}
 {/content-body-section1}

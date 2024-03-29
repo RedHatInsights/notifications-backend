@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CLIENT_ERROR_TYPE;
+import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_4XX;
+import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_5XX;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
-import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.SERVER_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.buildIntegrationDisabledAction;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,7 +40,7 @@ public class IntegrationsTemplatesTest extends EmailTemplatesInDbHelper {
     @Test
     void testIntegrationDisabledTitle() {
         Endpoint endpoint = buildEndpoint();
-        Action action = buildIntegrationDisabledAction(endpoint, CLIENT_ERROR_TYPE, 401, 1);
+        Action action = buildIntegrationDisabledAction(endpoint, HTTP_4XX, 401, 1);
         String result = generateEmailSubject(INTEGRATION_DISABLED_EVENT_TYPE, action);
         assertEquals("Instant notification - Integrations - Console", result);
     }
@@ -48,7 +48,7 @@ public class IntegrationsTemplatesTest extends EmailTemplatesInDbHelper {
     @Test
     void testIntegrationDisabledBodyWithClientError() {
         Endpoint endpoint = buildEndpoint();
-        Action action = buildIntegrationDisabledAction(endpoint, CLIENT_ERROR_TYPE, 401, 1);
+        Action action = buildIntegrationDisabledAction(endpoint, HTTP_4XX, 401, 1);
         String rendered = generateEmailBody(INTEGRATION_DISABLED_EVENT_TYPE, action);
         assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
@@ -57,9 +57,9 @@ public class IntegrationsTemplatesTest extends EmailTemplatesInDbHelper {
     @Test
     void testIntegrationDisabledBodyWithServerError() {
         Endpoint endpoint = buildEndpoint();
-        Action action = buildIntegrationDisabledAction(endpoint, SERVER_ERROR_TYPE, -1, 2048);
+        Action action = buildIntegrationDisabledAction(endpoint, HTTP_5XX, -1, 2048);
         String rendered = generateEmailBody(INTEGRATION_DISABLED_EVENT_TYPE, action);
-        assertTrue(rendered.contains("disabled because the remote endpoint responded 2048 times with a server error"));
+        assertTrue(rendered.contains("disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after 2048 attempts"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 

@@ -19,7 +19,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
-import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CLIENT_ERROR_TYPE;
+import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_4XX;
+import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_5XX;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CONSOLE_BUNDLE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ENDPOINT_CATEGORY_PROPERTY;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ENDPOINT_ID_PROPERTY;
@@ -28,7 +29,6 @@ import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.ERROR_TYPE_PROPERTY;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATIONS_APP;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
-import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.SERVER_ERROR_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.STATUS_CODE_PROPERTY;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static org.awaitility.Awaitility.await;
@@ -64,18 +64,18 @@ public class IntegrationDisabledNotifierTest {
     void testClientError() {
         Endpoint endpoint = buildEndpoint();
         int errorStatusCode = 401;
-        integrationDisabledNotifier.clientError(endpoint, errorStatusCode);
-        checkReceivedAction(endpoint, CLIENT_ERROR_TYPE, errorStatusCode, 1);
+        integrationDisabledNotifier.notify(endpoint, HTTP_4XX, errorStatusCode, 1);
+        checkReceivedAction(endpoint, HTTP_4XX, errorStatusCode, 1);
     }
 
     @Test
     void testTooManyServerErrors() {
         Endpoint endpoint = buildEndpoint();
-        integrationDisabledNotifier.tooManyServerErrors(endpoint, 10);
-        checkReceivedAction(endpoint, SERVER_ERROR_TYPE, -1, 10);
+        integrationDisabledNotifier.notify(endpoint, HTTP_5XX, 500, 10);
+        checkReceivedAction(endpoint, HTTP_5XX, -1, 10);
     }
 
-    private void checkReceivedAction(Endpoint endpoint, String expectedErrorType, int expectedStatusCode, int expectedErrorsCount) {
+    private void checkReceivedAction(Endpoint endpoint, HttpErrorType expectedErrorType, int expectedStatusCode, int expectedErrorsCount) {
         await().until(() -> egressChannel.received().size() == 1);
         String payload = egressChannel.received().get(0).getPayload();
         Action action = Parser.decode(payload);
@@ -90,7 +90,7 @@ public class IntegrationDisabledNotifierTest {
         assertTrue(action.getRecipients().get(0).getIgnoreUserPreferences());
 
         Map<String, Object> contextProperties = action.getContext().getAdditionalProperties();
-        assertEquals(expectedErrorType, contextProperties.get(ERROR_TYPE_PROPERTY));
+        assertEquals(expectedErrorType.name(), contextProperties.get(ERROR_TYPE_PROPERTY));
         assertEquals(endpoint.getId().toString(), contextProperties.get(ENDPOINT_ID_PROPERTY));
         assertEquals(endpoint.getName(), contextProperties.get(ENDPOINT_NAME_PROPERTY));
         assertEquals("Communications", contextProperties.get(ENDPOINT_CATEGORY_PROPERTY));
