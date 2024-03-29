@@ -5,7 +5,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @QuarkusTest
 public class EmailActorsResolverTest {
 
-    @InjectSpy
+    @Inject
     EmailActorsResolver emailActorsResolver;
 
     /**
