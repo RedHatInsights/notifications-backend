@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
-import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
