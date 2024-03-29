@@ -219,7 +219,7 @@ public class UserConfigResource {
                 eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
                 for (SubscriptionType subscriptionType : SubscriptionType.values()) {
                     if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
-                        boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), subscriptionType);
+                        boolean supported = templateRepository.isEmailSubscriptionSupported(bundle.getName(), application.getName(), eventType.getId(), subscriptionType);
                         if (supported) {
                             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
                             eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscribedByDefault);
