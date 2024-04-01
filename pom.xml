@@ -68,7 +68,7 @@
         <insights-notification-schemas-java.version>0.21</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>2.5.1</clowder-quarkus-config-source.version>
 
-        <quarkus-logging-cloudwatch.version>6.7.1</quarkus-logging-cloudwatch.version>
+        <quarkus-logging-cloudwatch.version>6.8.0</quarkus-logging-cloudwatch.version>
         <quarkus-logging-sentry.version>2.0.5</quarkus-logging-sentry.version>
         <quarkus-unleash.version>1.5.0</quarkus-unleash.version>
 
