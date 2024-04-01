@@ -37,7 +37,7 @@ objects:
           limits:
             cpu: 200m
             memory: 200Mi
-        image: quay.io/cloudservices/postgresql-rds:12-1
+        image: quay.io/cloudservices/postgresql-rds:12
         volumes:
           - name: notifications-db-cleaner-volume
             configMap:
