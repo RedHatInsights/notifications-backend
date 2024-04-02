@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
-import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -31,7 +30,6 @@ public class EngineConfig {
     private String aggregationWithRecipientsResolverToggle;
     private String asyncAggregationToggle;
     private String drawerToggle;
-    private String hccEmailSenderNameToggle;
     private String kafkaConsumedTotalCheckerToggle;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
@@ -53,10 +51,6 @@ public class EngineConfig {
     @ConfigProperty(name = "notifications.kafka-consumed-total-checker.enabled", defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean kafkaConsumedTotalCheckerEnabled;
-
-    @ConfigProperty(name = "notifications.email.hcc-sender-name.enabled", defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean hccEmailSenderNameEnabled;
 
     @ConfigProperty(name = "notifications.use-rbac-for-fetching-users", defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -89,7 +83,6 @@ public class EngineConfig {
         aggregationWithRecipientsResolverToggle = toggleRegistry.register("aggregation-with-recipients-resolver", true);
         asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
         drawerToggle = toggleRegistry.register("drawer", true);
-        hccEmailSenderNameToggle = toggleRegistry.register("hcc-email-sender-name", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
     }
 
@@ -141,15 +134,6 @@ public class EngineConfig {
 
     public boolean isEmailsOnlyModeEnabled() {
         return emailsOnlyModeEnabled;
-    }
-
-    public boolean isHccEmailSenderNameEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContext.builder().addProperty("orgId", orgId).build();
-            return unleash.isEnabled(hccEmailSenderNameToggle, unleashContext, false);
-        } else {
-            return hccEmailSenderNameEnabled;
-        }
     }
 
     public boolean isKafkaConsumedTotalCheckerEnabled() {
