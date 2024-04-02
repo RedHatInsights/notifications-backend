@@ -11,12 +11,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record MBOPUser(
     @JsonProperty("id")             String id,
     @JsonProperty("username")       String username,
-    @JsonProperty("email")          String email,
-    @JsonProperty("first_name")     String firstName,
-    @JsonProperty("last_name")      String lastName,
-    @JsonProperty("is_active")      Boolean isActive,
-    @JsonProperty("is_org_admin")   Boolean isOrgAdmin,
-    @JsonProperty("is_internal")    Boolean isInternal,
-    @JsonProperty("locale")         String locale
+    @JsonProperty("email")          String email
 ) {
 }
