@@ -415,7 +415,11 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                     .toList();
 
                 // get single daily template
-                Optional<Template> dailyTemplate = templateRepository.findTemplateByName("Common/insightsDailyEmailBody");
+                String singleDailyEmailTemplateName = "Common/insightsDailyEmailBody";
+                if (engineConfig.isSecuredEmailTemplatesEnabled()) {
+                    singleDailyEmailTemplateName = "Secure/" + singleDailyEmailTemplateName;
+                }
+                Optional<Template> dailyTemplate = templateRepository.findTemplateByName(singleDailyEmailTemplateName);
                 TemplateInstance SingleBodyTemplate = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
 
                 Map<String, Object> action = Map.of("context", Map.of("title", emailTitle, "items", result),
