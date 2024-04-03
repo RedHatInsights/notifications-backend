@@ -11,7 +11,8 @@ import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.respons
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.PersonalInformation;
 import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPService;
-import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUser;
+import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers;
+import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers.MBOPUser;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Meta;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
@@ -32,7 +33,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -296,9 +296,9 @@ public class FetchUsersFromExternalServicesTest {
         when(recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
 
         // Fake a REST call to MBOP.
-        final List<MBOPUser> firstPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage());
-        final List<MBOPUser> secondPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage());
-        final List<MBOPUser> thirdPageMBOPUsers = this.mockGetMBOPUsers(recipientsResolverConfig.getMaxResultsPerPage() / 2);
+        final MBOPUsers firstPageMBOPUsers = this.mockGetMBOPUsersPage(recipientsResolverConfig.getMaxResultsPerPage());
+        final MBOPUsers secondPageMBOPUsers = this.mockGetMBOPUsersPage(recipientsResolverConfig.getMaxResultsPerPage());
+        final MBOPUsers thirdPageMBOPUsers = this.mockGetMBOPUsersPage(recipientsResolverConfig.getMaxResultsPerPage() / 2);
 
         final boolean adminsOnly = false;
 
@@ -330,9 +330,9 @@ public class FetchUsersFromExternalServicesTest {
 
         // Transform the generated MBOP users in order to check that the
         // function under test did the transformations as expected.
-        final List<User> mockUsers = this.fetchUsersFromExternalServices.transformMBOPUserToUser(firstPageMBOPUsers);
-        mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(secondPageMBOPUsers));
-        mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(thirdPageMBOPUsers));
+        final List<User> mockUsers = this.fetchUsersFromExternalServices.transformMBOPUserToUser(firstPageMBOPUsers.users());
+        mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(secondPageMBOPUsers.users()));
+        mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(thirdPageMBOPUsers.users()));
 
         assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
     }
@@ -389,9 +389,8 @@ public class FetchUsersFromExternalServicesTest {
      * @return a list containing the specified number of elements filled with
      * random data.
      */
-    private List<MBOPUser> mockGetMBOPUsers(final int elements) {
+    private MBOPUsers mockGetMBOPUsersPage(final int elements) {
         final List<MBOPUser> mbopUsers = new ArrayList<>(elements);
-        final Random random = new Random();
 
         for (int i = 0; i < elements; i++) {
             final String uuid = UUID.randomUUID().toString();
@@ -399,19 +398,12 @@ public class FetchUsersFromExternalServicesTest {
             final MBOPUser mbopUser = new MBOPUser(
                 uuid,
                 String.format("username-%s", uuid),
-                String.format("%s@redhat.com", uuid),
-                String.format("firstName-%s", uuid),
-                String.format("lastName-%s", uuid),
-                random.nextBoolean(),
-                random.nextBoolean(),
-                random.nextBoolean(),
-                "en-US"
+                String.format("%s@redhat.com", uuid)
             );
 
             mbopUsers.add(mbopUser);
         }
-
-        return mbopUsers;
+        return new MBOPUsers(mbopUsers);
     }
 
     /*

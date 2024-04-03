@@ -4,12 +4,10 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.RestQuery;
-import java.util.List;
 
 /**
  * REST client for both BOP and MBOP services, which in turn, talk to the IT
@@ -26,17 +24,17 @@ public interface MBOPService {
      * @param environment the environment in which the application is running.
      * @param orgId the organization to look the users from.
      * @param adminOnly do we want to fetch just organization administrators?
-     * @param sortOrder sort order, either {@code asc} or {@code des}.
      * @param limit number of records to return per page. Defaults to 100.
      * @param offset the offset to apply to the requested records. Defaults
      *               to 0.
+     * @param includePermissions always false
+     * @param status always enabled
      * @return the list of requested users.
      */
     @Path("/v3/accounts/{orgId}/users")
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    List<MBOPUser> getUsersByOrgId(
+    MBOPUsers getUsersByOrgId(
         @HeaderParam(Constants.MBOP_APITOKEN_HEADER)    String apiToken,
         @HeaderParam(Constants.MBOP_CLIENT_ID_HEADER)   String clientId,
         @HeaderParam(Constants.MBOP_ENV_HEADER)         String environment,

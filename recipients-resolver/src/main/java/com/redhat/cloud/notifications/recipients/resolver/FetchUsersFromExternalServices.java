@@ -11,7 +11,7 @@ import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.respons
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPService;
-import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUser;
+import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers.MBOPUser;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToService;
@@ -51,7 +51,6 @@ import static java.lang.Boolean.TRUE;
 @ApplicationScoped
 public class FetchUsersFromExternalServices {
 
-    public static final String MBOP_SORT_ORDER = "asc";
     public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
     @Inject
@@ -193,7 +192,7 @@ public class FetchUsersFromExternalServices {
                             finalOffset,
                             false,
                             "enabled"
-                        );
+                        ).users();
                         Duration duration = Duration.between(startTime, LocalDateTime.now());
                         if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
                             Log.warnf("MBOP service response time was %ds for request OrgId: %s, adminOnly: %s, offset %d ", duration.toSeconds(), orgId, adminsOnly, finalOffset);
@@ -212,7 +211,7 @@ public class FetchUsersFromExternalServices {
             pageSize = receivedUsers.size();
         } while (pageSize == recipientsResolverConfig.getMaxResultsPerPage());
 
-        users = this.transformMBOPUserToUser(mbopUsers);
+        users = transformMBOPUserToUser(mbopUsers);
         return users;
     }
 
@@ -318,20 +317,13 @@ public class FetchUsersFromExternalServices {
 
     List<User> transformMBOPUserToUser(final List<MBOPUser> mbopUsers) {
         final List<User> users = new ArrayList<>(mbopUsers.size());
-
         for (final MBOPUser mbopUser : mbopUsers) {
-            if (mbopUser.isActive()) {
-                final User user = new User();
-
-                user.setId(mbopUser.id());
-                user.setUsername(mbopUser.username());
-                user.setEmail(mbopUser.email());
-                user.setAdmin(mbopUser.isOrgAdmin());
-
-                users.add(user);
-            }
+            final User user = new User();
+            user.setId(mbopUser.id());
+            user.setUsername(mbopUser.username());
+            user.setEmail(mbopUser.email());
+            users.add(user);
         }
-
         return users;
     }
 }
