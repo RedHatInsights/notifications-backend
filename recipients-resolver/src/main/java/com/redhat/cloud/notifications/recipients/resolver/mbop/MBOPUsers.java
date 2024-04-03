@@ -10,4 +10,10 @@ import java.util.List;
 public record MBOPUsers(
     List<MBOPUser> users
 ) {
+    public record MBOPUser(
+        @JsonProperty("id")             String id,
+        @JsonProperty("username")       String username,
+        @JsonProperty("email")          String email
+    ) {
+    }
 }

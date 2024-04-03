@@ -11,8 +11,8 @@ import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.respons
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.PersonalInformation;
 import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPService;
-import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUser;
 import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers;
+import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers.MBOPUser;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Meta;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;

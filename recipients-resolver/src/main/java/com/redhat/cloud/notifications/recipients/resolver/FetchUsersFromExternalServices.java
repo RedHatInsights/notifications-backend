@@ -11,7 +11,7 @@ import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.respons
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPService;
-import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUser;
+import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers.MBOPUser;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToService;
@@ -51,7 +51,6 @@ import static java.lang.Boolean.TRUE;
 @ApplicationScoped
 public class FetchUsersFromExternalServices {
 
-    public static final String MBOP_SORT_ORDER = "asc";
     public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
     @Inject
