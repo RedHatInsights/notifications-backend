@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.secrets.BasicAuthenticationDTO;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.validation.Valid;
@@ -15,15 +14,12 @@ public final class CamelPropertiesDTO extends EndpointPropertiesDTO {
     private Map<String, String> extras;
 
     @NotNull
-    @JsonProperty(required = true)
     @ValidNonPrivateUrl
     private String url;
 
-    @JsonProperty(required = true)
     @Valid
     private BasicAuthenticationDTO basicAuthentication;
 
-    @JsonProperty(required = true)
     @Size(max = 255)
     private String secretToken;
 

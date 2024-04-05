@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
@@ -9,11 +8,9 @@ public final class SystemSubscriptionPropertiesDTO extends EndpointPropertiesDTO
     private UUID groupId;
 
     @NotNull
-    @JsonProperty(required = true)
     private boolean ignorePreferences;
 
     @NotNull
-    @JsonProperty(required = true)
     private boolean onlyAdmins;
 
     public SystemSubscriptionPropertiesDTO() { }

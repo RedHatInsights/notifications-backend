@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.secrets.BasicAuthenticationDTO;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
@@ -10,27 +9,21 @@ import jakarta.validation.constraints.Size;
 
 public final class WebhookPropertiesDTO extends EndpointPropertiesDTO {
     @NotNull
-    @JsonProperty(value = "disable_ssl_verification", required = true)
     private Boolean disableSslVerification = Boolean.FALSE;
 
     @NotNull
-    @JsonProperty(required = true)
     private HttpType method;
 
     @NotNull
-    @JsonProperty(required = true)
     @ValidNonPrivateUrl
     private String url;
 
-    @JsonProperty("basic_authentication")
     @Valid
     private BasicAuthenticationDTO basicAuthentication;
 
-    @JsonProperty("bearer_authentication")
     private String bearerAuthentication;
 
     @Size(max = 255)
-    @JsonProperty("secret_token")
     private String secretToken;
 
     public WebhookPropertiesDTO() { }
