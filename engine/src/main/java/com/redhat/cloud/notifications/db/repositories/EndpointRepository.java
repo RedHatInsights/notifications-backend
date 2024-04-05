@@ -128,7 +128,7 @@ public class EndpointRepository {
      * @return {@code true} if the endpoint was disabled by this method, {@code false} otherwise
      */
     @Transactional
-    public boolean incrementEndpointServerErrors(UUID endpointId, int maxServerErrors) {
+    public boolean incrementEndpointServerErrors(UUID endpointId, int maxServerErrors, int currentServerErrors) {
         /*
          * This method must be an atomic operation from a DB perspective. Otherwise, we could send multiple email
          * notifications about the same disabled endpoint in case of failures happening on concurrent threads or pods.
@@ -139,7 +139,7 @@ public class EndpointRepository {
          * It may or may not have been disabled already from the frontend or because of a 4xx error.
          */
         if (endpoint.isPresent() && endpoint.get().isEnabled()) {
-            if (endpoint.get().getServerErrors() + 1 > maxServerErrors) {
+            if (endpoint.get().getServerErrors() + currentServerErrors > maxServerErrors) {
                 /*
                  * The endpoint exceeded the max server errors allowed from configuration.
                  * It is therefore disabled.
@@ -154,8 +154,9 @@ public class EndpointRepository {
                  * The endpoint did NOT exceed the max server errors allowed from configuration.
                  * The errors counter is therefore incremented.
                  */
-                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + 1 WHERE id = :id";
+                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors WHERE id = :id";
                 entityManager.createQuery(hql)
+                        .setParameter("currentServerErrors", currentServerErrors)
                         .setParameter("id", endpointId)
                         .executeUpdate();
                 return false;

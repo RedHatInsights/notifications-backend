@@ -25,8 +25,6 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BEARER;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_ERROR_TYPE;
-import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_STATUS_CODE;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_5XX;
 import static com.redhat.cloud.notifications.connector.webhook.AuthenticationProcessor.X_INSIGHT_TOKEN_HEADER;
@@ -144,15 +142,16 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
         testFailedNotificationAndReturnedFlagsToEngine(404, "Page not found", HTTP_4XX, 0);
     }
 
-    private void testFailedNotificationAndReturnedFlagsToEngine(int httpReturnCode, String returnedBodyMessage, HttpErrorType httpErrorType, final int expectedRedeliveriesCount) throws Exception {
+    private void testFailedNotificationAndReturnedFlagsToEngine(int httpStatusCode, String returnedBodyMessage, HttpErrorType httpErrorType, final int expectedRedeliveriesCount) throws Exception {
         connectorConfig.setDisableFaultyEndpoints(true);
         try {
-            mockRemoteServerError(httpReturnCode, returnedBodyMessage);
+            mockRemoteServerError(httpStatusCode, returnedBodyMessage);
             JsonObject returnToEngine = super.testFailedNotification(expectedRedeliveriesCount);
             JsonObject data = new JsonObject(returnToEngine.getString("data"));
-            assertEquals(httpErrorType.name(), data.getString(HTTP_ERROR_TYPE));
-            JsonObject details = data.getJsonObject("details");
-            assertEquals(httpReturnCode, details.getInteger(HTTP_STATUS_CODE));
+            JsonObject error = data.getJsonObject("error");
+            assertEquals(httpErrorType.name(), error.getString("error_type"));
+            assertEquals(expectedRedeliveriesCount + 1, error.getInteger("delivery_attempts"));
+            assertEquals(httpStatusCode, error.getInteger("http_status_code"));
         } finally {
             connectorConfig.setDisableFaultyEndpoints(false);
         }

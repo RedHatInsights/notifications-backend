@@ -19,6 +19,7 @@ public class ExchangeProperty {
      */
     public static final String ORIGINAL_CLOUD_EVENT = "originalCloudEvent";
     public static final String OUTCOME = "outcome";
+    public static final String REDELIVERY_ATTEMPTS = "redeliveryAttempts";
     public static final String RETURN_SOURCE = "source";
     public static final String START_TIME = "startTime";
     public static final String SUCCESSFUL = "successful";
