@@ -54,6 +54,33 @@ objects:
             et.display_name,
             bg.org_id,
             actively_used
+      - prefix: insights/notifications/emails_sent_by_bundle_app_org_id
+        query: >-
+          SELECT
+            bundles.display_name AS bundle,
+            applications.display_name AS application,
+            "event".org_id,
+            COUNT(notification_history.*)
+          FROM
+            notification_history
+          INNER JOIN
+            "event"
+              ON "event".id = notification_history.event_id
+          INNER JOIN
+            event_type
+              ON event_type.id = "event".event_type_id
+          INNER JOIN
+            applications
+              ON applications.id = event_type.application_id
+          INNER JOIN
+            bundles
+              ON bundles.id = applications.bundle_id
+          WHERE
+            endpoint_type_v2 = 'EMAIL_SUBSCRIPTION'
+          GROUP BY
+            bundles.display_name,
+            applications.display_name,
+            "event".org_id
         # Count the number of email subscriptions, and group them by
         # application, subscription type, whether they are subscribed or not
         # and their org id.
