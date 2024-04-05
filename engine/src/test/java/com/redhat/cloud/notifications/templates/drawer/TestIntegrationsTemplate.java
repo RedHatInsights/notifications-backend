@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.CLIENT_ERROR_TYPE;
+import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.INTEGRATION_DISABLED_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.IntegrationDisabledNotifier.buildIntegrationDisabledAction;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
@@ -36,7 +36,7 @@ class TestIntegrationsTemplate extends IntegrationTemplatesInDbHelper {
     @Test
     void testRenderedTemplateIntegrationDisabled() {
         Endpoint endpoint = buildEndpoint();
-        Action action = buildIntegrationDisabledAction(endpoint, CLIENT_ERROR_TYPE, 401, 1);
+        Action action = buildIntegrationDisabledAction(endpoint, HTTP_4XX, 401, 1);
         String result = generateDrawerTemplate(INTEGRATION_DISABLED_EVENT_TYPE, action);
         assertEquals("Integration <b>Unreliable integration</b> was disabled because the remote endpoint responded with an HTTP status code 401.", result);
     }

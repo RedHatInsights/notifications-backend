@@ -22,12 +22,11 @@ import static java.time.ZoneOffset.UTC;
 @ApplicationScoped
 public class IntegrationDisabledNotifier {
 
-    public static final String CLIENT_ERROR_TYPE = "client";
-    public static final String SERVER_ERROR_TYPE = "server";
     public static final String CONSOLE_BUNDLE = "console";
     public static final String INTEGRATIONS_APP = "integrations";
     public static final String INTEGRATION_DISABLED_EVENT_TYPE = "integration-disabled";
     public static final String ERROR_TYPE_PROPERTY = "error_type";
+    public static final String ERROR_DETAILS_PROPERTY = "error_details";
     public static final String ENDPOINT_ID_PROPERTY = "endpoint_id";
     public static final String ENDPOINT_NAME_PROPERTY = "endpoint_name";
     public static final String ENDPOINT_CATEGORY_PROPERTY = "endpoint_category";
@@ -37,30 +36,23 @@ public class IntegrationDisabledNotifier {
     @Channel(EGRESS_CHANNEL)
     Emitter<String> emitter;
 
-    public void clientError(Endpoint endpoint, int statusCode) {
-        notify(endpoint, CLIENT_ERROR_TYPE, statusCode, 1);
-    }
-
-    public void tooManyServerErrors(Endpoint endpoint, int errorsCount) {
-        notify(endpoint, SERVER_ERROR_TYPE, -1, errorsCount);
-    }
-
-    private void notify(Endpoint endpoint, String errorType, int statusCode, int errorsCount) {
-        Action action = buildIntegrationDisabledAction(endpoint, errorType, statusCode, errorsCount);
+    public void notify(Endpoint endpoint, HttpErrorType httpErrorType, Integer statusCode, int errorsCount) {
+        Action action = buildIntegrationDisabledAction(endpoint, httpErrorType, statusCode, errorsCount);
         String encodedAction = Parser.encode(action);
         Message<String> message = KafkaMessageWithIdBuilder.build(encodedAction);
         emitter.send(message);
     }
 
-    public static Action buildIntegrationDisabledAction(Endpoint endpoint, String errorType, int statusCode, int errorsCount) {
+    public static Action buildIntegrationDisabledAction(Endpoint endpoint, HttpErrorType httpErrorType, Integer statusCode, int errorsCount) {
         Context.ContextBuilderBase contextBuilder = new Context.ContextBuilder()
-                .withAdditionalProperty(ERROR_TYPE_PROPERTY, errorType)
+                .withAdditionalProperty(ERROR_TYPE_PROPERTY, httpErrorType.name())
+                .withAdditionalProperty(ERROR_DETAILS_PROPERTY, httpErrorType.getMessage())
                 .withAdditionalProperty(ENDPOINT_ID_PROPERTY, endpoint.getId())
                 .withAdditionalProperty(ENDPOINT_NAME_PROPERTY, endpoint.getName())
                 .withAdditionalProperty(ENDPOINT_CATEGORY_PROPERTY, getFrontendCategory(endpoint))
                 .withAdditionalProperty(ERRORS_COUNT_PROPERTY, errorsCount);
 
-        if (statusCode > 0) {
+        if (statusCode != null) {
             contextBuilder.withAdditionalProperty(STATUS_CODE_PROPERTY, statusCode);
         }
 

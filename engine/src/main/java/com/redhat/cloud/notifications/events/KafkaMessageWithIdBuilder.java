@@ -11,9 +11,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class KafkaMessageWithIdBuilder {
 
-    public static Message build(String payload) {
+    public static Message<String> build(String payload) {
         byte[] messageId = UUID.randomUUID().toString().getBytes(UTF_8);
-        OutgoingKafkaRecordMetadata metadata = OutgoingKafkaRecordMetadata.builder()
+        OutgoingKafkaRecordMetadata<String> metadata = OutgoingKafkaRecordMetadata.<String>builder()
                 .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, messageId))
                 .build();
         return Message.of(payload).addMetadata(metadata);

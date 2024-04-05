@@ -11,12 +11,23 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.util.Optional;
+import java.util.Set;
+
+import static com.redhat.cloud.notifications.events.HttpErrorType.CONNECTION_REFUSED;
+import static com.redhat.cloud.notifications.events.HttpErrorType.CONNECT_TIMEOUT;
+import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_4XX;
+import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_5XX;
+import static com.redhat.cloud.notifications.events.HttpErrorType.SSL_HANDSHAKE;
+import static com.redhat.cloud.notifications.events.HttpErrorType.UNKNOWN_HOST;
+
 @ApplicationScoped
 public class EndpointErrorFromConnectorHelper {
 
-    public static final String INCREMENT_ENDPOINT_SERVER_ERRORS = "incrementEndpointServerErrors";
-    public static final String DISABLE_ENDPOINT_CLIENT_ERRORS = "disableEndpointClientErrors";
+    public static final String HTTP_ERROR_TYPE = "httpErrorType";
     public static final String HTTP_STATUS_CODE = "httpStatusCode";
+
+    private static final Set<HttpErrorType> HTTP_SERVER_ERRORS = Set.of(CONNECT_TIMEOUT, CONNECTION_REFUSED, HTTP_5XX, SSL_HANDSHAKE, UNKNOWN_HOST);
 
     @Inject
     EndpointRepository endpointRepository;
@@ -52,45 +63,58 @@ public class EndpointErrorFromConnectorHelper {
 
         JsonObject data = new JsonObject(payload.getString("data"));
         if (strHistoryId != null) {
-            boolean shouldIncrementServerError = data.getBoolean(INCREMENT_ENDPOINT_SERVER_ERRORS, false);
-            boolean shouldDisableEndpointClientError = data.getBoolean(DISABLE_ENDPOINT_CLIENT_ERRORS, false);
 
             if (data.getBoolean("successful", false)) {
                 boolean reset = endpointRepository.resetEndpointServerErrors(endpoint.getId());
                 if (reset) {
                     Log.infof("The server errors counter of endpoint %s was just reset", endpoint.getId());
                 }
-            } else if (shouldIncrementServerError || shouldDisableEndpointClientError) {
-                if (shouldDisableEndpointClientError) {
-                    /*
-                     * The target endpoint returned a 4xx status. That kind of error requires an update of the
-                     * endpoint settings (URL, secret token...). The endpoint will most likely never return a
-                     * successful status code with the current settings, so it is disabled immediately.
-                     */
+            } else {
+                Optional<HttpErrorType> httpErrorType = getHttpErrorType(data);
+                if (httpErrorType.isPresent()) {
+                    Integer statusCode = data.getJsonObject("details").getInteger(HTTP_STATUS_CODE);
 
-                    boolean disabled = endpointRepository.disableEndpoint(endpoint.getId());
-                    if (disabled) {
-                        disabledWebhooksClientErrorCount.increment();
-                        Log.infof("Endpoint %s was disabled because we received a 4xx status while calling it", endpoint.getId());
-                        integrationDisabledNotifier.clientError(endpoint, data.getJsonObject("details").getInteger(HTTP_STATUS_CODE, 400));
-                    }
-                }
-
-                if (shouldIncrementServerError) {
-                    /*
-                     * The target endpoint returned a 5xx status. That kind of error happens in case of remote
-                     * server failure, which is usually something temporary. Sending another notification to
-                     * the same endpoint may work in the future, so the endpoint is only disabled if the max
-                     * number of endpoint failures allowed from the configuration is exceeded.
-                     */
-                    boolean disabled = endpointRepository.incrementEndpointServerErrors(endpoint.getId(), maxServerErrors);
-                    if (disabled) {
-                        disabledWebhooksServerErrorCount.increment();
-                        Log.infof("Endpoint %s was disabled because we received too many 5xx status while calling it", endpoint.getId());
-                        integrationDisabledNotifier.tooManyServerErrors(endpoint, maxServerErrors);
+                    if (httpErrorType.get() == HTTP_4XX) {
+                        /*
+                         * The target endpoint returned a 4xx status. That kind of error requires an update of the
+                         * endpoint settings (URL, secret token...). The endpoint will most likely never return a
+                         * successful status code with the current settings, so it is disabled immediately.
+                         */
+                        boolean disabled = endpointRepository.disableEndpoint(endpoint.getId());
+                        if (disabled) {
+                            disabledWebhooksClientErrorCount.increment();
+                            Log.infof("Endpoint %s was disabled because we received a 4xx status while calling it", endpoint.getId());
+                            integrationDisabledNotifier.notify(endpoint, httpErrorType.get(), statusCode, 1);
+                        }
+                    } else if (HTTP_SERVER_ERRORS.contains(httpErrorType.get())) {
+                        /*
+                         * The target endpoint returned a server error. That kind of error happens in case of remote
+                         * server failure, which is usually something temporary. Sending another notification to
+                         * the same endpoint may work in the future, so the endpoint is only disabled if the max
+                         * number of endpoint failures allowed from the configuration is exceeded.
+                         */
+                        boolean disabled = endpointRepository.incrementEndpointServerErrors(endpoint.getId(), maxServerErrors);
+                        if (disabled) {
+                            disabledWebhooksServerErrorCount.increment();
+                            Log.infof("Endpoint %s was disabled because it caused too many 5xx errors or IOExceptions while calling it", endpoint.getId());
+                            integrationDisabledNotifier.notify(endpoint, httpErrorType.get(), statusCode, maxServerErrors);
+                        }
                     }
                 }
             }
+        }
+    }
+
+    private static Optional<HttpErrorType> getHttpErrorType(JsonObject data) {
+        String httpErrorType = data.getString(HTTP_ERROR_TYPE);
+        if (httpErrorType == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(HttpErrorType.valueOf(httpErrorType));
+        } catch (IllegalArgumentException e) {
+            Log.warnf(e, "Unknown %s: %s", HttpErrorType.class.getName(), httpErrorType);
+            return Optional.empty();
         }
     }
 }

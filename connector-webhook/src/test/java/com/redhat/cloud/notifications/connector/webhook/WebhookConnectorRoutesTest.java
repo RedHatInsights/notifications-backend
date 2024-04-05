@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.connector.TestLifecycleManager;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationType;
 import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import com.redhat.cloud.notifications.connector.http.HttpErrorType;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -24,13 +25,13 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BEARER;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
+import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_ERROR_TYPE;
 import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_STATUS_CODE;
-import static com.redhat.cloud.notifications.connector.http.HttpOutgoingCloudEventBuilder.DISABLE_ENDPOINT_CLIENT_ERRORS;
-import static com.redhat.cloud.notifications.connector.http.HttpOutgoingCloudEventBuilder.INCREMENT_ENDPOINT_SERVER_ERRORS;
+import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_4XX;
+import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_5XX;
 import static com.redhat.cloud.notifications.connector.webhook.AuthenticationProcessor.X_INSIGHT_TOKEN_HEADER;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -135,21 +136,21 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
     @Test
     protected void testFailedNotificationError500() throws Exception {
         // We expect the connector to attempt redeliveries for the error.
-        testFailedNotificationAndReturnedFlagsToEngine(500, "My custom internal error", INCREMENT_ENDPOINT_SERVER_ERRORS, this.connectorConfig.getRedeliveryMaxAttempts());
+        testFailedNotificationAndReturnedFlagsToEngine(500, "My custom internal error", HTTP_5XX, this.connectorConfig.getRedeliveryMaxAttempts());
     }
 
     @Test
     protected void testFailedNotificationError404() throws Exception {
-        testFailedNotificationAndReturnedFlagsToEngine(404, "Page not found", DISABLE_ENDPOINT_CLIENT_ERRORS, 0);
+        testFailedNotificationAndReturnedFlagsToEngine(404, "Page not found", HTTP_4XX, 0);
     }
 
-    private void testFailedNotificationAndReturnedFlagsToEngine(int httpReturnCode, String returnedBodyMessage, String flagNameThatShouldBeTrue, final int expectedRedeliveriesCount) throws Exception {
+    private void testFailedNotificationAndReturnedFlagsToEngine(int httpReturnCode, String returnedBodyMessage, HttpErrorType httpErrorType, final int expectedRedeliveriesCount) throws Exception {
         connectorConfig.setDisableFaultyEndpoints(true);
         try {
             mockRemoteServerError(httpReturnCode, returnedBodyMessage);
             JsonObject returnToEngine = super.testFailedNotification(expectedRedeliveriesCount);
             JsonObject data = new JsonObject(returnToEngine.getString("data"));
-            assertTrue(data.getBoolean(flagNameThatShouldBeTrue));
+            assertEquals(httpErrorType.name(), data.getString(HTTP_ERROR_TYPE));
             JsonObject details = data.getJsonObject("details");
             assertEquals(httpReturnCode, details.getInteger(HTTP_STATUS_CODE));
         } finally {
