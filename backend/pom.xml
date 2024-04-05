@@ -13,6 +13,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <properties>
+        <json-schema-validator-tests.version>3.3.0</json-schema-validator-tests.version>
+    </properties>
+
     <dependencies>
 
         <!-- notifications modules -->
@@ -147,19 +151,18 @@
             <version>${quarkus-logging-cloudwatch.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>json-schema-validator</artifactId>
-            <version>3.3.0</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Test dependencies -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
             <artifactId>notifications-common</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${json-schema-validator-tests.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
