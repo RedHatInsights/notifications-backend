@@ -24,9 +24,6 @@ import static com.redhat.cloud.notifications.events.HttpErrorType.UNKNOWN_HOST;
 @ApplicationScoped
 public class EndpointErrorFromConnectorHelper {
 
-    public static final String HTTP_ERROR_TYPE = "httpErrorType";
-    public static final String HTTP_STATUS_CODE = "httpStatusCode";
-
     private static final Set<HttpErrorType> HTTP_SERVER_ERRORS = Set.of(CONNECT_TIMEOUT, CONNECTION_REFUSED, HTTP_5XX, SSL_HANDSHAKE, UNKNOWN_HOST);
 
     @Inject
@@ -69,10 +66,11 @@ public class EndpointErrorFromConnectorHelper {
                 if (reset) {
                     Log.infof("The server errors counter of endpoint %s was just reset", endpoint.getId());
                 }
-            } else {
-                Optional<HttpErrorType> httpErrorType = getHttpErrorType(data);
+            } else if (data.containsKey("error")) {
+                JsonObject error = data.getJsonObject("error");
+                Optional<HttpErrorType> httpErrorType = getHttpErrorType(error);
                 if (httpErrorType.isPresent()) {
-                    Integer statusCode = data.getJsonObject("details").getInteger(HTTP_STATUS_CODE);
+                    Integer statusCode = error.getInteger("http_status_code");
 
                     if (httpErrorType.get() == HTTP_4XX) {
                         /*
@@ -93,7 +91,8 @@ public class EndpointErrorFromConnectorHelper {
                          * the same endpoint may work in the future, so the endpoint is only disabled if the max
                          * number of endpoint failures allowed from the configuration is exceeded.
                          */
-                        boolean disabled = endpointRepository.incrementEndpointServerErrors(endpoint.getId(), maxServerErrors);
+                        int deliveryAttempts = error.getInteger("delivery_attempts", 1);
+                        boolean disabled = endpointRepository.incrementEndpointServerErrors(endpoint.getId(), maxServerErrors, deliveryAttempts);
                         if (disabled) {
                             disabledWebhooksServerErrorCount.increment();
                             Log.infof("Endpoint %s was disabled because it caused too many 5xx errors or IOExceptions while calling it", endpoint.getId());
@@ -105,15 +104,15 @@ public class EndpointErrorFromConnectorHelper {
         }
     }
 
-    private static Optional<HttpErrorType> getHttpErrorType(JsonObject data) {
-        String httpErrorType = data.getString(HTTP_ERROR_TYPE);
-        if (httpErrorType == null) {
+    private static Optional<HttpErrorType> getHttpErrorType(JsonObject error) {
+        String errorType = error.getString("error_type");
+        if (errorType == null) {
             return Optional.empty();
         }
         try {
-            return Optional.of(HttpErrorType.valueOf(httpErrorType));
+            return Optional.of(HttpErrorType.valueOf(errorType));
         } catch (IllegalArgumentException e) {
-            Log.warnf(e, "Unknown %s: %s", HttpErrorType.class.getName(), httpErrorType);
+            Log.warnf(e, "Unknown %s: %s", HttpErrorType.class.getName(), errorType);
             return Optional.empty();
         }
     }

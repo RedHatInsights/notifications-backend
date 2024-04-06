@@ -8,8 +8,10 @@ import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.REDELIVERY_ATTEMPTS;
+
 @ApplicationScoped
-public class RedeliveryCounterProcessor implements Processor {
+public class RedeliveryProcessor implements Processor {
 
     @Inject
     MeterRegistry meterRegistry;
@@ -27,5 +29,6 @@ public class RedeliveryCounterProcessor implements Processor {
     @Override
     public void process(Exchange exchange) {
         counter.increment();
+        exchange.setProperty(REDELIVERY_ATTEMPTS, exchange.getProperty(REDELIVERY_ATTEMPTS, 0, int.class) + 1);
     }
 }

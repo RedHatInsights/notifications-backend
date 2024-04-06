@@ -45,7 +45,7 @@ public class EndpointRepositoryTest {
         assertEquals(0, endpoint.getServerErrors());
 
         for (int i = 1; i <= MAX_SERVER_ERRORS + 1; i++) {
-            assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS));
+            assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS, 1));
             entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
             Endpoint ep = getEndpoint(endpoint.getId());
             assertEquals(i <= MAX_SERVER_ERRORS, ep.isEnabled());
@@ -56,7 +56,7 @@ public class EndpointRepositoryTest {
 
     @Test
     void testIncrementEndpointServerErrorsWithUnknownId() {
-        assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 10));
+        assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 10, 1));
     }
 
     @Test

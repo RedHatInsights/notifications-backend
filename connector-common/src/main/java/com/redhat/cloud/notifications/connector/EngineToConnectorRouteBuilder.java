@@ -36,7 +36,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
     KafkaReinjectionProcessor kafkaReinjectionProcessor;
 
     @Inject
-    RedeliveryCounterProcessor redeliveryCounterProcessor;
+    RedeliveryProcessor redeliveryProcessor;
 
     @Inject
     ExceptionProcessor exceptionProcessor;
@@ -59,7 +59,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .maximumRedeliveries(connectorConfig.getRedeliveryMaxAttempts())
                 .redeliveryDelay(connectorConfig.getRedeliveryDelay())
                 .retryAttemptedLogLevel(DEBUG)
-                .onRedelivery(redeliveryCounterProcessor)
+                .onRedelivery(redeliveryProcessor)
                 .process(exceptionProcessor);
 
         onException(Throwable.class)
