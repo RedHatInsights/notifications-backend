@@ -4,22 +4,19 @@ import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 @ApplicationScoped
 public class EmailActorsResolver {
+    @Deprecated
     public static final String RH_INSIGHTS_SENDER = "\"Red Hat Insights\" noreply@redhat.com";
-    /**
-     * Standard "Red Hat Hybrid Cloud Console" sender that the vast majority of the
-     * ConsoleDot applications will use.
-     */
-    public static final String RH_HCC_SENDER = "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com";
+    @Deprecated
     public static final String OPENSHIFT_SENDER_STAGE = "\"Red Hat OpenShift (staging)\" no-reply@openshift.com";
+    @Deprecated
     public static final String OPENSHIFT_SENDER_PROD = "\"Red Hat OpenShift\" no-reply@openshift.com";
-    public static final String OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT = "\"Red Hat OpenShift (staging)\" noreply@redhat.com";
-    public static final String OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT = "\"Red Hat OpenShift\" noreply@redhat.com";
     private static final String STAGE_ENVIRONMENT = "stage";
     public static String OCM_PENDO_MESSAGE = "The email sender address will soon be changing from no-reply@openshift.com to <br/><b>noreply@redhat.com</b>.<br/><br/>If you have filtering or forwarding logic in place, you will need to update<br/>those rules by <b>%s</b>.";
     public static String GENERAL_PENDO_MESSAGE = "The email sender name will soon be changing from Red Hat Insights to<br/><b>Red Hat Hybrid Cloud Console</b>.<br/><br/>If you have filtering or forwarding logic in place, you will need to update<br/>those rules by <b>%s</b>.";
@@ -29,6 +26,24 @@ public class EmailActorsResolver {
 
     @ConfigProperty(name = "notifications.email.show.pendo.until.date", defaultValue = "2024-05-01")
     LocalDate emailChangesActivationDate;
+
+    /**
+     * The email sender address for the Red Hat Hybrid Cloud Console.
+     */
+    @ConfigProperty(name = "notifications.email.sender.hybrid.cloud.console", defaultValue = "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com")
+    protected String rhHccSender;
+
+    /**
+     * The email sender address for OpenShift in stage.
+     */
+    @ConfigProperty(name = "notifications.email.sender.openshift.stage", defaultValue = "\"Red Hat OpenShift (staging)\" noreply@redhat.com")
+    protected String rhOpenshiftSenderStage;
+
+    /**
+     * The email sender address for OpenShift in production.
+     */
+    @ConfigProperty(name = "notifications.email.sender.openshift.prod", defaultValue = "\"Red Hat OpenShift\" noreply@redhat.com")
+    protected String rhOpenshiftSenderProd;
 
     /**
      * Determines which sender should be set in the email from the given event.
@@ -55,9 +70,9 @@ public class EmailActorsResolver {
     private String getOCMEmailSender(Event event) {
         if (isHccEmailSenderNameEnabled()) {
             if (STAGE_ENVIRONMENT.equals(event.getSourceEnvironment())) {
-                return OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT;
+                return this.rhOpenshiftSenderStage;
             } else {
-                return OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT;
+                return this.rhOpenshiftSenderProd;
             }
         } else {
             if (STAGE_ENVIRONMENT.equals(event.getSourceEnvironment())) {
@@ -95,7 +110,7 @@ public class EmailActorsResolver {
 
     private String getDefaultEmailSender() {
         if (isHccEmailSenderNameEnabled()) {
-            return RH_HCC_SENDER;
+            return this.rhHccSender;
         } else {
             return RH_INSIGHTS_SENDER;
         }
@@ -115,5 +130,17 @@ public class EmailActorsResolver {
 
     public void setEmailChangesActivationDate(LocalDate emailChangesActivationDate) {
         this.emailChangesActivationDate = emailChangesActivationDate;
+    }
+
+    public String getRhHccSender() {
+        return this.rhHccSender;
+    }
+
+    public String getOpenshiftSenderStage() {
+        return this.rhOpenshiftSenderStage;
+    }
+
+    public String getOpenshiftSenderProd() {
+        return this.rhOpenshiftSenderProd;
     }
 }
