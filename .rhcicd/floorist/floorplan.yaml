@@ -134,6 +134,14 @@ objects:
             bun.display_name::TEXT AS bundle,
             apps.display_name::TEXT AS application,
             e.org_id::TEXT,
+            CASE
+              WHEN
+                nh.endpoint_type_v2 = 'CAMEL'
+              THEN
+                LOWER(nh.endpoint_sub_type)
+              ELSE
+                LOWER(nh.endpoint_type_v2)
+            END AS endpoint_type,
             nh.status::TEXT,
             count(nh.*)
           FROM
@@ -151,6 +159,7 @@ objects:
             bun.display_name,
             apps.display_name,
             e.org_id,
+            endpoint_type,
             nh.status
 parameters:
 - name: FLOORIST_BUCKET_SECRET_NAME
