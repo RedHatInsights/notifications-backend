@@ -60,10 +60,10 @@ objects:
       - prefix: insights/notifications/email_subscriptions_by_org_id
         query: >-
           SELECT
-            bun.display_name::TEXT,
-            apps.display_name::TEXT,
+            bun.display_name::TEXT AS bundle,
+            apps.display_name::TEXT AS application,
             es.org_id::TEXT,
-            et.display_name::TEXT,
+            et.display_name::TEXT AS event_type,
             es.subscription_type::TEXT,
             es.subscribed::BOOLEAN,
             count(es.*)::INTEGER AS "count"
