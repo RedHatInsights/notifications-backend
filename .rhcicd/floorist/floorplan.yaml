@@ -182,6 +182,23 @@ objects:
             bundles.display_name,
             applications.display_name,
             e.org_id
+      # Counts and lists the event types that each organization is using.
+      - prefix: insights/notifications/event_types_per_organization
+        query: >-
+          SELECT
+            event_type.display_name::TEXT AS event_type,
+            behavior_group.org_id::TEXT
+          FROM
+            event_type
+          INNER JOIN
+            event_type_behavior AS etb
+              ON etb.event_type_id = event_type.id
+          INNER JOIN
+            behavior_group_action AS bga
+              ON bga.behavior_group_id = etb.behavior_group_id
+          INNER JOIN
+            behavior_group
+              ON behavior_group.id = bga.behavior_group_id
 parameters:
 - name: FLOORIST_BUCKET_SECRET_NAME
   description: Floorist's S3 bucket's secret name
