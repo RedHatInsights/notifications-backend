@@ -199,9 +199,6 @@ objects:
           INNER JOIN
             behavior_group
               ON behavior_group.id = bga.behavior_group_id
-          GROUP BY
-            event_type.display_name,
-            behavior_group.org_id
 parameters:
 - name: FLOORIST_BUCKET_SECRET_NAME
   description: Floorist's S3 bucket's secret name
