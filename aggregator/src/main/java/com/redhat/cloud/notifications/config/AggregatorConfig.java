@@ -34,7 +34,7 @@ public class AggregatorConfig {
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean unleashEnabled;
 
-    @ConfigProperty(name = "notifications.bundle.level.digest.enabled", defaultValue = "false")
+    @ConfigProperty(name = "notifications.bundle.level.digest.enabled", defaultValue = "true")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean singleDailyDigestEnabled;
 
@@ -63,7 +63,7 @@ public class AggregatorConfig {
 
     public boolean isSingleDailyDigestEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(singleDailyDigestToggle, false);
+            return unleash.isEnabled(singleDailyDigestToggle, true);
         } else {
             return singleDailyDigestEnabled;
         }

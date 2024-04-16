@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
@@ -75,20 +75,22 @@ class DailyEmailAggregationJobTest {
         testee.defaultDailyDigestTime = LocalTime.now(ZoneOffset.UTC);
     }
 
-    List<AggregationCommand> getRecordsFromKafka() throws JsonProcessingException {
+    List<AggregationCommand> getRecordsFromKafka() {
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
 
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
         for (Message message : results.received()) {
             Action action = Parser.decode(String.valueOf(message.getPayload()));
-            aggregationCommands.add(objectMapper.convertValue(action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class));
+            for (Event event : action.getEvents()) {
+                aggregationCommands.add(objectMapper.convertValue(event.getPayload().getAdditionalProperties(), AggregationCommand.class));
+            }
         }
 
         return aggregationCommands;
     }
 
     @Test
-    void shouldSentFourAggregationsToKafkaTopic() throws JsonProcessingException {
+    void shouldSentFourAggregationsToKafkaTopic() {
 
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
@@ -100,14 +102,14 @@ class DailyEmailAggregationJobTest {
 
         List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(4, listCommand.size());
-        checkAggCommand(listCommand.get(0), "anotherOrgId", "rhel", "policies");
-        checkAggCommand(listCommand.get(1), "anotherOrgId", "rhel", "unknown-application");
-        checkAggCommand(listCommand.get(2), "someOrgId", "rhel", "policies");
-        checkAggCommand(listCommand.get(3), "someOrgId", "rhel", "unknown-application");
+        checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
+        checkAggCommand(listCommand, "anotherOrgId", "rhel", "unknown-application");
+        checkAggCommand(listCommand, "someOrgId", "rhel", "policies");
+        checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application");
     }
 
     @Test
-    void shouldSentTwoAggregationsToKafkaTopic() throws JsonProcessingException {
+    void shouldSentTwoAggregationsToKafkaTopic() {
         LocalTime now = LocalTime.now(ZoneOffset.UTC);
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
@@ -123,8 +125,8 @@ class DailyEmailAggregationJobTest {
         List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(2, listCommand.size());
 
-        checkAggCommand(listCommand.get(0), "anotherOrgId", "rhel", "policies");
-        checkAggCommand(listCommand.get(1), "anotherOrgId", "rhel", "unknown-application");
+        checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
+        checkAggCommand(listCommand, "anotherOrgId", "rhel", "unknown-application");
 
         // remove all preferences, and set default hour in the past, nothing should be processed
         helpers.purgeAggregationOrgConfig();
@@ -148,15 +150,17 @@ class DailyEmailAggregationJobTest {
         listCommand = getRecordsFromKafka();
         assertEquals(2, listCommand.size());
 
-        checkAggCommand(listCommand.get(0), "someOrgId", "rhel", "policies");
-        checkAggCommand(listCommand.get(1), "someOrgId", "rhel", "unknown-application");
+        checkAggCommand(listCommand, "someOrgId", "rhel", "policies");
+        checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application");
     }
 
-    private void checkAggCommand(AggregationCommand command, String orgId, String bundle, String application) {
-        assertEquals(orgId, command.getAggregationKey().getOrgId());
-        assertEquals(bundle, command.getAggregationKey().getBundle());
-        assertEquals(application, command.getAggregationKey().getApplication());
-        assertEquals(DAILY, command.getSubscriptionType());
+    private void checkAggCommand(List<AggregationCommand> commands, String orgId, String bundle, String application) {
+        assertTrue(commands.stream().anyMatch(
+            com -> orgId.equals(com.getAggregationKey().getOrgId()) &&
+                bundle.equals(com.getAggregationKey().getBundle()) &&
+                application.equals(com.getAggregationKey().getApplication()) &&
+                DAILY.equals(com.getSubscriptionType())
+            ));
     }
 
     @Test

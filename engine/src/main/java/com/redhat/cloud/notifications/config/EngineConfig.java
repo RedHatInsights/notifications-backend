@@ -44,7 +44,7 @@ public class EngineConfig {
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean asyncAggregation;
 
-    @ConfigProperty(name = "processor.email.aggregation.use-recipients-resolver-clowdapp.enabled", defaultValue = "false")
+    @ConfigProperty(name = "processor.email.aggregation.use-recipients-resolver-clowdapp.enabled", defaultValue = "true")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean useRecipientsResolverClowdappForDailyDigestEnabled;
 
