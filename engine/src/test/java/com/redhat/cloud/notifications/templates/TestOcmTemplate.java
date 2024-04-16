@@ -69,6 +69,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertTrue(result.contains(((Map<String, String>) action.getEvents().get(0).getPayload().getAdditionalProperties().get("global_vars")).get("log_description")));
         assertTrue(result.contains("What can you expect"));
         assertTrue(result.contains("Thank you for choosing Red Hat OpenShift Dedicated Trial."));
+        assertTrue(result.contains("The machine pools hosting the applications will not be upgraded. The machine pools must be upgraded separately."));
         assertFalse(result.contains("What should you do to minimize impact"));
     }
 
