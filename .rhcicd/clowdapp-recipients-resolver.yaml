@@ -48,7 +48,7 @@ objects:
             path: /q/health/ready
             port: ${{QUARKUS_HTTP_PORT}}
             scheme: HTTP
-          initialDelaySeconds: 20
+          initialDelaySeconds: 40
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
@@ -58,7 +58,7 @@ objects:
             path: /q/health/live
             port: ${{QUARKUS_HTTP_PORT}}
             scheme: HTTP
-          initialDelaySeconds: 20
+          initialDelaySeconds: 40
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
