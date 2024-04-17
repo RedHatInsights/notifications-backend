@@ -52,7 +52,7 @@ public class DailyEmailAggregationJob {
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
-    @ConfigProperty(name = "prometheus.pushgateway.url")
+    @ConfigProperty(name = "prometheus.pushgateway.url", defaultValue = "http://localhost:8080")
     String prometheusPushGatewayUrl;
 
     @ConfigProperty(name = "notifications.default.daily.digest.time", defaultValue = "00:00")

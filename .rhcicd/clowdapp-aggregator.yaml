@@ -85,6 +85,7 @@ parameters:
   required: true
 - name: PROMETHEUS_PUSHGATEWAY
   description: Prometheus Pushgateway URL
+  value: "http://localhost:8080"
 - name: IMAGE
   description: Image URL
   value: quay.io/cloudservices/notifications-aggregator
