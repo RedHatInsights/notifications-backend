@@ -21,6 +21,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -95,6 +96,9 @@ public class Endpoint extends CreationUpdateTimestamped {
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.REMOVE)
     @JsonIgnore
     private Set<BehaviorGroupAction> behaviorGroupActions;
+
+    @JsonIgnore
+    private LocalDateTime serverErrorsSince;
 
     @OneToMany(mappedBy = "endpoint")
     @JsonIgnore
@@ -237,6 +241,14 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.serverErrors = serverErrors;
     }
 
+    public LocalDateTime getServerErrorsSince() {
+        return serverErrorsSince;
+    }
+
+    public void setServerErrorsSince(LocalDateTime serverErrorSince) {
+        this.serverErrorsSince = serverErrorsSince;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -270,6 +282,7 @@ public class Endpoint extends CreationUpdateTimestamped {
                 ", updated=" + getUpdated() +
                 ", properties=" + properties +
                 ", serverErrors=" + serverErrors +
+                ", serverErrorsSince=" + serverErrorsSince +
                 '}';
     }
 }

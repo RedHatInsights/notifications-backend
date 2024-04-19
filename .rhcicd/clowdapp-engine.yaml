@@ -238,6 +238,10 @@ objects:
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE
           value: ${NOTIFICATIONS_EMAIL_SHOW_PENDO_UNTIL_DATE}
+        - name: PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS
+          value: ${PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS}
+        - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
+          value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -401,3 +405,9 @@ parameters:
   value: "2020-01-01"
 - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
   value: "false"
+- name: PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS
+  description: max accepted number of error before an endpoint could be disabled
+  value: "10"
+- name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
+  description: min delay since the first error before an endpoint could be disabled
+  value: PT2D

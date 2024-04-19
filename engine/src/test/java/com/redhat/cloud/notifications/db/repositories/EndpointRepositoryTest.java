@@ -15,7 +15,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -45,7 +47,7 @@ public class EndpointRepositoryTest {
         assertEquals(0, endpoint.getServerErrors());
 
         for (int i = 1; i <= MAX_SERVER_ERRORS + 1; i++) {
-            assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS, 1));
+            assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS, 1, Duration.of(1, ChronoUnit.NANOS)));
             entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
             Endpoint ep = getEndpoint(endpoint.getId());
             assertEquals(i <= MAX_SERVER_ERRORS, ep.isEnabled());
@@ -55,8 +57,31 @@ public class EndpointRepositoryTest {
     }
 
     @Test
+    void testIncrementEndpointServerErrorsAndWaitForMinDelay() throws InterruptedException {
+        Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 0);
+        assertTrue(endpoint.isEnabled());
+        assertEquals(0, endpoint.getServerErrors());
+
+        for (int i = 1; i <= MAX_SERVER_ERRORS + 10; i++) {
+            assertFalse(endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS, 1, Duration.of(2, ChronoUnit.SECONDS)));
+            entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+        }
+
+        Endpoint ep = getEndpoint(endpoint.getId());
+        assertTrue(ep.isEnabled());
+        assertTrue(ep.getServerErrors() > MAX_SERVER_ERRORS);
+        Thread.sleep(Duration.of(2, ChronoUnit.SECONDS));
+
+        assertTrue(endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS, 1, Duration.of(2, ChronoUnit.SECONDS)));
+        entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+
+        ep = getEndpoint(endpoint.getId());
+        assertFalse(ep.isEnabled());
+    }
+
+    @Test
     void testIncrementEndpointServerErrorsWithUnknownId() {
-        assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 10, 1));
+        assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 10, 1, Duration.of(1, ChronoUnit.SECONDS)));
     }
 
     @Test

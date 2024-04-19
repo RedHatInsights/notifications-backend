@@ -15,6 +15,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -125,10 +128,11 @@ public class EndpointRepository {
      * Increments the server errors counter of the endpoint identified by the given ID.
      * @param endpointId the endpoint ID
      * @param maxServerErrors the maximum server errors allowed from the configuration
+     * @param minDelaySinceFirstServerErrorBeforeDisabling the minimum delay since the first error before an endpoint could be disabled
      * @return {@code true} if the endpoint was disabled by this method, {@code false} otherwise
      */
     @Transactional
-    public boolean incrementEndpointServerErrors(UUID endpointId, int maxServerErrors, int currentServerErrors) {
+    public boolean incrementEndpointServerErrors(UUID endpointId, int maxServerErrors, int currentServerErrors, Duration minDelaySinceFirstServerErrorBeforeDisabling) {
         /*
          * This method must be an atomic operation from a DB perspective. Otherwise, we could send multiple email
          * notifications about the same disabled endpoint in case of failures happening on concurrent threads or pods.
@@ -139,10 +143,18 @@ public class EndpointRepository {
          * It may or may not have been disabled already from the frontend or because of a 4xx error.
          */
         if (endpoint.isPresent() && endpoint.get().isEnabled()) {
-            if (endpoint.get().getServerErrors() + currentServerErrors > maxServerErrors) {
+            LocalDateTime currentTime = LocalDateTime.now(ZoneId.of("UTC"));
+            boolean minDelaySinceFirstErrorRespected = false;
+            if (endpoint.get().getServerErrorsSince() != null) {
+                Duration spentDuration = Duration.between(endpoint.get().getServerErrorsSince(), currentTime);
+                minDelaySinceFirstErrorRespected = spentDuration.compareTo(minDelaySinceFirstServerErrorBeforeDisabling) > 0;
+            }
+            if (endpoint.get().getServerErrors() + currentServerErrors > maxServerErrors &&
+                minDelaySinceFirstErrorRespected) {
                 /*
-                 * The endpoint exceeded the max server errors allowed from configuration.
-                 * It is therefore disabled.
+                 * The endpoint exceeded the max server errors allowed from configuration
+                 * and a reasonable duration was respected to give a chance to customers to fix the issue,
+                 * it is therefore disabled.
                  */
                 String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
                 int updated = entityManager.createQuery(hql)
@@ -154,11 +166,20 @@ public class EndpointRepository {
                  * The endpoint did NOT exceed the max server errors allowed from configuration.
                  * The errors counter is therefore incremented.
                  */
-                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors WHERE id = :id";
-                entityManager.createQuery(hql)
+                if (endpoint.get().getServerErrors() == 0) {
+                    String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors, serverErrorsSince = :currentDate WHERE id = :id";
+                    entityManager.createQuery(hql)
+                        .setParameter("currentServerErrors", currentServerErrors)
+                        .setParameter("currentDate", currentTime)
+                        .setParameter("id", endpointId)
+                        .executeUpdate();
+                } else {
+                    String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors WHERE id = :id";
+                    entityManager.createQuery(hql)
                         .setParameter("currentServerErrors", currentServerErrors)
                         .setParameter("id", endpointId)
                         .executeUpdate();
+                }
                 return false;
             }
         } else {
@@ -229,7 +250,7 @@ public class EndpointRepository {
      */
     @Transactional
     public boolean resetEndpointServerErrors(UUID endpointId) {
-        String hql = "UPDATE Endpoint SET serverErrors = 0 WHERE id = :id AND serverErrors > 0";
+        String hql = "UPDATE Endpoint SET serverErrors = 0, serverErrorsSince = null WHERE id = :id AND serverErrors > 0";
         int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();
