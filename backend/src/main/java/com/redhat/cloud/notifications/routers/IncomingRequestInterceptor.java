@@ -84,7 +84,7 @@ public class IncomingRequestInterceptor implements ContainerRequestFilter {
         Matcher m = p.matcher(uri);
         if (m.matches()) {
             String newTarget = "/api/" + m.group(1) + "/v" + m.group(2) + ".0/" + m.group(3);
-            Log.tracef("Rerouting uri path: %s to %s", requestContext.getUriInfo().getPath(), newTarget);
+            Log.tracef("Rerouting to: %s", newTarget);
 
             requestContext.setRequestUri(UriBuilder.fromUri(requestContext.getUriInfo().getRequestUri()).replacePath(newTarget).build());
         }
