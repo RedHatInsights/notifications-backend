@@ -18,7 +18,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: https://raw.githubusercontent.com/RedHatInsights/notifications-backend/master/docker/Dockerfile.notifications-connector-google-chat.jvm
+    value: /docker/Dockerfile.notifications-connector-google-chat.jvm
   - name: git-url
     value: '{{source_url}}'
   - name: output-image
