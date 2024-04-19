@@ -121,6 +121,38 @@
           ]
         },
         {
+          "name": "inventory",
+          "display_name": "Inventory",
+          "event_types": [
+            {
+              "name": "new-system-registered",
+              "display_name": "New system registered"
+            },
+            {
+              "name": "system-became-stale",
+              "display_name": "System became stale"
+            },
+            {
+              "name": "system-deleted",
+              "display_name": "System deleted"
+            },
+            {
+              "name": "validation-error",
+              "display_name": "Validation error"
+            }
+          ]
+        },
+        {
+          "name": "patch",
+          "display_name": "Patch",
+          "event_types": [
+            {
+              "name": "new-advisory",
+              "display_name": "New advisory"
+            }
+          ]
+        },
+        {
           "name": "policies",
           "display_name": "Policies",
           "event_types": [
