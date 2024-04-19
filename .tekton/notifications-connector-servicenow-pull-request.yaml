@@ -19,7 +19,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: https://raw.githubusercontent.com/RedHatInsights/notifications-backend/master/docker/Dockerfile.notifications-connector-servicenow.jvm
+    value: /docker/Dockerfile.notifications-connector-servicenow.jvm
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after

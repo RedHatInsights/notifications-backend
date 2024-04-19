@@ -19,7 +19,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: https://raw.githubusercontent.com/RedHatInsights/notifications-backend/master/docker/Dockerfile.notifications-recipients-resolver.jvm
+    value: /docker/Dockerfile.notifications-recipients-resolver.jvm
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after
