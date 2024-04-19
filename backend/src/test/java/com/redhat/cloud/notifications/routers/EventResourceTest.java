@@ -42,6 +42,7 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_AC
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NOTIFICATIONS_ACCESS_ONLY;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NOTIFICATIONS_READ_ACCESS_ONLY;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
+import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
@@ -69,6 +70,8 @@ public class EventResourceTest extends DbIsolatedTest {
     private static final LocalDateTime NOW = LocalDateTime.now(UTC);
     private static final String PAYLOAD = "payload";
     private static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
+    private static final String PATH_V_1 = API_NOTIFICATIONS_V_1 + "/notifications/events";
+
 
     @Inject
     EntityManager entityManager;
@@ -292,6 +295,18 @@ public class EventResourceTest extends DbIsolatedTest {
          * Request: Let's try all request params at once!
          */
         page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION.name()), Set.of(TRUE), null, 10, 0, "created:desc", true, true);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
+        assertEquals(PAYLOAD, page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #14.1
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: Let's try all request params at once, using old path /v1/ to check internal redirect
+         */
+        page = getEventLogPage(defaultIdentityHeader, Set.of(bundle2.getId()), Set.of(app2.getId()), eventType2.getDisplayName(), NOW.minusDays(3L), NOW.minusDays(1L), Set.of(EMAIL_SUBSCRIPTION.name()), Set.of(TRUE), null, 10, 0, "created:desc", true, true, PATH_V_1);
         assertEquals(1, page.getMeta().getCount());
         assertEquals(1, page.getData().size());
         assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
@@ -667,6 +682,13 @@ public class EventResourceTest extends DbIsolatedTest {
                                                        LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
                                                        Set<Boolean> invocationResults, Set<EventLogEntryActionStatus> status, Integer limit,
                                                        Integer offset, String sortBy, boolean includePayload, boolean includeActions) {
+        return getEventLogPage(identityHeader, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status,  limit, offset, sortBy, includePayload, includeActions, PATH);
+    }
+
+    private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+                                                       LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
+                                                       Set<Boolean> invocationResults, Set<EventLogEntryActionStatus> status, Integer limit,
+                                                       Integer offset, String sortBy, boolean includePayload, boolean includeActions, String path) {
         RequestSpecification request = given()
                 .header(identityHeader);
         if (bundleIds != null) {
@@ -709,7 +731,7 @@ public class EventResourceTest extends DbIsolatedTest {
             request.param("includeActions", true);
         }
         return request
-                .when().get(PATH)
+                .when().get(path)
                 .then()
                 .statusCode(200)
                 .contentType(JSON)

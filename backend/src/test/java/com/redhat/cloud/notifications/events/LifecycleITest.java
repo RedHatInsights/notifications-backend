@@ -50,7 +50,9 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
+import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
+import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_2;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_2_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
@@ -746,15 +748,17 @@ public class LifecycleITest extends DbIsolatedTest {
     }
 
     private boolean checkEndpointHistory(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
-        return checkEndpointHistoryV1(identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus) &&
-                checkEndpointHistoryV2(identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus);
+        return checkEndpointHistoryV1(API_INTEGRATIONS_V_1, identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus) &&
+            checkEndpointHistoryV1(API_INTEGRATIONS_V_1_0, identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus) &&
+            checkEndpointHistoryV2(API_INTEGRATIONS_V_2, identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus) &&
+            checkEndpointHistoryV2(API_INTEGRATIONS_V_2_0, identityHeader, endpointId, expectedHistoryEntries, expectedInvocationResult, expectedHttpStatus);
     }
 
 
-    private boolean checkEndpointHistoryV1(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+    private boolean checkEndpointHistoryV1(String basePath, Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
         try {
             String responseBody = given()
-                    .basePath(API_INTEGRATIONS_V_1_0)
+                    .basePath(basePath)
                     .header(identityHeader)
                     .pathParam("endpointId", endpointId)
                     .when()
@@ -777,10 +781,10 @@ public class LifecycleITest extends DbIsolatedTest {
         }
     }
 
-    private boolean checkEndpointHistoryV2(Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
+    private boolean checkEndpointHistoryV2(String basePath, Header identityHeader, String endpointId, int expectedHistoryEntries, boolean expectedInvocationResult, int expectedHttpStatus) {
         try {
             String rawResponseBody = given()
-                    .basePath(API_INTEGRATIONS_V_2_0)
+                    .basePath(basePath)
                     .header(identityHeader)
                     .pathParam("endpointId", endpointId)
                     .when()

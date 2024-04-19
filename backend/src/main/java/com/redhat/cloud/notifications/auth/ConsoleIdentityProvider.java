@@ -20,7 +20,6 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.Json;
-import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -57,9 +56,6 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
     @RestClient
     RbacServer rbacServer;
 
-    @Inject
-    RoutingContext routingContext;
-
     @ConfigProperty(name = "rbac.enabled", defaultValue = "true")
     Boolean isRbacEnabled;
 
@@ -89,11 +85,9 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 } catch (IllegalIdentityHeaderException e) {
                     return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
                 }
-                routingContext.put("x-rh-rbac-org-id", ((RhIdentity) identity).getOrgId());
             } else {
                 principal = ConsolePrincipal.noIdentity();
             }
-
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
                     .setPrincipal(principal)
                     .addRole(RBAC_READ_NOTIFICATIONS_EVENTS)
@@ -156,7 +150,6 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                             if (rbacRaw.canWrite("integrations", "endpoints")) {
                                 builder.addRole(RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
                             }
-                            routingContext.put("x-rh-rbac-org-id", rhIdentity.getOrgId());
                             return builder.build();
                         });
                 } else if (identity instanceof TurnpikeSamlIdentity) {
@@ -183,7 +176,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
             });
     }
 
-    private static ConsoleIdentity getRhIdentityFromString(String xRhIdHeader) {
+    public static ConsoleIdentity getRhIdentityFromString(String xRhIdHeader) {
         String xRhDecoded = Base64Utils.decode(xRhIdHeader);
         ConsoleIdentity identity = Json.decodeValue(xRhDecoded, ConsoleIdentityWrapper.class).getIdentity();
         identity.rawIdentity = xRhIdHeader;
