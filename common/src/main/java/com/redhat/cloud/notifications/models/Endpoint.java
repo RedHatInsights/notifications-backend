@@ -245,7 +245,7 @@ public class Endpoint extends CreationUpdateTimestamped {
         return serverErrorsSince;
     }
 
-    public void setServerErrorsSince(LocalDateTime serverErrorSince) {
+    public void setServerErrorsSince(LocalDateTime serverErrorsSince) {
         this.serverErrorsSince = serverErrorsSince;
     }
 
