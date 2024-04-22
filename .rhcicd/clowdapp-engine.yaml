@@ -406,7 +406,7 @@ parameters:
 - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
   value: "false"
 - name: PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS
-  description: max accepted number of error before an endpoint could be disabled
+  description: max accepted number of errors before an endpoint is eligible to be disabled
   value: "10"
 - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
   description: min delay since the first error before an endpoint could be disabled
