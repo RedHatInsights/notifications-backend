@@ -53,7 +53,11 @@ public class BOPRequestPreparer implements Processor {
         exchange.getMessage().setHeader(Exchange.HTTP_METHOD, HttpMethods.POST);
 
         // Specify the request's path.
-        exchange.getMessage().setHeader(Exchange.HTTP_PATH, "/v1/sendEmails");
+        if(emailConnectorConfig.isEnableBopServiceV2Usage()) {
+            exchange.getMessage().setHeader(Exchange.HTTP_PATH, "/v2/sendEmails");
+        } else {
+            exchange.getMessage().setHeader(Exchange.HTTP_PATH, "/v1/sendEmails");
+        }
 
         // Specify the payload's content type.
         exchange.getMessage().setHeader(Exchange.CONTENT_TYPE, "application/json; charset=utf-8");

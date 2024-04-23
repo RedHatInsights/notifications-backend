@@ -27,6 +27,8 @@ import static org.apache.camel.LoggingLevel.INFO;
 public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
     static final String BOP_RESPONSE_TIME_METRIC = "micrometer:timer:email.bop.response.time";
+    static final String BOP_V2_RESPONSE_TIME_METRIC = "micrometer:timer:email.bop.v2.response.time";
+
     static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "micrometer:timer:email.recipients_resolver.response.time";
     static final String TIMER_ACTION_START = "?action=start";
     static final String TIMER_ACTION_STOP = "?action=stop";
@@ -63,7 +65,8 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * Prepares the payload accepted by BOP and sends the request to
          * the service.
          */
-        final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpoint = this.setUpBOPEndpoint();
+        final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpointV1 = setUpBOPEndpointV1();
+        final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpointV2 = setUpBOPEndpointV2();
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
@@ -90,9 +93,15 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
             .process(this.BOPRequestPreparer)
-            .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-                .to(bopEndpoint)
-            .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
+            .choice().when(shouldUseBopEmailServiceV2())
+                .to(BOP_V2_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                    .to(bopEndpointV2)
+                .to(BOP_V2_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
+            .otherwise()
+                .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                    .to(bopEndpointV1)
+                .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
+            .end()
             .log(INFO, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
             .process(emailMetricsProcessor);
     }
@@ -101,12 +110,17 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         return exchange -> exchange.getProperty(FILTERED_USERS, Set.class).isEmpty();
     }
 
+    private Predicate shouldUseBopEmailServiceV2() {
+        // TODO update it before prod to be able to filter on org_id
+        return exchange -> emailConnectorConfig.isEnableBopServiceV2Usage();
+    }
+
     /**
      * Creates the endpoint for the BOP service. It makes Apache Camel trust
      * BOP service's certificate.
      * @return the created endpoint.
      */
-    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpBOPEndpoint() {
+    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpBOPEndpointV1() {
         // Remove the schema from the url to avoid the
         // "ResolveEndpointFailedException", which complaints about specifying
         // the schema twice.
@@ -115,6 +129,18 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             return https(fullURL.replace("https://", ""))
                 .sslContextParameters(getSslContextParameters())
                 .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
+        } else {
+            return http(fullURL.replace("http://", ""));
+        }
+    }
+
+    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpBOPEndpointV2() {
+        // Remove the schema from the url to avoid the
+        // "ResolveEndpointFailedException", which complaints about specifying
+        // the schema twice.
+        final String fullURL = this.emailConnectorConfig.getBopURL();
+        if (fullURL.startsWith("https")) {
+            return https(fullURL.replace("https://", ""));
         } else {
             return http(fullURL.replace("http://", ""));
         }

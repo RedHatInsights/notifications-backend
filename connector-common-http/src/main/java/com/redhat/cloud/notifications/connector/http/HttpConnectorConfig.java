@@ -62,10 +62,10 @@ public class HttpConnectorConfig extends ConnectorConfig {
     int httpSocketTimeout;
 
     @Inject
-    ToggleRegistry toggleRegistry;
+    protected ToggleRegistry toggleRegistry;
 
     @PostConstruct
-    void postConstruct() {
+    protected void postConstruct() {
         disableFaultyEndpointsToggle = toggleRegistry.register("disable-faulty-endpoints", true);
     }
 
