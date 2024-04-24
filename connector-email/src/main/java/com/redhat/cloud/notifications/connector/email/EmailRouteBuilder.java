@@ -21,6 +21,7 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
+import static org.apache.camel.LoggingLevel.DEBUG;
 import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
@@ -94,6 +95,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .removeHeaders("*")
             .process(this.BOPRequestPreparer)
             .choice().when(shouldUseBopEmailServiceV2())
+                .log(DEBUG, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "} using email service V2]")
                 .to(BOP_V2_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                     .to(bopEndpointV2)
                 .to(BOP_V2_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
@@ -111,8 +113,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     }
 
     private Predicate shouldUseBopEmailServiceV2() {
-        // TODO update it before prod to be able to filter on org_id
-        return exchange -> emailConnectorConfig.isEnableBopServiceV2Usage();
+        return exchange -> emailConnectorConfig.isEnableBopServiceV2Usage(exchange.getProperty(ORG_ID, String.class));
     }
 
     /**

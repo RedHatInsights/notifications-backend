@@ -13,6 +13,8 @@ import org.apache.camel.component.http.HttpMethods;
 
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
+
 @ApplicationScoped
 public class BOPRequestPreparer implements Processor {
 
@@ -52,8 +54,9 @@ public class BOPRequestPreparer implements Processor {
         // Specify the request's method.
         exchange.getMessage().setHeader(Exchange.HTTP_METHOD, HttpMethods.POST);
 
+        final String ordId = exchange.getProperty(ORG_ID, String.class);
         // Specify the request's path.
-        if (emailConnectorConfig.isEnableBopServiceV2Usage()) {
+        if (emailConnectorConfig.isEnableBopServiceV2Usage(ordId)) {
             exchange.getMessage().setHeader(Exchange.HTTP_PATH, "/v2/sendEmails");
         } else {
             exchange.getMessage().setHeader(Exchange.HTTP_PATH, "/v1/sendEmails");

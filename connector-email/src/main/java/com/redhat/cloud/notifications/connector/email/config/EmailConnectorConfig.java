@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import io.getunleash.UnleashContext;
 import io.quarkus.runtime.configuration.ProfileManager;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;
@@ -73,7 +74,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
-        config.put(enableBopEmailServiceV2Toggle, isEnableBopServiceV2Usage());
+        config.put(enableBopEmailServiceV2Toggle + " for all orgIds", isEnableBopServiceV2Usage(null));
 
         /*
          * /!\ WARNING /!\
@@ -116,8 +117,11 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         this.emailsInternalOnlyEnabled = emailsInternalOnlyEnabled;
     }
 
-    public boolean isEnableBopServiceV2Usage() {
-        return unleash.isEnabled(enableBopEmailServiceV2Toggle, false);
+    public boolean isEnableBopServiceV2Usage(String orgId) {
+        UnleashContext unleashContext = UnleashContext.builder()
+            .addProperty("orgId", orgId)
+            .build();
+        return unleash.isEnabled(enableBopEmailServiceV2Toggle, unleashContext, false);
     }
 
     /**
