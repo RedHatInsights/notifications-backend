@@ -113,4 +113,4 @@ parameters:
   description: Should the aggregation cron job be disabled?
   value: "false"
 - name: NOTIFICATIONS_BUNDLE_LEVEL_DIGEST_ENABLED
-  value: "false"
+  value: "true"
