@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
 import jakarta.validation.constraints.NotNull;
-
 import java.util.Objects;
 
 public class EmailAggregationKey {

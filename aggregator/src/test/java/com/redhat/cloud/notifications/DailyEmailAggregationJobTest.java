@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,11 +51,11 @@ class DailyEmailAggregationJobTest {
 
     final AggregationOrgConfig someOrgIdToProceed = new AggregationOrgConfig("someOrgId",
             LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), LocalTime.now(ZoneOffset.UTC).getMinute()),
-            LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
 
     final AggregationOrgConfig anotherOrgIdToProceed = new AggregationOrgConfig("anotherOrgId",
             LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), LocalTime.now(ZoneOffset.UTC).getMinute()),
-            LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
 
     @BeforeEach
     void setUp() {
@@ -172,13 +171,13 @@ class DailyEmailAggregationJobTest {
 
         AggregationOrgConfig tooLateOrgIdToProceed = new AggregationOrgConfig("tooLateOrgId",
             LocalTime.of(now.getHour(), 15),
-            LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
         AggregationOrgConfig onTimeOrgIdToProceed = new AggregationOrgConfig("onTimeOrgId",
             LocalTime.of(now.getHour(), 30),
-            LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
         AggregationOrgConfig toSoonOrgIdToProceed = new AggregationOrgConfig("tooSoonOrgId",
             LocalTime.of(now.getHour(), 45),
-            LocalDateTime.now(ZoneOffset.UTC).minus(1, ChronoUnit.DAYS));
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
 
         helpers.addAggregationOrgConfig(tooLateOrgIdToProceed);
         helpers.addAggregationOrgConfig(onTimeOrgIdToProceed);
@@ -200,13 +199,13 @@ class DailyEmailAggregationJobTest {
 
         AggregationOrgConfig tooLateOrgIdToProceed = new AggregationOrgConfig("tooLateOrgId",
             LocalTime.of(23, 45),
-            now.minus(1, ChronoUnit.DAYS));
+            now.minusDays(1));
         AggregationOrgConfig onTimeOrgIdToProceed = new AggregationOrgConfig("onTimeOrgId",
             LocalTime.of(0, 0),
-            now.minus(1, ChronoUnit.DAYS));
+            now.minusDays(1));
         AggregationOrgConfig toSoonOrgIdToProceed = new AggregationOrgConfig("tooSoonOrgId",
             LocalTime.of(0, 15),
-            now.minus(1, ChronoUnit.DAYS));
+            now.minusDays(1));
 
         helpers.addAggregationOrgConfig(tooLateOrgIdToProceed);
         helpers.addAggregationOrgConfig(onTimeOrgIdToProceed);

@@ -12,7 +12,7 @@ import jakarta.inject.Inject;
 public class AsyncAggregation implements Runnable {
 
     @Inject
-    EmailSubscriptionTypeProcessor emailSubscriptionTypeProcessor;
+    EmailAggregationProcessor emailSubscriptionTypeProcessor;
 
     private Event event;
 

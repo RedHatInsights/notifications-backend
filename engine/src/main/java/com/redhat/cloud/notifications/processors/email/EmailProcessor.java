@@ -37,7 +37,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     EmailActorsResolver emailActorsResolver;
 
     @Inject
-    EmailSubscriptionTypeProcessor emailSubscriptionTypeProcessor;
+    EmailAggregationProcessor emailSubscriptionTypeProcessor;
 
     @Inject
     TemplateRepository templateRepository;
