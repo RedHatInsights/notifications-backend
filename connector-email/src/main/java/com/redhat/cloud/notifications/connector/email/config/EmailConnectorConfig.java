@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import io.quarkus.runtime.configuration.ProfileManager;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -52,6 +53,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     private String enableBopEmailServiceV2Toggle;
 
     @Override
+    @PostConstruct
     protected void postConstruct() {
         super.postConstruct();
         enableBopEmailServiceV2Toggle = toggleRegistry.register("enable-bop-service-v2", true);
