@@ -34,10 +34,6 @@ public class AggregatorConfig {
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean unleashEnabled;
 
-    @ConfigProperty(name = "notifications.bundle.level.digest.enabled", defaultValue = "true")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean singleDailyDigestEnabled;
-
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -52,20 +48,11 @@ public class AggregatorConfig {
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
-        config.put(singleDailyDigestToggle, isSingleDailyDigestEnabled());
         config.put(UNLEASH, unleashEnabled);
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
             Log.infof("%s=%s", key, value);
         });
-    }
-
-    public boolean isSingleDailyDigestEnabled() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(singleDailyDigestToggle, true);
-        } else {
-            return singleDailyDigestEnabled;
-        }
     }
 }
