@@ -53,7 +53,7 @@ public class EndpointProcessor {
     EmailProcessor emailConnectorProcessor;
 
     @Inject
-    EmailAggregationProcessor emailProcessor;
+    EmailAggregationProcessor emailAggregationProcessor;
 
     @Inject
     SlackProcessor slackProcessor;
@@ -124,7 +124,7 @@ public class EndpointProcessor {
                             break;
                         case EMAIL_SUBSCRIPTION:
                             if (isAggregatorEvent(event)) {
-                                emailProcessor.processAggregation(event);
+                                emailAggregationProcessor.processAggregation(event);
                             } else {
                                 emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
                             }
