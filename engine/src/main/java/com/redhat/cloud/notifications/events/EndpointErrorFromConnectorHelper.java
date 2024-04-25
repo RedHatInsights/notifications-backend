@@ -9,9 +9,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 
@@ -35,12 +33,6 @@ public class EndpointErrorFromConnectorHelper {
 
     @Inject
     MeterRegistry registry;
-
-    @ConfigProperty(name = "processor.connectors.max-server-errors", defaultValue = "10")
-    int maxServerErrors;
-
-    @ConfigProperty(name = "processor.connectors.min-delay-since-first-server-error", defaultValue = "2D")
-    Duration minDelaySinceFirstServerErrorBeforeDisabling;
 
     private Counter disabledWebhooksServerErrorCount;
     private Counter disabledWebhooksClientErrorCount;
@@ -96,11 +88,11 @@ public class EndpointErrorFromConnectorHelper {
                          * number of endpoint failures allowed from the configuration is exceeded.
                          */
                         int deliveryAttempts = error.getInteger("delivery_attempts", 1);
-                        boolean disabled = endpointRepository.incrementEndpointServerErrors(endpoint.getId(), maxServerErrors, deliveryAttempts, minDelaySinceFirstServerErrorBeforeDisabling);
+                        boolean disabled = endpointRepository.incrementEndpointServerErrors(endpoint.getId(), deliveryAttempts);
                         if (disabled) {
                             disabledWebhooksServerErrorCount.increment();
                             Log.infof("Endpoint %s was disabled because it caused too many 5xx errors or IOExceptions while calling it", endpoint.getId());
-                            integrationDisabledNotifier.notify(endpoint, httpErrorType.get(), statusCode, maxServerErrors);
+                            integrationDisabledNotifier.notify(endpoint, httpErrorType.get(), statusCode, endpoint.getServerErrors());
                         }
                     }
                 }

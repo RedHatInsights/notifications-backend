@@ -22,7 +22,6 @@ import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHe
 import static com.redhat.cloud.notifications.events.EndpointErrorFromConnectorHelper.SERVER_TAG_VALUE;
 import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_5XX;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -72,7 +71,7 @@ class EndpointErrorFromConnectorHelperTest {
 
         JsonObject payload = buildTestPayload(false, HTTP_5XX, 503);
         endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
-        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), anyInt(), eq(4), any());
+        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), eq(4));
         verifyNoInteractions(integrationDisabledNotifier);
         assertMetrics(0, 0);
     }
@@ -80,12 +79,13 @@ class EndpointErrorFromConnectorHelperTest {
     @Test
     void testIncreaseAndDisableServerErrorCount() {
         final Endpoint endpoint = mockEndpointFromNotificationHistorySearch();
-        Mockito.when(endpointRepository.incrementEndpointServerErrors(eq(endpoint.getId()), anyInt(), anyInt(), any())).thenReturn(true);
+        Mockito.when(endpointRepository.incrementEndpointServerErrors(eq(endpoint.getId()), anyInt())).thenReturn(true);
 
         JsonObject payload = buildTestPayload(false, HTTP_5XX, 503);
         endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
-        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), anyInt(), eq(4), any());
-        verify(integrationDisabledNotifier, times(1)).notify(endpoint, HTTP_5XX, 503, 10);
+        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), eq(4));
+
+        verify(integrationDisabledNotifier, times(1)).notify(endpoint, HTTP_5XX, 503, 0);
         assertMetrics(1, 0);
     }
 

@@ -10,6 +10,7 @@ import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -23,6 +24,8 @@ public class EngineConfig {
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
     private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
     private static final String UNLEASH = "notifications.unleash.enabled";
+    public static final String PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS = "processor.connectors.max-server-errors";
+    public static final String PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR = "processor.connectors.min-delay-since-first-server-error";
 
     /*
      * Unleash configuration
@@ -72,6 +75,12 @@ public class EngineConfig {
     @ConfigProperty(name = SECURED_EMAIL_TEMPLATES, defaultValue = "false")
     boolean useSecuredEmailTemplates;
 
+    @ConfigProperty(name = PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS, defaultValue = "10")
+    int maxServerErrors;
+
+    @ConfigProperty(name = PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR, defaultValue = "2D")
+    Duration minDelaySinceFirstServerErrorBeforeDisabling;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -97,6 +106,8 @@ public class EngineConfig {
         config.put(kafkaConsumedTotalCheckerToggle, isKafkaConsumedTotalCheckerEnabled());
         config.put(SECURED_EMAIL_TEMPLATES, isSecuredEmailTemplatesEnabled());
         config.put(UNLEASH, unleashEnabled);
+        config.put(PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS, maxServerErrors);
+        config.put(PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR, minDelaySinceFirstServerErrorBeforeDisabling);
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -156,5 +167,13 @@ public class EngineConfig {
     @Deprecated(forRemoval = true)
     public boolean isUseRbacForFetchingUsers() {
         return useRbacForFetchingUsers;
+    }
+
+    public int getMaxServerErrors() {
+        return maxServerErrors;
+    }
+
+    public Duration getMinDelaySinceFirstServerErrorBeforeDisabling() {
+        return minDelaySinceFirstServerErrorBeforeDisabling;
     }
 }

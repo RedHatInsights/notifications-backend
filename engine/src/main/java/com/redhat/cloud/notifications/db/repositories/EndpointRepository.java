@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -40,6 +41,9 @@ public class EndpointRepository {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    EngineConfig engineConfig;
 
     /**
      * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION or DRAWER endpoint with empty properties. This
@@ -127,12 +131,11 @@ public class EndpointRepository {
     /**
      * Increments the server errors counter of the endpoint identified by the given ID.
      * @param endpointId the endpoint ID
-     * @param maxServerErrors the maximum server errors allowed from the configuration
-     * @param minDelaySinceFirstServerErrorBeforeDisabling the minimum delay since the first error before an endpoint could be disabled
+     * @param currentServerErrors the current server errors number
      * @return {@code true} if the endpoint was disabled by this method, {@code false} otherwise
      */
     @Transactional
-    public boolean incrementEndpointServerErrors(UUID endpointId, int maxServerErrors, int currentServerErrors, Duration minDelaySinceFirstServerErrorBeforeDisabling) {
+    public boolean incrementEndpointServerErrors(UUID endpointId, int currentServerErrors) {
         /*
          * This method must be an atomic operation from a DB perspective. Otherwise, we could send multiple email
          * notifications about the same disabled endpoint in case of failures happening on concurrent threads or pods.
@@ -144,44 +147,44 @@ public class EndpointRepository {
          */
         if (endpoint.isPresent() && endpoint.get().isEnabled()) {
             LocalDateTime currentTime = LocalDateTime.now(ZoneId.of("UTC"));
-            boolean minDelaySinceFirstErrorRespected = false;
-            if (endpoint.get().getServerErrorsSince() != null) {
-                Duration spentDuration = Duration.between(endpoint.get().getServerErrorsSince(), currentTime);
-                minDelaySinceFirstErrorRespected = spentDuration.compareTo(minDelaySinceFirstServerErrorBeforeDisabling) > 0;
-            }
-            if (endpoint.get().getServerErrors() + currentServerErrors > maxServerErrors &&
-                minDelaySinceFirstErrorRespected) {
-                /*
-                 * The endpoint exceeded the max server errors allowed from configuration
-                 * and a reasonable duration was respected to give a chance to customers to fix the issue,
-                 * it is therefore disabled.
-                 */
-                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
-                int updated = entityManager.createQuery(hql)
-                        .setParameter("id", endpointId)
-                        .executeUpdate();
-                return updated > 0;
-            } else {
-                /*
-                 * The endpoint did NOT exceed the max server errors allowed from configuration.
-                 * The errors counter is therefore incremented.
-                 */
-                if (endpoint.get().getServerErrors() == 0) {
-                    String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors, serverErrorsSince = :currentDate WHERE id = :id";
-                    entityManager.createQuery(hql)
-                        .setParameter("currentServerErrors", currentServerErrors)
-                        .setParameter("currentDate", currentTime)
-                        .setParameter("id", endpointId)
-                        .executeUpdate();
-                } else {
-                    String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors WHERE id = :id";
-                    entityManager.createQuery(hql)
-                        .setParameter("currentServerErrors", currentServerErrors)
-                        .setParameter("id", endpointId)
-                        .executeUpdate();
+
+            if (endpoint.get().getServerErrors() + currentServerErrors > engineConfig.getMaxServerErrors()) {
+                if (endpoint.get().getServerErrorsSince() != null) {
+                    Duration spentDuration = Duration.between(endpoint.get().getServerErrorsSince(), currentTime);
+                    if (spentDuration.compareTo(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()) > 0) {
+                        /*
+                         * The endpoint exceeded the max server errors allowed from configuration
+                         * and a reasonable duration was respected to give a chance to customers to fix the issue,
+                         * it is therefore disabled.
+                         */
+                        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+                        int updated = entityManager.createQuery(hql)
+                            .setParameter("id", endpointId)
+                            .executeUpdate();
+                        return updated > 0;
+                    }
                 }
-                return false;
             }
+
+            /*
+             * The endpoint did NOT exceed the max server errors allowed from configuration.
+             * The errors counter is therefore incremented.
+             */
+            if (endpoint.get().getServerErrors() == 0) {
+                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors, serverErrorsSince = :currentDate WHERE id = :id";
+                entityManager.createQuery(hql)
+                    .setParameter("currentServerErrors", currentServerErrors)
+                    .setParameter("currentDate", currentTime)
+                    .setParameter("id", endpointId)
+                    .executeUpdate();
+            } else {
+                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors WHERE id = :id";
+                entityManager.createQuery(hql)
+                    .setParameter("currentServerErrors", currentServerErrors)
+                    .setParameter("id", endpointId)
+                    .executeUpdate();
+            }
+            return false;
         } else {
             return false;
         }
