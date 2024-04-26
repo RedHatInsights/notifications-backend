@@ -24,7 +24,7 @@
         <!-- notifications modules -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
-            <artifactId>notifications-common-aggregator</artifactId>
+            <artifactId>notifications-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

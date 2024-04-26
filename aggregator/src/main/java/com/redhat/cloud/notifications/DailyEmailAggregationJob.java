@@ -80,14 +80,11 @@ public class DailyEmailAggregationJob {
             aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             Log.infof("found %s commands", aggregationCommands.size());
-            if (!aggregatorConfig.isSingleDailyDigestEnabled()) {
-                aggregationCommands.stream().forEach(aggregationCommand -> sendIt(List.of(aggregationCommand)));
-            } else {
-                aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
-                    .values().forEach(this::sendIt);
-            }
+            aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
+                .values().forEach(this::sendIt);
+
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
-            emailAggregationResources.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
+            aggregationOrgConfigRepository.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
 
             Gauge lastSuccess = Gauge
                     .build()
@@ -147,7 +144,7 @@ public class DailyEmailAggregationJob {
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(eventList)
             .withContext(new Context.ContextBuilder()
-                .withAdditionalProperty("single_daily_digest_enabled", aggregatorConfig.isSingleDailyDigestEnabled())
+                .withAdditionalProperty("single_daily_digest_enabled", true)
                 .build())
             .build();
 

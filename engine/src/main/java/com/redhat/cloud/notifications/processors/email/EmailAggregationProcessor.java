@@ -8,15 +8,12 @@ import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
-import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -45,8 +42,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,7 +60,7 @@ import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
  * TODO Stop extending SystemEndpointTypeProcessor.
  */
 @ApplicationScoped
-public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor {
+public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
     public static final String AGGREGATION_COMMAND_REJECTED_COUNTER_NAME = "aggregation.command.rejected";
     public static final String AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME = "aggregation.command.processed";
@@ -206,12 +201,9 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         Timer.Sample consumedTimer = Timer.start(registry);
 
-        Boolean isSingleDailyDigestEnabled = false;
         try {
             Action action = actionParser.fromJsonString(event.getPayload());
-            if (null != action.getContext() && null != action.getContext().getAdditionalProperties()) {
-                isSingleDailyDigestEnabled = (Boolean) action.getContext().getAdditionalProperties().getOrDefault("single_daily_digest_enabled", false);
-            }
+
             for (com.redhat.cloud.notifications.ingress.Event actionEvent : action.getEvents()) {
                 try {
                     aggregationCommands.add(objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class));
@@ -230,11 +222,7 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
 
         processedAggregationCommandCount.increment(aggregationCommands.size());
         try {
-            if (null != isSingleDailyDigestEnabled && isSingleDailyDigestEnabled) {
-                processBundleAggregation(aggregationCommands, event);
-            } else {
-                processAggregateEmailsByAggregationKey(aggregationCommands.get(0), event);
-            }
+            processBundleAggregation(aggregationCommands, event);
         } catch (Exception e) {
             Log.warn("Error while processing aggregation", e);
             failedAggregationCommandCount.increment();
@@ -253,99 +241,6 @@ public class EmailSubscriptionTypeProcessor extends SystemEndpointTypeProcessor 
                     TAG_KEY_ORG_ID, event.getOrgId()
                 ));
             }
-        }
-    }
-
-    private void processAggregateEmailsByAggregationKey(AggregationCommand aggregationCommand, Event aggregatorEvent) {
-
-        Log.infof("Processing received aggregation command: %s", aggregationCommand);
-        Application app = applicationRepository.getApplication(aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication())
-                .orElseThrow(() -> {
-                    String exceptionMsg = String.format("Application not found: %s/%s", aggregationCommand.getAggregationKey().getBundle(), aggregationCommand.getAggregationKey().getApplication());
-                    return new IllegalArgumentException(exceptionMsg);
-                });
-
-        String eventTypeDisplayName = String.format("%s - %s - %s",
-            aggregatorEvent.getEventTypeDisplayName(),
-            app.getDisplayName(),
-            app.getBundle().getDisplayName()
-        );
-        eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
-
-        TemplateInstance subject = null;
-        TemplateInstance body = null;
-
-        EmailAggregationKey aggregationKey = aggregationCommand.getAggregationKey();
-        Optional<AggregationEmailTemplate> aggregationEmailTemplate = templateRepository
-                .findAggregationEmailTemplate(aggregationKey.getBundle(), aggregationKey.getApplication(), aggregationCommand.getSubscriptionType());
-        if (aggregationEmailTemplate.isPresent()) {
-            String subjectData = aggregationEmailTemplate.get().getSubjectTemplate().getData();
-            subject = templateService.compileTemplate(subjectData, "subject");
-            String bodyData = aggregationEmailTemplate.get().getBodyTemplate().getData();
-            body = templateService.compileTemplate(bodyData, "body");
-        }
-
-        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregationKey.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
-
-        Event event = aggregatorEvent;
-
-        Action action = new Action();
-        action.setEvents(List.of());
-        action.setOrgId(aggregationKey.getOrgId());
-        action.setApplication(aggregationKey.getApplication());
-        action.setBundle(aggregationKey.getBundle());
-        action.setTimestamp(LocalDateTime.now(ZoneOffset.UTC));
-        if (null != event.getEventType()) {
-            action.setEventType(event.getEventType().getName());
-        }
-
-        if (subject != null && body != null) {
-            Map<User, Map<String, Object>> aggregationsByUsers = emailAggregator.getAggregated(app.getId(), aggregationKey,
-                                                                        aggregationCommand.getSubscriptionType(),
-                                                                        aggregationCommand.getStart(),
-                                                                        aggregationCommand.getEnd());
-
-            Map<Map<String, Object>, Set<User>> aggregationsEmailContext = aggregationsByUsers.keySet().stream()
-                .collect(Collectors.groupingBy(aggregationsByUsers::get, Collectors.toSet()));
-
-            for (Map.Entry<Map<String, Object>, Set<User>> aggregation : aggregationsEmailContext.entrySet()) {
-
-                Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
-                aggregation.getKey().forEach(contextBuilder::withAdditionalProperty);
-                action.setContext(contextBuilder.build());
-                event.setEventWrapper(new EventWrapperAction(action));
-
-                Set<String> recipientsUsernames = aggregation.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
-                String subjectStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), subject);
-                String bodyStr = templateService.renderTemplate(event.getEventWrapper().getEvent(), body, emailActorsResolver.getPendoEmailMessage(event));
-
-                Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, List.of(endpoint));
-
-                // Prepare all the data to be sent to the connector.
-                final EmailNotification emailNotification = new EmailNotification(
-                    bodyStr,
-                    subjectStr,
-                    emailActorsResolver.getEmailSender(event),
-                    event.getOrgId(),
-                    recipientSettings,
-                    /*
-                     * The recipients are determined at an earlier stage (see EmailAggregator) using the
-                     * recipients-resolver app and the subscription records from the database.
-                     * The subscribedByDefault value below simply means that recipients-resolver will consider
-                     * the subscribers passed in the request as the recipients candidates of the aggregation email.
-                     */
-                    recipientsUsernames,
-                    Collections.emptySet(),
-                    false
-                );
-
-                connectorSender.send(event, endpoint, JsonObject.mapFrom(emailNotification));
-            }
-        }
-
-        // Delete on daily
-        if (aggregationCommand.getSubscriptionType().equals(SubscriptionType.DAILY)) {
-            emailAggregationRepository.purgeOldAggregation(aggregationKey, aggregationCommand.getEnd());
         }
     }
 

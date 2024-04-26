@@ -11,8 +11,8 @@ import com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatPro
 import com.redhat.cloud.notifications.processors.camel.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.camel.teams.TeamsProcessor;
 import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
+import com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailProcessor;
-import com.redhat.cloud.notifications.processors.email.EmailSubscriptionTypeProcessor;
 import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
@@ -53,7 +53,7 @@ public class EndpointProcessor {
     EmailProcessor emailConnectorProcessor;
 
     @Inject
-    EmailSubscriptionTypeProcessor emailProcessor;
+    EmailAggregationProcessor emailAggregationProcessor;
 
     @Inject
     SlackProcessor slackProcessor;
@@ -124,7 +124,7 @@ public class EndpointProcessor {
                             break;
                         case EMAIL_SUBSCRIPTION:
                             if (isAggregatorEvent(event)) {
-                                emailProcessor.processAggregation(event);
+                                emailAggregationProcessor.processAggregation(event);
                             } else {
                                 emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
                             }

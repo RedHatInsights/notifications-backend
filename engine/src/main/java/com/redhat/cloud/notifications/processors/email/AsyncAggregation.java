@@ -12,7 +12,7 @@ import jakarta.inject.Inject;
 public class AsyncAggregation implements Runnable {
 
     @Inject
-    EmailSubscriptionTypeProcessor emailSubscriptionTypeProcessor;
+    EmailAggregationProcessor emailAggregationProcessor;
 
     private Event event;
 
@@ -29,7 +29,7 @@ public class AsyncAggregation implements Runnable {
     @Override
     @ActivateRequestContext
     public void run() {
-        emailSubscriptionTypeProcessor.processAggregationAsync(event);
+        emailAggregationProcessor.processAggregationAsync(event);
     }
 
     @PreDestroy
