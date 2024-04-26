@@ -28,6 +28,6 @@ class TestDriftTemplate extends IntegrationTemplatesInDbHelper {
     void testRenderedTemplateDrift() {
         Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
         String result = generateDrawerTemplate(EVENT_TYPE_NAME, action);
-        assertEquals("<b>Machine 1</b> has drifted from 2 baselines.", result);
+        assertEquals("**Machine 1** has drifted from 2 baselines.", result);
     }
 }

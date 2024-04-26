@@ -41,42 +41,42 @@ class TestCostManagementTemplate extends IntegrationTemplatesInDbHelper {
     void testRenderedTemplateMissingCostModel() {
 
         String result = generateDrawerTemplate(MISSING_COST_MODEL, ACTION);
-        assertEquals("OpenShift source <b>Dummy source name</b> has no assigned cost model.", result);
+        assertEquals("OpenShift source **Dummy source name** has no assigned cost model.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelCreate() {
         String result = generateDrawerTemplate(COST_MODEL_CREATE, ACTION);
-        assertEquals("Cost model <b>Sample model</b> has been created.", result);
+        assertEquals("Cost model **Sample model** has been created.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelUpdate() {
         String result = generateDrawerTemplate(COST_MODEL_UPDATE, ACTION);
-        assertEquals("Cost model <b>Sample model</b> has been updated.", result);
+        assertEquals("Cost model **Sample model** has been updated.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelRemove() {
         String result = generateDrawerTemplate(COST_MODEL_REMOVE, ACTION);
-        assertEquals("Cost model <b>Sample model</b> has been removed.", result);
+        assertEquals("Cost model **Sample model** has been removed.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelOperatorStale() {
         String result = generateDrawerTemplate(CM_OPERATOR_STALE, ACTION);
-        assertEquals("OpenShift source <b>Dummy source name</b> has not received any payloads in the last 3 or more days.", result);
+        assertEquals("OpenShift source **Dummy source name** has not received any payloads in the last 3 or more days.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelOperatorDataProcessed() {
         String result = generateDrawerTemplate(CM_OPERATOR_DATA_PROCESSED, ACTION);
-        assertEquals("Cost Management has completed processing for OpenShift source <b>Dummy source name</b>.", result);
+        assertEquals("Cost Management has completed processing for OpenShift source **Dummy source name**.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelOperatorDataReceived() {
         String result = generateDrawerTemplate(CM_OPERATOR_DATA_RECEIVED, ACTION);
-        assertEquals("OpenShift source <b>Dummy source name</b> has received a new payload and processing should begin shortly.", result);
+        assertEquals("OpenShift source **Dummy source name** has received a new payload and processing should begin shortly.", result);
     }
 }

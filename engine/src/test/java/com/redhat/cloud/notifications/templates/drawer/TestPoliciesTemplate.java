@@ -29,6 +29,6 @@ class TestPoliciesTemplate extends IntegrationTemplatesInDbHelper {
     void testRenderedTemplateNewAdvisory() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
         String result = generateDrawerTemplate(EVENT_TYPE_NAME, action);
-        assertEquals("<b>FooMachine</b> triggered 2 policies.", result);
+        assertEquals("**FooMachine** triggered 2 policies.", result);
     }
 }

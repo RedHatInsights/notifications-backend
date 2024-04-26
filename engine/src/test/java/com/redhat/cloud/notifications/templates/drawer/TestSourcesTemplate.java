@@ -34,6 +34,6 @@ class TestSourcesTemplate extends IntegrationTemplatesInDbHelper {
     @Test
     void testRenderedTemplateAvailabilityStatus() {
         String result = generateDrawerTemplate(AVAILABILITY_STATUS, ACTION);
-        assertEquals("test name 1's availability status was changed from <b>old status</b> to <b>current status</b>.", result);
+        assertEquals("test name 1's availability status was changed from **old status** to **current status**.", result);
     }
 }

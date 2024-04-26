@@ -34,12 +34,12 @@ class TestEdgeManagementTemplate extends IntegrationTemplatesInDbHelper {
         TimeAgoFormatter timeFormatter = new TimeAgoFormatter();
         String deltaTme = timeFormatter.format(LocalDateTime.now(UTC), LocalDateTime.from(ACTION.getTimestamp()));
         String result = generateDrawerTemplate(IMAGE_CREATION, ACTION);
-        assertEquals(String.format("A new image named <b>Test name</b> was created %s.", deltaTme), result);
+        assertEquals(String.format("A new image named **Test name** was created %s.", deltaTme), result);
     }
 
     @Test
     void testRenderedTemplateUpdateDevice() {
         String result = generateDrawerTemplate(UPDATE_DEVICES, ACTION);
-        assertEquals("An Update for the device <b>DEVICE-9012</b> started.", result);
+        assertEquals("An Update for the device **DEVICE-9012** started.", result);
     }
 }

@@ -30,12 +30,12 @@ class TestComplianceTemplate extends IntegrationTemplatesInDbHelper {
     void testRenderedTemplateBelowThreshold() {
 
         String result = generateDrawerTemplate(COMPLIANCE_BELOW_THRESHOLD, ACTION);
-        assertEquals("Your system, <b>My test machine</b>, assigned to policy <b>Tested name</b>, has been marked as non-compliant because its compliance score 20% dropped below the configured compliance threshold of 25% for this policy.", result);
+        assertEquals("Your system, **My test machine**, assigned to policy **Tested name**, has been marked as non-compliant because its compliance score 20% dropped below the configured compliance threshold of 25% for this policy.", result);
     }
 
     @Test
     void testRenderedTemplateUploadFailed() {
         String result = generateDrawerTemplate(REPORT_UPLOAD_FAILED, ACTION);
-        assertEquals("Your system <b>My test machine</b> failed to upload a new compliance report. The error message returned by our system for the request <i>12345</i> was: <i>Kernel panic (test)</i>", result);
+        assertEquals("Your system **My test machine** failed to upload a new compliance report. The error message returned by our system for the request *12345* was: *Kernel panic (test)*", result);
     }
 }

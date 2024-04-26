@@ -38,7 +38,7 @@ class TestIntegrationsTemplate extends IntegrationTemplatesInDbHelper {
         Endpoint endpoint = buildEndpoint();
         Action action = buildIntegrationDisabledAction(endpoint, HTTP_4XX, 401, 1);
         String result = generateDrawerTemplate(INTEGRATION_DISABLED_EVENT_TYPE, action);
-        assertEquals("Integration <b>Unreliable integration</b> was disabled because the remote endpoint responded with an HTTP status code 401.", result);
+        assertEquals("Integration **Unreliable integration** was disabled because the remote endpoint responded with an HTTP status code 401.", result);
     }
 
     private static Endpoint buildEndpoint() {
