@@ -29,14 +29,14 @@ class TestAdvisorTemplate extends IntegrationTemplatesInDbHelper {
     void testRenderedTemplateForResolvedRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
         String result = generateDrawerTemplate(RESOLVED_RECOMMENDATION, action);
-        assertEquals("<b>My Host</b> has 4 resolved recommendations.", result);
+        assertEquals("**My Host** has 4 resolved recommendations.", result);
     }
 
     @Test
     void testRenderedTemplateForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = generateDrawerTemplate(NEW_RECOMMENDATION, action);
-        assertEquals("<b>My Host</b> has 4 new recommendations.", result);
+        assertEquals("**My Host** has 4 new recommendations.", result);
     }
 
     @Test

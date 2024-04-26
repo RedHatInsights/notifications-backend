@@ -54,38 +54,38 @@ class TestRbacTemplate extends IntegrationTemplatesInDbHelper {
     private void checkResult(String eventType, String result) {
         switch (eventType) {
             case RH_NEW_ROLE_AVAILABLE:
-                assertEquals("Red Hat now provides a new role <b>testRoleName</b>.", result);
+                assertEquals("Red Hat now provides a new role **testRoleName**.", result);
                 break;
             case RH_PLATFORM_DEFAULT_ROLE_UPDATED:
             case RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED:
-                assertEquals("Red Hat has updated the role <b>testRoleName</b>.", result);
+                assertEquals("Red Hat has updated the role **testRoleName**.", result);
                 break;
             case CUSTOM_ROLE_CREATED:
-                assertEquals("A custom role <b>testRoleName</b> has been created by testUser1.", result);
+                assertEquals("A custom role **testRoleName** has been created by testUser1.", result);
                 break;
             case CUSTOM_ROLE_UPDATED:
-                assertEquals("Custom role <b>testRoleName</b> has been updated by testUser1.", result);
+                assertEquals("Custom role **testRoleName** has been updated by testUser1.", result);
                 break;
             case CUSTOM_ROLE_DELETED:
-                assertEquals("Custom role <b>testRoleName</b> has been deleted by testUser1 and is not available anymore.", result);
+                assertEquals("Custom role **testRoleName** has been deleted by testUser1 and is not available anymore.", result);
                 break;
             case RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS:
-                assertEquals("Red Hat added a role <b>myRole</b> to platform default access group.", result);
+                assertEquals("Red Hat added a role **myRole** to platform default access group.", result);
                 break;
             case RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS:
-                assertEquals("Red Hat removed a role <b>myRole</b> from platform default access group.", result);
+                assertEquals("Red Hat removed a role **myRole** from platform default access group.", result);
                 break;
             case CUSTOM_DEFAULT_ACCESS_UPDATED:
                 assertEquals("Custom platform default access group has been updated by testUser1.", result);
                 break;
             case GROUP_CREATED:
-                assertEquals("A custom group <b>testRoleName</b> has been created by testUser1.", result);
+                assertEquals("A custom group **testRoleName** has been created by testUser1.", result);
                 break;
             case GROUP_UPDATED:
                 assertEquals("Custom group has been updated by testUser1.", result);
                 break;
             case GROUP_DELETED:
-                assertEquals("Custom group <b>testRoleName</b> has been deleted by testUser1 and is not available anymore.", result);
+                assertEquals("Custom group **testRoleName** has been deleted by testUser1 and is not available anymore.", result);
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
                 assertEquals("Platform default group is modified by testUser1 and Red Hat will not be responsible for managing it from now on.", result);

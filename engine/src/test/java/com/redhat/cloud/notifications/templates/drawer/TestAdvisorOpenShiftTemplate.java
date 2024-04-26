@@ -33,6 +33,6 @@ class TestAdvisorOpenShiftTemplate extends IntegrationTemplatesInDbHelper {
     void testRenderedTemplateForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = generateDrawerTemplate(NEW_RECOMMENDATION, action);
-        assertEquals("<b>My Host</b> has 4 new recommendations.", result);
+        assertEquals("**My Host** has 4 new recommendations.", result);
     }
 }
