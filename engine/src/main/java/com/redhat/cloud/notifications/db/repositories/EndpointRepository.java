@@ -177,6 +177,14 @@ public class EndpointRepository {
                     .setParameter("currentDate", currentTime)
                     .setParameter("id", endpointId)
                     .executeUpdate();
+            } else if (endpoint.get().getServerErrorsSince() == null) {
+                // this case it to cover migration phase, when an endpoint already had some errors before introducing initial error date mechanism
+                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors, serverErrorsSince = :currentDate WHERE id = :id";
+                entityManager.createQuery(hql)
+                    .setParameter("currentServerErrors", currentServerErrors)
+                    .setParameter("currentDate", currentTime)
+                    .setParameter("id", endpointId)
+                    .executeUpdate();
             } else {
                 String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors WHERE id = :id";
                 entityManager.createQuery(hql)
@@ -184,10 +192,8 @@ public class EndpointRepository {
                     .setParameter("id", endpointId)
                     .executeUpdate();
             }
-            return false;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**

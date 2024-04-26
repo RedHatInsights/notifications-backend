@@ -16,11 +16,12 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -57,7 +58,7 @@ public class EndpointRepositoryTest {
         Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 0);
         assertTrue(endpoint.isEnabled());
         assertEquals(0, endpoint.getServerErrors());
-        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.of(1, ChronoUnit.NANOS));
+        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.ofNanos(1));
 
         for (int i = 1; i <= MAX_SERVER_ERRORS + 1; i++) {
             assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), 1));
@@ -69,12 +70,13 @@ public class EndpointRepositoryTest {
         }
     }
 
-    @Test
-    void testIncrementEndpointServerErrorsAndWaitForMinDelay() throws InterruptedException {
-        Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 0);
+    @ParameterizedTest
+    @ValueSource(ints = {0, 5}) // to test cases when endpoint have already some servers error or not
+    void testIncrementEndpointServerErrorsAndWaitForMinDelay(int initialServerErrors) throws InterruptedException {
+        Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, initialServerErrors);
         assertTrue(endpoint.isEnabled());
-        assertEquals(0, endpoint.getServerErrors());
-        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.of(2, ChronoUnit.SECONDS));
+        assertEquals(initialServerErrors, endpoint.getServerErrors());
+        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.ofSeconds(2));
 
         for (int i = 1; i <= MAX_SERVER_ERRORS + 10; i++) {
             assertFalse(endpointRepository.incrementEndpointServerErrors(endpoint.getId(), 1));
@@ -84,7 +86,7 @@ public class EndpointRepositoryTest {
         Endpoint ep = getEndpoint(endpoint.getId());
         assertTrue(ep.isEnabled());
         assertTrue(ep.getServerErrors() > MAX_SERVER_ERRORS);
-        Thread.sleep(Duration.of(2, ChronoUnit.SECONDS));
+        Thread.sleep(Duration.ofSeconds(2));
 
         assertTrue(endpointRepository.incrementEndpointServerErrors(endpoint.getId(), 1));
         entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
@@ -95,7 +97,7 @@ public class EndpointRepositoryTest {
 
     @Test
     void testIncrementEndpointServerErrorsWithUnknownId() {
-        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.of(1, ChronoUnit.SECONDS));
+        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.ofSeconds(1));
         assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 1));
     }
 
