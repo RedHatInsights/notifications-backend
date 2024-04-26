@@ -186,6 +186,8 @@ objects:
       - prefix: insights/notifications/event_types_per_organization
         query: >-
           SELECT
+            bundles.display_name::TEXT AS bundle,
+            applications.display_name::TEXT AS application,
             event_type.display_name::TEXT AS event_type,
             behavior_group.org_id::TEXT
           FROM
@@ -199,6 +201,12 @@ objects:
           INNER JOIN
             behavior_group
               ON behavior_group.id = bga.behavior_group_id
+          INNER JOIN
+            applications
+              ON applications.id = event_type.application_id
+          INNER JOIN
+            bundles
+              ON bundles.id = applications.bundle_id
 parameters:
 - name: FLOORIST_BUCKET_SECRET_NAME
   description: Floorist's S3 bucket's secret name
