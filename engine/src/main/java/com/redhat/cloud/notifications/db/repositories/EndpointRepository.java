@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -15,6 +16,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +41,9 @@ public class EndpointRepository {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    EngineConfig engineConfig;
 
     /**
      * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION or DRAWER endpoint with empty properties. This
@@ -124,11 +131,11 @@ public class EndpointRepository {
     /**
      * Increments the server errors counter of the endpoint identified by the given ID.
      * @param endpointId the endpoint ID
-     * @param maxServerErrors the maximum server errors allowed from the configuration
+     * @param currentServerErrors the current server errors number
      * @return {@code true} if the endpoint was disabled by this method, {@code false} otherwise
      */
     @Transactional
-    public boolean incrementEndpointServerErrors(UUID endpointId, int maxServerErrors, int currentServerErrors) {
+    public boolean incrementEndpointServerErrors(UUID endpointId, int currentServerErrors) {
         /*
          * This method must be an atomic operation from a DB perspective. Otherwise, we could send multiple email
          * notifications about the same disabled endpoint in case of failures happening on concurrent threads or pods.
@@ -139,31 +146,54 @@ public class EndpointRepository {
          * It may or may not have been disabled already from the frontend or because of a 4xx error.
          */
         if (endpoint.isPresent() && endpoint.get().isEnabled()) {
-            if (endpoint.get().getServerErrors() + currentServerErrors > maxServerErrors) {
-                /*
-                 * The endpoint exceeded the max server errors allowed from configuration.
-                 * It is therefore disabled.
-                 */
-                String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
-                int updated = entityManager.createQuery(hql)
-                        .setParameter("id", endpointId)
-                        .executeUpdate();
-                return updated > 0;
+            LocalDateTime currentTime = LocalDateTime.now(ZoneId.of("UTC"));
+
+            if (endpoint.get().getServerErrors() + currentServerErrors > engineConfig.getMaxServerErrors()) {
+                if (endpoint.get().getServerErrorsSince() != null) {
+                    Duration spentDuration = Duration.between(endpoint.get().getServerErrorsSince(), currentTime);
+                    if (spentDuration.compareTo(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()) > 0) {
+                        /*
+                         * The endpoint exceeded the max server errors allowed from configuration
+                         * and a reasonable duration was respected to give a chance to customers to fix the issue,
+                         * it is therefore disabled.
+                         */
+                        String hql = "UPDATE Endpoint SET enabled = FALSE WHERE id = :id AND enabled IS TRUE";
+                        int updated = entityManager.createQuery(hql)
+                            .setParameter("id", endpointId)
+                            .executeUpdate();
+                        return updated > 0;
+                    }
+                }
+            }
+
+            /*
+             * The endpoint did NOT exceed the max server errors allowed from configuration.
+             * The errors counter is therefore incremented.
+             */
+            if (endpoint.get().getServerErrors() == 0) {
+                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors, serverErrorsSince = :currentDate WHERE id = :id";
+                entityManager.createQuery(hql)
+                    .setParameter("currentServerErrors", currentServerErrors)
+                    .setParameter("currentDate", currentTime)
+                    .setParameter("id", endpointId)
+                    .executeUpdate();
+            } else if (endpoint.get().getServerErrorsSince() == null) {
+                // this case it to cover migration phase, when an endpoint already had some errors before introducing initial error date mechanism
+                String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors, serverErrorsSince = :currentDate WHERE id = :id";
+                entityManager.createQuery(hql)
+                    .setParameter("currentServerErrors", currentServerErrors)
+                    .setParameter("currentDate", currentTime)
+                    .setParameter("id", endpointId)
+                    .executeUpdate();
             } else {
-                /*
-                 * The endpoint did NOT exceed the max server errors allowed from configuration.
-                 * The errors counter is therefore incremented.
-                 */
                 String hql = "UPDATE Endpoint SET serverErrors = serverErrors + :currentServerErrors WHERE id = :id";
                 entityManager.createQuery(hql)
-                        .setParameter("currentServerErrors", currentServerErrors)
-                        .setParameter("id", endpointId)
-                        .executeUpdate();
-                return false;
+                    .setParameter("currentServerErrors", currentServerErrors)
+                    .setParameter("id", endpointId)
+                    .executeUpdate();
             }
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -229,7 +259,7 @@ public class EndpointRepository {
      */
     @Transactional
     public boolean resetEndpointServerErrors(UUID endpointId) {
-        String hql = "UPDATE Endpoint SET serverErrors = 0 WHERE id = :id AND serverErrors > 0";
+        String hql = "UPDATE Endpoint SET serverErrors = 0, serverErrorsSince = null WHERE id = :id AND serverErrors > 0";
         int updated = entityManager.createQuery(hql)
                 .setParameter("id", endpointId)
                 .executeUpdate();

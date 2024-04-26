@@ -71,7 +71,7 @@ class EndpointErrorFromConnectorHelperTest {
 
         JsonObject payload = buildTestPayload(false, HTTP_5XX, 503);
         endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
-        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), anyInt(), eq(4));
+        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), eq(4));
         verifyNoInteractions(integrationDisabledNotifier);
         assertMetrics(0, 0);
     }
@@ -79,12 +79,13 @@ class EndpointErrorFromConnectorHelperTest {
     @Test
     void testIncreaseAndDisableServerErrorCount() {
         final Endpoint endpoint = mockEndpointFromNotificationHistorySearch();
-        Mockito.when(endpointRepository.incrementEndpointServerErrors(eq(endpoint.getId()), anyInt(), anyInt())).thenReturn(true);
+        Mockito.when(endpointRepository.incrementEndpointServerErrors(eq(endpoint.getId()), anyInt())).thenReturn(true);
 
         JsonObject payload = buildTestPayload(false, HTTP_5XX, 503);
         endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
-        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), anyInt(), eq(4));
-        verify(integrationDisabledNotifier, times(1)).notify(endpoint, HTTP_5XX, 503, 10);
+        verify(endpointRepository, times(1)).incrementEndpointServerErrors(eq(endpoint.getId()), eq(4));
+
+        verify(integrationDisabledNotifier, times(1)).notify(endpoint, HTTP_5XX, 503, 0);
         assertMetrics(1, 0);
     }
 

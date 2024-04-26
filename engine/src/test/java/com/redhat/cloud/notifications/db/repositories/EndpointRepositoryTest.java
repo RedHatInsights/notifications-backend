@@ -1,20 +1,26 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -22,6 +28,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -38,14 +45,23 @@ public class EndpointRepositoryTest {
     @Inject
     EntityManager entityManager;
 
+    @InjectSpy
+    EngineConfig engineConfig;
+
+    @BeforeEach
+    void setUp() {
+        when(engineConfig.getMaxServerErrors()).thenReturn(MAX_SERVER_ERRORS);
+    }
+
     @Test
     void testIncrementEndpointServerErrors() {
         Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 0);
         assertTrue(endpoint.isEnabled());
         assertEquals(0, endpoint.getServerErrors());
+        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.ofNanos(1));
 
         for (int i = 1; i <= MAX_SERVER_ERRORS + 1; i++) {
-            assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), MAX_SERVER_ERRORS, 1));
+            assertEquals(i > MAX_SERVER_ERRORS, endpointRepository.incrementEndpointServerErrors(endpoint.getId(), 1));
             entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
             Endpoint ep = getEndpoint(endpoint.getId());
             assertEquals(i <= MAX_SERVER_ERRORS, ep.isEnabled());
@@ -54,9 +70,35 @@ public class EndpointRepositoryTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {0, 5}) // to test cases when endpoint have already some servers error or not
+    void testIncrementEndpointServerErrorsAndWaitForMinDelay(int initialServerErrors) throws InterruptedException {
+        Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, initialServerErrors);
+        assertTrue(endpoint.isEnabled());
+        assertEquals(initialServerErrors, endpoint.getServerErrors());
+        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.ofSeconds(2));
+
+        for (int i = 1; i <= MAX_SERVER_ERRORS + 10; i++) {
+            assertFalse(endpointRepository.incrementEndpointServerErrors(endpoint.getId(), 1));
+            entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+        }
+
+        Endpoint ep = getEndpoint(endpoint.getId());
+        assertTrue(ep.isEnabled());
+        assertTrue(ep.getServerErrors() > MAX_SERVER_ERRORS);
+        Thread.sleep(Duration.ofSeconds(2));
+
+        assertTrue(endpointRepository.incrementEndpointServerErrors(endpoint.getId(), 1));
+        entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+
+        ep = getEndpoint(endpoint.getId());
+        assertFalse(ep.isEnabled());
+    }
+
     @Test
     void testIncrementEndpointServerErrorsWithUnknownId() {
-        assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 10, 1));
+        when(engineConfig.getMinDelaySinceFirstServerErrorBeforeDisabling()).thenReturn(Duration.ofSeconds(1));
+        assertFalse(endpointRepository.incrementEndpointServerErrors(UUID.randomUUID(), 1));
     }
 
     @Test
