@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+
 import java.time.LocalDate;
 
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.GENERAL_PENDO_MESSAGE;
@@ -14,10 +15,7 @@ import static com.redhat.cloud.notifications.processors.email.EmailActorsResolve
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OCM_PENDO_MESSAGE;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OCM_PENDO_TITLE;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_PROD;
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_STAGE;
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT;
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.RH_HCC_SENDER;
 import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.RH_INSIGHTS_SENDER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -50,7 +48,7 @@ public class EmailActorsResolverTest {
         try {
             emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2024-01-01"));
             Event event = buildEvent(null, "rhel", "policies");
-            assertEquals(RH_HCC_SENDER, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+            assertEquals(this.emailActorsResolver.getRhHccSender(), emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
         } finally {
             emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2000-01-01"));
         }
@@ -62,7 +60,7 @@ public class EmailActorsResolverTest {
     @Test
     void testOpenshiftClusterManagerStageEmailSender() {
         Event event = buildEvent("stage", "openshift", "cluster-manager");
-        assertEquals(OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        assertEquals(this.emailActorsResolver.getOpenshiftSenderStage(), emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
         try {
             emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2050-01-01"));
 
@@ -79,7 +77,7 @@ public class EmailActorsResolverTest {
     @Test
     void testOpenshiftClusterManagerDefaultEmailSender() {
         Event event = buildEvent("prod", "openshift", "cluster-manager");
-        assertEquals(OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT, emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+        assertEquals(this.emailActorsResolver.getOpenshiftSenderProd(), emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
         try {
             emailActorsResolver.setEmailChangesActivationDate(LocalDate.parse("2050-01-01"));
 
