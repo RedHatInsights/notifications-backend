@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -57,7 +56,6 @@ public class Endpoint extends CreationUpdateTimestamped {
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.REMOVE)
     private Set<BehaviorGroupAction> behaviorGroupActions;
 
-    @JsonIgnore
     private LocalDateTime serverErrorsSince;
 
     @OneToMany(mappedBy = "endpoint")

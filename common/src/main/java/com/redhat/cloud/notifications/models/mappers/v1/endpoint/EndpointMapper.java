@@ -36,6 +36,7 @@ public interface EndpointMapper {
     @Mapping(target = "notificationHistories", ignore = true)
     @Mapping(target = "orgId", ignore = true)
     @Mapping(target = "updated", ignore = true)
+    @Mapping(target = "serverErrorsSince", ignore = true)
     Endpoint toEntity(EndpointDTO endpoint);
 
     /**
