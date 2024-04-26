@@ -1,10 +1,8 @@
 package com.redhat.cloud.notifications.connector.http;
 
 import com.redhat.cloud.notifications.connector.ConnectorConfig;
-import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.List;
@@ -61,11 +59,8 @@ public class HttpConnectorConfig extends ConnectorConfig {
     @ConfigProperty(name = SOCKET_TIMEOUT_MS, defaultValue = "2500")
     int httpSocketTimeout;
 
-    @Inject
-    protected ToggleRegistry toggleRegistry;
-
     @PostConstruct
-    protected void postConstruct() {
+    void postConstruct() {
         disableFaultyEndpointsToggle = toggleRegistry.register("disable-faulty-endpoints", true);
     }
 

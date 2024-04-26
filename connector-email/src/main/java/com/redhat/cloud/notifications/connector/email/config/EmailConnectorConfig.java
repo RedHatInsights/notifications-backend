@@ -53,10 +53,8 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     private String enableBopEmailServiceV2Toggle;
 
-    @Override
     @PostConstruct
-    protected void postConstruct() {
-        super.postConstruct();
+    void emailConnectorPostConstruct() {
         enableBopEmailServiceV2Toggle = toggleRegistry.register("enable-bop-service-v2", true);
     }
 
