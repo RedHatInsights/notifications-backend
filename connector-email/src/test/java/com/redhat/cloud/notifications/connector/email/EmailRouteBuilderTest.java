@@ -42,7 +42,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
      */
     @Test
     void testBuildBOPEndpoint() throws Exception {
-        try (Endpoint bopEndpoint = this.emailRouteBuilder.setUpBOPEndpoint().resolve(this.context)) {
+        try (Endpoint bopEndpoint = this.emailRouteBuilder.setUpBOPEndpointV1().resolve(this.context)) {
             Assertions.assertEquals(this.emailConnectorConfig.getBopURL(), bopEndpoint.getEndpointBaseUri(), "the base URI of the endpoint is not the same as the one set through the properties");
 
             final String bopEndpointURI = bopEndpoint.getEndpointUri();

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector;
 
+import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
@@ -87,6 +88,9 @@ public class ConnectorConfig {
 
     @Inject
     protected Unleash unleash;
+
+    @Inject
+    protected ToggleRegistry toggleRegistry;
 
     public void log() {
         Log.info("=== Startup configuration ===");

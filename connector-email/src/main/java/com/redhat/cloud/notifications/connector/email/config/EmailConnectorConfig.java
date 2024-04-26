@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import io.getunleash.UnleashContext;
 import io.quarkus.runtime.configuration.ProfileManager;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -25,8 +27,8 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_URL = "notifications.connector.user-provider.bop.url";
     private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
     private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
-
     private static final String NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED = "notifications.emails-internal-only.enabled";
+    private static final String NOTIFICATIONS_EMAILS_USE_BOP_V2_ENABLED = "notifications.emails-use-bop-v2.enabled";
 
     @ConfigProperty(name = BOP_API_TOKEN)
     String bopApiToken;
@@ -49,6 +51,13 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, defaultValue = "false")
     boolean emailsInternalOnlyEnabled;
 
+    private String enableBopEmailServiceV2Toggle;
+
+    @PostConstruct
+    void emailConnectorPostConstruct() {
+        enableBopEmailServiceV2Toggle = toggleRegistry.register("enable-bop-service-v2", true);
+    }
+
     @Override
     protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = super.getLoggedConfiguration();
@@ -58,11 +67,12 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
          * DO NOT log config values that come from OpenShift secrets.
          */
 
-        config.put(BOP_ENV, this.bopEnv);
-        config.put(BOP_URL, this.bopURL);
+        config.put(BOP_ENV, bopEnv);
+        config.put(BOP_URL, bopURL);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
+        config.put(enableBopEmailServiceV2Toggle + " for all orgIds", isEnableBopServiceV2Usage(null));
 
         /*
          * /!\ WARNING /!\
@@ -103,6 +113,13 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     public void setEmailsInternalOnlyEnabled(boolean emailsInternalOnlyEnabled) {
         checkTestLaunchMode();
         this.emailsInternalOnlyEnabled = emailsInternalOnlyEnabled;
+    }
+
+    public boolean isEnableBopServiceV2Usage(String orgId) {
+        UnleashContext unleashContext = UnleashContext.builder()
+            .addProperty("orgId", orgId)
+            .build();
+        return unleash.isEnabled(enableBopEmailServiceV2Toggle, unleashContext, false);
     }
 
     /**
