@@ -425,4 +425,4 @@ parameters:
   value: "10"
 - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
   description: min delay since the first error before an endpoint is eligible to be disabled
-  value: PT2D
+  value: P2D
