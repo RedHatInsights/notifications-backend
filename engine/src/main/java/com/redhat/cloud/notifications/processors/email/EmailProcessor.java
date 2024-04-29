@@ -37,6 +37,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     EmailActorsResolver emailActorsResolver;
 
     @Inject
+    EmailPendoResolver emailPendoResolver;
+
+    @Inject
     EmailAggregationProcessor emailAggregationProcessor;
 
     @Inject
@@ -51,7 +54,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
         // Generate an aggregation if the event supports it.
-        this.emailAggregationProcessor.generateAggregationWhereDue(event);
+        emailAggregationProcessor.generateAggregationWhereDue(event);
 
         // Fetch the template that will be used to hydrate it with the data.
         final Optional<InstantEmailTemplate> instantEmailTemplateMaybe = this.templateRepository.findInstantEmailTemplate(event.getEventType().getId());
@@ -97,7 +100,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
 
         final String subject = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
-        final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailActorsResolver.getPendoEmailMessage(event));
+        final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event));
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(

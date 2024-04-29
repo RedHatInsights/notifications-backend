@@ -10,8 +10,8 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Template;
-import com.redhat.cloud.notifications.processors.email.EmailActorsResolver;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
@@ -36,8 +36,8 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.GENERAL_PENDO_MESSAGE;
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.GENERAL_PENDO_TITLE;
+import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_MESSAGE;
+import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_TITLE;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
@@ -58,13 +58,13 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
 
     String myCurrentApp;
 
+    @Inject
+    Environment environment;
+
     @Override
     protected String getApp() {
         return myCurrentApp;
     }
-
-    @Inject
-    EmailActorsResolver emailActorsResolver;
 
     @Override
     @BeforeEach
@@ -129,7 +129,7 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         assertNotNull(bodyTemplate);
         Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result);
 
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, emailActorsResolver.addDateOnPendoMessage(GENERAL_PENDO_MESSAGE));
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
 
         String templateResult = generateEmailFromContextMap(bodyTemplate, mapData, null);
         templateResultChecks(templateResult);
