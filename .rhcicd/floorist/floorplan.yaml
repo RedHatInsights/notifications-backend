@@ -127,8 +127,8 @@ objects:
             sub.enabled,
             sub.actively_used;
       # Count the number of notifications grouped by bundle, application,
-      # delivery status and the organization ID.
-      - prefix: insights/notifications/events_by_bundle_app_status_org_id
+      # event type, delivery status and the organization ID.
+      - prefix: insights/notifications/events_by_bundle_app_type_status_org_id
         query: >-
           SELECT
             bun.display_name::TEXT AS bundle,
@@ -142,6 +142,7 @@ objects:
               ELSE
                 LOWER(nh.endpoint_type_v2)
             END AS endpoint_type,
+            et.display_name::TEXT AS event_type,
             nh.status::TEXT,
             count(nh.*)
           FROM
@@ -149,6 +150,9 @@ objects:
           INNER JOIN
             "event" AS e
               ON e.id = nh.event_id
+          INNER JOIN
+            event_type AS et
+              ON et.id = e.event_type_id
           INNER JOIN
             applications AS apps
               ON apps.id = e.application_id
@@ -159,6 +163,7 @@ objects:
             bun.display_name,
             apps.display_name,
             e.org_id,
+            et.display_name,
             endpoint_type,
             nh.status
       # Count the number of received events from applications and group them
