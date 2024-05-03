@@ -15,10 +15,12 @@ objects:
       secretName: ${FLOORIST_BUCKET_SECRET_NAME}
     suspend: ${{FLOORIST_SUSPEND}}
     queries:
-      # Count the number of behavior groups associated to event types per
-      # organization, and also show the bundle and the application they are
-      # associated to.
-      - prefix: insights/notifications/behavior_groups_event_types_org_id
+      # List the behavior groups and the event type they are associated with
+      # of an organization. Includes the associated bundle and the application,
+      # the organization the behavior groups belong to, the associated event
+      # type the behavior groups are linked to, and whether they are being
+      # actively used or not.
+      - prefix: insights/notifications/behavior_groups_event_types
         query: >-
           SELECT
             bun.display_name::TEXT AS bundle,
@@ -32,8 +34,7 @@ objects:
                 behavior_group_action AS bga
               WHERE
                 bga.behavior_group_id = etb.behavior_group_id
-            )::BOOLEAN AS actively_used,
-            count(bg.*)::INTEGER AS "count"
+            )::BOOLEAN AS actively_used
           FROM
             event_type_behavior AS etb
           INNER JOIN
@@ -48,16 +49,11 @@ objects:
           INNER JOIN
             bundles AS bun
               ON bun.id = bg.bundle_id
-          GROUP BY
-            bun.display_name,
-            apps.display_name,
-            et.display_name,
-            bg.org_id,
-            actively_used
-        # Count the number of email subscriptions, and group them by
-        # application, subscription type, whether they are subscribed or not
-        # and their org id.
-      - prefix: insights/notifications/email_subscriptions_by_org_id
+        # Lists the email subscriptions. The associated bundle, application,
+        # organization they belong to, the associated event type's name, the
+        # type of the subscription, and whether the subscription is enabled or
+        # not are returned.
+      - prefix: insights/notifications/email_subscriptions
         query: >-
           SELECT
             bun.display_name::TEXT AS bundle,
@@ -65,8 +61,7 @@ objects:
             es.org_id::TEXT,
             et.display_name::TEXT AS event_type,
             es.subscription_type::TEXT,
-            es.subscribed::BOOLEAN,
-            count(es.*)::INTEGER AS "count"
+            es.subscribed::BOOLEAN
           FROM
             email_subscriptions AS es
           INNER JOIN
@@ -78,57 +73,39 @@ objects:
           INNER JOIN
             bundles AS bun
               ON bun.id = apps.bundle_id
-          GROUP BY
-            bun.display_name,
-            apps.display_name,
-            es.org_id,
-            et.display_name,
-            es.subscription_type,
-            es.subscribed
-      # Count the number of created endpoints per endpoint type, and group them
-      # by organization ID.
-      - prefix: insights/notifications/endpoint_types_by_org_id
+      # List the endpoint types and whether they are being actively used or
+      # not. We assume that an endpoint without any associated behavior groups
+      # is not being used.
+      - prefix: insights/notifications/endpoint_types
         query: >-
           SELECT
-            sub.org_id::TEXT,
-            sub.endpoint_type::TEXT,
-            sub.enabled::BOOLEAN,
-            sub.actively_used::BOOLEAN,
-            COUNT(*)::INTEGER AS "count"
-          FROM
-            (
+            CASE
+              WHEN
+                endpoint_type_v2 = 'CAMEL'
+              THEN
+                LOWER(endpoint_sub_type)::TEXT
+              ELSE
+                LOWER(endpoint_type_v2)::TEXT
+            END AS endpoint_type,
+            endpoints.org_id::TEXT,
+            endpoints.enabled::TEXT AS enabled,
+            EXISTS (
               SELECT
-              CASE
-                WHEN
-                  e.endpoint_type_v2 = 'CAMEL'
-                THEN
-                  LOWER(e.endpoint_sub_type)
-                ELSE
-                  LOWER(e.endpoint_type_v2)
-              END AS endpoint_type,
-              e.org_id,
-              e.enabled AS enabled,
-              EXISTS (
-                SELECT
-                  1
-                FROM
-                  behavior_group_action AS bga
-                INNER JOIN
-                  event_type_behavior AS etb ON etb.behavior_group_id = bga.behavior_group_id
-                WHERE
-                  bga.endpoint_id = e.id
-                ) AS actively_used
+                1
               FROM
-                endpoints AS e
-            ) AS sub
-          GROUP BY
-            sub.endpoint_type,
-            sub.org_id,
-            sub.enabled,
-            sub.actively_used;
-      # Count the number of notifications grouped by bundle, application,
-      # event type, delivery status and the organization ID.
-      - prefix: insights/notifications/events_by_bundle_app_type_status_org_id
+                behavior_group_action
+              INNER JOIN
+                event_type_behavior
+                  ON event_type_behavior.behavior_group_id = behavior_group_action.behavior_group_id
+              WHERE
+                behavior_group_action.endpoint_id = endpoints.id
+            )::BOOLEAN AS actively_used
+          FROM
+            endpoints
+      # List the attempted notification deliveries. It shows the associated
+      # bundle, the application, the endpoint type, the event type and the
+      # delivery status.
+      - prefix: insights/notifications/notifications_deliveries
         query: >-
           SELECT
             bun.display_name::TEXT AS bundle,
@@ -143,8 +120,7 @@ objects:
                 LOWER(nh.endpoint_type_v2)
             END AS endpoint_type,
             et.display_name::TEXT AS event_type,
-            nh.status::TEXT,
-            count(nh.*)
+            nh.status::TEXT
           FROM
             notification_history AS nh
           INNER JOIN
@@ -159,22 +135,16 @@ objects:
           INNER JOIN
             bundles AS bun
               ON bun.id = apps.bundle_id
-          GROUP BY
-            bun.display_name,
-            apps.display_name,
-            e.org_id,
-            et.display_name,
-            endpoint_type,
-            nh.status
-      # Count the number of received events from applications and group them
-      # by bundle, application and organization ID.
-      - prefix: insights/notifications/events_received_from_apps_by_bundle_app_org_id
+      # List the events received from the integrated applications, as well as
+      # the bundle and application the event is associated to, plus the event
+      # type's name.
+      - prefix: insights/notifications/received_events_from_applications
         query: >-
           SELECT
             bundles.display_name AS bundle,
             applications.display_name AS application,
-            e.org_id,
-            COUNT(e.*)
+            e.event_type_display_name AS event_type,
+            e.org_id
           FROM
             "event" AS e
           INNER JOIN
@@ -183,11 +153,9 @@ objects:
           INNER JOIN
             bundles AS bundles
               ON bundles.id = e.bundle_id
-          GROUP BY
-            bundles.display_name,
-            applications.display_name,
-            e.org_id
-      # Counts and lists the event types that each organization is using.
+      # Lists the event types that are currently being used. It also returns
+      # the associated bundle, the application and the organization in which
+      # those event types are being used.
       - prefix: insights/notifications/event_types_per_organization
         query: >-
           SELECT
