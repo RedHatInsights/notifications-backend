@@ -133,7 +133,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      * BOP service's certificate.
      * @return the created endpoint.
      */
-    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpBOPEndpointV1() {
+    protected HttpEndpointBuilder setUpBOPEndpointV1() {
         // Remove the schema from the url to avoid the
         // "ResolveEndpointFailedException", which complaints about specifying
         // the schema twice.
