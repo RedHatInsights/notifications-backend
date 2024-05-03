@@ -20,6 +20,7 @@ import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBui
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.USE_EMAIL_BOP_V2_SERVICE;
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static org.apache.camel.LoggingLevel.DEBUG;
 import static org.apache.camel.LoggingLevel.INFO;
@@ -67,7 +68,6 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * the service.
          */
         final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpointV1 = setUpBOPEndpointV1();
-        final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpointV2 = setUpBOPEndpointV2();
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
@@ -97,7 +97,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .choice().when(shouldUseBopEmailServiceV2())
                 .log(DEBUG, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "} using email service V2]")
                 .to(BOP_V2_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-                    .to(bopEndpointV2)
+                    .to(emailConnectorConfig.getBopURL())
                 .to(BOP_V2_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .otherwise()
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
@@ -113,7 +113,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     }
 
     private Predicate shouldUseBopEmailServiceV2() {
-        return exchange -> emailConnectorConfig.isEnableBopServiceV2Usage(exchange.getProperty(ORG_ID, String.class));
+        return exchange -> exchange.getProperty(USE_EMAIL_BOP_V2_SERVICE, Boolean.class);
     }
 
     /**
@@ -130,18 +130,6 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             return https(fullURL.replace("https://", ""))
                 .sslContextParameters(getSslContextParameters())
                 .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
-        } else {
-            return http(fullURL.replace("http://", ""));
-        }
-    }
-
-    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpBOPEndpointV2() {
-        // Remove the schema from the url to avoid the
-        // "ResolveEndpointFailedException", which complaints about specifying
-        // the schema twice.
-        final String fullURL = this.emailConnectorConfig.getBopURL();
-        if (fullURL.startsWith("https")) {
-            return https(fullURL.replace("https://", ""));
         } else {
             return http(fullURL.replace("http://", ""));
         }

@@ -46,4 +46,6 @@ public class ExchangeProperty {
     public static final String RENDERED_SUBJECT = "rendered_subject";
 
     public static final String RECIPIENTS_SIZE = "recipientsSize";
+
+    public static final String USE_EMAIL_BOP_V2_SERVICE = "use_email_bop_V2_service";
 }

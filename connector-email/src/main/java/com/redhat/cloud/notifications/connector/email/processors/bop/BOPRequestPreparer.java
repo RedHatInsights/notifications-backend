@@ -56,7 +56,7 @@ public class BOPRequestPreparer implements Processor {
 
         final String orgId = exchange.getProperty(ORG_ID, String.class);
         // Specify the request's path.
-        if (emailConnectorConfig.isEnableBopServiceV2Usage(orgId)) {
+        if (exchange.getProperty(ExchangeProperty.USE_EMAIL_BOP_V2_SERVICE, Boolean.class)) {
             exchange.getMessage().setHeader(Exchange.HTTP_PATH, "/v2/sendEmails");
         } else {
             exchange.getMessage().setHeader(Exchange.HTTP_PATH, "/v1/sendEmails");
