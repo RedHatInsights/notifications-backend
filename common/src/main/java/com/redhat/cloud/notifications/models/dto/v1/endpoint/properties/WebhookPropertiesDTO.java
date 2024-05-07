@@ -26,8 +26,6 @@ public final class WebhookPropertiesDTO extends EndpointPropertiesDTO {
     @Size(max = 255)
     private String secretToken;
 
-    public WebhookPropertiesDTO() { }
-
     public Boolean getDisableSslVerification() {
         return disableSslVerification;
     }

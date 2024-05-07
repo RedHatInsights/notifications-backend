@@ -71,8 +71,6 @@ public final class EndpointDTO {
     @Valid
     private EndpointPropertiesDTO properties;
 
-    public EndpointDTO() { }
-
     @JsonIgnore
     @AssertTrue(message = "This type requires a sub_type")
     private boolean isSubTypePresentWhenRequired() {

@@ -13,8 +13,6 @@ public final class SystemSubscriptionPropertiesDTO extends EndpointPropertiesDTO
     @NotNull
     private boolean onlyAdmins;
 
-    public SystemSubscriptionPropertiesDTO() { }
-
     public UUID getGroupId() {
         return groupId;
     }

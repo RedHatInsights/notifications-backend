@@ -24,8 +24,6 @@ public final class CamelPropertiesDTO extends EndpointPropertiesDTO {
     @Size(max = 255)
     private String secretToken;
 
-    public CamelPropertiesDTO() { }
-
     public Boolean getDisableSslVerification() {
         return disableSslVerification;
     }
