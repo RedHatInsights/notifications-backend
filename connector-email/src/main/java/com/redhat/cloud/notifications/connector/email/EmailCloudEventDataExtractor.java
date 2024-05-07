@@ -1,20 +1,27 @@
 package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
+import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 
 import java.util.List;
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
 public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
+
+    @Inject
+    EmailConnectorConfig emailConnectorConfig;
+
     /**
      * Extracts the relevant information for the email connector from the
      * received message from the engine.
@@ -53,5 +60,7 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.UNSUBSCRIBERS, unsubscribers);
         exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
         exchange.setProperty(ExchangeProperty.EMAIL_SENDER, cloudEventData.getString("email_sender"));
+
+        exchange.setProperty(ExchangeProperty.USE_EMAIL_BOP_V2_SERVICE, emailConnectorConfig.isEnableBopServiceV2Usage(exchange.getProperty(ORG_ID, String.class)));
     }
 }
