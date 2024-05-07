@@ -68,7 +68,7 @@
         <clowder-quarkus-config-source.version>2.6.1</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.8.0</quarkus-logging-cloudwatch.version>
-        <quarkus-logging-sentry.version>2.0.6</quarkus-logging-sentry.version>
+        <quarkus-logging-sentry.version>2.0.7</quarkus-logging-sentry.version>
         <quarkus-unleash.version>1.6.0</quarkus-unleash.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
