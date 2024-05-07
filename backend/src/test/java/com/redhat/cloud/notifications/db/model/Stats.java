@@ -13,7 +13,6 @@ public final class Stats {
 
     public Stats(final int createdEndpointsCount) {
         this.createdEndpointsCount = createdEndpointsCount;
-        this.disabledCount = 0;
     }
 
     public int getCreatedEndpointsCount() {

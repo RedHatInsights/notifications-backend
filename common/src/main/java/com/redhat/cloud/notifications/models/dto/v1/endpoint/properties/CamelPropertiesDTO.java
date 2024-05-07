@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import java.util.Map;
 
 public final class CamelPropertiesDTO extends EndpointPropertiesDTO {
+    @NotNull
     private Boolean disableSslVerification = Boolean.FALSE;
 
     private Map<String, String> extras;
