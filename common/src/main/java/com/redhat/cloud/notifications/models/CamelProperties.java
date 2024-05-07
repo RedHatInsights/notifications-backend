@@ -1,11 +1,15 @@
 package com.redhat.cloud.notifications.models;
 
 import com.redhat.cloud.notifications.db.converters.MapConverter;
+import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.Map;
 
@@ -13,11 +17,15 @@ import java.util.Map;
 @Table(name = "camel_properties")
 public class CamelProperties extends EndpointProperties implements SourcesSecretable {
 
+    @NotNull
+    @ValidNonPrivateUrl
     private String url;
 
+    @NotNull
     private Boolean disableSslVerification = Boolean.FALSE;
 
     @Transient
+    @Size(max = 255)
     private String secretToken;
 
     /**
@@ -27,6 +35,7 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     private Long secretTokenSourcesId;
 
     @Transient
+    @Valid
     private BasicAuthentication basicAuthentication;
 
     /**

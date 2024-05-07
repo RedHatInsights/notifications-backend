@@ -1,24 +1,32 @@
 package com.redhat.cloud.notifications.models;
 
 import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
+import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "endpoint_webhooks")
 public class WebhookProperties extends EndpointProperties implements SourcesSecretable {
 
+    @NotNull
+    @ValidNonPrivateUrl
     private String url;
 
     @Convert(converter = HttpTypeConverter.class)
+    @NotNull
     private HttpType method;
 
+    @NotNull
     private Boolean disableSslVerification = Boolean.FALSE;
 
+    @Size(max = 255)
     @Transient
     private String secretToken;
 

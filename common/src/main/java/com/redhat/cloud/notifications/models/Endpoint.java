@@ -9,6 +9,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -32,12 +37,17 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Id
     private UUID id;
 
+    @Size(max = 50)
     private String accountId;
 
+    @Size(max = 50)
     private String orgId;
 
+    @NotNull
+    @Size(max = 255)
     private String name;
 
+    @NotNull
     private String description;
 
     private Boolean enabled = Boolean.FALSE;
@@ -46,11 +56,15 @@ public class Endpoint extends CreationUpdateTimestamped {
     private EndpointStatus status = EndpointStatus.UNKNOWN;
 
     @Embedded
+    @NotNull
+    @Valid
     private final CompositeEndpointType compositeType = new CompositeEndpointType();
 
+    @Min(0)
     private int serverErrors;
 
     @Transient
+    @Valid
     private EndpointProperties properties;
 
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.REMOVE)
@@ -60,6 +74,16 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     @OneToMany(mappedBy = "endpoint")
     private Set<NotificationHistory> notificationHistories;
+
+    @AssertTrue(message = "This type requires a sub_type")
+    private boolean isSubTypePresentWhenRequired() {
+        return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;
+    }
+
+    @AssertTrue(message = "This type does not support sub_type")
+    private boolean isSubTypeNotPresentWhenNotRequired() {
+        return compositeType.getType().requiresSubType || compositeType.getSubType() == null;
+    }
 
     @Override
     protected void additionalPrePersist() {
