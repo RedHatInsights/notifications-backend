@@ -105,6 +105,10 @@
             <artifactId>commons-csv</artifactId>
             <version>${apache.commons.csv.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
 
         <!-- events-schemas -->
         <dependency>

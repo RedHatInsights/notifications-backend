@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
-import org.apache.camel.component.micrometer.routepolicy.MicrometerRoutePolicyFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
@@ -41,8 +40,6 @@ public class WebhookRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Override
     public void configureRoutes() {
-        getContext().addRoutePolicyFactory(new MicrometerRoutePolicyFactory());
-
         from(seda(ENGINE_TO_CONNECTOR))
             .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
             .routeId(connectorConfig.getConnectorName())
