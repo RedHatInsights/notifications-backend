@@ -1,16 +1,12 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
-import jakarta.validation.constraints.NotNull;
-
 import java.util.UUID;
 
 public final class SystemSubscriptionPropertiesDTO extends EndpointPropertiesDTO {
     private UUID groupId;
 
-    @NotNull
     private boolean ignorePreferences;
 
-    @NotNull
     private boolean onlyAdmins;
 
     public UUID getGroupId() {
@@ -21,7 +17,7 @@ public final class SystemSubscriptionPropertiesDTO extends EndpointPropertiesDTO
         this.groupId = groupId;
     }
 
-    public boolean isIgnorePreferences() {
+    public Boolean isIgnorePreferences() {
         return ignorePreferences;
     }
 
@@ -29,7 +25,7 @@ public final class SystemSubscriptionPropertiesDTO extends EndpointPropertiesDTO
         this.ignorePreferences = ignorePreferences;
     }
 
-    public boolean isOnlyAdmins() {
+    public Boolean isOnlyAdmins() {
         return onlyAdmins;
     }
 
