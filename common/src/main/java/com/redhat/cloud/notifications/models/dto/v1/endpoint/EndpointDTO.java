@@ -26,12 +26,10 @@ public final class EndpointDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private UUID id;
 
-    @JsonProperty(required = true)
     @NotNull
     @Size(max = 255)
     private String name;
 
-    @JsonProperty(required = true)
     @NotNull
     private String description;
 
@@ -39,23 +37,19 @@ public final class EndpointDTO {
 
     private EndpointStatusDTO status = EndpointStatusDTO.UNKNOWN;
 
-    @JsonProperty(required = true)
     @Min(0)
     private int serverErrors;
 
-    @JsonProperty(required = true)
     @NotNull
     private EndpointTypeDTO type;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty(required = true)
     @Size(max = 20)
     private String subType;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime created;
 
-    @JsonProperty(required = true)
     @JsonSubTypes({
         @JsonSubTypes.Type(value = CamelPropertiesDTO.class, name = "camel"),
         @JsonSubTypes.Type(value = CamelPropertiesDTO.class, name = "CAMEl"),
