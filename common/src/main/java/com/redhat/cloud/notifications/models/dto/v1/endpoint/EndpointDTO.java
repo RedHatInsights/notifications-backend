@@ -52,15 +52,10 @@ public final class EndpointDTO {
 
     @JsonSubTypes({
         @JsonSubTypes.Type(value = CamelPropertiesDTO.class, name = "camel"),
-        @JsonSubTypes.Type(value = CamelPropertiesDTO.class, name = "CAMEL"),
         @JsonSubTypes.Type(value = SystemSubscriptionPropertiesDTO.class, name = "drawer"),
-        @JsonSubTypes.Type(value = SystemSubscriptionPropertiesDTO.class, name = "DRAWER"),
         @JsonSubTypes.Type(value = SystemSubscriptionPropertiesDTO.class, name = "email_subscription"),
-        @JsonSubTypes.Type(value = SystemSubscriptionPropertiesDTO.class, name = "EMAIL_SUBSCRIPTION"),
         @JsonSubTypes.Type(value = WebhookPropertiesDTO.class, name = "ansible"),
-        @JsonSubTypes.Type(value = WebhookPropertiesDTO.class, name = "ANSIBLE"),
         @JsonSubTypes.Type(value = WebhookPropertiesDTO.class, name = "webhook"),
-        @JsonSubTypes.Type(value = WebhookPropertiesDTO.class, name = "WEBHOOK")
     })
     @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
