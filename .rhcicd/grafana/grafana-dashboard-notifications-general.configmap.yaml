@@ -7816,17 +7816,17 @@ data:
             "options": [
               {
                 "selected": false,
-                "text": "insights-perf-prometheus",
+                "text": "perf",
                 "value": "insights-perf-prometheus"
               },
               {
                 "selected": true,
-                "text": "crcs02ue1-prometheus",
+                "text": "stage",
                 "value": "crcs02ue1-prometheus"
               },
               {
                 "selected": false,
-                "text": "crcp01ue1-prometheus",
+                "text": "prod",
                 "value": "crcp01ue1-prometheus"
               }
             ],
