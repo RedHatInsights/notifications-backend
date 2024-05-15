@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -47,6 +48,7 @@ public final class EndpointDTO {
     @Size(max = 20)
     private String subType;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime created;
 

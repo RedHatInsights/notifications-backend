@@ -1,23 +1,16 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
-
 @MappedSuperclass
 public abstract class CreationTimestamped {
 
     protected static final ZoneId UTC = ZoneId.of("UTC");
 
-    @JsonProperty(access = READ_ONLY)
-    @JsonFormat(shape = STRING)
     private LocalDateTime created;
 
     public LocalDateTime getCreated() {
