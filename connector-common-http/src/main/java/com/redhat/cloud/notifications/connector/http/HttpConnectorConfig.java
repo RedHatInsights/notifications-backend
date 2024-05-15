@@ -1,16 +1,21 @@
 package com.redhat.cloud.notifications.connector.http;
 
 import com.redhat.cloud.notifications.connector.ConnectorConfig;
+import io.quarkus.arc.DefaultBean;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.List;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.connector.ConnectorConfig.BASE_CONFIG_PRIORITY;
 import static org.jboss.logging.Logger.Level;
 
 @ApplicationScoped
+@DefaultBean
+@Priority(BASE_CONFIG_PRIORITY + 1)
 public class HttpConnectorConfig extends ConnectorConfig {
 
     /*

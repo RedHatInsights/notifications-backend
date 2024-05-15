@@ -4,9 +4,7 @@ import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import io.getunleash.UnleashContext;
 import io.quarkus.runtime.configuration.ProfileManager;
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Alternative;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
@@ -14,12 +12,6 @@ import java.util.Map;
 import static io.quarkus.runtime.LaunchMode.TEST;
 
 @ApplicationScoped
-/*
- * @Alternative and Priority will soon go away.
- * See https://github.com/quarkusio/quarkus/issues/37042 for more details about the replacement.
- */
-@Alternative
-@Priority(0) // The value doesn't matter.
 public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_API_TOKEN = "notifications.connector.user-provider.bop.api_token";
     private static final String BOP_CLIENT_ID = "notifications.connector.user-provider.bop.client_id";
