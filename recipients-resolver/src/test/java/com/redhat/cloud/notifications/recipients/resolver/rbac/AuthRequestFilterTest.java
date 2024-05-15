@@ -52,6 +52,23 @@ public class AuthRequestFilterTest {
     }
 
     @Test
+    @DisplayName("Should load alt-secret value if secret value is not set")
+    void shouldLoadAltSecretIfSecretIsNotSet() throws IOException {
+        System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, "advisor");
+        System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, testToken);
+        AuthRequestFilter rbacAuthRequestFilter = new AuthRequestFilter();
+
+        ClientRequestContext context = configureContext();
+
+        rbacAuthRequestFilter.filter(context);
+
+        assertNull(context.getHeaderString("Authorization"));
+
+        assertEquals("456", context.getHeaderString("x-rh-rbac-psk"));
+        assertEquals("advisor", context.getHeaderString("x-rh-rbac-client-id"));
+    }
+
+    @Test
     @DisplayName("Should not contain username and password in header when dev header is not set")
     void shouldNotContainUsernamePasswordHeaderWhenDevHeaderIsNotSet() throws IOException {
         System.setProperty(AuthRequestFilter.RBAC_SERVICE_TO_SERVICE_APPLICATION_KEY, "notifications");
