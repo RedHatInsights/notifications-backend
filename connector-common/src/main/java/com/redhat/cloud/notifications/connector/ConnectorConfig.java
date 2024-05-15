@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -12,9 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static com.redhat.cloud.notifications.connector.ConnectorConfig.BASE_CONFIG_PRIORITY;
+
 @ApplicationScoped
 @DefaultBean
+@Priority(BASE_CONFIG_PRIORITY)
 public class ConnectorConfig {
+
+    public static final int BASE_CONFIG_PRIORITY = 0;
 
     private static final String ENDPOINT_CACHE_MAX_SIZE = "notifications.connector.endpoint-cache-max-size";
     private static final String KAFKA_INCOMING_GROUP_ID = "notifications.connector.kafka.incoming.group-id";
