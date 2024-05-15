@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.cloudevent.transformers;
 
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
-import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
@@ -31,7 +31,7 @@ public class CloudEventTransformerTest {
 
     @Test
     public void testTransformer() throws IOException {
-        InputStream policyCloudEvent = MockServerConfig.class.getClassLoader().getResourceAsStream("cloudevents/cloudevent.json");
+        InputStream policyCloudEvent = TestLifecycleManager.class.getClassLoader().getResourceAsStream("cloudevents/cloudevent.json");
         NotificationsConsoleCloudEvent cloudEvent = new ConsoleCloudEventParser().fromJsonString(
                 IOUtils.toString(policyCloudEvent, UTF_8),
                 NotificationsConsoleCloudEvent.class
