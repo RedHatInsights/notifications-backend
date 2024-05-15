@@ -1,16 +1,22 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
+import com.redhat.cloud.notifications.recipients.authz.api.RelationshipsApi;
+import com.redhat.cloud.notifications.recipients.authz.model.ApiRebacV1ReadRelationshipsResponse;
+import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 
 import static java.util.stream.Collectors.toSet;
 
@@ -18,7 +24,14 @@ import static java.util.stream.Collectors.toSet;
 public class RecipientsResolver {
 
     @Inject
+    RecipientsResolverConfig recipientsResolverConfig;
+
+    @Inject
     FetchUsersFromExternalServices fetchingUsers;
+
+    @Inject
+    @RestClient
+    RelationshipsApi kesselRelationshipApi;
 
     @CacheResult(cacheName = "find-recipients")
     public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault) {
@@ -48,6 +61,10 @@ public class RecipientsResolver {
             fetchedUsers = fetchingUsers.getUsers(orgId, request.isAdminsOnly());
         } else {
             fetchedUsers = fetchingUsers.getGroupUsers(orgId, request.isAdminsOnly(), request.getGroupUUID());
+        }
+
+        if (recipientsResolverConfig.isUseKesselEnabled()) {
+            callKessel();
         }
 
         // The fetched users are cached, so we need to create a new Set to avoid altering the cached data.
@@ -115,5 +132,18 @@ public class RecipientsResolver {
             }
             return Optional.of(result);
         }
+    }
+
+    private Optional<Set<String>> callKessel() {
+        Optional<Set<String>> allowedUsers = Optional.empty();
+        try {
+            ApiRebacV1ReadRelationshipsResponse kesselResponse = kesselRelationshipApi.relationshipsReadRelationships("group", "bob_club", "member", null, null, null);
+            Log.infof("Kessel Open Api response: %s", kesselResponse);
+            allowedUsers = Optional.of(kesselResponse.getRelationships().stream().filter(rel -> "user".equals(rel.getSubject().getObject().getType())).map(rel -> rel.getSubject().getObject().getId().toLowerCase()).collect(Collectors.toSet()));
+            Log.infof("Allowed users from Kessel are: %s", allowedUsers);
+        } catch (Exception ex) {
+            Log.error("Error calling Kessel relationship Api");
+        }
+        return allowedUsers;
     }
 }

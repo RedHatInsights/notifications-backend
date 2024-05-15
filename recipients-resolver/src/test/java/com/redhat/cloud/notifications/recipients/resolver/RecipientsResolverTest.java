@@ -1,14 +1,20 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
+import com.redhat.cloud.notifications.recipients.authz.api.RelationshipsApi;
+import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheName;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Set;
@@ -17,9 +23,12 @@ import java.util.UUID;
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +42,13 @@ public class RecipientsResolverTest {
 
     @InjectMock
     FetchUsersFromExternalServices fetchUsersFromExternalServices;
+
+    @InjectMock
+    @RestClient
+    RelationshipsApi kesselRelationshipApi;
+
+    @InjectSpy
+    RecipientsResolverConfig recipientsResolverConfig;
 
     @CacheName("find-recipients")
     Cache recipientsCache;
@@ -113,8 +129,13 @@ public class RecipientsResolverTest {
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
     }
 
-    @Test
-    void testNotSubscribedByDefaultAndAdminsOnly() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testNotSubscribedByDefaultAndAdminsOnly(boolean useKessel) {
+        // update Kessel feature flag only if use Kessel is true, to keep check on default behaviour
+        if (useKessel) {
+            when(recipientsResolverConfig.isUseKesselEnabled()).thenReturn(useKessel);
+        }
         Set<User> recipients = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(new RecipientSettings(true, false, null, emptySet())),
@@ -125,6 +146,11 @@ public class RecipientsResolverTest {
         assertEquals(Set.of(admin1), recipients);
         verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
+        if (useKessel) {
+            verify(kesselRelationshipApi, times(1)).relationshipsReadRelationships(anyString(), anyString(), anyString(), any(), any(), any());
+        } else {
+            verifyNoInteractions(kesselRelationshipApi);
+        }
     }
 
     @Test
