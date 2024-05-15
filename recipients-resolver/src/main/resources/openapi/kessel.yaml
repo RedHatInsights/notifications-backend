@@ -1,0 +1,212 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+ title: ""
+ version: 0.0.1
+paths:
+ /livez:
+  get:
+   tags:
+    - Health
+   operationId: Health_GetLivez
+   responses:
+    "200":
+     description: OK
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/api.health.v1.GetLivezReply'
+ /readyz:
+  get:
+   tags:
+    - Health
+   operationId: Health_GetReadyz
+   responses:
+    "200":
+     description: OK
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/api.health.v1.GetReadyzReply'
+ /v1/check:
+  post:
+   tags:
+    - Check
+   operationId: Check_Check
+   requestBody:
+    content:
+     application/json:
+      schema:
+       $ref: '#/components/schemas/api.rebac.v1.CheckRequest'
+    required: true
+   responses:
+    "200":
+     description: OK
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/api.rebac.v1.CheckResponse'
+ /v1/relationships:
+  get:
+   tags:
+    - Relationships
+   operationId: Relationships_ReadRelationships
+   parameters:
+    - name: filter.objectType
+      in: query
+      schema:
+       type: string
+    - name: filter.objectId
+      in: query
+      schema:
+       type: string
+    - name: filter.relation
+      in: query
+      schema:
+       type: string
+    - name: filter.subjectFilter.relation
+      in: query
+      schema:
+       type: string
+    - name: filter.subjectFilter.subjectId
+      in: query
+      schema:
+       type: string
+    - name: filter.subjectFilter.subjectType
+      in: query
+      schema:
+       type: string
+   responses:
+    "200":
+     description: OK
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/api.rebac.v1.ReadRelationshipsResponse'
+  post:
+   tags:
+    - Relationships
+   operationId: Relationships_CreateRelationships
+   requestBody:
+    content:
+     application/json:
+      schema:
+       $ref: '#/components/schemas/api.rebac.v1.CreateRelationshipsRequest'
+    required: true
+   responses:
+    "200":
+     description: OK
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/api.rebac.v1.CreateRelationshipsResponse'
+  delete:
+   tags:
+    - Relationships
+   operationId: Relationships_DeleteRelationships
+   parameters:
+    - name: filter.objectType
+      in: query
+      schema:
+       type: string
+    - name: filter.objectId
+      in: query
+      schema:
+       type: string
+    - name: filter.relation
+      in: query
+      schema:
+       type: string
+    - name: filter.subjectFilter.relation
+      in: query
+      schema:
+       type: string
+    - name: filter.subjectFilter.subjectId
+      in: query
+      schema:
+       type: string
+    - name: filter.subjectFilter.subjectType
+      in: query
+      schema:
+       type: string
+   responses:
+    "200":
+     description: OK
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/api.rebac.v1.DeleteRelationshipsResponse'
+components:
+ schemas:
+  api.health.v1.GetLivezReply:
+   type: object
+   properties: {}
+  api.health.v1.GetReadyzReply:
+   type: object
+   properties: {}
+  api.rebac.v1.CheckRequest:
+   type: object
+   properties:
+    object:
+     $ref: '#/components/schemas/api.rebac.v1.ObjectReference'
+    relation:
+     type: string
+    subject:
+     $ref: '#/components/schemas/api.rebac.v1.SubjectReference'
+  api.rebac.v1.CheckResponse:
+   type: object
+   properties:
+    allowed:
+     type: integer
+     format: enum
+  api.rebac.v1.CreateRelationshipsRequest:
+   type: object
+   properties:
+    touch:
+     type: boolean
+    relationships:
+     type: array
+     items:
+      $ref: '#/components/schemas/api.rebac.v1.Relationship'
+  api.rebac.v1.CreateRelationshipsResponse:
+   type: object
+   properties: {}
+  api.rebac.v1.DeleteRelationshipsResponse:
+   type: object
+   properties: {}
+  api.rebac.v1.ObjectReference:
+   type: object
+   properties:
+    type:
+     type: string
+    id:
+     type: string
+  api.rebac.v1.ReadRelationshipsResponse:
+   type: object
+   properties:
+    relationships:
+     type: array
+     items:
+      $ref: '#/components/schemas/api.rebac.v1.Relationship'
+  api.rebac.v1.Relationship:
+   type: object
+   properties:
+    object:
+     $ref: '#/components/schemas/api.rebac.v1.ObjectReference'
+    relation:
+     type: string
+    subject:
+     $ref: '#/components/schemas/api.rebac.v1.SubjectReference'
+  api.rebac.v1.SubjectReference:
+   type: object
+   properties:
+    relation:
+     type: string
+    object:
+     $ref: '#/components/schemas/api.rebac.v1.ObjectReference'
+tags:
+ - name: Check
+ - name: Health
+ - name: Relationships
