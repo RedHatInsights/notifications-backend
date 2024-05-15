@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.templates;
 
-import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -170,7 +169,7 @@ public class DbQuteEngineTest {
                 .build();
         TemplateInstance templateInstance = templateService.compileTemplate(template.getData(), template.getName());
 
-        InputStream expectedInputStream = MockServerConfig.class.getClassLoader().getResourceAsStream("qute/expected-pretty-json-action.json");
+        InputStream expectedInputStream = TestLifecycleManager.class.getClassLoader().getResourceAsStream("qute/expected-pretty-json-action.json");
         String expected = IOUtils.toString(expectedInputStream, UTF_8).trim();
         assertEquals(expected,
                 templateInstance

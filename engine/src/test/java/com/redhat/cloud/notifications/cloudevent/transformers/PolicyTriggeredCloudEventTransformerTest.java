@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.cloudevent.transformers;
 
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
-import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
@@ -24,7 +24,7 @@ public class PolicyTriggeredCloudEventTransformerTest {
 
     @Test
     void testPolicies() throws IOException {
-        InputStream policyCloudEvent = MockServerConfig.class.getClassLoader().getResourceAsStream("cloudevents/policies.json");
+        InputStream policyCloudEvent = TestLifecycleManager.class.getClassLoader().getResourceAsStream("cloudevents/policies.json");
         NotificationsConsoleCloudEvent cloudEvent = new ConsoleCloudEventParser().fromJsonString(
                 IOUtils.toString(policyCloudEvent, UTF_8),
                 NotificationsConsoleCloudEvent.class
@@ -42,7 +42,7 @@ public class PolicyTriggeredCloudEventTransformerTest {
 
     @Test
     void testPoliciesWithNullTagValue() throws IOException {
-        InputStream policyCloudEvent = MockServerConfig.class.getClassLoader().getResourceAsStream("cloudevents/policies-with-null-tag-values.json");
+        InputStream policyCloudEvent = TestLifecycleManager.class.getClassLoader().getResourceAsStream("cloudevents/policies-with-null-tag-values.json");
         NotificationsConsoleCloudEvent cloudEvent = new ConsoleCloudEventParser().fromJsonString(
                 IOUtils.toString(policyCloudEvent, UTF_8),
                 NotificationsConsoleCloudEvent.class
