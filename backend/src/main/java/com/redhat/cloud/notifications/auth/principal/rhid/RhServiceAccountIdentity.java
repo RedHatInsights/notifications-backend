@@ -38,4 +38,13 @@ public class RhServiceAccountIdentity extends RhIdentity {
     public String getName() {
         return getServiceAccount().getClientId();
     }
+
+    @Override
+    public String toString() {
+        return "RhServiceAccountIdentity{" +
+            "orgId='" + this.orgId + '\'' +
+            ", serviceAccount=" + this.serviceAccount.username +
+            ", type='" + this.type + '\'' +
+            '}';
+    }
 }

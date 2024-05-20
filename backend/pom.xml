@@ -151,6 +151,13 @@
             <version>${quarkus-logging-cloudwatch.version}</version>
         </dependency>
 
+        <!-- gRPC client for the interactions with Kessel -->
+        <dependency>
+            <groupId>org.project-kessel</groupId>
+            <artifactId>relations-client-java</artifactId>
+            <version>0.1</version>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>

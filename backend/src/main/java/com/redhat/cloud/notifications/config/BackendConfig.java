@@ -22,12 +22,14 @@ public class BackendConfig {
     private static final String DEFAULT_TEMPLATE = "notifications.use-default-template";
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
+    private static final String KESSEL_BACKEND_ENABLED = "notifications.kessel.backend.enabled";
     private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
      * Unleash configuration
      */
     private String drawerToggle;
+    private String kesselBackendToggle;
     private String uniqueBgNameToggle;
     private String uniqueIntegrationNameToggle;
 
@@ -63,6 +65,9 @@ public class BackendConfig {
     @ConfigProperty(name = INSTANT_EMAILS, defaultValue = "false")
     boolean instantEmailsEnabled;
 
+    @ConfigProperty(name = KESSEL_BACKEND_ENABLED, defaultValue = "false")
+    boolean kesselBackendEnabled;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -74,6 +79,7 @@ public class BackendConfig {
         drawerToggle = toggleRegistry.register("drawer", true);
         uniqueBgNameToggle = toggleRegistry.register("unique-bg-name", true);
         uniqueIntegrationNameToggle = toggleRegistry.register("unique-integration-name", true);
+        kesselBackendToggle = toggleRegistry.register("kessel-backend", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -82,6 +88,7 @@ public class BackendConfig {
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
+        config.put(KESSEL_BACKEND_ENABLED, isKesselBackendEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(uniqueBgNameToggle, isUniqueBgNameEnabled());
         config.put(uniqueIntegrationNameToggle, isUniqueIntegrationNameEnabled());
@@ -111,6 +118,14 @@ public class BackendConfig {
 
     public boolean isInstantEmailsEnabled() {
         return instantEmailsEnabled;
+    }
+
+    public boolean isKesselBackendEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(kesselBackendToggle, false);
+        } else {
+            return kesselBackendEnabled;
+        }
     }
 
     public boolean isUniqueBgNameEnabled() {
