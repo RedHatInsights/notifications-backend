@@ -58,7 +58,7 @@ public class AuthRequestFilter implements ClientRequestFilter {
 
         secret = rbacServiceToServiceSecretMap.getOrDefault(application, new Secret()).secret;
         if (secret == null) {
-            Log.error("Unable to load Rbac service to service secret key, try to use alt-secret");
+            Log.error("Unable to load Rbac service to service secret key, trying to use the alt-secret instead");
             secret = rbacServiceToServiceSecretMap.getOrDefault(application, new Secret()).altSecret;
             if (secret == null) {
                 Log.error("Unable to load Rbac service to service alt-secret key");
