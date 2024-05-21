@@ -38,9 +38,18 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    public void testInstantEmailBody() {
+    public void testInstantEmailBodyWithoutPreferencesIgnored() {
+        testInstantEmailBody(false);
+    }
+
+    @Test
+    public void testInstantEmailBodyWithPreferencesIgnored() {
+        testInstantEmailBody(true);
+    }
+
+    private void testInstantEmailBody(boolean ignoreUserPreferences) {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
-        String result = generateEmailBody(EVENT_TYPE_NAME, action);
+        String result = generateEmailBody(EVENT_TYPE_NAME, action, ignoreUserPreferences);
         assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
         assertTrue(result.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
 
@@ -50,6 +59,10 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
         // Display name
         assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+
+        if (ignoreUserPreferences) {
+            assertTrue(result.contains("This email is critical or requires action. Therefore, you are receiving this message regardless of your email preferences."));
+        }
     }
 
     @Test
