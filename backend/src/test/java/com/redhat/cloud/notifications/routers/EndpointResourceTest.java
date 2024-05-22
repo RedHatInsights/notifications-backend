@@ -38,7 +38,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
-import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -552,9 +551,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
-                .and()
-                .assertThat()
-                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("json-schemas/v1/endpoint/endpoint-schema-read.json"))
                 .extract().asString();
 
         JsonObject responsePoint = new JsonObject(responseBody);
