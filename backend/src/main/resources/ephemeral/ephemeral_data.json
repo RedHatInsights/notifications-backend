@@ -163,6 +163,33 @@
           ]
         }
       ]
+    },
+    {
+      "name": "subscription-services",
+      "display_name": "Subscription Services",
+      "applications": [
+        {
+          "name": "errata-notifications",
+          "display_name": "Errata",
+          "event_types": [
+            {
+              "name": "new-subscription-security-errata",
+              "display_name": "Subscription security updates",
+              "description": "Subscription security updates"
+            },
+            {
+              "name": "new-subscription-bugfix-errata",
+              "display_name": "Subscription Bug Fixes",
+              "description": "Subscription Bug Fixes"
+            },
+            {
+              "name": "new-subscription-enhancement-errata",
+              "display_name": "Subscription Enhancements",
+              "description": "Subscription Enhancements"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
