@@ -81,6 +81,9 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     EmailActorsResolver emailActorsResolver;
 
     @Inject
+    EmailPendoResolver emailPendoResolver;
+
+    @Inject
     EmailAggregator emailAggregator;
 
     @Inject

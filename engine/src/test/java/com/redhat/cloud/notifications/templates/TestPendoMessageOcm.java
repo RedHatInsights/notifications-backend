@@ -4,15 +4,11 @@ import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.OcmTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.processors.email.EmailActorsResolver;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OCM_PENDO_MESSAGE;
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.OCM_PENDO_TITLE;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,16 +27,13 @@ public class TestPendoMessageOcm extends EmailTemplatesInDbHelper  {
         return "cluster-manager";
     }
 
-    @Inject
-    EmailActorsResolver emailActorsResolver;
-
     protected List<String> getUsedEventTypeNames() {
         return List.of(CLUSTER_LIFECYCLE);
     }
 
     @Test
     public void testInstantEmailBody() {
-        EmailPendo emailPendo = new EmailPendo(OCM_PENDO_TITLE, emailActorsResolver.addDateOnPendoMessage(OCM_PENDO_MESSAGE));
+        EmailPendo emailPendo = new EmailPendo("OCM_PENDO_TITLE", "OCM_PENDO_MESSAGE");
 
         Action action = OcmTestHelpers.createOcmAction("Batcave", "OSD", "<b>Batmobile</b> need a revision", "Awesome subject");
         String result = generateEmailBody(CLUSTER_LIFECYCLE, action);

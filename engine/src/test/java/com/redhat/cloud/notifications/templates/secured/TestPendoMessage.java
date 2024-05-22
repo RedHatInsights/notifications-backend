@@ -3,26 +3,21 @@ package com.redhat.cloud.notifications.templates.secured;
 import com.redhat.cloud.notifications.DriftTestHelpers;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.processors.email.EmailActorsResolver;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.GENERAL_PENDO_MESSAGE;
-import static com.redhat.cloud.notifications.processors.email.EmailActorsResolver.GENERAL_PENDO_TITLE;
+import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_MESSAGE;
+import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_TITLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestPendoMessage extends EmailTemplatesInDbHelper  {
-
-    @Inject
-    EmailActorsResolver emailActorsResolver;
 
     @Override
     protected String getApp() {
@@ -51,7 +46,7 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
         String resultSubject = generateAggregatedEmailSubject(drift);
         assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", resultSubject);
 
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, emailActorsResolver.addDateOnPendoMessage(GENERAL_PENDO_MESSAGE));
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
 
         String resultBody = generateAggregatedEmailBody(drift, null);
         commonValidations(resultBody);

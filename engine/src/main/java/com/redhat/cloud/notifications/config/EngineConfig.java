@@ -27,6 +27,17 @@ public class EngineConfig {
     public static final String PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS = "processor.connectors.max-server-errors";
     public static final String PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR = "processor.connectors.min-delay-since-first-server-error";
 
+    /**
+     * Standard "Red Hat Hybrid Cloud Console" sender that the vast majority of the
+     * ConsoleDot applications will use.
+     */
+    private static final String RH_HCC_SENDER = "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com";
+    private static final String OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT = "\"Red Hat OpenShift (staging)\" noreply@redhat.com";
+    private static final String OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT = "\"Red Hat OpenShift\" noreply@redhat.com";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE = "notifications.email.sender.hybrid.cloud.console";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE = "notifications.email.sender.openshift.stage";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD = "notifications.email.sender.openshift.prod";
+
     /*
      * Unleash configuration
      */
@@ -81,6 +92,24 @@ public class EngineConfig {
     @ConfigProperty(name = PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR, defaultValue = "2D")
     Duration minDelaySinceFirstServerErrorBeforeDisabling;
 
+    /**
+     * The email sender address for the Red Hat Hybrid Cloud Console.
+     */
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, defaultValue = RH_HCC_SENDER)
+    String rhHccSender;
+
+    /**
+     * The email sender address for OpenShift in stage.
+     */
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, defaultValue = OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT)
+    String rhOpenshiftSenderStage;
+
+    /**
+     * The email sender address for OpenShift in production.
+     */
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, defaultValue = OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT)
+    String rhOpenshiftSenderProd;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -108,6 +137,9 @@ public class EngineConfig {
         config.put(UNLEASH, unleashEnabled);
         config.put(PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS, maxServerErrors);
         config.put(PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR, minDelaySinceFirstServerErrorBeforeDisabling);
+        config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
+        config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
+        config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -175,5 +207,17 @@ public class EngineConfig {
 
     public Duration getMinDelaySinceFirstServerErrorBeforeDisabling() {
         return minDelaySinceFirstServerErrorBeforeDisabling;
+    }
+
+    public String getRhHccSender() {
+        return rhHccSender;
+    }
+
+    public String getRhOpenshiftSenderStage() {
+        return rhOpenshiftSenderStage;
+    }
+
+    public String getRhOpenshiftSenderProd() {
+        return rhOpenshiftSenderProd;
     }
 }
