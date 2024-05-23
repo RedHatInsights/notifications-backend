@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -22,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
 @Table(name = "endpoints")
 public class Endpoint extends CreationUpdateTimestamped {
 
@@ -37,9 +41,11 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Id
     private UUID id;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @Size(max = 50)
     private String accountId;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @Size(max = 50)
     private String orgId;
 
@@ -56,6 +62,7 @@ public class Endpoint extends CreationUpdateTimestamped {
     private EndpointStatus status = EndpointStatus.UNKNOWN;
 
     @Embedded
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @NotNull
     @Valid
     private final CompositeEndpointType compositeType = new CompositeEndpointType();
@@ -67,19 +74,24 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Valid
     private EndpointProperties properties;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.REMOVE)
     private Set<BehaviorGroupAction> behaviorGroupActions;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private LocalDateTime serverErrorsSince;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @OneToMany(mappedBy = "endpoint")
     private Set<NotificationHistory> notificationHistories;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @AssertTrue(message = "This type requires a sub_type")
     private boolean isSubTypePresentWhenRequired() {
         return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;
     }
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @AssertTrue(message = "This type does not support sub_type")
     private boolean isSubTypeNotPresentWhenNotRequired() {
         return compositeType.getType().requiresSubType || compositeType.getSubType() == null;
