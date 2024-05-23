@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
@@ -12,6 +15,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @Entity
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
 @Table(name = "endpoint_webhooks")
 public class WebhookProperties extends EndpointProperties implements SourcesSecretable {
 
@@ -34,6 +38,7 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
      * The ID of the "secret token" secret in the Sources backend.
      */
     @Column(name = "secret_token_id")
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private Long secretTokenSourcesId;
 
     @Transient
@@ -44,9 +49,11 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
      * The ID of the "basic authentication" secret in the Sources backend.
      */
     @Column(name = "basic_authentication_id")
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private Long basicAuthenticationSourcesId;
 
     @Column(name = "bearer_authentication_id")
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private Long bearerAuthenticationSourcesId;
 
     @Transient

@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
@@ -7,6 +9,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Entity
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
 @Table(name = "email_properties")
 public class SystemSubscriptionProperties extends EndpointProperties {
 
