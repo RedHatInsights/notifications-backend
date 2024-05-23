@@ -1,12 +1,17 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum EndpointType {
+    @JsonProperty("webhook") // TODO remove them once the transition to DTOs have been completed.
     WEBHOOK(false, false),
+    @JsonProperty("email_subscription") // TODO remove them once the transition to DTOs have been completed.
     EMAIL_SUBSCRIPTION(false, true),
+    @JsonProperty("camel") // TODO remove them once the transition to DTOs have been completed.
     CAMEL(true, false),
+    @JsonProperty("ansible") // TODO remove them once the transition to DTOs have been completed.
     ANSIBLE(false, false),
+    @JsonProperty("drawer") // TODO remove them once the transition to DTOs have been completed.
     DRAWER(false, true);
 
     public final boolean requiresSubType;
@@ -15,29 +20,5 @@ public enum EndpointType {
     EndpointType(boolean requiresSubType, boolean isSystemEndpointType) {
         this.requiresSubType = requiresSubType;
         this.isSystemEndpointType = isSystemEndpointType;
-    }
-
-    /**
-     * Transforms the enum values to lowercase. It is required for the
-     * following tests to work:
-     * <ul>
-     *     <li>
-     *         {@link EndpointResourceTest#testAddEndpointDrawerSubscription}
-     *         {@link EndpointResourceTest#testAddEndpointEmailSubscription}
-     *         {@link EndpointResourceTest#testAnsibleEndpointCRUD}
-     *     </li>
-     * </ul>
-     *
-     * The reason for this is that we use the entities to build the payloads
-     * that we send to the endpoints, and since the enum values get written in
-     * uppercase letters by default, the target endpoints were not recognizing
-     * the type of the endpoints being managed, since they expect the lowercase
-     * values.
-     *
-     * @return the enum value in lowercase.
-     */
-    @JsonValue
-    public String toLowerCase() {
-        return this.toString().toLowerCase();
     }
 }

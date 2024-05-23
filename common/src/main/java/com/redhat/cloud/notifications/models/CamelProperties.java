@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
@@ -14,6 +17,7 @@ import jakarta.validation.constraints.Size;
 import java.util.Map;
 
 @Entity
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
 @Table(name = "camel_properties")
 public class CamelProperties extends EndpointProperties implements SourcesSecretable {
 
@@ -32,6 +36,7 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
      * The ID of the "secret token" secret in the Sources backend.
      */
     @Column(name = "secret_token_id")
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private Long secretTokenSourcesId;
 
     @Transient
@@ -42,6 +47,7 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
      * The ID of the "basic authentication" secret in the Sources backend.
      */
     @Column(name = "basic_authentication_id")
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private Long basicAuthenticationSourcesId;
 
     @Convert(converter = MapConverter.class)

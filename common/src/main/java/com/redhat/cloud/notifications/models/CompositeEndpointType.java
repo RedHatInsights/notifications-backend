@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.redhat.cloud.notifications.db.converters.EndpointTypeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -18,6 +19,7 @@ public class CompositeEndpointType {
     private EndpointType type;
 
     @Column(name = "endpoint_sub_type")
+    @JsonInclude(JsonInclude.Include.NON_NULL) // TODO remove them once the transition to DTOs have been completed.
     @Size(max = 20)
     private String subType;
 
