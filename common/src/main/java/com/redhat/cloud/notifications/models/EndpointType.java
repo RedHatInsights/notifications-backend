@@ -1,19 +1,12 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-@Schema(enumeration = { "webhook", "email_subscription", "camel", "ansible", "drawer" })
 public enum EndpointType {
-    @JsonProperty("webhook")
     WEBHOOK(false, false),
-    @JsonProperty("email_subscription")
     EMAIL_SUBSCRIPTION(false, true),
-    @JsonProperty("camel")
     CAMEL(true, false),
-    @JsonProperty("ansible")
     ANSIBLE(false, false),
-    @JsonProperty("drawer")
     DRAWER(false, true);
 
     public final boolean requiresSubType;
@@ -24,4 +17,27 @@ public enum EndpointType {
         this.isSystemEndpointType = isSystemEndpointType;
     }
 
+    /**
+     * Transforms the enum values to lowercase. It is required for the
+     * following tests to work:
+     * <ul>
+     *     <li>
+     *         {@link EndpointResourceTest#testAddEndpointDrawerSubscription}
+     *         {@link EndpointResourceTest#testAddEndpointEmailSubscription}
+     *         {@link EndpointResourceTest#testAnsibleEndpointCRUD}
+     *     </li>
+     * </ul>
+     *
+     * The reason for this is that we use the entities to build the payloads
+     * that we send to the endpoints, and since the enum values get written in
+     * uppercase letters by default, the target endpoints were not recognizing
+     * the type of the endpoints being managed, since they expect the lowercase
+     * values.
+     *
+     * @return the enum value in lowercase.
+     */
+    @JsonValue
+    public String toLowerCase() {
+        return this.toString().toLowerCase();
+    }
 }

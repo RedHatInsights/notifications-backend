@@ -1,0 +1,20 @@
+{
+  "name": "Webhook endpoint",
+  "description": "A JSON structure which represents a webhook endpoint",
+  "enabled": true,
+  "status": "READY",
+  "server_errors": 12,
+  "subtype": null,
+  "type": "webhook",
+  "properties": {
+    "disable_ssl_verification": true,
+    "method": "POST",
+    "url": "https://redhat.com",
+    "basic_authentication": {
+      "username": "webhook-user",
+      "password": "webhook-pass"
+    },
+    "bearer_authentication": "w3bh00k-bearer-t0k3n",
+    "secret_token": "w3bh00k-sup3r-s3cr3t-t0k3n"
+  }
+}

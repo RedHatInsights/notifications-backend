@@ -17,6 +17,9 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
+import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
@@ -85,6 +88,9 @@ public class LifecycleITest extends DbIsolatedTest {
     private static final String EVENT_TYPE_NAME = "all";
     private static final String WEBHOOK_MOCK_PATH = "/test/lifecycle";
     private static final String SECRET_TOKEN = "super-secret-token";
+
+    @Inject
+    EndpointMapper endpointMapper;
 
     @Inject
     EntityManager entityManager;
@@ -555,7 +561,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .basePath(API_INTEGRATIONS_V_1_0)
                 .header(identityHeader)
                 .contentType(JSON)
-                .body(Json.encode(endpoint))
+                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
                 .when()
                 .post("/endpoints")
                 .then()
@@ -564,7 +570,7 @@ public class LifecycleITest extends DbIsolatedTest {
                 .extract().body().asString();
 
         JsonObject jsonEndpoint = new JsonObject(responseBody);
-        jsonEndpoint.mapTo(Endpoint.class);
+        jsonEndpoint.mapTo(EndpointDTO.class);
         assertNotNull(jsonEndpoint.getString("id"));
         assertNull(jsonEndpoint.getString("accountId"));
         assertNull(jsonEndpoint.getString("orgId"));
@@ -598,8 +604,8 @@ public class LifecycleITest extends DbIsolatedTest {
 
         JsonArray jsonEndpoints = new JsonObject(responseBody).getJsonArray("data");
         assertEquals(expectedEndpointIds.length, jsonEndpoints.size());
-        jsonEndpoints.getJsonObject(0).mapTo(Endpoint.class);
-        jsonEndpoints.getJsonObject(0).getJsonObject("properties").mapTo(WebhookProperties.class);
+        jsonEndpoints.getJsonObject(0).mapTo(EndpointDTO.class);
+        jsonEndpoints.getJsonObject(0).getJsonObject("properties").mapTo(WebhookPropertiesDTO.class);
 
         for (String endpointId : expectedEndpointIds) {
             if (!responseBody.contains(endpointId)) {

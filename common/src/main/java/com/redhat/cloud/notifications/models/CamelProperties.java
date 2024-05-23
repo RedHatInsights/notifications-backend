@@ -1,8 +1,5 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.db.converters.MapConverter;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
@@ -18,7 +15,6 @@ import java.util.Map;
 
 @Entity
 @Table(name = "camel_properties")
-@JsonNaming(SnakeCaseStrategy.class)
 public class CamelProperties extends EndpointProperties implements SourcesSecretable {
 
     @NotNull
@@ -36,7 +32,6 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
      * The ID of the "secret token" secret in the Sources backend.
      */
     @Column(name = "secret_token_id")
-    @JsonIgnore
     private Long secretTokenSourcesId;
 
     @Transient
@@ -47,7 +42,6 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
      * The ID of the "basic authentication" secret in the Sources backend.
      */
     @Column(name = "basic_authentication_id")
-    @JsonIgnore
     private Long basicAuthenticationSourcesId;
 
     @Convert(converter = MapConverter.class)

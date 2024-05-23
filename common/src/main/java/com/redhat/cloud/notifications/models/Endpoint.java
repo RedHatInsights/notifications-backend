@@ -1,9 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Embedded;
@@ -19,7 +17,6 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -27,12 +24,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
-import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
-
 @Entity
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
 @Table(name = "endpoints")
-@JsonNaming(SnakeCaseStrategy.class)
 public class Endpoint extends CreationUpdateTimestamped {
 
     public static final Map<String, String> SORT_FIELDS = Map.of(
@@ -45,15 +39,14 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     // This field is generated (when needed) from the additionalPrePersist method.
     @Id
-    @JsonProperty(access = READ_ONLY)
     private UUID id;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @Size(max = 50)
-    @JsonIgnore
     private String accountId;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @Size(max = 50)
-    @JsonIgnore
     private String orgId;
 
     @NotNull
@@ -68,49 +61,37 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Enumerated(EnumType.STRING)
     private EndpointStatus status = EndpointStatus.UNKNOWN;
 
-    @Valid
-    @NotNull
     @Embedded
-    @JsonIgnore
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
+    @NotNull
+    @Valid
     private final CompositeEndpointType compositeType = new CompositeEndpointType();
 
     @Min(0)
     private int serverErrors;
 
-    @Schema(oneOf = { WebhookProperties.class, SystemSubscriptionProperties.class, CamelProperties.class })
-    @JsonTypeInfo(
-            use = JsonTypeInfo.Id.NAME,
-            property = "type",
-            include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
-    @JsonSubTypes({
-        @JsonSubTypes.Type(value = WebhookProperties.class, name = "webhook"),
-        @JsonSubTypes.Type(value = WebhookProperties.class, name = "ansible"),
-        @JsonSubTypes.Type(value = SystemSubscriptionProperties.class, name = "email_subscription"),
-        @JsonSubTypes.Type(value = SystemSubscriptionProperties.class, name = "drawer"),
-        @JsonSubTypes.Type(value = CamelProperties.class, name = "camel")
-    })
-    @Valid
     @Transient
+    @Valid
     private EndpointProperties properties;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @OneToMany(mappedBy = "endpoint", cascade = CascadeType.REMOVE)
-    @JsonIgnore
     private Set<BehaviorGroupAction> behaviorGroupActions;
 
-    @JsonIgnore
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private LocalDateTime serverErrorsSince;
 
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @OneToMany(mappedBy = "endpoint")
-    @JsonIgnore
     private Set<NotificationHistory> notificationHistories;
 
-    @JsonIgnore
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @AssertTrue(message = "This type requires a sub_type")
     private boolean isSubTypePresentWhenRequired() {
         return !compositeType.getType().requiresSubType || compositeType.getSubType() != null;
     }
 
-    @JsonIgnore
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @AssertTrue(message = "This type does not support sub_type")
     private boolean isSubTypeNotPresentWhenNotRequired() {
         return compositeType.getType().requiresSubType || compositeType.getSubType() == null;
@@ -175,7 +156,6 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.enabled = enabled;
     }
 
-    @JsonProperty(required = true)
     public EndpointType getType() {
         return compositeType.getType();
     }
