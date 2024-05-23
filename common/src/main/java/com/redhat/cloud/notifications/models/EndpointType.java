@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+@Schema(enumeration = { "ansible", "camel", "drawer", "email_subscription", "webhook" }) // TODO remove them once the transition to DTOs have been completed.
 public enum EndpointType {
     @JsonProperty("webhook") // TODO remove them once the transition to DTOs have been completed.
     WEBHOOK(false, false),
