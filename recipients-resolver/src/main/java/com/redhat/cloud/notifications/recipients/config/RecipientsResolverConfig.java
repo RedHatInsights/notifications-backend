@@ -28,12 +28,14 @@ public class RecipientsResolverConfig {
     public static final String MBOP_APITOKEN = "notifications.recipients-resolver.mbop.api_token";
     public static final String MBOP_CLIENT_ID = "notifications.recipients-resolver.mbop.client_id";
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
+    public static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED = "notifications.recipients-resolver.use.kessel.enabled";
 
     /*
      * Unleash configuration
      */
     private String fetchUsersWithMbopToggle;
     private String fetchUsersWithRbacToggle;
+    private String useKesselToggle;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -71,6 +73,9 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = MBOP_ENV, defaultValue = "na")
     String mbopEnv;
 
+    @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED, defaultValue = "false")
+    boolean useKesselEnabled;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -81,6 +86,7 @@ public class RecipientsResolverConfig {
     void postConstruct() {
         fetchUsersWithMbopToggle = toggleRegistry.register("fetch-users-with-mbop", true);
         fetchUsersWithRbacToggle = toggleRegistry.register("fetch-users-with-rbac", true);
+        useKesselToggle = toggleRegistry.register("use-kessel", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -95,6 +101,7 @@ public class RecipientsResolverConfig {
         config.put(RETRY_MAX_BACKOFF, getMaxRetryBackoff());
         config.put(WARN_IF_DURATION_EXCEEDS, getLogTooLongRequestLimit());
         config.put(UNLEASH, unleashEnabled);
+        config.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED, isUseKesselEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -116,6 +123,11 @@ public class RecipientsResolverConfig {
         } else {
             return fetchUsersWithRbacEnabled;
         }
+    }
+
+    public boolean isUseKesselEnabled() {
+        // TODO read this toggle from unleash when Kessel will be available on stage
+        return useKesselEnabled;
     }
 
     public int getMaxResultsPerPage() {
