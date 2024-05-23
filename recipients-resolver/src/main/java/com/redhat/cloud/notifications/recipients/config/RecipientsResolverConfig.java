@@ -86,7 +86,7 @@ public class RecipientsResolverConfig {
     void postConstruct() {
         fetchUsersWithMbopToggle = toggleRegistry.register("fetch-users-with-mbop", true);
         fetchUsersWithRbacToggle = toggleRegistry.register("fetch-users-with-rbac", true);
-        fetchUsersWithRbacToggle = toggleRegistry.register("use-kessel", true);
+        useKesselToggle = toggleRegistry.register("use-kessel", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
