@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.recipients.resolver.rbac;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,10 +30,13 @@ public class AuthRequestFilter implements ClientRequestFilter {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Secret {
         public String secret;
+
+        @JsonProperty("alt-secret")
+        public String altSecret;
     }
 
     private final String authInfo;
-    private final String secret;
+    private String secret;
     private final String application;
 
     AuthRequestFilter() {
@@ -44,8 +48,8 @@ public class AuthRequestFilter implements ClientRequestFilter {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             rbacServiceToServiceSecretMap = objectMapper.readValue(
-                    config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_DEFAULT),
-                    new TypeReference<>() { }
+                config.getOptionalValue(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_KEY, String.class).orElse(RBAC_SERVICE_TO_SERVICE_SECRET_MAP_DEFAULT),
+                new TypeReference<>() { }
             );
         } catch (JsonProcessingException jsonProcessingException) {
             Log.error("Unable to load Rbac service to service secret map, defaulting to empty map", jsonProcessingException);
@@ -54,7 +58,11 @@ public class AuthRequestFilter implements ClientRequestFilter {
 
         secret = rbacServiceToServiceSecretMap.getOrDefault(application, new Secret()).secret;
         if (secret == null) {
-            Log.error("Unable to load Rbac service to service secret key");
+            Log.error("Unable to load Rbac service to service secret key, trying to use the alt-secret instead");
+            secret = rbacServiceToServiceSecretMap.getOrDefault(application, new Secret()).altSecret;
+            if (secret == null) {
+                Log.error("Unable to load Rbac service to service alt-secret key");
+            }
         }
 
         String tmp = System.getProperty(RBAC_SERVICE_TO_SERVICE_DEV_EXCEPTIONAL_AUTH_KEY);
