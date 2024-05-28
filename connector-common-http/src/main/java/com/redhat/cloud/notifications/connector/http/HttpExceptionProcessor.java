@@ -11,6 +11,7 @@ import org.apache.hc.client5.http.HttpHostConnectException;
 import org.jboss.logging.Logger;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_ERROR_TYPE;
@@ -49,7 +50,7 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
             } else {
                 logHttpError(ERROR, e, exchange);
             }
-        } else if (t instanceof ConnectTimeoutException) {
+        } else if (t instanceof ConnectTimeoutException || t instanceof SocketTimeoutException) {
             if (connectorConfig.isDisableFaultyEndpoints()) {
                 exchange.setProperty(HTTP_ERROR_TYPE, CONNECT_TIMEOUT);
             } else {
