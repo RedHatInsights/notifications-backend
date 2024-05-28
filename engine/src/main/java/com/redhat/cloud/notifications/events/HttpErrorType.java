@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 public enum HttpErrorType {
+    SOCKET_TIMEOUT("a timeout happened while waiting for server response"),
     CONNECT_TIMEOUT("a timeout happened while connecting to the HTTP server"),
     CONNECTION_REFUSED("the connection to the HTTP server was refused"),
     HTTP_4XX(""), // Message not used.

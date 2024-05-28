@@ -20,6 +20,7 @@ import static com.redhat.cloud.notifications.connector.http.HttpErrorType.CONNEC
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.CONNECT_TIMEOUT;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_5XX;
+import static com.redhat.cloud.notifications.connector.http.HttpErrorType.SOCKET_TIMEOUT;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.SSL_HANDSHAKE;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.UNKNOWN_HOST;
 import static org.apache.http.HttpStatus.SC_TOO_MANY_REQUESTS;
@@ -50,9 +51,15 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
             } else {
                 logHttpError(ERROR, e, exchange);
             }
-        } else if (t instanceof ConnectTimeoutException || t instanceof SocketTimeoutException) {
+        } else if (t instanceof ConnectTimeoutException) {
             if (connectorConfig.isDisableFaultyEndpoints()) {
                 exchange.setProperty(HTTP_ERROR_TYPE, CONNECT_TIMEOUT);
+            } else {
+                logDefault(t, exchange);
+            }
+        } else if (t instanceof SocketTimeoutException) {
+            if (connectorConfig.isDisableFaultyEndpoints()) {
+                exchange.setProperty(HTTP_ERROR_TYPE, SOCKET_TIMEOUT);
             } else {
                 logDefault(t, exchange);
             }

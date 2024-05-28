@@ -17,13 +17,14 @@ import static com.redhat.cloud.notifications.events.HttpErrorType.CONNECTION_REF
 import static com.redhat.cloud.notifications.events.HttpErrorType.CONNECT_TIMEOUT;
 import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_5XX;
+import static com.redhat.cloud.notifications.events.HttpErrorType.SOCKET_TIMEOUT;
 import static com.redhat.cloud.notifications.events.HttpErrorType.SSL_HANDSHAKE;
 import static com.redhat.cloud.notifications.events.HttpErrorType.UNKNOWN_HOST;
 
 @ApplicationScoped
 public class EndpointErrorFromConnectorHelper {
 
-    private static final Set<HttpErrorType> HTTP_SERVER_ERRORS = Set.of(CONNECT_TIMEOUT, CONNECTION_REFUSED, HTTP_5XX, SSL_HANDSHAKE, UNKNOWN_HOST);
+    private static final Set<HttpErrorType> HTTP_SERVER_ERRORS = Set.of(SOCKET_TIMEOUT, CONNECT_TIMEOUT, CONNECTION_REFUSED, HTTP_5XX, SSL_HANDSHAKE, UNKNOWN_HOST);
 
     @Inject
     EndpointRepository endpointRepository;
