@@ -75,7 +75,6 @@ import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static com.redhat.cloud.notifications.routers.EndpointResource.DEPRECATED_SLACK_CHANNEL_ERROR;
-import static com.redhat.cloud.notifications.routers.EndpointResource.EMPTY_SLACK_CHANNEL_ERROR;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -84,6 +83,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -636,67 +636,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testMissingSlackChannel() {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "user");
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-
-        Map<String, String> extras = new HashMap<>(Map.of("channel", "")); // An empty channel value is invalid.
-        CamelProperties camelProperties = new CamelProperties();
-        camelProperties.setUrl("https://foo.com");
-        camelProperties.setExtras(extras);
-
-        Endpoint endpoint = new Endpoint();
-        endpoint.setType(EndpointType.CAMEL);
-        endpoint.setSubType("slack");
-        endpoint.setName("name");
-        endpoint.setDescription("description");
-        endpoint.setProperties(camelProperties);
-
-        String responseBody = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .extract().asString();
-
-        assertEquals(EMPTY_SLACK_CHANNEL_ERROR, responseBody);
-
-        extras.put("channel", "   "); // A blank channel value is invalid.
-
-        responseBody = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .extract().asString();
-
-        assertEquals(EMPTY_SLACK_CHANNEL_ERROR, responseBody);
-
-        extras.remove("channel"); // A missing channel value is invalid.
-
-        responseBody = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
-                .post("/endpoints")
-                .then()
-                .statusCode(400)
-                .extract().asString();
-
-        assertEquals(EMPTY_SLACK_CHANNEL_ERROR, responseBody);
-    }
-
-    @Test
     void testForbidSlackChannelUsage() {
-        when(backendConfig.isForbidSlackChannelUsage()).thenReturn(true);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -763,6 +703,19 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .put("/endpoints/{id}")
             .then()
             .statusCode(400);
+
+        // test create slack integration without extras object
+        camelProperties.setExtras(null);
+        endpoint.setProperties(camelProperties);
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .post("/endpoints")
+            .then()
+            .statusCode(200)
+            .extract().asString();
     }
 
     @Test
@@ -779,9 +732,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
-        Map<String, String> extras = new HashMap<>();
-        extras.put("channel", "#notifications");
-        cAttr.setExtras(extras);
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.CAMEL);
@@ -816,11 +766,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertTrue(endpoint.getBoolean("enabled"));
             assertEquals("slack", endpoint.getString("sub_type"));
             JsonObject extrasObject = properties.getJsonObject("extras");
-            assertNotNull(extrasObject);
-            String channel  = extrasObject.getString("channel");
-            assertEquals("#notifications", channel);
+            assertNull(extrasObject);
 
-            ep.getProperties(CamelProperties.class).getExtras().put("channel", "#updated");
             ep.getProperties(CamelProperties.class).setUrl("https://redhat.com");
 
             // Now update
@@ -839,7 +786,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
             CamelProperties updatedProperties = entityManager.createQuery("FROM CamelProperties WHERE id = :id", CamelProperties.class)
                     .setParameter("id", UUID.fromString(id))
                     .getSingleResult();
-            assertEquals("#updated", updatedProperties.getExtras().get("channel"));
             assertEquals(ep.getProperties(CamelProperties.class).getUrl(), updatedProperties.getUrl());
 
         } finally {
@@ -2179,7 +2125,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         for (final var url : ValidNonPrivateUrlValidatorTest.validUrls) {
             // Test with a camel endpoint.
             camelProperties.setUrl(url);
-            camelProperties.setExtras(Map.of("channel", "notifications"));
             endpoint.setType(EndpointType.CAMEL);
             endpoint.setProperties(camelProperties);
             endpoint.setSubType(subType);
@@ -2311,7 +2256,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
         Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
-        Assertions.assertNull(sentPayload.message, "the sent message should be null since no custom message was specified");
+        assertNull(sentPayload.message, "the sent message should be null since no custom message was specified");
     }
 
     /**
@@ -2626,8 +2571,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Endpoint databaseEndpoint = this.endpointRepository.getEndpoint(DEFAULT_ORG_ID, endpointUuid);
         final WebhookProperties webhookProperties = databaseEndpoint.getProperties(WebhookProperties.class);
 
-        Assertions.assertNull(webhookProperties.getBasicAuthenticationSourcesId(), "Sources was called to delete the basic authentication secret, but the secret's ID wasn't deleted from the database");
-        Assertions.assertNull(webhookProperties.getSecretTokenSourcesId(), "Sources was called to delete the secret token secret, but the secret's ID wasn't deleted from the database");
+        assertNull(webhookProperties.getBasicAuthenticationSourcesId(), "Sources was called to delete the basic authentication secret, but the secret's ID wasn't deleted from the database");
+        assertNull(webhookProperties.getSecretTokenSourcesId(), "Sources was called to delete the secret token secret, but the secret's ID wasn't deleted from the database");
     }
 
     /**
