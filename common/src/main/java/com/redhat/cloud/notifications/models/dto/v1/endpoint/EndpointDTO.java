@@ -52,6 +52,11 @@ public final class EndpointDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime created;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private LocalDateTime updated;
+
     @JsonSubTypes({
         @JsonSubTypes.Type(value = CamelPropertiesDTO.class, name = "camel"),
         @JsonSubTypes.Type(value = SystemSubscriptionPropertiesDTO.class, name = "drawer"),
@@ -149,6 +154,14 @@ public final class EndpointDTO {
 
     public void setCreated(final LocalDateTime created) {
         this.created = created;
+    }
+
+    public LocalDateTime getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(final LocalDateTime updated) {
+        this.updated = updated;
     }
 
     public EndpointPropertiesDTO getProperties() {

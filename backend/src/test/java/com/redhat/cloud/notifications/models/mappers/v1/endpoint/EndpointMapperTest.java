@@ -96,6 +96,7 @@ public class EndpointMapperTest {
         endpoint.setType(EndpointType.CAMEL);
         endpoint.setSubType("slack");
         endpoint.setCreated(LocalDateTime.now());
+        endpoint.setUpdated(LocalDateTime.now());
 
         final CamelProperties camelProperties = new CamelProperties();
         camelProperties.setDisableSslVerification(false);
