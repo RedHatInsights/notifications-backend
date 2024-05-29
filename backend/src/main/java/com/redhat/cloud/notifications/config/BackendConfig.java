@@ -28,7 +28,6 @@ public class BackendConfig {
      * Unleash configuration
      */
     private String drawerToggle;
-    private String forbidSlackChannelUsageToggle;
     private String uniqueBgNameToggle;
     private String uniqueIntegrationNameToggle;
 
@@ -52,10 +51,6 @@ public class BackendConfig {
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean drawerEnabled;
 
-    @ConfigProperty(name = "notifications.slack.forbid.channel.usage.enabled", defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean slackForbidChannelUsageEnabled;
-
     // Only used in stage environments.
     @ConfigProperty(name = DEFAULT_TEMPLATE, defaultValue = "false")
     boolean defaultTemplateEnabled;
@@ -77,7 +72,6 @@ public class BackendConfig {
     @PostConstruct
     void postConstruct() {
         drawerToggle = toggleRegistry.register("drawer", true);
-        forbidSlackChannelUsageToggle = toggleRegistry.register("forbid-slack-channel-usage", true);
         uniqueBgNameToggle = toggleRegistry.register("unique-bg-name", true);
         uniqueIntegrationNameToggle = toggleRegistry.register("unique-integration-name", true);
     }
@@ -89,7 +83,6 @@ public class BackendConfig {
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
-        config.put(forbidSlackChannelUsageToggle, isForbidSlackChannelUsage());
         config.put(uniqueBgNameToggle, isUniqueBgNameEnabled());
         config.put(uniqueIntegrationNameToggle, isUniqueIntegrationNameEnabled());
         config.put(UNLEASH, unleashEnabled);
@@ -114,14 +107,6 @@ public class BackendConfig {
 
     public boolean isEmailsOnlyModeEnabled() {
         return emailsOnlyModeEnabled;
-    }
-
-    public boolean isForbidSlackChannelUsage() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(forbidSlackChannelUsageToggle, false);
-        } else {
-            return slackForbidChannelUsageEnabled;
-        }
     }
 
     public boolean isInstantEmailsEnabled() {

@@ -84,7 +84,6 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 // TODO Needs documentation annotations
 public class EndpointResource {
 
-    public static final String EMPTY_SLACK_CHANNEL_ERROR = "The channel field is required";
     public static final String DEPRECATED_SLACK_CHANNEL_ERROR = "The channel field is deprecated";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
     public static final String REDACTED_CREDENTIAL = "*****";
@@ -327,20 +326,14 @@ public class EndpointResource {
     }
 
     private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {
-        String channel = camelProperties.getExtras().get("channel");
+        String channel = camelProperties.getExtras() != null ? camelProperties.getExtras().get("channel") : null;
 
-        if (backendConfig.isForbidSlackChannelUsage()) {
-            // throw an exception if we receive a channel on endpoint creation
-            if (null == previousCamelProperties && channel != null) {
-                throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
-            // throw an exception if we receive a channel update
-            } else if (channel != null && !channel.equals(previousCamelProperties.getExtras().get("channel"))) {
-                throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
-            }
-        } else {
-            if (channel == null || channel.isBlank()) {
-                throw new BadRequestException(EMPTY_SLACK_CHANNEL_ERROR);
-            }
+        // throw an exception if we receive a channel on endpoint creation
+        if (null == previousCamelProperties && channel != null) {
+            throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
+        // throw an exception if we receive a channel update
+        } else if (channel != null && !channel.equals(previousCamelProperties.getExtras().get("channel"))) {
+            throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
         }
     }
 
