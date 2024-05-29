@@ -76,6 +76,11 @@
       "title": "Creation timestamp of the endpoint",
       "type": "string"
     },
+    "updated": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1,12}$",
+      "title": "Update timestamp of the endpoint",
+      "type": "string"
+    },
     "properties": {
       "title": "Properties of the endpoint",
       "type": "object",
