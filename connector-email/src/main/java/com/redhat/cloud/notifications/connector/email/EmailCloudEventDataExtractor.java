@@ -61,6 +61,6 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
         exchange.setProperty(ExchangeProperty.EMAIL_SENDER, cloudEventData.getString("email_sender"));
 
-        exchange.setProperty(ExchangeProperty.USE_EMAIL_BOP_V2_SERVICE, emailConnectorConfig.isEnableBopServiceV2Usage(exchange.getProperty(ORG_ID, String.class)));
+        exchange.setProperty(ExchangeProperty.USE_EMAIL_BOP_V1_SSL, emailConnectorConfig.isEnableBopServiceWithSslChecks(exchange.getProperty(ORG_ID, String.class)));
     }
 }
