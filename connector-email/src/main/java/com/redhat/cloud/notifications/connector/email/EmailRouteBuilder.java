@@ -96,7 +96,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                 .log(DEBUG, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "} using regular SSL checks on email service]")
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                     .to(emailConnectorConfig.getBopURL())
-                .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .otherwise()
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                     .to(bopEndpointV1)
