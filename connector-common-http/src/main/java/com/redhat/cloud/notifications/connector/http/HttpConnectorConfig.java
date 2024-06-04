@@ -26,7 +26,6 @@ public class HttpConnectorConfig extends ConnectorConfig {
     private static final String CONNECT_TIMEOUT_MS = "notifications.connector.http.connect-timeout-ms";
     private static final String CONNECTIONS_PER_ROUTE = "notifications.connector.http.connections-per-route";
     private static final String DISABLE_FAULTY_ENDPOINTS = "notifications.connector.http.disable-faulty-endpoints";
-    private static final String FOLLOW_REDIRECTS = "notifications.connector.http.follow-redirects";
     private static final String MAX_TOTAL_CONNECTIONS = "notifications.connector.http.max-total-connections";
     private static final String SERVER_ERROR_LOG_LEVEL = "notifications.connector.http.server-error.log-level";
     private static final String SOCKET_TIMEOUT_MS = "notifications.connector.http.socket-timeout-ms";
@@ -52,9 +51,6 @@ public class HttpConnectorConfig extends ConnectorConfig {
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean disableFaultyEndpoints;
 
-    @ConfigProperty(name = FOLLOW_REDIRECTS, defaultValue = "false")
-    boolean followRedirects;
-
     @ConfigProperty(name = MAX_TOTAL_CONNECTIONS, defaultValue = "200")
     int httpMaxTotalConnections;
 
@@ -77,7 +73,6 @@ public class HttpConnectorConfig extends ConnectorConfig {
         config.put(CONNECT_TIMEOUT_MS, httpConnectTimeout);
         config.put(CONNECTIONS_PER_ROUTE, httpConnectionsPerRoute);
         config.put(disableFaultyEndpointsToggle, isDisableFaultyEndpoints());
-        config.put(FOLLOW_REDIRECTS, followRedirects);
         config.put(MAX_TOTAL_CONNECTIONS, httpMaxTotalConnections);
         config.put(SERVER_ERROR_LOG_LEVEL, serverErrorLogLevel);
         config.put(SOCKET_TIMEOUT_MS, httpSocketTimeout);
@@ -111,10 +106,6 @@ public class HttpConnectorConfig extends ConnectorConfig {
     @Deprecated(forRemoval = true)
     public void setDisableFaultyEndpoints(boolean disableFaultyEndpoints) {
         this.disableFaultyEndpoints = disableFaultyEndpoints;
-    }
-
-    public boolean isFollowRedirects() {
-        return followRedirects;
     }
 
     public int getHttpMaxTotalConnections() {
