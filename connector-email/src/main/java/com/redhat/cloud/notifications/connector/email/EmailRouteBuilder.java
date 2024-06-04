@@ -20,7 +20,7 @@ import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBui
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
-import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.USE_EMAIL_BOP_V2_SERVICE;
+import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.USE_EMAIL_BOP_V1_SSL;
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static org.apache.camel.LoggingLevel.DEBUG;
 import static org.apache.camel.LoggingLevel.INFO;
@@ -29,8 +29,6 @@ import static org.apache.camel.LoggingLevel.INFO;
 public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
     static final String BOP_RESPONSE_TIME_METRIC = "micrometer:timer:email.bop.response.time";
-    static final String BOP_V2_RESPONSE_TIME_METRIC = "micrometer:timer:email.bop.v2.response.time";
-
     static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "micrometer:timer:email.recipients_resolver.response.time";
     static final String TIMER_ACTION_START = "?action=start";
     static final String TIMER_ACTION_STOP = "?action=stop";
@@ -94,11 +92,11 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             // Clear all the headers that may come from the previous route.
             .removeHeaders("*")
             .process(this.BOPRequestPreparer)
-            .choice().when(shouldUseBopEmailServiceV2())
-                .log(DEBUG, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "} using email service V2]")
-                .to(BOP_V2_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+            .choice().when(shouldUseBopEmailServiceWithSslChecks())
+                .log(DEBUG, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "} using regular SSL checks on email service]")
+                .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                     .to(emailConnectorConfig.getBopURL())
-                .to(BOP_V2_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
+                .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .otherwise()
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                     .to(bopEndpointV1)
@@ -112,8 +110,8 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         return exchange -> exchange.getProperty(FILTERED_USERS, Set.class).isEmpty();
     }
 
-    private Predicate shouldUseBopEmailServiceV2() {
-        return exchange -> exchange.getProperty(USE_EMAIL_BOP_V2_SERVICE, Boolean.class);
+    private Predicate shouldUseBopEmailServiceWithSslChecks() {
+        return exchange -> exchange.getProperty(USE_EMAIL_BOP_V1_SSL, Boolean.class);
     }
 
     /**
