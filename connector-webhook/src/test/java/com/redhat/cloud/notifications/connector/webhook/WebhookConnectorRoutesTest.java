@@ -25,6 +25,7 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BEARER;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
+import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_3XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_5XX;
 import static com.redhat.cloud.notifications.connector.webhook.AuthenticationProcessor.X_INSIGHT_TOKEN_HEADER;
@@ -140,6 +141,11 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
     @Test
     protected void testFailedNotificationError404() throws Exception {
         testFailedNotificationAndReturnedFlagsToEngine(404, "Page not found", HTTP_4XX, 0);
+    }
+
+    @Test
+    protected void testFailedNotificationError301() throws Exception {
+        testFailedNotificationAndReturnedFlagsToEngine(301, "Moved Permanently", HTTP_3XX, 0);
     }
 
     private void testFailedNotificationAndReturnedFlagsToEngine(int httpStatusCode, String returnedBodyMessage, HttpErrorType httpErrorType, final int expectedRedeliveriesCount) throws Exception {

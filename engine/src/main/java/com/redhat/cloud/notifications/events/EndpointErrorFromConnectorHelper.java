@@ -15,6 +15,7 @@ import java.util.Set;
 
 import static com.redhat.cloud.notifications.events.HttpErrorType.CONNECTION_REFUSED;
 import static com.redhat.cloud.notifications.events.HttpErrorType.CONNECT_TIMEOUT;
+import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_3XX;
 import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.events.HttpErrorType.HTTP_5XX;
 import static com.redhat.cloud.notifications.events.HttpErrorType.SOCKET_TIMEOUT;
@@ -69,16 +70,16 @@ public class EndpointErrorFromConnectorHelper {
                 if (httpErrorType.isPresent()) {
                     Integer statusCode = error.getInteger("http_status_code");
 
-                    if (httpErrorType.get() == HTTP_4XX) {
+                    if (httpErrorType.get() == HTTP_4XX || httpErrorType.get() == HTTP_3XX) {
                         /*
-                         * The target endpoint returned a 4xx status. That kind of error requires an update of the
+                         * The target endpoint returned a 4xx or 3xx status. That kind of error requires an update of the
                          * endpoint settings (URL, secret token...). The endpoint will most likely never return a
                          * successful status code with the current settings, so it is disabled immediately.
                          */
                         boolean disabled = endpointRepository.disableEndpoint(endpoint.getId());
                         if (disabled) {
                             disabledWebhooksClientErrorCount.increment();
-                            Log.infof("Endpoint %s was disabled because we received a 4xx status while calling it", endpoint.getId());
+                            Log.infof("Endpoint %s was disabled because we received a %s status while calling it", endpoint.getId(), httpErrorType.get().name());
                             integrationDisabledNotifier.notify(endpoint, httpErrorType.get(), statusCode, 1);
                         }
                     } else if (HTTP_SERVER_ERRORS.contains(httpErrorType.get())) {

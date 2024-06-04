@@ -18,6 +18,7 @@ import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTT
 import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_STATUS_CODE;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.CONNECTION_REFUSED;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.CONNECT_TIMEOUT;
+import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_3XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_5XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.SOCKET_TIMEOUT;
@@ -38,7 +39,12 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
     protected void process(Throwable t, Exchange exchange) {
         if (t instanceof HttpOperationFailedException e) {
             exchange.setProperty(HTTP_STATUS_CODE, e.getStatusCode());
-            if (e.getStatusCode() >= 400 && e.getStatusCode() < 500 && e.getStatusCode() != SC_TOO_MANY_REQUESTS) {
+            if (e.getStatusCode() >= 300 && e.getStatusCode() < 400) {
+                if (connectorConfig.isDisableFaultyEndpoints()) {
+                    exchange.setProperty(HTTP_ERROR_TYPE, HTTP_3XX);
+                }
+                logHttpError(connectorConfig.getServerErrorLogLevel(), e, exchange);
+            } else if (e.getStatusCode() >= 400 && e.getStatusCode() < 500 && e.getStatusCode() != SC_TOO_MANY_REQUESTS) {
                 if (connectorConfig.isDisableFaultyEndpoints()) {
                     exchange.setProperty(HTTP_ERROR_TYPE, HTTP_4XX);
                 }
