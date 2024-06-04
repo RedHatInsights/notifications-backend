@@ -27,6 +27,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
+      "id": 707191,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -3131,6 +3132,100 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 30
+          },
+          "id": 172,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "sum by(bundle, application) (increase(input_consumed_seconds_count{service=\"notifications-engine-service\"}[5m]))",
+              "hide": false,
+              "legendFormat": "{{bundle}}/{{application}}",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "title": "Events consumed per bundle/app",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
           "description": "Number of current restarts (since pod deployment)",
           "fieldConfig": {
             "defaults": {
@@ -4183,100 +4278,6 @@ data:
             }
           ],
           "title": "Kafka Lag (seconds)",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "normal"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 12,
-            "y": 55
-          },
-          "id": 172,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(bundle, application) (increase(input_consumed_seconds_count{service=\"notifications-engine-service\"}[5m]))",
-              "hide": false,
-              "legendFormat": "{{bundle}}/{{application}}",
-              "range": true,
-              "refId": "B"
-            }
-          ],
-          "title": "Events consumed per bundle/app",
           "type": "timeseries"
         },
         {
@@ -6725,6 +6726,199 @@ data:
           "type": "timeseries"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the maximum time the different services spent fetching the secrets from Sources",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.5
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 106
+          },
+          "id": 293,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "max by(service) (sources_get_secret_request_seconds_max)",
+              "hide": false,
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Sources — Maximum time spent fetching secrets",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the number of secrets fetched by the different services.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 106
+          },
+          "id": 294,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum by(service) (increase(sources_get_secret_request_seconds_count[5m]))",
+              "hide": false,
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Sources — Number of secrets fetched",
+          "type": "timeseries"
+        },
+        {
           "collapsed": false,
           "datasource": {
             "type": "prometheus",
@@ -6734,7 +6928,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 106
+            "y": 114
           },
           "id": 179,
           "panels": [],
@@ -6802,7 +6996,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 107
+            "y": 115
           },
           "id": 174,
           "options": {
@@ -6896,7 +7090,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 107
+            "y": 115
           },
           "id": 208,
           "options": {
@@ -6990,7 +7184,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 107
+            "y": 115
           },
           "id": 189,
           "options": {
@@ -7086,7 +7280,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 115
+            "y": 123
           },
           "id": 113,
           "options": {
@@ -7179,7 +7373,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 115
+            "y": 123
           },
           "id": 175,
           "options": {
@@ -7272,7 +7466,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 115
+            "y": 123
           },
           "id": 176,
           "options": {
@@ -7374,7 +7568,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 115
+            "y": 123
           },
           "id": 177,
           "options": {
@@ -7432,7 +7626,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 123
+            "y": 131
           },
           "id": 24,
           "panels": [],
@@ -7506,7 +7700,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 124
+            "y": 132
           },
           "id": 22,
           "options": {
@@ -7598,7 +7792,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 124
+            "y": 132
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -7770,7 +7964,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 133
+            "y": 141
           },
           "id": 85,
           "options": {
@@ -7848,7 +8042,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "stage",
               "value": "crcs02ue1-prometheus"
             },
@@ -7913,7 +8107,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 2,
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap
