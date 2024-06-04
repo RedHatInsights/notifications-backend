@@ -76,6 +76,30 @@ objects:
       # List the endpoint types and whether they are being actively used or
       # not. We assume that an endpoint without any associated behavior groups
       # is not being used.
+      #
+      # We STRING_AGG all the potential event types in a single row, as
+      # otherwise we would have stuff like:
+      #
+      # endpoint_id | event_type
+      # a           | a
+      # a           | b
+      # a           | c
+      #
+      # And what we want is actually the following:
+      #
+      # endpoint_id | event_type
+      # a           | a, b, c
+      #
+      # Also, the subqueries must go inside the parentheses so that the
+      # "endpoints" table is the one that is left joined. This way, if there
+      # are no behavior groups, behavior groups actions and consequently, event
+      # types associated to the endpoint, the "event_type" column in the
+      # selected results will simply be "null".
+      #
+      # Finally, we need to group the results by the endpoints' identifier so
+      # that we can aggregate the multiple "event types" rows, as in this
+      # particular query the main question to answer is "the number of
+      # endpoints an organization has".
       - prefix: insights/notifications/endpoint_types
         query: >-
           SELECT
@@ -87,6 +111,7 @@ objects:
               ELSE
                 LOWER(endpoint_type_v2)::TEXT
             END AS endpoint_type,
+            STRING_AGG(event_type.display_name, ', ') AS event_type,
             endpoints.org_id::TEXT,
             endpoints.enabled::TEXT AS enabled,
             EXISTS (
@@ -102,6 +127,17 @@ objects:
             )::BOOLEAN AS actively_used
           FROM
             endpoints
+          LEFT JOIN (
+            behavior_group_action
+              INNER JOIN
+                event_type_behavior
+                  ON event_type_behavior.behavior_group_id = behavior_group_action.behavior_group_id
+              INNER JOIN
+                event_type
+                  ON event_type_behavior.event_type_id  = event_type.id
+          ) ON behavior_group_action.endpoint_id = endpoints.id
+          GROUP BY
+            endpoints.id
       # List the attempted notification deliveries. It shows the associated
       # bundle, the application, the endpoint type, the event type and the
       # delivery status.
