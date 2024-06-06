@@ -4467,6 +4467,213 @@ data:
             "x": 0,
             "y": 63
           },
+          "id": 295,
+          "panels": [],
+          "title": "Kafka output",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the amount of bytes sent to the \"platform.notifications.ingress\" topic by the different producers.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1048576
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 64
+          },
+          "id": 297,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PDD8BE47D10408F45"
+              },
+              "editorMode": "code",
+              "expr": "increase(kafka_producer_topic_byte_total{topic=\"platform.notifications.ingress\"}[5m])",
+              "instant": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Producers"
+            }
+          ],
+          "title": "\"ingress\" — bytes per producer",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the amount of bytes sent to the \"platform.notifications.tocamel\" topic by the different producers.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1048576
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 64
+          },
+          "id": 296,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PDD8BE47D10408F45"
+              },
+              "editorMode": "code",
+              "expr": "increase(kafka_producer_topic_byte_total{topic=\"platform.notifications.tocamel\"}[5m])",
+              "instant": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Producers"
+            }
+          ],
+          "title": "\"tocamel\" — bytes per producer",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 72
+          },
           "id": 226,
           "panels": [],
           "title": "Connectors",
@@ -4563,7 +4770,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 64
+            "y": 73
           },
           "id": 269,
           "options": {
@@ -4725,7 +4932,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 64
+            "y": 73
           },
           "id": 267,
           "options": {
@@ -4893,7 +5100,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 64
+            "y": 73
           },
           "id": 249,
           "options": {
@@ -5060,7 +5267,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 64
+            "y": 73
           },
           "id": 262,
           "options": {
@@ -5228,7 +5435,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 72
+            "y": 81
           },
           "id": 248,
           "options": {
@@ -5395,7 +5602,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 72
+            "y": 81
           },
           "id": 258,
           "options": {
@@ -5563,7 +5770,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 72
+            "y": 81
           },
           "id": 250,
           "options": {
@@ -5630,7 +5837,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 80
+            "y": 89
           },
           "id": 228,
           "panels": [],
@@ -5700,7 +5907,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 81
+            "y": 90
           },
           "id": 201,
           "options": {
@@ -5792,7 +5999,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 81
+            "y": 90
           },
           "id": 254,
           "options": {
@@ -5851,7 +6058,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 81
+            "y": 90
           },
           "id": 205,
           "options": {
@@ -5895,7 +6102,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 89
+            "y": 98
           },
           "id": 188,
           "panels": [],
@@ -5966,7 +6173,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 90
+            "y": 99
           },
           "id": 153,
           "options": {
@@ -6077,7 +6284,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 90
+            "y": 99
           },
           "id": 161,
           "options": {
@@ -6174,7 +6381,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 90
+            "y": 99
           },
           "id": 252,
           "links": [
@@ -6372,7 +6579,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 98
+            "y": 107
           },
           "id": 280,
           "options": {
@@ -6471,7 +6678,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 98
+            "y": 107
           },
           "id": 281,
           "options": {
@@ -6592,7 +6799,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 98
+            "y": 107
           },
           "id": 276,
           "options": {
@@ -6773,7 +6980,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -6789,7 +6997,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 106
+            "y": 115
           },
           "id": 293,
           "options": {
@@ -6873,7 +7081,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -6885,7 +7094,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 106
+            "y": 115
           },
           "id": 294,
           "options": {
@@ -6928,7 +7137,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 114
+            "y": 123
           },
           "id": 179,
           "panels": [],
@@ -6996,7 +7205,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 115
+            "y": 124
           },
           "id": 174,
           "options": {
@@ -7090,7 +7299,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 115
+            "y": 124
           },
           "id": 208,
           "options": {
@@ -7184,7 +7393,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 115
+            "y": 124
           },
           "id": 189,
           "options": {
@@ -7280,7 +7489,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 123
+            "y": 132
           },
           "id": 113,
           "options": {
@@ -7373,7 +7582,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 123
+            "y": 132
           },
           "id": 175,
           "options": {
@@ -7466,7 +7675,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 123
+            "y": 132
           },
           "id": 176,
           "options": {
@@ -7568,7 +7777,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 123
+            "y": 132
           },
           "id": 177,
           "options": {
@@ -7626,7 +7835,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 131
+            "y": 140
           },
           "id": 24,
           "panels": [],
@@ -7700,7 +7909,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 132
+            "y": 141
           },
           "id": 22,
           "options": {
@@ -7792,7 +8001,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 132
+            "y": 141
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -7964,7 +8173,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 141
+            "y": 150
           },
           "id": 85,
           "options": {
@@ -8043,8 +8252,8 @@ data:
           {
             "current": {
               "selected": true,
-              "text": "stage",
-              "value": "crcs02ue1-prometheus"
+              "text": "crcp01ue1-prometheus",
+              "value": "crcp01ue1-prometheus"
             },
             "hide": 0,
             "includeAll": false,
@@ -8054,17 +8263,17 @@ data:
             "options": [
               {
                 "selected": false,
-                "text": "perf",
+                "text": "insights-perf-prometheus",
                 "value": "insights-perf-prometheus"
               },
               {
-                "selected": true,
-                "text": "stage",
+                "selected": false,
+                "text": "crcs02ue1-prometheus",
                 "value": "crcs02ue1-prometheus"
               },
               {
-                "selected": false,
-                "text": "prod",
+                "selected": true,
+                "text": "crcp01ue1-prometheus",
                 "value": "crcp01ue1-prometheus"
               }
             ],
@@ -8107,7 +8316,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 3,
+      "version": 4,
       "weekStart": ""
     }
 kind: ConfigMap
