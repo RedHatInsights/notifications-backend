@@ -3995,19 +3995,15 @@ data:
         },
         {
           "collapsed": false,
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
             "y": 54
           },
-          "id": 191,
+          "id": 302,
           "panels": [],
-          "title": "Kafka input",
+          "title": "Kafka issues indicators",
           "type": "row"
         },
         {
@@ -4400,8 +4396,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 6,
-            "x": 18,
+            "w": 7,
+            "x": 12,
             "y": 55
           },
           "id": 218,
@@ -4461,11 +4457,586 @@ data:
         },
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
             "y": 63
+          },
+          "id": 191,
+          "panels": [],
+          "title": "Kafka input",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the number of messages each Kafka broker has received for the \"platform.notifications.ingress\" topic.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 100,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 64
+          },
+          "id": 305,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "increase(kafka_server_brokertopicmetrics_messagesin_total{topic=\"platform.notifications.ingress\"}[5m])",
+              "instant": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Message intake per broker"
+            }
+          ],
+          "title": "\"ingress\" — Message intake per broker",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the number of messages each Kafka broker has received for the \"platform.notifications.tocamel\" topic.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 100,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 64
+          },
+          "id": 306,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "increase(kafka_server_brokertopicmetrics_messagesin_total{topic=\"platform.notifications.tocamel\"}[5m])",
+              "instant": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Message intake per broker"
+            }
+          ],
+          "title": "\"tocamel\" — Message intake per broker",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the amount of bytes each Kafka broker has received for the \"platform.notifications.ingress\" topic.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 100,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 72
+          },
+          "id": 303,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "increase(kafka_server_brokertopicmetrics_bytesin_total{topic=\"platform.notifications.ingress\"}[5m])",
+              "instant": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Intake per broker"
+            }
+          ],
+          "title": "\"ingress\" —  Intake per broker",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the amount of bytes each Kafka broker has received for the \"platform.notifications.tocamel\" topic.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 100,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 72
+          },
+          "id": 304,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "increase(kafka_server_brokertopicmetrics_bytesin_total{topic=\"platform.notifications.tocamel\"}[5m])",
+              "instant": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Intake per broker"
+            }
+          ],
+          "title": "\"tocamel\" — Intake per broker",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the number of messages each Kafka broker has received for the \"platform.notifications.fromcamel\" topic.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 100,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 80
+          },
+          "id": 307,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "increase(kafka_server_brokertopicmetrics_messagesin_total{topic=\"platform.notifications.fromcamel\"}[5m])",
+              "instant": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Message intake per broker"
+            }
+          ],
+          "title": "\"fromcamel\" — Message intake per broker",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Shows the amount of bytes each Kafka broker has received for the \"platform.notifications.fromcamel\" topic. The reason for using broker metrics instead of producer metrics is that our Apache Camel producers do not collect and send Kafka metrics by default.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 100,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 88
+          },
+          "id": 301,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "increase(kafka_server_brokertopicmetrics_bytesin_total{topic=\"platform.notifications.fromcamel\"}[5m])",
+              "instant": false,
+              "legendFormat": "{{pod}}",
+              "range": true,
+              "refId": "Intake per broker"
+            }
+          ],
+          "title": "\"fromcamel\" — Intake per broker",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 96
           },
           "id": 295,
           "panels": [],
@@ -4477,7 +5048,7 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "description": "Shows the number of bytes each producer sends to Kafka to the \"platform.notifications.ingress\" channel.",
+          "description": "Shows the number of bytes each in-cluster Quarkus producer sends to Kafka to the \"platform.notifications.ingress\" channel.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -4525,10 +5096,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 1048576
                   }
                 ]
               },
@@ -4540,7 +5107,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 64
+            "y": 97
           },
           "id": 300,
           "options": {
@@ -4566,10 +5133,10 @@ data:
               "instant": false,
               "legendFormat": "{{pod}}",
               "range": true,
-              "refId": "Notifications producers"
+              "refId": "In-cluster Quarkus producers"
             }
           ],
-          "title": "\"ingress\" — bytes per producer",
+          "title": "\"ingress\" — bytes per in-cluster Quarkus producer",
           "type": "timeseries"
         },
         {
@@ -4577,7 +5144,7 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "description": "Shows the number of bytes each Kafka broker has received for the \"platform.notifications.fromcamel\" topic. The reason for using broker metrics instead of producer metrics is that our Apache Camel producers do not collect and send Kafka metrics by default.",
+          "description": "Shows the number of bytes each Notifications producer sends to Kafka to the \"platform.notifications.tocamel\" channel.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -4622,10 +5189,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 1048576
                   }
                 ]
               },
@@ -4637,9 +5200,9 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 64
+            "y": 97
           },
-          "id": 301,
+          "id": 298,
           "options": {
             "legend": {
               "calcs": [],
@@ -4656,17 +5219,17 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "$datasource"
+                "uid": "PC1EAC84DCBBF0697"
               },
               "editorMode": "code",
-              "expr": "increase(kafka_server_brokertopicmetrics_bytesin_total{topic=\"platform.notifications.fromcamel\"}[5m])",
+              "expr": "increase(kafka_producer_outgoing_byte_total{client_id=\"kafka-producer-tocamel\"}[5m])",
               "instant": false,
-              "legendFormat": "__auto",
+              "legendFormat": "{{pod}}",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "\"fromcamel\" — broker input bytes",
+          "title": "\"tocamel\" — bytes per Notifications producer",
           "type": "timeseries"
         },
         {
@@ -4719,10 +5282,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 1048576
                   }
                 ]
               },
@@ -4734,7 +5293,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 72
+            "y": 105
           },
           "id": 299,
           "options": {
@@ -4767,107 +5326,12 @@ data:
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the number of bytes each producer sends to Kafka to the \"platform.notifications.tocamel\" channel.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 1048576
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 72
-          },
-          "id": 298,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PC1EAC84DCBBF0697"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_producer_outgoing_byte_total{client_id=\"kafka-producer-tocamel\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "\"tocamel\" — bytes per producer",
-          "type": "timeseries"
-        },
-        {
           "collapsed": false,
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 80
+            "y": 113
           },
           "id": 228,
           "panels": [],
@@ -4937,7 +5401,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 81
+            "y": 114
           },
           "id": 201,
           "options": {
@@ -5029,7 +5493,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 81
+            "y": 114
           },
           "id": 254,
           "options": {
@@ -5088,7 +5552,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 81
+            "y": 114
           },
           "id": 205,
           "options": {
@@ -5128,7 +5592,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 89
+            "y": 122
           },
           "id": 226,
           "panels": [],
@@ -5226,7 +5690,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 90
+            "y": 123
           },
           "id": 269,
           "options": {
@@ -5388,7 +5852,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 90
+            "y": 123
           },
           "id": 267,
           "options": {
@@ -5556,7 +6020,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 90
+            "y": 123
           },
           "id": 249,
           "options": {
@@ -5723,7 +6187,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 90
+            "y": 123
           },
           "id": 262,
           "options": {
@@ -5891,7 +6355,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 98
+            "y": 131
           },
           "id": 248,
           "options": {
@@ -6058,7 +6522,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 98
+            "y": 131
           },
           "id": 258,
           "options": {
@@ -6226,7 +6690,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 98
+            "y": 131
           },
           "id": 250,
           "options": {
@@ -6297,7 +6761,705 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 106
+            "y": 139
+          },
+          "id": 179,
+          "panels": [],
+          "title": "HTTP",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "decimals": 0,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 140
+          },
+          "id": 174,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "sum by(status) (increase(http_server_requests_seconds_count{container=\"notifications-backend-service\"}[5m]))",
+              "hide": false,
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "title": "notifications-backend-service - HTTP requests [5m]",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "decimals": 0,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 8,
+            "y": 140
+          },
+          "id": 208,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "sum by(status) (increase(http_server_requests_seconds_count{container=\"notifications-engine-service\"}[5m]))",
+              "hide": false,
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "title": "notifications-engine-service - HTTP requests [5m]",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "decimals": 0,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 140
+          },
+          "id": 189,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "sum by(status) (increase(http_server_requests_seconds_count{container=\"notifications-gw-service\", uri!~\"/health/live|/health/ready|/metrics\"}[5m]))",
+              "hide": false,
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "title": "notifications-gw-service - HTTP requests [5m]",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 148
+          },
+          "id": 113,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/integrations.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/integrations.*\"}[5m])) by (uri)",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ],
+          "title": "average response time in seconds",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 148
+          },
+          "id": 175,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri)",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ],
+          "title": "average response time in seconds",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 148
+          },
+          "id": 176,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri)",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri)",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "B"
+            }
+          ],
+          "title": "average response time in seconds",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 100,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 148
+          },
+          "id": 177,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri)",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri)",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri)",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "{{status}}",
+              "refId": "C"
+            }
+          ],
+          "title": "average response time in seconds",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 156
           },
           "id": 188,
           "panels": [],
@@ -6368,7 +7530,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 107
+            "y": 157
           },
           "id": 153,
           "options": {
@@ -6479,7 +7641,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 107
+            "y": 157
           },
           "id": 161,
           "options": {
@@ -6576,7 +7738,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 107
+            "y": 157
           },
           "id": 252,
           "links": [
@@ -6774,7 +7936,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 115
+            "y": 165
           },
           "id": 280,
           "options": {
@@ -6873,7 +8035,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 115
+            "y": 165
           },
           "id": 281,
           "options": {
@@ -6994,7 +8156,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 115
+            "y": 165
           },
           "id": 276,
           "options": {
@@ -7192,7 +8354,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 123
+            "y": 173
           },
           "id": 293,
           "options": {
@@ -7289,7 +8451,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 123
+            "y": 173
           },
           "id": 294,
           "options": {
@@ -7332,705 +8494,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 131
-          },
-          "id": 179,
-          "panels": [],
-          "title": "HTTP",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "normal"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "decimals": 0,
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 0,
-            "y": 132
-          },
-          "id": 174,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(status) (increase(http_server_requests_seconds_count{container=\"notifications-backend-service\"}[5m]))",
-              "hide": false,
-              "legendFormat": "__auto",
-              "range": true,
-              "refId": "B"
-            }
-          ],
-          "title": "notifications-backend-service - HTTP requests [5m]",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "normal"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "decimals": 0,
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 8,
-            "y": 132
-          },
-          "id": 208,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(status) (increase(http_server_requests_seconds_count{container=\"notifications-engine-service\"}[5m]))",
-              "hide": false,
-              "legendFormat": "__auto",
-              "range": true,
-              "refId": "B"
-            }
-          ],
-          "title": "notifications-engine-service - HTTP requests [5m]",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "normal"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "decimals": 0,
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 16,
-            "y": 132
-          },
-          "id": 189,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(status) (increase(http_server_requests_seconds_count{container=\"notifications-gw-service\", uri!~\"/health/live|/health/ready|/metrics\"}[5m]))",
-              "hide": false,
-              "legendFormat": "__auto",
-              "range": true,
-              "refId": "B"
-            }
-          ],
-          "title": "notifications-gw-service - HTTP requests [5m]",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 0,
-            "y": 140
-          },
-          "id": 113,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "10.4.1",
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/integrations.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/integrations.*\"}[5m])) by (uri)",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{status}}",
-              "refId": "A"
-            }
-          ],
-          "title": "average response time in seconds",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 6,
-            "y": 140
-          },
-          "id": 175,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "10.4.1",
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/user-config.*\"}[5m])) by (uri)",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{status}}",
-              "refId": "A"
-            }
-          ],
-          "title": "average response time in seconds",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 12,
-            "y": 140
-          },
-          "id": 176,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "10.4.1",
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/facets.*\"}[5m])) by (uri)",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{status}}",
-              "refId": "A"
-            },
-            {
-              "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/events.*\"}[5m])) by (uri)",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{status}}",
-              "refId": "B"
-            }
-          ],
-          "title": "average response time in seconds",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "uid": "$datasource"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 18,
-            "y": 140
-          },
-          "id": 177,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "10.4.1",
-          "targets": [
-            {
-              "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri)",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{status}}",
-              "refId": "A"
-            },
-            {
-              "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri)",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{status}}",
-              "refId": "B"
-            },
-            {
-              "exemplar": true,
-              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri)",
-              "hide": false,
-              "interval": "",
-              "intervalFactor": 1,
-              "legendFormat": "{{status}}",
-              "refId": "C"
-            }
-          ],
-          "title": "average response time in seconds",
-          "type": "timeseries"
-        },
-        {
-          "collapsed": false,
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 148
+            "y": 181
           },
           "id": 24,
           "panels": [],
@@ -8104,7 +8568,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 149
+            "y": 182
           },
           "id": 22,
           "options": {
@@ -8196,7 +8660,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 149
+            "y": 182
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -8368,7 +8832,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 158
+            "y": 191
           },
           "id": 85,
           "options": {
@@ -8446,7 +8910,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "crcp01ue1-prometheus",
               "value": "crcp01ue1-prometheus"
             },
@@ -8511,7 +8975,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 1,
+      "version": 2,
       "weekStart": ""
     }
 kind: ConfigMap
