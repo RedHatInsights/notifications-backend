@@ -2,25 +2,23 @@ package com.redhat.cloud.notifications.auth.kessel.producer;
 
 import client.CheckClient;
 import client.RelationsGrpcClientsManager;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 @Priority(1)
 public class KesselClientsProducer {
-    private static final String KESSEL_SECURE_CLIENT = "notifications.kessel.secure-client";
     private static final String KESSEL_TARGET_URL = "notifications.kessel.target-url";
 
-    /**
-     * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
-     */
-    @ConfigProperty(name = KESSEL_SECURE_CLIENT, defaultValue = "false")
-    boolean secureClient;
+    @Inject
+    BackendConfig backendConfig;
 
     /**
      * The target URL the gRPC client will connect to.
@@ -37,7 +35,7 @@ public class KesselClientsProducer {
     @ApplicationScoped
     @Produces
     protected RelationsGrpcClientsManager getRelationsGrpcClientsManager() {
-        if (this.secureClient) {
+        if (this.backendConfig.isKesselUseSecureClientEnabled()) {
             Log.infof("Generated secure gRPC client manager with target url \"%s\"", this.targetUrl);
 
             return RelationsGrpcClientsManager.forSecureClients(this.targetUrl);

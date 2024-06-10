@@ -23,6 +23,7 @@ public class BackendConfig {
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_BACKEND_ENABLED = "notifications.kessel.backend.enabled";
+    private static final String KESSEL_USE_SECURE_CLIENT = "notifications.kessel.secure-client";
     private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
@@ -68,6 +69,12 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_BACKEND_ENABLED, defaultValue = "false")
     boolean kesselBackendEnabled;
 
+    /**
+     * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
+     */
+    @ConfigProperty(name = KESSEL_USE_SECURE_CLIENT, defaultValue = "false")
+    boolean kesselUseSecureClientEnabled;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -89,6 +96,7 @@ public class BackendConfig {
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(KESSEL_BACKEND_ENABLED, isKesselBackendEnabled());
+        config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClientEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(uniqueBgNameToggle, isUniqueBgNameEnabled());
         config.put(uniqueIntegrationNameToggle, isUniqueIntegrationNameEnabled());
@@ -142,5 +150,9 @@ public class BackendConfig {
         } else {
             return enforceIntegrationNameUnicity;
         }
+    }
+
+    public boolean isKesselUseSecureClientEnabled() {
+        return kesselUseSecureClientEnabled;
     }
 }
