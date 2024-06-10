@@ -10,6 +10,9 @@ import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhServiceAccountIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -28,12 +31,28 @@ public class KesselAuthorization {
      * Represents the "user"'s subject's name in Kessel.
      */
     public static final String KESSEL_IDENTITY_SUBJECT_USER = "user";
+    /**
+     * Represents the key for the "permission" tag used in the timer.
+     */
+    private static final String KESSEL_METRICS_TAG_PERMISSION_KEY = "permission";
+    /**
+     * Represents the key for the "resource_type" tag used in the timer.
+     */
+    private static final String KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY = "resource_type";
+    /**
+     * Represents the timer's name to measure the time spent sending requests
+     * and receiving responses from Kessel.
+     */
+    private static final String KESSEL_METRICS_TIMER_NAME = "notifications.kessel.requests";
 
     @Inject
     BackendConfig backendConfig;
 
     @Inject
     CheckClient checkClient;
+
+    @Inject
+    MeterRegistry meterRegistry;
 
     /**
      * Checks if the subject on the security context has permission on the
@@ -59,10 +78,18 @@ public class KesselAuthorization {
 
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Payload for the permission check: %s", identity, permission, resourceType, resourceId, permissionCheckRequest);
 
+        // Measure the time it takes to perform the operation with Kessel.
+        final Timer.Sample timer = Timer.start(this.meterRegistry);
+
+        // Call Kessel.
         final CheckResponse response = this.checkClient.check(permissionCheckRequest);
+
+        // Stop the timer.
+        timer.stop(this.meterRegistry.timer(KESSEL_METRICS_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.getKesselName())));
 
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
 
+        // Verify whether the subject has permission on the resource or not.
         if (CheckResponse.Allowed.ALLOWED_TRUE != response.getAllowed()) {
             Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
 
