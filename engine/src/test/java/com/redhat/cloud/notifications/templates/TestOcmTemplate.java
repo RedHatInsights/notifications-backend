@@ -99,6 +99,25 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
     }
 
     @Test
+    public void testApprovedAccessEmailBody() {
+        // test generic template case
+        Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> need a revision", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "ocm-approved-access-template")));
+        String result = generateEmailBody(CLUSTER_LIFECYCLE, action);
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("This notification is for your"));
+        assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
+        assertFalse(result.contains("We are notifying you about your"));
+        assertFalse(result.contains("Thank you for trialing OpenShift Dedicated"));
+
+        assertTrue(result.contains("Your organization has enabled \"Approved Access\" for ROSA clusters"));
+        assertFalse(result.contains("Your subscription provides"));
+        assertFalse(result.contains("To learn more about the OpenShift Dedicated trial"));
+        assertFalse(result.contains("You will be notified once your cluster is deleted"));
+        assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
+    }
+
+    @Test
     public void testClusterLifecycleInstantEmailBody() {
         // test generic template case
         Action action = OcmTestHelpers.createOcmAction("Batcave", "OSD", "<b>Batmobile</b> need a revision", "Awesome subject");
