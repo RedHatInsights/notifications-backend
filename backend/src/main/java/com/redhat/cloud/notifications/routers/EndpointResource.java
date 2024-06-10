@@ -245,7 +245,6 @@ public class EndpointResource {
      * @param name filter endpoints by name.
      * @return a page containing the requested endpoints.
      */
-    @Deprecated(forRemoval = true, since = "The Kessel integration began on 2024Q2.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     public EndpointPage getEndpointsLegacyRBACRoles(final SecurityContext securityContext, final Query query, final List<String> targetType, final Boolean activeOnly, final String name) {
         return this.internalGetEndpoints(securityContext, query, targetType, activeOnly, name);
@@ -550,7 +549,6 @@ public class EndpointResource {
      * @param endpointDTO the received request body.
      * @return a response specifying the outcome of the operation.
      */
-    @Deprecated(forRemoval = true, since = "The Kessel integration began on 2024Q2.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public Response updateEndpointLegacyRBACRoles(final SecurityContext securityContext, final UUID endpointId, final EndpointDTO endpointDTO) {
         return this.internalUpdateEndpoint(securityContext, endpointId, endpointDTO);
