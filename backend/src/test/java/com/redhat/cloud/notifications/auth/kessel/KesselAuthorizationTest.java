@@ -19,7 +19,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -42,7 +41,6 @@ public class KesselAuthorizationTest {
      * Tests that when the principal is authorized, the function under test
      * does not raise an exception.
      */
-    @Disabled
     @Test
     void testAuthorized() {
         // Mock the security context.
@@ -79,7 +77,6 @@ public class KesselAuthorizationTest {
      * Tests that when the principal is authorized, the function under test
      * throws an exception.
      */
-    @Disabled
     @Test
     void testUnauthorized() {
         // Mock the security context.
