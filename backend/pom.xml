@@ -155,7 +155,7 @@
         <dependency>
             <groupId>org.project-kessel</groupId>
             <artifactId>relations-client-java</artifactId>
-            <version>0.1</version>
+            <version>${kessel.version}</version>
         </dependency>
 
         <!-- Test dependencies -->

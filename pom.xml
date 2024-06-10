@@ -42,6 +42,7 @@
 
     <properties>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <kessel.version>0.1</kessel.version>
 
         <enforcer-plugin.version>3.4.1</enforcer-plugin.version>
         <maven-minimum-version>3.8.4</maven-minimum-version>
