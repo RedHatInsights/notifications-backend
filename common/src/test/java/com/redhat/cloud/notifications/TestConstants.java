@@ -12,4 +12,5 @@ public class TestConstants {
     public static final String API_INTEGRATIONS_V_2 = "/api/integrations/v2";
     public static final String DEFAULT_ACCOUNT_ID = "default-account-id";
     public static final String DEFAULT_ORG_ID = "default-org-id";
+    public static final String DEFAULT_USER = "default-user";
 }

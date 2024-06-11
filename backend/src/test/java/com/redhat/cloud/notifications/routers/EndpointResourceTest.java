@@ -43,6 +43,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.ws.rs.core.UriBuilder;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -55,6 +56,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,11 +72,13 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_AC
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static com.redhat.cloud.notifications.routers.EndpointResource.DEPRECATED_SLACK_CHANNEL_ERROR;
+import static com.redhat.cloud.notifications.routers.EndpointResource.HTTPS_ENDPOINT_SCHEME_REQUIRED;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -716,6 +720,112 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(200)
             .extract().asString();
+    }
+
+    @Test
+    void testRequireHttpsSchemeServiceNow() {
+        URI sNowUri = URI.create("http://webhook.site/3074bfbb-366c-4f54-8513-b66a483985aa");
+        testRequireHttpsScheme("servicenow", sNowUri);
+    }
+
+    @Test
+    void testRequireHttpsSchemeSplunk() {
+        URI splunkUri = URI.create("http://webhook.site/20832c6c-6493-487d-bbf5-d4f8cbfd1fc6");
+        testRequireHttpsScheme("splunk", splunkUri);
+    }
+
+    private void testRequireHttpsScheme(String subtype, URI uriWithHttpScheme) {
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setUrl(uriWithHttpScheme.toString());
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(EndpointType.CAMEL);
+        endpoint.setSubType(subtype);
+        endpoint.setName("name");
+        endpoint.setDescription("description");
+        endpoint.setProperties(camelProperties);
+
+        String invalidResp = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+                .post("/endpoints")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+
+        assertEquals(HTTPS_ENDPOINT_SCHEME_REQUIRED, invalidResp);
+
+        URI uriHttps = UriBuilder.fromUri(uriWithHttpScheme).scheme("https").build();
+        camelProperties.setUrl(uriHttps.toString());
+        endpoint.setProperties(camelProperties);
+
+        String createdEndpoint = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+
+        final String endpointUuidRaw = new JsonObject(createdEndpoint).getString("id");
+
+        // try to update endpoint with HTTPS URI
+        URI exampleUri = URI.create("https://webhook.site/a6de9c30-f4c9-49af-8d03-c9ce7e78fdb3");
+        camelProperties.setUrl(exampleUri.toString());
+        endpoint.setProperties(camelProperties);
+        given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("id", endpointUuidRaw)
+                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+                .when()
+                .put("/endpoints/{id}")
+                .then()
+                .statusCode(200)
+                .extract().asString();
+
+        // try to update endpoint with HTTP URI
+        URI insecureExampleUri = UriBuilder.fromUri(exampleUri).scheme("http").build();
+        camelProperties.setUrl(insecureExampleUri.toString());
+        endpoint.setProperties(camelProperties);
+        String sNowInvalidUpdate = given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("id", endpointUuidRaw)
+                .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+                .when()
+                .put("/endpoints/{id}")
+                .then()
+                .statusCode(400)
+                .extract().asString();
+
+        assertEquals(HTTPS_ENDPOINT_SCHEME_REQUIRED, sNowInvalidUpdate);
+
+        // try to create Camel endpoint for a service which doesn't require HTTPS
+        CamelProperties slackCamelProperties = new CamelProperties();
+        slackCamelProperties.setUrl(insecureExampleUri.toString());
+        Endpoint slackEndpoint = new Endpoint();
+        slackEndpoint.setType(EndpointType.CAMEL);
+        slackEndpoint.setSubType("slack");
+        slackEndpoint.setName("slack-name");
+        slackEndpoint.setDescription("description");
+        slackEndpoint.setProperties(slackCamelProperties);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(this.endpointMapper.toDTO(slackEndpoint)))
+                .post("/endpoints")
+                .then()
+                .statusCode(200);
     }
 
     @Test

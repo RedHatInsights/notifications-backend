@@ -64,6 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,6 +86,7 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 public class EndpointResource {
 
     public static final String DEPRECATED_SLACK_CHANNEL_ERROR = "The channel field is deprecated";
+    public static final String HTTPS_ENDPOINT_SCHEME_REQUIRED = "The endpoint URL must start with \"https\"";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
     public static final String REDACTED_CREDENTIAL = "*****";
 
@@ -314,8 +316,14 @@ public class EndpointResource {
             throw new BadRequestException("Properties is required");
         }
 
-        if (endpoint.getType() == CAMEL && "slack".equals(endpoint.getSubType())) {
-            checkSlackChannel(endpoint.getProperties(CamelProperties.class), null);
+        if (endpoint.getType() == CAMEL) {
+            String subType = endpoint.getSubType();
+
+            if (subType.equals("slack")) {
+                checkSlackChannel(endpoint.getProperties(CamelProperties.class), null);
+            } else if (subType.equals("servicenow") || subType.equals("splunk")) {
+                checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
+            }
         }
 
         endpoint.setStatus(EndpointStatus.READY);
@@ -334,6 +342,17 @@ public class EndpointResource {
         // throw an exception if we receive a channel update
         } else if (channel != null && !channel.equals(previousCamelProperties.getExtras().get("channel"))) {
             throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
+        }
+    }
+
+    private void checkHttpsEndpoint(CamelProperties camelProperties) {
+        if (camelProperties != null) {
+            URI endpointUri = URI.create(camelProperties.getUrl());
+
+            if (!endpointUri.getScheme().equalsIgnoreCase("https")) {
+                // throw an exception if a non-HTTPS URL scheme is used on endpoint creation or update
+                throw new BadRequestException(HTTPS_ENDPOINT_SCHEME_REQUIRED);
+            }
         }
     }
 
@@ -505,8 +524,14 @@ public class EndpointResource {
         // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
         checkSystemEndpoint(endpointType);
 
-        if (endpoint.getType() == CAMEL && "slack".equals(endpoint.getSubType())) {
-            checkSlackChannel(endpoint.getProperties(CamelProperties.class), dbEndpoint.getProperties(CamelProperties.class));
+        if (endpoint.getType() == CAMEL) {
+            String subType = endpoint.getSubType();
+
+            if (subType.equals("slack")) {
+                checkSlackChannel(endpoint.getProperties(CamelProperties.class), dbEndpoint.getProperties(CamelProperties.class));
+            } else if (subType.equals("servicenow") || subType.equals("splunk")) {
+                checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
+            }
         }
 
         endpointRepository.updateEndpoint(endpoint);
