@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import io.quarkus.test.InjectMock;
@@ -228,6 +229,11 @@ class EventingTypeProcessorTest {
         Event event = new Event();
         event.setId(FIXTURE_EVENT_ORIGINAL_UUID);
         event.setEventWrapper(new EventWrapperAction(action));
+        event.setOrgId(DEFAULT_ORG_ID);
+        event.setApplicationDisplayName("policies");
+        EventType eventType = new EventType();
+        eventType.setName("policy-triggered");
+        event.setEventType(eventType);
         return event;
     }
 

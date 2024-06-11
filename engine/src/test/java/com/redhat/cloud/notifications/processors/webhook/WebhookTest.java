@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
@@ -92,6 +93,11 @@ public class WebhookTest {
         Action webhookActionMessage = buildWebhookAction();
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(webhookActionMessage));
+        event.setApplicationDisplayName("policies");
+        EventType eventType = new EventType();
+        eventType.setName("policy-triggered");
+        event.setEventType(eventType);
+        event.setOrgId(DEFAULT_ORG_ID);
         Endpoint ep = buildWebhookEndpoint("https://my.webhook.connector.com");
 
         webhookTypeProcessor.process(event, List.of(ep));
