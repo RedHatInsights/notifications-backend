@@ -64,9 +64,11 @@ public class ConnectorSender {
 
         notificationHistoryRepository.createNotificationHistory(history);
 
+        int payloadSize = payload.toString().getBytes().length;
+        recordMetrics(event, connector, payloadSize);
+
         try {
             Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
-            recordMetrics(event, connector, payload);
             emitter.send(message);
         } catch (Exception e) {
             history.setStatus(FAILED_INTERNAL);
@@ -118,9 +120,9 @@ public class ConnectorSender {
         }
     }
 
-    private void recordMetrics(Event event, String connector, JsonObject payload) {
+    private void recordMetrics(Event event, String connector, int payloadSize) {
         Gauge
-            .builder("tocamel.payload.content.size", () -> payload.toString().getBytes().length)
+            .builder("tocamel.payload.content.size", () -> payloadSize)
             .tags(TAG_KEY_CONNECTOR, connector)
             .tags(TAG_KEY_ORG_ID, event.getOrgId())
             .tags(TAG_KEY_APPLICATION, event.getApplicationDisplayName())
