@@ -30,7 +30,6 @@ import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
@@ -80,9 +79,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     EmailActorsResolver emailActorsResolver;
-
-    @Inject
-    EmailPendoResolver emailPendoResolver;
 
     @Inject
     EmailAggregator emailAggregator;
@@ -330,11 +326,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 // Format data to send to the connector.
                 Set<String> recipientsUsernames = listApplicationWithUserCollection.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
                 Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(aggregatorEvent, List.of(endpoint));
-
-                Gauge
-                    .builder("aggregated.email.content.size", () -> String.join(",", recipientsUsernames).getBytes().length + bodyStr.getBytes().length)
-                    .tags(TAG_KEY_ORG_ID, aggregatorEvent.getOrgId())
-                    .register(registry);
 
                 // Prepare all the data to be sent to the connector.
                 final EmailNotification emailNotification = new EmailNotification(

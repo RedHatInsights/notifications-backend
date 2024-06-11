@@ -10,9 +10,11 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.Template;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.InjectMock;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
@@ -56,6 +58,9 @@ public abstract class CamelProcessorTest {
 
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
+
+    @Inject
+    MeterRegistry registry;
 
     @Inject
     @Any
@@ -157,6 +162,10 @@ public abstract class CamelProcessorTest {
         event.setId(UUID.randomUUID());
         event.setOrgId(DEFAULT_ORG_ID);
         event.setEventWrapper(new EventWrapperAction(action));
+        event.setApplicationDisplayName("policies");
+        EventType eventType = new EventType();
+        eventType.setName("policy-triggered");
+        event.setEventType(eventType);
 
         return event;
     }

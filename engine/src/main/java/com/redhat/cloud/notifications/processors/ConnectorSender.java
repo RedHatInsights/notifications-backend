@@ -4,6 +4,8 @@ import com.redhat.cloud.notifications.db.repositories.NotificationHistoryReposit
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.TracingMetadata;
@@ -34,6 +36,10 @@ public class ConnectorSender {
     // TODO notification should end with a s but eventing-integrations does not expect it...
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String X_RH_NOTIFICATIONS_CONNECTOR_HEADER = "x-rh-notifications-connector";
+    private static final String TAG_KEY_CONNECTOR = "connector";
+    private static final String TAG_KEY_ORG_ID = "orgid";
+    private static final String TAG_KEY_APPLICATION = "application";
+    private static final String TAG_KEY_EVENT_TYPE = "event_type";
 
     @Inject
     @Channel(TOCAMEL_CHANNEL)
@@ -41,6 +47,9 @@ public class ConnectorSender {
 
     @Inject
     NotificationHistoryRepository notificationHistoryRepository;
+
+    @Inject
+    MeterRegistry registry;
 
     public void send(Event event, Endpoint endpoint, JsonObject payload) {
         payload.put("org_id", event.getOrgId());
@@ -54,6 +63,9 @@ public class ConnectorSender {
                 event.getOrgId(), event.getId(), connector, history.getId());
 
         notificationHistoryRepository.createNotificationHistory(history);
+
+        final int payloadSize = payload.toString().getBytes().length;
+        recordMetrics(event, connector, payloadSize);
 
         try {
             Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
@@ -106,5 +118,15 @@ public class ConnectorSender {
         } else {
             return endpoint.getType().name().toLowerCase();
         }
+    }
+
+    private void recordMetrics(Event event, String connector, int payloadSize) {
+        Gauge
+            .builder("tocamel.payload.content.size", () -> payloadSize)
+            .tags(TAG_KEY_CONNECTOR, connector)
+            .tags(TAG_KEY_ORG_ID, event.getOrgId())
+            .tags(TAG_KEY_APPLICATION, event.getApplicationDisplayName())
+            .tags(TAG_KEY_EVENT_TYPE, event.getEventType().getName())
+            .register(registry);
     }
 }
