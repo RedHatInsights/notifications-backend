@@ -18,9 +18,8 @@
 <table class="rh-data-table-bordered">
     <thead>
     <tr>
-        <th style="width: 60%">Recommendation</th>
-        <th style="width: 20%">Total Risk</th>
-        <th style="width: 20%">Added</th>
+        <th style="width: 75%">Recommendation</th>
+        <th style="width: 25%">Total Risk</th>
     </tr>
     </thead>
     <tbody>
@@ -32,16 +31,15 @@
             <td>
                 {#switch it.payload.total_risk}
                 {#case '1'}
-                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_low.png" alt="Low severity" width="55" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
                 {#case '2'}
-                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_moderate.png" alt="Moderate severity" width="85" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
                 {#case '3'}
-                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_important.png" alt="Important severity" width="86" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
                 {#case '4'}
-                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_critical.png" alt="Critical severity" width="70" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
                 {/switch}
             </td>
-            <td>{it.payload.publish_date.toTimeAgo()}</td>
         </tr>
     {/each}
     </tbody>
