@@ -64,7 +64,7 @@ public class ConnectorSender {
 
         notificationHistoryRepository.createNotificationHistory(history);
 
-        int payloadSize = payload.toString().getBytes().length;
+        final int payloadSize = payload.toString().getBytes().length;
         recordMetrics(event, connector, payloadSize);
 
         try {
