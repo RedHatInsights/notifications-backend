@@ -23,6 +23,7 @@ public class EngineConfig {
     private static final String DEFAULT_TEMPLATE = "notifications.use-default-template";
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
     private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
+    private static final String KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE = "mp.messaging.outgoing.tocamel.max.request.size";
     private static final String UNLEASH = "notifications.unleash.enabled";
     public static final String PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS = "processor.connectors.max-server-errors";
     public static final String PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR = "processor.connectors.min-delay-since-first-server-error";
@@ -92,6 +93,10 @@ public class EngineConfig {
     @ConfigProperty(name = PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR, defaultValue = "2D")
     Duration minDelaySinceFirstServerErrorBeforeDisabling;
 
+    //@ConfigProperty(name = KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE, defaultValue = "10485760")
+    @ConfigProperty(name = KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE, defaultValue = "1")
+    int kafkaToCamelMaximumRequestSize;
+
     /**
      * The email sender address for the Red Hat Hybrid Cloud Console.
      */
@@ -133,6 +138,7 @@ public class EngineConfig {
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(kafkaConsumedTotalCheckerToggle, isKafkaConsumedTotalCheckerEnabled());
+        config.put(KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE, getKafkaToCamelMaximumRequestSize());
         config.put(SECURED_EMAIL_TEMPLATES, isSecuredEmailTemplatesEnabled());
         config.put(UNLEASH, unleashEnabled);
         config.put(PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS, maxServerErrors);
@@ -219,5 +225,9 @@ public class EngineConfig {
 
     public String getRhOpenshiftSenderProd() {
         return rhOpenshiftSenderProd;
+    }
+
+    public int getKafkaToCamelMaximumRequestSize() {
+        return kafkaToCamelMaximumRequestSize;
     }
 }

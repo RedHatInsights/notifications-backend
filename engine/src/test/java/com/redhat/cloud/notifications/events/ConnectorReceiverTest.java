@@ -5,24 +5,32 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.db.repositories.PayloadDetailsRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
+import org.apache.kafka.common.header.Headers;
+import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
@@ -53,6 +61,9 @@ public class ConnectorReceiverTest {
 
     @InjectSpy
     EndpointRepository endpointRepository;
+
+    @InjectMock
+    PayloadDetailsRepository payloadDetailsRepository;
 
     final String expectedHistoryId = UUID.randomUUID().toString();
 
@@ -115,14 +126,45 @@ public class ConnectorReceiverTest {
 
     @Test
     void testValidPayloadWithDeletedEndpoint() {
-        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS);
+        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS, new HashMap<>());
+    }
+
+    /**
+     * Tests that when the receiver receives a message with a header indicating
+     * the event ID, then the payload is deleted from the database.
+     */
+    @Test
+    void testDeletePayloadFromDatabase() {
+        // Prepare the header which signals that the payload must be deleted
+        // from the database.
+        final UUID eventId = UUID.randomUUID();
+        final Map<String, String> databasePayloadHeader = Map.of(PayloadDetails.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, eventId.toString());
+
+        // Send the message.
+        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS, databasePayloadHeader);
+
+        // Verify that the payload is deleted.
+        Mockito.verify(this.payloadDetailsRepository, Mockito.times(1)).deleteById(eventId);
+    }
+
+    /**
+     * Tests that for a regular incoming message without any event ID header
+     * no payload is attempted to be deleted.
+     */
+    @Test
+    void testDoNotDeletePayloadFromDatabase() {
+        // Send the message.
+        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS, new HashMap<>());
+
+        // Verify that the payload is not deleted.
+        Mockito.verify(this.payloadDetailsRepository, Mockito.times(0)).deleteById(Mockito.any());
     }
 
     private void testPayload(boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
-        testPayload(expectedHistoryId, isSuccessful, expectedDuration, expectedOutcome, expectedNotificationStatus);
+        testPayload(expectedHistoryId, isSuccessful, expectedDuration, expectedOutcome, expectedNotificationStatus, new HashMap<>());
     }
 
-    private void testPayload(String historyId, boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
+    private void testPayload(String historyId, boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus, final Map<String, String> customHeaders) {
 
         String expectedDetailsType = "com.redhat.console.notification.toCamel.tower";
         String expectedDetailsTarget = "1.2.3.4";
@@ -148,7 +190,28 @@ public class ConnectorReceiverTest {
                 "content-type", "application/json",
                 "data", Json.encode(dataMap)
         ));
-        inMemoryConnector.source(FROMCAMEL_CHANNEL).send(payload);
+
+        // Create a Spy for the message because when building the message, we
+        // need to use the "OutgoingKafkaRecordMetadata" class, but the
+        // receiver end expects an "IncomingKafkaRecordMetadata", so we need
+        // to mock that somehow.
+        final Message<String> message = Mockito.spy(Message.class);
+        Mockito.when(message.getPayload()).thenReturn(payload);
+
+        // If any custom headers are specified add them to the message.
+        if (!customHeaders.isEmpty()) {
+            final Headers headers = new RecordHeaders();
+            customHeaders.forEach((key, value) -> headers.add(key, value.getBytes(StandardCharsets.UTF_8)));
+
+            final IncomingKafkaRecordMetadata incomingKafkaRecordMetadata = Mockito.mock(IncomingKafkaRecordMetadata.class);
+            Mockito.when(incomingKafkaRecordMetadata.getHeaders()).thenReturn(headers);
+
+            Mockito.when(message.getMetadata(IncomingKafkaRecordMetadata.class)).thenReturn(Optional.of(incomingKafkaRecordMetadata));
+
+            message.addMetadata(message);
+        }
+
+        inMemoryConnector.source(FROMCAMEL_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(MESSAGES_PROCESSED_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(MESSAGES_ERROR_COUNTER_NAME, 0);

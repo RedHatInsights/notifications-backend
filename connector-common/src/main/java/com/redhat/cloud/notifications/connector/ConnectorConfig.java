@@ -31,6 +31,7 @@ public class ConnectorConfig {
     private static final String KAFKA_MAXIMUM_REINJECTIONS = "notifications.connector.kafka.maximum-reinjections";
     private static final String KAFKA_OUTGOING_TOPIC = "notifications.connector.kafka.outgoing.topic";
     private static final String NAME = "notifications.connector.name";
+    private static final String NOTIFICATIONS_ENGINE_HOSTNAME = "notifications.engine.hostname";
     private static final String REDELIVERY_COUNTER_NAME = "notifications.connector.redelivery.counter-name";
     private static final String REDELIVERY_DELAY = "notifications.connector.redelivery.delay";
     private static final String REDELIVERY_MAX_ATTEMPTS = "notifications.connector.redelivery.max-attempts";
@@ -65,6 +66,9 @@ public class ConnectorConfig {
 
     @ConfigProperty(name = KAFKA_INCOMING_TOPIC)
     String incomingKafkaTopic;
+
+    @ConfigProperty(name = NOTIFICATIONS_ENGINE_HOSTNAME)
+    String notificationsEngineHostname;
 
     @ConfigProperty(name = KAFKA_OUTGOING_TOPIC)
     String outgoingKafkaTopic;
@@ -116,6 +120,7 @@ public class ConnectorConfig {
         config.put(KAFKA_MAXIMUM_REINJECTIONS, kafkaMaximumReinjections);
         config.put(KAFKA_OUTGOING_TOPIC, outgoingKafkaTopic);
         config.put(NAME, connectorName);
+        config.put(NOTIFICATIONS_ENGINE_HOSTNAME, notificationsEngineHostname);
         config.put(REDELIVERY_COUNTER_NAME, redeliveryCounterName);
         config.put(REDELIVERY_DELAY, redeliveryDelay);
         config.put(REDELIVERY_MAX_ATTEMPTS, redeliveryMaxAttempts);
@@ -152,6 +157,10 @@ public class ConnectorConfig {
 
     public int getKafkaMaximumReinjections() {
         return this.kafkaMaximumReinjections;
+    }
+
+    public String getNotificationsEngineHostname() {
+        return this.notificationsEngineHostname;
     }
 
     public String getOutgoingKafkaTopic() {

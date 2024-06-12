@@ -47,5 +47,12 @@ public class KafkaReinjectionProcessor implements Processor {
         // otherwise it does not get properly pushed to Kafka. When attempted
         // to send the integer directly, the value simply was not there.
         message.setHeader(KafkaHeader.REINJECTION_COUNT, String.valueOf(reinjectionCount + 1));
+
+        // In the case that the payload has to be fetched from the engine,
+        // add the appropriate header when reinjecting the message.
+        final String cloudEventId = exchange.getProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, String.class);
+        if (cloudEventId != null) {
+            message.setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, cloudEventId);
+        }
     }
 }

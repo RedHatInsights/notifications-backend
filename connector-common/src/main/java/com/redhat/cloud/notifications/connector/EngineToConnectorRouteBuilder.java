@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.connector;
 
+import com.redhat.cloud.notifications.connector.payload.PayloadDetailsRequestPreparer;
+import com.redhat.cloud.notifications.connector.payload.PayloadDetailsResponseProcessor;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
@@ -42,6 +44,12 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
     ExceptionProcessor exceptionProcessor;
 
     @Inject
+    PayloadDetailsRequestPreparer payloadDetailsRequestPreparer;
+
+    @Inject
+    PayloadDetailsResponseProcessor payloadDetailsResponseProcessor;
+
+    @Inject
     RedeliveryPredicate redeliveryPredicate;
 
     @Inject
@@ -72,6 +80,12 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .to(log(getClass().getName()).level("DEBUG").showHeaders(true).showBody(true))
                 .filter(incomingCloudEventFilter)
                 .process(this.incomingKafkaReinjectionHeadersProcessor)
+                .choice()
+                    .when(header(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER).isNotNull())
+                        .process(this.payloadDetailsRequestPreparer)
+                        .to(http(this.connectorConfig.getNotificationsEngineHostname()))
+                        .process(this.payloadDetailsResponseProcessor)
+                .end()
                 // Headers coming from Kafka must not be forwarded to external services.
                 .removeHeaders("*")
                 .process(incomingCloudEventProcessor)

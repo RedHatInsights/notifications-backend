@@ -1,11 +1,15 @@
 package com.redhat.cloud.notifications.processors;
 
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.db.repositories.PayloadDetailsRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.opentelemetry.context.Context;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.TracingMetadata;
@@ -21,6 +25,7 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,6 +41,8 @@ public class ConnectorSender {
     // TODO notification should end with a s but eventing-integrations does not expect it...
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String X_RH_NOTIFICATIONS_CONNECTOR_HEADER = "x-rh-notifications-connector";
+
+    private static final String NOTIFICATIONS_PAYLOAD_STORED_DATABASE_METRIC_NAME = "notifications.payload.stored.database";
     private static final String TAG_KEY_CONNECTOR = "connector";
     private static final String TAG_KEY_ORG_ID = "orgid";
     private static final String TAG_KEY_APPLICATION = "application";
@@ -46,10 +53,16 @@ public class ConnectorSender {
     Emitter<JsonObject> emitter;
 
     @Inject
+    EngineConfig engineConfig;
+
+    @Inject
     NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     MeterRegistry registry;
+
+    @Inject
+    PayloadDetailsRepository payloadDetailsRepository;
 
     public void send(Event event, Endpoint endpoint, JsonObject payload) {
         payload.put("org_id", event.getOrgId());
@@ -64,11 +77,31 @@ public class ConnectorSender {
 
         notificationHistoryRepository.createNotificationHistory(history);
 
+        // Measure the payload size.
         final int payloadSize = payload.toString().getBytes().length;
         recordMetrics(event, connector, payloadSize);
 
+        final Map<String, String> customHeaders = new HashMap<>();
+
+        // When the payload to be sent is greater than the configured limit,
+        // store the payload in the database so that we can fetch it from the
+        // connectors themselves.
+        if (this.engineConfig.getKafkaToCamelMaximumRequestSize() <= payloadSize) {
+            customHeaders.put(PayloadDetails.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, event.getId().toString());
+
+            final PayloadDetails payloadDetails = new PayloadDetails(event, payload);
+            this.payloadDetailsRepository.save(payloadDetails);
+
+            payload = new JsonObject();
+
+            this.registry.counter(
+                NOTIFICATIONS_PAYLOAD_STORED_DATABASE_METRIC_NAME,
+                Tags.of(TAG_KEY_CONNECTOR, connector, TAG_KEY_ORG_ID, event.getOrgId(), TAG_KEY_APPLICATION, event.getApplicationDisplayName(), TAG_KEY_EVENT_TYPE, event.getEventTypeDisplayName())
+            ).increment();
+        }
+
         try {
-            Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
+            Message<JsonObject> message = buildMessage(payload, history.getId(), connector, customHeaders);
             emitter.send(message);
         } catch (Exception e) {
             history.setStatus(FAILED_INTERNAL);
@@ -79,9 +112,18 @@ public class ConnectorSender {
         }
     }
 
-    private static Message<JsonObject> buildMessage(JsonObject payload, UUID historyId, String connector) {
-
-        OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(connector);
+    /**
+     * Build a Kafka message read to be sent to the connectors.
+     * @param payload the payload of the message.
+     * @param historyId the history ID to include in the Cloud Event metadata.
+     * @param connector the connector's name to include both in the Cloud Event
+     *                  metadata and in the header for discerning the target
+     *                  connector.
+     * @param customHeaders any custom headers to include in the Kafka message.
+     * @return the Kafka message ready to be sent.
+     */
+    private static Message<JsonObject> buildMessage(final JsonObject payload, final UUID historyId, final String connector, final Map<String, String> customHeaders) {
+        OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(connector, customHeaders);
 
         String cloudEventId = historyId.toString();
         String cloudEventType = CLOUD_EVENT_TYPE_PREFIX + connector;
@@ -95,9 +137,21 @@ public class ConnectorSender {
                 .addMetadata(tracingMetadata);
     }
 
-    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(String connector) {
-        Headers headers = new RecordHeaders()
+    /**
+     * Build the headers for the Kafka message.
+     * @param connector the connector the Kafka message is intended to.
+     * @param customHeaders any custom headers to add to the Kafka message.
+     * @return a metadata object including the headers.
+     */
+    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(final String connector, final Map<String, String> customHeaders) {
+        final Headers headers = new RecordHeaders()
                 .add(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connector.getBytes(UTF_8));
+
+        // Add any custom headers to the Kafka message.
+        if (!customHeaders.isEmpty()) {
+            customHeaders.forEach((key, value) -> headers.add(key, value.getBytes(UTF_8)));
+        }
+
         return OutgoingKafkaRecordMetadata.<String>builder()
                 .withHeaders(headers)
                 .build();
