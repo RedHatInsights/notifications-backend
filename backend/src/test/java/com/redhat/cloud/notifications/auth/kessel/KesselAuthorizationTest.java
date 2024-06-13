@@ -1,10 +1,5 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
-import api.check.v1.CheckRequest;
-import api.check.v1.CheckResponse;
-import api.relations.v1.ObjectReference;
-import api.relations.v1.SubjectReference;
-import client.CheckClient;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
@@ -21,6 +16,11 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.project_kessel.api.relations.v0.CheckRequest;
+import org.project_kessel.api.relations.v0.CheckResponse;
+import org.project_kessel.api.relations.v0.ObjectReference;
+import org.project_kessel.api.relations.v0.SubjectReference;
+import org.project_kessel.relations.client.CheckClient;
 
 import java.security.Principal;
 import java.util.List;
@@ -156,16 +156,17 @@ public class KesselAuthorizationTest {
             final CheckRequest checkRequest = this.kesselAuthorization.buildCheckRequest(tc.identity(), tc.permission(), tc.resourceType(), tc.resourceId());
 
             // Make sure the request was built appropriately.
-            final ObjectReference objectReference = checkRequest.getObject();
-            Assertions.assertEquals(tc.resourceType().getKesselName(), objectReference.getType(), String.format("unexpected resource type obtained for the object's reference on test case: %s", tc));
+
+            final ObjectReference objectReference = checkRequest.getResource();
+            Assertions.assertEquals(tc.resourceType().getKesselName(), objectReference.getType().getName(), String.format("unexpected resource type obtained for the object's reference on test case: %s", tc));
             Assertions.assertEquals(tc.resourceId(), objectReference.getId(), String.format("unexpected resource ID obtained for the object's reference on test case: %s", tc));
             Assertions.assertEquals(tc.resourceId(), objectReference.getId(), String.format("unexpected resource ID obtained for the object's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), checkRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
             final SubjectReference subjectReference = checkRequest.getSubject();
-            Assertions.assertEquals(tc.expectedIdentityType(), subjectReference.getObject().getType(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
-            Assertions.assertEquals(tc.identity().getName(), subjectReference.getObject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(tc.expectedIdentityType(), subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(tc.identity().getName(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
         }
     }
 

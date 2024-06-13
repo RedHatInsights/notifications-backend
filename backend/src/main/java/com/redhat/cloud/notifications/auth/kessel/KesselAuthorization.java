@@ -1,10 +1,5 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
-import api.check.v1.CheckRequest;
-import api.check.v1.CheckResponse;
-import api.relations.v1.ObjectReference;
-import api.relations.v1.SubjectReference;
-import client.CheckClient;
 import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
@@ -18,6 +13,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.SecurityContext;
+import org.project_kessel.api.relations.v0.CheckRequest;
+import org.project_kessel.api.relations.v0.CheckResponse;
+import org.project_kessel.api.relations.v0.ObjectReference;
+import org.project_kessel.api.relations.v0.ObjectType;
+import org.project_kessel.api.relations.v0.SubjectReference;
+import org.project_kessel.relations.client.CheckClient;
 
 import java.security.Principal;
 
@@ -119,23 +120,22 @@ public class KesselAuthorization {
         }
 
         return CheckRequest.newBuilder()
-            .setObject(
+            .setResource(
                 ObjectReference.newBuilder()
-                    .setType(resourceType.getKesselName())
+                    .setType(ObjectType.newBuilder().setName(resourceType.getKesselName()).build())
                     .setId(resourceId)
                     .build()
             )
             .setRelation(permission.getKesselPermissionName())
             .setSubject(
                 SubjectReference.newBuilder()
-                    .setObject(
+                    .setSubject(
                         ObjectReference.newBuilder()
-                            .setType(type)
+                            .setType(ObjectType.newBuilder().setName(type).build())
                             .setId(identity.getName())
-                    )
-                    .build()
-            )
-            .build();
+                            .build()
+                    ).build()
+            ).build();
     }
 
     /**

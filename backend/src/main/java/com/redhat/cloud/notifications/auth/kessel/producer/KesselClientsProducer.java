@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.auth.kessel.producer;
 
-import client.CheckClient;
-import client.RelationsGrpcClientsManager;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
@@ -11,6 +9,8 @@ import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.RelationsGrpcClientsManager;
 
 @ApplicationScoped
 @Priority(1)

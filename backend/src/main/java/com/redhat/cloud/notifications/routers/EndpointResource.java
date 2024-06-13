@@ -314,7 +314,7 @@ public class EndpointResource {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Endpoint.class))),
         @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
     })
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    //@RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public EndpointDTO createEndpoint(
         @Context                                        SecurityContext sec,
         @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
@@ -369,7 +369,7 @@ public class EndpointResource {
 
         endpoint.setStatus(EndpointStatus.READY);
 
-        this.secretUtils.createSecretsForEndpoint(endpoint);
+        //this.secretUtils.createSecretsForEndpoint(endpoint);
 
         return this.endpointRepository.createEndpoint(endpoint);
     }
