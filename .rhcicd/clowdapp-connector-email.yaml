@@ -9,8 +9,12 @@ objects:
   metadata:
     name: notifications-connector-email
   spec:
+    testing:
+      iqePlugin: notifications
     dependencies:
     - notifications-recipients-resolver
+    optionalDependencies:
+    - notifications-backend
     envName: ${ENV_NAME}
     featureFlags: true
     kafkaTopics:

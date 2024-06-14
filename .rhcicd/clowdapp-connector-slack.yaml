@@ -10,6 +10,10 @@ objects:
     name: notifications-connector-slack
   spec:
     envName: ${ENV_NAME}
+    testing:
+      iqePlugin: notifications
+    optionalDependencies:
+    - notifications-backend
     featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.tocamel
