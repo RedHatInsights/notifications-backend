@@ -13,7 +13,7 @@
     </p>
     {#if action.events[0].payload.role}
         <p>
-            The role <a class="rh-url" href="{environment.url}/settings/rbac/roles/detail/{action.events[0].payload.role.uuid}"><b>{action.events[0].payload.role.name}</b></a> has been
+            The role <a class="rh-url" href="{environment.url}/iam/user-access/roles/detail/{action.events[0].payload.role.uuid}"><b>{action.events[0].payload.role.name}</b></a> has been
             {action.events[0].payload.operation} {#if action.events[0].payload.operation == "added"}to{#else}from{/if}
             the group.
         </p>
@@ -27,6 +27,6 @@
     {/if}
 {/content-body-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/settings/rbac/groups/detail/{action.events[0].payload.uuid}">Check the updated group in Insights</a>
+    <a target="_blank" href="{environment.url}/iam/user-access/groups/detail/{action.events[0].payload.uuid}">Check the updated group in Insights</a>
 {/content-button-section1}
 {/include}
