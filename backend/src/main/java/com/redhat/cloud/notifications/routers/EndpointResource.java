@@ -369,7 +369,7 @@ public class EndpointResource {
 
         endpoint.setStatus(EndpointStatus.READY);
 
-        //this.secretUtils.createSecretsForEndpoint(endpoint);
+        this.secretUtils.createSecretsForEndpoint(endpoint);
 
         return this.endpointRepository.createEndpoint(endpoint);
     }
