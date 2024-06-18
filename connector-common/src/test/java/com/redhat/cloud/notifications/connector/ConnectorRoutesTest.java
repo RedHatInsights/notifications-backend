@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.connector;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
-import com.redhat.cloud.notifications.connector.payload.PayloadDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -11,7 +10,6 @@ import org.apache.camel.Predicate;
 import org.apache.camel.builder.AdviceWith;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.model.language.ConstantExpression;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -228,67 +226,13 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     }
 
     /**
-     * Tests that when the incoming Kafka message contains the payload's ID in
-     * a header, then the payload itself gets fetched from the engine.
-     *
-     * @throws Exception if any unexpected error occurs.
-     */
-    @Test
-    protected void testPayloadFetchedFromEngine() throws Exception {
-        mockKafkaSourceEndpoint(); // This is the entry point of the connector.
-        final UUID eventId = UUID.randomUUID();
-
-        // Simulate that the engine is returning the payload.
-        final String payloadContents = "{\"flavor\":\"Red Hat Entreprise Linux\"}";
-        final PayloadDetails payloadDetails = new PayloadDetails(payloadContents);
-        final String serializedPayload = this.objectMapper.writeValueAsString(payloadDetails);
-
-        // Simulate that the engine's HTTP endpoint returns our payload.
-        AdviceWith.adviceWith(this.context(), ENGINE_TO_CONNECTOR, a -> a.weaveByToUri(
-            String.format(
-                "http://%s", this.connectorConfig.getNotificationsEngineHostname())
-            ).replace()
-            .setBody(new ConstantExpression(serializedPayload))
-        );
-
-        // Add a mocked "to" statement after the "seda" one so that we don't
-        // have to mock the last "to" statement. That would make the rest of
-        // the tests fail.
-        AdviceWith.adviceWith(this.context(), ENGINE_TO_CONNECTOR, a -> a.weaveAddLast().to("mock:seda:test-engine-to-connector"));
-
-        // Get the last "to" statement.
-        final MockEndpoint mockedLastToStatement = this.getMockEndpoint("mock:seda:test-engine-to-connector");
-        mockedLastToStatement.expectedMessageCount(1);
-        mockedLastToStatement.setResultWaitTime(TimeUnit.SECONDS.toMillis(15));
-
-        // Send the message to the route under test.
-        this.sendMessageToKafkaSource(new JsonObject(), Map.of(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, eventId));
-
-        // Assert that we got the exchange with the full payload.
-        mockedLastToStatement.assertIsSatisfied();
-
-        final Exchange receivedExchange = mockedLastToStatement.getReceivedExchanges().getFirst();
-
-        // Assert that the exchange contains the "event ID" property.
-        Assertions.assertEquals(eventId.toString(), receivedExchange.getProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, String.class));
-
-        // Assert that the "data" key of the Json Object contains the payload
-        // we fetched from the engine.
-        final String messageBody = receivedExchange.getMessage().getBody(String.class);
-        final JsonObject messageBodyJson = new JsonObject(messageBody);
-        final JsonObject data = messageBodyJson.getJsonObject("data");
-
-        Assertions.assertEquals(payloadContents, data.encode());
-    }
-
-    /**
-     * Tests that when the exchange contains an event ID in the exchange's
+     * Tests that when the exchange contains a payload ID in the exchange's
      * property, then the final exchange that gets sent to Kafka has the
-     * corresponding header with that event ID for the engine.
+     * corresponding header with that payload ID for the engine.
      * @throws Exception if any unexpected error occurs.
      */
     @Test
-    protected void testSendEventIdToEngine() throws Exception {
+    protected void testSendPayloadIdToEngine() throws Exception {
         // Mock the last endpoint on the "connector to engine" route.
         final MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is the entry point of the connector.
         kafkaSinkMockEndpoint.expectedMessageCount(1);
