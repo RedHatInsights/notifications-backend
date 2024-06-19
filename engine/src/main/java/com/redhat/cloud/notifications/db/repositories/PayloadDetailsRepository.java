@@ -17,42 +17,42 @@ public class PayloadDetailsRepository {
 
     /**
      * Deletes the payload details from the database.
-     * @param eventId the identifier of the related event the payload was saved
-     *                for.
+     * @param payloadDetailsId the identifier of the payload's details record.
      */
     @Transactional
-    public void deleteById(final UUID eventId) {
+    public void deleteById(final UUID payloadDetailsId) {
         final String deletePayloadById =
             "DELETE FROM " +
                 "PayloadDetails " +
             "WHERE " +
-                "eventId = :event_id";
+                "id = :id";
 
         this.entityManager
             .createQuery(deletePayloadById)
-            .setParameter("event_id", eventId)
+            .setParameter("id", payloadDetailsId)
             .executeUpdate();
     }
 
     /**
-     * Fetches the payload from the database by its event ID.
-     * @param eventId the event ID to fetch the payload for.
+     * Fetches the payload from the database by its identifier.
+     * @param payloadDetailsId the payload's identifier to fetch the contents
+     *                         for.
      *
      * @return the payload for the given event.
      */
     @Transactional
-    public Optional<PayloadDetails> findByEventId(final UUID eventId) {
-        final String findByEventId =
+    public Optional<PayloadDetails> findById(final UUID payloadDetailsId) {
+        final String findPayloadDetailsById =
             "FROM " +
                 "PayloadDetails " +
             "WHERE " +
-                "eventId = :event_id";
+                "id = :id";
 
         try {
             return Optional.of(
                 this.entityManager
-                    .createQuery(findByEventId, PayloadDetails.class)
-                    .setParameter("event_id", eventId)
+                    .createQuery(findPayloadDetailsById, PayloadDetails.class)
+                    .setParameter("id", payloadDetailsId)
                     .getSingleResult()
             );
         } catch (final NoResultException e) {

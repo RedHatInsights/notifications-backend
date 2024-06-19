@@ -30,13 +30,13 @@ public class PayloadDetailsRequestPreparerTest extends CamelQuarkusTestSupport {
 
         final Exchange exchange = this.createExchangeWithBody(testCloudEvent);
 
-        exchange.getMessage().setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, eventId);
+        exchange.getMessage().setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_ID_HEADER, eventId);
 
         // Call the processor under test.
         this.payloadDetailsRequestPreparer.process(exchange);
 
         // Assert that the correct properties were set.
-        Assertions.assertEquals(eventId, exchange.getProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, String.class), "the event ID was not properly set in the exchange");
+        Assertions.assertEquals(eventId, exchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class), "the payload ID was not properly set in the exchange");
         Assertions.assertEquals(testCloudEvent, exchange.getProperty(ExchangeProperty.ORIGINAL_CLOUD_EVENT, String.class), "the Cloud Event was not properly stored in the exchange");
 
         // Assert that the HTTP headers were set for the request.

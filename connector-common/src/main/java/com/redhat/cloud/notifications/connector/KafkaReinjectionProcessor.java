@@ -50,9 +50,9 @@ public class KafkaReinjectionProcessor implements Processor {
 
         // In the case that the payload has to be fetched from the engine,
         // add the appropriate header when reinjecting the message.
-        final String cloudEventId = exchange.getProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, String.class);
+        final String cloudEventId = exchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class);
         if (cloudEventId != null) {
-            message.setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, cloudEventId);
+            message.setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_ID_HEADER, cloudEventId);
         }
     }
 }

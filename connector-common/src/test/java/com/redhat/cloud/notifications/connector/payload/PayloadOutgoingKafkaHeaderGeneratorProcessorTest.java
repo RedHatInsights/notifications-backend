@@ -17,22 +17,22 @@ public class PayloadOutgoingKafkaHeaderGeneratorProcessorTest extends CamelQuark
     PayloadOutgoingKafkaHeaderGeneratorProcessor payloadOutgoingKafkaHeaderGeneratorProcessor;
 
     /**
-     * Tests that if the exchange contains the event ID in one of its
+     * Tests that if the exchange contains the payload ID in one of its
      * properties then the corresponding header is set to notify the engine
      * about it.
      */
     @Test
     void testProcessor() {
-        // Set up teh event ID in the exchange's property.
-        final String eventId = UUID.randomUUID().toString();
+        // Set up teh payload ID in the exchange's property.
+        final String payloadId = UUID.randomUUID().toString();
 
         final Exchange exchange = this.createExchangeWithBody("");
-        exchange.setProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, eventId);
+        exchange.setProperty(ExchangeProperty.PAYLOAD_ID, payloadId);
 
         // Call the processor under test.
         this.payloadOutgoingKafkaHeaderGeneratorProcessor.process(exchange);
 
         // Assert that the header was set.
-        Assertions.assertEquals(eventId, exchange.getMessage().getHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER), "unexpected event ID set in the header");
+        Assertions.assertEquals(payloadId, exchange.getMessage().getHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_ID_HEADER), "unexpected payload ID set in the header");
     }
 }

@@ -22,7 +22,7 @@ import static io.restassured.RestAssured.given;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class EventPayloadResourceTest {
+public class PayloadDetailsResourceTest {
     @Inject
     ObjectMapper objectMapper;
 
@@ -40,12 +40,12 @@ public class EventPayloadResourceTest {
         final PayloadDetails payloadDetails = new PayloadDetails();
         payloadDetails.setContents("Red Hat Enterprise Linux");
 
-        Mockito.when(this.payloadDetailsRepository.findByEventId(Mockito.any())).thenReturn(Optional.of(payloadDetails));
+        Mockito.when(this.payloadDetailsRepository.findById(Mockito.any())).thenReturn(Optional.of(payloadDetails));
 
         // Call the endpoint under test.
         final String response = given()
             .when()
-            .get("/internal/payloads/{eventId}", UUID.randomUUID())
+            .get("/internal/payloads/{payloadDetailsId}", UUID.randomUUID())
             .then()
             .statusCode(HttpStatus.SC_OK)
             .contentType(ContentType.JSON)
@@ -64,12 +64,12 @@ public class EventPayloadResourceTest {
      */
     @Test
     void testFetchEventPayloadNotFound() {
-        Mockito.when(this.payloadDetailsRepository.findByEventId(Mockito.any())).thenReturn(Optional.empty());
+        Mockito.when(this.payloadDetailsRepository.findById(Mockito.any())).thenReturn(Optional.empty());
 
         // Call the endpoint under test.
         given()
             .when()
-            .get("/internal/payloads/{eventId}", UUID.randomUUID())
+            .get("/internal/payloads/{payloadDetailsId}", UUID.randomUUID())
             .then()
             .statusCode(HttpStatus.SC_NOT_FOUND);
     }

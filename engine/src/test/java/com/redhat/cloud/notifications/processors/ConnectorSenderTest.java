@@ -52,7 +52,7 @@ public class ConnectorSenderTest {
 
     /**
      * Tests that when the payload of the message is over the configured
-     * maximum Kafka message size, then a header specifying the event ID is
+     * maximum Kafka message size, then a header specifying the payload ID is
      * added to the Kafka message, and that the payload is replaced with an
      * empty JSON object.
      */
@@ -85,12 +85,12 @@ public class ConnectorSenderTest {
             () -> messages.received().size() == 1
         );
 
-        // Check that the "event ID" header is present in the message.
+        // Check that the "payload ID" header is present in the message.
         final Message<JsonObject> message = messages.received().getFirst();
         final Optional<OutgoingKafkaRecordMetadata> metadataOptional = message.getMetadata(OutgoingKafkaRecordMetadata.class);
 
         if (metadataOptional.isEmpty()) {
-            Assertions.fail("no headers are present in the message's metadata, and at least the one about the event ID was expected");
+            Assertions.fail("no headers are present in the message's metadata, and at least the one about the payload ID was expected");
         }
 
         final OutgoingKafkaRecordMetadata metadata = metadataOptional.get();

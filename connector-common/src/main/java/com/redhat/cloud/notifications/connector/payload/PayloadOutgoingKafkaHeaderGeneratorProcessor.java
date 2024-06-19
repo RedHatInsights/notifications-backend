@@ -15,10 +15,10 @@ public class PayloadOutgoingKafkaHeaderGeneratorProcessor implements Processor {
      */
     @Override
     public void process(final Exchange exchange) {
-        final String eventId = exchange.getProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, String.class);
+        final String eventId = exchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class);
 
         if (eventId != null && !eventId.isBlank()) {
-            exchange.getMessage().setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, eventId);
+            exchange.getMessage().setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_ID_HEADER, eventId);
         }
     }
 }

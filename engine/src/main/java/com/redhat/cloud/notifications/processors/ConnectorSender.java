@@ -89,7 +89,7 @@ public class ConnectorSender {
         if (this.engineConfig.getKafkaToCamelMaximumRequestSize() <= payloadSize) {
             customHeaders.put(PayloadDetails.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, event.getId().toString());
 
-            final PayloadDetails payloadDetails = new PayloadDetails(event, payload);
+            final PayloadDetails payloadDetails = new PayloadDetails(event.getOrgId(), payload);
             this.payloadDetailsRepository.save(payloadDetails);
 
             payload = new JsonObject();

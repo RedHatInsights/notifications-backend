@@ -131,7 +131,7 @@ public class ConnectorReceiverTest {
 
     /**
      * Tests that when the receiver receives a message with a header indicating
-     * the event ID, then the payload is deleted from the database.
+     * the payload ID, then the payload is deleted from the database.
      */
     @Test
     void testDeletePayloadFromDatabase() {
@@ -148,7 +148,7 @@ public class ConnectorReceiverTest {
     }
 
     /**
-     * Tests that for a regular incoming message without any event ID header
+     * Tests that for a regular incoming message without any payload ID header
      * no payload is attempted to be deleted.
      */
     @Test

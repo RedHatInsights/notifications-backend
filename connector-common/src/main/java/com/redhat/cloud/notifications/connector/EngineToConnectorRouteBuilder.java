@@ -81,7 +81,7 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .filter(incomingCloudEventFilter)
                 .process(this.incomingKafkaReinjectionHeadersProcessor)
                 .choice()
-                    .when(header(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER).isNotNull())
+                    .when(header(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_ID_HEADER).isNotNull())
                         .process(this.payloadDetailsRequestPreparer)
                         .to(http(this.connectorConfig.getNotificationsEngineHostname()))
                         .process(this.payloadDetailsResponseProcessor)

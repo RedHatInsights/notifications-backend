@@ -12,23 +12,23 @@ public class PayloadDetailsRequestPreparer implements Processor {
     /**
      * Stores the incoming message's body on an exchange property to be able to
      * modify it later with the incoming payload contents from the engine.
-     * Extracts the event's ID from the headers, if present, and set its on an
-     * exchange property so that we can use it later either in the message
+     * Extracts the payload's ID from the headers, if present, and set its on
+     * an exchange property so that we can use it later either in the message
      * reinjection or when sending a response to the engine. It also sets the
      * HTTP headers for Camel to make the request to the engine. And finally,
      * stores the original Cloud Event from Kafka so that we can add the
      * payload's data to it in the {@link PayloadDetailsResponseProcessor}.
-     * @param exchange the exchange to extract the event ID from.
+     * @param exchange the exchange to extract the payload's ID from.
      * @throws Exception if any unexpected error occurs.
      */
     @Override
     public void process(final Exchange exchange) throws Exception {
-        final String headersContents = exchange.getIn().getHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, String.class);
+        final String headersContents = exchange.getIn().getHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_ID_HEADER, String.class);
 
-        // Set the event's ID in the properties so that we can add it later to
+        // Set the payload's ID in the properties so that we can add it later to
         // the Kafka headers when we are either reinjecting the message or
         // sending the delivery status to the engine.
-        exchange.setProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, headersContents);
+        exchange.setProperty(ExchangeProperty.PAYLOAD_ID, headersContents);
 
         // Prepare the request's details.
         exchange.getMessage().setHeader(Exchange.HTTP_METHOD, HttpMethod.GET);

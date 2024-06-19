@@ -238,23 +238,23 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         kafkaSinkMockEndpoint.expectedMessageCount(1);
         kafkaSinkMockEndpoint.setResultWaitTime(TimeUnit.SECONDS.toMillis(15));
 
-        // Simulate that the exchange contains an "event ID" that was set in
+        // Simulate that the exchange contains an "payload ID" that was set in
         // the "engine to connector" route. Set the required properties so that
         // the "Cloud Event builder" does not complain.
-        final String eventId = UUID.randomUUID().toString();
+        final String payloadId = UUID.randomUUID().toString();
 
         final Exchange exchange = this.createExchangeWithBody("");
         exchange.setProperty(ExchangeProperty.START_TIME, System.currentTimeMillis());
-        exchange.setProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, eventId);
+        exchange.setProperty(ExchangeProperty.PAYLOAD_ID, payloadId);
 
         // Send the exchange.
         this.template.send(String.format("direct:%s", SUCCESS), exchange);
 
         kafkaSinkMockEndpoint.assertIsSatisfied();
 
-        // Assert that the header with the event ID for the engine was set.
+        // Assert that the header with the payload ID for the engine was set.
         final Exchange receivedExchange = kafkaSinkMockEndpoint.getReceivedExchanges().getFirst();
-        Assertions.assertEquals(eventId, receivedExchange.getMessage().getHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER));
+        Assertions.assertEquals(payloadId, receivedExchange.getMessage().getHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_ID_HEADER));
     }
 
     protected void saveRoutesMetrics(String... routeIds) {

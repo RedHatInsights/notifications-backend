@@ -1,10 +1,11 @@
 package com.redhat.cloud.notifications.processors.payload;
 
 import com.redhat.cloud.notifications.models.CreationTimestamped;
-import com.redhat.cloud.notifications.models.Event;
 import io.vertx.core.json.JsonObject;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -15,9 +16,11 @@ import java.util.UUID;
 public class PayloadDetails extends CreationTimestamped {
 
     public static final String X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER = "x-rh-notifications-payload-id";
-    @Column(name = "event_id")
+
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Id
-    private UUID eventId;
+    private UUID id;
 
     @Column(name = "org_id", nullable = false)
     private String orgId;
@@ -29,20 +32,18 @@ public class PayloadDetails extends CreationTimestamped {
 
     }
 
-    public PayloadDetails(final Event event, final JsonObject contents) {
-        this.eventId = event.getId();
-        this.orgId = event.getOrgId();
+    public PayloadDetails(final String orgId, final JsonObject contents) {
+        this.orgId = orgId;
         this.contents = contents.encode();
     }
 
-    public PayloadDetails(final Event event, final String contents) {
-        this.eventId = event.getId();
-        this.orgId = event.getOrgId();
+    public PayloadDetails(final String orgId, final String contents) {
+        this.orgId = orgId;
         this.contents = contents;
     }
 
-    public UUID getEventId() {
-        return eventId;
+    public UUID getId() {
+        return id;
     }
 
     public String getOrgId() {

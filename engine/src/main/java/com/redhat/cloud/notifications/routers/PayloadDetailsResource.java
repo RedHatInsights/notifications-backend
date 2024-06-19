@@ -19,7 +19,7 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
 @Path(API_INTERNAL + "/payloads")
-public class EventPayloadResource {
+public class PayloadDetailsResource {
     @Inject
     PayloadDetailsMapper payloadDetailsMapper;
 
@@ -27,15 +27,15 @@ public class EventPayloadResource {
     PayloadDetailsRepository payloadDetailsRepository;
 
     /**
-     * Retrieves the payload contents for the given event.
-     * @param eventId the event ID to fetch the payload for.
+     * Retrieves the payload's contents.
+     * @param payloadDetailsId the payload's ID to fetch the contents for.
      * @return a DTO containing the payload details.
      */
     @GET
-    @Path("/{eventId}")
+    @Path("/{payloadDetailsId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ReadPayloadDetailsDto getPayloadForEvent(@NotNull @RestPath UUID eventId) {
-        final Optional<PayloadDetails> payloadDetailsOptional = this.payloadDetailsRepository.findByEventId(eventId);
+    public ReadPayloadDetailsDto getPayloadForEvent(@NotNull @RestPath UUID payloadDetailsId) {
+        final Optional<PayloadDetails> payloadDetailsOptional = this.payloadDetailsRepository.findById(payloadDetailsId);
 
         final PayloadDetails payloadDetails = payloadDetailsOptional.orElseThrow(NotFoundException::new);
 

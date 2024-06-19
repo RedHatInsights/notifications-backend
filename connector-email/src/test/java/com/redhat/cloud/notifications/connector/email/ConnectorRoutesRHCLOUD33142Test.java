@@ -113,7 +113,7 @@ public class ConnectorRoutesRHCLOUD33142Test extends CamelQuarkusTestSupport {
 
         final Exchange exchange = this.createExchangeWithBody("");
         exchange.getMessage().setHeader(IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER, this.connectorConfig.getConnectorName());
-        exchange.getMessage().setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, payloadId);
+        exchange.getMessage().setHeader(Constants.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_ID_HEADER, payloadId);
         exchange.getMessage().setBody(cloudEvent.encode());
 
         this.template.send("direct:kafka-mock", exchange);
@@ -123,8 +123,8 @@ public class ConnectorRoutesRHCLOUD33142Test extends CamelQuarkusTestSupport {
 
         final Exchange receivedExchange = mockedLastToStatement.getReceivedExchanges().getFirst();
 
-        // Assert that the exchange contains the "event ID" property.
-        Assertions.assertEquals(payloadId, receivedExchange.getProperty(ExchangeProperty.DATABASE_PAYLOAD_EVENT_ID, String.class));
+        // Assert that the exchange contains the "payload ID" property.
+        Assertions.assertEquals(payloadId, receivedExchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class));
 
         // Assert that the "data" key of the Json Object contains the payload
         // we fetched from the engine.
