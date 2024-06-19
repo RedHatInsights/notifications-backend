@@ -252,7 +252,7 @@ public class EndpointResource {
 
     /**
      * Gets the list of endpoints.
-     * @param securityContext the security context of the request.
+     * @param sec the security context of the request.
      * @param query the page related query elements.
      * @param targetType the types of the endpoints to fetch.
      * @param activeOnly should only the active endpoints be fetched?
