@@ -4,7 +4,7 @@ import com.redhat.cloud.notifications.db.repositories.NotificationHistoryReposit
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.context.Context;
 import io.quarkus.logging.Log;
@@ -121,12 +121,13 @@ public class ConnectorSender {
     }
 
     private void recordMetrics(Event event, String connector, int payloadSize) {
-        Gauge
-            .builder("tocamel.payload.content.size", () -> payloadSize)
+        DistributionSummary ds = DistributionSummary.builder("notifications.tocamel.payload.content.size")
+            .baseUnit("bytes")
             .tags(TAG_KEY_CONNECTOR, connector)
             .tags(TAG_KEY_ORG_ID, event.getOrgId())
             .tags(TAG_KEY_APPLICATION, event.getApplicationDisplayName())
             .tags(TAG_KEY_EVENT_TYPE, event.getEventType().getName())
             .register(registry);
+        ds.record(payloadSize);
     }
 }
