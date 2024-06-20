@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.payload;
 
 import com.redhat.cloud.notifications.models.CreationTimestamped;
+import com.redhat.cloud.notifications.models.Event;
 import io.vertx.core.json.JsonObject;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,16 +15,19 @@ import java.util.UUID;
 @Entity(name = "PayloadDetails")
 @Table(name = "payload_details")
 public class PayloadDetails extends CreationTimestamped {
-
-    public static final String X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER = "x-rh-notifications-payload-id";
+    /**
+     * The key for the identifier of the payload which will go in the JSON
+     * payload that we send over Kafka.
+     */
+    public static final String PAYLOAD_DETAILS_ID_KEY = "payload_details_id";
 
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.UUID)
     @Id
     private UUID id;
 
-    @Column(name = "org_id", nullable = false)
-    private String orgId;
+    @Column(name = "event_id", nullable = false)
+    private UUID eventId;
 
     @Column(name = "contents", nullable = false)
     private String contents;
@@ -32,26 +36,21 @@ public class PayloadDetails extends CreationTimestamped {
 
     }
 
-    public PayloadDetails(final String orgId, final JsonObject contents) {
-        this.orgId = orgId;
+    public PayloadDetails(final Event event, final JsonObject contents) {
+        this.eventId = event.getId();
         this.contents = contents.encode();
-    }
-
-    public PayloadDetails(final String orgId, final String contents) {
-        this.orgId = orgId;
-        this.contents = contents;
     }
 
     public UUID getId() {
         return id;
     }
 
-    public String getOrgId() {
-        return orgId;
+    public void setId(final UUID id) {
+        this.id = id;
     }
 
-    public void setOrgId(final String orgId) {
-        this.orgId = orgId;
+    public UUID getEventId() {
+        return eventId;
     }
 
     public String getContents() {

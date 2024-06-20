@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 
 import java.util.Optional;
@@ -40,24 +39,10 @@ public class PayloadDetailsRepository {
      *
      * @return the payload for the given event.
      */
-    @Transactional
     public Optional<PayloadDetails> findById(final UUID payloadDetailsId) {
-        final String findPayloadDetailsById =
-            "FROM " +
-                "PayloadDetails " +
-            "WHERE " +
-                "id = :id";
-
-        try {
-            return Optional.of(
-                this.entityManager
-                    .createQuery(findPayloadDetailsById, PayloadDetails.class)
-                    .setParameter("id", payloadDetailsId)
-                    .getSingleResult()
-            );
-        } catch (final NoResultException e) {
-            return Optional.empty();
-        }
+        return Optional.ofNullable(
+            this.entityManager.find(PayloadDetails.class, payloadDetailsId)
+        );
     }
 
     /**

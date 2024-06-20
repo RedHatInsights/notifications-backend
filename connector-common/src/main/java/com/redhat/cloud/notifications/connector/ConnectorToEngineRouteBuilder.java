@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.connector;
 
-import com.redhat.cloud.notifications.connector.payload.PayloadOutgoingKafkaHeaderGeneratorProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
@@ -21,9 +20,6 @@ public class ConnectorToEngineRouteBuilder extends EndpointRouteBuilder {
     @Inject
     OutgoingCloudEventBuilder outgoingCloudEventBuilder;
 
-    @Inject
-    PayloadOutgoingKafkaHeaderGeneratorProcessor payloadOutgoingKafkaHeaderGeneratorProcessor;
-
     @Override
     public void configure() {
 
@@ -36,7 +32,6 @@ public class ConnectorToEngineRouteBuilder extends EndpointRouteBuilder {
         from(direct(CONNECTOR_TO_ENGINE))
                 .routeId(CONNECTOR_TO_ENGINE)
                 .process(outgoingCloudEventBuilder)
-                .process(payloadOutgoingKafkaHeaderGeneratorProcessor)
                 .to(log(getClass().getName()).level("DEBUG").showHeaders(true).showBody(true))
                 .to(kafka(connectorConfig.getOutgoingKafkaTopic()));
     }

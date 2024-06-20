@@ -25,7 +25,6 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -81,18 +80,15 @@ public class ConnectorSender {
         final int payloadSize = payload.toString().getBytes().length;
         recordMetrics(event, connector, payloadSize);
 
-        final Map<String, String> customHeaders = new HashMap<>();
-
         // When the payload to be sent is greater than the configured limit,
         // store the payload in the database so that we can fetch it from the
         // connectors themselves.
         if (this.engineConfig.getKafkaToCamelMaximumRequestSize() <= payloadSize) {
-            customHeaders.put(PayloadDetails.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER, event.getId().toString());
-
-            final PayloadDetails payloadDetails = new PayloadDetails(event.getOrgId(), payload);
+            final PayloadDetails payloadDetails = new PayloadDetails(event, payload);
             this.payloadDetailsRepository.save(payloadDetails);
 
             payload = new JsonObject();
+            payload.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, payloadDetails.getId());
 
             this.registry.counter(
                 NOTIFICATIONS_PAYLOAD_STORED_DATABASE_METRIC_NAME,
@@ -101,7 +97,7 @@ public class ConnectorSender {
         }
 
         try {
-            Message<JsonObject> message = buildMessage(payload, history.getId(), connector, customHeaders);
+            Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
             emitter.send(message);
         } catch (Exception e) {
             history.setStatus(FAILED_INTERNAL);
@@ -112,18 +108,8 @@ public class ConnectorSender {
         }
     }
 
-    /**
-     * Build a Kafka message read to be sent to the connectors.
-     * @param payload the payload of the message.
-     * @param historyId the history ID to include in the Cloud Event metadata.
-     * @param connector the connector's name to include both in the Cloud Event
-     *                  metadata and in the header for discerning the target
-     *                  connector.
-     * @param customHeaders any custom headers to include in the Kafka message.
-     * @return the Kafka message ready to be sent.
-     */
-    private static Message<JsonObject> buildMessage(final JsonObject payload, final UUID historyId, final String connector, final Map<String, String> customHeaders) {
-        OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(connector, customHeaders);
+    private static Message<JsonObject> buildMessage(final JsonObject payload, final UUID historyId, final String connector) {
+        OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(connector);
 
         String cloudEventId = historyId.toString();
         String cloudEventType = CLOUD_EVENT_TYPE_PREFIX + connector;
@@ -137,20 +123,9 @@ public class ConnectorSender {
                 .addMetadata(tracingMetadata);
     }
 
-    /**
-     * Build the headers for the Kafka message.
-     * @param connector the connector the Kafka message is intended to.
-     * @param customHeaders any custom headers to add to the Kafka message.
-     * @return a metadata object including the headers.
-     */
-    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(final String connector, final Map<String, String> customHeaders) {
+    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(final String connector) {
         final Headers headers = new RecordHeaders()
                 .add(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connector.getBytes(UTF_8));
-
-        // Add any custom headers to the Kafka message.
-        if (!customHeaders.isEmpty()) {
-            customHeaders.forEach((key, value) -> headers.add(key, value.getBytes(UTF_8)));
-        }
 
         return OutgoingKafkaRecordMetadata.<String>builder()
                 .withHeaders(headers)

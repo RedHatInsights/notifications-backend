@@ -10,24 +10,17 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
-import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
-import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.header.Headers;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-import org.eclipse.microprofile.reactive.messaging.Message;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 
 /**
  * We sent data via Camel. Now Camel informs us about the outcome,
@@ -75,10 +68,8 @@ public class ConnectorReceiver {
     @Incoming(FROMCAMEL_CHANNEL)
     @Blocking
     @ActivateRequestContext
-    public CompletionStage<Void> processAsync(final Message<String> message) {
+    public void processAsync(String payload) {
         try {
-            final String payload = message.getPayload();
-
             Log.infof("Processing return from camel: %s", payload);
             Map<String, Object> decodedPayload = decodeItem(payload);
 
@@ -94,15 +85,17 @@ public class ConnectorReceiver {
             }
             endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, new JsonObject(payload));
 
-            this.removePayloadFromDatabase(message);
+            // Remove the payload from the database.
+            final String payloadId = (String) decodedPayload.get(PayloadDetails.PAYLOAD_DETAILS_ID_KEY);
+            if (null != payloadId) {
+                this.payloadDetailsRepository.deleteById(UUID.fromString(payloadId));
+            }
         } catch (Exception e) {
             messagesErrorCounter.increment();
             Log.error("|  Failure to update the history", e);
         } finally {
             messagesProcessedCounter.increment();
         }
-
-        return message.ack();
     }
 
     private Map<String, Object> decodeItem(String s) {
@@ -119,28 +112,4 @@ public class ConnectorReceiver {
         return map;
     }
 
-    /**
-     * Removes the payload from the database if we receive a Kafka header from
-     * the connectors signaling so.
-     * @param message the message to check the headers from.
-     */
-    private void removePayloadFromDatabase(final Message<String> message) {
-        final Optional<IncomingKafkaRecordMetadata> metadata = message.getMetadata(IncomingKafkaRecordMetadata.class);
-
-        // If there is no message metadata do nothing.
-        if (metadata.isEmpty()) {
-            return;
-        }
-
-        final Headers headers = metadata.get().getHeaders();
-        for (final Header header : headers.headers(PayloadDetails.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER)) {
-            if (PayloadDetails.X_RH_NOTIFICATIONS_CONNECTOR_PAYLOAD_HEADER.equals(header.key())) {
-                final String headerValue = new String(header.value(), StandardCharsets.UTF_8);
-
-                final UUID eventId = UUID.fromString(headerValue);
-
-                this.payloadDetailsRepository.deleteById(eventId);
-            }
-        }
-    }
 }
