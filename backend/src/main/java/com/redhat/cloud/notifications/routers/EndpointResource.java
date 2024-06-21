@@ -2,6 +2,10 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourcePermission;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -101,6 +105,9 @@ public class EndpointResource {
     EndpointTestService endpointTestService;
 
     @Inject
+    KesselAuthorization kesselAuthorization;
+
+    @Inject
     NotificationRepository notificationRepository;
 
     @Inject
@@ -197,7 +204,6 @@ public class EndpointResource {
 
     @GET
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     @Operation(summary = "List endpoints", description = "Provides a list of endpoints. Use this endpoint to find specific endpoints.")
     @Parameters({
         @Parameter(
@@ -214,11 +220,54 @@ public class EndpointResource {
             )
     })
     public EndpointPage getEndpoints(
-            @Context SecurityContext sec,
-            @BeanParam @Valid Query query,
-            @QueryParam("type") List<String> targetType,
-            @QueryParam("active") Boolean activeOnly,
-            @QueryParam("name") String name) {
+        @Context                SecurityContext sec,
+        @BeanParam @Valid       Query query,
+        @QueryParam("type")     List<String> targetType,
+        @QueryParam("active")   Boolean activeOnly,
+        @QueryParam("name")     String name
+    ) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            // Check that the principal has the proper permission to list the
+            // endpoints.
+            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.INTEGRATIONS_READ, ResourceType.WORKSPACE, "TODO get workspace from request");
+
+            return this.internalGetEndpoints(sec, query, targetType, activeOnly, name);
+        }
+
+        return this.getEndpointsLegacyRBACRoles(sec, query, targetType, activeOnly, name);
+    }
+
+    /**
+     * Gets the list of endpoints. Checks the principal's authorization by
+     * looking at its roles.
+     * @param securityContext the security context of the request.
+     * @param query the page related query elements.
+     * @param targetType the types of the endpoints to fetch.
+     * @param activeOnly should only the active endpoints be fetched?
+     * @param name filter endpoints by name.
+     * @return a page containing the requested endpoints.
+     */
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+    public EndpointPage getEndpointsLegacyRBACRoles(final SecurityContext securityContext, final Query query, final List<String> targetType, final Boolean activeOnly, final String name) {
+        return this.internalGetEndpoints(securityContext, query, targetType, activeOnly, name);
+    }
+
+    /**
+     * Gets the list of endpoints.
+     * @param sec the security context of the request.
+     * @param query the page related query elements.
+     * @param targetType the types of the endpoints to fetch.
+     * @param activeOnly should only the active endpoints be fetched?
+     * @param name filter endpoints by name.
+     * @return a page containing the requested endpoints.
+     */
+    public EndpointPage internalGetEndpoints(
+        final SecurityContext sec,
+        final Query query,
+        final List<String> targetType,
+        final Boolean activeOnly,
+        final String name
+    ) {
         String orgId = getOrgId(sec);
 
         List<Endpoint> endpoints;
@@ -267,7 +316,7 @@ public class EndpointResource {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Endpoint.class))),
         @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
     })
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    //@RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
     public EndpointDTO createEndpoint(
         @Context                                        SecurityContext sec,
         @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
@@ -491,17 +540,48 @@ public class EndpointResource {
         return Response.noContent().build();
     }
 
-    @PUT
-    @Path("/{id}")
-    @Consumes(APPLICATION_JSON)
-    @Produces(TEXT_PLAIN)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    @Operation(summary = "Update an endpoint", description = "Updates the endpoint configuration. Use this to update an existing endpoint. Any changes to the endpoint take place immediately.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Consumes(APPLICATION_JSON)
+    @Operation(summary = "Update an endpoint", description = "Updates the endpoint configuration. Use this to update an existing endpoint. Any changes to the endpoint take place immediately.")
+    @Path("/{id}")
+    @Produces(TEXT_PLAIN)
+    @PUT
+    public Response updateEndpoint(
+        @Context                                        SecurityContext securityContext,
+        @PathParam("id")                                UUID id,
+        @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
+    ) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, ResourcePermission.WRITE, ResourceType.ENDPOINT, id.toString());
+
+            return this.internalUpdateEndpoint(securityContext, id, endpointDTO);
+        }
+
+        return this.updateEndpointLegacyRBACRoles(securityContext, id, endpointDTO);
+    }
+
+    /**
+     * Updates an endpoint. Checks the principal's authorization by looking at
+     * its roles.
+     * @param securityContext the security context of the request.
+     * @param endpointId the ID of the endpoint to be updated.
+     * @param endpointDTO the received request body.
+     * @return a response specifying the outcome of the operation.
+     */
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
+    public Response updateEndpointLegacyRBACRoles(final SecurityContext securityContext, final UUID endpointId, final EndpointDTO endpointDTO) {
+        return this.internalUpdateEndpoint(securityContext, endpointId, endpointDTO);
+    }
+
+    /**
+     * Updates an endpoint.
+     * @param sec the security context of the request.
+     * @param id the endpoint's identifier.
+     * @param endpointDTO the updated endpoint's body.
+     * @return a response specifying the outcome of the oeration.
+     */
     @Transactional
-    public Response updateEndpoint(@Context SecurityContext sec,
-                                   @PathParam("id") UUID id,
-                                   @RequestBody(required = true) @NotNull @Valid EndpointDTO endpointDTO) {
+    public Response internalUpdateEndpoint(final SecurityContext sec, final UUID id, final @NotNull @Valid EndpointDTO endpointDTO) {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
 
         if (!isEndpointTypeAllowed(endpoint.getType())) {

@@ -2,12 +2,20 @@ package com.redhat.cloud.notifications.auth;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.auth.principal.IllegalIdentityHeaderException;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import java.security.Principal;
+import java.util.Optional;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
@@ -16,6 +24,9 @@ import static org.hamcrest.Matchers.emptyString;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ConsoleIdentityProviderTest {
+
+    @Inject
+    ConsoleIdentityProvider consoleIdentityProvider;
 
     @Test
     void testNullOrgId() {
@@ -84,6 +95,44 @@ public class ConsoleIdentityProviderTest {
             .when().get(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications/eventTypes")
             .then()
             .statusCode(expectedHttpReturnCode);
+    }
+
+    /**
+     * Tests that when a proper "x-rh-identity" header's value is given, a
+     * Console principal is built.
+     * @throws IllegalArgumentException in the case that the generated
+     * "x-rh-identity" header's value is not valid.
+     */
+    @Test
+    void testBuildPrincipalFromIdentityHeader() throws IllegalIdentityHeaderException {
+        // Build a request with a proper "x-rh-identity" header's value.
+        final String xRhIdentityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, TestConstants.DEFAULT_ORG_ID, "johndoe");
+        final ConsoleAuthenticationRequest request = new ConsoleAuthenticationRequest(xRhIdentityHeaderValue);
+
+        // Call the function under test.
+        final Optional<Principal> principal = this.consoleIdentityProvider.buildPrincipalFromIdentityHeader(request);
+
+        // Assert that the principal has been properly generated.
+        Assertions.assertTrue(principal.isPresent(), "expecting a principal to be generated from a proper \"x-rh-identity\" header's value. It was not generated.");
+    }
+
+    /**
+     * Tests that when a proper "x-rh-identity" header's value is not given,
+     * then no principal is generated.
+     * @throws IllegalArgumentException in the case that the generated
+     * "x-rh-identity" header's value is not valid.
+     */
+    @Test
+    void testBuildEmptyPrincipalFromIdentityHeader() throws IllegalIdentityHeaderException {
+        // Build a request with no "x-rh-identity" header's value.
+        final ConsoleAuthenticationRequest request = Mockito.mock(ConsoleAuthenticationRequest.class);
+        Mockito.when(request.getAttribute(Constants.X_RH_IDENTITY_HEADER)).thenReturn(null);
+
+        // Call the function under test.
+        final Optional<Principal> principal = this.consoleIdentityProvider.buildPrincipalFromIdentityHeader(request);
+
+        // Assert that no principal was generated.
+        Assertions.assertFalse(principal.isPresent(), "expecting a principal to not be generated when no \"x-rh-identity\" header's value is present, but a principal was generated");
     }
 
     private static Header buildIdentityHeader(String orgId) {

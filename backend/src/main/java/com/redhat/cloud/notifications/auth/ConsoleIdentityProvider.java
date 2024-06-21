@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.auth.principal.IllegalIdentityHeaderExcept
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdentity;
 import com.redhat.cloud.notifications.auth.rbac.RbacServer;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.cache.CacheResult;
@@ -28,6 +29,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.Duration;
+import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
@@ -53,6 +55,9 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
     String adminRole;
 
     @Inject
+    BackendConfig backendConfig;
+
+    @Inject
     @RestClient
     RbacServer rbacServer;
 
@@ -75,19 +80,43 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
 
     @Override
     public Uni<SecurityIdentity> authenticate(ConsoleAuthenticationRequest rhAuthReq, AuthenticationRequestContext authenticationRequestContext) {
-        if (!isRbacEnabled) {
-            Principal principal;
-            String xH = rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER);
-            if (xH != null) {
-                ConsoleIdentity identity = getRhIdentityFromString(xH);
-                try {
-                    principal = ConsolePrincipalFactory.fromIdentity(identity);
-                } catch (IllegalIdentityHeaderException e) {
-                    return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
-                }
-            } else {
-                principal = ConsolePrincipal.noIdentity();
+        // The Kessel back end takes priority over any other authentication, in
+        // order to be able to have both the RBAC and Kessel back ends enabled
+        // at the same time. That way we can jump from using RBAC to Kessel and
+        // if we see that something is not working properly, we can instantly
+        // switch back to RBAC by disabling Kessel.
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            try {
+                // Build the principal from the incoming "x-rh-identity" header.
+                final Optional<Principal> principal = this.buildPrincipalFromIdentityHeader(rhAuthReq);
+
+                final QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder();
+
+                // Set the principal to the one we decoded from the header,
+                // unless no header was present. In that case we build an empty
+                // principal.
+                builder.setPrincipal(principal.orElse(ConsolePrincipal.noIdentity()));
+
+                // Build the security identity for Quarkus.
+                return Uni.createFrom().item(builder.build());
+            } catch (final IllegalIdentityHeaderException e) {
+                return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
             }
+        }
+
+        if (!isRbacEnabled) {
+            final Principal principal;
+            try {
+                final Optional<Principal> optionalPrincipal = this.buildPrincipalFromIdentityHeader(rhAuthReq);
+
+                // Set the principal to the one we decoded from the header,
+                // unless no header was present. In that case we set an empty
+                // principal.
+                principal = optionalPrincipal.orElse(ConsolePrincipal.noIdentity());
+            } catch (final IllegalIdentityHeaderException e) {
+                return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
+            }
+
             return Uni.createFrom().item(() -> QuarkusSecurityIdentity.builder()
                     .setPrincipal(principal)
                     .addRole(RBAC_READ_NOTIFICATIONS_EVENTS)
@@ -174,6 +203,25 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 Log.error("Error while processing identity", throwable);
                 return new AuthenticationFailedException(throwable);
             });
+    }
+
+    /**
+     * Builds the {@link Principal} object from the incoming "x-rh-identity"
+     * header.
+     * @param request the incoming request.
+     * @return the built Principal from the request's header.
+     * @throws IllegalIdentityHeaderException in case the header does not
+     * contain the mandatory fields.
+     */
+    public Optional<Principal> buildPrincipalFromIdentityHeader(final ConsoleAuthenticationRequest request) throws IllegalIdentityHeaderException {
+        final String xRhIdentityHeaderValue = request.getAttribute(X_RH_IDENTITY_HEADER);
+        if (xRhIdentityHeaderValue == null) {
+            return Optional.empty();
+        }
+
+        final ConsoleIdentity identity = getRhIdentityFromString(xRhIdentityHeaderValue);
+
+        return Optional.of(ConsolePrincipalFactory.fromIdentity(identity));
     }
 
     public static ConsoleIdentity getRhIdentityFromString(String xRhIdHeader) {
