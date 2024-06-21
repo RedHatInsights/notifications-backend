@@ -65,11 +65,11 @@
             <artifactId>quarkus-logging-sentry</artifactId>
             <version>${quarkus-logging-sentry.version}</version>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>io.quarkiverse.openapi.generator</groupId>
             <artifactId>quarkus-openapi-generator</artifactId>
             <version>${quarkus-openapi-generator.version}</version>
-        </dependency>
+        </dependency>-->
 
         <!-- Clowder -->
         <dependency>

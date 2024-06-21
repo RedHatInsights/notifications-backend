@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
-import com.redhat.cloud.notifications.recipients.authz.api.RelationshipsApi;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
@@ -10,7 +9,6 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,12 +21,9 @@ import java.util.UUID;
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -42,10 +37,10 @@ public class RecipientsResolverTest {
 
     @InjectMock
     FetchUsersFromExternalServices fetchUsersFromExternalServices;
-
+    /*
     @InjectMock
     @RestClient
-    RelationshipsApi kesselRelationshipApi;
+    RelationshipsApi kesselRelationshipApi;*/
 
     @InjectSpy
     RecipientsResolverConfig recipientsResolverConfig;
@@ -146,11 +141,11 @@ public class RecipientsResolverTest {
         assertEquals(Set.of(admin1), recipients);
         verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        if (useKessel) {
+        /*if (useKessel) {
             verify(kesselRelationshipApi, times(1)).relationshipsReadRelationships(anyString(), anyString(), anyString(), any(), any(), any());
         } else {
             verifyNoInteractions(kesselRelationshipApi);
-        }
+        }*/
     }
 
     @Test
