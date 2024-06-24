@@ -33,7 +33,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -102,9 +101,6 @@ class DrawerProcessorTest {
 
     @Test
     void shouldCreateTwoDrawerNotifications() {
-        // Make sure that the payload does not get stored in the database.
-        Mockito.when(this.engineConfig.getKafkaToCamelMaximumRequestSize()).thenReturn(Integer.MAX_VALUE);
-
         User user1 = new User();
         user1.setId("foo");
         user1.setUsername("foo");
