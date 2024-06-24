@@ -15,24 +15,6 @@ public class PayloadDetailsRepository {
     EntityManager entityManager;
 
     /**
-     * Deletes the payload details from the database.
-     * @param payloadDetailsId the identifier of the payload's details record.
-     */
-    @Transactional
-    public void deleteById(final UUID payloadDetailsId) {
-        final String deletePayloadById =
-            "DELETE FROM " +
-                "PayloadDetails " +
-            "WHERE " +
-                "id = :id";
-
-        this.entityManager
-            .createQuery(deletePayloadById)
-            .setParameter("id", payloadDetailsId)
-            .executeUpdate();
-    }
-
-    /**
      * Fetches the payload from the database by its identifier.
      * @param payloadDetailsId the payload's identifier to fetch the contents
      *                         for.

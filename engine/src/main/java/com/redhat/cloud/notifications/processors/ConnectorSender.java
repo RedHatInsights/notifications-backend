@@ -108,7 +108,8 @@ public class ConnectorSender {
         }
     }
 
-    private static Message<JsonObject> buildMessage(final JsonObject payload, final UUID historyId, final String connector) {
+    private static Message<JsonObject> buildMessage(JsonObject payload, UUID historyId, String connector) {
+
         OutgoingKafkaRecordMetadata<String> kafkaMetadata = buildOutgoingKafkaRecordMetadata(connector);
 
         String cloudEventId = historyId.toString();
@@ -123,10 +124,9 @@ public class ConnectorSender {
                 .addMetadata(tracingMetadata);
     }
 
-    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(final String connector) {
-        final Headers headers = new RecordHeaders()
+    private static OutgoingKafkaRecordMetadata<String> buildOutgoingKafkaRecordMetadata(String connector) {
+        Headers headers = new RecordHeaders()
                 .add(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connector.getBytes(UTF_8));
-
         return OutgoingKafkaRecordMetadata.<String>builder()
                 .withHeaders(headers)
                 .build();

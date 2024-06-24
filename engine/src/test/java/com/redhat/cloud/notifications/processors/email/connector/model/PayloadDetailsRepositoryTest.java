@@ -33,12 +33,12 @@ public class PayloadDetailsRepositoryTest {
     ResourceHelpers resourceHelpers;
 
     /**
-     * Tests that the payload details can be properly saved in the database,
-     * fetched and then deleted.
+     * Tests that the payload details can be properly saved in the database and
+     * then fetched from it.
      */
     @Test
     @Transactional
-    void testSaveFetchDeleteEmailDetails() {
+    void testSaveFetchEmailDetails() {
         // Prepare the test event.
         final Bundle bundle = this.resourceHelpers.createBundle("test-sfd-details");
         final Application application = this.resourceHelpers.createApp(bundle.getId(), "test-sfd-payload-details");
@@ -76,8 +76,11 @@ public class PayloadDetailsRepositoryTest {
         Assertions.assertEquals(payloadDetails.getEventId(), fetchedPayloadDetails.getEventId(), "the event ID is incorrect");
         Assertions.assertEquals(payloadDetails.getContents(), fetchedPayloadDetails.getContents(), "the fetched payload is incorrect");
 
-        // Delete the payload from the database.
-        this.payloadDetailsRepository.deleteById(fetchedPayloadDetails.getId());
+        // Delete the event from the database. Due to the "CASCADE DELETE"
+        // statement for the payload's table, the database should have deleted
+        // the payload too.
+        this.entityManager.remove(event);
+        this.entityManager.flush();
         this.entityManager.clear();
 
         // Assert that the object got properly deleted.

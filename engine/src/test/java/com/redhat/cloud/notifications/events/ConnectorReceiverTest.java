@@ -5,11 +5,9 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
-import com.redhat.cloud.notifications.db.repositories.PayloadDetailsRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
-import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -55,9 +53,6 @@ public class ConnectorReceiverTest {
 
     @InjectSpy
     EndpointRepository endpointRepository;
-
-    @InjectMock
-    PayloadDetailsRepository payloadDetailsRepository;
 
     final String expectedHistoryId = UUID.randomUUID().toString();
 
@@ -120,40 +115,15 @@ public class ConnectorReceiverTest {
 
     @Test
     void testValidPayloadWithDeletedEndpoint() {
-        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS, false);
-    }
-
-    /**
-     * Tests that when the receiver receives a message with a header indicating
-     * the payload ID, then the payload is deleted from the database.
-     */
-    @Test
-    void testDeletePayloadFromDatabase() {
-        // Send the message.
-        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS, true);
-
-        // Verify that the payload is deleted.
-        Mockito.verify(this.payloadDetailsRepository, Mockito.times(1)).deleteById(Mockito.any(UUID.class));
-    }
-
-    /**
-     * Tests that for a regular incoming message without any payload ID header
-     * no payload is attempted to be deleted.
-     */
-    @Test
-    void testDoNotDeletePayloadFromDatabase() {
-        // Send the message.
-        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS, false);
-
-        // Verify that the payload is not deleted.
-        Mockito.verify(this.payloadDetailsRepository, Mockito.times(0)).deleteById(Mockito.any());
+        testPayload(UUID.randomUUID().toString(), true, 67549274, null, NotificationStatus.SUCCESS);
     }
 
     private void testPayload(boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
-        testPayload(expectedHistoryId, isSuccessful, expectedDuration, expectedOutcome, expectedNotificationStatus, false);
+        testPayload(expectedHistoryId, isSuccessful, expectedDuration, expectedOutcome, expectedNotificationStatus);
     }
 
-    private void testPayload(String historyId, boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus, final boolean isPayloadDetailsIdPresent) {
+    private void testPayload(String historyId, boolean isSuccessful, long expectedDuration, String expectedOutcome, NotificationStatus expectedNotificationStatus) {
+
         String expectedDetailsType = "com.redhat.console.notification.toCamel.tower";
         String expectedDetailsTarget = "1.2.3.4";
 
@@ -167,12 +137,6 @@ public class ConnectorReceiverTest {
                 "successful", isSuccessful
         ));
 
-        // Include a payload identifier in the data payload to signal that we
-        // need to remove the payload from the database.
-        if (isPayloadDetailsIdPresent) {
-            dataMap.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, UUID.randomUUID());
-        }
-
         dataMap.put("outcome", expectedOutcome);
 
         String payload = Json.encode(Map.of(
@@ -184,7 +148,6 @@ public class ConnectorReceiverTest {
                 "content-type", "application/json",
                 "data", Json.encode(dataMap)
         ));
-
         inMemoryConnector.source(FROMCAMEL_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(MESSAGES_PROCESSED_COUNTER_NAME, 1);

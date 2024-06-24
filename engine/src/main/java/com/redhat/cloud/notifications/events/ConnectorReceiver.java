@@ -2,10 +2,8 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
-import com.redhat.cloud.notifications.db.repositories.PayloadDetailsRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
-import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -18,7 +16,6 @@ import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
-
 import java.util.Map;
 import java.util.UUID;
 
@@ -45,9 +42,6 @@ public class ConnectorReceiver {
 
     @Inject
     EndpointErrorFromConnectorHelper endpointErrorFromConnectorHelper;
-
-    @Inject
-    PayloadDetailsRepository payloadDetailsRepository;
 
     private Counter messagesProcessedCounter;
     private Counter messagesErrorCounter;
@@ -84,12 +78,6 @@ public class ConnectorReceiver {
                 Log.warnf("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
             }
             endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, new JsonObject(payload));
-
-            // Remove the payload from the database.
-            final String payloadId = (String) decodedPayload.get(PayloadDetails.PAYLOAD_DETAILS_ID_KEY);
-            if (null != payloadId) {
-                this.payloadDetailsRepository.deleteById(UUID.fromString(payloadId));
-            }
         } catch (Exception e) {
             messagesErrorCounter.increment();
             Log.error("|  Failure to update the history", e);
