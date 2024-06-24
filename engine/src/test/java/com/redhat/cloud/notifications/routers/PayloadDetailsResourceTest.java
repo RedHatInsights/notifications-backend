@@ -43,17 +43,14 @@ public class PayloadDetailsResourceTest {
         Mockito.when(this.payloadDetailsRepository.findById(Mockito.any())).thenReturn(Optional.of(payloadDetails));
 
         // Call the endpoint under test.
-        final String response = given()
+        final ReadPayloadDetailsDto readPayloadDetailsDto = given()
             .when()
             .get("/internal/payloads/{payloadDetailsId}", UUID.randomUUID())
             .then()
             .statusCode(HttpStatus.SC_OK)
             .contentType(ContentType.JSON)
             .extract()
-            .asString();
-
-        // Assert that the returned response contains the payload.
-        final ReadPayloadDetailsDto readPayloadDetailsDto = this.objectMapper.readValue(response, ReadPayloadDetailsDto.class);
+            .as(ReadPayloadDetailsDto.class);
 
         Assertions.assertEquals(payloadDetails.getContents(), readPayloadDetailsDto.getContents());
     }
