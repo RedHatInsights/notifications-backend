@@ -41,6 +41,19 @@ public class EmailAggregationRepository {
                 .getResultList();
     }
 
+    public List<EmailAggregation> getEmailAggregationBasedOnEvent(EmailAggregationKey key, LocalDateTime start, LocalDateTime end, int firstResultIndex, int maxResults) {
+        String query = "FROM Event WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
+        return entityManager.createQuery(query, EmailAggregation.class)
+            .setParameter("orgId", key.getOrgId())
+            .setParameter("bundleName", key.getBundle())
+            .setParameter("applicationName", key.getApplication())
+            .setParameter("start", start)
+            .setParameter("end", end)
+            .setFirstResult(firstResultIndex)
+            .setMaxResults(maxResults)
+            .getResultList();
+    }
+
     @Transactional
     public int purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
         String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";

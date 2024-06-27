@@ -24,7 +24,7 @@ public class AggregatorConfig {
     /*
      * Unleash configuration
      */
-    private String singleDailyDigestToggle;
+    private String fetchAggregationBasedOnEvents;
 
     private static String toggleName(String feature) {
         return String.format("notifications-aggregator.%s.enabled", feature);
@@ -42,17 +42,25 @@ public class AggregatorConfig {
 
     @PostConstruct
     void postConstruct() {
-        singleDailyDigestToggle = toggleRegistry.register("single-daily-digest", true);
+        fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
         config.put(UNLEASH, unleashEnabled);
-
+        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnable());
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
             Log.infof("%s=%s", key, value);
         });
+    }
+
+    public boolean isAggregationBasedOnEventEnable() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(fetchAggregationBasedOnEvents, false);
+        } else {
+            return false;
+        }
     }
 }

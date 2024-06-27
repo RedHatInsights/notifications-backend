@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
+import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import io.quarkus.arc.ArcUndeclaredThrowableException;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,8 +47,9 @@ public class EmailAggregationRepositoryTest {
     void testAllMethods() {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
-        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
+        //EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
 
+        EventAggregationCriteria key =  new EventAggregationCriteria(ORG_ID, UUID.randomUUID(), UUID.randomUUID(), BUNDLE_NAME, APP_NAME);
         clearEmailAggregations();
         resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
         resourceHelpers.addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
