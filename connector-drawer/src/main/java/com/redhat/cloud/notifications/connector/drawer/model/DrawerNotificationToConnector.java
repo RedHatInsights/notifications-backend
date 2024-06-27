@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.drawer.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.vertx.core.json.JsonObject;
 import java.util.Collection;
 
 public record DrawerNotificationToConnector(
@@ -15,5 +16,8 @@ public record DrawerNotificationToConnector(
     Collection<RecipientSettings> recipientSettings,
 
     @JsonProperty("unsubscribers")
-    Collection<String> unsubscribers
+    Collection<String> unsubscribers,
+
+    @JsonProperty("authorization_criteria")
+    JsonObject authorizationCriteria
 )  { }

@@ -11,6 +11,8 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteriaExtractor;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.RecipientResolver;
@@ -67,6 +69,9 @@ public class EmailAggregator {
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String RECIPIENTS_KEY = "recipients";
 
+    @Inject
+    ExternalAuthorizationCriteriaExtractor externalAuthorizationCriteriaExtractor;
+
     @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
     int maxPageSize;
 
@@ -89,6 +94,8 @@ public class EmailAggregator {
 
             // For each aggregation...
             for (EmailAggregation aggregation : aggregations) {
+
+                ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(aggregation);
                 // We need its event type to determine the target endpoints.
                 String eventTypeName = getEventType(aggregation);
                 EventType eventType;
@@ -128,7 +135,8 @@ public class EmailAggregator {
                             ).collect(toSet()),
                             subscribers,
                             unsubscribers,
-                            eventType.isSubscribedByDefault()
+                            eventType.isSubscribedByDefault(),
+                            externalAuthorizationCriteria
                         );
                     } catch (Exception ex) {
                         Log.error("Error calling external recipients resolver service", ex);

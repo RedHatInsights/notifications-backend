@@ -8,6 +8,8 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteriaExtractor;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
@@ -51,6 +53,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     @Inject
     SubscriptionRepository subscriptionRepository;
 
+    @Inject
+    ExternalAuthorizationCriteriaExtractor externalAuthorizationCriteriaExtractor;
+
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
         // Generate an aggregation if the event supports it.
@@ -62,6 +67,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             Log.debugf("[event_uuid: %s] The event was skipped because there were no suitable templates for it", event.getId());
             return;
         }
+
+        ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(event);
 
         Set<String> subscribers;
         Set<String> unsubscribers;
@@ -111,7 +118,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             recipientSettings,
             subscribers,
             unsubscribers,
-            event.getEventType().isSubscribedByDefault()
+            event.getEventType().isSubscribedByDefault(),
+            externalAuthorizationCriteria
         );
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
