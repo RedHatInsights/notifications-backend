@@ -2,6 +2,8 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
+import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -41,12 +43,11 @@ public class EmailAggregationRepository {
                 .getResultList();
     }
 
-    public List<EmailAggregation> getEmailAggregationBasedOnEvent(EmailAggregationKey key, LocalDateTime start, LocalDateTime end, int firstResultIndex, int maxResults) {
-        String query = "FROM Event WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created > :start AND created <= :end ORDER BY created";
-        return entityManager.createQuery(query, EmailAggregation.class)
+    public List<Event> getEmailAggregationBasedOnEvent(EventAggregationCriteria key, LocalDateTime start, LocalDateTime end, int firstResultIndex, int maxResults) {
+        String query = "FROM Event WHERE orgId = :orgId AND applicationId = :applicationId AND created > :start AND created <= :end ORDER BY created";
+        return entityManager.createQuery(query, Event.class)
             .setParameter("orgId", key.getOrgId())
-            .setParameter("bundleName", key.getBundle())
-            .setParameter("applicationName", key.getApplication())
+            .setParameter("applicationId", key.getApplicationId())
             .setParameter("start", start)
             .setParameter("end", end)
             .setFirstResult(firstResultIndex)

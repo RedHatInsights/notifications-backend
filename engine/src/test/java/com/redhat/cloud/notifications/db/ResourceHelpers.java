@@ -123,7 +123,9 @@ public class ResourceHelpers {
 
     @Transactional
     public Event createEvent(Event event) {
-        event.setOrgId(DEFAULT_ORG_ID);
+        if (null == event.getOrgId()) {
+            event.setOrgId(DEFAULT_ORG_ID);
+        }
         event.setAccountId("account-id");
         event.setEventTypeDisplayName(event.getEventType().getDisplayName());
         event.setApplicationId(event.getEventType().getApplication().getId());
@@ -131,6 +133,7 @@ public class ResourceHelpers {
         event.setBundleId(event.getEventType().getApplication().getBundle().getId());
         event.setBundleDisplayName(event.getEventType().getApplication().getBundle().getDisplayName());
         entityManager.persist(event);
+        entityManager.flush();
         return event;
     }
 
@@ -265,4 +268,20 @@ public class ResourceHelpers {
         return eventType;
     }
 
+    @Transactional
+    public EventTypeEmailSubscription findOrCreateEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType) {
+
+        EventTypeEmailSubscriptionId subscriptionId = new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType);
+        EventTypeEmailSubscription eventTypeEmailSubscription = entityManager.find(EventTypeEmailSubscription.class, subscriptionId);
+        if (eventTypeEmailSubscription == null) {
+            eventTypeEmailSubscription = new EventTypeEmailSubscription();
+            eventTypeEmailSubscription.setId(
+                new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)
+            );
+            eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
+            eventTypeEmailSubscription.setSubscribed(true);
+            entityManager.persist(eventTypeEmailSubscription);
+        }
+        return eventTypeEmailSubscription;
+    }
 }

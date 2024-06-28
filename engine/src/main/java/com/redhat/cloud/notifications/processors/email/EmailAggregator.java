@@ -9,6 +9,8 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
@@ -78,6 +80,20 @@ public class EmailAggregator {
         Map<String, Set<String>> unsubscribersByEventType = subscriptionRepository
                 .getUnsubscribersByEventType(aggregationKey.getOrgId(), appId, subscriptionType);
 
+        if (aggregationKey instanceof EventAggregationCriteria eventAggregationCriteria) {
+            aggregationBasedOnEvent(eventAggregationCriteria, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
+        } else {
+            aggregationBasedOnEmailAggregation(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
+        }
+
+        return aggregated.entrySet().stream()
+                .collect(toMap(
+                        Entry::getKey,
+                        entry -> entry.getValue().getContext()
+                ));
+    }
+
+    private void aggregationBasedOnEmailAggregation(EmailAggregationKey aggregationKey, LocalDateTime start, LocalDateTime end, Map<String, Set<String>> subscribersByEventType, Map<String, Set<String>> unsubscribersByEventType, Map<User, AbstractEmailPayloadAggregator> aggregated) {
         int offset = 0;
         int totalAggregatedElements = 0;
 
@@ -132,10 +148,10 @@ public class EmailAggregator {
                         );
                     } catch (Exception ex) {
                         Log.error("Error calling external recipients resolver service", ex);
-                        recipients = getRecipients(aggregationKey, subscribers, getActionRecipientSettings(aggregation), endpoints);
+                        recipients = getRecipients(aggregationKey.getOrgId(), subscribers, getActionRecipientSettings(aggregation), endpoints);
                     }
                 } else {
-                    recipients = getRecipients(aggregationKey, subscribers, getActionRecipientSettings(aggregation), endpoints);
+                    recipients = getRecipients(aggregationKey.getOrgId(), subscribers, getActionRecipientSettings(aggregation), endpoints);
                 }
 
                 /*
@@ -153,18 +169,83 @@ public class EmailAggregator {
             totalAggregatedElements += aggregations.size();
         } while (maxPageSize == aggregations.size());
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
+    }
 
-        return aggregated.entrySet().stream()
-                .collect(toMap(
-                        Entry::getKey,
-                        entry -> entry.getValue().getContext()
-                ));
+    private void aggregationBasedOnEvent(EventAggregationCriteria eventAggregationCriteria, LocalDateTime start, LocalDateTime end, Map<String, Set<String>> subscribersByEventType, Map<String, Set<String>> unsubscribersByEventType, Map<User, AbstractEmailPayloadAggregator> aggregated) {
+        int offset = 0;
+        int totalAggregatedElements = 0;
+
+        List<Event> aggregations;
+        do {
+            // First, we retrieve paginated aggregations that match the given key.
+            aggregations = emailAggregationRepository.getEmailAggregationBasedOnEvent(eventAggregationCriteria, start, end, offset, maxPageSize);
+            offset += maxPageSize;
+
+            // For each aggregation...
+            for (Event aggregation : aggregations) {
+                // We need its event type to determine the target endpoints.
+                EventType eventType = aggregation.getEventType();
+
+                // Let's retrieve these targets.
+                Set<Endpoint> endpoints = Set.copyOf(endpointRepository
+                    .getTargetEmailSubscriptionEndpoints(aggregation.getOrgId(), aggregation.getEventType().getId()));
+
+                /*
+                 * Now we want to determine who will actually receive the aggregation email.
+                 * All users who subscribed to the current application and subscription type combination are recipients candidates.
+                 * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
+                 * The target endpoints properties will determine whether each candidate will actually receive an email.
+                 */
+
+                Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+                Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+
+                Set<User> recipients;
+                if (engineConfig.isAggregationWithRecipientsResolverEnabled()) {
+                    try {
+                        Log.info("Start calling external resolver service ");
+                        recipients = externalRecipientsResolver.recipientUsers(
+                            aggregation.getOrgId(),
+                            Stream.concat(
+                                endpoints
+                                    .stream()
+                                    .map(EndpointRecipientSettings::new),
+                                getActionRecipientSettings(aggregation)
+                            ).collect(toSet()),
+                            subscribers,
+                            unsubscribers,
+                            eventType.isSubscribedByDefault()
+                        );
+                    } catch (Exception ex) {
+                        Log.error("Error calling external recipients resolver service", ex);
+                        recipients = getRecipients(aggregation.getOrgId(), subscribers, getActionRecipientSettings(aggregation), endpoints);
+                    }
+                } else {
+                    recipients = getRecipients(aggregation.getOrgId(), subscribers, getActionRecipientSettings(aggregation), endpoints);
+                }
+
+                /*
+                 * We now have the final recipients list.
+                 * Let's populate the Map that will be returned by the method.
+                 */
+                recipients.forEach(recipient -> {
+                    // We may or may not have already initialized an aggregator for the recipient.
+                    AbstractEmailPayloadAggregator aggregator = aggregated
+                        .computeIfAbsent(recipient, ignored -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, start, end));
+                    // It's aggregation time!
+                    EmailAggregation eventDataToAggregate = new EmailAggregation(aggregation.getOrgId(), eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), new JsonObject(aggregation.getPayload()));
+                    aggregator.aggregate(eventDataToAggregate);
+                });
+            }
+            totalAggregatedElements += aggregations.size();
+        } while (maxPageSize == aggregations.size());
+        Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, eventAggregationCriteria);
     }
 
     @Deprecated(forRemoval = true)
-    private Set<User> getRecipients(EmailAggregationKey aggregationKey, Set<String> subscribers, Stream<ActionRecipientSettings> actionRecipientSettings, Set<Endpoint> endpoints) {
+    private Set<User> getRecipients(String orgId, Set<String> subscribers, Stream<ActionRecipientSettings> actionRecipientSettings, Set<Endpoint> endpoints) {
         return recipientResolver.recipientUsers(
-            aggregationKey.getOrgId(),
+            orgId,
             Stream.concat(
                 endpoints
                     .stream()
@@ -189,6 +270,20 @@ public class EmailAggregator {
                 }).map(r -> new ActionRecipientSettings(r.getOnlyAdmins(), r.getIgnoreUserPreferences(), r.getUsers(), r.getEmails()));
             }
 
+        }
+        return Stream.empty();
+    }
+
+    private Stream<ActionRecipientSettings> getActionRecipientSettings(Event emailAggregation) {
+        JsonObject payload = new JsonObject(emailAggregation.getPayload());
+        if (payload.containsKey(RECIPIENTS_KEY)) {
+            JsonArray recipients = payload.getJsonArray(RECIPIENTS_KEY);
+            if (!recipients.isEmpty()) {
+                return recipients.stream().map(r -> {
+                    JsonObject recipient = (JsonObject) r;
+                    return recipient.mapTo(Recipient.class);
+                }).map(r -> new ActionRecipientSettings(r.getOnlyAdmins(), r.getIgnoreUserPreferences(), r.getUsers(), r.getEmails()));
+            }
         }
         return Stream.empty();
     }
