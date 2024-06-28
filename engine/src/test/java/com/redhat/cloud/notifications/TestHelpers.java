@@ -354,7 +354,7 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
-    public static Action createAnsibleAction(String slug) {
+    public static Action createAnsibleAction(String eventType, String envName) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(StringUtils.EMPTY);
         emailActionMessage.setApplication(StringUtils.EMPTY);
@@ -364,8 +364,7 @@ public class TestHelpers {
 
         emailActionMessage.setContext(
             new Context.ContextBuilder()
-                .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
-                .withAdditionalProperty("slug", slug)
+                .withAdditionalProperty("env_name", envName)
                 .build()
         );
 

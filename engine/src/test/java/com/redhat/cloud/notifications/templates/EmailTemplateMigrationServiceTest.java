@@ -105,12 +105,12 @@ public class EmailTemplateMigrationServiceTest {
         EventType operatorDataReceived = resourceHelpers.createEventType(costManagement.getId(), "cm-operator-data-received");
 
         /*
-         * Bundle: ansible
+         * Bundle: ansible-automation-platform
          */
-        Bundle ansible = resourceHelpers.createBundle("ansible");
-        // App: reports
-        Application reports = resourceHelpers.createApp(ansible.getId(), "reports");
-        EventType reportAvailable = resourceHelpers.createEventType(reports.getId(), "report-available");
+        Bundle ansible = resourceHelpers.createBundle("ansible-automation-platform");
+        // App: ansible-service-on-aws
+        Application reports = resourceHelpers.createApp(ansible.getId(), "ansible-service-on-aws");
+        EventType notifyCustomerProvisionSuccess = resourceHelpers.createEventType(reports.getId(), "notify-customer-provision-success");
 
         /*
          * Bundle: console
@@ -208,7 +208,7 @@ public class EmailTemplateMigrationServiceTest {
          * Bundle: ansible
          */
         // App: reports
-        findAndCompileInstantEmailTemplate(reportAvailable.getId());
+        findAndCompileInstantEmailTemplate(notifyCustomerProvisionSuccess.getId());
         assertTrue(templateRepository.findAggregationEmailTemplate(ansible.getName(), reports.getName(), DAILY).isEmpty());
 
         /*

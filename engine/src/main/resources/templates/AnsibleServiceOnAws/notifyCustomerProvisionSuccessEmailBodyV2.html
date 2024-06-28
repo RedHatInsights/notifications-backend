@@ -2,15 +2,12 @@
 {@boolean renderButtonSection1=true}
 {#include Common/insightsEmailBody}
 {#content-title}
-    Ansible
+    Ansible Automation Platform Service on AWS - Ansible Automation Platform
 {/content-title}
 {#content-title-section1}
-    Report available
+    Notify customer environment is ready
 {/content-title-section1}
 {#content-body-section1}
-    <p>Ansible report available for download.</p>
+    <p>Requested environment '{action.context.env_name}' is ready.</p>
 {/content-body-section1}
-{#content-button-section1}
-    <a href="{environment.url}/ansible/insights/reports/{action.context.slug}">Download now</a>
-{/content-button-section1}
 {/include}
