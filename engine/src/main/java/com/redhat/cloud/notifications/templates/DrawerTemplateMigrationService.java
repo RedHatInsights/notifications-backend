@@ -54,12 +54,6 @@ public class DrawerTemplateMigrationService {
             "AdvisorOpenShift/newRecommendationBody", "html", "Advisor new recommendation drawer body"
         );
 
-        // Ansible
-        createDrawerIntegrationTemplate(
-            warnings, "ansible", "reports", List.of("report-available"),
-            "Ansible/reportAvailableBody", "html", "Ansible report available drawer body"
-        );
-
         // Compliance
         createDrawerIntegrationTemplate(
             warnings, "rhel", "compliance", List.of("compliance-below-threshold"),

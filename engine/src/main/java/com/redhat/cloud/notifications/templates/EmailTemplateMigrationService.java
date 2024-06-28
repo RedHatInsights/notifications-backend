@@ -145,12 +145,12 @@ public class EmailTemplateMigrationService {
             );
 
             /*
-             * Former src/main/resources/templates/Ansible folder.
+             * Former src/main/resources/templates/AnsibleServiceOnAws folder.
              */
             createInstantEmailTemplate(
-                warnings, "ansible", "reports", List.of("report-available"),
-                "Ansible/instantEmailTitle", "txt", "Ansible instant email title",
-                "Ansible/instantEmailBody", "html", "Ansible instant email body"
+                warnings, "ansible-automation-platform", "ansible-service-on-aws", List.of("notify-customer-provision-success"),
+                "AnsibleServiceOnAws/notifyCustomerProvisionSuccessEmailTitle", "txt", "Notify customer environment is ready instant email title",
+                "AnsibleServiceOnAws/notifyCustomerProvisionSuccessEmailBody", "html", "Notify customer environment is ready instant email body"
             );
 
             /*
