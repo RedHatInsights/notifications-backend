@@ -85,7 +85,7 @@ objects:
         - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
           value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
         - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
-          value: ${NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE}
+          value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
         - name: NOTIFICATIONS_CONNECTOR_USER_PROVIDER_BOP_API_TOKEN
           valueFrom:
             secretKeyRef:
@@ -201,10 +201,7 @@ parameters:
   description: Maximum number of redelivery attempts (initial call not included)
   value: "2"
 - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
-  description: Number of concurrent threads processing exchanges with SEDA
-  value: "10"
-- name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
-  description: Maximum capacity of the SEDA queue
+  description: Number of concurrent threads processing exchanges with SEDA; Maximum capacity of the SEDA queue
   value: "10"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
