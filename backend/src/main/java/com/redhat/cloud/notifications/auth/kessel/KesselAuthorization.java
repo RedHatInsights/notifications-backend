@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhServiceAccountIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import io.grpc.StatusRuntimeException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -83,7 +84,18 @@ public class KesselAuthorization {
         final Timer.Sample timer = Timer.start(this.meterRegistry);
 
         // Call Kessel.
-        final CheckResponse response = this.checkClient.check(permissionCheckRequest);
+        final CheckResponse response;
+        try {
+            response = this.checkClient.check(permissionCheckRequest);
+        } catch (final StatusRuntimeException e) {
+            Log.errorf(
+                e,
+                "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Runtime error when querying Kessel for a permission check",
+                identity, permission, resourceType, resourceId
+            );
+
+            throw e;
+        }
 
         // Stop the timer.
         timer.stop(this.meterRegistry.timer(KESSEL_METRICS_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.getKesselName())));
