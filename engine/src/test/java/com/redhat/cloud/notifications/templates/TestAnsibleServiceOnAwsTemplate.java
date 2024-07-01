@@ -43,7 +43,7 @@ public class TestAnsibleServiceOnAwsTemplate extends EmailTemplatesInDbHelper {
     @Test
     public void testInstantEmailBody() {
         String envName  = "cus-" + RandomStringUtils.randomAlphanumeric(5).toLowerCase();
-        String bitwardenURL = "https://redhat.com";
+        String bitwardenURL = "https://www.example.com";
         Action action = TestHelpers.createAnsibleAction(NOTIFY_CUSTOMER_PROVISION_SUCCESS, envName, bitwardenURL);
 
         String result = generateEmailBody(NOTIFY_CUSTOMER_PROVISION_SUCCESS, action);
