@@ -95,7 +95,6 @@ public class EmailAggregator {
             // For each aggregation...
             for (EmailAggregation aggregation : aggregations) {
 
-                ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(aggregation);
                 // We need its event type to determine the target endpoints.
                 String eventTypeName = getEventType(aggregation);
                 EventType eventType;
@@ -120,6 +119,7 @@ public class EmailAggregator {
 
                 Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
                 Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+                ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(aggregation);
 
                 Set<User> recipients;
                 if (engineConfig.isAggregationWithRecipientsResolverEnabled()) {

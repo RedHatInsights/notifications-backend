@@ -36,7 +36,7 @@ public class ExternalAuthorizationCriteriaExtractorTest {
     ObjectMapper objectMapper;
 
     @Test
-    void testExtractionFormEvent() {
+    void testExtractionFromEvent() {
         Context context = null;
         assertNull(externalAuthorizationCriteriaExtractor.extract(createEvent(context)));
 
@@ -59,7 +59,7 @@ public class ExternalAuthorizationCriteriaExtractorTest {
     }
 
     @Test
-    void testExtractionFormEmailAggregation() {
+    void testExtractionFromEmailAggregation() {
         Context context = null;
         assertNull(externalAuthorizationCriteriaExtractor.extract(createEmailAggregation(context)));
 

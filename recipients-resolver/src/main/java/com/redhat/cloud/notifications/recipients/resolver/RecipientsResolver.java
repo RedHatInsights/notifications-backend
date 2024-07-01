@@ -66,15 +66,10 @@ public class RecipientsResolver {
             fetchedUsers = fetchingUsers.getGroupUsers(orgId, request.isAdminsOnly(), request.getGroupUUID());
         }
 
-        Set<String> authorizedUsers = null;
+        final Set<String> authorizedUsers = new HashSet<>();
         if (recipientsResolverConfig.isUseKesselEnabled() && !fetchedUsers.isEmpty() && null != externalAuthorizationCriteria) {
-            authorizedUsers = callKessel(externalAuthorizationCriteria);
-            // if nobody is authorized for this notification, we can early break
-            if (authorizedUsers.isEmpty()) {
-                return Collections.emptySet();
-            }
+            authorizedUsers.addAll(findAuthorizedUsersWithCriteria(externalAuthorizationCriteria));
         }
-        final Optional<Set<String>> optionalAuthorizedUsersSet = Optional.ofNullable(authorizedUsers);
 
         // The fetched users are cached, so we need to create a new Set to avoid altering the cached data.
         Set<User> recipients = new HashSet<>(fetchedUsers);
@@ -91,7 +86,7 @@ public class RecipientsResolver {
                 return true;
             }
 
-            if (optionalAuthorizedUsersSet.isPresent() && !optionalAuthorizedUsersSet.get().contains(lowerCaseUsername)) {
+            if (recipientsResolverConfig.isUseKesselEnabled() && null != externalAuthorizationCriteria && !authorizedUsers.contains(lowerCaseUsername)) {
                 return true;
             }
 
@@ -147,7 +142,7 @@ public class RecipientsResolver {
         }
     }
 
-    private Set<String> callKessel(ExternalAuthorizationCriteria externalAuthorizationCriteria) {
+    private Set<String> findAuthorizedUsersWithCriteria(ExternalAuthorizationCriteria externalAuthorizationCriteria) {
         Set<String> authorizedUsers = new HashSet<>();
         if (externalAuthorizationCriteria != null) {
             try {

@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
 import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteriaExtractor;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
@@ -68,8 +67,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             return;
         }
 
-        ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(event);
-
         Set<String> subscribers;
         Set<String> unsubscribers;
         if (event.getEventType().isSubscribedByDefault()) {
@@ -119,7 +116,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             subscribers,
             unsubscribers,
             event.getEventType().isSubscribedByDefault(),
-            externalAuthorizationCriteria
+            externalAuthorizationCriteriaExtractor.extract(event)
         );
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
