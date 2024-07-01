@@ -2,12 +2,18 @@
 {@boolean renderButtonSection1=true}
 {#include Common/insightsEmailBody}
 {#content-title}
-    Ansible Automation Platform Service on AWS - Ansible Automation Platform
+    Ansible Automation Platform Service on AWS
 {/content-title}
 {#content-title-section1}
-    Environment is ready
+    Ansible Automation Platform is ready
 {/content-title-section1}
 {#content-body-section1}
-    <p>Requested environment '{action.context.env_name}' is ready.</p>
+    <p>Requested environment '{action.context.env_name}' is ready. The environment details can be found <a href="https://console.redhat.com/ansible/service/instances" target="_blank">here</a>.</p>
+    <p>Your environments initial password can be found, by clicking the below secure link below.</p>
+    <p><b>The initial password can only be accessed through the below link 1 time. Please change your password as soon as possible.</b></p>
+    <p><a href="{action.context.bitwarden_url}" target="_blank">Initial Password</a></p>
+    <p>If the password is lost, <a href="https://www.redhat.com/en/services/support" target="_blank">a support ticket </a> should be opened to request a password reset.</p>
+
+    <p>For help getting started with Ansible Automation Platform, visit the product <a href="https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform" target="_blank">documentation</a>.</p>
 {/content-body-section1}
 {/include}

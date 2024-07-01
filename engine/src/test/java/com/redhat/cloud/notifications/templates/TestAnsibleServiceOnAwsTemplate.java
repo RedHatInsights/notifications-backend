@@ -34,7 +34,7 @@ public class TestAnsibleServiceOnAwsTemplate extends EmailTemplatesInDbHelper {
 
     @Test
     public void testInstantEmailTitle() {
-        Action action = TestHelpers.createAnsibleAction(NOTIFY_CUSTOMER_PROVISION_SUCCESS, null);
+        Action action = TestHelpers.createAnsibleAction(NOTIFY_CUSTOMER_PROVISION_SUCCESS, null, null);
 
         String result = generateEmailSubject(NOTIFY_CUSTOMER_PROVISION_SUCCESS, action);
         assertEquals("Instant notification - Notify customer environment is ready - Ansible Automation Platform Service on AWS - Ansible Automation Platform", result);
@@ -42,8 +42,9 @@ public class TestAnsibleServiceOnAwsTemplate extends EmailTemplatesInDbHelper {
 
     @Test
     public void testInstantEmailBody() {
-        String envName  = RandomStringUtils.randomAlphanumeric(10);
-        Action action = TestHelpers.createAnsibleAction(NOTIFY_CUSTOMER_PROVISION_SUCCESS, envName);
+        String envName  = "cus-" + RandomStringUtils.randomAlphanumeric(5).toLowerCase();
+        String bitwardenURL = "https://redhat.com";
+        Action action = TestHelpers.createAnsibleAction(NOTIFY_CUSTOMER_PROVISION_SUCCESS, envName, bitwardenURL);
 
         String result = generateEmailBody(NOTIFY_CUSTOMER_PROVISION_SUCCESS, action);
         assertTrue(result.contains(envName));

@@ -354,7 +354,7 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
-    public static Action createAnsibleAction(String eventType, String envName) {
+    public static Action createAnsibleAction(String eventType, String envName, String bitwardenURL) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(StringUtils.EMPTY);
         emailActionMessage.setApplication(StringUtils.EMPTY);
@@ -365,6 +365,7 @@ public class TestHelpers {
         emailActionMessage.setContext(
             new Context.ContextBuilder()
                 .withAdditionalProperty("env_name", envName)
+                .withAdditionalProperty("bitwarden_url", bitwardenURL)
                 .build()
         );
 
