@@ -9,6 +9,8 @@ objects:
   metadata:
     name: notifications-connector-google-chat
   spec:
+    dependencies:
+    - notifications-engine
     envName: ${ENV_NAME}
     featureFlags: true
     kafkaTopics:

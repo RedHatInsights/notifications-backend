@@ -1,11 +1,15 @@
 package com.redhat.cloud.notifications.processors;
 
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.db.repositories.PayloadDetailsRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.opentelemetry.context.Context;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.TracingMetadata;
@@ -36,6 +40,8 @@ public class ConnectorSender {
     // TODO notification should end with a s but eventing-integrations does not expect it...
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
     public static final String X_RH_NOTIFICATIONS_CONNECTOR_HEADER = "x-rh-notifications-connector";
+
+    private static final String NOTIFICATIONS_PAYLOAD_STORED_DATABASE_METRIC_NAME = "notifications.payload.stored.database";
     private static final String TAG_KEY_CONNECTOR = "connector";
     private static final String TAG_KEY_ORG_ID = "orgid";
     private static final String TAG_KEY_APPLICATION = "application";
@@ -46,10 +52,16 @@ public class ConnectorSender {
     Emitter<JsonObject> emitter;
 
     @Inject
+    EngineConfig engineConfig;
+
+    @Inject
     NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     MeterRegistry registry;
+
+    @Inject
+    PayloadDetailsRepository payloadDetailsRepository;
 
     public void send(Event event, Endpoint endpoint, JsonObject payload) {
         payload.put("org_id", event.getOrgId());
@@ -64,8 +76,25 @@ public class ConnectorSender {
 
         notificationHistoryRepository.createNotificationHistory(history);
 
+        // Measure the payload size.
         final int payloadSize = payload.toString().getBytes().length;
         recordMetrics(event, connector, payloadSize);
+
+        // When the payload to be sent is greater than the configured limit,
+        // store the payload in the database so that we can fetch it from the
+        // connectors themselves.
+        if (this.engineConfig.getKafkaToCamelMaximumRequestSize() <= payloadSize) {
+            final PayloadDetails payloadDetails = new PayloadDetails(event, payload);
+            this.payloadDetailsRepository.save(payloadDetails);
+
+            payload = new JsonObject();
+            payload.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, payloadDetails.getId());
+
+            this.registry.counter(
+                NOTIFICATIONS_PAYLOAD_STORED_DATABASE_METRIC_NAME,
+                Tags.of(TAG_KEY_CONNECTOR, connector, TAG_KEY_ORG_ID, event.getOrgId(), TAG_KEY_APPLICATION, event.getApplicationDisplayName(), TAG_KEY_EVENT_TYPE, event.getEventTypeDisplayName())
+            ).increment();
+        }
 
         try {
             Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
