@@ -23,6 +23,13 @@ public class TestHelpers {
         aggregation.setOrgId(orgId);
         aggregation.setCreated(localDateTime.minusHours(5L));
 
+        JsonObject payload = generatePayloadContent(orgId, bundle, application, policyId, inventoryId);
+        aggregation.setPayload(payload);
+
+        return aggregation;
+    }
+
+    public static JsonObject generatePayloadContent(String orgId, String bundle, String application, String policyId, String inventoryId) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
         emailActionMessage.setApplication(application);
@@ -55,9 +62,7 @@ public class TestHelpers {
         emailActionMessage.setOrgId(orgId);
 
         JsonObject payload = baseTransformer.transform(emailActionMessage);
-        aggregation.setPayload(payload);
-
-        return aggregation;
+        return payload;
     }
 
 }

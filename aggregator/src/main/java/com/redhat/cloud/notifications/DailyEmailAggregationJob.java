@@ -9,7 +9,7 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
-import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.IAggregationCommand;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
@@ -75,15 +75,20 @@ public class DailyEmailAggregationJob {
         Gauge.Timer durationTimer = duration.startTimer();
 
         try {
-            LocalDateTime now = LocalDateTime.now(UTC);
+            // get targeted schedule execution time
+            LocalDateTime now = computeScheduleExecutionTime();
 
-            aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
-            List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
+            if (aggregatorConfig.isAggregationBasedOnEventEnable()) {
+                aggregationOrgConfigRepository.createMissingDefaultConfigurationbasedOnEvent(defaultDailyDigestTime);
+            } else {
+                aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
+            }
+            List<IAggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             Log.infof("found %s commands", aggregationCommands.size());
-            aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
+            aggregationCommands.stream().collect(Collectors.groupingBy(IAggregationCommand::getOrgId))
                 .values().forEach(this::sendIt);
 
-            List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
+            List<String> orgIdsToUpdate = aggregationCommands.stream().map(aggregationCommand -> aggregationCommand.getOrgId()).collect(Collectors.toList());
             aggregationOrgConfigRepository.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
 
             Gauge lastSuccess = Gauge
@@ -108,10 +113,38 @@ public class DailyEmailAggregationJob {
         }
     }
 
-    List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
-        final List<AggregationCommand> pendingAggregationCommands =
-                emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
+    /**
+     * Compute targeted schedule execution time local date time.
+     * User can schedule execution time every 15 min.
+     * Event if this job is executed at 05:02, we are looking for schedule executions of 05:00
+     *
+     * @return the local date time
+     */
+    protected LocalDateTime computeScheduleExecutionTime() {
+        LocalDateTime currentTime = LocalDateTime.now(UTC).withSecond(0).withNano(0);
+
+        // correct Time
+        if (0 <= currentTime.getMinute() && currentTime.getMinute() < 15) {
+            currentTime = currentTime.withMinute(0);
+        } else if (15 <= currentTime.getMinute() && currentTime.getMinute() < 30) {
+            currentTime = currentTime.withMinute(15);
+        } else if (30 <= currentTime.getMinute() && currentTime.getMinute() < 45) {
+            currentTime = currentTime.withMinute(30);
+        } else {
+            currentTime = currentTime.withMinute(45);
+        }
+        return currentTime;
+    }
+
+    List<IAggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
+
+        List<IAggregationCommand> pendingAggregationCommands;
+        if (aggregatorConfig.isAggregationBasedOnEventEnable()) {
+            pendingAggregationCommands = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(endTime);
+        } else {
+            pendingAggregationCommands = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
+        }
         pairsProcessed = Gauge
                 .build()
                 .name("aggregator_job_orgid_application_pairs_processed")
@@ -122,7 +155,7 @@ public class DailyEmailAggregationJob {
         return pendingAggregationCommands;
     }
 
-    private void sendIt(List<AggregationCommand> aggregationCommands) {
+    private void sendIt(List<IAggregationCommand> aggregationCommands) {
 
         List<Event> eventList = new ArrayList<>();
         aggregationCommands.stream().forEach(aggregationCommand -> {
@@ -140,7 +173,7 @@ public class DailyEmailAggregationJob {
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
             .withEventType(EVENT_TYPE_NAME)
-            .withOrgId(aggregationCommands.get(0).getAggregationKey().getOrgId())
+            .withOrgId(aggregationCommands.get(0).getOrgId())
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(eventList)
             .withContext(new Context.ContextBuilder()
