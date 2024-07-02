@@ -30,6 +30,7 @@ public class RecipientsResolverResource {
             recipientsQuery.recipientSettings,
             recipientsQuery.subscribers,
             recipientsQuery.unsubscribers,
-            recipientsQuery.subscribedByDefault);
+            recipientsQuery.subscribedByDefault,
+            recipientsQuery.externalAuthorizationCriteria);
     }
 }

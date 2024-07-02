@@ -1,20 +1,20 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
-import com.redhat.cloud.notifications.recipients.authz.api.RelationshipsApi;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
+import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriteria;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
+import com.redhat.cloud.notifications.recipients.resolver.kessel.KesselService;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheName;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 import java.util.Set;
@@ -24,7 +24,6 @@ import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,8 +43,7 @@ public class RecipientsResolverTest {
     FetchUsersFromExternalServices fetchUsersFromExternalServices;
 
     @InjectMock
-    @RestClient
-    RelationshipsApi kesselRelationshipApi;
+    KesselService kesselService;
 
     @InjectSpy
     RecipientsResolverConfig recipientsResolverConfig;
@@ -130,26 +128,32 @@ public class RecipientsResolverTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testNotSubscribedByDefaultAndAdminsOnly(boolean useKessel) {
+    @CsvSource({"true,false", "true,true", "false,true", "false,false"})
+    void testNotSubscribedByDefaultAndAdminsOnlyWithOrWithoutKessel(boolean useKessel, boolean useJsonObjectAsAuthData) {
+        ExternalAuthorizationCriteria externalAuthorizationCriteria = null;
         // update Kessel feature flag only if use Kessel is true, to keep check on default behaviour
         if (useKessel) {
             when(recipientsResolverConfig.isUseKesselEnabled()).thenReturn(useKessel);
+        }
+        if (useJsonObjectAsAuthData) {
+            externalAuthorizationCriteria = new ExternalAuthorizationCriteria("workspace", "defaultId", "relationship");
+            when(kesselService.lookupSubjects(any())).thenReturn(Set.of("user1", "admin1"));
         }
         Set<User> recipients = recipientsResolver.findRecipients(
                 ORG_ID,
                 Set.of(new RecipientSettings(true, false, null, emptySet())),
                 Set.of("user1", "admin1"),
                 emptySet(),
-                false
+                false,
+                externalAuthorizationCriteria
         );
         assertEquals(Set.of(admin1), recipients);
         verify(fetchUsersFromExternalServices, times(1)).getUsers(eq(ORG_ID), eq(true));
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
-        if (useKessel) {
-            verify(kesselRelationshipApi, times(1)).relationshipsReadRelationships(anyString(), anyString(), anyString(), any(), any(), any());
+        if (useKessel && useJsonObjectAsAuthData) {
+            verify(kesselService, times(1)).lookupSubjects(any());
         } else {
-            verifyNoInteractions(kesselRelationshipApi);
+            verifyNoInteractions(kesselService);
         }
     }
 
