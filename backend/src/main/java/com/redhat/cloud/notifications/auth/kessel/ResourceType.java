@@ -4,7 +4,11 @@ package com.redhat.cloud.notifications.auth.kessel;
  * Enumerates the resource types that are present in Kessel.
  */
 public enum ResourceType {
+    APPLICATION("application"),
+    BEHAVIOR_GROUP("behavior-group"),
+    BUNDLE("bundle"),
     ENDPOINT("integration"),
+    EVENT_TYPE("event_type"),
     WORKSPACE("workspace");
 
     /**
