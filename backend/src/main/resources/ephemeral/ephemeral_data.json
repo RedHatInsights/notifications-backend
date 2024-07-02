@@ -1,16 +1,16 @@
 {
   "bundles": [
     {
-      "name": "ansible",
-      "display_name": "Ansible",
+      "name": "ansible-automation-platform",
+      "display_name": "Ansible Automation Platform",
       "applications": [
         {
-          "name": "reports",
-          "display_name": "Reports",
+          "name": "ansible-service-on-aws",
+          "display_name": "Ansible Automation Platform Service on AWS",
           "event_types": [
             {
-              "name": "report-available",
-              "display_name": "Report available for download"
+              "name": "notify-customer-provision-success",
+              "display_name": "Notify customer environment is ready"
             }
           ]
         }
