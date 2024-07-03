@@ -1,1 +1,1 @@
-Instant notification - Notify customer environment is ready - Ansible Automation Platform Service on AWS - Ansible Automation Platform
+Environment is ready - Ansible Automation Platform Service on AWS

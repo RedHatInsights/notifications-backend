@@ -1,5 +1,5 @@
 {@boolean renderSection1=true}
-{@boolean renderButtonSection1=true}
+{@boolean renderButtonSection1=false}
 {#include Common/insightsEmailBody}
 {#content-title}
     Ansible Automation Platform Service on AWS
@@ -8,7 +8,7 @@
     Ansible Automation Platform is ready
 {/content-title-section1}
 {#content-body-section1}
-    <p>Requested environment '{action.context.env_name}' is ready. You can find the environment details <a href="https://console.redhat.com/ansible/service/instances" target="_blank">here</a>.</p>
+    <p>Requested environment '{action.context.env_name}' is ready. You can find the environment details <a href="{environment.url}/ansible/service/instances" target="_blank">here</a>.</p>
     <p>Click the secure link below to access your environment's initial password.</p>
     <p><b>You can access the initial password from the link only once.</b></p>
     <p><b>Change the initial password as soon as possible.</b></p>
@@ -17,4 +17,4 @@
 
     <p>Visit the product <a href="https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform" target="_blank">documentation</a> for help getting started with Ansible Automation Platform.</p>
 {/content-body-section1}
-{/include}
+
