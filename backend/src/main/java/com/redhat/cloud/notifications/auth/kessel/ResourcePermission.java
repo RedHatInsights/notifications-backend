@@ -5,8 +5,7 @@ package com.redhat.cloud.notifications.auth.kessel;
  */
 public enum ResourcePermission implements KesselPermission {
     VIEW,
-    WRITE,
-    DELETE;
+    WRITE;
 
     /**
      * Get the permission's name as defined Kessel.
