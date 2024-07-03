@@ -2,6 +2,11 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourcePermission;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.WorkspacePermission;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
@@ -58,12 +63,15 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
 public class NotificationResource {
+    @Inject
+    BackendConfig backendConfig;
 
     @Inject
     BundleRepository bundleRepository;
@@ -77,21 +85,41 @@ public class NotificationResource {
     @Inject
     EndpointRepository endpointRepository;
 
+    @Inject
+    KesselAuthorization kesselAuthorization;
+
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
     public static class V1 extends NotificationResource {
         @GET
         @Path("/eventTypes/{eventTypeId}/behaviorGroups")
         @Produces(APPLICATION_JSON)
         @Operation(summary = "List the behavior groups linked to an event type", description = "Lists the behavior groups that are linked to an event type. Use this endpoint to see which behavior groups will be affected if you delete an event type.")
-        @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
         public List<BehaviorGroup> getLinkedBehaviorGroups(
                 @Context SecurityContext sec,
                 @PathParam("eventTypeId") UUID eventTypeId,
                 @BeanParam @Valid Query query
         ) {
-            String orgId = getOrgId(sec);
+            if (this.backendConfig.isKesselBackendEnabled()) {
+                this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
-            return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
+                final List<BehaviorGroup> behaviorGroups = this.internalGetLinkedBehaviorGroups(sec, eventTypeId, query);
+                behaviorGroups.forEach(behaviorGroup -> this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.BEHAVIOR_GROUP, behaviorGroup.getId().toString()));
+
+                return behaviorGroups;
+            } else {
+                return this.legacyRBACGetLinkedBehaviorGroups(sec, eventTypeId, query);
+            }
+        }
+
+        @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+        public List<BehaviorGroup> legacyRBACGetLinkedBehaviorGroups(final SecurityContext securityContext, final UUID eventTypeId, final Query query) {
+            return this.internalGetLinkedBehaviorGroups(securityContext, eventTypeId, query);
+        }
+
+        public List<BehaviorGroup> internalGetLinkedBehaviorGroups(final SecurityContext securityContext, final UUID eventTypeId, final Query query) {
+            final String orgId = getOrgId(securityContext);
+
+            return this.behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
         }
     }
 
@@ -101,22 +129,39 @@ public class NotificationResource {
         @Path("/eventTypes/{eventTypeId}/behaviorGroups")
         @Produces(APPLICATION_JSON)
         @Operation(summary = "Retrieve the behavior groups linked to an event type.")
-        @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
         public Page<BehaviorGroup> getLinkedBehaviorGroups(
                 @Context SecurityContext sec,
                 @PathParam("eventTypeId") UUID eventTypeId,
                 @BeanParam @Valid Query query,
                 @Context UriInfo uriInfo
         ) {
-            String orgId = getOrgId(sec);
+            if (this.backendConfig.isKesselBackendEnabled()) {
+                this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+                final Page<BehaviorGroup> behaviorGroupPage = this.internalGetLinkedBehaviorGroups(sec, eventTypeId, query, uriInfo);
+                behaviorGroupPage.getData().forEach(behaviorGroup -> this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.BEHAVIOR_GROUP, behaviorGroup.getId().toString()));
+
+                return behaviorGroupPage;
+            } else {
+                return this.legacyRBACGetLinkedBehaviorGroups(sec, eventTypeId, query, uriInfo);
+            }
+        }
+
+        @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+        public Page<BehaviorGroup> legacyRBACGetLinkedBehaviorGroups(final SecurityContext securityContext, final UUID eventTypeId, final Query query, final UriInfo uriInfo) {
+            return this.internalGetLinkedBehaviorGroups(securityContext, eventTypeId, query, uriInfo);
+        }
+
+        public Page<BehaviorGroup> internalGetLinkedBehaviorGroups(final SecurityContext securityContext, final UUID eventTypeId, final Query query, final UriInfo uriInfo) {
+            String orgId = getOrgId(securityContext);
 
             final List<BehaviorGroup> behaviorGroups = this.behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
             final long behaviorGroupCount = this.behaviorGroupRepository.countByEventTypeId(orgId, eventTypeId);
 
             return new Page<>(
-                    behaviorGroups,
-                    PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query),
-                    new Meta(behaviorGroupCount)
+                behaviorGroups,
+                PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query),
+                new Meta(behaviorGroupCount)
             );
         }
     }
@@ -124,22 +169,37 @@ public class NotificationResource {
     @GET
     @Path("/eventTypes")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List all event types", description = "Lists all event types. You can filter the returned list by bundle, application name, or unmuted types.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    @Operation(summary = "List all event types", description = "Lists all event types. You can filter the returned list by bundle or application name.")
     public Page<EventType> getEventTypes(
-            @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds,
-            @QueryParam("bundleId") UUID bundleId, @QueryParam("eventTypeName") String eventTypeName, @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
+        @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds,
+        @QueryParam("bundleId") UUID bundleId, @QueryParam("eventTypeName") String eventTypeName, @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
     ) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetEventTypes(securityContext, uriInfo, query, applicationIds, bundleId, eventTypeName, excludeMutedTypes);
+        } else {
+            return this.legacyRBACGetEventTypes(securityContext, uriInfo, query, applicationIds, bundleId, eventTypeName, excludeMutedTypes);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public Page<EventType> legacyRBACGetEventTypes(final SecurityContext securityContext, final UriInfo uriInfo, final Query query, final Set<UUID> applicationIds, final UUID bundleId, final String eventTypeName, final boolean excludeMutedTypes) {
+        return this.internalGetEventTypes(securityContext, uriInfo, query, applicationIds, bundleId, eventTypeName, excludeMutedTypes);
+    }
+
+    public Page<EventType> internalGetEventTypes(final SecurityContext securityContext, final UriInfo uriInfo, final Query query, final Set<UUID> applicationIds, final UUID bundleId, final String eventTypeName, final boolean excludeMutedTypes) {
         List<UUID> unmutedEventTypeIds = excludeMutedTypes
-                ? behaviorGroupRepository.findUnmutedEventTypes(getOrgId(securityContext), bundleId)
-                : null;
+            ? behaviorGroupRepository.findUnmutedEventTypes(getOrgId(securityContext), bundleId)
+            : null;
 
         List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds);
         Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds);
+
         return new Page<>(
-                eventTypes,
-                PageLinksBuilder.build(uriInfo.getPath(), count, query.getLimit().getLimit(), query.getLimit().getOffset()),
-                new Meta(count)
+            eventTypes,
+            PageLinksBuilder.build(uriInfo.getPath(), count, query.getLimit().getLimit(), query.getLimit().getOffset()),
+            new Meta(count)
         );
     }
 
@@ -147,8 +207,22 @@ public class NotificationResource {
     @Path("/bundles/{bundleName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching by its name.")
+    public Bundle getBundleByName(@Context SecurityContext securityContext, @PathParam("bundleName") String bundleName) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetBundleByName(securityContext, bundleName);
+        } else {
+            return this.legacyRBACGetBundleByName(securityContext, bundleName);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Bundle getBundleByName(@PathParam("bundleName") String bundleName) {
+    public Bundle legacyRBACGetBundleByName(final SecurityContext securityContext, final String bundleName) {
+        return this.internalGetBundleByName(securityContext, bundleName);
+    }
+
+    public Bundle internalGetBundleByName(final SecurityContext securityContext, final String bundleName) {
         Bundle bundle = bundleRepository.getBundle(bundleName);
         if (bundle == null) {
             throw new NotFoundException();
@@ -161,12 +235,27 @@ public class NotificationResource {
     @Path("/bundles/{bundleName}/applications/{applicationName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an application by bundle and application names", description = "Retrieves an application by bundle and application names. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Application getApplicationByNameAndBundleName(
+            @Context SecurityContext securityContext,
             @PathParam("bundleName") String bundleName,
             @PathParam("applicationName") String applicationName
     ) {
-        Application application = applicationRepository.getApplication(bundleName, applicationName);
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetApplicationByNameAndBundleName(securityContext, bundleName, applicationName);
+        } else {
+            return this.legacyRBACGetApplicationByNameAndBundleName(securityContext, bundleName, applicationName);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public Application legacyRBACGetApplicationByNameAndBundleName(final SecurityContext securityContext, final String bundleName, final String applicationName) {
+        return internalGetApplicationByNameAndBundleName(securityContext, bundleName, applicationName);
+    }
+
+    public Application internalGetApplicationByNameAndBundleName(final SecurityContext securityContext, final String bundleName, final String applicationName) {
+        final Application application = applicationRepository.getApplication(bundleName, applicationName);
         if (application == null) {
             throw new NotFoundException();
         }
@@ -178,12 +267,27 @@ public class NotificationResource {
     @Path("/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an event type by bundle, application and event type names", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public EventType getEventTypesByNameAndBundleAndApplicationName(
+            @Context SecurityContext securityContext,
             @PathParam("bundleName") String bundleName,
             @PathParam("applicationName") String applicationName,
             @PathParam("eventTypeName") String eventTypeName
     ) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetEventTypesByNameAndBundleAndApplicationName(securityContext, bundleName, applicationName, eventTypeName);
+        } else {
+            return this.legacyRBACGetEventTypesByNameAndBundleAndApplicationName(securityContext, bundleName, applicationName, eventTypeName);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public EventType legacyRBACGetEventTypesByNameAndBundleAndApplicationName(final SecurityContext securityContext, final String bundleName, final String applicationName, final String eventTypeName) {
+        return this.internalGetEventTypesByNameAndBundleAndApplicationName(securityContext, bundleName, applicationName, eventTypeName);
+    }
+
+    public EventType internalGetEventTypesByNameAndBundleAndApplicationName(final SecurityContext securityContext, final String bundleName, final String applicationName, final String eventTypeName) {
         EventType eventType = applicationRepository.getEventType(bundleName, applicationName, eventTypeName);
         if (eventType == null) {
             throw new NotFoundException();
@@ -191,7 +295,6 @@ public class NotificationResource {
 
         return eventType;
     }
-
 
     /*
      * Called by the UI to build the behavior group removal confirmation screen.
@@ -201,10 +304,26 @@ public class NotificationResource {
     @Path("/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List the event types affected by the removal of a behavior group", description = "Lists the event types that will be affected by the removal of a behavior group. Use this endpoint to see which event types will be removed if you delete a behavior group.")
+    public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(
+        @Context SecurityContext sec,
+        @Parameter(description = "The UUID of the behavior group to check") @PathParam("behaviorGroupId") UUID behaviorGroupId
+    ) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.BEHAVIOR_GROUP, behaviorGroupId.toString());
+
+            return this.internalGetEventTypesAffectedByRemovalOfBehaviorGroup(sec, behaviorGroupId);
+        } else {
+            return this.legacyRBACGetEventTypesAffectedByRemovalOfBehaviorGroup(sec,  behaviorGroupId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec,
-                     @Parameter(description = "The UUID of the behavior group to check") @PathParam("behaviorGroupId") UUID behaviorGroupId) {
-        String orgId = getOrgId(sec);
+    public List<EventType> legacyRBACGetEventTypesAffectedByRemovalOfBehaviorGroup(final SecurityContext securityContext, final UUID behaviorGroupId) {
+        return this.internalGetEventTypesAffectedByRemovalOfBehaviorGroup(securityContext, behaviorGroupId);
+    }
+
+    public List<EventType> internalGetEventTypesAffectedByRemovalOfBehaviorGroup(final SecurityContext securityContext, final UUID behaviorGroupId) {
+        String orgId = getOrgId(securityContext);
         return behaviorGroupRepository.findEventTypesByBehaviorGroupId(orgId, behaviorGroupId);
     }
 
@@ -216,9 +335,26 @@ public class NotificationResource {
     @Path("/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List the behavior groups affected by the removal of an endpoint", description = "Lists the behavior groups that are affected by the removal of an endpoint. Use this endpoint to understand how removing an endpoint affects existing behavior groups.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
-        String orgId = getOrgId(sec);
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.ENDPOINT, endpointId.toString());
+
+            final List<BehaviorGroup> behaviorGroups = this.internalGetBehaviorGroupsAffectedByRemovalOfEndpoint(sec, endpointId);
+            behaviorGroups.forEach(bg -> this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.BEHAVIOR_GROUP, bg.getId().toString()));
+
+            return behaviorGroups;
+        } else {
+            return this.legacyRBACGetBehaviorGroupsAffectedByRemovalOfEndpoint(sec, endpointId);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public List<BehaviorGroup> legacyRBACGetBehaviorGroupsAffectedByRemovalOfEndpoint(final SecurityContext securityContext, final UUID endpointId) {
+        return this.internalGetBehaviorGroupsAffectedByRemovalOfEndpoint(securityContext, endpointId);
+    }
+
+    public List<BehaviorGroup> internalGetBehaviorGroupsAffectedByRemovalOfEndpoint(final SecurityContext securityContext, final UUID endpointId) {
+        String orgId = getOrgId(securityContext);
         return behaviorGroupRepository.findBehaviorGroupsByEndpointId(orgId, endpointId);
     }
 
@@ -272,12 +408,26 @@ public class NotificationResource {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = CreateBehaviorGroupResponse.class))),
         @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)), description = "Bad or no content passed.")
     })
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public CreateBehaviorGroupResponse createBehaviorGroup(
         @Context final SecurityContext sec,
         @RequestBody(required = true) @Valid @NotNull final CreateBehaviorGroupRequest request
     ) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.NOTIFICATIONS_WRITE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalCreateBehaviorGroup(sec, request);
+        } else {
+            return this.legacyRBACCreateBehaviorGroup(sec, request);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public CreateBehaviorGroupResponse legacyRBACCreateBehaviorGroup(final SecurityContext securityContext, final CreateBehaviorGroupRequest request) {
+        return this.internalCreateBehaviorGroup(securityContext, request);
+    }
+
+    public CreateBehaviorGroupResponse internalCreateBehaviorGroup(final SecurityContext sec, final CreateBehaviorGroupRequest request) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
@@ -332,12 +482,30 @@ public class NotificationResource {
                 description = "No behavior group found with the passed id.")
     })
     @Operation(summary = "Update a behavior group", description = "Updates the details of a behavior group. Use this endpoint to update the list of related endpoints and event types associated with this behavior group.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public Response updateBehaviorGroup(@Context SecurityContext sec,
                                         @Parameter(description = "The UUID of the behavior group to update") @PathParam("id") UUID id,
                                         @RequestBody(description = "New parameters", required = true) @NotNull @Valid UpdateBehaviorGroupRequest request) {
-        String orgId = getOrgId(sec);
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.WRITE, ResourceType.BEHAVIOR_GROUP, id.toString());
+
+            if (request.endpointIds != null) {
+                request.endpointIds.forEach(endpointId -> this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.ENDPOINT, endpointId.toString()));
+            }
+
+            return this.internalUpdateBehaviorGroup(sec, id, request);
+        } else {
+            return this.legacyRBACUpdateBehaviorGroup(sec, id, request);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public Response legacyRBACUpdateBehaviorGroup(final SecurityContext securityContext, final UUID id, final UpdateBehaviorGroupRequest request) {
+        return this.internalUpdateBehaviorGroup(securityContext, id, request);
+    }
+
+    public Response internalUpdateBehaviorGroup(final SecurityContext securityContext, final UUID id, final UpdateBehaviorGroupRequest request) {
+        String orgId = getOrgId(securityContext);
 
         if (request.displayName != null) {
             UUID bundleId = behaviorGroupRepository.getBundleId(orgId, id);
@@ -364,11 +532,25 @@ public class NotificationResource {
     @Path("/behaviorGroups/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Delete a behavior group", description = "Deletes a behavior group and all of its configured actions. Use this endpoint when you no longer need a behavior group.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Transactional
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec,
                                        @Parameter(description = "The UUID of the behavior group to delete") @PathParam("id") UUID behaviorGroupId) {
-        String orgId = getOrgId(sec);
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.WRITE, ResourceType.BEHAVIOR_GROUP, behaviorGroupId.toString());
+
+            return this.internalDeleteBehaviorGroup(sec, behaviorGroupId);
+        } else {
+            return this.legacyRBACDeleteBehaviorGroup(sec, behaviorGroupId);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public Boolean legacyRBACDeleteBehaviorGroup(final SecurityContext securityContext, final UUID behaviorGroupId) {
+        return this.internalDeleteBehaviorGroup(securityContext, behaviorGroupId);
+    }
+
+    public Boolean internalDeleteBehaviorGroup(final SecurityContext securityContext, final UUID behaviorGroupId) {
+        String orgId = getOrgId(securityContext);
         return behaviorGroupRepository.delete(orgId, behaviorGroupId);
     }
 
@@ -377,12 +559,27 @@ public class NotificationResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of behavior group actions", description = "Updates the list of actions to be executed in that particular behavior group after an event is received.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateBehaviorGroupActions(@Context SecurityContext sec,
                        @Parameter(description = "The UUID of the behavior group to update") @PathParam("behaviorGroupId") UUID behaviorGroupId,
                        @Parameter(description = "List of endpoint ids of the actions") List<UUID> endpointIds) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.WRITE, ResourceType.BEHAVIOR_GROUP, behaviorGroupId.toString());
+            endpointIds.forEach(endpointId -> this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.ENDPOINT, endpointId.toString()));
+
+            return this.internalUpdateBehaviorGroupActions(sec, behaviorGroupId, endpointIds);
+        } else {
+            return this.legacyRBACUpdateBehaviorGroupActions(sec, behaviorGroupId, endpointIds);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public Response legacyRBACUpdateBehaviorGroupActions(final SecurityContext securityContext, final UUID behaviorGroupId, final List<UUID> endpointIds) {
+        return this.internalUpdateBehaviorGroupActions(securityContext, behaviorGroupId, endpointIds);
+    }
+
+    public Response internalUpdateBehaviorGroupActions(final SecurityContext securityContext, final UUID behaviorGroupId, final List<UUID> endpointIds) {
         if (endpointIds == null) {
             throw new BadRequestException("The request body must contain a list (possibly empty) of endpoints identifiers");
         }
@@ -393,7 +590,7 @@ public class NotificationResource {
         if (endpointIds.size() != endpointIds.stream().distinct().count()) {
             throw new BadRequestException("The endpoints identifiers list should not contain duplicates");
         }
-        String orgId = getOrgId(sec);
+        String orgId = getOrgId(securityContext);
         behaviorGroupRepository.updateBehaviorGroupActions(orgId, behaviorGroupId, endpointIds);
         return Response.ok().build();
     }
@@ -403,12 +600,27 @@ public class NotificationResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Update the list of behavior groups for an event type", description = "Updates the list of behavior groups associated with an event type.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateEventTypeBehaviors(@Context SecurityContext sec,
                          @Parameter(description = "UUID of the eventType to associate with the behavior group(s)") @PathParam("eventTypeId") UUID eventTypeId,
                          @Parameter(description = "Set of behavior group ids to associate") Set<UUID> behaviorGroupIds) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.NOTIFICATIONS_WRITE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+            behaviorGroupIds.forEach(id -> this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.BEHAVIOR_GROUP, id.toString()));
+
+            return this.internalUpdateEventTypeBehaviors(sec, eventTypeId, behaviorGroupIds);
+        } else {
+            return this.legacyRBACUpdateEventTypeBehaviors(sec, eventTypeId, behaviorGroupIds);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public Response legacyRBACUpdateEventTypeBehaviors(final SecurityContext securityContext, final UUID eventTypeId, final Set<UUID> behaviorGroupIds) {
+        return this.internalUpdateEventTypeBehaviors(securityContext, eventTypeId, behaviorGroupIds);
+    }
+
+    public Response internalUpdateEventTypeBehaviors(final SecurityContext securityContext, final UUID eventTypeId, final Set<UUID> behaviorGroupIds) {
         if (behaviorGroupIds == null) {
             throw new BadRequestException("The request body must contain a list (possibly empty) of behavior groups identifiers");
         }
@@ -416,7 +628,7 @@ public class NotificationResource {
         if (behaviorGroupIds.contains(null)) {
             throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
         }
-        String orgId = getOrgId(sec);
+        String orgId = getOrgId(securityContext);
         behaviorGroupRepository.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
         return Response.ok().build();
     }
@@ -430,28 +642,56 @@ public class NotificationResource {
     @PUT
     @Path("/eventTypes/{eventTypeUuid}/behaviorGroups/{behaviorGroupUuid}")
     @Operation(summary = "Add a behavior group to the given event type.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204")
     public void appendBehaviorGroupToEventType(
             @Context final SecurityContext securityContext,
             @RestPath final UUID behaviorGroupUuid,
             @RestPath final UUID eventTypeUuid
     ) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, ResourcePermission.VIEW, ResourceType.BEHAVIOR_GROUP, behaviorGroupUuid.toString());
+
+            this.internalAppendBehaviorGroupToEventType(securityContext, behaviorGroupUuid, eventTypeUuid);
+        } else {
+            this.legacyRBACAppendBehaviorGroupToEventType(securityContext, behaviorGroupUuid, eventTypeUuid);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public void legacyRBACAppendBehaviorGroupToEventType(final SecurityContext securityContext, final UUID behaviorGroupId, final UUID eventTypeId) {
+        this.internalAppendBehaviorGroupToEventType(securityContext, behaviorGroupId, eventTypeId);
+    }
+
+    public void internalAppendBehaviorGroupToEventType(final SecurityContext securityContext, final UUID behaviorGroupId, final UUID eventTypeId) {
         final String orgId = getOrgId(securityContext);
 
-        this.behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, behaviorGroupUuid, eventTypeUuid);
+        this.behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, behaviorGroupId, eventTypeId);
     }
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
     @Operation(summary = "Add a behavior group to an event type", description = "Adds a behavior group to the specified event type.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204")
     public void deleteBehaviorGroupFromEventType(
             @Context final SecurityContext securityContext,
             @RestPath final UUID eventTypeId,
             @RestPath final UUID behaviorGroupId
     ) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, ResourcePermission.VIEW, ResourceType.BEHAVIOR_GROUP, behaviorGroupId.toString());
+
+            this.internalDeleteBehaviorGroupFromEventType(securityContext, eventTypeId, behaviorGroupId);
+        } else {
+            this.legacyRBACDeleteBehaviorGroupFromEventType(securityContext, eventTypeId, behaviorGroupId);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public void legacyRBACDeleteBehaviorGroupFromEventType(final SecurityContext securityContext, final UUID eventTypeId, final UUID behaviorGroupId) {
+        this.internalDeleteBehaviorGroupFromEventType(securityContext, eventTypeId, behaviorGroupId);
+    }
+
+    public void internalDeleteBehaviorGroupFromEventType(final SecurityContext securityContext, final UUID eventTypeId, final UUID behaviorGroupId) {
         final String orgId = getOrgId(securityContext);
 
         this.behaviorGroupRepository.deleteBehaviorGroupFromEventType(eventTypeId, behaviorGroupId, orgId);
@@ -461,10 +701,26 @@ public class NotificationResource {
     @Path("/bundles/{bundleId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List behavior groups in a bundle", description = "Lists the behavior groups associated with a bundle. Use this endpoint to see the behavior groups that are configured for a particular bundle for a particular tenant.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+
     public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec,
                 @Parameter(description = "UUID of the bundle to retrieve the behavior groups for.") @PathParam("bundleId") UUID bundleId) {
-        String orgId = getOrgId(sec);
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            final List<BehaviorGroup> behaviorGroups = this.internalFindBehaviorGroupsByBundleId(sec, bundleId);
+            behaviorGroups.forEach(bg -> this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.VIEW, ResourceType.BEHAVIOR_GROUP, bg.getId().toString()));
+
+            return behaviorGroups;
+        } else {
+            return this.legacyRBACInternalFindBehaviorGroupsByBundleId(sec, bundleId);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public List<BehaviorGroup> legacyRBACInternalFindBehaviorGroupsByBundleId(final SecurityContext securityContext, final UUID bundleId) {
+        return this.internalFindBehaviorGroupsByBundleId(securityContext, bundleId);
+    }
+
+    public List<BehaviorGroup> internalFindBehaviorGroupsByBundleId(final SecurityContext securityContext, final UUID bundleId) {
+        String orgId = getOrgId(securityContext);
         List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(orgId, bundleId);
         endpointRepository.loadProperties(
                 behaviorGroups
