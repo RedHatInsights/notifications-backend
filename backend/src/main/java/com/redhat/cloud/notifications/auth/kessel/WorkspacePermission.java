@@ -4,6 +4,8 @@ public enum WorkspacePermission implements KesselPermission {
     EVENTS_READ("notifications_events_read"),
     INTEGRATIONS_READ("notifications_integrations_view"),
     INTEGRATIONS_WRITE("notifications_integrations_write"),
+    INTERNAL_ADMINISTRATOR("notifications_internal_administrator_access"),
+    INTERNAL_USER("notifications_internal_user_access"),
     NOTIFICATIONS_READ("notifications_notifications_view"),
     NOTIFICATIONS_WRITE("notifications_notifications_write");
 

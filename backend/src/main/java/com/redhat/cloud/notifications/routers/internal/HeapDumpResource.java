@@ -1,8 +1,11 @@
 package com.redhat.cloud.notifications.routers.internal;
 
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -22,6 +25,11 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 @Path(API_INTERNAL + "/heap_dump")
 @RolesAllowed(RBAC_INTERNAL_ADMIN)
 public class HeapDumpResource {
+    @Inject
+    BackendConfig backendConfig;
+
+    @Inject
+    KesselAuthorization kesselAuthorization;
 
     @ConfigProperty(name = "quarkus.log.cloudwatch.log-stream-name", defaultValue = "localhost")
     String hostname;

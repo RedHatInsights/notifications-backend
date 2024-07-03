@@ -2,6 +2,10 @@ package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.WorkspacePermission;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
@@ -75,6 +79,7 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
+import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
@@ -86,6 +91,9 @@ import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 public class InternalResource {
 
     private static final Pattern GIT_COMMIT_ID_PATTERN = Pattern.compile("git.commit.id.abbrev=([0-9a-f]{7})");
+
+    @Inject
+    BackendConfig backendConfig;
 
     @Inject
     BundleRepository bundleRepository;
@@ -105,6 +113,9 @@ public class InternalResource {
 
     @Inject
     Environment environment;
+
+    @Inject
+    KesselAuthorization kesselAuthorization;
 
     @Inject
     StatusRepository statusRepository;
@@ -145,8 +156,22 @@ public class InternalResource {
     @GET
     @Path("/serverInfo")
     @Produces(APPLICATION_JSON)
+    public ServerInfo getServerInfo(@Context final SecurityContext securityContext) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetServerInfo();
+        } else {
+            return this.legacyRBACGetServerInfo();
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public ServerInfo getServerInfo() {
+    public ServerInfo legacyRBACGetServerInfo() {
+        return this.internalGetServerInfo();
+    }
+
+    public ServerInfo internalGetServerInfo() {
         ServerInfo info = new ServerInfo();
         String environmentName = System.getenv("ENV_NAME");
 
@@ -157,8 +182,22 @@ public class InternalResource {
 
     @GET
     @Path("/")
+    public void httpRoot(@Context final SecurityContext securityContext) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            this.internalHttpRoot();
+        } else {
+            this.legacyRBACHttpRoot();
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public void httpRoot() {
+    public void legacyRBACHttpRoot() {
+        this.internalHttpRoot();
+    }
+
+    public void internalHttpRoot() {
         throw new RedirectionException(Response.Status.OK, URI.create("index.html"));
     }
 
@@ -175,26 +214,68 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
+    public Bundle createBundle(@Context final SecurityContext securityContext, @NotNull @Valid Bundle bundle) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalCreateBundle(bundle);
+        } else {
+            return this.legacyRBACCreateBundle(bundle);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public Bundle createBundle(@NotNull @Valid Bundle bundle) {
-        return bundleRepository.createBundle(bundle);
+    public Bundle legacyRBACCreateBundle(final Bundle bundle) {
+        return this.internalCreateBundle(bundle);
+    }
+
+    public Bundle internalCreateBundle(final Bundle bundle) {
+        return this.bundleRepository.createBundle(bundle);
     }
 
     @GET
     @Path("/bundles")
     @Produces(APPLICATION_JSON)
+    public List<Bundle> getBundles(@Context final SecurityContext securityContext) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetBundles();
+        } else {
+            return this.legacyRBACGetBundles();
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public List<Bundle> getBundles() {
+    public List<Bundle> legacyRBACGetBundles() {
+        return this.internalGetBundles();
+    }
+
+    public List<Bundle> internalGetBundles() {
         // Return configured with types?
-        return bundleRepository.getBundles();
+        return this.bundleRepository.getBundles();
     }
 
     @GET
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
+    public Bundle getBundle(@Context final SecurityContext securityContext, @PathParam("bundleId") UUID bundleId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetBundle(bundleId);
+        } else {
+            return this.legacyRBACGetBundle(bundleId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Bundle getBundle(@PathParam("bundleId") UUID bundleId) {
-        Bundle bundle = bundleRepository.getBundle(bundleId);
+    public Bundle legacyRBACGetBundle(final UUID bundleId) {
+        return this.internalGetBundle(bundleId);
+    }
+
+    public Bundle internalGetBundle(final UUID bundleId) {
+        Bundle bundle = this.bundleRepository.getBundle(bundleId);
         if (bundle == null) {
             throw new NotFoundException();
         } else {
@@ -212,9 +293,23 @@ public class InternalResource {
      * We need to increase the transaction timeout for this method because it involves
      * an update of 'event' table records based on 'bundleId' column which is not indexed.
      */
+    public Response updateBundle(@Context final SecurityContext securityContext, @PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalUpdateBundle(bundleId, bundle);
+        } else {
+            return this.legacyRBACUpdateBundle(bundleId, bundle);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public Response updateBundle(@PathParam("bundleId") UUID bundleId, @NotNull @Valid Bundle bundle) {
-        int rowCount = bundleRepository.updateBundle(bundleId, bundle);
+    public Response legacyRBACUpdateBundle(final UUID bundleId, final Bundle bundle) {
+        return this.internalUpdateBundle(bundleId, bundle);
+    }
+
+    public Response internalUpdateBundle(final UUID bundleId, final Bundle bundle) {
+        int rowCount = this.bundleRepository.updateBundle(bundleId, bundle);
         if (rowCount == 0) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else {
@@ -231,17 +326,45 @@ public class InternalResource {
      * We need to increase the transaction timeout for this method because it involves
      * a full scan of 'event' table based on 'bundleId' column which is not indexed.
      */
+    public boolean deleteBundle(@Context final SecurityContext securityContext, @PathParam("bundleId") UUID bundleId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalDeleteBundle(bundleId);
+        } else {
+            return this.legacyRBACDeleteBundle(bundleId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public boolean deleteBundle(@PathParam("bundleId") UUID bundleId) {
-        return bundleRepository.deleteBundle(bundleId);
+    public boolean legacyRBACDeleteBundle(final UUID bundleId) {
+        return this.internalDeleteBundle(bundleId);
+    }
+
+    public boolean internalDeleteBundle(final UUID bundleId) {
+        return this.bundleRepository.deleteBundle(bundleId);
     }
 
     @GET
     @Path("/bundles/{bundleId}/applications")
     @Produces(APPLICATION_JSON)
+    public List<Application> getApplications(@Context final SecurityContext securityContext, @PathParam("bundleId") UUID bundleId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetApplications(bundleId);
+        } else {
+            return this.legacyRBACGetApplications(bundleId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public List<Application> getApplications(@PathParam("bundleId") UUID bundleId) {
-        return bundleRepository.getApplications(bundleId);
+    public List<Application> legacyRBACGetApplications(final UUID bundleId) {
+        return this.internalGetApplications(bundleId);
+    }
+
+    public List<Application> internalGetApplications(final UUID bundleId) {
+        return this.bundleRepository.getApplications(bundleId);
     }
 
     @POST
@@ -249,15 +372,29 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
+    public ApplicationDTO createApplication(@Context SecurityContext securityContext, @NotNull @Valid AddApplicationRequest request) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalCreateApplication(securityContext, request);
+        } else {
+            return this.legacyRBACCreateApplication(securityContext, request);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public ApplicationDTO createApplication(@Context SecurityContext sec, @NotNull @Valid AddApplicationRequest request) {
-        securityContextUtil.hasPermissionForRole(sec, request.ownerRole);
+    public ApplicationDTO legacyRBACCreateApplication(final SecurityContext securityContext, final AddApplicationRequest request) {
+        return this.internalCreateApplication(securityContext, request);
+    }
+
+    public ApplicationDTO internalCreateApplication(final SecurityContext securityContext, final AddApplicationRequest request) {
+        this.securityContextUtil.hasPermissionForRole(securityContext, request.ownerRole);
 
         Application app = new Application();
         app.setBundleId(request.bundleId);
         app.setDisplayName(request.displayName);
         app.setName(request.name);
-        app = applicationRepository.createApp(app);
+        app = this.applicationRepository.createApp(app);
 
         InternalRoleAccess internalRoleAccess = null;
         if (request.ownerRole != null && !request.ownerRole.isBlank()) {
@@ -275,8 +412,22 @@ public class InternalResource {
     @GET
     @Path("/applications/{appId}")
     @Produces(APPLICATION_JSON)
+    public ApplicationDTO getApplication(@Context final SecurityContext securityContext, @PathParam("appId") UUID appId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetApplication(appId);
+        } else {
+            return this.legacyRBACGetApplication(appId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public ApplicationDTO getApplication(@PathParam("appId") UUID appId) {
+    public ApplicationDTO legacyRBACGetApplication(final UUID appId) {
+        return this.internalGetApplication(appId);
+    }
+
+    public ApplicationDTO internalGetApplication(final UUID appId) {
         final Application app = applicationRepository.getApplication(appId);
 
         if (app == null) {
@@ -293,11 +444,25 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
+    public Response updateApplication(@Context SecurityContext securityContext, @PathParam("appId") UUID appId, @NotNull UpdateApplicationRequest uar) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalUpdateApplication(securityContext, appId, uar);
+        } else {
+            return this.legacyRBACUpdateApplication(securityContext, appId, uar);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Response updateApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId, @NotNull UpdateApplicationRequest uar) {
+    public Response legacyRBACUpdateApplication(final SecurityContext securityContext, final UUID appId, final UpdateApplicationRequest uar) {
+        return this.internalUpdateApplication(securityContext, appId, uar);
+    }
+
+    public Response internalUpdateApplication(final SecurityContext securityContext, final UUID appId, final UpdateApplicationRequest uar) {
         // Make sure that the user has the permission to modify the application
         // or its permission.
-        securityContextUtil.hasPermissionForApplication(sec, appId);
+        this.securityContextUtil.hasPermissionForApplication(securityContext, appId);
 
         // Attempt fetching the application.
         final Application application = this.applicationRepository.getApplication(appId);
@@ -346,17 +511,45 @@ public class InternalResource {
      * We need to increase the transaction timeout for this method because it involves
      * a cascade delete action on 'event' table based on 'applicationId' column which is not indexed.
      */
+    public boolean deleteApplication(@Context final SecurityContext securityContext, @PathParam("appId") UUID appId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalDeleteApplication(appId);
+        } else {
+            return this.legacyRBACDeleteApplication(appId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public boolean deleteApplication(@Context SecurityContext sec, @PathParam("appId") UUID appId) {
-        return applicationRepository.deleteApplication(appId);
+    public boolean legacyRBACDeleteApplication(final UUID appId) {
+        return this.internalDeleteApplication(appId);
+    }
+
+    public boolean internalDeleteApplication(final UUID appId) {
+        return this.applicationRepository.deleteApplication(appId);
     }
 
     @GET
     @Path("/applications/{appId}/eventTypes")
     @Produces(APPLICATION_JSON)
+    public List<EventType> getEventTypes(@Context final SecurityContext securityContext, @PathParam("appId") UUID appId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetEventTypes(appId);
+        } else {
+            return this.legacyRBACGetEventTypes(appId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public List<EventType> getEventTypes(@PathParam("appId") UUID appId) {
-        return applicationRepository.getEventTypes(appId);
+    public List<EventType> legacyRBACGetEventTypes(final UUID appId) {
+        return this.internalGetEventTypes(appId);
+    }
+
+    public List<EventType> internalGetEventTypes(final UUID appId) {
+        return this.applicationRepository.getEventTypes(appId);
     }
 
     @POST
@@ -364,9 +557,24 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
+    public EventType createEventType(@Context SecurityContext securityContext, @NotNull @Valid EventType eventType) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalCreateEventType(securityContext, eventType);
+        } else {
+            return this.legacyRBACCreateEventType(securityContext, eventType);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public EventType createEventType(@Context SecurityContext sec, @NotNull @Valid EventType eventType) {
-        securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
+    public EventType legacyRBACCreateEventType(final SecurityContext securityContext, final EventType eventType) {
+        return this.internalCreateEventType(securityContext, eventType);
+    }
+
+    public EventType internalCreateEventType(final SecurityContext securityContext, final EventType eventType) {
+        this.securityContextUtil.hasPermissionForApplication(securityContext, eventType.getApplicationId());
+
         return applicationRepository.createEventType(eventType);
     }
 
@@ -380,9 +588,23 @@ public class InternalResource {
      * We need to increase the transaction timeout for this method because it involves
      * an update of 'event' table records based on 'eventTypeId' column which is not indexed.
      */
+    public Response updateEventType(@Context SecurityContext securityContext, @PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return internalUpdateEventType(securityContext, eventTypeId, eventType);
+        } else {
+            return legacyRBACUpdateEventType(securityContext, eventTypeId, eventType);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Response updateEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid EventType eventType) {
-        securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
+    public Response legacyRBACUpdateEventType(final SecurityContext securityContext, final UUID eventTypeId, final EventType eventType) {
+        return this.internalUpdateEventType(securityContext, eventTypeId, eventType);
+    }
+
+    public Response internalUpdateEventType(final SecurityContext sec, final UUID eventTypeId, final EventType eventType) {
+        this.securityContextUtil.hasPermissionForApplication(sec, eventType.getApplicationId());
         int rowCount = applicationRepository.updateEventType(eventTypeId, eventType);
         if (rowCount == 0) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -396,8 +618,22 @@ public class InternalResource {
     @Path("/eventTypes/{eventTypeId}/updateVisibility")
     @Produces(TEXT_PLAIN)
     @Transactional
+    public Response updateEventTypeVisibility(@Context final SecurityContext securityContext, @PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid boolean isVisible) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalUpdateEventTypeVisibility(eventTypeId, isVisible);
+        } else {
+            return this.legacyRBACUpdateEventTypeVisibility(eventTypeId, isVisible);
+        }
+    }
+
     @RolesAllowed(RBAC_INTERNAL_ADMIN)
-    public Response updateEventTypeVisibility(@PathParam("eventTypeId") UUID eventTypeId, @NotNull @Valid boolean isVisible) {
+    public Response legacyRBACUpdateEventTypeVisibility(final UUID eventTypeId, final boolean isVisible) {
+        return this.internalUpdateEventTypeVisibility(eventTypeId, isVisible);
+    }
+
+    public Response internalUpdateEventTypeVisibility(final UUID eventTypeId, final boolean isVisible) {
         int rowCount = applicationRepository.updateEventTypeVisibility(eventTypeId, isVisible);
         if (rowCount == 0) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -415,9 +651,22 @@ public class InternalResource {
      * We need to increase the transaction timeout for this method because it involves
      * a full scan of 'event' table based on 'eventTypeId' column which is not indexed.
      */
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public boolean deleteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
-        securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
+    public boolean deleteEventType(@Context SecurityContext securityContext, @PathParam("eventTypeId") UUID eventTypeId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalDeleteEventType(securityContext, eventTypeId);
+        } else {
+            return this.legacyRBACDeleteEventType(securityContext, eventTypeId);
+        }
+    }
+
+    public boolean legacyRBACDeleteEventType(final SecurityContext securityContext, final UUID eventTypeId) {
+        return this.internalDeleteEventType(securityContext, eventTypeId);
+    }
+
+    public boolean internalDeleteEventType(final SecurityContext securityContext, final UUID eventTypeId) {
+        this.securityContextUtil.hasPermissionForEventType(securityContext, eventTypeId);
         return applicationRepository.deleteEventTypeById(eventTypeId);
     }
 
@@ -425,25 +674,53 @@ public class InternalResource {
     @Path("/status")
     @Consumes(APPLICATION_JSON)
     @Transactional
+    public void setCurrentStatus(@Context final SecurityContext securityContext, @NotNull @Valid CurrentStatus status) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            this.internalSetCurrentStatus(status);
+        } else {
+            this.legacyRBACSetCurrentStatus(status);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public void setCurrentStatus(@NotNull @Valid CurrentStatus status) {
-        statusRepository.setCurrentStatus(status);
+    public void legacyRBACSetCurrentStatus(final CurrentStatus status) {
+        this.internalSetCurrentStatus(status);
+    }
+
+    public void internalSetCurrentStatus(final CurrentStatus status) {
+        this.statusRepository.setCurrentStatus(status);
     }
 
     @GET
     @Path("/behaviorGroups/default")
     @Produces(APPLICATION_JSON)
+    public List<BehaviorGroup> getDefaultBehaviorGroups(@Context final SecurityContext securityContext) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetDefaultBehaviorGroups();
+        } else {
+            return this.legacyRBACGetDefaultBehaviorGroups();
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public List<BehaviorGroup> getDefaultBehaviorGroups() {
+    public List<BehaviorGroup> legacyRBACGetDefaultBehaviorGroups() {
+        return this.internalGetDefaultBehaviorGroups();
+    }
+
+    public List<BehaviorGroup> internalGetDefaultBehaviorGroups() {
         List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findDefaults();
         endpointRepository.loadProperties(
-                behaviorGroups
-                        .stream()
-                        .map(BehaviorGroup::getActions)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .map(BehaviorGroupAction::getEndpoint)
-                        .collect(Collectors.toList())
+            behaviorGroups
+                .stream()
+                .map(BehaviorGroup::getActions)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .map(BehaviorGroupAction::getEndpoint)
+                .collect(Collectors.toList())
         );
         return behaviorGroups;
     }
@@ -453,9 +730,23 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
+    public BehaviorGroup createDefaultBehaviorGroup(@Context final SecurityContext securityContext, @NotNull @Valid BehaviorGroup behaviorGroup) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalCreateDefaultBehaviorGroup(behaviorGroup);
+        } else {
+            return this.legacyRBACCreateDefaultBehaviorGroup(behaviorGroup);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public BehaviorGroup createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.createDefault(behaviorGroup);
+    public BehaviorGroup legacyRBACCreateDefaultBehaviorGroup(final BehaviorGroup behaviorGroup) {
+        return this.internalCreateDefaultBehaviorGroup(behaviorGroup);
+    }
+
+    public BehaviorGroup internalCreateDefaultBehaviorGroup(final BehaviorGroup behaviorGroup) {
+        return this.behaviorGroupRepository.createDefault(behaviorGroup);
     }
 
     @PUT
@@ -464,10 +755,24 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Update a default behavior group.")
     @Transactional
+    public boolean updateDefaultBehaviorGroup(@Context final SecurityContext securityContext, @PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalUpdateDefaultBehaviorGroup(id, behaviorGroup);
+        } else {
+            return this.legacyRBACUpdateDefaultBehaviorGroup(id, behaviorGroup);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public boolean updateDefaultBehaviorGroup(@PathParam("id") UUID id, @NotNull @Valid BehaviorGroup behaviorGroup) {
+    public boolean legacyRBACUpdateDefaultBehaviorGroup(final UUID id, final BehaviorGroup behaviorGroup) {
+        return this.internalUpdateDefaultBehaviorGroup(id, behaviorGroup);
+    }
+
+    public boolean internalUpdateDefaultBehaviorGroup(final UUID id, final BehaviorGroup behaviorGroup) {
         behaviorGroup.setId(id);
-        behaviorGroupRepository.updateDefault(behaviorGroup);
+        this.behaviorGroupRepository.updateDefault(behaviorGroup);
         return true;
     }
 
@@ -476,9 +781,23 @@ public class InternalResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Deletes a default behavior group.")
     @Transactional
+    public boolean deleteDefaultBehaviorGroup(@Context final SecurityContext securityContext, @PathParam("id") UUID id) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalDeleteDefaultBehaviorGroup(id);
+        } else {
+            return this.legacyRBACDeleteDefaultBehaviorGroup(id);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public boolean deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
-        return behaviorGroupRepository.deleteDefault(id);
+    public boolean legacyRBACDeleteDefaultBehaviorGroup(final UUID id) {
+        return this.internalDeleteDefaultBehaviorGroup(id);
+    }
+
+    public boolean internalDeleteDefaultBehaviorGroup(final UUID id) {
+        return this.behaviorGroupRepository.deleteDefault(id);
     }
 
     @PUT
@@ -488,8 +807,22 @@ public class InternalResource {
     @Operation(summary = "Update the list of actions of a default behavior group.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
+    public Response updateDefaultBehaviorGroupActions(@Context final SecurityContext securityContext, @PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalDefaultBehaviorGroupActions(behaviorGroupId, propertiesList);
+        } else {
+            return this.legacyRBACDefaultBehaviorGroupActions(behaviorGroupId, propertiesList);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public Response updateDefaultBehaviorGroupActions(@PathParam("behaviorGroupId") UUID behaviorGroupId, List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
+    public Response legacyRBACDefaultBehaviorGroupActions(final UUID behaviorGroupId, final List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
+        return this.internalDefaultBehaviorGroupActions(behaviorGroupId, propertiesList);
+    }
+
+    public Response internalDefaultBehaviorGroupActions(final UUID behaviorGroupId, final List<RequestDefaultBehaviorGroupPropertyList> propertiesList) {
         if (propertiesList == null) {
             throw new BadRequestException("The request body must contain a list of EmailSubscriptionProperties");
         }
@@ -505,8 +838,8 @@ public class InternalResource {
             return endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, EMAIL_SUBSCRIPTION);
         }).collect(Collectors.toList());
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
-                behaviorGroupId,
-                endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
+            behaviorGroupId,
+            endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
         );
         return Response.ok().build();
     }
@@ -517,9 +850,23 @@ public class InternalResource {
     @Operation(summary = "Links the default behavior group to the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
+    public Response linkDefaultBehaviorToEventType(@Context SecurityContext securityContext, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalLinkDefaultBehaviorToEventType(securityContext, behaviorGroupId, eventTypeId);
+        } else {
+            return this.legacyRBACLinkDefaultBehaviorToEventType(securityContext, behaviorGroupId, eventTypeId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Response linkDefaultBehaviorToEventType(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
-        securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
+    public Response legacyRBACLinkDefaultBehaviorToEventType(final SecurityContext securityContext, final UUID behaviorGroupId, final UUID eventTypeId) {
+        return this.internalLinkDefaultBehaviorToEventType(securityContext, behaviorGroupId, eventTypeId);
+    }
+
+    public Response internalLinkDefaultBehaviorToEventType(final SecurityContext securityContext, final UUID behaviorGroupId, final UUID eventTypeId) {
+        this.securityContextUtil.hasPermissionForEventType(securityContext, eventTypeId);
         boolean isSuccess = behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
         if (isSuccess) {
             return Response.ok().build();
@@ -534,9 +881,23 @@ public class InternalResource {
     @Operation(summary = "Unlinks the default behavior group from the event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
+    public Response unlinkDefaultBehaviorToEventType(@Context SecurityContext securityContext, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalUnlinkDefaultBehaviorToEventType(securityContext, behaviorGroupId, eventTypeId);
+        } else {
+            return this.legacyRBACUnlinkDefaultBehaviorToEventType(securityContext, behaviorGroupId, eventTypeId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Response unlinkDefaultBehaviorToEventType(@Context SecurityContext sec, @PathParam("behaviorGroupId") UUID behaviorGroupId, @PathParam("eventTypeId") UUID eventTypeId) {
-        securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
+    public Response legacyRBACUnlinkDefaultBehaviorToEventType(final SecurityContext securityContext, final UUID behaviorGroupId, final UUID eventTypeId) {
+        return this.internalUnlinkDefaultBehaviorToEventType(securityContext, behaviorGroupId, eventTypeId);
+    }
+
+    public Response internalUnlinkDefaultBehaviorToEventType(final SecurityContext securityContext, final UUID behaviorGroupId, final UUID eventTypeId) {
+        this.securityContextUtil.hasPermissionForEventType(securityContext, eventTypeId);
         boolean isSuccess = behaviorGroupRepository.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
         if (isSuccess) {
             return Response.ok().build();
@@ -550,20 +911,48 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Transactional
+    public Response saveDailyDigestTimePreference(@Context final SecurityContext securityContext, @NotNull LocalTime expectedTime, @RestPath String orgId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalSaveDailyDigestTimePreference(expectedTime, orgId);
+        } else {
+            return this.legacyRBACSaveDailyDigestTimePreference(expectedTime, orgId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public Response saveDailyDigestTimePreference(@NotNull LocalTime expectedTime, @RestPath String orgId) {
+    public Response legacyRBACSaveDailyDigestTimePreference(final LocalTime expectedTime, final String orgId) {
+        return this.internalSaveDailyDigestTimePreference(expectedTime, orgId);
+    }
+
+    public Response internalSaveDailyDigestTimePreference(final LocalTime expectedTime, final String orgId) {
         Log.infof("Update daily digest time preference form internal API, for orgId %s at %s", orgId, expectedTime);
-        aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
+        this.aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
         return Response.ok().build();
     }
 
     @GET
     @Path("/daily-digest/time-preference/{orgId}")
     @Produces(APPLICATION_JSON)
+    public Response getDailyDigestTimePreference(@Context final SecurityContext securityContext, @PathParam("orgId") String orgId) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetDailyDigestTimePreference(orgId);
+        } else {
+            return this.legacyRBACGetDailyDigestTimePreference(orgId);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public Response getDailyDigestTimePreference(@PathParam("orgId") String orgId) {
+    public Response legacyRBACGetDailyDigestTimePreference(final String orgId) {
+        return this.internalGetDailyDigestTimePreference(orgId);
+    }
+
+    public Response internalGetDailyDigestTimePreference(final String orgId) {
         Log.infof("Get daily digest time preference form internal API, for orgId %s", orgId);
-        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
+        final AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
         if (null != storedParameters) {
             return Response.ok(storedParameters.getScheduledExecutionTime()).build();
         } else {
@@ -578,8 +967,22 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @POST
     @Path("/daily-digest/trigger")
+    public void triggerDailyDigest(@Context final SecurityContext securityContext, @NotNull @Valid final TriggerDailyDigestRequest triggerDailyDigestRequest) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_USER, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            this.internalTriggerDailyDigest(triggerDailyDigestRequest);
+        } else {
+            this.legacyRBACTriggerDailyDigest(triggerDailyDigestRequest);
+        }
+    }
+
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
-    public void triggerDailyDigest(@NotNull @Valid final TriggerDailyDigestRequest triggerDailyDigestRequest) {
+    public void legacyRBACTriggerDailyDigest(final TriggerDailyDigestRequest triggerDailyDigestRequest) {
+        this.internalTriggerDailyDigest(triggerDailyDigestRequest);
+    }
+
+    public void internalTriggerDailyDigest(final TriggerDailyDigestRequest triggerDailyDigestRequest) {
         if (!this.environment.isLocal() && !this.environment.isStage()) {
             throw new BadRequestException("the daily digests can only be triggered in the stage environment");
         }

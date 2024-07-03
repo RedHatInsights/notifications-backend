@@ -1,6 +1,10 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.WorkspacePermission;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.routers.internal.models.DuplicateNameMigrationReport;
 import io.quarkus.logging.Log;
@@ -14,6 +18,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.SecurityContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,11 +28,16 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL + "/duplicate-name-migration")
 public class DuplicateNameMigrationResource {
+    @Inject
+    BackendConfig backendConfig;
+
+    @Inject
+    KesselAuthorization kesselAuthorization;
 
     final String ack = "i-am-sure-i-want-to-run-the-migration";
 
@@ -40,7 +51,22 @@ public class DuplicateNameMigrationResource {
 
     @GET
     @Produces(APPLICATION_JSON)
-    public DuplicateNameMigrationReport migrateDuplicateNames(@QueryParam("ack") String ack) {
+    public DuplicateNameMigrationReport migrateDuplicateNames(@Context final SecurityContext securityContext, @QueryParam("ack") String ack) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.INTERNAL_ADMINISTRATOR, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalMigrateDuplicateNames(ack);
+        } else {
+            return this.legacyRBACMigrateDuplicateNames(ack);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public DuplicateNameMigrationReport legacyRBACMigrateDuplicateNames(final String ack) {
+        return this.internalMigrateDuplicateNames(ack);
+    }
+
+    public DuplicateNameMigrationReport internalMigrateDuplicateNames(final String ack) {
         if (!Objects.equals(this.ack, ack)) {
             throw new BadRequestException(String.format("Invalid ack provided - should be [%s]", ack));
         }
