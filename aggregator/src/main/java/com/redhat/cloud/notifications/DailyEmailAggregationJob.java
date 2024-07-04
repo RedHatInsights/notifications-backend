@@ -75,6 +75,7 @@ public class DailyEmailAggregationJob {
         Gauge.Timer durationTimer = duration.startTimer();
 
         try {
+            // get targeted schedule execution time
             LocalDateTime now = computeScheduleExecutionTime();
 
             if (aggregatorConfig.isAggregationBasedOnEventEnable()) {
@@ -87,7 +88,7 @@ public class DailyEmailAggregationJob {
             aggregationCommands.stream().collect(Collectors.groupingBy(IAggregationCommand::getOrgId))
                 .values().forEach(this::sendIt);
 
-            List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getOrgId()).collect(Collectors.toList());
+            List<String> orgIdsToUpdate = aggregationCommands.stream().map(aggregationCommand -> aggregationCommand.getOrgId()).collect(Collectors.toList());
             aggregationOrgConfigRepository.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
 
             Gauge lastSuccess = Gauge
@@ -112,6 +113,14 @@ public class DailyEmailAggregationJob {
         }
     }
 
+
+    /**
+     * Compute targeted schedule execution time local date time.
+     * User can schedule execution time every 15 min.
+     * Event if this job is executed at 05:02, we are looking for schedule executions of 05:00
+     *
+     * @return the local date time
+     */
     protected LocalDateTime computeScheduleExecutionTime() {
         LocalDateTime currentTime = LocalDateTime.now(UTC).withSecond(0).withNano(0);
 

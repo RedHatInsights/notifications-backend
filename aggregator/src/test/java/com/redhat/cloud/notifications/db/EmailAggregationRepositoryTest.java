@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
-import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailAggregation;
@@ -49,40 +48,6 @@ class EmailAggregationRepositoryTest {
 
     LocalDateTime end;
 
-    @Test
-    void testApplicationsWithPendingAggregationAccordinfOrgPref() {
-
-        addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
-        addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        addEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
-        addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
-
-        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
-
-        List<IAggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(end);
-        assertEquals(4, keys.size());
-        assertEquals(ORG_ID, keys.get(0).getOrgId());
-        assertEquals(BUNDLE_NAME, ((AggregationCommand) keys.get(0)).getAggregationKey().getBundle());
-        assertEquals(APP_NAME, ((AggregationCommand) keys.get(0)).getAggregationKey().getApplication());
-
-        Integer purged = resourceHelpers.purgeOldAggregation(key, end);
-        assertEquals(2, purged);
-
-        keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(end);
-        assertEquals(3, keys.size());
-    }
-
-    private void addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
-        EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setOrgId(orgId);
-        aggregation.setBundleName(bundleName);
-        aggregation.setApplicationName(applicationName);
-        aggregation.setPayload(payload);
-
-        resourceHelpers.addEmailAggregation(aggregation);
-    }
-
     @BeforeEach
     void beforeEach() {
         final AggregationOrgConfig orgPrefDef = new AggregationOrgConfig(ORG_ID,
@@ -101,6 +66,40 @@ class EmailAggregationRepositoryTest {
     }
 
     @Test
+    void testApplicationsWithPendingAggregationAccordinfOrgPref() {
+
+        addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+        addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+        addEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
+        addEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
+        addEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
+
+        EmailAggregationKey key = new EmailAggregationKey(ORG_ID, BUNDLE_NAME, APP_NAME);
+
+        List<IAggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(end);
+        assertEquals(4, keys.size());
+        assertEquals(ORG_ID, keys.get(0).getOrgId());
+        assertEquals(BUNDLE_NAME, keys.get(0).getAggregationKey().getBundle());
+        assertEquals(APP_NAME, keys.get(0).getAggregationKey().getApplication());
+
+        Integer purged = resourceHelpers.purgeOldAggregation(key, end);
+        assertEquals(2, purged);
+
+        keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(end);
+        assertEquals(3, keys.size());
+    }
+
+    private void addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
+        EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setOrgId(orgId);
+        aggregation.setBundleName(bundleName);
+        aggregation.setApplicationName(applicationName);
+        aggregation.setPayload(payload);
+
+        resourceHelpers.addEmailAggregation(aggregation);
+    }
+
+    @Test
     void testApplicationsWithPendingAggregationAccordingOrgPref() {
 
         Event event1 = addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
@@ -115,8 +114,8 @@ class EmailAggregationRepositoryTest {
 
         List<IAggregationCommand> matchedKeys = keys.stream().filter(k -> ORG_ID.equals(k.getOrgId())).filter(k -> ((EventAggregationCommand) k).getAggregationKey().getApplicationId().equals(application.getId())).collect(Collectors.toList());
         assertEquals(1, matchedKeys.size());
-        assertEquals(BUNDLE_NAME, ((EventAggregationCommand) matchedKeys.get(0)).getAggregationKey().getBundle());
-        assertEquals(APP_NAME, ((EventAggregationCommand) matchedKeys.get(0)).getAggregationKey().getApplication());
+        assertEquals(BUNDLE_NAME,  matchedKeys.get(0).getAggregationKey().getBundle());
+        assertEquals(APP_NAME, matchedKeys.get(0).getAggregationKey().getApplication());
 
         resourceHelpers.deleteEvent(event1);
         resourceHelpers.deleteEvent(event2);
