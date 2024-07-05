@@ -685,6 +685,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final JsonObject jsonResponse = new JsonObject(createdEndpoint);
         final String endpointUuidRaw = jsonResponse.getString("id");
 
+        // Set a new endpoint's name to avoid receiving a "duplicate endpoint's
+        // name" response.
+        endpoint.setName(UUID.randomUUID().toString());
+
         // try to update endpoint without channel
         given()
             .header(identityHeader)
@@ -710,6 +714,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // test create slack integration without extras object
         camelProperties.setExtras(null);
+        // Set a new endpoint's name to avoid receiving a "duplicate endpoint's
+        // name" response.
+        endpoint.setName(UUID.randomUUID().toString());
         endpoint.setProperties(camelProperties);
         given()
             .header(identityHeader)
@@ -2181,45 +2188,28 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testEndpointValidUrls() {
         // Set up the RBAC access for the test.
-        final String orgId = "endpoint-invalid-urls";
-        final String userName = "user";
-
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, orgId, userName);
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Set up the fixture data.
-        final var disableSslVerification = false;
-        final HttpType method = POST;
+        final boolean disableSslVerification = false;
         final String password = "endpoint-invalid-urls-basic-authentication-password";
         final String username = "endpoint-invalid-urls-basic-authentication-username";
         final String secretToken = "endpoint-invalid-urls-secret-token";
 
         // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
-        final var camelProperties = new CamelProperties();
+        final CamelProperties camelProperties = new CamelProperties();
         camelProperties.setBasicAuthentication(new BasicAuthentication(username, password));
         camelProperties.setDisableSslVerification(disableSslVerification);
         camelProperties.setSecretToken(secretToken);
 
-        final var webhookProperties = new WebhookProperties();
+        final WebhookProperties webhookProperties = new WebhookProperties();
         webhookProperties.setBasicAuthentication(new BasicAuthentication(username, password));
         webhookProperties.setDisableSslVerification(disableSslVerification);
-        webhookProperties.setMethod(method);
+        webhookProperties.setMethod(POST);
         webhookProperties.setSecretToken(secretToken);
-
-        // Create an endpoint without the type and the properties set.
-        final var name = "endpoint-invalid-urls-name";
-        final var description = "endpoint-invalid-urls-description";
-        final var enabled = true;
-        final var serverErrors = 0;
-        final var subType = "slack";
-
-        final var endpoint = new Endpoint();
-        endpoint.setDescription(description);
-        endpoint.setEnabled(enabled);
-        endpoint.setName(name);
-        endpoint.setServerErrors(serverErrors);
 
         // Mock the Sources service calls. In this test we don't assert for the
         // secrets' values, so we can simply return the same secret over and
@@ -2232,12 +2222,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
             .thenReturn(secret);
 
-        for (final var url : ValidNonPrivateUrlValidatorTest.validUrls) {
+        for (final String url : ValidNonPrivateUrlValidatorTest.validUrls) {
             // Test with a camel endpoint.
             camelProperties.setUrl(url);
+
+            final Endpoint endpoint = new Endpoint();
+            endpoint.setDescription("test-endpoints-valid-urls");
+            endpoint.setName(UUID.randomUUID().toString());
             endpoint.setType(EndpointType.CAMEL);
             endpoint.setProperties(camelProperties);
-            endpoint.setSubType(subType);
+            endpoint.setSubType("slack");
 
             EndpointDTO dto = this.endpointMapper.toDTO(endpoint);
 
@@ -2248,10 +2242,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(dto))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
 
             // Test with a webhook endpoint.
             webhookProperties.setUrl(url);
+            // Set a new endpoint's name to avoid receiving a "duplicate
+            // endpoint's name" response.
+            endpoint.setName(UUID.randomUUID().toString());
             endpoint.setType(EndpointType.WEBHOOK);
             endpoint.setSubType(null);
             endpoint.setProperties(webhookProperties);
@@ -2265,7 +2262,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(dto))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
         }
     }
 

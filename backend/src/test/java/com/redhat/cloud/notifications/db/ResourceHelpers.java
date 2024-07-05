@@ -147,7 +147,7 @@ public class ResourceHelpers {
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType) {
-        return createEndpoint(accountId, orgId, type, subType, "name", "description", null, FALSE, null);
+        return createEndpoint(accountId, orgId, type, subType, UUID.randomUUID().toString(), "description", null, FALSE, null);
     }
 
     public UUID createWebhookEndpoint(String accountId, String orgId) {

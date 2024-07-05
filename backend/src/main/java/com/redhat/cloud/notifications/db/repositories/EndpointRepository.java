@@ -142,13 +142,20 @@ public class EndpointRepository {
         if (endpointOptional.isPresent()) {
             return endpointOptional.get();
         }
-        Endpoint endpoint = new Endpoint();
+
+        // In order to avoid having duplicated names which could end up in the
+        // "unique endpoint name" constraint being triggered, we generate and
+        // assign the endpoint's UUID ourselves.
+        final UUID endpointId = UUID.randomUUID();
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setId(endpointId);
         endpoint.setProperties(properties);
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
         endpoint.setEnabled(true);
         endpoint.setDescription(String.format("System %s endpoint", label.toLowerCase()));
-        endpoint.setName(String.format("%s endpoint", label));
+        endpoint.setName(String.format("%s endpoint %s", label, endpointId));
         endpoint.setType(endpointType);
         endpoint.setStatus(READY);
 
