@@ -711,7 +711,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
             final BehaviorGroup behaviorGroup = this.resourceHelpers.createBehaviorGroup(
                 accountId,
                 orgId,
-                String.format("count behavior groups by event type id %s", i),
+                UUID.randomUUID().toString(),
                 bundle.getId()
             );
 

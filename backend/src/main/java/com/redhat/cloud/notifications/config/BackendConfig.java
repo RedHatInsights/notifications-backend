@@ -42,7 +42,7 @@ public class BackendConfig {
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean unleashEnabled;
 
-    @ConfigProperty(name = "notifications.enforce-bg-name-unicity", defaultValue = "false")
+    @ConfigProperty(name = "notifications.enforce-bg-name-unicity", defaultValue = "true")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean enforceBehaviorGroupNameUnicity;
 
@@ -138,7 +138,7 @@ public class BackendConfig {
 
     public boolean isUniqueBgNameEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(uniqueBgNameToggle, false);
+            return unleash.isEnabled(uniqueBgNameToggle, true);
         } else {
             return enforceBehaviorGroupNameUnicity;
         }
