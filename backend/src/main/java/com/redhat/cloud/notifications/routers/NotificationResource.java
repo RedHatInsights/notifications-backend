@@ -211,18 +211,18 @@ public class NotificationResource {
         if (this.backendConfig.isKesselBackendEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
-            return this.internalGetBundleByName(securityContext, bundleName);
+            return this.internalGetBundleByName(bundleName);
         } else {
-            return this.legacyRBACGetBundleByName(securityContext, bundleName);
+            return this.legacyRBACGetBundleByName(bundleName);
         }
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Bundle legacyRBACGetBundleByName(final SecurityContext securityContext, final String bundleName) {
-        return this.internalGetBundleByName(securityContext, bundleName);
+    public Bundle legacyRBACGetBundleByName(final String bundleName) {
+        return this.internalGetBundleByName(bundleName);
     }
 
-    public Bundle internalGetBundleByName(final SecurityContext securityContext, final String bundleName) {
+    public Bundle internalGetBundleByName(final String bundleName) {
         Bundle bundle = bundleRepository.getBundle(bundleName);
         if (bundle == null) {
             throw new NotFoundException();
@@ -243,18 +243,18 @@ public class NotificationResource {
         if (this.backendConfig.isKesselBackendEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
-            return this.internalGetApplicationByNameAndBundleName(securityContext, bundleName, applicationName);
+            return this.internalGetApplicationByNameAndBundleName(bundleName, applicationName);
         } else {
-            return this.legacyRBACGetApplicationByNameAndBundleName(securityContext, bundleName, applicationName);
+            return this.legacyRBACGetApplicationByNameAndBundleName(bundleName, applicationName);
         }
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public Application legacyRBACGetApplicationByNameAndBundleName(final SecurityContext securityContext, final String bundleName, final String applicationName) {
-        return internalGetApplicationByNameAndBundleName(securityContext, bundleName, applicationName);
+    public Application legacyRBACGetApplicationByNameAndBundleName(final String bundleName, final String applicationName) {
+        return internalGetApplicationByNameAndBundleName(bundleName, applicationName);
     }
 
-    public Application internalGetApplicationByNameAndBundleName(final SecurityContext securityContext, final String bundleName, final String applicationName) {
+    public Application internalGetApplicationByNameAndBundleName(final String bundleName, final String applicationName) {
         final Application application = applicationRepository.getApplication(bundleName, applicationName);
         if (application == null) {
             throw new NotFoundException();
@@ -276,18 +276,18 @@ public class NotificationResource {
         if (this.backendConfig.isKesselBackendEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.NOTIFICATIONS_READ, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
-            return this.internalGetEventTypesByNameAndBundleAndApplicationName(securityContext, bundleName, applicationName, eventTypeName);
+            return this.internalGetEventTypesByNameAndBundleAndApplicationName(bundleName, applicationName, eventTypeName);
         } else {
-            return this.legacyRBACGetEventTypesByNameAndBundleAndApplicationName(securityContext, bundleName, applicationName, eventTypeName);
+            return this.legacyRBACGetEventTypesByNameAndBundleAndApplicationName(bundleName, applicationName, eventTypeName);
         }
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    public EventType legacyRBACGetEventTypesByNameAndBundleAndApplicationName(final SecurityContext securityContext, final String bundleName, final String applicationName, final String eventTypeName) {
-        return this.internalGetEventTypesByNameAndBundleAndApplicationName(securityContext, bundleName, applicationName, eventTypeName);
+    public EventType legacyRBACGetEventTypesByNameAndBundleAndApplicationName(final String bundleName, final String applicationName, final String eventTypeName) {
+        return this.internalGetEventTypesByNameAndBundleAndApplicationName(bundleName, applicationName, eventTypeName);
     }
 
-    public EventType internalGetEventTypesByNameAndBundleAndApplicationName(final SecurityContext securityContext, final String bundleName, final String applicationName, final String eventTypeName) {
+    public EventType internalGetEventTypesByNameAndBundleAndApplicationName(final String bundleName, final String applicationName, final String eventTypeName) {
         EventType eventType = applicationRepository.getEventType(bundleName, applicationName, eventTypeName);
         if (eventType == null) {
             throw new NotFoundException();
