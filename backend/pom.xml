@@ -14,7 +14,7 @@
     </parent>
 
     <properties>
-        <json-schema-validator-tests.version>5.4.0</json-schema-validator-tests.version>
+        <json-schema-validator-tests.version>5.5.0</json-schema-validator-tests.version>
     </properties>
 
     <dependencies>
