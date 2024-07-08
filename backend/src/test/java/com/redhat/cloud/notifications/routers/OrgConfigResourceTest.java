@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -11,13 +9,10 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.Clock;
 import java.time.LocalTime;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
@@ -30,8 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 class OrgConfigResourceTest extends DbIsolatedTest {
-    @Inject
-    ObjectMapper objectMapper;
 
     static final LocalTime TIME = LocalTime.of(10, 00);
 
@@ -120,7 +113,7 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testInsufficientPrivileges() throws JsonProcessingException {
+    void testInsufficientPrivileges() {
         Header noAccessIdentityHeader = initRbacMock("tenant", "orgId", "noAccess", NO_ACCESS);
         Header readAccessIdentityHeader = initRbacMock("tenant", "orgId", "readAccess", READ_ACCESS);
 
@@ -134,8 +127,6 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         given()
             .header(noAccessIdentityHeader)
             .when()
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(this.objectMapper.writeValueAsString(LocalTime.now(Clock.systemUTC())))
             .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
             .then()
             .statusCode(403);
@@ -150,8 +141,6 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         given()
             .header(readAccessIdentityHeader)
             .when()
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(this.objectMapper.writeValueAsString(LocalTime.now(Clock.systemUTC())))
             .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
             .then()
             .statusCode(403);

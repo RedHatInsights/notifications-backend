@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.routers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
@@ -92,9 +90,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @InjectMock
     BackendConfig backendConfig;
-
-    @Inject
-    ObjectMapper objectMapper;
 
     @BeforeEach
     void beforeEach() {
@@ -942,7 +937,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @Test
-    void testInsufficientPrivileges() throws JsonProcessingException {
+    void testInsufficientPrivileges() {
         Header noAccessIdentityHeader = initRbacMock("tenant", "orgId", "noAccess", NO_ACCESS);
         Header readAccessIdentityHeader = initRbacMock("tenant", "orgId", "readAccess", READ_ACCESS);
 
@@ -987,23 +982,17 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(403);
 
-        final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
-        createBehaviorGroupRequest.bundleId = UUID.randomUUID();
-        createBehaviorGroupRequest.displayName = "create-behavior-group-test";
         given()
                 .header(readAccessIdentityHeader)
                 .contentType(JSON)
-                .body(this.objectMapper.writeValueAsString(createBehaviorGroupRequest))
                 .when()
                 .post("/notifications/behaviorGroups")
                 .then()
                 .statusCode(403);
 
-        final UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
         given()
                 .header(readAccessIdentityHeader)
                 .contentType(JSON)
-                .body(this.objectMapper.writeValueAsString(updateBehaviorGroupRequest))
                 .pathParam("id", UUID.randomUUID())
                 .when()
                 .put("/notifications/behaviorGroups/{id}")

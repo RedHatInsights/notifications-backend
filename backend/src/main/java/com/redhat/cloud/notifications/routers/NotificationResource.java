@@ -411,7 +411,7 @@ public class NotificationResource {
     @Transactional
     public CreateBehaviorGroupResponse createBehaviorGroup(
         @Context final SecurityContext sec,
-        @RequestBody(required = true) @Valid @NotNull final CreateBehaviorGroupRequest request
+        @RequestBody(required = true) final CreateBehaviorGroupRequest request
     ) {
         if (this.backendConfig.isKesselBackendEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.NOTIFICATIONS_WRITE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
@@ -427,7 +427,7 @@ public class NotificationResource {
         return this.internalCreateBehaviorGroup(securityContext, request);
     }
 
-    public CreateBehaviorGroupResponse internalCreateBehaviorGroup(final SecurityContext sec, final CreateBehaviorGroupRequest request) {
+    public CreateBehaviorGroupResponse internalCreateBehaviorGroup(final SecurityContext sec, @NotNull @Valid final CreateBehaviorGroupRequest request) {
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
@@ -485,7 +485,7 @@ public class NotificationResource {
     @Transactional
     public Response updateBehaviorGroup(@Context SecurityContext sec,
                                         @Parameter(description = "The UUID of the behavior group to update") @PathParam("id") UUID id,
-                                        @RequestBody(description = "New parameters", required = true) @NotNull @Valid UpdateBehaviorGroupRequest request) {
+                                        @RequestBody(description = "New parameters", required = true) UpdateBehaviorGroupRequest request) {
         if (this.backendConfig.isKesselBackendEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, ResourcePermission.WRITE, ResourceType.BEHAVIOR_GROUP, id.toString());
 
@@ -504,7 +504,7 @@ public class NotificationResource {
         return this.internalUpdateBehaviorGroup(securityContext, id, request);
     }
 
-    public Response internalUpdateBehaviorGroup(final SecurityContext securityContext, final UUID id, final UpdateBehaviorGroupRequest request) {
+    public Response internalUpdateBehaviorGroup(final SecurityContext securityContext, final UUID id, @NotNull @Valid final UpdateBehaviorGroupRequest request) {
         String orgId = getOrgId(securityContext);
 
         if (request.displayName != null) {

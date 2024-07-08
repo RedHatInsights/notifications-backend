@@ -71,7 +71,7 @@ public class OrgConfigResource {
     @Consumes(APPLICATION_JSON)
     @Transactional
     @Operation(summary = "Set the daily digest time", description = "Sets the daily digest UTC time. The accepted minute values are 00, 15, 30, and 45. Use this endpoint to set the time when daily emails are sent.")
-    public void saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
+    public void saveDailyDigestTimePreference(@Context SecurityContext sec, LocalTime expectedTime) {
         if (this.backendConfig.isKesselBackendEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.NOTIFICATIONS_WRITE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
@@ -86,7 +86,7 @@ public class OrgConfigResource {
         this.internalSaveDailyDigestTimePreference(securityContext, expectedTime);
     }
 
-    public void internalSaveDailyDigestTimePreference(final SecurityContext securityContext, final LocalTime expectedTime) {
+    public void internalSaveDailyDigestTimePreference(final SecurityContext securityContext, @NotNull final LocalTime expectedTime) {
         String orgId = getOrgId(securityContext);
         if (!ALLOWED_MINUTES.contains(expectedTime.getMinute())) {
             String errorMessage = "Accepted minute values are: " + ALLOWED_MINUTES.stream().map(min -> String.format("%02d", min)).collect(Collectors.joining(", ")) + ".";
