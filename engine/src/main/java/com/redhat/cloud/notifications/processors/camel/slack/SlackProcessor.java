@@ -7,6 +7,8 @@ import com.redhat.cloud.notifications.processors.camel.CamelNotification;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.util.Map;
+
 import static com.redhat.cloud.notifications.events.EndpointProcessor.SLACK_ENDPOINT_SUBTYPE;
 
 @ApplicationScoped
@@ -29,7 +31,12 @@ public class SlackProcessor extends CamelProcessor {
 
         SlackNotification notification = new SlackNotification();
         notification.webhookUrl = properties.getUrl();
-        notification.channel = properties.getExtras().get("channel");
+
+        final Map<String, String> extras = properties.getExtras();
+        if (null != extras) {
+            notification.channel = properties.getExtras().get("channel");
+        }
+
         notification.message = message;
         return notification;
     }
