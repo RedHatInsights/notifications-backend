@@ -34,7 +34,7 @@ public class SlackProcessor extends CamelProcessor {
 
         final Map<String, String> extras = properties.getExtras();
         if (null != extras) {
-            notification.channel = properties.getExtras().get("channel");
+            notification.channel = extras.get("channel");
         }
 
         notification.message = message;
