@@ -1,0 +1,32 @@
+{@boolean renderSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Errata - Subscription Services
+{/content-title}
+{#content-title-section1}
+    Bug Fixes
+{/content-title-section1}
+{#content-subtitle-section1}
+    There are {action.events.size()} bug fixes affecting your systems.
+{/content-subtitle-section1}
+{#content-body-section1}
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+              <th style="width: 30%">Bugfix</th>
+              <th style="width: 60%">Synopsis</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#if action.events.size() > 0}
+                {#each action.events}
+                <tr style="font-size: 14px;">
+                    <td><a href="{it.payload.url}" target="_blank">{it.payload.id}</a></td>
+                    <td>{it.payload.synopsis}</td>
+                </tr>
+                {/each}
+            {/if}
+        </tbody>
+    </table>
+{/content-body-section1}
+{/include}
