@@ -240,6 +240,25 @@ public class EmailTemplateMigrationService {
             );
 
             /*
+             * Former src/main/resources/templates/Errata folder.
+             */
+            createInstantEmailTemplate(
+                warnings, "subscription-services", "errata-notifications", List.of("new-subscription-bugfix-errata"),
+                "Errata/bugfixEmailTitle", "txt", "Subscription Bug Fixes email title",
+                "Errata/bugfixEmailBody", "html", "Subscription Bug Fixes email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "subscription-services", "errata-notifications", List.of("new-subscription-enhancement-errata"),
+                "Errata/enhancementEmailTitle", "txt", "Subscription Enhancements email title",
+                "Errata/enhancementEmailBody", "html", "Subscription Enhancements email body"
+            );
+            createInstantEmailTemplate(
+                warnings, "subscription-services", "errata-notifications", List.of("new-subscription-security-errata"),
+                "Errata/securityEmailTitle", "txt", "Subscription Security Updates email title",
+                "Errata/securityEmailBody", "html", "Subscription Security Updates email body"
+            );
+
+            /*
              * Former src/main/resources/templates/Inventory folder.
              */
             createInstantEmailTemplate(
