@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -25,6 +26,8 @@ public class RecipientsResolverRequestPreparer implements Processor {
         List<RecipientSettings> recipientSettings = exchange.getProperty(ExchangeProperty.RECIPIENT_SETTINGS, List.class);
         Set<String> subscribers = exchange.getProperty(ExchangeProperty.SUBSCRIBERS, Set.class);
         Set<String> unsubscribers = exchange.getProperty(ExchangeProperty.UNSUBSCRIBERS, Set.class);
+        JsonObject authorizationCriteria = exchange.getProperty(ExchangeProperty.AUTHORIZATION_CRITERIA, JsonObject.class);
+
         boolean subscribedByDefault = exchange.getProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, boolean.class);
         final String orgId = exchange.getProperty(ORG_ID, String.class);
 
@@ -34,6 +37,7 @@ public class RecipientsResolverRequestPreparer implements Processor {
         recipientsQuery.orgId = orgId;
         recipientsQuery.recipientSettings = Set.copyOf(recipientSettings);
         recipientsQuery.subscribedByDefault = subscribedByDefault;
+        recipientsQuery.authorizationCriteria = authorizationCriteria;
 
         // Serialize the payload.
         exchange.getMessage().setBody(objectMapper.writeValueAsString(recipientsQuery));

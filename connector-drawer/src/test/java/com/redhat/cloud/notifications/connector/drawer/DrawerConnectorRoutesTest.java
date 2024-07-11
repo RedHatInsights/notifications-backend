@@ -103,7 +103,7 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         drawerEntryPayload.setBundle("My Bundle");
 
         RecipientSettings recipientSettings = new RecipientSettings();
-        return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings), List.of("user-1", "user-2"));
+        return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings), List.of("user-1", "user-2"), new JsonObject());
     }
 
     private HttpRequest getMockHttpRequest(String path, ExpectationResponseCallback expectationResponseCallback) {
