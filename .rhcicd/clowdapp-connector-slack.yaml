@@ -79,7 +79,7 @@ objects:
         - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
           value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
         - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
-          value: ${NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE}
+          value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_HTTP_PORT
@@ -156,11 +156,8 @@ parameters:
   description: Maximum number of redelivery attempts (initial call not included)
   value: "2"
 - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
-  description: Number of concurrent threads processing exchanges with SEDA
-  value: "5"
-- name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
-  description: Maximum capacity of the SEDA queue
-  value: "5"
+  description: Number of concurrent threads processing exchanges with SEDA; Maximum capacity of the SEDA queue
+  value: "50"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
