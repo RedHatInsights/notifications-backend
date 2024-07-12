@@ -13,7 +13,6 @@ import org.apache.camel.Exchange;
 import java.util.List;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
