@@ -77,6 +77,8 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = RECIPIENTS_RESOLVER_TRUST_STORE_TYPE)
     Optional<String> recipientsResolverTrustStoreType;
 
+    private String enableBopEmailServiceWithSslChecks;
+
     @PostConstruct
     void emailConnectorPostConstruct() {
         enableBopEmailServiceWithSslChecks = toggleRegistry.register("enable-bop-service-ssl-checks", true);
