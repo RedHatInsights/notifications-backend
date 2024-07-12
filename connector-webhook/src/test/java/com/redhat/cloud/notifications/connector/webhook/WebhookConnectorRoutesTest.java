@@ -149,18 +149,13 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
     }
 
     private void testFailedNotificationAndReturnedFlagsToEngine(int httpStatusCode, String returnedBodyMessage, HttpErrorType httpErrorType, final int expectedRedeliveriesCount) throws Exception {
-        connectorConfig.setDisableFaultyEndpoints(true);
-        try {
-            mockRemoteServerError(httpStatusCode, returnedBodyMessage);
-            JsonObject returnToEngine = super.testFailedNotification(expectedRedeliveriesCount);
-            JsonObject data = new JsonObject(returnToEngine.getString("data"));
-            JsonObject error = data.getJsonObject("error");
-            assertEquals(httpErrorType.name(), error.getString("error_type"));
-            assertEquals(expectedRedeliveriesCount + 1, error.getInteger("delivery_attempts"));
-            assertEquals(httpStatusCode, error.getInteger("http_status_code"));
-        } finally {
-            connectorConfig.setDisableFaultyEndpoints(false);
-        }
+        mockRemoteServerError(httpStatusCode, returnedBodyMessage);
+        JsonObject returnToEngine = super.testFailedNotification(expectedRedeliveriesCount);
+        JsonObject data = new JsonObject(returnToEngine.getString("data"));
+        JsonObject error = data.getJsonObject("error");
+        assertEquals(httpErrorType.name(), error.getString("error_type"));
+        assertEquals(expectedRedeliveriesCount + 1, error.getInteger("delivery_attempts"));
+        assertEquals(httpStatusCode, error.getInteger("http_status_code"));
     }
 
     @Test
