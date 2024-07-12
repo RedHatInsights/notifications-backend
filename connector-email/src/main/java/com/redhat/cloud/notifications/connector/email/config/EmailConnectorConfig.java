@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
-import io.getunleash.UnleashContext;
 import io.quarkus.runtime.LaunchMode;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -103,9 +102,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
-        config.put(RECIPIENTS_RESOLVER_TRUST_STORE_PATH, recipientsResolverTrustStorePath);
-        config.put(RECIPIENTS_RESOLVER_TRUST_STORE_TYPE, recipientsResolverTrustStoreType);
-        config.put(enableBopEmailServiceWithSslChecks + " for all orgIds", isEnableBopServiceWithSslChecks(null));
+        config.put(enableBopEmailServiceWithSslChecks, isEnableBopServiceWithSslChecks());
 
         /*
          * /!\ WARNING /!\
@@ -180,11 +177,8 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         return recipientsResolverTrustStoreType;
     }
 
-    public boolean isEnableBopServiceWithSslChecks(String orgId) {
-        UnleashContext unleashContext = UnleashContext.builder()
-            .addProperty("orgId", orgId)
-            .build();
-        return unleash.isEnabled(enableBopEmailServiceWithSslChecks, unleashContext, false);
+    public boolean isEnableBopServiceWithSslChecks() {
+        return true;
     }
 
     /**
