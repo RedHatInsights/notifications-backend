@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 
 @ApplicationScoped
@@ -63,7 +63,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         // Fetch the template that will be used to hydrate it with the data.
         final Optional<InstantEmailTemplate> instantEmailTemplateMaybe = this.templateRepository.findInstantEmailTemplate(event.getEventType().getId());
         if (instantEmailTemplateMaybe.isEmpty()) {
-            Log.debugf("[event_uuid: %s] The event was skipped because there were no suitable templates for it", event.getId());
+            Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getEventType().getName());
             return;
         }
 
@@ -94,6 +94,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             return;
         }
 
+        final boolean ignoreUserPreferences = recipientSettings.stream().filter(RecipientSettings::isIgnoreUserPreferences).count() > 0;
+
         // Render the subject and the body of the email.
         final InstantEmailTemplate instantEmailTemplate = instantEmailTemplateMaybe.get();
 
@@ -103,8 +105,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final TemplateInstance subjectTemplate = this.templateService.compileTemplate(subjectData, "subject");
         final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
 
-        final String subject = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
-        final String body = this.templateService.renderTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event));
+        final String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
+        final String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences), ignoreUserPreferences);
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
@@ -121,8 +123,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
-        final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+        final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EMAIL_SUBSCRIPTION);
 
-        this.connectorSender.send(event, endpoint, payload);
+        connectorSender.send(event, endpoint, payload);
     }
 }
