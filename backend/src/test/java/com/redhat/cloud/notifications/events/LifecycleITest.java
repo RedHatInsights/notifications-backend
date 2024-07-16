@@ -536,7 +536,7 @@ public class LifecycleITest extends DbIsolatedTest {
 
         Endpoint endpoint = new Endpoint();
         endpoint.setType(EndpointType.WEBHOOK);
-        endpoint.setName("endpoint");
+        endpoint.setName(UUID.randomUUID().toString());
         endpoint.setDescription("Endpoint");
         endpoint.setEnabled(true);
         endpoint.setProperties(properties);

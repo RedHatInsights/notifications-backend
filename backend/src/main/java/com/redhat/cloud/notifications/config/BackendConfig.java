@@ -42,11 +42,11 @@ public class BackendConfig {
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean unleashEnabled;
 
-    @ConfigProperty(name = "notifications.enforce-bg-name-unicity", defaultValue = "false")
+    @ConfigProperty(name = "notifications.enforce-bg-name-unicity", defaultValue = "true")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean enforceBehaviorGroupNameUnicity;
 
-    @ConfigProperty(name = "notifications.enforce-integration-name-unicity", defaultValue = "false")
+    @ConfigProperty(name = "notifications.enforce-integration-name-unicity", defaultValue = "true")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean enforceIntegrationNameUnicity;
 
@@ -138,7 +138,7 @@ public class BackendConfig {
 
     public boolean isUniqueBgNameEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(uniqueBgNameToggle, false);
+            return unleash.isEnabled(uniqueBgNameToggle, true);
         } else {
             return enforceBehaviorGroupNameUnicity;
         }
@@ -146,7 +146,7 @@ public class BackendConfig {
 
     public boolean isUniqueIntegrationNameEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(uniqueIntegrationNameToggle, false);
+            return unleash.isEnabled(uniqueIntegrationNameToggle, true);
         } else {
             return enforceIntegrationNameUnicity;
         }
