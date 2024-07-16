@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -128,6 +129,8 @@ class EventingTypeProcessorTest {
 
     @Test
     void testCamelEndpointProcessing() {
+        // Make sure that the payload does not get stored in the database.
+        Mockito.when(this.engineConfig.getKafkaToCamelMaximumRequestSize()).thenReturn(Integer.MAX_VALUE);
 
         // We need input data for the test.
         Event event = buildEvent();

@@ -12,6 +12,7 @@ objects:
     testing:
       iqePlugin: notifications
     dependencies:
+    - notifications-engine
     - notifications-recipients-resolver
     optionalDependencies:
     - notifications-backend

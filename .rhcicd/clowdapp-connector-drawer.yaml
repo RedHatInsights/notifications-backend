@@ -10,6 +10,7 @@ objects:
     name: notifications-connector-drawer
   spec:
     dependencies:
+    - notifications-engine
     - notifications-recipients-resolver
     envName: ${ENV_NAME}
     featureFlags: true
