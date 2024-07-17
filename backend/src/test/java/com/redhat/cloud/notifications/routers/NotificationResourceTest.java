@@ -338,12 +338,12 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID appId = app.getId();
         Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, "user", FULL_ACCESS);
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behaviour-group-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behaviour-group-2", bundleId).getId();
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behavior-group-2", bundleId).getId();
 
         List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
         // bgroup1 assigned to ev0 and ev1, bgroup2 assigned to ev14, all other event types unassigned
-        List<String> unmutedEventTypeNames = List.of(String.format(TEST_EVENT_TYPE_FORMAT, 0), String.format(TEST_EVENT_TYPE_FORMAT, 1), String.format(TEST_EVENT_TYPE_FORMAT, 14));
+        ArrayList<String> unmutedEventTypeNames = new ArrayList<>(List.of(String.format(TEST_EVENT_TYPE_FORMAT, 0), String.format(TEST_EVENT_TYPE_FORMAT, 1), String.format(TEST_EVENT_TYPE_FORMAT, 14)));
         behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.getFirst())).findFirst().get().getId(), Set.of(behaviorGroupId1));
         behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.get(1))).findFirst().get().getId(), Set.of(behaviorGroupId1));
         behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.get(2))).findFirst().get().getId(), Set.of(behaviorGroupId2));
@@ -369,6 +369,38 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertTrue(unmutedEventTypeNames.containsAll(respEventTypeNames) && respEventTypeNames.containsAll(unmutedEventTypeNames));
         assertFalse(respEventTypeNames.contains(String.format(TEST_EVENT_TYPE_FORMAT, 2)));
         assertEquals(3, page.getJsonObject("meta").getInteger("count"));
+
+        // Default bgroup assigned to ev20 (should match), bgroup from different org assigned to ev30 (should not match)
+        String otherOrganization = "otherOrganizationId";
+        UUID defaultBehaviorGroup = helpers.createDefaultBehaviorGroup("default-behavior-group", bundleId).getId();
+        UUID otherOrgBehaviorGroup = helpers.createBehaviorGroup(ACCOUNT_ID, otherOrganization, "other-org-bgroup", bundleId).getId();
+
+        unmutedEventTypeNames.add(String.format(TEST_EVENT_TYPE_FORMAT, 20));
+        String otherOrgEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 30);
+        behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.get(3))).findFirst().get().getId(), defaultBehaviorGroup);
+        behaviorGroupRepository.updateEventTypeBehaviors(otherOrganization, eventTypes.stream().filter(ev -> ev.getName().equals(otherOrgEventTypeName)).findFirst().get().getId(), Set.of(otherOrgBehaviorGroup));
+
+        String multiOrgResponse = given()
+                .when()
+                .header(identityHeader)
+                .queryParam("excludeMutedTypes", "true")
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().asString();
+
+        JsonObject multiOrgPage = new JsonObject(multiOrgResponse);
+        JsonArray multiOrgEventTypes = multiOrgPage.getJsonArray("data");
+        ArrayList<String> multiOrgEventTypeNames = new ArrayList<>();
+        for (int i = 0; i < multiOrgEventTypes.size(); i++) {
+            JsonObject ev = multiOrgEventTypes.getJsonObject(i);
+            multiOrgEventTypeNames.add(ev.getString("name"));
+        }
+
+        assertTrue(unmutedEventTypeNames.containsAll(multiOrgEventTypeNames) && multiOrgEventTypeNames.containsAll(unmutedEventTypeNames));
+        assertFalse(multiOrgEventTypeNames.contains(otherOrgEventTypeName));
+        assertEquals(4, multiOrgPage.getJsonObject("meta").getInteger("count"));
     }
 
     @Test
@@ -380,15 +412,19 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Application app2 = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID appId2 = app2.getId();
         Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, "user", FULL_ACCESS);
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behaviour-group-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behaviour-group-2", bundleId).getId();
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behavior-group-2", bundleId).getId();
+        UUID defaultBehaviorGroup = helpers.createDefaultBehaviorGroup(ACCOUNT_ID, bundleId).getId();
 
-        // bgroup1 assigned to ev0 and ev1 on TEST_APP_NAME, bgroup2 assigned to ev1 on TEST_APP_NAME_2, all other event types unassigned
+        // bgroup1 assigned to ev0 and ev1 on TEST_APP_NAME, bgroup2 assigned to ev1 on TEST_APP_NAME_2,
+        // default bgroup assigned to ev20 on TEST_APP_NAME_2,  all other event types unassigned
+        String defaultEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 20);
         List<EventType> eventTypesApp1 = applicationRepository.getEventTypes(appId1);
         behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypesApp1.getFirst().getId(), Set.of(behaviorGroupId1));
         behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypesApp1.get(1).getId(), Set.of(behaviorGroupId1));
         List<EventType> eventTypesApp2 = applicationRepository.getEventTypes(appId2);
         behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypesApp2.get(1).getId(), Set.of(behaviorGroupId2));
+        behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypesApp2.stream().filter(ev -> ev.getName().equals(defaultEventTypeName)).findFirst().get().getId(), defaultBehaviorGroup);
 
         Response unmutedResponse = given()
                 .when()
@@ -414,6 +450,30 @@ public class NotificationResourceTest extends DbIsolatedTest {
         }
         assertEquals(1, unmutedEventTypes.size());
 
+        Response unmutedDefaultGroupResponse = given()
+                .when()
+                .header(identityHeader)
+                .queryParam("bundleId", bundleId)
+                .queryParam("applicationIds", appId2)
+                .queryParam("eventTypeName", "20")
+                .queryParam("excludeMutedTypes", "true")
+                .get("/notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject unmutedDefaultGroupPage = new JsonObject(unmutedDefaultGroupResponse.getBody().asString());
+        JsonArray unmutedDefaultGroupEventTypes = unmutedDefaultGroupPage.getJsonArray("data");
+        for (int i = 0; i < unmutedDefaultGroupEventTypes.size(); i++) {
+            JsonObject unmutedDefaultGroupEv = unmutedDefaultGroupEventTypes.getJsonObject(i);
+            unmutedDefaultGroupEv.mapTo(EventType.class);
+            assertEquals(bundleId.toString(), unmutedDefaultGroupEv.getJsonObject("application").getString("bundle_id"));
+            assertEquals(appId2.toString(), unmutedDefaultGroupEv.getJsonObject("application").getString("id"));
+            assertTrue(unmutedDefaultGroupEv.getString("display_name").contains("20") || unmutedDefaultGroupEv.getString("name").contains("20"));
+        }
+        assertEquals(1, unmutedDefaultGroupEventTypes.size());
+
         Response mutedResponse = given()
                 .when()
                 .header(identityHeader)
@@ -430,6 +490,55 @@ public class NotificationResourceTest extends DbIsolatedTest {
         JsonObject mutedPage = new JsonObject(mutedResponse.getBody().asString());
         JsonArray mutedEventTypes = mutedPage.getJsonArray("data");
         assertTrue(mutedEventTypes.isEmpty());
+
+        // bgroup in different org assigned to ev30 on TEST_APP_NAME_2. Although unmuted, this should not match since the org is different.
+        String otherOrganization = "otherOrganizationId";
+        UUID otherOrgBehaviorGroup = helpers.createBehaviorGroup(ACCOUNT_ID, otherOrganization, "other-org-bgroup", bundleId).getId();
+
+        String otherOrgEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 30);
+        behaviorGroupRepository.updateEventTypeBehaviors(otherOrganization, eventTypesApp2.stream().filter(ev -> ev.getName().equals(otherOrgEventTypeName)).findFirst().get().getId(), Set.of(otherOrgBehaviorGroup));
+
+        Response otherOrgUnmatchedResponse = given()
+                .when()
+                .header(identityHeader)
+                .queryParam("bundleId", bundleId)
+                .queryParam("applicationIds", appId2)
+                .queryParam("eventTypeName", "30")
+                .queryParam("excludeMutedTypes", "true")
+                .get("notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject otherOrgUnmatchedPage = new JsonObject(otherOrgUnmatchedResponse.getBody().asString());
+        JsonArray otherOrgUnmatchedEventTypes = otherOrgUnmatchedPage.getJsonArray("data");
+        assertTrue(otherOrgUnmatchedEventTypes.isEmpty());
+
+        // Query as other org, should match
+        Response otherOrgMatchedResponse = given()
+                .when()
+                .header(initRbacMock(ACCOUNT_ID, otherOrganization, "user", FULL_ACCESS))
+                .queryParam("bundleId", bundleId)
+                .queryParam("applicationIds", appId2)
+                .queryParam("eventTypeName", "30")
+                .queryParam("excludeMutedTypes", "true")
+                .get("notifications/eventTypes")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject otherOrgMatchedPage = new JsonObject(otherOrgMatchedResponse.getBody().asString());
+        JsonArray otherOrgMatchedEventTypes = otherOrgMatchedPage.getJsonArray("data");
+        for (int i = 0; i < otherOrgMatchedEventTypes.size(); i++) {
+            JsonObject otherOrgMatchedEv = otherOrgMatchedEventTypes.getJsonObject(i);
+            otherOrgMatchedEv.mapTo(EventType.class);
+            assertEquals(bundleId.toString(), otherOrgMatchedEv.getJsonObject("application").getString("bundle_id"));
+            assertEquals(appId2.toString(), otherOrgMatchedEv.getJsonObject("application").getString("id"));
+            assertTrue(otherOrgMatchedEv.getString("display_name").contains("30") || otherOrgMatchedEv.getString("name").contains("30"));
+        }
+        assertEquals(1, otherOrgMatchedEventTypes.size());
     }
 
     @Test
