@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,7 +40,7 @@ public class SettingsValueByEventTypeJsonForm {
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
     public static class Bundle {
-        public Map<String, Application> applications = new HashMap<>();
+        public Map<String, Application> applications = new LinkedHashMap<>();
         public String label;
     }
 
@@ -57,7 +57,7 @@ public class SettingsValueByEventTypeJsonForm {
         public List<Field> fields = new ArrayList<>();
     }
 
-    public Map<String, Bundle> bundles = new HashMap<>();
+    public Map<String, Bundle> bundles = new LinkedHashMap<>();
 
     public static Application fromSettingsValueEventTypes(SettingsValuesByEventType eventTypeEmailSubscriptions, String bundleName, String applicationName) {
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = eventTypeEmailSubscriptions.bundles.get(bundleName).applications.get(applicationName);
@@ -67,16 +67,23 @@ public class SettingsValueByEventTypeJsonForm {
     public static SettingsValueByEventTypeJsonForm fromSettingsValue(SettingsValuesByEventType values) {
         SettingsValueByEventTypeJsonForm form = new SettingsValueByEventTypeJsonForm();
         values.bundles.forEach((bundleName, bundleSettingsValue) -> {
-            final Map<String, Application> applicationsMap = new HashMap<>();
+            final Map<String, Application> applicationsMap = new LinkedHashMap<>();
             bundleSettingsValue.applications.forEach((applicationName, applicationSettingsValue) -> {
                 final Application application = buildEventTypes(bundleName, applicationName, applicationSettingsValue);
                 applicationsMap.put(applicationName, application);
             });
+            Map<String, Application> sortedApplicationsMap = applicationsMap.entrySet().stream()
+                .sorted(Comparator.comparing(app -> app.getValue().label.toUpperCase()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a1, a2) -> a1, LinkedHashMap::new));
             final Bundle bundle = new Bundle();
-            bundle.applications.putAll(applicationsMap);
+            bundle.applications.putAll(sortedApplicationsMap);
             bundle.label = bundleSettingsValue.displayName;
             form.bundles.put(bundleName, bundle);
         });
+
+        form.bundles = form.bundles.entrySet().stream()
+            .sorted(Comparator.comparing(app -> app.getValue().label.toUpperCase()))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (b1, b2) -> b1, LinkedHashMap::new));
         return form;
     }
 
