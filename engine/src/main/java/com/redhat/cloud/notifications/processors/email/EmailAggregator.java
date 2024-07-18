@@ -85,7 +85,7 @@ public class EmailAggregator {
         Map<String, Set<String>> unsubscribersByEventType = subscriptionRepository
                 .getUnsubscribersByEventType(aggregationKey.getOrgId(), appId, subscriptionType);
 
-        if (engineConfig.isAggregationBasedOnEventEnable() && aggregationKey instanceof EventAggregationCriteria eventAggregationCriteria) {
+        if (engineConfig.isAggregationBasedOnEventEnabled() && aggregationKey instanceof EventAggregationCriteria eventAggregationCriteria) {
             aggregationBasedOnEvent(eventAggregationCriteria, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
         } else {
             aggregationBasedOnEmailAggregation(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);

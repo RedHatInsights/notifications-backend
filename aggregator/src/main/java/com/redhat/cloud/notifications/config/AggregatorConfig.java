@@ -49,14 +49,14 @@ public class AggregatorConfig {
 
         Map<String, Object> config = new TreeMap<>();
         config.put(UNLEASH, unleashEnabled);
-        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnable());
+        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnabled());
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
             Log.infof("%s=%s", key, value);
         });
     }
 
-    public boolean isAggregationBasedOnEventEnable() {
+    public boolean isAggregationBasedOnEventEnabled() {
         if (unleashEnabled) {
             return unleash.isEnabled(fetchAggregationBasedOnEvents, false);
         } else {

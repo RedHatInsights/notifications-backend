@@ -81,7 +81,7 @@ class DailyEventAggregationJobTest {
     void setUp() {
         helpers.purgeEventAggregations();
         initAggregationParameters();
-        when(aggregatorConfig.isAggregationBasedOnEventEnable()).thenReturn(true);
+        when(aggregatorConfig.isAggregationBasedOnEventEnabled()).thenReturn(true);
         baseReferenceTime = dailyEmailAggregationJob.computeScheduleExecutionTime();
 
         when(dailyEmailAggregationJob.computeScheduleExecutionTime()).thenReturn(baseReferenceTime);

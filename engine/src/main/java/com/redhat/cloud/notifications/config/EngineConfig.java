@@ -147,7 +147,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
-        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnable());
+        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -199,7 +199,7 @@ public class EngineConfig {
         return useSecuredEmailTemplates;
     }
 
-    public boolean isAggregationBasedOnEventEnable() {
+    public boolean isAggregationBasedOnEventEnabled() {
         if (unleashEnabled) {
             return unleash.isEnabled(fetchAggregationBasedOnEvents, false);
         } else {

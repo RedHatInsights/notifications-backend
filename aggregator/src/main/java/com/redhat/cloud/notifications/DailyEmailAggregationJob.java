@@ -78,8 +78,8 @@ public class DailyEmailAggregationJob {
             // get targeted schedule execution time
             LocalDateTime now = computeScheduleExecutionTime();
 
-            if (aggregatorConfig.isAggregationBasedOnEventEnable()) {
-                aggregationOrgConfigRepository.createMissingDefaultConfigurationbasedOnEvent(defaultDailyDigestTime);
+            if (aggregatorConfig.isAggregationBasedOnEventEnabled()) {
+                aggregationOrgConfigRepository.createMissingDefaultConfigurationBasedOnEvent(defaultDailyDigestTime);
             } else {
                 aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
             }
@@ -139,7 +139,7 @@ public class DailyEmailAggregationJob {
     List<IAggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
         List<IAggregationCommand> pendingAggregationCommands;
-        if (aggregatorConfig.isAggregationBasedOnEventEnable()) {
+        if (aggregatorConfig.isAggregationBasedOnEventEnabled()) {
             pendingAggregationCommands = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(endTime);
         } else {
             pendingAggregationCommands = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);

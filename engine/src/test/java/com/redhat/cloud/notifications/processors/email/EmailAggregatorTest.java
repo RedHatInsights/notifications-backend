@@ -108,7 +108,7 @@ class EmailAggregatorTest {
     @ParameterizedTest
     @CsvSource({"true,true", "true,false", "false,true", "false,false"})
     void shouldTestRecipientsFromSubscription(boolean useRecipientsResolverClowdappForDailyDigestEnabled, boolean isAggregationBasedOnEvents) {
-        when(engineConfig.isAggregationBasedOnEventEnable()).thenReturn(true);
+        when(engineConfig.isAggregationBasedOnEventEnabled()).thenReturn(true);
         when(engineConfig.isAggregationWithRecipientsResolverEnabled()).thenReturn(useRecipientsResolverClowdappForDailyDigestEnabled);
         // init test environment
         application = resourceHelpers.findApp("rhel", "policies");
@@ -189,7 +189,7 @@ class EmailAggregatorTest {
     void shouldTestFallbackOnLegacyRecipientsResolverFetching(boolean isAggregationBasedOnEvents, boolean isAggregationBasedOnEventsEnabled) {
 
         when(engineConfig.isAggregationWithRecipientsResolverEnabled()).thenReturn(true);
-        when(engineConfig.isAggregationBasedOnEventEnable()).thenReturn(isAggregationBasedOnEventsEnabled);
+        when(engineConfig.isAggregationBasedOnEventEnabled()).thenReturn(isAggregationBasedOnEventsEnabled);
 
         // init test environment
         application = resourceHelpers.findApp("rhel", "policies");

@@ -35,7 +35,7 @@ public class AggregationOrgConfigRepository {
     }
 
     @Transactional
-    public void createMissingDefaultConfigurationbasedOnEvent(LocalTime defaultRunningTime) {
+    public void createMissingDefaultConfigurationBasedOnEvent(LocalTime defaultRunningTime) {
         String query = "INSERT INTO aggregation_org_config (org_id, scheduled_execution_time, last_run) " +
             "SELECT DISTINCT ev.org_id, CAST(:expectedRunningTime as time without time zone), CAST(:lastRun as timestamp without time zone) FROM event ev " +
             "WHERE NOT EXISTS (SELECT 1 FROM aggregation_org_config agcjp WHERE ev.org_id = agcjp.org_id)";
