@@ -142,7 +142,7 @@ class DailyEventAggregationJobTest {
         someOrgIdToProceed.setScheduledExecutionTime(baseReferenceTime.minusHours(2).toLocalTime());
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        // Because we added time preferences for orgId someOrgId two hours in the past, those messages must me ignored
+        // Because we added time preferences for orgId someOrgId two hours in the past, those messages must be ignored
         dailyEmailAggregationJob.processDailyEmail();
 
         List<EventAggregationCommand> listCommand = getRecordsFromKafka();
