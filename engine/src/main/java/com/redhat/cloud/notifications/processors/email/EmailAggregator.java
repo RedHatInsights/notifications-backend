@@ -207,6 +207,7 @@ public class EmailAggregator {
 
                 Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
                 Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+                ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(aggregation);
 
                 Set<User> recipients;
                 if (engineConfig.isAggregationWithRecipientsResolverEnabled()) {
@@ -222,7 +223,8 @@ public class EmailAggregator {
                             ).collect(toSet()),
                             subscribers,
                             unsubscribers,
-                            eventType.isSubscribedByDefault()
+                            eventType.isSubscribedByDefault(),
+                            externalAuthorizationCriteria
                         );
                     } catch (Exception ex) {
                         Log.error("Error calling external recipients resolver service", ex);
