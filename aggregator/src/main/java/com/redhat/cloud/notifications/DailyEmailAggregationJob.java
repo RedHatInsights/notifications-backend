@@ -122,19 +122,18 @@ public class DailyEmailAggregationJob {
      * @return the local date time
      */
     protected LocalDateTime computeScheduleExecutionTime() {
-        LocalDateTime currentTime = LocalDateTime.now(UTC).withSecond(0).withNano(0);
+        final LocalDateTime currentTime = LocalDateTime.now(UTC).withSecond(0).withNano(0);
 
         // correct Time
-        if (0 <= currentTime.getMinute() && currentTime.getMinute() < 15) {
-            currentTime = currentTime.withMinute(0);
-        } else if (15 <= currentTime.getMinute() && currentTime.getMinute() < 30) {
-            currentTime = currentTime.withMinute(15);
-        } else if (30 <= currentTime.getMinute() && currentTime.getMinute() < 45) {
-            currentTime = currentTime.withMinute(30);
+        if (currentTime.getMinute() < 15) {
+            return currentTime.withMinute(0);
+        } else if (currentTime.getMinute() < 30) {
+            return currentTime.withMinute(15);
+        } else if (currentTime.getMinute() < 45) {
+            return currentTime.withMinute(30);
         } else {
-            currentTime = currentTime.withMinute(45);
+            return currentTime.withMinute(45);
         }
-        return currentTime;
     }
 
     List<IAggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
