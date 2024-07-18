@@ -45,7 +45,7 @@ public class AggregationOrgConfigRepository {
             .setParameter("lastRun", LocalDateTime.now(UTC).minusDays(1))
             .executeUpdate();
 
-        Log.infof("Default time preference must be created for %d OrgId", createdEntries);
+        Log.infof("Default aggregation configuration created for %d organizations", createdEntries);
     }
 
     @Transactional
