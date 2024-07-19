@@ -43,6 +43,7 @@ public interface MBOPService {
         @RestQuery("limit")                             int limit,
         @RestQuery("offset")                            int offset,
         @RestQuery("include_permissions")               boolean includePermissions,
-        @RestQuery("status")                            String status
+        @RestQuery("status")                            String status,
+        @RestQuery("skipTotalCount")                    boolean skipTotalCount
     );
 }

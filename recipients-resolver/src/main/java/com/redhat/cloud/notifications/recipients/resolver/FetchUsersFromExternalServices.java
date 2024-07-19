@@ -191,7 +191,8 @@ public class FetchUsersFromExternalServices {
                             recipientsResolverConfig.getMaxResultsPerPage(),
                             finalOffset,
                             false,
-                            "enabled"
+                            "enabled",
+                            true
                         ).users();
                         Duration duration = Duration.between(startTime, LocalDateTime.now());
                         if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
