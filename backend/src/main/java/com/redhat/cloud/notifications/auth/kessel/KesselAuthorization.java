@@ -14,11 +14,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.SecurityContext;
-import org.project_kessel.api.relations.v0.CheckRequest;
-import org.project_kessel.api.relations.v0.CheckResponse;
-import org.project_kessel.api.relations.v0.ObjectReference;
-import org.project_kessel.api.relations.v0.ObjectType;
-import org.project_kessel.api.relations.v0.SubjectReference;
+import org.project_kessel.api.relations.v1beta1.CheckRequest;
+import org.project_kessel.api.relations.v1beta1.CheckResponse;
+import org.project_kessel.api.relations.v1beta1.ObjectReference;
+import org.project_kessel.api.relations.v1beta1.ObjectType;
+import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
 
 import java.security.Principal;
