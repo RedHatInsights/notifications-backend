@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.RecipientsResolverService;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.pojo.RecipientsQuery;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheManager;
 import io.quarkus.test.InjectMock;
@@ -254,9 +255,13 @@ class EmailAggregatorTest {
 
         for (int i = 0; i < 4; i++) {
             JsonObject payload = TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();
+            // the base transformer adds a "source" element which should not be present in an original event payload
+            payload.remove(BaseTransformer.SOURCE);
             resourceHelpers.addEventEmailAggregation("org-1", "rhel", "policies", payload, false);
         }
         JsonObject payload = TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();
+        // the base transformer adds a "source" element which should not be present in an original event payload
+        payload.remove(BaseTransformer.SOURCE);
         resourceHelpers.addEventEmailAggregation("org-2", "rhel", "policies", payload, false);
 
         EmailAggregationKey aggregationKey = AGGREGATION_KEY;

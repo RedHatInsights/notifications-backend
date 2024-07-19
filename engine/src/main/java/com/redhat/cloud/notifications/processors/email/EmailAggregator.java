@@ -1,10 +1,16 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
+import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
+import com.redhat.cloud.notifications.events.EventWrapper;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
+import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
@@ -12,6 +18,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
 import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteriaExtractor;
@@ -22,6 +29,8 @@ import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
+import com.redhat.cloud.notifications.utils.ActionParser;
+import com.redhat.cloud.notifications.utils.ActionParsingException;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -66,6 +75,11 @@ public class EmailAggregator {
 
     @Inject
     EventTypeRepository eventTypeRepository;
+
+    @Inject
+    ActionParser actionParser;
+
+    ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String EVENT_TYPE_KEY = "event_type";
@@ -207,6 +221,7 @@ public class EmailAggregator {
 
                 Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
                 Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+                aggregation.setEventWrapper(getEventWrapper(aggregation.getPayload()));
                 ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(aggregation);
 
                 Set<User> recipients;
@@ -250,6 +265,27 @@ public class EmailAggregator {
             totalAggregatedElements += aggregations.size();
         } while (maxPageSize == aggregations.size());
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, eventAggregationCriteria);
+    }
+
+    private EventWrapper<?, ?> getEventWrapper(String payload) {
+        try {
+            Action action = actionParser.fromJsonString(payload);
+            return new EventWrapperAction(action);
+        } catch (ActionParsingException actionParseException) {
+            // Try to load it as a CloudEvent
+            try {
+                EventWrapperCloudEvent eventWrapperCloudEvent = new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload, NotificationsConsoleCloudEvent.class));
+                return eventWrapperCloudEvent;
+            } catch (ConsoleCloudEventParsingException cloudEventParseException) {
+                /*
+                 * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
+                 * is therefore considered rejected.
+                 */
+
+                actionParseException.addSuppressed(cloudEventParseException);
+                throw actionParseException;
+            }
+        }
     }
 
     @Deprecated(forRemoval = true)
