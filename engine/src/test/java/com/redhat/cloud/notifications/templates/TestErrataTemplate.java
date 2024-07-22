@@ -45,6 +45,7 @@ public class TestErrataTemplate extends EmailTemplatesInDbHelper {
     public void testNewSubscriptionBugfixErrataEmailBody() {
         String result = generateEmailBody(NEW_SUBSCRIPTION_BUGFIX_ERRATA, ACTION);
         assertTrue(result.contains("There are 3 bug fixes affecting your systems."));
+        assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -58,6 +59,7 @@ public class TestErrataTemplate extends EmailTemplatesInDbHelper {
     public void testNewSubscriptionSecurityUpdateErrataEmailBody() {
         String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, ACTION);
         assertTrue(result.contains("There are 3 security updates affecting your systems."));
+        assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -71,6 +73,7 @@ public class TestErrataTemplate extends EmailTemplatesInDbHelper {
     public void testNewSubscriptionEnhancementErrataEmailBody() {
         String result = generateEmailBody(NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, ACTION);
         assertTrue(result.contains("There are 3 enhancements affecting your systems."));
+        assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

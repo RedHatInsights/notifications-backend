@@ -25,6 +25,7 @@ public class ErrataTestHelpers {
             new Context.ContextBuilder()
                 .withAdditionalProperty("system_check_in", "2022-08-03T15:22:42.199046")
                 .withAdditionalProperty("start_time", "2022-08-03T15:22:42.199046")
+                .withAdditionalProperty("base_url", "https://access.redhat.com/errata/")
                 .build()
         );
 
@@ -35,7 +36,6 @@ public class ErrataTestHelpers {
                     new Payload.PayloadBuilder()
                         .withAdditionalProperty("id", "RHSA-2024:2106")
                         .withAdditionalProperty("synopsis", "Moderate: Red Hat build of Quarkus 3.8.4 release")
-                        .withAdditionalProperty("url", "https://access.redhat.com/errata/RHSA-2024:2106")
                         .build()
                 )
                 .build(),
@@ -45,7 +45,6 @@ public class ErrataTestHelpers {
                     new Payload.PayloadBuilder()
                         .withAdditionalProperty("id", "RHSA-2024:3842")
                         .withAdditionalProperty("synopsis", "Low: c-ares security update")
-                        .withAdditionalProperty("url", "https://access.redhat.com/errata/RHSA-2024:3842")
                         .build()
                 )
                 .build(),
@@ -55,7 +54,6 @@ public class ErrataTestHelpers {
                     new Payload.PayloadBuilder()
                         .withAdditionalProperty("id", "RHSA-2024:3843")
                         .withAdditionalProperty("synopsis", "Moderate: cockpit security update")
-                        .withAdditionalProperty("url", "https://access.redhat.com/errata/RHSA-2024:3843")
                         .build()
                 )
                 .build()
