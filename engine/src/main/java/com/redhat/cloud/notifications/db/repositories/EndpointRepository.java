@@ -74,19 +74,13 @@ public class EndpointRepository {
         if (DRAWER == endpointType) {
             label = "Drawer";
         }
-
-        // In order to avoid having duplicated names which could end up in the
-        // "unique endpoint name" constraint being triggered, we generate and
-        // assign the endpoint's UUID ourselves.
-        final UUID endpointId = UUID.randomUUID();
-
         Endpoint endpoint = new Endpoint();
         endpoint.setProperties(properties);
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
         endpoint.setEnabled(true);
         endpoint.setDescription(String.format("System %s endpoint", label.toLowerCase()));
-        endpoint.setName(String.format("%s endpoint %s", label, endpointId));
+        endpoint.setName(String.format("%s endpoint", label));
         endpoint.setType(endpointType);
         endpoint.setStatus(READY);
         properties.setEndpoint(endpoint);

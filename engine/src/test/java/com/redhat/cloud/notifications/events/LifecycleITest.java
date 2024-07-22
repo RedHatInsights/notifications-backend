@@ -227,7 +227,7 @@ public class LifecycleITest {
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setAccountId(accountId);
         behaviorGroup.setOrgId(DEFAULT_ORG_ID);
-        behaviorGroup.setDisplayName(UUID.randomUUID().toString());
+        behaviorGroup.setDisplayName("Behavior group");
         behaviorGroup.setBundle(bundle);
         behaviorGroup.setBundleId(bundle.getId());
         entityManager.persist(behaviorGroup);
@@ -251,7 +251,7 @@ public class LifecycleITest {
         properties.setDisableSslVerification(true);
         properties.setSecretToken(secretToken);
         properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
-        return createEndpoint(accountId, WEBHOOK, UUID.randomUUID().toString(), "Endpoint", properties);
+        return createEndpoint(accountId, WEBHOOK, "endpoint", "Endpoint", properties);
     }
 
     private void addDefaultBehaviorGroupAction(BehaviorGroup behaviorGroup) {
