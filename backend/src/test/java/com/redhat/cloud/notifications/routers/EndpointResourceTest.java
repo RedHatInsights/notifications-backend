@@ -31,6 +31,7 @@ import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionPr
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
 import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -2118,7 +2119,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             )
         );
         try {
-            LaunchMode.set(LaunchMode.NORMAL);
+            ProfileManager.setLaunchMode(LaunchMode.NORMAL);
             // Test the URLs with both camel and webhook endpoints.
             for (final var testCase : testCases) {
                 for (final var url : testCase.testUrls) {
@@ -2169,7 +2170,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 }
             }
         } finally {
-            LaunchMode.set(LaunchMode.TEST);
+            ProfileManager.setLaunchMode(LaunchMode.TEST);
         }
     }
 
