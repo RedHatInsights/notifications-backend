@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.config;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
@@ -21,11 +20,6 @@ public class AggregatorConfig {
      */
     private static final String UNLEASH = "notifications.unleash.enabled";
 
-    /*
-     * Unleash configuration
-     */
-    private String singleDailyDigestToggle;
-
     private static String toggleName(String feature) {
         return String.format("notifications-aggregator.%s.enabled", feature);
     }
@@ -39,11 +33,6 @@ public class AggregatorConfig {
 
     @Inject
     Unleash unleash;
-
-    @PostConstruct
-    void postConstruct() {
-        singleDailyDigestToggle = toggleRegistry.register("single-daily-digest", true);
-    }
 
     void logConfigAtStartup(@Observes Startup event) {
 
