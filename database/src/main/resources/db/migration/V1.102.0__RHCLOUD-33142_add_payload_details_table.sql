@@ -1,0 +1,2 @@
+ALTER TABLE behavior_group DROP CONSTRAINT behavior_group_bundle_id_display_name_org_id_key;
+ALTER TABLE endpoints DROP CONSTRAINT endpoints_name_org_id_key;
