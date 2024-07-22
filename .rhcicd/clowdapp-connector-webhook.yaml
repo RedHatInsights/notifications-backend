@@ -94,7 +94,7 @@ objects:
         - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
           value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
         - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
-          value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
+          value: ${NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE}
         - name: NOTIFICATIONS_CONNECTOR_HTTP_DISABLE_FAULTY_ENDPOINTS
           value: ${NOTIFICATIONS_CONNECTOR_HTTP_DISABLE_FAULTY_ENDPOINTS}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
@@ -185,8 +185,11 @@ parameters:
   description: Maximum number of redelivery attempts (initial call not included)
   value: "2"
 - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
-  description: Number of concurrent threads processing exchanges with SEDA; Maximum capacity of the SEDA queue
-  value: "50"
+  description: Number of concurrent threads processing exchanges with SEDA
+  value: "20"
+- name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
+  description: Maximum capacity of the SEDA queue
+  value: "20"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level of Notifications
   value: INFO
