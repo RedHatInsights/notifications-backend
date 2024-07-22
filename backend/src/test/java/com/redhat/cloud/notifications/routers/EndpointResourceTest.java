@@ -685,10 +685,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final JsonObject jsonResponse = new JsonObject(createdEndpoint);
         final String endpointUuidRaw = jsonResponse.getString("id");
 
-        // Set a new endpoint's name to avoid receiving a "duplicate endpoint's
-        // name" response.
-        endpoint.setName(UUID.randomUUID().toString());
-
         // try to update endpoint without channel
         given()
             .header(identityHeader)
@@ -712,9 +708,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(400);
 
-        // Set a new endpoint's name to avoid receiving a "duplicate endpoint's
-        // name" response.
-        endpoint.setName(UUID.randomUUID().toString());
         // test create slack integration without extras object
         camelProperties.setExtras(null);
         endpoint.setProperties(camelProperties);
