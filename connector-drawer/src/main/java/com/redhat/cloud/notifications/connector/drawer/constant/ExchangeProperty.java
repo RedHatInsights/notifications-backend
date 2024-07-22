@@ -9,5 +9,4 @@ public class ExchangeProperty {
     public static final String UNSUBSCRIBERS = "unsubscribers";
 
     public static final String DRAWER_ENTRY_PAYLOAD = "drawer_entry_payload";
-    public static final String AUTHORIZATION_CRITERIA = "authorization_criteria";
 }

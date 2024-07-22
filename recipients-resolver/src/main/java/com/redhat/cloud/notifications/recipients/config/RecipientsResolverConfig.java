@@ -28,9 +28,7 @@ public class RecipientsResolverConfig {
     public static final String MBOP_APITOKEN = "notifications.recipients-resolver.mbop.api_token";
     public static final String MBOP_CLIENT_ID = "notifications.recipients-resolver.mbop.client_id";
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
-    private static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED = "notifications.recipients-resolver.use.kessel.enabled";
-    private static final String KESSEL_TARGET_URL = "notifications.recipients-resolver.kessel.target-url";
-    private static final String KESSEL_USE_SECURE_CLIENT = "notifications.kessel.secure-client";
+    public static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED = "notifications.recipients-resolver.use.kessel.enabled";
 
     /*
      * Unleash configuration
@@ -78,15 +76,6 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED, defaultValue = "false")
     boolean useKesselEnabled;
 
-    @ConfigProperty(name = KESSEL_TARGET_URL, defaultValue = "localhost:9000")
-    String kesselTargetUrl;
-
-    /**
-     * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
-     */
-    @ConfigProperty(name = KESSEL_USE_SECURE_CLIENT, defaultValue = "false")
-    boolean kesselUseSecureClient;
-
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -113,8 +102,6 @@ public class RecipientsResolverConfig {
         config.put(WARN_IF_DURATION_EXCEEDS, getLogTooLongRequestLimit());
         config.put(UNLEASH, unleashEnabled);
         config.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED, isUseKesselEnabled());
-        config.put(KESSEL_TARGET_URL, getKesselTargetUrl());
-        config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClient());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -169,15 +156,6 @@ public class RecipientsResolverConfig {
 
     public String getMbopEnv() {
         return mbopEnv;
-    }
-
-
-    public boolean isKesselUseSecureClient() {
-        return kesselUseSecureClient;
-    }
-
-    public String getKesselTargetUrl() {
-        return kesselTargetUrl;
     }
 
     public Duration getLogTooLongRequestLimit() {

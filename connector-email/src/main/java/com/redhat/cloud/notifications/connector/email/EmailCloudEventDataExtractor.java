@@ -47,8 +47,6 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
                 .map(String.class::cast)
                 .collect(toSet());
 
-        final JsonObject authorizationCriteria = cloudEventData.getJsonObject("authorization_criteria");
-
         final Set<String> emails = recipientSettings.stream()
                 .filter(settings -> settings.getEmails() != null)
                 .flatMap(settings -> settings.getEmails().stream())
@@ -60,7 +58,6 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, cloudEventData.getBoolean("subscribed_by_default"));
         exchange.setProperty(ExchangeProperty.SUBSCRIBERS, subscribers);
         exchange.setProperty(ExchangeProperty.UNSUBSCRIBERS, unsubscribers);
-        exchange.setProperty(ExchangeProperty.AUTHORIZATION_CRITERIA, authorizationCriteria);
         exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
         exchange.setProperty(ExchangeProperty.EMAIL_SENDER, cloudEventData.getString("email_sender"));
 

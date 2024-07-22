@@ -48,6 +48,4 @@ public class ExchangeProperty {
     public static final String RECIPIENTS_SIZE = "recipientsSize";
 
     public static final String USE_EMAIL_BOP_V1_SSL = "use_email_bop_V1_ssl";
-
-    public static final String AUTHORIZATION_CRITERIA = "authorization_criteria";
 }

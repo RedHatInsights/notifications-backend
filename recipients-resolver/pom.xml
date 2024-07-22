@@ -13,6 +13,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
+    <properties>
+        <quarkus-openapi-generator.version>2.4.2</quarkus-openapi-generator.version>
+    </properties>
+
     <dependencies>
 
         <!-- Scope: compile -->
@@ -22,13 +26,6 @@
             <groupId>com.redhat.cloud.notifications</groupId>
             <artifactId>notifications-common-unleash</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <!-- gRPC client for the interactions with Kessel -->
-        <dependency>
-            <groupId>org.project-kessel</groupId>
-            <artifactId>relations-client-java</artifactId>
-            <version>${kessel.version}</version>
         </dependency>
 
         <!-- Quarkus -->
@@ -67,6 +64,11 @@
             <groupId>io.quarkiverse.loggingsentry</groupId>
             <artifactId>quarkus-logging-sentry</artifactId>
             <version>${quarkus-logging-sentry.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.openapi.generator</groupId>
+            <artifactId>quarkus-openapi-generator</artifactId>
+            <version>${quarkus-openapi-generator.version}</version>
         </dependency>
 
         <!-- Clowder -->

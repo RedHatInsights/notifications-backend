@@ -52,9 +52,9 @@ public class RecipientResolverResourceTest {
         List<User> userList = getRecipientsPage(recipientQuery);
         Assertions.assertNotNull(userList);
         Assertions.assertEquals(0, userList.size());
-        verify(recipientsResolver, times(1)).findRecipients(anyString(), any(), any(), any(), anyBoolean(), any());
+        verify(recipientsResolver, times(1)).findRecipients(anyString(), any(), any(), any(), anyBoolean());
 
-        when(recipientsResolver.findRecipients(anyString(), any(), any(), any(), anyBoolean(), any())).thenReturn(createUserList(500));
+        when(recipientsResolver.findRecipients(anyString(), any(), any(), any(), anyBoolean())).thenReturn(createUserList(500));
         userList = getRecipientsPage(recipientQuery);
         Assertions.assertEquals(500, userList.size());
     }

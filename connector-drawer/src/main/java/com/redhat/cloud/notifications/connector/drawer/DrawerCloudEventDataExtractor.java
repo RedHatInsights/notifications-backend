@@ -16,7 +16,5 @@ public class DrawerCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.DRAWER_ENTRY_PAYLOAD, notification.drawerEntryPayload());
         exchange.setProperty(ExchangeProperty.RECIPIENT_SETTINGS, notification.recipientSettings());
         exchange.setProperty(ExchangeProperty.UNSUBSCRIBERS, notification.unsubscribers());
-        exchange.setProperty(ExchangeProperty.UNSUBSCRIBERS, notification.unsubscribers());
-        exchange.setProperty(ExchangeProperty.AUTHORIZATION_CRITERIA, notification.authorizationCriteria());
     }
 }

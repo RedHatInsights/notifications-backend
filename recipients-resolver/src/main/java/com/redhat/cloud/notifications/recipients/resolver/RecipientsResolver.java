@@ -1,21 +1,22 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
+import com.redhat.cloud.notifications.recipients.authz.api.RelationshipsApi;
+import com.redhat.cloud.notifications.recipients.authz.model.ApiRebacV1ReadRelationshipsResponse;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
-import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriteria;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
-import com.redhat.cloud.notifications.recipients.resolver.kessel.KesselService;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 
 import static java.util.stream.Collectors.toSet;
 
@@ -29,24 +30,20 @@ public class RecipientsResolver {
     FetchUsersFromExternalServices fetchingUsers;
 
     @Inject
-    KesselService kesselLookupService;
-
-    public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault) {
-        return findRecipients(orgId, recipientSettings, subscribers, unsubscribers, subscribedByDefault, null);
-    }
+    @RestClient
+    RelationshipsApi kesselRelationshipApi;
 
     @CacheResult(cacheName = "find-recipients")
-    public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriteria externalAuthorizationCriteria) {
+    public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault) {
         Optional<Set<String>> requestUsersIntersection = extractRequestUsersIntersection(recipientSettings);
         Set<String> lowerCaseSubscribers = toLowerCaseOrEmpty(subscribers);
         Set<String> lowerCaseUnsubscribers = toLowerCaseOrEmpty(unsubscribers);
-
         return recipientSettings.stream()
-            .flatMap(r -> recipientUsers(orgId, r, requestUsersIntersection, lowerCaseSubscribers, lowerCaseUnsubscribers, subscribedByDefault, externalAuthorizationCriteria).stream())
+            .flatMap(r -> recipientUsers(orgId, r, requestUsersIntersection, lowerCaseSubscribers, lowerCaseUnsubscribers, subscribedByDefault).stream())
             .collect(toSet());
     }
 
-    private Set<User> recipientUsers(String orgId, RecipientSettings request, Optional<Set<String>> requestUsersIntersection, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriteria externalAuthorizationCriteria) {
+    private Set<User> recipientUsers(String orgId, RecipientSettings request, Optional<Set<String>> requestUsersIntersection, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault) {
 
         /*
          * When:
@@ -66,9 +63,8 @@ public class RecipientsResolver {
             fetchedUsers = fetchingUsers.getGroupUsers(orgId, request.isAdminsOnly(), request.getGroupUUID());
         }
 
-        final Set<String> authorizedUsers = new HashSet<>();
-        if (recipientsResolverConfig.isUseKesselEnabled() && !fetchedUsers.isEmpty() && null != externalAuthorizationCriteria) {
-            authorizedUsers.addAll(findAuthorizedUsersWithCriteria(externalAuthorizationCriteria));
+        if (recipientsResolverConfig.isUseKesselEnabled()) {
+            callKessel();
         }
 
         // The fetched users are cached, so we need to create a new Set to avoid altering the cached data.
@@ -83,10 +79,6 @@ public class RecipientsResolver {
              * if we did fetch them from the external service. Any fetched users who are not included in the intersection are removed.
              */
             if (requestUsersIntersection.isPresent() && !requestUsersIntersection.get().contains(lowerCaseUsername)) {
-                return true;
-            }
-
-            if (recipientsResolverConfig.isUseKesselEnabled() && null != externalAuthorizationCriteria && !authorizedUsers.contains(lowerCaseUsername)) {
                 return true;
             }
 
@@ -105,7 +97,7 @@ public class RecipientsResolver {
             return false;
 
         });
-        Log.infof("%d recipients found for org ID %s: %s", recipients.size(), orgId, recipients.stream().map(User::getUsername).collect(Collectors.toSet()));
+        Log.infof("%d recipients found for org ID %s", recipients.size(), orgId);
         return recipients;
     }
 
@@ -114,8 +106,8 @@ public class RecipientsResolver {
             return Collections.emptySet();
         } else {
             return usernames.stream()
-                .map(String::toLowerCase)
-                .collect(toSet());
+                    .map(String::toLowerCase)
+                    .collect(toSet());
         }
     }
 
@@ -142,15 +134,16 @@ public class RecipientsResolver {
         }
     }
 
-    private Set<String> findAuthorizedUsersWithCriteria(ExternalAuthorizationCriteria externalAuthorizationCriteria) {
-        Set<String> authorizedUsers = new HashSet<>();
-        if (externalAuthorizationCriteria != null) {
-            try {
-                authorizedUsers = kesselLookupService.lookupSubjects(externalAuthorizationCriteria);
-            } catch (Exception ex) {
-                Log.error("Error calling Kessel relationship Api", ex);
-            }
+    private Optional<Set<String>> callKessel() {
+        Optional<Set<String>> allowedUsers = Optional.empty();
+        try {
+            ApiRebacV1ReadRelationshipsResponse kesselResponse = kesselRelationshipApi.relationshipsReadRelationships("group", "bob_club", "member", null, null, null);
+            Log.infof("Kessel Open Api response: %s", kesselResponse);
+            allowedUsers = Optional.of(kesselResponse.getRelationships().stream().filter(rel -> "user".equals(rel.getSubject().getObject().getType())).map(rel -> rel.getSubject().getObject().getId().toLowerCase()).collect(Collectors.toSet()));
+            Log.infof("Allowed users from Kessel are: %s", allowedUsers);
+        } catch (Exception ex) {
+            Log.error("Error calling Kessel relationship Api");
         }
-        return authorizedUsers;
+        return allowedUsers;
     }
 }

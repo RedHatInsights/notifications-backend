@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.connector.email.processors.recipients;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
-import io.vertx.core.json.JsonObject;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.Set;
@@ -23,6 +22,4 @@ public class RecipientsQuery {
     public Set<String> unsubscribers;
 
     public boolean subscribedByDefault;
-
-    public JsonObject authorizationCriteria;
 }
