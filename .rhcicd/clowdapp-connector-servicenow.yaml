@@ -13,7 +13,6 @@ objects:
     testing:
       iqePlugin: eventing
     dependencies:
-    - notifications-engine
     - sources-api
     optionalDependencies:
     - drift

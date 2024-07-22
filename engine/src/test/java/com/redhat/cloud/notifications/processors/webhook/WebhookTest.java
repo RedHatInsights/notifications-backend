@@ -33,7 +33,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -90,9 +89,6 @@ public class WebhookTest {
 
     @Test
     void testWebhookUsingConnector() {
-        // Make sure that the payload does not get stored in the database.
-        Mockito.when(this.engineConfig.getKafkaToCamelMaximumRequestSize()).thenReturn(Integer.MAX_VALUE);
-
         String testUrl = "https://my.webhook.connector.com";
         Action webhookActionMessage = buildWebhookAction();
         Event event = new Event();

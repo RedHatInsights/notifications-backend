@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.connector;
 
-import com.redhat.cloud.notifications.connector.payload.PayloadDetails;
 import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
@@ -46,16 +45,6 @@ public class OutgoingCloudEventBuilder implements Processor {
         data.put("successful", exchange.getProperty(SUCCESSFUL, Boolean.class));
         data.put("duration", System.currentTimeMillis() - exchange.getProperty(START_TIME, Long.class));
         data.put("details", details);
-
-        // Include the payload's identifier in the response, so that the engine
-        // can delete it afterward. Also, remove the exchange property from the
-        // exchange.
-        final String payloadId = exchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class);
-        if (null != payloadId) {
-            data.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, payloadId);
-
-            exchange.removeProperty(ExchangeProperty.PAYLOAD_ID);
-        }
 
         JsonObject outgoingCloudEvent = new JsonObject();
         outgoingCloudEvent.put("type", CE_TYPE);

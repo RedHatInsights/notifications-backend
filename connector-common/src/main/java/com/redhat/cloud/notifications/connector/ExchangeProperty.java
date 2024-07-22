@@ -4,12 +4,6 @@ public class ExchangeProperty {
 
     public static final String ID = "id";
     /**
-     * Specifies the ID of the payload for which its payload was fetched.
-     * Signals that the engine must be notified about deleting the stored
-     * payload.
-     */
-    public static final String PAYLOAD_ID = "payloadId";
-    /**
      * Specifies the number of times the message was reinjected to the
      * "incoming" Kafka topic.
      */
@@ -20,7 +14,7 @@ public class ExchangeProperty {
     public static final String KAFKA_REINJECTION_DELAY = "kafkaReinjectionDelay";
     public static final String ORG_ID = "orgId";
     /**
-     * Holds the original Cloud Event as received from the "incoming" Kafka
+     * Holds the original Cloud Event as received from the  "incoming" Kafka
      * topic.
      */
     public static final String ORIGINAL_CLOUD_EVENT = "originalCloudEvent";

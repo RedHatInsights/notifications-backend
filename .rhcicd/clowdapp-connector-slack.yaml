@@ -9,8 +9,6 @@ objects:
   metadata:
     name: notifications-connector-slack
   spec:
-    dependencies:
-    - notifications-engine
     envName: ${ENV_NAME}
     testing:
       iqePlugin: notifications
