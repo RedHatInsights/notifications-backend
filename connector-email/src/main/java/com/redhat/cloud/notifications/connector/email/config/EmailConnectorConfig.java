@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import io.getunleash.UnleashContext;
-import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.ProfileManager;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -119,7 +119,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
      * config value from tests only, preventing doing so from runtime code.
      */
     private static void checkTestLaunchMode() {
-        if (!TEST.getProfileKey().equals(LaunchMode.current().getProfileKey())) {
+        if (ProfileManager.getLaunchMode() != TEST) {
             throw new IllegalStateException("Illegal config value override detected");
         }
     }
