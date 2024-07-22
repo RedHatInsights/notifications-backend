@@ -216,56 +216,6 @@ objects:
           INNER JOIN
             bundles
               ON bundles.id = applications.bundle_id
-- apiVersion: metrics.console.redhat.com/v1alpha1
-  kind: FloorPlan
-  metadata:
-    name: notifications-hms
-  spec:
-    database:
-      secretName: ${FLOORIST_DB_SECRET_NAME}
-    objectStore:
-      secretName: ${FLOORIST_HMS_BUCKET_SECRET_NAME}
-    logLevel: ${FLOORIST_LOGLEVEL}
-    suspend: ${{FLOORIST_SUSPEND}}
-    queries:
-    - prefix: hms_analytics/notifications/${FLOORIST_ENV_PREFIX}/notifications_deliveries
-      chunksize: 1000
-      query: >-
-        SELECT
-          bun.display_name::TEXT AS bundle,
-          apps.display_name::TEXT AS application,
-          e.org_id::TEXT,
-          CASE
-            WHEN
-              nh.endpoint_type_v2 = 'CAMEL'
-            THEN
-              LOWER(nh.endpoint_sub_type)
-            ELSE
-              LOWER(nh.endpoint_type_v2)
-          END AS endpoint_type,
-          et.name::TEXT AS event_type,
-          nh.status::TEXT,
-          e.created::DATE,
-          COUNT(*) AS count
-        FROM
-          notification_history AS nh
-        INNER JOIN
-          "event" AS e
-            ON e.id = nh.event_id
-        INNER JOIN
-          event_type AS et
-            ON et.id = e.event_type_id
-        INNER JOIN
-          applications AS apps
-            ON apps.id = e.application_id
-        INNER JOIN
-          bundles AS bun
-            ON bun.id = apps.bundle_id
-        WHERE e.created > (CURRENT_DATE - INTERVAL '7 days')
-        GROUP BY
-          bun.display_name, apps.display_name, e.org_id, nh.endpoint_type_v2,
-          nh.endpoint_sub_type, et.name, nh.status, e.created::DATE
-
 parameters:
 - name: FLOORIST_BUCKET_SECRET_NAME
   description: Floorist's S3 bucket's secret name
@@ -274,12 +224,6 @@ parameters:
 - name: FLOORIST_DB_SECRET_NAME
   description: The database's secret name specification for the Floorist operator.
   value: notifications-backend-db
-- name: FLOORIST_ENV_PREFIX
-  description: Used to split data across environments on a single (HMS) bucket.
-  value: stage
-- name: FLOORIST_HMS_BUCKET_SECRET_NAME
-  description: HMS bucket secret name
-  value: floorist-bucket
 - name: FLOORIST_LOGLEVEL
   description: Floorist loglevel config
   value: 'INFO'
