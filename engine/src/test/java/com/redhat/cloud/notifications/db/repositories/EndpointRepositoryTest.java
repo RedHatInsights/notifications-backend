@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -23,8 +22,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -129,7 +126,7 @@ public class EndpointRepositoryTest {
     void testDisableEndpointWithEnabledEndpoint() {
         Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, true, 3);
         assertTrue(endpoint.isEnabled());
-        assertTrue(endpointRepository.disableEndpoint(endpoint), "Enabled endpoints SHOULD be updated");
+        assertTrue(endpointRepository.disableEndpoint(endpoint.getId()), "Enabled endpoints SHOULD be updated");
         assertFalse(getEndpoint(endpoint.getId()).isEnabled());
     }
 
@@ -137,41 +134,13 @@ public class EndpointRepositoryTest {
     void testDisableEndpointWithDisabledEndpoint() {
         Endpoint endpoint = resourceHelpers.createEndpoint(WEBHOOK, null, false, 0);
         assertFalse(endpoint.isEnabled());
-        assertFalse(endpointRepository.disableEndpoint(endpoint), "Disabled endpoints SHOULD NOT be updated");
+        assertFalse(endpointRepository.disableEndpoint(endpoint.getId()), "Disabled endpoints SHOULD NOT be updated");
         assertFalse(getEndpoint(endpoint.getId()).isEnabled());
     }
 
     @Test
     void testDisableEndpointWithUnknownId() {
-        final Endpoint endpoint = new Endpoint();
-        endpoint.setId(UUID.randomUUID());
-        endpoint.setType(WEBHOOK);
-
-        assertFalse(endpointRepository.disableEndpoint(endpoint));
-    }
-
-    /**
-     * Tests that the function under test does not disable system endpoints.
-     */
-    @Test
-    void testDoesNotDisableSystemEndpoints() {
-        // Create the enabled system endpoints.
-        final Set<Endpoint> systemEndpoints = new HashSet<>();
-        for (final EndpointType endpointType : EndpointType.values()) {
-            if (endpointType.isSystemEndpointType) {
-                systemEndpoints.add(this.resourceHelpers.createEndpoint(endpointType, null, true, 0));
-            }
-        }
-
-        for (final Endpoint systemEndpoint : systemEndpoints) {
-            // Call the function under test and assert that the endpoints were
-            // not disabled.
-            Assertions.assertFalse(this.endpointRepository.incrementEndpointServerErrors(systemEndpoint.getId(), 25), String.format("system endpoint with type \"%s\" should not have been disabled", systemEndpoint.getType()));
-
-            final Endpoint databaseEndpoint = this.entityManager.createQuery("FROM Endpoint WHERE id=:endpoint_id", Endpoint.class).setParameter("endpoint_id", systemEndpoint.getId()).getSingleResult();
-            Assertions.assertTrue(databaseEndpoint.isEnabled(), "the system endpoint got disabled even though it should have been");
-        }
-
+        assertFalse(endpointRepository.disableEndpoint(UUID.randomUUID()));
     }
 
     Endpoint getEndpoint(UUID id) {
@@ -298,30 +267,5 @@ public class EndpointRepositoryTest {
     void persist(Endpoint endpoint, WebhookProperties webhookProperties) {
         entityManager.persist(endpoint);
         entityManager.persist(webhookProperties);
-    }
-
-    /**
-     * Tests that when the endpoint is a system endpoint, the function under
-     * test does not disable it.
-     */
-    @Test
-    void testSystemEndpointsNotDisabled() {
-        // Create the system endpoints.
-        final int originalServerErrors = 12;
-        final Set<Endpoint> systemEndpoints = new HashSet<>();
-        for (final EndpointType endpointType : EndpointType.values()) {
-            if (endpointType.isSystemEndpointType) {
-                systemEndpoints.add(this.resourceHelpers.createEndpoint(endpointType, null, true, originalServerErrors));
-            }
-        }
-
-        for (final Endpoint systemEndpoint : systemEndpoints) {
-            // Call the function under test and assert that the endpoints were
-            // not disabled, nor their server errors were incremented.
-            Assertions.assertFalse(this.endpointRepository.incrementEndpointServerErrors(systemEndpoint.getId(), 25), String.format("system endpoint with type \"%s\" should not have been disabled", systemEndpoint.getType()));
-
-            final Endpoint databaseEndpoint = this.entityManager.createQuery("FROM Endpoint WHERE id=:endpoint_id", Endpoint.class).setParameter("endpoint_id", systemEndpoint.getId()).getSingleResult();
-            Assertions.assertEquals(originalServerErrors, databaseEndpoint.getServerErrors(), "the server errors field was updated for a system endpoint, when it shouldn't have");
-        }
     }
 }

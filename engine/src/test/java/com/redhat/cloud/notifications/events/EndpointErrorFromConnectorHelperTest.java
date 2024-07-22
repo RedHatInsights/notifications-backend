@@ -92,11 +92,11 @@ class EndpointErrorFromConnectorHelperTest {
     @Test
     void testDisableEndpointBecauseOfClientError() {
         final Endpoint endpoint = mockEndpointFromNotificationHistorySearch();
-        Mockito.when(endpointRepository.disableEndpoint(endpoint)).thenReturn(true);
+        Mockito.when(endpointRepository.disableEndpoint(endpoint.getId())).thenReturn(true);
 
         JsonObject payload = buildTestPayload(false, HTTP_4XX, 408);
         endpointErrorFromConnectorHelper.manageEndpointDisablingIfNeeded(endpoint, payload);
-        verify(endpointRepository, times(1)).disableEndpoint(endpoint);
+        verify(endpointRepository, times(1)).disableEndpoint(endpoint.getId());
         verify(integrationDisabledNotifier, times(1)).notify(endpoint, HTTP_4XX, 408, 1);
         assertMetrics(0, 1);
     }

@@ -40,27 +40,53 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
         if (t instanceof HttpOperationFailedException e) {
             exchange.setProperty(HTTP_STATUS_CODE, e.getStatusCode());
             if (e.getStatusCode() >= 300 && e.getStatusCode() < 400) {
-                exchange.setProperty(HTTP_ERROR_TYPE, HTTP_3XX);
+                if (connectorConfig.isDisableFaultyEndpoints()) {
+                    exchange.setProperty(HTTP_ERROR_TYPE, HTTP_3XX);
+                }
                 logHttpError(connectorConfig.getServerErrorLogLevel(), e, exchange);
             } else if (e.getStatusCode() >= 400 && e.getStatusCode() < 500 && e.getStatusCode() != SC_TOO_MANY_REQUESTS) {
-                exchange.setProperty(HTTP_ERROR_TYPE, HTTP_4XX);
+                if (connectorConfig.isDisableFaultyEndpoints()) {
+                    exchange.setProperty(HTTP_ERROR_TYPE, HTTP_4XX);
+                }
                 logHttpError(connectorConfig.getClientErrorLogLevel(), e, exchange);
             } else if (e.getStatusCode() == SC_TOO_MANY_REQUESTS || e.getStatusCode() >= 500) {
-                exchange.setProperty(HTTP_ERROR_TYPE, HTTP_5XX);
+                if (connectorConfig.isDisableFaultyEndpoints()) {
+                    exchange.setProperty(HTTP_ERROR_TYPE, HTTP_5XX);
+                }
                 logHttpError(connectorConfig.getServerErrorLogLevel(), e, exchange);
             } else {
                 logHttpError(ERROR, e, exchange);
             }
         } else if (t instanceof ConnectTimeoutException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, CONNECT_TIMEOUT);
+            if (connectorConfig.isDisableFaultyEndpoints()) {
+                exchange.setProperty(HTTP_ERROR_TYPE, CONNECT_TIMEOUT);
+            } else {
+                logDefault(t, exchange);
+            }
         } else if (t instanceof SocketTimeoutException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, SOCKET_TIMEOUT);
+            if (connectorConfig.isDisableFaultyEndpoints()) {
+                exchange.setProperty(HTTP_ERROR_TYPE, SOCKET_TIMEOUT);
+            } else {
+                logDefault(t, exchange);
+            }
         } else if (t instanceof HttpHostConnectException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, CONNECTION_REFUSED);
+            if (connectorConfig.isDisableFaultyEndpoints()) {
+                exchange.setProperty(HTTP_ERROR_TYPE, CONNECTION_REFUSED);
+            } else {
+                logDefault(t, exchange);
+            }
         } else if (t instanceof SSLHandshakeException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, SSL_HANDSHAKE);
+            if (connectorConfig.isDisableFaultyEndpoints()) {
+                exchange.setProperty(HTTP_ERROR_TYPE, SSL_HANDSHAKE);
+            } else {
+                logDefault(t, exchange);
+            }
         } else if (t instanceof UnknownHostException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, UNKNOWN_HOST);
+            if (connectorConfig.isDisableFaultyEndpoints()) {
+                exchange.setProperty(HTTP_ERROR_TYPE, UNKNOWN_HOST);
+            } else {
+                logDefault(t, exchange);
+            }
         } else {
             logDefault(t, exchange);
         }

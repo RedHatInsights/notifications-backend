@@ -76,7 +76,7 @@ public class EndpointErrorFromConnectorHelper {
                          * endpoint settings (URL, secret token...). The endpoint will most likely never return a
                          * successful status code with the current settings, so it is disabled immediately.
                          */
-                        final boolean disabled = this.endpointRepository.disableEndpoint(endpoint);
+                        boolean disabled = endpointRepository.disableEndpoint(endpoint.getId());
                         if (disabled) {
                             disabledWebhooksClientErrorCount.increment();
                             Log.infof("Endpoint %s was disabled because we received a %s status while calling it", endpoint.getId(), httpErrorType.get().name());
