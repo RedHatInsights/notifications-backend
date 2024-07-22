@@ -174,29 +174,6 @@ public class BehaviorGroupRepository {
         return behaviorGroups;
     }
 
-    /**
-     * Iterates behavior groups within an organization to get IDs of all unmuted {@link EventType EventTypes}.
-     *
-     * @param orgId    Organization ID
-     * @param bundleId Optionally filter by bundle ID.
-     * @return A list of event type {@link UUID} connected to at least one behavior group.
-     */
-    public List<UUID> findUnmutedEventTypes(String orgId, UUID bundleId) {
-        String query = "SELECT DISTINCT e.id FROM BehaviorGroup b JOIN b.behaviors etb JOIN etb.eventType e " +
-                "WHERE (b.orgId = :orgId OR b.orgId IS NULL)";
-        if (bundleId != null) {
-            query += " AND b.bundle.id = :bundleId";
-        }
-
-        TypedQuery<UUID> queryBuilder = entityManager.createQuery(query, UUID.class)
-                .setParameter("orgId", orgId);
-        if (bundleId != null) {
-            queryBuilder.setParameter("bundleId", bundleId);
-        }
-
-        return queryBuilder.getResultList();
-    }
-
     public void update(String orgId, BehaviorGroup behaviorGroup) {
         this.update(orgId, behaviorGroup, false);
     }
