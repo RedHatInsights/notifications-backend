@@ -5,8 +5,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -14,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -33,18 +30,17 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    void testInstantEmailTitle() {
+    public void testInstantEmailTitle() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
 
         String result = generateEmailSubject(EVENT_TYPE_NAME, action);
         assertEquals("Instant notification - Policies - Red Hat Enterprise Linux", result);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testInstantEmailBody(boolean ignoreUserPreferences) {
+    @Test
+    public void testInstantEmailBody() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
-        String result = generateEmailBody(EVENT_TYPE_NAME, action, ignoreUserPreferences);
+        String result = generateEmailBody(EVENT_TYPE_NAME, action);
         assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
         assertTrue(result.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
 
@@ -54,15 +50,10 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
         // Display name
         assertTrue(result.contains("FooMachine"), "Body should contain the display_name");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-
-        assertEquals(ignoreUserPreferences, result.contains("This email was sent by Red Hat Hybrid Cloud Console, it is critical or requires action."));
-        assertEquals(ignoreUserPreferences, result.contains("Therefore, you are receiving this message regardless of your email preferences."));
-        assertNotEquals(ignoreUserPreferences, result.contains("This email was sent by Red Hat Hybrid Cloud Console |"));
-        assertNotEquals(ignoreUserPreferences, result.contains("Manage email preferences"));
     }
 
     @Test
-    void testDailyEmailTitleMultiplePoliciesAndSystems() {
+    public void testDailyEmailTitleMultiplePoliciesAndSystems() {
 
         LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
         LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
@@ -95,7 +86,7 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    void testDailyEmailTitleOnePoliciesAndOneSystem() {
+    public void testDailyEmailTitleOnePoliciesAndOneSystem() {
 
         LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
         LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
@@ -119,7 +110,7 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    void testDailyEmailBodyMultiplePoliciesAndSystems() {
+    public void testDailyEmailBodyMultiplePoliciesAndSystems() {
 
         LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
         LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
@@ -156,7 +147,7 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    void testDailyEmailBodyOnePoliciesAndOneSystem() {
+    public void testDailyEmailBodyOnePoliciesAndOneSystem() {
         LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
         LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
 

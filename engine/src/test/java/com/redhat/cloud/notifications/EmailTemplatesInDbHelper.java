@@ -113,11 +113,7 @@ public abstract class EmailTemplatesInDbHelper {
     }
 
     protected String generateEmailBody(String eventTypeStr, Action action) {
-        return generateEmailBody(eventTypeStr, action, false);
-    }
-
-    protected String generateEmailBody(String eventTypeStr, Action action, boolean ignoreUserPreferences) {
-        return generateEmailBody(eventTypeStr, (Object) action, ignoreUserPreferences);
+        return generateEmailBody(eventTypeStr, (Object) action);
     }
 
     protected String generateEmailBody(String eventTypeStr, Action action, EmailPendo pendo) {
@@ -129,21 +125,13 @@ public abstract class EmailTemplatesInDbHelper {
     }
 
     private String generateEmailBody(String eventTypeStr, Object event, EmailPendo pendo) {
-        return generateEmailBody(eventTypeStr, event, pendo, false);
-    }
-
-    private String generateEmailBody(String eventTypeStr, Object event, EmailPendo pendo, boolean ignoreUserPreferences) {
         InstantEmailTemplate emailTemplate = templateRepository.findInstantEmailTemplate(eventTypes.get(eventTypeStr)).get();
         TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-        return generateEmail(bodyTemplate, event, pendo, ignoreUserPreferences);
+        return generateEmail(bodyTemplate, event, pendo);
     }
 
     private String generateEmailBody(String eventTypeStr, Object event) {
-        return generateEmailBody(eventTypeStr, event, false);
-    }
-
-    private String generateEmailBody(String eventTypeStr, Object event, boolean ignoreUserPreferences) {
-        return generateEmailBody(eventTypeStr, event, null, ignoreUserPreferences);
+        return generateEmailBody(eventTypeStr, event, null);
     }
 
     protected String generateAggregatedEmailSubject(Map<String, Object> context) {
@@ -175,12 +163,8 @@ public abstract class EmailTemplatesInDbHelper {
     }
 
     protected String generateEmail(TemplateInstance template, Object actionOrEvent, EmailPendo pendo) {
-        return generateEmail(template, actionOrEvent, pendo, false);
-    }
 
-    protected String generateEmail(TemplateInstance template, Object actionOrEvent, EmailPendo pendo, boolean ignoreUserPreferences) {
-
-        String result = templateService.renderEmailBodyTemplate(actionOrEvent, template, pendo, ignoreUserPreferences);
+        String result = templateService.renderTemplate(actionOrEvent, template, pendo);
         writeOrSendEmailTemplate(result, template.getTemplate().getId() + ".html");
 
         return result;
@@ -189,7 +173,7 @@ public abstract class EmailTemplatesInDbHelper {
     protected String generateEmailFromContextMap(TemplateInstance templateInstance, Map<String, Object> context, EmailPendo emailPendo) {
         Map<String, Object> action =  Map.of("context", context, "bundle", getBundle(), "timestamp", LocalDateTime.now());
 
-        String result = templateService.renderEmailBodyTemplate(action, templateInstance, emailPendo, false);
+        String result = templateService.renderTemplate(action, templateInstance, emailPendo);
         writeOrSendEmailTemplate(result, templateInstance.getTemplate().getId() + ".html");
 
         return result;

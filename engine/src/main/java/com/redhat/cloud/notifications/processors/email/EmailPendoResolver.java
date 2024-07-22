@@ -18,8 +18,8 @@ public class EmailPendoResolver {
     @Inject
     Environment environment;
 
-    public EmailPendo getPendoEmailMessage(final Event event, boolean forcedEmail) {
-        if (!isPendoMessageEnabled(event, forcedEmail)) {
+    public EmailPendo getPendoEmailMessage(final Event event) {
+        if (!isPendoMessageEnabled(event)) {
             return null;
         } else {
             String pendoMessage = String.format(GENERAL_PENDO_MESSAGE, environment.url());
@@ -28,8 +28,8 @@ public class EmailPendoResolver {
         }
     }
 
-    private boolean isPendoMessageEnabled(final Event event, boolean forcedEmail) {
+    private boolean isPendoMessageEnabled(final Event event) {
         // pendo message must not be shown on OCM and environment with emails only mode
-        return !EmailActorsResolver.isOCMApp(event) && !engineConfig.isEmailsOnlyModeEnabled() && !forcedEmail;
+        return !EmailActorsResolver.isOCMApp(event) && !engineConfig.isEmailsOnlyModeEnabled();
     }
 }

@@ -32,16 +32,15 @@ public class TemplateService {
     }
 
     public String renderTemplate(Object event, TemplateInstance templateInstance) {
-        return renderEmailBodyTemplate(event, templateInstance, null, false);
+        return renderTemplate(event, templateInstance, null);
     }
 
-    public String renderEmailBodyTemplate(Object event, TemplateInstance templateInstance, EmailPendo pendoMessage, boolean ignoreUserPreferences) {
+    public String renderTemplate(Object event, TemplateInstance templateInstance, EmailPendo pendoMessage) {
         return templateInstance
             .data("action", event)
             .data("event", event)
             .data("environment", environment)
             .data("pendo_message", pendoMessage)
-            .data("ignore_user_preferences", ignoreUserPreferences)
             .render();
     }
 }
