@@ -44,11 +44,6 @@ public class EndpointRepository {
     BackendConfig backendConfig;
 
     public void checkEndpointNameDuplicate(Endpoint endpoint) {
-        if (!backendConfig.isUniqueIntegrationNameEnabled()) {
-            // Check disabled from configuration
-            return;
-        }
-
         if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
             // This check does not apply for email subscriptions - as these are managed by us.
             return;

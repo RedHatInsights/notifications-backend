@@ -311,7 +311,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Test
     void testRepeatedEndpointName() {
-        when(backendConfig.isUniqueIntegrationNameEnabled()).thenReturn(true);
         String orgId = "repeatEndpoint";
         String userName = "user";
 

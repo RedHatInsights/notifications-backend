@@ -35,6 +35,8 @@ import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.core.MediaType;
+import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +64,6 @@ import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityH
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
-import static io.restassured.http.ContentType.TEXT;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -123,11 +124,6 @@ public class LifecycleITest extends DbIsolatedTest {
 
     @Test
     void shouldReturn400AndBadRequestExceptionWhenDisplayNameIsAlreadyPresent() {
-        if (!backendConfig.isUniqueBgNameEnabled()) {
-            // The check is disabled from configuration.
-            return;
-        }
-
         final String accountId = "tenant";
         final String orgId = "someOrgId";
         final String username = "user";
@@ -154,8 +150,8 @@ public class LifecycleITest extends DbIsolatedTest {
                 .when()
                 .post(API_NOTIFICATIONS_V_1_0 + "/notifications/behaviorGroups")
                 .then()
-                .statusCode(400)
-                .contentType(TEXT)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
                 .extract().asString();
 
         assertEquals("A behavior group with display name [" + behaviorGroup.getDisplayName() + "] already exists", responseBody);

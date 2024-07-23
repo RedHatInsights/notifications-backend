@@ -230,11 +230,6 @@ public class BehaviorGroupRepository {
     }
 
     private void checkBehaviorGroupDisplayNameDuplicate(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
-        if (!backendConfig.isUniqueBgNameEnabled()) {
-            // The check is disabled from configuration.
-            return;
-        }
-
         String hql = "SELECT COUNT(*) FROM BehaviorGroup WHERE displayName = :displayName AND bundle.id = :bundleId";
         if (behaviorGroup.getId() != null) { // The behavior group already exists in the DB, it's being updated.
             hql += " AND id != :behaviorGroupId";

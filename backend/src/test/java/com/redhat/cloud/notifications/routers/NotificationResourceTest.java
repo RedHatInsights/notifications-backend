@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -21,7 +20,6 @@ import com.redhat.cloud.notifications.routers.models.Facet;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -62,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -88,14 +85,10 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
 
-    @InjectMock
-    BackendConfig backendConfig;
-
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.clearRbac();
-        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
     }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
@@ -1144,7 +1137,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
         final String BEHAVIOR_GROUP_1_NAME = "BehaviorGroup1";
         final String BEHAVIOR_GROUP_2_NAME = "BehaviorGroup2";
 
-        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
         Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
 
         Bundle bundle1 = helpers.createBundle(TEST_BUNDLE_NAME, "Bundle1");
