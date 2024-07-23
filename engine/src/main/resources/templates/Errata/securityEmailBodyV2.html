@@ -21,7 +21,7 @@
             {#if action.events.size() > 0}
                 {#each action.events}
                 <tr style="font-size: 14px;">
-                    <td><a href="{it.payload.url}" target="_blank">{it.payload.id}</a></td>
+                    <td><a href="{action.context.base_url}{it.payload.id}" target="_blank">{it.payload.id}</a></td>
                     <td>{it.payload.synopsis}</td>
                 </tr>
                 {/each}
