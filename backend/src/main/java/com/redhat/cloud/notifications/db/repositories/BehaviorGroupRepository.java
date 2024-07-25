@@ -180,10 +180,12 @@ public class BehaviorGroupRepository {
      * @param orgId    Organization ID
      * @param bundleId Optionally filter by bundle ID.
      * @return A list of event type {@link UUID} connected to at least one behavior group.
+     * @apiNote Event types associated with default behavior groups (those without an {@code orgId})
+     *          will <em>not</em> be returned by this method.
      */
     public List<UUID> findUnmutedEventTypes(String orgId, UUID bundleId) {
         String query = "SELECT DISTINCT e.id FROM BehaviorGroup b JOIN b.behaviors etb JOIN etb.eventType e " +
-                "WHERE (b.orgId = :orgId OR b.orgId IS NULL)";
+                "WHERE b.orgId = :orgId";
         if (bundleId != null) {
             query += " AND b.bundle.id = :bundleId";
         }
