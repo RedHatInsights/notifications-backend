@@ -5,10 +5,10 @@ import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCrit
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.project_kessel.api.relations.v0.LookupSubjectsRequest;
-import org.project_kessel.api.relations.v0.LookupSubjectsResponse;
-import org.project_kessel.api.relations.v0.ObjectReference;
-import org.project_kessel.api.relations.v0.ObjectType;
+import org.project_kessel.api.relations.v1beta1.LookupSubjectsRequest;
+import org.project_kessel.api.relations.v1beta1.LookupSubjectsResponse;
+import org.project_kessel.api.relations.v1beta1.ObjectReference;
+import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.relations.client.LookupClient;
 import org.project_kessel.relations.client.RelationsGrpcClientsManager;
 
