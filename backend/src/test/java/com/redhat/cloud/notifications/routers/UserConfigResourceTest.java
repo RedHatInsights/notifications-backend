@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.CrudTestHelpers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
@@ -24,7 +26,6 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
-import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
@@ -37,15 +38,20 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.CrudTestHelpers.createAggregationEmailTemplate;
+import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
+import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
+import static com.redhat.cloud.notifications.CrudTestHelpers.createEventType;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createInstantEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteAggregationEmailTemplate;
+import static com.redhat.cloud.notifications.CrudTestHelpers.deleteBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteInstantEmailTemplate;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
@@ -67,9 +73,10 @@ import static org.mockito.Mockito.when;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class UserConfigResourceTest extends DbIsolatedTest {
 
+    static final String PATH_EVENT_TYPE_PREFERENCE_API = TestConstants.API_NOTIFICATIONS_V_1_0 + "/user-config/notification-event-type-preference";
+
     @BeforeEach
     void beforeEach() {
-        RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
     }
 
@@ -90,6 +97,10 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @Inject
     EventTypeRepository eventTypeRepository;
+
+    record TestRecordNameAndDisplayName(String name, String displayName) { }
+
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private SettingsValueByEventTypeJsonForm.Application rhelPolicyForm(SettingsValueByEventTypeJsonForm settingsValuesByEventType) {
         for (String bundleName : settingsValuesByEventType.bundles.keySet()) {
@@ -139,6 +150,68 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return settingsValues;
     }
 
+    private String createTestBundleAppEventType(Header adminIdentity, TestRecordNameAndDisplayName bundleDetails, List<TestRecordNameAndDisplayName> applicationsDetails) {
+        final String bundleId = createBundle(adminIdentity, bundleDetails.name, bundleDetails.displayName, 200).get();
+        applicationsDetails.forEach(appDetail -> {
+            final String appId = createApp(adminIdentity, bundleId, appDetail.name, appDetail.displayName, null, 200).get();
+            createEventType(adminIdentity, appId, "event-type-name", "Event type", "Event type description", false, false, 200).get();
+        });
+        return bundleId;
+    }
+
+    @Test
+    void testBundlesAndAppsOrder() throws JsonProcessingException {
+        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        // to be able to return all event types without adding one template to each event types,
+        // we need to enable the default template feature.
+        when(backendConfig.isDefaultTemplateEnabled()).thenReturn(true);
+
+        Map<TestRecordNameAndDisplayName, List<TestRecordNameAndDisplayName>> bundleAndApps = Map.of(
+            new TestRecordNameAndDisplayName("bundle-name1", "zbundle"),        // declare a bundle
+            List.of(new TestRecordNameAndDisplayName("app-name1", "appname1"),  // declare 3 apps under created bundle
+                new TestRecordNameAndDisplayName("app-name2", "appname4"),
+                new TestRecordNameAndDisplayName("app-name3", "appname3")),
+            new TestRecordNameAndDisplayName("bundle-name2", "abundle"),        // declare a bundle
+            List.of(new TestRecordNameAndDisplayName("app-name1", "appnamez"),  // declare 3 apps under created bundle
+                new TestRecordNameAndDisplayName("app-name2", "appname3"),
+                new TestRecordNameAndDisplayName("app-name3", "appname")),
+            new TestRecordNameAndDisplayName("bundle-name3", "bbundle"),        // declare a bundle
+            List.of(new TestRecordNameAndDisplayName("app-name1", "e-appname"), // declare 3 apps under created bundle
+                new TestRecordNameAndDisplayName("app-name2", "r-appname"),
+                new TestRecordNameAndDisplayName("app-name3", "a-appname"))
+        );
+
+        final List<String> bundleIdsToRemove = new ArrayList<>();
+        // Let's create declared bundles and apps and record bundle ids to be able to delete them at the end of this test
+        for (TestRecordNameAndDisplayName bundleName : bundleAndApps.keySet()) {
+            bundleIdsToRemove.add(createTestBundleAppEventType(adminIdentity, bundleName, bundleAndApps.get(bundleName)));
+        }
+
+        String accountId = "empty";
+        String orgId = "empty";
+        String username = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
+            .header(identityHeader)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        // We want to validate bundles and apps orders returned as a json string
+        String mappedString = mapper.writeValueAsString(settingsValuesByEventType);
+        final String RESULT = "{\"bundles\":{\"bundle-name2\":{\"applications\":{\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname3\"},\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appnamez\"}},\"label\":\"abundle\"},\"bundle-name3\":{\"applications\":{\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"a-appname\"},\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"e-appname\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"r-appname\"}},\"label\":\"bbundle\"},\"rhel\":{\"applications\":{\"policies\":{\"eventTypes\":[{\"name\":\"policy-triggered\",\"label\":\"Policy triggered\",\"fields\":[{\"name\":\"bundles[rhel].applications[policies].eventTypes[policy-triggered].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"Policies\"}},\"label\":\"Red Hat Enterprise Linux\"},\"bundle-name1\":{\"applications\":{\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname1\"},\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname3\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname4\"}},\"label\":\"zbundle\"}}}";
+        assertEquals(RESULT, mappedString);
+
+        // delete created bundles, apps and event types
+        bundleIdsToRemove.forEach(bundleIdToRemove -> deleteBundle(adminIdentity, bundleIdToRemove, true));
+    }
+
+
     @Test
     void testLegacySettingsByEventType() {
         testSettingsByEventType();
@@ -151,7 +224,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     }
 
     void testSettingsByEventType() {
-        String path = "/user-config/notification-event-type-preference";
         String accountId = "empty";
         String orgId = "empty";
         String username = "user";
@@ -170,7 +242,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
             .header(identityHeader)
             .queryParam("bundleName", bundle)
-            .when().get(path)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -183,7 +255,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         settingsValuesByEventType = given()
             .header(identityHeader)
             .queryParam("bundleName", bundle)
-            .when().get(path)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -199,7 +271,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         settingsValuesByEventType = given()
             .header(identityHeader)
-            .when().get(path)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -209,13 +281,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
         SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, true, true, false);
-        postPreferencesByEventType(path, identityHeader, settingsValues, 400);
+        postPreferencesByEventType(identityHeader, settingsValues, 400);
 
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
-        postPreferencesByEventType(path, identityHeader, settingsValues, 200);
+        postPreferencesByEventType(identityHeader, settingsValues, 200);
 
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
-        SettingsValueByEventTypeJsonForm settingsValue = getPreferencesByEventType(path, identityHeader);
+        SettingsValueByEventTypeJsonForm settingsValue = getPreferencesByEventType(identityHeader);
         rhelPolicy = rhelPolicyForm(settingsValue);
         boolean instantEmailSettingsReturned = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType)
                 .keySet().stream().anyMatch(INSTANT::equals);
@@ -224,50 +296,50 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
 
         // Daily and Instant to false
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
 
         // Daily to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER));
 
         // Instant to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER));
 
         // Both to true
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
 
         // Before this line, we're subscribed to everything. Now, we're locking the subscriptions.
         lockOrUnlockSubscriptionToPoliciesEventType(true);
         // Let's try to unsubscribe from everything. The subscriptions should remain the same.
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, emptyList(), List.of(DAILY, INSTANT, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), List.of(DAILY, INSTANT, DRAWER));
         // We're now unlocking the subscriptions.
         lockOrUnlockSubscriptionToPoliciesEventType(false);
         // Unsubscribing from everything should work this time.
-        updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, emptyList(), emptyList());
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList());
 
         if (backendConfig.isDrawerEnabled()) {
             // Daily, Instant and drawer to false
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, emptyList(), emptyList());
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList());
 
             // Daily to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY), List.of(DAILY));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY), List.of(DAILY));
 
             // Instant to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(INSTANT), List.of(INSTANT));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT), List.of(INSTANT));
 
             // Daily and instant to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT), List.of(DAILY, INSTANT));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT), List.of(DAILY, INSTANT));
 
             // Daily and Instant to false, drawer to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
 
             // Daily to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER));
 
             // Instant to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER));
 
             // Daily and instant to true
-            updateAndCheckUserPreference(path, identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
         }
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database
@@ -287,12 +359,12 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .when()
             .contentType(JSON)
             .body(Json.encode(settingsValues))
-            .post(path)
+            .post(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(200);
         settingsValuesByEventType = given()
             .header(identityHeader)
-            .when().get(path)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -306,7 +378,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         deleteAggregationTemplate(aggregationTemplateId);
         SettingsValueByEventTypeJsonForm settingsValueJsonForm = given()
             .header(identityHeader)
-            .when().get(path)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -328,7 +400,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         deleteInstantTemplate(instantTemplateId);
         settingsValueJsonForm = given()
             .header(identityHeader)
-            .when().get(path)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -346,10 +418,10 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         }
     }
 
-    private void updateAndCheckUserPreference(String path, Header identityHeader, String bundle, String application, String eventType, List<SubscriptionType> subscriptionsToSet, List<SubscriptionType> expectedResult) {
+    private void updateAndCheckUserPreference(Header identityHeader, String bundle, String application, String eventType, List<SubscriptionType> subscriptionsToSet, List<SubscriptionType> expectedResult) {
         SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, subscriptionsToSet.contains(DAILY), subscriptionsToSet.contains(INSTANT), subscriptionsToSet.contains(DRAWER));
-        postPreferencesByEventType(path, identityHeader, settingsValues, 200);
-        SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(path, identityHeader);
+        postPreferencesByEventType(identityHeader, settingsValues, 200);
+        SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(identityHeader);
         final SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
         Map<SubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
@@ -362,18 +434,18 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         final SettingsValueByEventTypeJsonForm.Application preferences = given()
             .header(identityHeader)
-            .when().get(String.format(path + "/%s/%s", bundle, application))
+            .when().get(String.format(PATH_EVENT_TYPE_PREFERENCE_API + "/%s/%s", bundle, application))
             .then()
             .statusCode(200)
             .contentType(JSON)
             .extract().body().as(SettingsValueByEventTypeJsonForm.Application.class);
 
         assertNotNull(preferences);
-        Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
-        assertEquals(expectedResult.contains(DAILY), notificationPreferenes.get(DAILY));
-        assertEquals(expectedResult.contains(INSTANT), notificationPreferenes.get(INSTANT));
+        Map<SubscriptionType, Boolean> notificationPreferences = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
+        assertEquals(expectedResult.contains(DAILY), notificationPreferences.get(DAILY));
+        assertEquals(expectedResult.contains(INSTANT), notificationPreferences.get(INSTANT));
         if (backendConfig.isDrawerEnabled()) {
-            assertEquals(expectedResult.contains(DRAWER), notificationPreferenes.get(DRAWER));
+            assertEquals(expectedResult.contains(DRAWER), notificationPreferences.get(DRAWER));
         }
     }
 
@@ -395,21 +467,21 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .executeUpdate();
     }
 
-    private void postPreferencesByEventType(String path, Header identityHeader, SettingsValuesByEventType settingsValues, int expectedStatusCode) {
+    private void postPreferencesByEventType(Header identityHeader, SettingsValuesByEventType settingsValues, int expectedStatusCode) {
         given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
                 .body(Json.encode(settingsValues))
-                .post(path)
+                .post(PATH_EVENT_TYPE_PREFERENCE_API)
                 .then()
                 .statusCode(expectedStatusCode);
     }
 
-    private SettingsValueByEventTypeJsonForm getPreferencesByEventType(String path, Header identityHeader) {
+    private SettingsValueByEventTypeJsonForm getPreferencesByEventType(Header identityHeader) {
         return given()
                 .header(identityHeader)
-                .when().get(path)
+                .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
                 .then()
                 .statusCode(200)
                 .contentType(JSON)
@@ -461,7 +533,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @Test
     void testSettingsUserPreferenceUsingDeprecatedApi() {
-        String path = "/user-config/notification-event-type-preference";
         String accountId = "empty";
         String orgId = "empty";
         String username = "user";
@@ -477,20 +548,20 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         createAggregationTemplate(bundle, application);
 
         // Daily and Instant to false
-        updateAndCheckUserPreferenceUsingDeprecatedApi(path, identityHeader, bundle, application, eventType, false, false, true);
+        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, false, false, true);
 
         // Daily to true
-        updateAndCheckUserPreferenceUsingDeprecatedApi(path, identityHeader, bundle, application, eventType, true, false, true);
+        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, true, false, true);
 
         // Instant to true
-        updateAndCheckUserPreferenceUsingDeprecatedApi(path, identityHeader, bundle, application, eventType, false, true, true);
+        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, false, true, true);
 
         // Both to true
-        updateAndCheckUserPreferenceUsingDeprecatedApi(path, identityHeader, bundle, application, eventType, true, true, true);
+        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, true, true, true);
 
         given()
             .header(identityHeader)
-            .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, "another-app"))
+            .when().get(String.format(TestConstants.API_NOTIFICATIONS_V_1_0 + "/user-config/notification-preference/%s/%s", bundle, "another-app"))
             .then()
             .statusCode(403)
             .contentType(JSON)
@@ -507,7 +578,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         String response = given()
             .header(identityHeader)
-            .when().get(String.format("/user-config/notification-preference/%s/%s", "rhel", "policies"))
+            .when().get(String.format(TestConstants.API_NOTIFICATIONS_V_1_0 + "/user-config/notification-preference/%s/%s", "rhel", "policies"))
             .then()
             .statusCode(403)
             .contentType(JSON)
@@ -515,14 +586,14 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         assertTrue(response.contains("service account authentication"));
 
-        String path = "/user-config/notification-event-type-preference";
+        //String path = TestConstants.API_NOTIFICATIONS_V_1_0 + "/user-config/notification-event-type-preference";
         SettingsValuesByEventType settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", "eventType", true, true, true);
         response = given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
             .body(Json.encode(settingsValues))
-            .post(path)
+            .post(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(403)
             .extract().body().asString();
@@ -530,7 +601,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         response = given()
             .header(identityHeader)
-            .when().get(path)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
             .then()
             .statusCode(403)
             .contentType(JSON)
@@ -539,7 +610,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         response = given()
             .header(identityHeader)
-            .when().get(path + "/bundle/app")
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API + "/bundle/app")
             .then()
             .statusCode(403)
             .contentType(JSON)
@@ -547,13 +618,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertTrue(response.contains("service account authentication"));
     }
 
-    private void updateAndCheckUserPreferenceUsingDeprecatedApi(String path, Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
+    private void updateAndCheckUserPreferenceUsingDeprecatedApi(Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
         SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer);
-        postPreferencesByEventType(path, identityHeader, settingsValues, 200);
+        postPreferencesByEventType(identityHeader, settingsValues, 200);
 
         final UserConfigPreferences preferences = given()
             .header(identityHeader)
-            .when().get(String.format("/user-config/notification-preference/%s/%s", bundle, application))
+            .when().get(String.format(TestConstants.API_NOTIFICATIONS_V_1_0 + "/user-config/notification-preference/%s/%s", bundle, application))
             .then()
             .statusCode(200)
             .contentType(JSON)
