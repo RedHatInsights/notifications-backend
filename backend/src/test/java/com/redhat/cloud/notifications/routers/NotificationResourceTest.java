@@ -370,14 +370,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertFalse(respEventTypeNames.contains(String.format(TEST_EVENT_TYPE_FORMAT, 2)));
         assertEquals(3, page.getJsonObject("meta").getInteger("count"));
 
-        // Default bgroup assigned to ev20 (should match), bgroup from different org assigned to ev30 (should not match)
+        // Should not match: default bgroup assigned to ev20, bgroup from different org assigned to ev30
         String otherOrganization = "otherOrganizationId";
         UUID defaultBehaviorGroup = helpers.createDefaultBehaviorGroup("default-behavior-group", bundleId).getId();
         UUID otherOrgBehaviorGroup = helpers.createBehaviorGroup(ACCOUNT_ID, otherOrganization, "other-org-bgroup", bundleId).getId();
 
-        unmutedEventTypeNames.add(String.format(TEST_EVENT_TYPE_FORMAT, 20));
+        String defaultEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 20);
         String otherOrgEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 30);
-        behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.get(3))).findFirst().get().getId(), defaultBehaviorGroup);
+        behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypes.stream().filter(ev -> ev.getName().equals(defaultEventTypeName)).findFirst().get().getId(), defaultBehaviorGroup);
         behaviorGroupRepository.updateEventTypeBehaviors(otherOrganization, eventTypes.stream().filter(ev -> ev.getName().equals(otherOrgEventTypeName)).findFirst().get().getId(), Set.of(otherOrgBehaviorGroup));
 
         String multiOrgResponse = given()
@@ -400,7 +400,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         assertTrue(unmutedEventTypeNames.containsAll(multiOrgEventTypeNames) && multiOrgEventTypeNames.containsAll(unmutedEventTypeNames));
         assertFalse(multiOrgEventTypeNames.contains(otherOrgEventTypeName));
-        assertEquals(4, multiOrgPage.getJsonObject("meta").getInteger("count"));
+        assertEquals(3, multiOrgPage.getJsonObject("meta").getInteger("count"));
     }
 
     @Test
@@ -417,7 +417,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         UUID defaultBehaviorGroup = helpers.createDefaultBehaviorGroup(ACCOUNT_ID, bundleId).getId();
 
         // bgroup1 assigned to ev0 and ev1 on TEST_APP_NAME, bgroup2 assigned to ev1 on TEST_APP_NAME_2,
-        // default bgroup assigned to ev20 on TEST_APP_NAME_2,  all other event types unassigned
+        // default bgroup assigned to ev20 on TEST_APP_NAME_2 (should not match), all other event types unassigned
         String defaultEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 20);
         List<EventType> eventTypesApp1 = applicationRepository.getEventTypes(appId1);
         behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypesApp1.getFirst().getId(), Set.of(behaviorGroupId1));
@@ -465,14 +465,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         JsonObject unmutedDefaultGroupPage = new JsonObject(unmutedDefaultGroupResponse.getBody().asString());
         JsonArray unmutedDefaultGroupEventTypes = unmutedDefaultGroupPage.getJsonArray("data");
-        for (int i = 0; i < unmutedDefaultGroupEventTypes.size(); i++) {
-            JsonObject unmutedDefaultGroupEv = unmutedDefaultGroupEventTypes.getJsonObject(i);
-            unmutedDefaultGroupEv.mapTo(EventType.class);
-            assertEquals(bundleId.toString(), unmutedDefaultGroupEv.getJsonObject("application").getString("bundle_id"));
-            assertEquals(appId2.toString(), unmutedDefaultGroupEv.getJsonObject("application").getString("id"));
-            assertTrue(unmutedDefaultGroupEv.getString("display_name").contains("20") || unmutedDefaultGroupEv.getString("name").contains("20"));
-        }
-        assertEquals(1, unmutedDefaultGroupEventTypes.size());
+        assertTrue(unmutedDefaultGroupEventTypes.isEmpty());
 
         Response mutedResponse = given()
                 .when()
