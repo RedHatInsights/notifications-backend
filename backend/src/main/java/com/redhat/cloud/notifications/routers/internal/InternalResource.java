@@ -207,7 +207,7 @@ public class InternalResource {
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
     @Transactional
-    @TransactionConfiguration(timeout = 300)
+    @TransactionConfiguration(timeout = 600)
     /*
      * We need to increase the transaction timeout for this method because it involves
      * an update of 'event' table records based on 'bundleId' column which is not indexed.
@@ -226,7 +226,7 @@ public class InternalResource {
     @Path("/bundles/{bundleId}")
     @Produces(APPLICATION_JSON)
     @Transactional
-    @TransactionConfiguration(timeout = 300)
+    @TransactionConfiguration(timeout = 600)
     /*
      * We need to increase the transaction timeout for this method because it involves
      * a full scan of 'event' table based on 'bundleId' column which is not indexed.
