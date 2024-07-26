@@ -15,6 +15,7 @@ import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.g
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TRUST_ALL;
+import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.LoggingLevel.INFO;
 import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.HttpEndpointBuilder;
 
@@ -24,7 +25,7 @@ public class PagerDutyRouteBuilder extends EngineToConnectorRouteBuilder {
 
     private static final String APPLICATION_JSON = "application/json; charset=utf-8";
 
-    static final String PD_RESPONSE_TIME_METRIC = "micrometer:timer:pagerduty.response.time";
+    static final String PAGERDUTY_RESPONSE_TIME_METRIC = "micrometer:timer:pagerduty.response.time";
     static final String TIMER_ACTION_START = "?action=start";
     static final String TIMER_ACTION_STOP = "?action=stop";
 
@@ -39,29 +40,29 @@ public class PagerDutyRouteBuilder extends EngineToConnectorRouteBuilder {
 
     @Override
     public void configureRoutes() {
-
         from(seda(ENGINE_TO_CONNECTOR))
+            .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
             .routeId(connectorConfig.getConnectorName())
-            // ServiceNow requires a secret. It is loaded from Sources.
             .process(secretsLoader)
             .process(authenticationProcessor)
-            .to(PD_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+            .to(PAGERDUTY_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
                 // SSL certificates may or may not be verified depending on the integration settings.
                 .choice()
                 .when(exchangeProperty(TRUST_ALL))
-                    .toD(buildServiceNowEndpoint(true), connectorConfig.getEndpointCacheMaxSize())
+                    .toD(buildPagerDutyEndpoint(true), connectorConfig.getEndpointCacheMaxSize())
                 .endChoice()
+                // TODO is this a valid option for PagerDuty?
                 .otherwise()
-                    .toD(buildServiceNowEndpoint(false), connectorConfig.getEndpointCacheMaxSize())
+                    .toD(buildPagerDutyEndpoint(false), connectorConfig.getEndpointCacheMaxSize())
                 .end()
-            .to(PD_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
+            .to(PAGERDUTY_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .log(INFO, getClass().getName(), "Delivered event ${exchangeProperty." + ID + "} " +
                 "(orgId ${exchangeProperty." + ORG_ID + "} account ${exchangeProperty." + ACCOUNT_ID + "}) " +
                 "to ${exchangeProperty." + TARGET_URL + "}")
             .to(direct(SUCCESS));
     }
 
-    private HttpEndpointBuilder buildServiceNowEndpoint(boolean trustAll) {
+    private HttpEndpointBuilder buildPagerDutyEndpoint(boolean trustAll) {
         HttpEndpointBuilder endpointBuilder = https("${exchangeProperty." + TARGET_URL_NO_SCHEME + "}").httpMethod("POST");
         if (trustAll) {
             endpointBuilder
