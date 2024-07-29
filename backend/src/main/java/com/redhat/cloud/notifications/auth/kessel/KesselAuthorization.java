@@ -16,12 +16,19 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.SecurityContext;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
+import org.project_kessel.api.relations.v1beta1.LookupResourcesRequest;
+import org.project_kessel.api.relations.v1beta1.LookupResourcesResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
 import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.LookupClient;
 
 import java.security.Principal;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.UUID;
 
 @ApplicationScoped
 public class KesselAuthorization {
@@ -42,16 +49,24 @@ public class KesselAuthorization {
      */
     private static final String KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY = "resource_type";
     /**
-     * Represents the timer's name to measure the time spent sending requests
-     * and receiving responses from Kessel.
+     * Represents the timer's name to measure the time spent looking up for
+     * authorized resources for a particular subject.
      */
-    private static final String KESSEL_METRICS_TIMER_NAME = "notifications.kessel.requests";
+    private static final String KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME = "notifications.kessel.lookup.resources.requests";
+    /**
+     * Represents the timer's name to measure the time spent checking for a
+     * particular permission for a subject.
+     */
+    private static final String KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME = "notifications.kessel.permission.check.requests";
 
     @Inject
     BackendConfig backendConfig;
 
     @Inject
     CheckClient checkClient;
+
+    @Inject
+    LookupClient lookupClient;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -81,7 +96,7 @@ public class KesselAuthorization {
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Payload for the permission check: %s", identity, permission, resourceType, resourceId, permissionCheckRequest);
 
         // Measure the time it takes to perform the operation with Kessel.
-        final Timer.Sample timer = Timer.start(this.meterRegistry);
+        final Timer.Sample permissionCheckTimer = Timer.start(this.meterRegistry);
 
         // Call Kessel.
         final CheckResponse response;
@@ -90,15 +105,15 @@ public class KesselAuthorization {
         } catch (final StatusRuntimeException e) {
             Log.errorf(
                 e,
-                "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Runtime error when querying Kessel for a permission check",
-                identity, permission, resourceType, resourceId
+                "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Runtime error when querying Kessel for a permission check with request payload: %s",
+                identity, permission, resourceType, resourceId, permissionCheckRequest
             );
 
             throw e;
         }
 
         // Stop the timer.
-        timer.stop(this.meterRegistry.timer(KESSEL_METRICS_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.getKesselName())));
+        permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.getKesselName())));
 
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
 
@@ -113,6 +128,57 @@ public class KesselAuthorization {
     }
 
     /**
+     * Looks up the integrations the security context's subject has the given
+     * permission for.
+     * @param securityContext the security context holding the subject's
+     *                        identity.
+     * @param integrationPermission the integration's permission we want to use
+     *                              to filter the target integrations with.
+     * @return a set of integration IDs the user has permission to access.
+     */
+    public Set<UUID> lookupAuthorizedIntegrations(final SecurityContext securityContext, final IntegrationPermission integrationPermission) {
+        // Identify the subject.
+        final RhIdentity identity = this.extractRhIdentity(securityContext);
+
+        // Build the lookup request for Kessel.
+        final LookupResourcesRequest request = this.buildLookupResourcesRequest(identity, integrationPermission);
+
+        Log.tracef("[identity: %s][permission: %s][resource_type: %s] Payload for the resource lookup: %s", identity, integrationPermission, ResourceType.INTEGRATION, request);
+
+        // Measure the time it takes to perform the lookup operation.
+        final Timer.Sample lookupTimer = Timer.start(this.meterRegistry);
+
+        // Call Kessel.
+        final Iterator<LookupResourcesResponse> responses;
+        try {
+            responses = this.lookupClient.lookupResources(request);
+        } catch (final StatusRuntimeException e) {
+            Log.errorf(
+                e,
+                "[identity: %s][permission: %s][resource_type: %s] Runtime error when querying Kessel for integration resources with request payload: %s",
+                identity, integrationPermission, ResourceType.INTEGRATION, request
+            );
+
+            throw e;
+        }
+
+        // Stop the timer.
+        lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.getKesselName())));
+
+        // Process the incoming responses.
+        final Set<UUID> uuids = new HashSet<>();
+        while (responses.hasNext()) {
+            final LookupResourcesResponse response = responses.next();
+
+            Log.tracef("[identity: %s][permission: %s][resource_type: %s] Received payload for the resource lookup: %s", identity, integrationPermission, ResourceType.INTEGRATION, response);
+
+            uuids.add(UUID.fromString(response.getResource().getId()));
+        }
+
+        return uuids;
+    }
+
+    /**
      * Build a check request for a particular resource, to see if the subject
      * of the identity has permission on it.
      * @param identity the subject's identity.
@@ -123,13 +189,8 @@ public class KesselAuthorization {
      * @return the built check request for Kessel ready to be sent.
      */
     protected CheckRequest buildCheckRequest(final RhIdentity identity, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
-        //
-        final String type;
-        if (identity instanceof RhServiceAccountIdentity) {
-            type = KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT;
-        } else {
-            type = KESSEL_IDENTITY_SUBJECT_USER;
-        }
+        // Extract the subject's type from the subject's identity.
+        final String type = this.extractSubjectTypeFromRhIdentity(identity);
 
         return CheckRequest.newBuilder()
             .setResource(
@@ -151,6 +212,31 @@ public class KesselAuthorization {
     }
 
     /**
+     * Build a lookup request for integrations.
+     * @param identity the subject's identity.
+     * @param kesselPermission the permission we want to check against the
+     *                         subject's integrations.
+     * @return a built lookup request that aims at finding integrations for the
+     * given subject.
+     */
+    protected LookupResourcesRequest buildLookupResourcesRequest(final RhIdentity identity, final KesselPermission kesselPermission) {
+        // Extract the subject's type from the subject's identity.
+        final String type = this.extractSubjectTypeFromRhIdentity(identity);
+
+        return LookupResourcesRequest.newBuilder()
+            .setSubject(
+                SubjectReference.newBuilder()
+                    .setSubject(
+                        ObjectReference.newBuilder()
+                            .setType(ObjectType.newBuilder().setName(type).build())
+                            .setId(identity.getName())
+                    ).build()
+            ).setRelation(kesselPermission.getKesselPermissionName())
+            .setResourceType(ObjectType.newBuilder().setName(ResourceType.INTEGRATION.getKesselName()))
+            .build();
+    }
+
+    /**
      * Extracts the {@link RhIdentity} object from the security context.
      * @param securityContext the security context to extract the object from.
      * @return the extracted {@link RhIdentity} object.
@@ -167,5 +253,18 @@ public class KesselAuthorization {
         }
 
         return identity;
+    }
+
+    /**
+     * Extracts the subject's type from the given identity.
+     * @param rhIdentity the identity to extract the subject's type from.
+     * @return service account or user.
+     */
+    protected String extractSubjectTypeFromRhIdentity(final RhIdentity rhIdentity) {
+        if (rhIdentity instanceof RhServiceAccountIdentity) {
+            return KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT;
+        } else {
+            return KESSEL_IDENTITY_SUBJECT_USER;
+        }
     }
 }

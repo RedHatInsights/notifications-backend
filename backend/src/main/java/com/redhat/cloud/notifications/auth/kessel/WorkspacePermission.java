@@ -1,11 +1,12 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
 public enum WorkspacePermission implements KesselPermission {
-    EVENTS_READ("notifications_events_read"),
-    INTEGRATIONS_READ("notifications_integrations_view"),
-    INTEGRATIONS_WRITE("notifications_integrations_write"),
-    NOTIFICATIONS_READ("notifications_notifications_view"),
-    NOTIFICATIONS_WRITE("notifications_notifications_write");
+    CREATE_DRAWER_INTEGRATION("notifications_integration_create_drawer"),
+    CREATE_EMAIL_SUBSCRIPTION_INTEGRATION("notifications_integration_create_email_subscription"),
+    EVENT_LOG_VIEW("notifications_event_log_view"),
+    INTEGRATIONS_CREATE("notifications_integration_create"),
+    DAILY_DIGEST_PREFERENCE_EDIT("notifications_daily_digest_preference_edit"),
+    DAILY_DIGEST_PREFERENCE_VIEW("notifications_daily_digest_preference_view");
 
     /**
      * The permission's name in Kessel's schema.
