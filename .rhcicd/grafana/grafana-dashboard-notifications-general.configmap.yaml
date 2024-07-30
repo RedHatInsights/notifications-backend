@@ -28,7 +28,20 @@ data:
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
       "id": 930018,
-      "links": [],
+      "links": [
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": false,
+          "tags": [],
+          "targetBlank": true,
+          "title": "AWS RDS dashboard",
+          "tooltip": "Open the dashboard for the Notifications' databases",
+          "type": "link",
+          "url": "https://grafana.app-sre.devshift.net/d/AWSRDSdbi/aws-rds?orgId=1&var-datasource=PD4288CE6A02EB473&var-region=default&var-dbinstanceidentifier=notifications-backend-prod&from=now-7d&to=now"
+        }
+      ],
       "liveNow": false,
       "panels": [
         {
@@ -3053,24 +3066,32 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "description": "Number of current restarts (since pod deployment)",
+          "description": "Number of pods currently UP",
           "fieldConfig": {
             "defaults": {
-              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "red",
+                      "index": 0,
+                      "text": "Down"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
+              "max": 1,
+              "min": 0,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 1
-                  },
-                  {
-                    "color": "red",
-                    "value": 5
                   }
                 ]
               }
@@ -3083,7 +3104,7 @@ data:
             "x": 6,
             "y": 30
           },
-          "id": 278,
+          "id": 277,
           "options": {
             "colorMode": "value",
             "graphMode": "none",
@@ -3093,7 +3114,7 @@ data:
               "calcs": [
                 "last"
               ],
-              "fields": "",
+              "fields": "/^Up$/",
               "values": false
             },
             "showPercentChange": false,
@@ -3108,15 +3129,15 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "code",
-              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-recipients-resolver-service\"})",
+              "editorMode": "builder",
+              "expr": "sum(up{container=\"notifications-recipients-resolver-service\"})",
               "hide": false,
-              "legendFormat": "Restarts",
+              "legendFormat": "Up",
               "range": true,
               "refId": "B"
             }
           ],
-          "title": "Recipients-resolver - Restarts",
+          "title": "Recipients-resolver - UPs",
           "type": "stat"
         },
         {
@@ -3263,32 +3284,24 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "description": "Number of pods currently UP",
+          "description": "Number of current restarts (since pod deployment)",
           "fieldConfig": {
             "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "color": "red",
-                      "index": 0,
-                      "text": "Down"
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
-              "max": 1,
-              "min": 0,
+              "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
                   }
                 ]
               }
@@ -3301,7 +3314,7 @@ data:
             "x": 6,
             "y": 34
           },
-          "id": 277,
+          "id": 278,
           "options": {
             "colorMode": "value",
             "graphMode": "none",
@@ -3311,7 +3324,7 @@ data:
               "calcs": [
                 "last"
               ],
-              "fields": "/^Up$/",
+              "fields": "",
               "values": false
             },
             "showPercentChange": false,
@@ -3326,15 +3339,15 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "builder",
-              "expr": "sum(up{container=\"notifications-recipients-resolver-service\"})",
+              "editorMode": "code",
+              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-recipients-resolver-service\"})",
               "hide": false,
-              "legendFormat": "Up",
+              "legendFormat": "Restarts",
               "range": true,
               "refId": "B"
             }
           ],
-          "title": "Recipients-resolver - UPs",
+          "title": "Recipients-resolver - Restarts",
           "type": "stat"
         },
         {
@@ -3914,10 +3927,10 @@ data:
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "P7E8E1698DF0AC988"
+            "type": "cloudwatch",
+            "uid": "PD4288CE6A02EB473"
           },
-          "description": "Shows the CPU usage for the production database.",
+          "description": "",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3931,8 +3944,8 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
+                "fillOpacity": 21,
+                "gradientMode": "opacity",
                 "hideFrom": {
                   "legend": false,
                   "tooltip": false,
@@ -3974,16 +3987,20 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 7,
+            "h": 8,
             "w": 12,
             "x": 0,
             "y": 55
           },
-          "id": 314,
+          "id": 317,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": [
+                "min",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
             },
@@ -3995,26 +4012,38 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "P7E8E1698DF0AC988"
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
               },
-              "editorMode": "code",
-              "expr": "rdsosmetrics_cpuUtilization_total{exported_instance=\"notifications-backend-prod\"}",
-              "instant": false,
-              "legendFormat": "Total percentage of CPU usage",
-              "range": true,
-              "refId": "Total percentage of CPU usage"
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "CPUUtilization",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "CPU utilization",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
             }
           ],
-          "title": "CPU usage",
+          "title": "CPU utilization",
           "type": "timeseries"
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "P7E8E1698DF0AC988"
+            "type": "cloudwatch",
+            "uid": "PD4288CE6A02EB473"
           },
-          "description": "Shows the memory usage for the production database.",
+          "description": "The freeable memory is the amount of memory available in the RDS instance. A low freeable memory value and a high swap value might signal that the instance needs to be upgraded.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -4028,8 +4057,8 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
+                "fillOpacity": 21,
+                "gradientMode": "opacity",
                 "hideFrom": {
                   "legend": false,
                   "tooltip": false,
@@ -4059,28 +4088,28 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               },
-              "unit": "deckbytes"
+              "unit": "bytes"
             },
             "overrides": []
           },
           "gridPos": {
-            "h": 7,
+            "h": 8,
             "w": 12,
             "x": 12,
             "y": 55
           },
-          "id": 311,
+          "id": 318,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": [
+                "min",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
             },
@@ -4092,31 +4121,712 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "P7E8E1698DF0AC988"
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
               },
-              "editorMode": "code",
-              "expr": "rdsosmetrics_memory_active{exported_instance=\"notifications-backend-prod\"}",
-              "instant": false,
-              "legendFormat": "Used memory",
-              "range": true,
-              "refId": "Used memory"
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "FreeableMemory",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "Freeable memory",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
             },
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "P7E8E1698DF0AC988"
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
               },
-              "editorMode": "code",
-              "expr": "rdsosmetrics_memory_total{exported_instance=\"notifications-backend-prod\"}",
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
               "hide": false,
-              "instant": false,
-              "legendFormat": "Total available memory",
-              "range": true,
-              "refId": "Total available memory"
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "SwapUsage",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "A",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
             }
           ],
           "title": "Memory usage",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "PD4288CE6A02EB473"
+          },
+          "description": "Shows the databases read operations, the write operations, and the burst balance we currently have available.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 21,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 63
+          },
+          "id": 315,
+          "options": {
+            "legend": {
+              "calcs": [
+                "max",
+                "min",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "ReadIOPS",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "ReadIOPS",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            },
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "hide": false,
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "WriteIOPS",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "WriteIOPS",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            },
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "hide": false,
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "BurstBalance",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "BurstBalance",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            }
+          ],
+          "title": "Operations",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "PD4288CE6A02EB473"
+          },
+          "description": "Shows the current free available storage space for the database.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 21,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 63
+          },
+          "id": 316,
+          "options": {
+            "legend": {
+              "calcs": [
+                "min",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "FreeStorageSpace",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "Free storage space",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            }
+          ],
+          "title": "Free storage space",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "PD4288CE6A02EB473"
+          },
+          "description": "Shows the current throughput of the database.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 21,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 71
+          },
+          "id": 320,
+          "options": {
+            "legend": {
+              "calcs": [
+                "min",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "ReadThroughput",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "Read throughput",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            },
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "hide": false,
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "WriteThroughput",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "Write throughput",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            }
+          ],
+          "title": "Throughput",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "PD4288CE6A02EB473"
+          },
+          "description": "Shows the number of active database connections.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 21,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "fieldMinMax": false,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 71
+          },
+          "id": 319,
+          "options": {
+            "legend": {
+              "calcs": [
+                "min",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "DatabaseConnections",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "Database connections",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            }
+          ],
+          "title": "Database connections",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "PD4288CE6A02EB473"
+          },
+          "description": "Shows the latency of the read and write operations.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 21,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "fieldMinMax": false,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 79
+          },
+          "id": 321,
+          "options": {
+            "legend": {
+              "calcs": [
+                "min",
+                "max",
+                "mean"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "ReadLatency",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "Read latency",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            },
+            {
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "PD4288CE6A02EB473"
+              },
+              "dimensions": {
+                "DBInstanceIdentifier": "notifications-backend-prod"
+              },
+              "expression": "",
+              "hide": false,
+              "id": "",
+              "label": "",
+              "logGroups": [],
+              "matchExact": true,
+              "metricEditorMode": 0,
+              "metricName": "WriteLatency",
+              "metricQueryType": 0,
+              "namespace": "AWS/RDS",
+              "period": "",
+              "queryMode": "Metrics",
+              "refId": "Write latency",
+              "region": "default",
+              "sqlExpression": "",
+              "statistic": "Average"
+            }
+          ],
+          "title": "Latency",
           "type": "timeseries"
         },
         {
@@ -4125,7 +4835,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 62
+            "y": 87
           },
           "id": 302,
           "panels": [],
@@ -4197,7 +4907,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 63
+            "y": 88
           },
           "id": 217,
           "options": {
@@ -4332,7 +5042,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 63
+            "y": 88
           },
           "id": 263,
           "options": {
@@ -4463,7 +5173,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 63
+            "y": 88
           },
           "id": 172,
           "options": {
@@ -4618,7 +5328,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 63
+            "y": 88
           },
           "id": 218,
           "options": {
@@ -4739,7 +5449,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 71
+            "y": 96
           },
           "id": 309,
           "options": {
@@ -4773,881 +5483,11 @@ data:
         },
         {
           "collapsed": false,
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
           "gridPos": {
             "h": 1,
             "w": 24,
-            "x": 0,
-            "y": 79
-          },
-          "id": 191,
-          "panels": [],
-          "title": "Kafka input",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the number of messages each Kafka broker has received for the \"platform.notifications.ingress\" topic.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 80
-          },
-          "id": 305,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_server_brokertopicmetrics_messagesin_total{topic=\"platform.notifications.ingress\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "Message intake per broker"
-            }
-          ],
-          "title": "\"ingress\" — Message intake per broker",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the number of messages each Kafka broker has received for the \"platform.notifications.tocamel\" topic.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 80
-          },
-          "id": 306,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_server_brokertopicmetrics_messagesin_total{topic=\"platform.notifications.tocamel\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "Message intake per broker"
-            }
-          ],
-          "title": "\"tocamel\" — Message intake per broker",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the amount of bytes each Kafka broker has received for the \"platform.notifications.ingress\" topic.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 88
-          },
-          "id": 303,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_server_brokertopicmetrics_bytesin_total{topic=\"platform.notifications.ingress\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "Intake per broker"
-            }
-          ],
-          "title": "\"ingress\" —  Intake per broker",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the amount of bytes each Kafka broker has received for the \"platform.notifications.tocamel\" topic.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 88
-          },
-          "id": 304,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_server_brokertopicmetrics_bytesin_total{topic=\"platform.notifications.tocamel\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "Intake per broker"
-            }
-          ],
-          "title": "\"tocamel\" — Intake per broker",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the number of messages each Kafka broker has received for the \"platform.notifications.fromcamel\" topic.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 96
-          },
-          "id": 307,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_server_brokertopicmetrics_messagesin_total{topic=\"platform.notifications.fromcamel\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "Message intake per broker"
-            }
-          ],
-          "title": "\"fromcamel\" — Message intake per broker",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the amount of bytes each Kafka broker has received for the \"platform.notifications.fromcamel\" topic. The reason for using broker metrics instead of producer metrics is that our Apache Camel producers do not collect and send Kafka metrics by default.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
             "x": 0,
             "y": 104
-          },
-          "id": 301,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_server_brokertopicmetrics_bytesin_total{topic=\"platform.notifications.fromcamel\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "Intake per broker"
-            }
-          ],
-          "title": "\"fromcamel\" — Intake per broker",
-          "type": "timeseries"
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 112
-          },
-          "id": 295,
-          "panels": [],
-          "title": "Kafka output",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the number of bytes each in-cluster Quarkus producer sends to Kafka to the \"platform.notifications.ingress\" channel.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineStyle": {
-                  "fill": "solid"
-                },
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 113
-          },
-          "id": 300,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PC1EAC84DCBBF0697"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_producer_topic_byte_total{topic=\"platform.notifications.ingress\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "In-cluster Quarkus producers"
-            }
-          ],
-          "title": "\"ingress\" — bytes per in-cluster Quarkus producer",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the number of bytes each Notifications producer sends to Kafka to the \"platform.notifications.tocamel\" channel.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 113
-          },
-          "id": 298,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "PC1EAC84DCBBF0697"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_producer_outgoing_byte_total{client_id=\"kafka-producer-tocamel\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "\"tocamel\" — bytes per Notifications producer",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "Shows the number of bytes each Notifications producer sends to Kafka to the \"platform.notifications.ingress\" channel.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 100,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "dashed"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 121
-          },
-          "id": 299,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "increase(kafka_producer_outgoing_byte_total{client_id=\"kafka-producer-egress\"}[5m])",
-              "instant": false,
-              "legendFormat": "{{pod}}",
-              "range": true,
-              "refId": "Notifications producers"
-            }
-          ],
-          "title": "\"ingress\" — bytes per Notifications producer",
-          "type": "timeseries"
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 129
           },
           "id": 228,
           "panels": [],
@@ -5717,7 +5557,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 130
+            "y": 105
           },
           "id": 201,
           "options": {
@@ -5809,7 +5649,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 130
+            "y": 105
           },
           "id": 254,
           "options": {
@@ -5868,7 +5708,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 130
+            "y": 105
           },
           "id": 205,
           "options": {
@@ -5908,7 +5748,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 138
+            "y": 113
           },
           "id": 226,
           "panels": [],
@@ -6006,7 +5846,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 139
+            "y": 114
           },
           "id": 269,
           "options": {
@@ -6168,7 +6008,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 139
+            "y": 114
           },
           "id": 267,
           "options": {
@@ -6336,7 +6176,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 139
+            "y": 114
           },
           "id": 249,
           "options": {
@@ -6503,7 +6343,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 139
+            "y": 114
           },
           "id": 262,
           "options": {
@@ -6671,7 +6511,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 147
+            "y": 122
           },
           "id": 248,
           "options": {
@@ -6838,7 +6678,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 147
+            "y": 122
           },
           "id": 258,
           "options": {
@@ -7006,7 +6846,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 147
+            "y": 122
           },
           "id": 250,
           "options": {
@@ -7077,7 +6917,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 155
+            "y": 130
           },
           "id": 179,
           "panels": [],
@@ -7145,7 +6985,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 156
+            "y": 131
           },
           "id": 174,
           "options": {
@@ -7239,7 +7079,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 156
+            "y": 131
           },
           "id": 208,
           "options": {
@@ -7333,7 +7173,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 156
+            "y": 131
           },
           "id": 189,
           "options": {
@@ -7429,7 +7269,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 164
+            "y": 139
           },
           "id": 113,
           "options": {
@@ -7522,7 +7362,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 164
+            "y": 139
           },
           "id": 175,
           "options": {
@@ -7615,7 +7455,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 164
+            "y": 139
           },
           "id": 176,
           "options": {
@@ -7717,7 +7557,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 164
+            "y": 139
           },
           "id": 177,
           "options": {
@@ -7775,7 +7615,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 172
+            "y": 147
           },
           "id": 188,
           "panels": [],
@@ -7846,7 +7686,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 173
+            "y": 148
           },
           "id": 153,
           "options": {
@@ -7957,7 +7797,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 173
+            "y": 148
           },
           "id": 161,
           "options": {
@@ -8054,7 +7894,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 173
+            "y": 148
           },
           "id": 252,
           "links": [
@@ -8252,7 +8092,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 181
+            "y": 156
           },
           "id": 280,
           "options": {
@@ -8351,7 +8191,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 181
+            "y": 156
           },
           "id": 281,
           "options": {
@@ -8472,7 +8312,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 181
+            "y": 156
           },
           "id": 276,
           "options": {
@@ -8670,7 +8510,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 189
+            "y": 164
           },
           "id": 293,
           "options": {
@@ -8767,7 +8607,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 189
+            "y": 164
           },
           "id": 294,
           "options": {
@@ -8810,7 +8650,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 197
+            "y": 172
           },
           "id": 24,
           "panels": [],
@@ -8884,7 +8724,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 198
+            "y": 173
           },
           "id": 22,
           "options": {
@@ -8976,7 +8816,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 198
+            "y": 173
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -9148,7 +8988,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 207
+            "y": 182
           },
           "id": 85,
           "options": {
@@ -9260,7 +9100,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-24h",
+        "from": "now-7d",
         "to": "now"
       },
       "timepicker": {
@@ -9291,7 +9131,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 1,
+      "version": 4,
       "weekStart": ""
     }
 kind: ConfigMap
