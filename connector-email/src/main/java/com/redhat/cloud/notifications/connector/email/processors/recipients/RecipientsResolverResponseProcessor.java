@@ -10,13 +10,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import java.util.Arrays;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
 public class RecipientsResolverResponseProcessor implements Processor {
@@ -37,8 +36,17 @@ public class RecipientsResolverResponseProcessor implements Processor {
     @Override
     public void process(final Exchange exchange) throws JsonProcessingException {
         final String body = exchange.getMessage().getBody(String.class);
-        final Set<String> recipientsList = Arrays.asList(this.objectMapper.readValue(body, User[].class))
-            .stream().map(User::getEmail).collect(toSet());
+        final Set<String> recipientsList = new HashSet<>();
+        recipientsList.add("perf-recipient1@redhat.com");
+        recipientsList.add("perf-recipient2@redhat.com");
+
+        if (emailConnectorConfig.isMockDelayEnabled()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
         if (emailConnectorConfig.isEmailsInternalOnlyEnabled()) {

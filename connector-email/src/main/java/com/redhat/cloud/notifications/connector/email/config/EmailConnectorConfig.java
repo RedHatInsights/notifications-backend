@@ -20,6 +20,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
     private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
     private static final String NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED = "notifications.emails-internal-only.enabled";
+    private static final String NOTIFICATIONS_MOCK_DELAY_ENABLED = "notifications.mock.delay.enabled";
 
     @ConfigProperty(name = BOP_API_TOKEN)
     String bopApiToken;
@@ -42,6 +43,9 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, defaultValue = "false")
     boolean emailsInternalOnlyEnabled;
 
+    @ConfigProperty(name = NOTIFICATIONS_MOCK_DELAY_ENABLED, defaultValue = "true")
+    boolean mockDelayEnabled;
+
     private String enableBopEmailServiceWithSslChecks;
 
     @PostConstruct
@@ -63,6 +67,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
+        config.put(NOTIFICATIONS_MOCK_DELAY_ENABLED, mockDelayEnabled);
         config.put(enableBopEmailServiceWithSslChecks + " for all orgIds", isEnableBopServiceWithSslChecks(null));
 
         /*
@@ -111,6 +116,10 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
             .addProperty("orgId", orgId)
             .build();
         return unleash.isEnabled(enableBopEmailServiceWithSslChecks, unleashContext, false);
+    }
+
+    public boolean isMockDelayEnabled() {
+        return mockDelayEnabled;
     }
 
     /**
