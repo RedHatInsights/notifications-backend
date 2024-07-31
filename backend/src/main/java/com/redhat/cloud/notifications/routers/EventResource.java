@@ -28,6 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -95,6 +96,20 @@ public class EventResource {
 
         String orgId = getOrgId(securityContext);
         List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, query);
+
+        if (events.isEmpty()) {
+            Meta meta = new Meta();
+            meta.setCount(0L);
+
+            Map<String, String> links = PageLinksBuilder.build(uriInfo.getPath(), 0, query);
+
+            Page<EventLogEntry> page = new Page<>();
+            page.setData(new ArrayList<>());
+            page.setMeta(meta);
+            page.setLinks(links);
+            return page;
+        }
+
         List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
             List<EventLogEntryAction> actions;
             if (!includeActions) {

@@ -102,6 +102,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
         Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, OTHER_ORG_ID, "other-username", FULL_ACCESS);
+        Header emptyIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, "none", "other-username", FULL_ACCESS);
 
         Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
         Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
@@ -523,6 +524,17 @@ public class EventResourceTest extends DbIsolatedTest {
         assertSameEvent(page.getData().get(0), event3, history4, history5, history7);
         assertSameEvent(page.getData().get(1), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
+
+        /*
+         * Test #32
+         * Request: No filter
+         * Expected response: Empty event log page should be returned
+         */
+        page = getEventLogPage(emptyIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
+        assertEquals(0, page.getMeta().getCount());
+        assertEquals(0, page.getData().size());
+        assertTrue(page.getData().isEmpty());
         assertLinks(page.getLinks(), "first", "last");
     }
 
