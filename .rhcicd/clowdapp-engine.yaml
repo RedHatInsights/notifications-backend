@@ -23,6 +23,9 @@ objects:
       sharedDbAppName: notifications-backend
     featureFlags: true
     kafkaTopics:
+    - topicName: platform.notifications.connector.email.high.volume
+      partitions: 6
+      replicas: 3
     - topicName: platform.notifications.ingress
       partitions: 3
       replicas: 3

@@ -14,6 +14,8 @@ import static org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory.
 public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder {
 
     public static final String ENGINE_TO_CONNECTOR = "engine-to-connector";
+    public static final String ENTRYPOINT = "entrypoint";
+    public static final String ROUTE_ID_KAFKA_REGULAR_ROUTE = "kafka-regular-incoming-topic-entrypoint";
     public static final String KAFKA_REINJECTION = "kafka-reinjection";
 
     @Inject
@@ -67,7 +69,12 @@ public abstract class EngineToConnectorRouteBuilder extends EndpointRouteBuilder
                 .handled(true)
                 .process(exceptionProcessor);
 
-        from(buildKafkaEndpoint())
+        // Forward the messages from the regular incoming Kafka topic.
+        from(buildKafkaEndpoint()).routeId(ROUTE_ID_KAFKA_REGULAR_ROUTE).to(direct(ENTRYPOINT));
+
+        // Having an entrypoint allows any connector to inject messages to the
+        // main flow from any other Kafka sources.
+        from(direct(ENTRYPOINT))
                 .routeId(ENGINE_TO_CONNECTOR)
                 .to(log(getClass().getName()).level("DEBUG").showHeaders(true).showBody(true))
                 .filter(incomingCloudEventFilter)

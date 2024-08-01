@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.smallrye.reactive.messaging.memory.InMemorySink;
 import io.vertx.core.json.JsonObject;
@@ -22,6 +23,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -32,7 +34,7 @@ public class ConnectorSenderTest {
     @Inject
     ConnectorSender connectorSender;
 
-    @InjectMock
+    @InjectSpy
     EngineConfig engineConfig;
 
     @Any
@@ -44,6 +46,57 @@ public class ConnectorSenderTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
+
+    /**
+     * Clear the Kafka topics so that each test can verify the exact number
+     * of messages received, as otherwise the topics get not cleared until the
+     * whole test class is run.
+     */
+    @AfterEach
+    void cleanUp() {
+        this.inMemoryConnector.sink(ConnectorSender.HIGH_VOLUME_CHANNEL).clear();
+        this.inMemoryConnector.sink(ConnectorSender.TOCAMEL_CHANNEL).clear();
+    }
+
+    /**
+     * Tests that events incoming from a high volume application are sent to
+     * the high volume Kafka topic.
+     */
+    @Test
+    @Transactional
+    void testHighVolumeEventGetsSentToHighVolumeTopic() {
+        // Prepare the fixtures for our function.
+        final Bundle bundle = this.resourceHelpers.createBundle("bundle-test-high-volume");
+        final Application application = this.resourceHelpers.createApp(bundle.getId(), ConnectorSender.HIGH_VOLUME_APPLICATION);
+        final EventType eventType = this.resourceHelpers.createEventType(application.getId(), "event-test-high-volume");
+        final Event event = this.resourceHelpers.createEvent(eventType);
+        final Endpoint endpoint = this.resourceHelpers.createEndpoint(EndpointType.WEBHOOK, null, true, 0);
+
+        final JsonObject payload = new JsonObject();
+        payload.put("Red Hat", "Red Hat Enterprise Linux");
+
+        // Call the function under test.
+        this.connectorSender.send(event, endpoint, payload);
+
+        // Get the Kafka sink.
+        final InMemorySink<JsonObject> highVolumeMessages = this.inMemoryConnector.sink(ConnectorSender.HIGH_VOLUME_CHANNEL);
+
+        // Wait until we receive the message.
+        Awaitility.await().until(
+            () -> highVolumeMessages.received().size() == 1
+        );
+
+        final Message<JsonObject> message = highVolumeMessages.received().getFirst();
+        final JsonObject receivedPayload = message.getPayload();
+
+        Assertions.assertEquals(payload.encode(), receivedPayload.encode(), "the received payload does not match");
+
+        // Assert that the regular "tocamel" topic did not receive the event.
+        final InMemorySink<JsonObject> regularMessages = this.inMemoryConnector.sink(ConnectorSender.TOCAMEL_CHANNEL);
+
+        // Verify that the regular channel did not receive any messages.
+        Assertions.assertEquals(0, regularMessages.received().size(), "no messages should have been received in the \"tocamel\" topic");
+    }
 
     /**
      * Tests that when the payload of the message is over the configured

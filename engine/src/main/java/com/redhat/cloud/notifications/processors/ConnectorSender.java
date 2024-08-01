@@ -35,7 +35,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
 public class ConnectorSender {
-
+    /**
+     * Constant for the name of what we consider a high volume application.
+     */
+    public static final String HIGH_VOLUME_APPLICATION = "errata-notifications";
+    /**
+     * Constant for the "high volume" Kafka topic where all the events that are
+     * incoming from a high volume and traffic tenant are sent.
+     */
+    public static final String HIGH_VOLUME_CHANNEL = "highvolume";
     public static final String TOCAMEL_CHANNEL = "tocamel";
     // TODO notification should end with a s but eventing-integrations does not expect it...
     public static final String CLOUD_EVENT_TYPE_PREFIX = "com.redhat.console.notification.toCamel.";
@@ -46,6 +54,10 @@ public class ConnectorSender {
     private static final String TAG_KEY_ORG_ID = "orgid";
     private static final String TAG_KEY_APPLICATION = "application";
     private static final String TAG_KEY_EVENT_TYPE = "event_type";
+
+    @Inject
+    @Channel(HIGH_VOLUME_CHANNEL)
+    Emitter<JsonObject> highVolumeEmitter;
 
     @Inject
     @Channel(TOCAMEL_CHANNEL)
@@ -98,7 +110,12 @@ public class ConnectorSender {
 
         try {
             Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
-            emitter.send(message);
+
+            if (this.isEventFromHighVolumeApplication(event)) {
+                this.highVolumeEmitter.send(message);
+            } else {
+                this.emitter.send(message);
+            }
         } catch (Exception e) {
             history.setStatus(FAILED_INTERNAL);
             history.setDetails(Map.of("failure", e.getMessage()));
@@ -147,6 +164,17 @@ public class ConnectorSender {
         } else {
             return endpoint.getType().name().toLowerCase();
         }
+    }
+
+    /**
+     * Checks if the given event has been produced in an application that is
+     * considered a "high volume" one, which means that produces a high amount
+     * of traffic which needs to be diverted to special connectors.
+     * @param event the event we have received.
+     * @return {@code true} if the event comes from a high volume application.
+     */
+    private boolean isEventFromHighVolumeApplication(final Event event) {
+        return HIGH_VOLUME_APPLICATION.equals(event.getEventType().getApplication().getName());
     }
 
     private void recordMetrics(Event event, String connector, int payloadSize) {

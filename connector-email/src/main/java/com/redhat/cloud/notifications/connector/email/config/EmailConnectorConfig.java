@@ -17,6 +17,11 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_CLIENT_ID = "notifications.connector.user-provider.bop.client_id";
     private static final String BOP_ENV = "notifications.connector.user-provider.bop.env";
     private static final String BOP_URL = "notifications.connector.user-provider.bop.url";
+    private static final String KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_INTERVAL_MS = "notifications.connector.kafka.incoming.high-volume.max-poll-interval-ms";
+    private static final String KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_RECORDS = "notifications.connector.kafka.incoming.high-volume.max-poll-records";
+    private static final String KAFKA_INCOMING_HIGH_VOLUME_POLL_ON_ERROR = "notifications.connector.kafka.incoming.high-volume.poll-on-error";
+    private static final String KAFKA_INCOMING_HIGH_VOLUME_TOPIC = "notifications.connector.kafka.incoming.high-volume.topic";
+    private static final String KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED = "notifications.connector.kafka.incoming.high-volume.topic.enabled";
     private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
     private static final String RECIPIENTS_RESOLVER_USER_SERVICE_URL = "notifications.connector.recipients-resolver.url";
     private static final String NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED = "notifications.emails-internal-only.enabled";
@@ -32,6 +37,20 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     @ConfigProperty(name = BOP_URL)
     String bopURL;
+
+    // https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html#max-poll-interval-ms
+    @ConfigProperty(name = KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_INTERVAL_MS, defaultValue = "300000")
+    int incomingKafkaHighVolumeMaxPollIntervalMs;
+
+    // https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html#max-poll-records
+    @ConfigProperty(name = KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_RECORDS, defaultValue = "500")
+    int incomingKafkaHighVolumeMaxPollRecords;
+
+    @ConfigProperty(name = KAFKA_INCOMING_HIGH_VOLUME_POLL_ON_ERROR, defaultValue = "RECONNECT")
+    String incomingKafkaHighVolumePollOnError;
+
+    @ConfigProperty(name = KAFKA_INCOMING_HIGH_VOLUME_TOPIC)
+    String incomingKafkaHighVolumeTopic;
 
     @ConfigProperty(name = RECIPIENTS_RESOLVER_USER_SERVICE_URL)
     String recipientsResolverServiceURL;
@@ -60,6 +79,10 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
         config.put(BOP_ENV, bopEnv);
         config.put(BOP_URL, bopURL);
+        config.put(KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_INTERVAL_MS, incomingKafkaHighVolumeMaxPollIntervalMs);
+        config.put(KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_RECORDS, incomingKafkaHighVolumeMaxPollRecords);
+        config.put(KAFKA_INCOMING_HIGH_VOLUME_POLL_ON_ERROR, incomingKafkaHighVolumePollOnError);
+        config.put(KAFKA_INCOMING_HIGH_VOLUME_TOPIC, incomingKafkaHighVolumeTopic);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
@@ -91,6 +114,22 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     public String getRecipientsResolverServiceURL() {
         return recipientsResolverServiceURL;
+    }
+
+    public int getIncomingKafkaHighVolumeMaxPollIntervalMs() {
+        return this.incomingKafkaHighVolumeMaxPollIntervalMs;
+    }
+
+    public int getIncomingKafkaHighVolumeMaxPollRecords() {
+        return this.incomingKafkaHighVolumeMaxPollRecords;
+    }
+
+    public String getIncomingKafkaHighVolumePollOnError() {
+        return this.incomingKafkaHighVolumePollOnError;
+    }
+
+    public String getIncomingKafkaHighVolumeTopic() {
+        return this.incomingKafkaHighVolumeTopic;
     }
 
     public int getMaxRecipientsPerEmail() {
