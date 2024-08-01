@@ -7,14 +7,16 @@ import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLo
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
+import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
+import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
+import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
+import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
@@ -22,6 +24,7 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TRUST_ALL;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,25 +51,7 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
 
     @Override
     protected JsonObject buildIncomingPayload(String targetUrl) {
-
-        JsonObject authentication = new JsonObject();
-        authentication.put("type", SECRET_TOKEN.name());
-        authentication.put("secretId", 123L);
-
-        JsonObject metadata = new JsonObject();
-        metadata.put("url", targetUrl);
-        metadata.put("trustAll", "true");
-        metadata.put("authentication", authentication);
-
-        JsonObject payload = new JsonObject();
-        payload.put(PagerDutyCloudEventDataExtractor.NOTIF_METADATA, metadata);
-        payload.put("org_id", DEFAULT_ORG_ID);
-        payload.put("account_id", DEFAULT_ACCOUNT_ID);
-        payload.put("events", JsonArray.of(
-                JsonObject.of("event-1-key", "event-1-value"),
-                JsonObject.of("event-2-key", "event-2-value")
-        ));
-        return payload;
+        return createCloudEventData(targetUrl, true);
     }
 
     @Override
@@ -78,7 +63,6 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         return exchange -> {
             String outgoingPayload = exchange.getIn().getBody(String.class);
 
-            assertEquals(DEFAULT_ORG_ID, exchange.getProperty(ORG_ID, String.class));
             assertEquals(DEFAULT_ACCOUNT_ID, exchange.getProperty(ACCOUNT_ID, String.class));
             assertTrue(exchange.getProperty(TRUST_ALL, Boolean.class));
             assertEquals(exchange.getProperty(TARGET_URL, String.class), "https://" + exchange.getProperty(TARGET_URL_NO_SCHEME, String.class));
@@ -89,6 +73,68 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
             // In case of assertion failure, this return value won't be used.
             return true;
         };
+    }
+
+    @Test
+    void testMissingPayloadParameter() throws Exception {
+        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
+        expectedPayload.remove("payload");
+        testMissingParameters(expectedPayload, "The 'payload' field is required");
+    }
+
+    @Test
+    void testMissingPayloadSummaryParameter() throws Exception {
+        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
+        JsonObject payload = (JsonObject) expectedPayload.remove("payload");
+        payload.remove("summary");
+        expectedPayload.put("payload", payload);
+
+        testMissingParameters(expectedPayload, "The alert summary field is required");
+    }
+
+    @Test
+    void testMissingPayloadSeverityParameter() throws Exception {
+        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
+        JsonObject payload = (JsonObject) expectedPayload.remove("payload");
+        payload.remove("severity");
+        expectedPayload.put("payload", payload);
+
+        testMissingParameters(expectedPayload, "The alert severity field is required");
+    }
+
+    @Test
+    void testMissingPayloadSourceParameter() throws Exception {
+        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
+        JsonObject payload = (JsonObject) expectedPayload.remove("payload");
+        payload.remove("source");
+        expectedPayload.put("payload", payload);
+
+        testMissingParameters(expectedPayload, "The alert source field is required");
+
+    }
+
+    @Test
+    void testMissingEventActionParameter() throws Exception {
+        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
+        expectedPayload.remove("event_action");
+        testMissingParameters(expectedPayload, "The 'event_action' field is required");
+    }
+
+    void testMissingParameters(JsonObject incomingPayload, String expectedErrorMessage) throws Exception {
+
+        mockKafkaSourceEndpoint(); // This is the entry point of the connector.
+        MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
+
+        String cloudEventId = sendMessageToKafkaSource(incomingPayload);
+
+        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, null, expectedErrorMessage);
+
+        checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
+        checkRouteMetrics(connectorConfig.getConnectorName(), 0, 0, 0);
+
+        checkRouteMetrics(SUCCESS, 0, 0, 0);
+        checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
+        micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 0);
     }
 
     @Override
