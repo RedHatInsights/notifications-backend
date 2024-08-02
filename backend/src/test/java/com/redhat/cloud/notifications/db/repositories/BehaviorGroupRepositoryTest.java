@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -13,7 +12,6 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -43,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -60,12 +57,8 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
 
-    @InjectMock
-    BackendConfig backendConfig;
-
     @Test
     void shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameOrgId() {
-        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", bundle.getId());
 
@@ -83,7 +76,6 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Test
     void shouldThrowExceptionWhenCreatingDefaultWithExistingDisplayName() {
-        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
         Bundle bundle = resourceHelpers.createBundle();
         BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName", bundle.getId());
 
@@ -113,7 +105,6 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Test
     void shouldThrowExceptionWhenUpdatingToExistingDisplayNameAndSameOrgId() {
-        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
         Bundle bundle = resourceHelpers.createBundle("name", "displayName");
         BehaviorGroup behaviorGroup1 = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName1", bundle.getId());
         BehaviorGroup behaviorGroup2 = resourceHelpers.createBehaviorGroup(behaviorGroup1.getAccountId(), behaviorGroup1.getOrgId(), "displayName2", bundle.getId());
@@ -127,7 +118,6 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Test
     void shouldThrowExceptionWhenUpdatingDefaultToExistingDisplayName() {
-        when(backendConfig.isUniqueBgNameEnabled()).thenReturn(true);
         Bundle bundle = resourceHelpers.createBundle("name", "displayName");
         BehaviorGroup behaviorGroup1 = resourceHelpers.createDefaultBehaviorGroup("displayName1", bundle.getId());
         BehaviorGroup behaviorGroup2 = resourceHelpers.createDefaultBehaviorGroup("displayName2", bundle.getId());

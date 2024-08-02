@@ -42,14 +42,6 @@ public class BackendConfig {
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean unleashEnabled;
 
-    @ConfigProperty(name = "notifications.enforce-bg-name-unicity", defaultValue = "true")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean enforceBehaviorGroupNameUnicity;
-
-    @ConfigProperty(name = "notifications.enforce-integration-name-unicity", defaultValue = "true")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean enforceIntegrationNameUnicity;
-
     @ConfigProperty(name = "notifications.drawer.enabled", defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean drawerEnabled;
@@ -84,8 +76,6 @@ public class BackendConfig {
     @PostConstruct
     void postConstruct() {
         drawerToggle = toggleRegistry.register("drawer", true);
-        uniqueBgNameToggle = toggleRegistry.register("unique-bg-name", true);
-        uniqueIntegrationNameToggle = toggleRegistry.register("unique-integration-name", true);
         kesselBackendToggle = toggleRegistry.register("kessel-backend", true);
     }
 
@@ -98,8 +88,6 @@ public class BackendConfig {
         config.put(KESSEL_BACKEND_ENABLED, isKesselBackendEnabled());
         config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClientEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
-        config.put(uniqueBgNameToggle, isUniqueBgNameEnabled());
-        config.put(uniqueIntegrationNameToggle, isUniqueIntegrationNameEnabled());
         config.put(UNLEASH, unleashEnabled);
 
         Log.info("=== Startup configuration ===");
@@ -133,22 +121,6 @@ public class BackendConfig {
             return unleash.isEnabled(kesselBackendToggle, false);
         } else {
             return kesselBackendEnabled;
-        }
-    }
-
-    public boolean isUniqueBgNameEnabled() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(uniqueBgNameToggle, true);
-        } else {
-            return enforceBehaviorGroupNameUnicity;
-        }
-    }
-
-    public boolean isUniqueIntegrationNameEnabled() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(uniqueIntegrationNameToggle, true);
-        } else {
-            return enforceIntegrationNameUnicity;
         }
     }
 
