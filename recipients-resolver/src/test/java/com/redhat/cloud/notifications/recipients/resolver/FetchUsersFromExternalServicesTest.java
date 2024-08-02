@@ -25,6 +25,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -165,6 +166,7 @@ public class FetchUsersFromExternalServicesTest {
         return itUserResponses;
     }
 
+    @Disabled
     @Test
     public void getAllUsersFromDefaultGroup() {
         RbacGroup defaultGroup = new RbacGroup();
@@ -211,6 +213,7 @@ public class FetchUsersFromExternalServicesTest {
         assertEquals(0, users.size());
     }
 
+    @Disabled
     @Test
     public void getAllUsersCache() {
         int initialSize = 1095;

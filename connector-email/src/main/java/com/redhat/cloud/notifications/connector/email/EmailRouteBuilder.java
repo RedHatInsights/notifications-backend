@@ -71,7 +71,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .routeId(emailConnectorConfig.getConnectorName())
             .process(recipientsResolverRequestPreparer)
             .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-                //.to(setupRecipientResolverEndpoint())
+                .to(setupRecipientResolverEndpoint())
             .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
             .process(recipientsResolverResponseProcessor)
             .choice().when(shouldSkipEmail())

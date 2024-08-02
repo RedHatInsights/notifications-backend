@@ -40,14 +40,6 @@ public class RecipientsResolverResponseProcessor implements Processor {
         recipientsList.add("perf-recipient1@redhat.com");
         recipientsList.add("perf-recipient2@redhat.com");
 
-        if (emailConnectorConfig.isMockDelayEnabled()) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
         Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
         if (emailConnectorConfig.isEmailsInternalOnlyEnabled()) {
             Set<String> forbiddenEmail = emails.stream().filter(email -> !email.trim().toLowerCase().endsWith("@redhat.com")).collect(Collectors.toSet());
