@@ -32,6 +32,10 @@ public class EventRepository {
         query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
         List<UUID> eventIds = getEventIds(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, query);
+        if (eventIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         String hql;
         if (fetchNotificationHistory) {
             hql = "SELECT DISTINCT e FROM Event e LEFT JOIN FETCH e.historyEntries he WHERE e.id IN (:eventIds)";
