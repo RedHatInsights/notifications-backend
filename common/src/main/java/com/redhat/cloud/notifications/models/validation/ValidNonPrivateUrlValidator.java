@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.models.validation;
 
-import io.quarkus.runtime.configuration.ProfileManager;
+import io.quarkus.runtime.LaunchMode;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -83,7 +83,7 @@ public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNon
             return false;
         }
 
-        if (ProfileManager.getLaunchMode() == NORMAL && address.isLoopbackAddress()) {
+        if (NORMAL.getProfileKey().equals(LaunchMode.current().getProfileKey()) && address.isLoopbackAddress()) {
             this.replaceDefaultMessage(constraintValidatorContext, LOOPBACK_ADDRESS);
 
             return false;
