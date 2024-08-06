@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models.validation;
 
 import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.ProfileManager;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
@@ -101,10 +102,10 @@ public class ValidNonPrivateUrlValidatorTest {
     @Test
     public void loopbackHostTest() {
         try {
-            LaunchMode.set(LaunchMode.NORMAL);
+            ProfileManager.setLaunchMode(LaunchMode.NORMAL);
             this.testHosts(loopbackAddress, ValidNonPrivateUrlValidator.LOOPBACK_ADDRESS);
         } finally {
-            LaunchMode.set(LaunchMode.TEST);
+            ProfileManager.setLaunchMode(LaunchMode.TEST);
         }
     }
 
