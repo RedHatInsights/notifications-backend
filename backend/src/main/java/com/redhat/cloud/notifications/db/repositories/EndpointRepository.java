@@ -318,7 +318,7 @@ public class EndpointRepository {
                                                 .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
                                                 .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
                                 )
-                                .ifAnd(authorizedIds != null && !authorizedIds.isEmpty(), "e.id IN (:authorizedIds)", "authorizedIds", authorizedIds)
+                                .ifAnd(authorizedIds != null, "e.id IN (:authorizedIds)", "authorizedIds", authorizedIds)
                                 .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
                                 .ifAnd(
                                         name != null && !name.isEmpty(),

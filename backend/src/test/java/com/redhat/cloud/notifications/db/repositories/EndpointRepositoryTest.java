@@ -201,6 +201,44 @@ public class EndpointRepositoryTest {
     }
 
     /**
+     * Tests that when the user does not have authorization to fetch any
+     * endpoints, then none are fetched.
+     */
+    @Test
+    void testShouldNotFetchEndpointWhenUnauthorized() {
+        // Create a few endpoints.
+        final List<Endpoint> createdEndpoints = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            createdEndpoints.add(
+                this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK)
+            );
+        }
+
+        // Call the function under test.
+        final List<Endpoint> fetchedEndpoints = this.endpointRepository.getEndpointsPerCompositeType(
+            DEFAULT_ORG_ID,
+            null,
+            Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
+            null,
+            null,
+            new HashSet<>()
+        );
+
+        // Call the count function under test.
+        final Long countedEndpoints = this.endpointRepository.getEndpointsCountPerCompositeType(
+            DEFAULT_ORG_ID,
+            null,
+            Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
+            null,
+            new HashSet<>()
+        );
+
+        // Assert that no endpoints were fetched.
+        Assertions.assertTrue(fetchedEndpoints.isEmpty(), "even though no authorized IDs were specified, at least one endpoint was fetched from the database");
+        Assertions.assertEquals(0, countedEndpoints, "even though no authorized IDs were specified, at least one endpoint was counted in the database");
+    }
+
+    /**
      * Tests that when the function under test is given a set of identifiers
      * for the endpoints that the user is allowed to fetch, it respects it and
      * just fetches those endpoints.

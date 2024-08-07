@@ -259,6 +259,9 @@ public class EndpointResource {
         if (this.backendConfig.isKesselBackendEnabled()) {
             // Fetch the set of integration IDs the user is authorized to view.
             final Set<UUID> authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            if (authorizedIds.isEmpty()) {
+                return new EndpointPage(new ArrayList<>(), new HashMap<>(), new Meta(0L));
+            }
 
             return this.internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds);
         }
