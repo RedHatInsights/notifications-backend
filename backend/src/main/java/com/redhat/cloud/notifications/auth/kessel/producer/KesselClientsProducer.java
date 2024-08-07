@@ -79,7 +79,7 @@ public class KesselClientsProducer {
     @Alternative
     @ApplicationScoped
     @Produces
-    public LookupClient getLookupCliente(final RelationsGrpcClientsManager relationsGrpcClientsManager) {
+    public LookupClient getLookupClient(final RelationsGrpcClientsManager relationsGrpcClientsManager) {
         return relationsGrpcClientsManager.getLookupClient();
     }
 }
