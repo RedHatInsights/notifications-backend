@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.respons
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.ITUserResponse;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Permission;
 import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPService;
+import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers;
 import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers.MBOPUser;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
@@ -182,7 +183,7 @@ public class FetchUsersFromExternalServices {
             final List<MBOPUser> receivedUsers = this.retryOnError(() -> {
                     LocalDateTime startTime = LocalDateTime.now();
                     try {
-                        List<MBOPUser> mbopUserlist = mbopService.getUsersByOrgId(
+                        MBOPUsers receivedMbopUsers = mbopService.getUsersByOrgId(
                             recipientsResolverConfig.getMbopApiToken(),
                             recipientsResolverConfig.getMbopClientId(),
                             recipientsResolverConfig.getMbopEnv(),
@@ -193,7 +194,9 @@ public class FetchUsersFromExternalServices {
                             false,
                             "enabled",
                             true
-                        ).users();
+                        );
+                        List<MBOPUser> mbopUserlist = receivedMbopUsers.users();
+                        Log.debug(receivedMbopUsers);
                         Duration duration = Duration.between(startTime, LocalDateTime.now());
                         if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
                             Log.warnf("MBOP service response time was %ds for request OrgId: %s, adminOnly: %s, offset %d ", duration.toSeconds(), orgId, adminsOnly, finalOffset);
