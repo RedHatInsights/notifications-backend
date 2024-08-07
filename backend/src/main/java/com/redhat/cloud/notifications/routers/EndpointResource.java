@@ -159,11 +159,11 @@ public class EndpointResource {
         }
 
         @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-        public List<NotificationHistory> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, final Query query) {
+        protected List<NotificationHistory> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, final Query query) {
             return this.internalGetEndpointHistory(securityContext, id, includeDetail, query);
         }
 
-        public List<NotificationHistory> internalGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, @Valid final Query query) {
+        protected List<NotificationHistory> internalGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, @Valid final Query query) {
             // TODO We need globally limitations (Paging support and limits etc)
             String orgId = getOrgId(securityContext);
             boolean doDetail = includeDetail != null && includeDetail;
@@ -213,11 +213,11 @@ public class EndpointResource {
         }
 
         @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-        public Page<NotificationHistory> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, final Query query) {
+        protected Page<NotificationHistory> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, final Query query) {
             return this.internalGetEndpointHistory(securityContext, uriInfo, id, includeDetail, query);
         }
 
-        public Page<NotificationHistory> internalGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, @Valid final Query query) {
+        protected Page<NotificationHistory> internalGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, @Valid final Query query) {
             String orgId = getOrgId(securityContext);
             boolean doDetail = includeDetail != null && includeDetail;
 
@@ -280,7 +280,7 @@ public class EndpointResource {
      * @return a page containing the requested endpoints.
      */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public EndpointPage getEndpointsLegacyRBACRoles(final SecurityContext securityContext, final Query query, final List<String> targetType, final Boolean activeOnly, final String name) {
+    protected EndpointPage getEndpointsLegacyRBACRoles(final SecurityContext securityContext, final Query query, final List<String> targetType, final Boolean activeOnly, final String name) {
         return this.internalGetEndpoints(securityContext, query, targetType, activeOnly, name, null);
     }
 
@@ -295,7 +295,7 @@ public class EndpointResource {
      *                      to fetch.
      * @return a page containing the requested endpoints.
      */
-    public EndpointPage internalGetEndpoints(
+    private EndpointPage internalGetEndpoints(
         final SecurityContext sec,
         final Query query,
         final List<String> targetType,
@@ -364,11 +364,11 @@ public class EndpointResource {
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    final EndpointDTO legacyRBACCreateEndpoint(final SecurityContext securityContext, final EndpointDTO endpointDTO) {
+    protected EndpointDTO legacyRBACCreateEndpoint(final SecurityContext securityContext, final EndpointDTO endpointDTO) {
         return this.internalCreateEndpoint(securityContext, endpointDTO);
     }
 
-    final EndpointDTO internalCreateEndpoint(final SecurityContext securityContext, @NotNull @Valid final EndpointDTO endpointDTO) {
+    protected EndpointDTO internalCreateEndpoint(final SecurityContext securityContext, @NotNull @Valid final EndpointDTO endpointDTO) {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
 
         try {
@@ -395,7 +395,7 @@ public class EndpointResource {
      * @return the created endpoint in the database.
      */
     @Transactional
-    public Endpoint internalCreateEndpoint(
+    protected Endpoint internalCreateEndpoint(
             @Context                                        SecurityContext sec,
             @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint
     )  {
@@ -494,11 +494,11 @@ public class EndpointResource {
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    final Endpoint legacyRBACGetOrCreateSystemSubscriptionEndpoint(final SecurityContext securityContext, final RequestSystemSubscriptionProperties requestProps, final EndpointType endpointType) {
+    protected Endpoint legacyRBACGetOrCreateSystemSubscriptionEndpoint(final SecurityContext securityContext, final RequestSystemSubscriptionProperties requestProps, final EndpointType endpointType) {
         return this.getOrCreateSystemSubscriptionEndpoint(securityContext, requestProps, endpointType);
     }
 
-    public Endpoint getOrCreateSystemSubscriptionEndpoint(SecurityContext sec, @NotNull @Valid RequestSystemSubscriptionProperties requestProps, EndpointType endpointType) {
+    protected Endpoint getOrCreateSystemSubscriptionEndpoint(SecurityContext sec, @NotNull @Valid RequestSystemSubscriptionProperties requestProps, EndpointType endpointType) {
         RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
@@ -541,11 +541,11 @@ public class EndpointResource {
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    public EndpointDTO legacyGetEndpoint(final SecurityContext securityContext, final UUID id) {
+    protected EndpointDTO legacyGetEndpoint(final SecurityContext securityContext, final UUID id) {
         return this.internalGetEndpoint(securityContext, id);
     }
 
-    public EndpointDTO internalGetEndpoint(final SecurityContext securityContext, final UUID id) {
+    private EndpointDTO internalGetEndpoint(final SecurityContext securityContext, final UUID id) {
         String orgId = getOrgId(securityContext);
         Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
         if (endpoint == null) {
@@ -577,11 +577,11 @@ public class EndpointResource {
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Response legacyRBACDeleteEndpoint(final SecurityContext securityContext, final UUID id) {
+    protected Response legacyRBACDeleteEndpoint(final SecurityContext securityContext, final UUID id) {
         return this.internalDeleteEndpoint(securityContext, id);
     }
 
-    public Response internalDeleteEndpoint(final SecurityContext securityContext, final UUID id) {
+    private Response internalDeleteEndpoint(final SecurityContext securityContext, final UUID id) {
         String orgId = getOrgId(securityContext);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
         if (!isEndpointTypeAllowed(endpointType)) {
@@ -615,11 +615,11 @@ public class EndpointResource {
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Response legacyRBACEnableEndpoint(final SecurityContext securityContext, final UUID id) {
+    protected Response legacyRBACEnableEndpoint(final SecurityContext securityContext, final UUID id) {
         return this.internalEnableEndpoint(securityContext, id);
     }
 
-    public Response internalEnableEndpoint(final SecurityContext securityContext, final UUID id) {
+    private Response internalEnableEndpoint(final SecurityContext securityContext, final UUID id) {
         String orgId = getOrgId(securityContext);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
         if (!isEndpointTypeAllowed(endpointType)) {
@@ -646,11 +646,11 @@ public class EndpointResource {
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Response legacyRBACDisableEndpoint(final SecurityContext securityContext, final UUID id) {
+    protected Response legacyRBACDisableEndpoint(final SecurityContext securityContext, final UUID id) {
         return this.internalDisableEndpoint(securityContext, id);
     }
 
-    public Response internalDisableEndpoint(final SecurityContext securityContext, final UUID id) {
+    private Response internalDisableEndpoint(final SecurityContext securityContext, final UUID id) {
         String orgId = getOrgId(securityContext);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
         if (!isEndpointTypeAllowed(endpointType)) {
@@ -690,7 +690,7 @@ public class EndpointResource {
      * @return a response specifying the outcome of the operation.
      */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public Response updateEndpointLegacyRBACRoles(final SecurityContext securityContext, final UUID endpointId, final EndpointDTO endpointDTO) {
+    protected Response updateEndpointLegacyRBACRoles(final SecurityContext securityContext, final UUID endpointId, final EndpointDTO endpointDTO) {
         return this.internalUpdateEndpoint(securityContext, endpointId, endpointDTO);
     }
 
@@ -702,7 +702,7 @@ public class EndpointResource {
      * @return a response specifying the outcome of the oeration.
      */
     @Transactional
-    public Response internalUpdateEndpoint(final SecurityContext sec, final UUID id, final @NotNull @Valid EndpointDTO endpointDTO) {
+    protected Response internalUpdateEndpoint(final SecurityContext sec, final UUID id, final @NotNull @Valid EndpointDTO endpointDTO) {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
 
         if (!isEndpointTypeAllowed(endpoint.getType())) {
@@ -770,11 +770,11 @@ public class EndpointResource {
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    final Response legacyRBACGetDetailedEndpointHistory(final SecurityContext securityContext, final UUID endpointId, final UUID historyId) {
+    protected Response legacyRBACGetDetailedEndpointHistory(final SecurityContext securityContext, final UUID endpointId, final UUID historyId) {
         return this.internalGetDetailedEndpointHistory(securityContext, endpointId, historyId);
     }
 
-    final Response internalGetDetailedEndpointHistory(final SecurityContext securityContext, final UUID endpointId, final UUID historyId) {
+    private Response internalGetDetailedEndpointHistory(final SecurityContext securityContext, final UUID endpointId, final UUID historyId) {
         String orgId = getOrgId(securityContext);
         JsonObject json = notificationRepository.getNotificationDetails(orgId, endpointId, historyId);
         if (json == null) {
@@ -817,11 +817,11 @@ public class EndpointResource {
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)
-    public void legacyRBACTestEndpoint(final SecurityContext securityContext, final UUID uuid,  final EndpointTestRequest requestBody) {
+    protected void legacyRBACTestEndpoint(final SecurityContext securityContext, final UUID uuid,  final EndpointTestRequest requestBody) {
         this.internalTestEndpoint(securityContext, uuid, requestBody);
     }
 
-    public void internalTestEndpoint(final SecurityContext securityContext, final UUID uuid, @Valid final EndpointTestRequest requestBody) {
+    protected void internalTestEndpoint(final SecurityContext securityContext, final UUID uuid, @Valid final EndpointTestRequest requestBody) {
         final String orgId = SecurityContextUtil.getOrgId(securityContext);
 
         if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
