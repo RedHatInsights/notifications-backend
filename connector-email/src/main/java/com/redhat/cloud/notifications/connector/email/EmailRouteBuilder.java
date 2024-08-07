@@ -64,9 +64,11 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
     public void configureRoutes() {
         // Read events from the high volume topic and forward them to the
         // entrypoint, so that they get processed as usual.
-        from(this.buildKafkaHighVolumeEndpoint())
-            .routeId(ROUTE_ID_KAFKA_HIGH_VOLUME_ROUTE)
-            .to(direct(ENTRYPOINT));
+        if (this.emailConnectorConfig.isIncomingKafkaHighVolumeTopicEnabled()) {
+            from(this.buildKafkaHighVolumeEndpoint())
+                .routeId(ROUTE_ID_KAFKA_HIGH_VOLUME_ROUTE)
+                .to(direct(ENTRYPOINT));
+        }
 
         /*
          * Prepares the payload accepted by BOP and sends the request to

@@ -52,6 +52,9 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = KAFKA_INCOMING_HIGH_VOLUME_TOPIC)
     String incomingKafkaHighVolumeTopic;
 
+    @ConfigProperty(name = KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED, defaultValue = "false")
+    Boolean incomingKafkaHighVolumeTopicEnabled;
+
     @ConfigProperty(name = RECIPIENTS_RESOLVER_USER_SERVICE_URL)
     String recipientsResolverServiceURL;
 
@@ -83,6 +86,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_RECORDS, incomingKafkaHighVolumeMaxPollRecords);
         config.put(KAFKA_INCOMING_HIGH_VOLUME_POLL_ON_ERROR, incomingKafkaHighVolumePollOnError);
         config.put(KAFKA_INCOMING_HIGH_VOLUME_TOPIC, incomingKafkaHighVolumeTopic);
+        config.put(KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED, incomingKafkaHighVolumeTopicEnabled);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
@@ -130,6 +134,10 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     public String getIncomingKafkaHighVolumeTopic() {
         return this.incomingKafkaHighVolumeTopic;
+    }
+
+    public boolean isIncomingKafkaHighVolumeTopicEnabled() {
+        return this.incomingKafkaHighVolumeTopicEnabled;
     }
 
     public int getMaxRecipientsPerEmail() {
