@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
@@ -234,7 +235,10 @@ class EventingTypeProcessorTest {
         event.setEventWrapper(new EventWrapperAction(action));
         event.setOrgId(DEFAULT_ORG_ID);
         event.setApplicationDisplayName("policies");
+        Application application = new Application();
+        application.setName("policies");
         EventType eventType = new EventType();
+        eventType.setApplication(application);
         eventType.setName("policy-triggered");
         event.setEventType(eventType);
         return event;

@@ -12,6 +12,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Predicate;
 import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
+import org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import java.util.Set;
@@ -30,6 +31,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
 
     static final String BOP_RESPONSE_TIME_METRIC = "micrometer:timer:email.bop.response.time";
     static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "micrometer:timer:email.recipients_resolver.response.time";
+    static final String ROUTE_ID_KAFKA_HIGH_VOLUME_ROUTE = "kafka-high-volume-entrypoint";
     static final String TIMER_ACTION_START = "?action=start";
     static final String TIMER_ACTION_STOP = "?action=stop";
 
@@ -60,6 +62,13 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      */
     @Override
     public void configureRoutes() {
+        // Read events from the high volume topic and forward them to the
+        // entrypoint, so that they get processed as usual.
+        if (this.emailConnectorConfig.isIncomingKafkaHighVolumeTopicEnabled()) {
+            from(this.buildKafkaHighVolumeEndpoint())
+                .routeId(ROUTE_ID_KAFKA_HIGH_VOLUME_ROUTE)
+                .to(direct(ENTRYPOINT));
+        }
 
         /*
          * Prepares the payload accepted by BOP and sends the request to
@@ -142,5 +151,17 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
         } else {
             return http(fullURL.replace("http://", ""));
         }
+    }
+
+    /**
+     * Builds the Kafka consumer for the high volume Kafka topic.
+     * @return the built endpoint for the high volume Kafka consumer.
+     */
+    private KafkaEndpointBuilderFactory.KafkaEndpointConsumerBuilder buildKafkaHighVolumeEndpoint() {
+        return kafka(this.emailConnectorConfig.getIncomingKafkaHighVolumeTopic())
+            .groupId(this.emailConnectorConfig.getIncomingKafkaGroupId())
+            .maxPollRecords(this.emailConnectorConfig.getIncomingKafkaHighVolumeMaxPollRecords())
+            .maxPollIntervalMs(this.emailConnectorConfig.getIncomingKafkaHighVolumeMaxPollIntervalMs())
+            .pollOnError(this.emailConnectorConfig.getIncomingKafkaHighVolumePollOnError());
     }
 }

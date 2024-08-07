@@ -19,6 +19,9 @@ objects:
     envName: ${ENV_NAME}
     featureFlags: true
     kafkaTopics:
+    - topicName: platform.notifications.connector.email.high.volume
+      partitions: 6
+      replicas: 3
     - topicName: platform.notifications.tocamel
       partitions: 3
       replicas: 3
@@ -71,6 +74,14 @@ objects:
           value: ${NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS}
         - name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
           value: ${NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_INTERVAL_MS
+          value: ${NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_INTERVAL_MS}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_RECORDS
+          value: ${NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_RECORDS}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_POLL_ON_ERROR
+          value: ${NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_POLL_ON_ERROR}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED
+          value: ${NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_INTERVAL_MS
           value: ${KAFKA_MAX_POLL_INTERVAL_MS}
         - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_RECORDS
@@ -192,6 +203,18 @@ parameters:
 - name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
   description: Maximum time in milliseconds allowed to wait for HTTP data
   value: "180000"
+- name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_INTERVAL_MS
+  description: Maximum delay in milliseconds between two calls of poll(). Defaults to 300000 (5 minutes).
+  value: "300000"
+- name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_MAX_POLL_RECORDS
+  description: Maximum number of records returned in a single call of poll(). Defaults to 500.
+  value: "500"
+- name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_POLL_ON_ERROR
+  description: What to do if kafka threw an exception while polling for new messages. See https://camel.apache.org/components/latest/kafka-component.html for more details.
+  value: RECONNECT
+- name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED
+  description: Specifies whether the high volume topic is enabled for the connector or not.
+  value: "false"
 - name: NOTIFICATIONS_CONNECTOR_KAFKA_MAXIMUM_REINJECTIONS
   description: Maximum times a message will be reinjected in the incoming queue after having failed to deliver the notification
   value: "0"

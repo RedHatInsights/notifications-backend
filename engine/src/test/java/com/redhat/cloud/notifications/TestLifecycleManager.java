@@ -18,6 +18,7 @@ import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHA
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.HIGH_VOLUME_CHANNEL;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
 
@@ -50,6 +51,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
          * We'll use an in-memory Reactive Messaging connector to send payloads.
          * See https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
          */
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(HIGH_VOLUME_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(INGRESS_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(AGGREGATION_OUT_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(TOCAMEL_CHANNEL));
