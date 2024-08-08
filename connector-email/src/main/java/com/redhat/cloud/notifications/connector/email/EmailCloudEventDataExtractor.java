@@ -13,7 +13,6 @@ import org.apache.camel.Exchange;
 import java.util.List;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
@@ -64,6 +63,6 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
         exchange.setProperty(ExchangeProperty.EMAIL_SENDER, cloudEventData.getString("email_sender"));
 
-        exchange.setProperty(ExchangeProperty.USE_EMAIL_BOP_V1_SSL, emailConnectorConfig.isEnableBopServiceWithSslChecks(exchange.getProperty(ORG_ID, String.class)));
+        exchange.setProperty(ExchangeProperty.USE_EMAIL_BOP_V1_SSL, emailConnectorConfig.isEnableBopServiceWithSslChecks());
     }
 }

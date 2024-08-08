@@ -8,12 +8,14 @@ import com.redhat.cloud.notifications.connector.email.metrics.EmailMetricsProces
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverRequestPreparer;
 import com.redhat.cloud.notifications.connector.email.processors.recipients.RecipientsResolverResponseProcessor;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Predicate;
-import org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory;
 import org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.camel.support.jsse.KeyStoreParameters;
+import org.apache.camel.support.jsse.SSLContextParameters;
+import org.apache.camel.support.jsse.TrustManagersParameters;
 
 import java.util.Set;
 
@@ -22,9 +24,9 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.USE_EMAIL_BOP_V1_SSL;
-import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static org.apache.camel.LoggingLevel.DEBUG;
 import static org.apache.camel.LoggingLevel.INFO;
+import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.HttpEndpointBuilder;
 
 @ApplicationScoped
 public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
@@ -74,7 +76,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
          * Prepares the payload accepted by BOP and sends the request to
          * the service.
          */
-        final HttpEndpointBuilderFactory.HttpEndpointBuilder bopEndpointV1 = setUpBOPEndpointV1();
+        final HttpEndpointBuilder bopEndpointV1 = setUpBOPEndpointV1();
 
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(emailConnectorConfig.getConnectorName())
@@ -104,7 +106,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .choice().when(shouldUseBopEmailServiceWithSslChecks())
                 .log(DEBUG, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "} using regular SSL checks on email service]")
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-                    .to(emailConnectorConfig.getBopURL())
+                    .to(bopEndpointV1)
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .otherwise()
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
@@ -128,26 +130,37 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      * BOP service's certificate.
      * @return the created endpoint.
      */
-    protected HttpEndpointBuilderFactory.HttpEndpointBuilder setUpBOPEndpointV1() {
-        // Remove the schema from the url to avoid the
-        // "ResolveEndpointFailedException", which complaints about specifying
-        // the schema twice.
+    protected HttpEndpointBuilder setUpBOPEndpointV1() {
         final String fullURL = this.emailConnectorConfig.getBopURL();
-        if (fullURL.startsWith("https")) {
-            return https(fullURL.replace("https://", ""))
-                .sslContextParameters(getSslContextParameters())
-                .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
-        } else {
-            return http(fullURL.replace("http://", ""));
-        }
+        return setupEndpoints(fullURL);
     }
 
-    private HttpEndpointBuilderFactory.HttpEndpointBuilder setupRecipientResolverEndpoint() {
+    private HttpEndpointBuilder setupRecipientResolverEndpoint() {
         final String fullURL = emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver";
+        return setupEndpoints(fullURL);
+    }
+
+    private HttpEndpointBuilder setupEndpoints(String fullURL) {
         if (fullURL.startsWith("https")) {
-            return https(fullURL.replace("https://", ""))
-                    .sslContextParameters(getSslContextParameters())
-                    .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
+            HttpEndpointBuilder endpointBuilder = https(fullURL.replace("https://", ""));
+            if (emailConnectorConfig.getRecipientsResolverTrustStorePath().isPresent() && emailConnectorConfig.getRecipientsResolverTrustStorePassword().isPresent() && emailConnectorConfig.getRecipientsResolverTrustStoreType().isPresent()) {
+
+                KeyStoreParameters keyStoreParameters = new KeyStoreParameters();
+                keyStoreParameters.setResource("file:" + emailConnectorConfig.getRecipientsResolverTrustStorePath().get());
+                keyStoreParameters.setPassword(emailConnectorConfig.getRecipientsResolverTrustStorePassword().get());
+                keyStoreParameters.setType(emailConnectorConfig.getRecipientsResolverTrustStoreType().get());
+
+                TrustManagersParameters trustManagersParameters = new TrustManagersParameters();
+                trustManagersParameters.setKeyStore(keyStoreParameters);
+
+                SSLContextParameters sslContextParameters = new SSLContextParameters();
+                sslContextParameters.setTrustManagers(trustManagersParameters);
+
+                endpointBuilder.sslContextParameters(sslContextParameters);
+            } else {
+                Log.warn("TLS is enabled for recipients-resolver but the trust store could not be used to build the Camel endpoint because the trust store path, password or type are missing in the Clowder configuration");
+            }
+            return endpointBuilder;
         } else {
             return http(fullURL.replace("http://", ""));
         }
