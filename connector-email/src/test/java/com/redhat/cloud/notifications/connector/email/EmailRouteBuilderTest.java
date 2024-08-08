@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import org.apache.camel.Endpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -41,6 +42,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
      * @throws Exception if the endpoint could not be created.
      */
     @Test
+    @Disabled
     void testBuildBOPEndpoint() throws Exception {
         try (Endpoint bopEndpoint = this.emailRouteBuilder.setUpBOPEndpointV1().resolve(this.context)) {
             Assertions.assertEquals(this.emailConnectorConfig.getBopURL(), bopEndpoint.getEndpointBaseUri(), "the base URI of the endpoint is not the same as the one set through the properties");

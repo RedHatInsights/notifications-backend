@@ -16,7 +16,6 @@ import org.apache.camel.builder.endpoint.dsl.KafkaEndpointBuilderFactory;
 import org.apache.camel.support.jsse.KeyStoreParameters;
 import org.apache.camel.support.jsse.SSLContextParameters;
 import org.apache.camel.support.jsse.TrustManagersParameters;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
 import java.util.Set;
 
@@ -25,7 +24,6 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.FILTERED_USERS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.USE_EMAIL_BOP_V1_SSL;
-import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static org.apache.camel.LoggingLevel.DEBUG;
 import static org.apache.camel.LoggingLevel.INFO;
 import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.HttpEndpointBuilder;
@@ -108,7 +106,7 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .choice().when(shouldUseBopEmailServiceWithSslChecks())
                 .log(DEBUG, getClass().getName(), "Sent Email notification [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "} using regular SSL checks on email service]")
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-                    .to(emailConnectorConfig.getBopURL())
+                    .to(bopEndpointV1)
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .otherwise()
                 .to(BOP_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
@@ -133,22 +131,16 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
      * @return the created endpoint.
      */
     protected HttpEndpointBuilder setUpBOPEndpointV1() {
-        // Remove the schema from the url to avoid the
-        // "ResolveEndpointFailedException", which complaints about specifying
-        // the schema twice.
         final String fullURL = this.emailConnectorConfig.getBopURL();
-        if (fullURL.startsWith("https")) {
-            return https(fullURL.replace("https://", ""))
-                .sslContextParameters(getSslContextParameters())
-                .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
-        } else {
-            return http(fullURL.replace("http://", ""));
-        }
+        return setupEndpoints(fullURL);
     }
 
     private HttpEndpointBuilder setupRecipientResolverEndpoint() {
         final String fullURL = emailConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver";
+        return setupEndpoints(fullURL);
+    }
 
+    private HttpEndpointBuilder setupEndpoints(String fullURL) {
         if (fullURL.startsWith("https")) {
             HttpEndpointBuilder endpointBuilder = https(fullURL.replace("https://", ""));
             if (emailConnectorConfig.getRecipientsResolverTrustStorePath().isPresent() && emailConnectorConfig.getRecipientsResolverTrustStorePassword().isPresent() && emailConnectorConfig.getRecipientsResolverTrustStoreType().isPresent()) {
