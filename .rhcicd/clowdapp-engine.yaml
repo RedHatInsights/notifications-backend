@@ -249,6 +249,29 @@ objects:
           value: ${PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS}
         - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
           value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
+      autoScaler:
+        minReplicaCount: ${{MIN_REPLICAS}}
+        maxReplicaCount: 6
+        triggers:
+          - metadata:
+              query: kafka_consumergroup_group_topic_sum_lag{topic=~".*platform.notifications.ingress"}
+              threshold: "25"
+            type: prometheus
+            metricType: Value
+        advanced:
+          horizontalPodAutoscalerConfig:
+            behavior:
+              scaleDown:
+                stabilizationWindowSeconds: 180
+                policies:
+                  - type: Pods
+                    value: 2
+                    periodSeconds: 60
+              scaleUp:
+                policies:
+                  - type: Pods
+                    value: 2
+                    periodSeconds: 30
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
