@@ -46,6 +46,7 @@ public class EngineConfig {
     private String asyncAggregationToggle;
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
+    private String fetchAggregationBasedOnEvents;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -126,6 +127,7 @@ public class EngineConfig {
         asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
         drawerToggle = toggleRegistry.register("drawer", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
+        fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -145,6 +147,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
+        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -194,6 +197,14 @@ public class EngineConfig {
 
     public boolean isSecuredEmailTemplatesEnabled() {
         return useSecuredEmailTemplates;
+    }
+
+    public boolean isAggregationBasedOnEventEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(fetchAggregationBasedOnEvents, false);
+        } else {
+            return false;
+        }
     }
 
     @Deprecated(forRemoval = true)

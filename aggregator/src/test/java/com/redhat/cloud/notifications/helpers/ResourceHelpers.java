@@ -12,11 +12,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 @ApplicationScoped
-public class ResourceHelpers {
-
+public class ResourceHelpers extends com.redhat.cloud.notifications.models.ResourceHelpers {
 
     @Inject
     EntityManager entityManager;
+
+    @Override
+    protected EntityManager getEntityManager() {
+        return entityManager;
+    }
 
     public void addEmailAggregation(String orgId, String bundle, String application, String policyId, String insightsId) {
         addEmailAggregation(orgId, bundle, application, policyId, insightsId, LocalDateTime.now(ZoneOffset.UTC));
@@ -54,6 +58,11 @@ public class ResourceHelpers {
     @Transactional
     public void purgeEmailAggregations() {
         entityManager.createQuery("DELETE FROM EmailAggregation").executeUpdate();
+    }
+
+    @Transactional
+    public void purgeEventAggregations() {
+        entityManager.createQuery("DELETE FROM Event").executeUpdate();
     }
 
     @Transactional
