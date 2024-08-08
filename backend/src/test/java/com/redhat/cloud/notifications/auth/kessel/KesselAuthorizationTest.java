@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;

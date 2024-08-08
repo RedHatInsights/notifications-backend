@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.auth.kessel;
+package com.redhat.cloud.notifications.auth.kessel.permission;
 
 public enum IntegrationPermission implements KesselPermission {
     DELETE("delete"),

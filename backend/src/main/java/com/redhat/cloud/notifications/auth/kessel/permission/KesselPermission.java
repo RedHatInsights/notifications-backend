@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.auth.kessel;
+package com.redhat.cloud.notifications.auth.kessel.permission;
 
 /**
  * Defines common methods that the Kessel enumerations will hold, since our
