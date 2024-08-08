@@ -31,6 +31,7 @@ public class RecipientsResolverConfig {
     private static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED = "notifications.recipients-resolver.use.kessel.enabled";
     private static final String KESSEL_TARGET_URL = "notifications.recipients-resolver.kessel.target-url";
     private static final String KESSEL_USE_SECURE_CLIENT = "notifications.kessel.secure-client";
+    private static final String NOTIFICATIONS_MOCK_DELAY_ENABLED = "notifications.mock.delay.enabled";
 
     /*
      * Unleash configuration
@@ -81,6 +82,9 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = KESSEL_TARGET_URL, defaultValue = "localhost:9000")
     String kesselTargetUrl;
 
+    @ConfigProperty(name = NOTIFICATIONS_MOCK_DELAY_ENABLED, defaultValue = "true")
+    boolean mockDelayEnabled;
+
     /**
      * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
      */
@@ -115,6 +119,7 @@ public class RecipientsResolverConfig {
         config.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED, isUseKesselEnabled());
         config.put(KESSEL_TARGET_URL, getKesselTargetUrl());
         config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClient());
+        config.put(NOTIFICATIONS_MOCK_DELAY_ENABLED, mockDelayEnabled);
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -171,6 +176,9 @@ public class RecipientsResolverConfig {
         return mbopEnv;
     }
 
+    public boolean isMockDelayEnabled() {
+        return mockDelayEnabled;
+    }
 
     public boolean isKesselUseSecureClient() {
         return kesselUseSecureClient;

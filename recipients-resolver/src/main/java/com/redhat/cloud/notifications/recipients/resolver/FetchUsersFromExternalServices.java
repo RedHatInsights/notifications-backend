@@ -1,11 +1,9 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.ITUserService;
-import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.request.ITUserRequest;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.AccountRelationship;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.Email;
 import com.redhat.cloud.notifications.recipients.resolver.itservice.pojo.response.ITUserResponse;
@@ -146,7 +144,7 @@ public class FetchUsersFromExternalServices {
 
         int firstResult = 0;
 
-        do {
+        /*do {
             ITUserRequest itRequest = new ITUserRequest(orgId, adminsOnly, firstResult, recipientsResolverConfig.getMaxResultsPerPage());
             final LocalDateTime startTime = LocalDateTime.now();
             usersPaging = retryOnError(() -> itUserService.getUsers(itRequest));
@@ -161,9 +159,17 @@ public class FetchUsersFromExternalServices {
             usersTotal.addAll(usersPaging);
 
             firstResult += recipientsResolverConfig.getMaxResultsPerPage();
-        } while (usersPaging.size() == recipientsResolverConfig.getMaxResultsPerPage());
+        } while (usersPaging.size() == recipientsResolverConfig.getMaxResultsPerPage());*/
 
-        users = transformItUserToUser(usersTotal);
+        if (recipientsResolverConfig.isMockDelayEnabled()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        users = transformItUserToUser(new ArrayList<>());
         return users;
     }
 
