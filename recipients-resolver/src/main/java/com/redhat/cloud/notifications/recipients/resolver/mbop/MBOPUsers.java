@@ -8,7 +8,8 @@ import java.util.List;
  * REST API call.
  */
 public record MBOPUsers(
-    List<MBOPUser> users
+    List<MBOPUser> users,
+    Long count
 ) {
     public record MBOPUser(
         @JsonProperty("id")             String id,

@@ -403,7 +403,7 @@ public class FetchUsersFromExternalServicesTest {
 
             mbopUsers.add(mbopUser);
         }
-        return new MBOPUsers(mbopUsers);
+        return new MBOPUsers(mbopUsers, Long.valueOf(mbopUsers.size()));
     }
 
     /*
