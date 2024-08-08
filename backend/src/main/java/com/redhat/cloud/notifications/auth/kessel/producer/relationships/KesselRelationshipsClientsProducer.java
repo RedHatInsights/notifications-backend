@@ -22,19 +22,14 @@ import org.project_kessel.relations.client.RelationsGrpcClientsManager;
 @ApplicationScoped
 @Priority(1)
 public class KesselRelationshipsClientsProducer {
-    /**
-     * Constant for the configuration key that defines the relationships API's
-     * target URL.
-     */
-    private static final String RELATIONSHIPS_API_TARGET_URL = "notifications.kessel.relationships-api.target-url";
-
+    private static final String KESSEL_TARGET_URL = "notifications.kessel.target-url";
     @Inject
     BackendConfig backendConfig;
 
     /**
      * The target URL the gRPC client will connect to.
      */
-    @ConfigProperty(name = RELATIONSHIPS_API_TARGET_URL)
+    @ConfigProperty(name = KESSEL_TARGET_URL)
     String targetUrl;
 
     /**
