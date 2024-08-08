@@ -9,7 +9,7 @@ import java.util.List;
  */
 public record MBOPUsers(
     List<MBOPUser> users,
-    Long count
+    Long userCount
 ) {
     public record MBOPUser(
         @JsonProperty("id")             String id,
