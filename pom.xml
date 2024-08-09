@@ -22,6 +22,7 @@
         <module>connector-email</module>
         <module>connector-google-chat</module>
         <module>connector-microsoft-teams</module>
+        <module>connector-pagerduty</module>
         <module>connector-servicenow</module>
         <module>connector-slack</module>
         <module>connector-splunk</module>
