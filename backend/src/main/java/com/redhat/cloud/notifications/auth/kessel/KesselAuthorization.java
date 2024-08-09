@@ -45,10 +45,6 @@ public class KesselAuthorization {
      */
     private static final String KESSEL_METRICS_TAG_PERMISSION_KEY = "permission";
     /**
-     * Represents the key for the "resource_type" tag used in the timer.
-     */
-    private static final String KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY = "resource_type";
-    /**
      * Represents the timer's name to measure the time spent looking up for
      * authorized resources for a particular subject.
      */
@@ -113,7 +109,7 @@ public class KesselAuthorization {
         }
 
         // Stop the timer.
-        permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.getKesselName())));
+        permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.getKesselName())));
 
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
 
@@ -163,7 +159,7 @@ public class KesselAuthorization {
         }
 
         // Stop the timer.
-        lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.getKesselName())));
+        lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.getKesselName())));
 
         // Process the incoming responses.
         final Set<UUID> uuids = new HashSet<>();

@@ -6,4 +6,8 @@ public interface Constants {
      * querying Kessel about a workspace permission.
      */
     String WORKSPACE_ID_PLACEHOLDER = "workspace-id";
+    /**
+     * Represents the key for the "resource_type" tag used in the timer.
+     */
+    String KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY = "resource_type";
 }
