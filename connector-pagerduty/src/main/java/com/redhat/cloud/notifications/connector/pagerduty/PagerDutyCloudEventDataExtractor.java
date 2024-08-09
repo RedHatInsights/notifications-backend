@@ -6,7 +6,6 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
-import org.apache.camel.http.common.HttpMethods;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.ProtocolException;
 
@@ -55,7 +54,6 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
         cloudEventData.remove(NOTIF_METADATA);
 
         exchange.getIn().setBody(cloudEventData.encode());
-        exchange.getIn().setHeader(Exchange.HTTP_METHOD, HttpMethods.valueOf(metadata.getString(METHOD)));
     }
 
     private void validatePayload(JsonObject cloudEventData) {

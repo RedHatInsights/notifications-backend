@@ -14,7 +14,6 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_U
 import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TRUST_ALL;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.LoggingLevel.INFO;
 import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.HttpEndpointBuilder;
@@ -46,15 +45,7 @@ public class PagerDutyRouteBuilder extends EngineToConnectorRouteBuilder {
             .process(secretsLoader)
             .process(authenticationProcessor)
             .to(PAGERDUTY_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-                // SSL certificates may or may not be verified depending on the integration settings.
-                .choice()
-                .when(exchangeProperty(TRUST_ALL))
-                    .toD(buildPagerDutyEndpoint(true), connectorConfig.getEndpointCacheMaxSize())
-                .endChoice()
-                // TODO is this a valid option for PagerDuty?
-                .otherwise()
-                    .toD(buildPagerDutyEndpoint(false), connectorConfig.getEndpointCacheMaxSize())
-                .end()
+            .toD(buildPagerDutyEndpoint(), connectorConfig.getEndpointCacheMaxSize())
             .to(PAGERDUTY_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
             .log(INFO, getClass().getName(), "Delivered event ${exchangeProperty." + ID + "} " +
                 "(orgId ${exchangeProperty." + ORG_ID + "} account ${exchangeProperty." + ACCOUNT_ID + "}) " +
@@ -62,13 +53,9 @@ public class PagerDutyRouteBuilder extends EngineToConnectorRouteBuilder {
             .to(direct(SUCCESS));
     }
 
-    private HttpEndpointBuilder buildPagerDutyEndpoint(boolean trustAll) {
-        HttpEndpointBuilder endpointBuilder = https("${exchangeProperty." + TARGET_URL_NO_SCHEME + "}").httpMethod("POST");
-        if (trustAll) {
-            endpointBuilder
+    private HttpEndpointBuilder buildPagerDutyEndpoint() {
+        return https("${exchangeProperty." + TARGET_URL_NO_SCHEME + "}").httpMethod("POST")
                 .sslContextParameters(getSslContextParameters())
                 .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
-        }
-        return endpointBuilder;
     }
 }
