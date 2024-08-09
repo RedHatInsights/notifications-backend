@@ -12,6 +12,8 @@ objects:
     dependencies:
     - notifications-engine
     envName: ${ENV_NAME}
+    testing:
+      iqePlugin: notifications
     featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.tocamel

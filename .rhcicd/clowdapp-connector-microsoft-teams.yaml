@@ -13,6 +13,8 @@ objects:
     - notifications-engine
     envName: ${ENV_NAME}
     featureFlags: true
+    testing:
+      iqePlugin: notifications
     kafkaTopics:
     - topicName: platform.notifications.tocamel
       partitions: 3
