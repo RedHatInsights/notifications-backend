@@ -10,6 +10,7 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.LookupClient;
 import org.project_kessel.relations.client.RelationsGrpcClientsManager;
 
 @ApplicationScoped
@@ -66,5 +67,19 @@ public class KesselClientsProducer {
     @Produces
     public CheckClient getCheckClient(final RelationsGrpcClientsManager relationsGrpcClientsManager) {
         return relationsGrpcClientsManager.getCheckClient();
+    }
+
+    /**
+     * Produces a "lookup client" in order to be able to look up resources.
+     * @param relationsGrpcClientsManager the gRPC manager to create the client
+     *                                    from.
+     * @return a "lookup client" ready to be used for looking up resources in
+     * Kessel.
+     */
+    @Alternative
+    @ApplicationScoped
+    @Produces
+    public LookupClient getLookupClient(final RelationsGrpcClientsManager relationsGrpcClientsManager) {
+        return relationsGrpcClientsManager.getLookupClient();
     }
 }

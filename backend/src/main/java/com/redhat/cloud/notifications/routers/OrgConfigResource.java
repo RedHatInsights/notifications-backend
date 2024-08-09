@@ -2,6 +2,10 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.WorkspacePermission;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import io.quarkus.logging.Log;
@@ -30,10 +34,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class OrgConfigResource {
+    @Inject
+    BackendConfig backendConfig;
+
+    @Inject
+    KesselAuthorization kesselAuthorization;
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
     static class V1 extends OrgConfigResource {
@@ -60,10 +70,24 @@ public class OrgConfigResource {
     @Path("/daily-digest/time-preference")
     @Consumes(APPLICATION_JSON)
     @Transactional
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @Operation(summary = "Set the daily digest time", description = "Sets the daily digest UTC time. The accepted minute values are 00, 15, 30, and 45. Use this endpoint to set the time when daily emails are sent.")
-    public void saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
-        String orgId = getOrgId(sec);
+    public void saveDailyDigestTimePreference(@Context SecurityContext sec, LocalTime expectedTime) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            this.internalSaveDailyDigestTimePreference(sec, expectedTime);
+        } else {
+            this.legacyRBACInternalSaveDailyDigestTimePreference(sec, expectedTime);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public void legacyRBACInternalSaveDailyDigestTimePreference(final SecurityContext securityContext, final LocalTime expectedTime) {
+        this.internalSaveDailyDigestTimePreference(securityContext, expectedTime);
+    }
+
+    public void internalSaveDailyDigestTimePreference(final SecurityContext securityContext, @NotNull final LocalTime expectedTime) {
+        String orgId = getOrgId(securityContext);
         if (!ALLOWED_MINUTES.contains(expectedTime.getMinute())) {
             String errorMessage = "Accepted minute values are: " + ALLOWED_MINUTES.stream().map(min -> String.format("%02d", min)).collect(Collectors.joining(", ")) + ".";
 
@@ -78,9 +102,23 @@ public class OrgConfigResource {
     @Path("/daily-digest/time-preference")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the daily digest time", description = "Retrieves the daily digest time setting. Use this endpoint to check the time that daily emails are sent.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Response getDailyDigestTimePreference(@Context SecurityContext sec) {
-        String orgId = getOrgId(sec);
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.internalGetDailyDigestTimePreference(sec);
+        } else {
+            return this.legacyRBACGetDailyDigestTimePreference(sec);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    public Response legacyRBACGetDailyDigestTimePreference(final SecurityContext securityContext) {
+        return this.internalGetDailyDigestTimePreference(securityContext);
+    }
+
+    public Response internalGetDailyDigestTimePreference(final SecurityContext securityContext) {
+        String orgId = getOrgId(securityContext);
         Log.infof("Get daily digest time preference for orgId %s", orgId);
         AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
         if (null != storedParameters) {

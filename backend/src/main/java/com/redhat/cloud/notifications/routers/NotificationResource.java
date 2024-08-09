@@ -85,9 +85,9 @@ public class NotificationResource {
         @Operation(summary = "List the behavior groups linked to an event type", description = "Lists the behavior groups that are linked to an event type. Use this endpoint to see which behavior groups will be affected if you delete an event type.")
         @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
         public List<BehaviorGroup> getLinkedBehaviorGroups(
-                @Context SecurityContext sec,
-                @PathParam("eventTypeId") UUID eventTypeId,
-                @BeanParam @Valid Query query
+            @Context SecurityContext sec,
+            @PathParam("eventTypeId") UUID eventTypeId,
+            @BeanParam @Valid Query query
         ) {
             String orgId = getOrgId(sec);
 
@@ -103,10 +103,10 @@ public class NotificationResource {
         @Operation(summary = "Retrieve the behavior groups linked to an event type.")
         @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
         public Page<BehaviorGroup> getLinkedBehaviorGroups(
-                @Context SecurityContext sec,
-                @PathParam("eventTypeId") UUID eventTypeId,
-                @BeanParam @Valid Query query,
-                @Context UriInfo uriInfo
+            @Context SecurityContext sec,
+            @PathParam("eventTypeId") UUID eventTypeId,
+            @BeanParam @Valid Query query,
+            @Context UriInfo uriInfo
         ) {
             String orgId = getOrgId(sec);
 
@@ -114,9 +114,9 @@ public class NotificationResource {
             final long behaviorGroupCount = this.behaviorGroupRepository.countByEventTypeId(orgId, eventTypeId);
 
             return new Page<>(
-                    behaviorGroups,
-                    PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query),
-                    new Meta(behaviorGroupCount)
+                behaviorGroups,
+                PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query),
+                new Meta(behaviorGroupCount)
             );
         }
     }
@@ -127,19 +127,19 @@ public class NotificationResource {
     @Operation(summary = "List all event types", description = "Lists all event types. You can filter the returned list by bundle, application name, or unmuted types.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Page<EventType> getEventTypes(
-            @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds,
-            @QueryParam("bundleId") UUID bundleId, @QueryParam("eventTypeName") String eventTypeName, @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
+        @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds,
+        @QueryParam("bundleId") UUID bundleId, @QueryParam("eventTypeName") String eventTypeName, @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
     ) {
         List<UUID> unmutedEventTypeIds = excludeMutedTypes
-                ? behaviorGroupRepository.findUnmutedEventTypes(getOrgId(securityContext), bundleId)
-                : null;
+            ? behaviorGroupRepository.findUnmutedEventTypes(getOrgId(securityContext), bundleId)
+            : null;
 
         List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds);
         Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds);
         return new Page<>(
-                eventTypes,
-                PageLinksBuilder.build(uriInfo.getPath(), count, query.getLimit().getLimit(), query.getLimit().getOffset()),
-                new Meta(count)
+            eventTypes,
+            PageLinksBuilder.build(uriInfo.getPath(), count, query.getLimit().getLimit(), query.getLimit().getOffset()),
+            new Meta(count)
         );
     }
 
@@ -163,8 +163,8 @@ public class NotificationResource {
     @Operation(summary = "Retrieve an application by bundle and application names", description = "Retrieves an application by bundle and application names. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public Application getApplicationByNameAndBundleName(
-            @PathParam("bundleName") String bundleName,
-            @PathParam("applicationName") String applicationName
+        @PathParam("bundleName") String bundleName,
+        @PathParam("applicationName") String applicationName
     ) {
         Application application = applicationRepository.getApplication(bundleName, applicationName);
         if (application == null) {
@@ -180,9 +180,9 @@ public class NotificationResource {
     @Operation(summary = "Retrieve an event type by bundle, application and event type names", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public EventType getEventTypesByNameAndBundleAndApplicationName(
-            @PathParam("bundleName") String bundleName,
-            @PathParam("applicationName") String applicationName,
-            @PathParam("eventTypeName") String eventTypeName
+        @PathParam("bundleName") String bundleName,
+        @PathParam("applicationName") String applicationName,
+        @PathParam("eventTypeName") String eventTypeName
     ) {
         EventType eventType = applicationRepository.getEventType(bundleName, applicationName, eventTypeName);
         if (eventType == null) {
@@ -203,7 +203,7 @@ public class NotificationResource {
     @Operation(summary = "List the event types affected by the removal of a behavior group", description = "Lists the event types that will be affected by the removal of a behavior group. Use this endpoint to see which event types will be removed if you delete a behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec,
-                     @Parameter(description = "The UUID of the behavior group to check") @PathParam("behaviorGroupId") UUID behaviorGroupId) {
+                                                                         @Parameter(description = "The UUID of the behavior group to check") @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         String orgId = getOrgId(sec);
         return behaviorGroupRepository.findEventTypesByBehaviorGroupId(orgId, behaviorGroupId);
     }
@@ -228,9 +228,9 @@ public class NotificationResource {
     @Operation(summary = "List configured applications", description = "Returns a list of configured applications that includes the application name, the display name, and the ID. You can use this list to configure a filter in the UI.")
     public List<Facet> getApplicationsFacets(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
         return applicationRepository.getApplications(bundleName)
-                .stream()
-                .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
-                .collect(Collectors.toList());
+            .stream()
+            .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
+            .collect(Collectors.toList());
     }
 
     @GET
@@ -239,18 +239,18 @@ public class NotificationResource {
     @Operation(summary = "List configured bundles", description = "Returns a list of configured bundles that includes the bundle name, the display name, and the ID. You can use this list to configure a filter in the UI.")
     public List<Facet> getBundleFacets(@Context SecurityContext sec, @QueryParam("includeApplications") boolean includeApplications) {
         return bundleRepository.getBundles()
-                .stream()
-                .map(b -> {
-                    List<Facet> applications = null;
-                    if (includeApplications) {
-                        applications = applicationRepository.getApplications(b.getId()).stream()
-                                .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
-                                .collect(Collectors.toList());
-                    }
+            .stream()
+            .map(b -> {
+                List<Facet> applications = null;
+                if (includeApplications) {
+                    applications = applicationRepository.getApplications(b.getId()).stream()
+                        .map(a -> new Facet(a.getId().toString(), a.getName(), a.getDisplayName()))
+                        .collect(Collectors.toList());
+                }
 
-                    return new Facet(b.getId().toString(), b.getName(), b.getDisplayName(), applications);
-                })
-                .collect(Collectors.toList());
+                return new Facet(b.getId().toString(), b.getName(), b.getDisplayName(), applications);
+            })
+            .collect(Collectors.toList());
     }
 
     /**
@@ -300,11 +300,11 @@ public class NotificationResource {
         behaviorGroup.setDisplayName(request.displayName);
 
         behaviorGroup = behaviorGroupRepository.createFull(
-                accountId,
-                orgId,
-                behaviorGroup,
-                request.endpointIds,
-                request.eventTypeIds
+            accountId,
+            orgId,
+            behaviorGroup,
+            request.endpointIds,
+            request.eventTypeIds
         );
 
         CreateBehaviorGroupResponse response = new CreateBehaviorGroupResponse();
@@ -327,9 +327,9 @@ public class NotificationResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.BOOLEAN))),
         @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)),
-                description = "Bad or no content passed."),
+            description = "Bad or no content passed."),
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
-                description = "No behavior group found with the passed id.")
+            description = "No behavior group found with the passed id.")
     })
     @Operation(summary = "Update a behavior group", description = "Updates the details of a behavior group. Use this endpoint to update the list of related endpoints and event types associated with this behavior group.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
@@ -381,8 +381,8 @@ public class NotificationResource {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateBehaviorGroupActions(@Context SecurityContext sec,
-                       @Parameter(description = "The UUID of the behavior group to update") @PathParam("behaviorGroupId") UUID behaviorGroupId,
-                       @Parameter(description = "List of endpoint ids of the actions") List<UUID> endpointIds) {
+                                               @Parameter(description = "The UUID of the behavior group to update") @PathParam("behaviorGroupId") UUID behaviorGroupId,
+                                               @Parameter(description = "List of endpoint ids of the actions") List<UUID> endpointIds) {
         if (endpointIds == null) {
             throw new BadRequestException("The request body must contain a list (possibly empty) of endpoints identifiers");
         }
@@ -407,8 +407,8 @@ public class NotificationResource {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateEventTypeBehaviors(@Context SecurityContext sec,
-                         @Parameter(description = "UUID of the eventType to associate with the behavior group(s)") @PathParam("eventTypeId") UUID eventTypeId,
-                         @Parameter(description = "Set of behavior group ids to associate") Set<UUID> behaviorGroupIds) {
+                                             @Parameter(description = "UUID of the eventType to associate with the behavior group(s)") @PathParam("eventTypeId") UUID eventTypeId,
+                                             @Parameter(description = "Set of behavior group ids to associate") Set<UUID> behaviorGroupIds) {
         if (behaviorGroupIds == null) {
             throw new BadRequestException("The request body must contain a list (possibly empty) of behavior groups identifiers");
         }
@@ -433,9 +433,9 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204")
     public void appendBehaviorGroupToEventType(
-            @Context final SecurityContext securityContext,
-            @RestPath final UUID behaviorGroupUuid,
-            @RestPath final UUID eventTypeUuid
+        @Context final SecurityContext securityContext,
+        @RestPath final UUID behaviorGroupUuid,
+        @RestPath final UUID eventTypeUuid
     ) {
         final String orgId = getOrgId(securityContext);
 
@@ -448,9 +448,9 @@ public class NotificationResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204")
     public void deleteBehaviorGroupFromEventType(
-            @Context final SecurityContext securityContext,
-            @RestPath final UUID eventTypeId,
-            @RestPath final UUID behaviorGroupId
+        @Context final SecurityContext securityContext,
+        @RestPath final UUID eventTypeId,
+        @RestPath final UUID behaviorGroupId
     ) {
         final String orgId = getOrgId(securityContext);
 
@@ -463,17 +463,17 @@ public class NotificationResource {
     @Operation(summary = "List behavior groups in a bundle", description = "Lists the behavior groups associated with a bundle. Use this endpoint to see the behavior groups that are configured for a particular bundle for a particular tenant.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec,
-                @Parameter(description = "UUID of the bundle to retrieve the behavior groups for.") @PathParam("bundleId") UUID bundleId) {
+                                                            @Parameter(description = "UUID of the bundle to retrieve the behavior groups for.") @PathParam("bundleId") UUID bundleId) {
         String orgId = getOrgId(sec);
         List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(orgId, bundleId);
         endpointRepository.loadProperties(
-                behaviorGroups
-                        .stream()
-                        .map(BehaviorGroup::getActions)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .map(BehaviorGroupAction::getEndpoint)
-                        .collect(Collectors.toList())
+            behaviorGroups
+                .stream()
+                .map(BehaviorGroup::getActions)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .map(BehaviorGroupAction::getEndpoint)
+                .collect(Collectors.toList())
         );
         return behaviorGroups;
     }

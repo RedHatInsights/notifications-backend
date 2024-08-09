@@ -1,5 +1,9 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.WorkspacePermission;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
@@ -41,14 +45,19 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
+import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class EventResource {
+    @Inject
+    BackendConfig backendConfig;
 
     @Inject
     EventRepository eventRepository;
 
+    @Inject
+    KesselAuthorization kesselAuthorization;
 
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
     public static class V1 extends EventResource {
@@ -62,7 +71,6 @@ public class EventResource {
 
     @GET
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
     @Operation(summary = "Retrieve the event log entries", description = "Retrieves the event log entries. Use this endpoint to review a full history of the events related to the tenant. You can sort by the bundle, application, event, and created fields. You can specify the sort order by appending :asc or :desc to the field, for example bundle:desc. Sorting defaults to desc for the created field and to asc for all other fields."
     )
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
@@ -72,6 +80,22 @@ public class EventResource {
                                          @RestQuery Set<EventLogEntryActionStatus> status,
                                          @BeanParam @Valid Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+            return this.getInternalEvents(securityContext, uriInfo, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, query, includeDetails, includePayload, includeActions);
+        } else {
+            return this.getEventsLegacyRBACRoles(securityContext, uriInfo, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, query, includeDetails, includePayload, includeActions);
+        }
+
+    }
+
+    @RolesAllowed(RBAC_READ_NOTIFICATIONS_EVENTS)
+    public Page<EventLogEntry> getEventsLegacyRBACRoles(final SecurityContext securityContext, final UriInfo uriInfo, final Set<UUID> bundleIds, final Set<UUID> appIds, final String eventTypeDisplayName, final LocalDate startDate, final LocalDate endDate, final Set<String> endpointTypes, final Set<Boolean> invocationResults, final Set<EventLogEntryActionStatus> status, final Query query, final boolean includeDetails, final boolean includePayload, final boolean includeActions) {
+        return this.getInternalEvents(securityContext, uriInfo, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, query, includeDetails, includePayload, includeActions);
+    }
+
+    public Page<EventLogEntry> getInternalEvents(final SecurityContext securityContext, final UriInfo uriInfo, final Set<UUID> bundleIds, final Set<UUID> appIds, final String eventTypeDisplayName, final LocalDate startDate, final LocalDate endDate, final Set<String> endpointTypes, final Set<Boolean> invocationResults, final Set<EventLogEntryActionStatus> status, final Query query, final boolean includeDetails, final boolean includePayload, final boolean includeActions) {
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
         Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);

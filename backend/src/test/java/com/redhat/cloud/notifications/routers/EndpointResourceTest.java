@@ -2476,7 +2476,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         final JsonObject constraintViolation = constraintViolations.getJsonObject(0);
 
-        Assertions.assertEquals("testEndpoint.requestBody.message", constraintViolation.getString("field"), "unexpected field validated when sending a blank test message");
+        Assertions.assertEquals("internalTestEndpoint.requestBody.message", constraintViolation.getString("field"), "unexpected field validated when sending a blank test message");
         Assertions.assertEquals("must not be blank", constraintViolation.getString("message"), "unexpected error message received when sending a blank custom message for testing the endpoint");
     }
 
