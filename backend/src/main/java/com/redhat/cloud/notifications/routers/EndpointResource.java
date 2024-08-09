@@ -363,6 +363,8 @@ public class EndpointResource {
         @RequestBody(required = true)   EndpointDTO endpointDTO
     ) {
         if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAssets.createIntegration(sec, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
             return this.internalCreateEndpoint(sec, endpointDTO);
