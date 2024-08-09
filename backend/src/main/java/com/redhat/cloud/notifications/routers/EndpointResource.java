@@ -2,10 +2,11 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
-import com.redhat.cloud.notifications.auth.kessel.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.KesselAssets;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
-import com.redhat.cloud.notifications.auth.kessel.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -106,6 +107,9 @@ public class EndpointResource {
     @Inject
     @RestClient
     EndpointTestService endpointTestService;
+
+    @Inject
+    KesselAssets kesselAssets;
 
     @Inject
     KesselAuthorization kesselAuthorization;
@@ -359,6 +363,8 @@ public class EndpointResource {
         @RequestBody(required = true)   EndpointDTO endpointDTO
     ) {
         if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAssets.createIntegration(sec, UUID.randomUUID(), UUID.randomUUID());
+
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
             return this.internalCreateEndpoint(sec, endpointDTO);

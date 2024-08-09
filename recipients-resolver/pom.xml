@@ -24,11 +24,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- gRPC client for the interactions with Kessel -->
+        <!-- gRPC clients for the interactions with Kessel -->
         <dependency>
             <groupId>org.project-kessel</groupId>
             <artifactId>relations-client-java</artifactId>
-            <version>${kessel.version}</version>
+            <version>${kessel.relationships-client.version}</version>
         </dependency>
 
         <!-- Quarkus -->
