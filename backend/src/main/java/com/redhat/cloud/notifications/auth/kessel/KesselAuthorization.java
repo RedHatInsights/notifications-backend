@@ -2,11 +2,10 @@ package com.redhat.cloud.notifications.auth.kessel;
 
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
-import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
-import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhServiceAccountIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.grpc.StatusRuntimeException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -26,7 +25,6 @@ import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
-import java.security.Principal;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -90,7 +88,7 @@ public class KesselAuthorization {
         }
 
         // Identify the subject.
-        final RhIdentity identity = this.extractRhIdentity(securityContext);
+        final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
 
         // Build the request for Kessel.
         final CheckRequest permissionCheckRequest = this.buildCheckRequest(identity, permission, resourceType, resourceId);
@@ -140,7 +138,7 @@ public class KesselAuthorization {
      */
     public Set<UUID> lookupAuthorizedIntegrations(final SecurityContext securityContext, final IntegrationPermission integrationPermission) {
         // Identify the subject.
-        final RhIdentity identity = this.extractRhIdentity(securityContext);
+        final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
 
         // Build the lookup request for Kessel.
         final LookupResourcesRequest request = this.buildLookupResourcesRequest(identity, integrationPermission);
@@ -236,25 +234,6 @@ public class KesselAuthorization {
             ).setRelation(kesselPermission.getKesselPermissionName())
             .setResourceType(ObjectType.newBuilder().setName(ResourceType.INTEGRATION.getKesselName()))
             .build();
-    }
-
-    /**
-     * Extracts the {@link RhIdentity} object from the security context.
-     * @param securityContext the security context to extract the object from.
-     * @return the extracted {@link RhIdentity} object.
-     */
-    protected RhIdentity extractRhIdentity(final SecurityContext securityContext) {
-        final Principal genericPrincipal = securityContext.getUserPrincipal();
-        if (!(genericPrincipal instanceof ConsolePrincipal<?> principal)) {
-            throw new IllegalStateException(String.format("unable to extract RH Identity object from principal. Expected \"Console Principal\" object type, got \"%s\"", genericPrincipal.getClass().getName()));
-        }
-
-        final ConsoleIdentity genericIdentity = principal.getIdentity();
-        if (!(genericIdentity instanceof RhIdentity identity)) {
-            throw new IllegalStateException(String.format("unable to extract RH Identity object from principal. Expected \"RhIdentity\" object type, got \"%s\"", genericIdentity.getClass().getName()));
-        }
-
-        return identity;
     }
 
     /**
