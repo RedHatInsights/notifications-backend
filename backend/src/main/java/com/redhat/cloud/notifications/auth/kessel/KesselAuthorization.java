@@ -52,12 +52,12 @@ public class KesselAuthorization {
      * Represents the timer's name to measure the time spent looking up for
      * authorized resources for a particular subject.
      */
-    private static final String KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME = "notifications.kessel.lookup.resources.requests";
+    private static final String KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME = "notifications.kessel.relationships.lookup.resources.requests";
     /**
      * Represents the timer's name to measure the time spent checking for a
      * particular permission for a subject.
      */
-    private static final String KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME = "notifications.kessel.permission.check.requests";
+    private static final String KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME = "notifications.kessel.relationships.permission.check.requests";
 
     @Inject
     BackendConfig backendConfig;
