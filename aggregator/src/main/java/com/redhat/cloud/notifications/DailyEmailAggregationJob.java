@@ -80,10 +80,14 @@ public class DailyEmailAggregationJob {
             aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             Log.infof("found %s commands", aggregationCommands.size());
+            Log.debugf("Aggregation commands: %s", aggregationCommands);
+
             aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
                 .values().forEach(this::sendIt);
 
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
+            Log.debugf("Found following org IDs to update: %s", orgIdsToUpdate);
+
             aggregationOrgConfigRepository.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
 
             Gauge lastSuccess = Gauge

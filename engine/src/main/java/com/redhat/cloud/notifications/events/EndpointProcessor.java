@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -93,7 +94,11 @@ public class EndpointProcessor {
 
             endpoints = List.of(endpoint);
         } else if (isAggregatorEvent(event)) {
+            Log.debugf("[org_id: %s] Processing aggregation event: %s", event.getOrgId(), event);
+
             endpoints = List.of(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION));
+
+            Log.debugf("[org_id: %s] Found %s endpoints for the aggregation event: %s", event.getOrgId(), endpoints.size(), event);
         } else {
             endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
         }
@@ -131,8 +136,10 @@ public class EndpointProcessor {
                             break;
                         case EMAIL_SUBSCRIPTION:
                             if (isAggregatorEvent(event) && !replayEmailsOnly) {
+                                Log.debugf("[org_id: %s] Sending event through the aggregator processor: %s", event.getOrgId(), event);
                                 emailAggregationProcessor.processAggregation(event);
                             } else {
+                                Log.debugf("[org_id: %s] Sending event through the email connector: %s", event.getOrgId(), event);
                                 emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue(), replayEmailsOnly);
                             }
                             break;

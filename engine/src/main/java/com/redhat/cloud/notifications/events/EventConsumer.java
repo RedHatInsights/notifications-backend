@@ -141,6 +141,7 @@ public class EventConsumer {
                  * The message ID is already known which means we already processed the current
                  * message and sent notifications. The message is therefore ignored.
                  */
+                Log.debugf(" [kafka_message_id: %s] Duplicated Kafka message ignored", messageId);
                 duplicateCounter.increment();
             } else {
                 /*
