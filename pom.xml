@@ -41,7 +41,7 @@
     </profiles>
 
     <properties>
-        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <mapstruct.version>1.6.0</mapstruct.version>
         <kessel.version>0.3</kessel.version>
 
         <enforcer-plugin.version>3.5.0</enforcer-plugin.version>
