@@ -14,6 +14,7 @@ import java.util.MissingResourceException;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TARGET_URL_NO_SCHEME;
+import static org.apache.commons.validator.routines.UrlValidator.ALLOW_LOCAL_URLS;
 
 @ApplicationScoped
 public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
@@ -28,8 +29,8 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
     public static final String CUSTOM_DETAILS = "custom_details";
     public static final String EVENT_ACTION = "event_action";
 
-    private static final UrlValidator HTTPS_URL_VALIDATOR = new UrlValidator(new String[]{"https"});
-    private static final UrlValidator HTTP_URL_VALIDATOR = new UrlValidator(new String[]{"http"});
+    private static final UrlValidator HTTPS_URL_VALIDATOR = new UrlValidator(new String[]{"https"}, ALLOW_LOCAL_URLS);
+    private static final UrlValidator HTTP_URL_VALIDATOR = new UrlValidator(new String[]{"http"}, ALLOW_LOCAL_URLS);
 
     @Inject
     AuthenticationDataExtractor authenticationDataExtractor;
