@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
-import com.google.protobuf.Timestamp;
-import com.google.protobuf.util.Timestamps;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.grpc.StatusRuntimeException;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -19,9 +17,6 @@ import org.project_kessel.api.inventory.v1beta1.Metadata;
 import org.project_kessel.api.inventory.v1beta1.NotificationsIntegration;
 import org.project_kessel.api.inventory.v1beta1.ReporterData;
 import org.project_kessel.client.NotificationsIntegrationClient;
-
-import java.time.Clock;
-import java.time.Instant;
 
 @ApplicationScoped
 public class KesselAssets {
@@ -53,7 +48,7 @@ public class KesselAssets {
      */
     public void createIntegration(final SecurityContext securityContext, final String workspaceId, final String integrationId) {
         // Build the request for Kessel's inventory.
-        final CreateNotificationsIntegrationRequest request = this.buildCreateIntegrationRequest(securityContext, workspaceId, integrationId);
+        final CreateNotificationsIntegrationRequest request = this.buildCreateIntegrationRequest(workspaceId, integrationId);
 
         Log.tracef("[identity: %s][workspace_id: %s][integration_id: %s] Payload for the integration creation in Kessel's inventory: %s", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, request);
 
@@ -122,30 +117,22 @@ public class KesselAssets {
 
     /**
      * Builds a request to create an integration in the inventory.
-     * @param securityContext the security context holding the identity.
      * @param workspaceId the identifier of the workspace the integration will
      *                    be created on.
      * @param integrationId the identifier of the integration that we created
      *                      on our database.
      * @return the creation request ready to be sent.
      */
-    protected CreateNotificationsIntegrationRequest buildCreateIntegrationRequest(final SecurityContext securityContext, final String workspaceId, final String integrationId) {
-        final Timestamp reportedAt = Timestamps.fromMillis(Instant.now(Clock.systemUTC()).toEpochMilli());
+    protected CreateNotificationsIntegrationRequest buildCreateIntegrationRequest(final String workspaceId, final String integrationId) {
         return CreateNotificationsIntegrationRequest.newBuilder()
             .setIntegration(
                 NotificationsIntegration.newBuilder()
                     .setMetadata(Metadata.newBuilder()
-                        .setFirstReported(reportedAt)
-                        .setLastReported(reportedAt)
-                        .setFirstReportedBy(SecurityContextUtil.getUsername(securityContext))
-                        .setLastReportedBy(SecurityContextUtil.getUsername(securityContext))
                         .setResourceType(ResourceType.INTEGRATION.getKesselName())
                         .setWorkspace(workspaceId)
                         .build()
                     ).setReporterData(ReporterData.newBuilder()
                         .setReporterType(ReporterData.ReporterType.REPORTER_TYPE_OTHER)
-                        .setFirstReported(reportedAt)
-                        .setLastReported(reportedAt)
                         .setLocalResourceId(integrationId)
                         .build()
                     ).build()
