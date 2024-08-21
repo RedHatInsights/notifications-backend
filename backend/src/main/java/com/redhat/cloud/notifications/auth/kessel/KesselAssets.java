@@ -69,7 +69,7 @@ public class KesselAssets {
         }
 
         // Stop the timer.
-        createIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.getKesselName())));
+        createIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
 
         Log.tracef("[identity: %s][workspace_id: %s][integration_id: %s] Received payload for the integration creation in Kessel's inventory: %s", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, response);
         Log.debugf("[identity: %s][workspace_id: %s][integration_id: %s] Integration created in Kessel's inventory", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId);
@@ -108,7 +108,7 @@ public class KesselAssets {
         }
 
         // Stop the timer.
-        deleteIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.getKesselName())));
+        deleteIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
 
         Log.tracef("[identity: %s][workspace_id: %s][integration_id: %s] Received payload for the integration removal in Kessel's inventory: %s", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, response);
         Log.debugf("[identity: %s][workspace_id: %s][integration_id: %s] Integration deleted in Kessel's inventory", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId);
@@ -127,7 +127,7 @@ public class KesselAssets {
             .setIntegration(
                 NotificationsIntegration.newBuilder()
                     .setMetadata(Metadata.newBuilder()
-                        .setResourceType("notifications-integration")
+                        .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
                         .setWorkspace(workspaceId)
                         .build()
                     ).setReporterData(ReporterData.newBuilder()

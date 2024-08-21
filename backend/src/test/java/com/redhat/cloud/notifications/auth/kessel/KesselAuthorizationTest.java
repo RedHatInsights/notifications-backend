@@ -210,7 +210,7 @@ public class KesselAuthorizationTest {
 
             // Make sure the request was built appropriately.
             final ObjectReference objectReference = checkRequest.getResource();
-            Assertions.assertEquals(tc.resourceType().getKesselName(), objectReference.getType().getName(), String.format("unexpected resource type obtained for the object's reference on test case: %s", tc));
+            Assertions.assertEquals(tc.resourceType().getKesselObjectType(), objectReference.getType(), String.format("unexpected resource type obtained for the object's reference on test case: %s", tc));
             Assertions.assertEquals(tc.resourceId(), objectReference.getId(), String.format("unexpected resource ID obtained for the object's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), checkRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
@@ -264,7 +264,7 @@ public class KesselAuthorizationTest {
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), lookupResourcesRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
-            Assertions.assertEquals(ResourceType.INTEGRATION.getKesselName(), lookupResourcesRequest.getResourceType().getName(), String.format("unexpected resource type obtained on test case: %s", tc));
+            Assertions.assertEquals(ResourceType.INTEGRATION.getKesselObjectType(), lookupResourcesRequest.getResourceType(), String.format("unexpected resource type obtained on test case: %s", tc));
         }
     }
 }

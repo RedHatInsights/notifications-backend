@@ -104,7 +104,7 @@ public class KesselAuthorization {
         }
 
         // Stop the timer.
-        permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.getKesselName())));
+        permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.name())));
 
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
 
@@ -154,7 +154,7 @@ public class KesselAuthorization {
         }
 
         // Stop the timer.
-        lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.getKesselName())));
+        lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
 
         // Process the incoming responses.
         final Set<UUID> uuids = new HashSet<>();
@@ -183,7 +183,7 @@ public class KesselAuthorization {
         return CheckRequest.newBuilder()
             .setResource(
                 ObjectReference.newBuilder()
-                    .setType(ObjectType.newBuilder().setName(resourceType.getKesselName()).build())
+                    .setType(resourceType.getKesselObjectType())
                     .setId(resourceId)
                     .build()
             )
@@ -217,7 +217,7 @@ public class KesselAuthorization {
                             .setId(identity.getName())
                     ).build()
             ).setRelation(kesselPermission.getKesselPermissionName())
-            .setResourceType(ObjectType.newBuilder().setName(ResourceType.INTEGRATION.getKesselName()))
+            .setResourceType(ResourceType.INTEGRATION.getKesselObjectType())
             .build();
     }
 }
