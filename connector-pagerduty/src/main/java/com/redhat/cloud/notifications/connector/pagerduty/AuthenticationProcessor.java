@@ -12,7 +12,7 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 @ApplicationScoped
 public class AuthenticationProcessor implements Processor {
 
-    public static final String ROUTING_KEY = "routing_key";
+    private static final String ROUTING_KEY = "routing_key";
 
     @Override
     public void process(Exchange exchange) {

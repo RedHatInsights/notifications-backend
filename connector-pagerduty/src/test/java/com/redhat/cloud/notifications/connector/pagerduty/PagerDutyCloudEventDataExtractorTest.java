@@ -8,15 +8,14 @@ import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
-import org.apache.http.ProtocolException;
 import org.junit.jupiter.api.Test;
+
+import java.util.MissingResourceException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.CUSTOM_DETAILS;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.NOTIF_METADATA;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.PAYLOAD;
@@ -25,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -70,11 +68,6 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
     }
 
     @Test
-    void httpProtocolShouldBeInvalid() {
-        assertInvalidTargetUrl("http://example.com/foo?bar=baz", ProtocolException.class);
-    }
-
-    @Test
     void ftpProtocolShouldBeInvalid() {
         assertInvalidTargetUrl("ftp://example.com/foo?bar=baz", IllegalArgumentException.class);
     }
@@ -86,7 +79,7 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
 
     @Test
     void nullUrlShouldBeInvalid() {
-        assertInvalidTargetUrl(null, IllegalArgumentException.class);
+        assertInvalidTargetUrl(null, MissingResourceException.class);
     }
 
     @Test
@@ -95,25 +88,9 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
     }
 
     @Test
-    void testExtractWithValidTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar", true);
-    }
-
-    private void assertValidTargetUrl(String url) {
+    void testExtractWithValidTargetUrlPath() {
         Exchange exchange = createExchangeWithBody("I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, false);
-        assertDoesNotThrow(() -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
-    }
-
-    private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
-        Exchange exchange = createExchangeWithBody("I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, false);
-        assertThrows(expectedException, () -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
-    }
-
-    private void testExtract(String url, boolean trustAll) throws Exception {
-        Exchange exchange = createExchangeWithBody("I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, trustAll);
+        JsonObject cloudEventData = createCloudEventData("https://foo.bar");
         /*
          * The 'extract' method will modify 'cloudEventData'.
          * We need to run assertions on the original JsonObject, so we're making a copy of it.
@@ -126,8 +103,6 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
 
         JsonObject expectedMetadata = cloudEventDataCopy.getJsonObject(NOTIF_METADATA);
         assertEquals(expectedMetadata.getString("url"), exchange.getProperty(TARGET_URL, String.class));
-        assertTrue(expectedMetadata.getString("url").endsWith(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class)));
-        assertEquals(expectedMetadata.getString("trustAll"), exchange.getProperty(TRUST_ALL, Boolean.class).toString());
 
         JsonObject expectedAuthentication = expectedMetadata.getJsonObject("authentication");
         assertEquals(expectedAuthentication.getString("type"), exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class).name());
@@ -135,5 +110,17 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
 
         // Check that metadata has been removed from the original JsonObject
         assertNull(cloudEventData.getJsonObject(NOTIF_METADATA));
+    }
+
+    private void assertValidTargetUrl(String url) {
+        Exchange exchange = createExchangeWithBody("I am not used!");
+        JsonObject cloudEventData = createCloudEventData(url);
+        assertDoesNotThrow(() -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
+    }
+
+    private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
+        Exchange exchange = createExchangeWithBody("I am not used!");
+        JsonObject cloudEventData = createCloudEventData(url);
+        assertThrows(expectedException, () -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 }

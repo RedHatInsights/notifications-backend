@@ -17,21 +17,16 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-// TODO: rewrite for PagerDuty
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
@@ -51,7 +46,7 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
 
     @Override
     protected JsonObject buildIncomingPayload(String targetUrl) {
-        return createCloudEventData(targetUrl, true);
+        return createCloudEventData(targetUrl);
     }
 
     @Override
@@ -64,8 +59,6 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
             String outgoingPayload = exchange.getIn().getBody(String.class);
 
             assertEquals(DEFAULT_ACCOUNT_ID, exchange.getProperty(ACCOUNT_ID, String.class));
-            assertTrue(exchange.getProperty(TRUST_ALL, Boolean.class));
-            assertEquals(exchange.getProperty(TARGET_URL, String.class), "https://" + exchange.getProperty(TARGET_URL_NO_SCHEME, String.class));
             assertEquals(expectedPayload.encode(), outgoingPayload);
             assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
             assertEquals(SECRET_TOKEN, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
@@ -135,11 +128,6 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         checkRouteMetrics(SUCCESS, 0, 0, 0);
         checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
         micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 0);
-    }
-
-    @Override
-    protected boolean useHttps() {
-        return true;
     }
 
     @Override

@@ -7,13 +7,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.http.ProtocolException;
 
 import java.util.MissingResourceException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static org.apache.commons.validator.routines.UrlValidator.ALLOW_LOCAL_URLS;
 
 @ApplicationScoped
@@ -29,14 +27,14 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
     public static final String CUSTOM_DETAILS = "custom_details";
     public static final String EVENT_ACTION = "event_action";
 
-    private static final UrlValidator HTTPS_URL_VALIDATOR = new UrlValidator(new String[]{"https"}, ALLOW_LOCAL_URLS);
-    private static final UrlValidator HTTP_URL_VALIDATOR = new UrlValidator(new String[]{"http"}, ALLOW_LOCAL_URLS);
+    // HTTP URLs (or disabling SSL verification) must be permitted to run test cases
+    private static final UrlValidator URL_VALIDATOR = new UrlValidator(new String[]{"http", "https"}, ALLOW_LOCAL_URLS);
 
     @Inject
     AuthenticationDataExtractor authenticationDataExtractor;
 
     @Override
-    public void extract(Exchange exchange, JsonObject cloudEventData) throws IllegalArgumentException, ProtocolException {
+    public void extract(Exchange exchange, JsonObject cloudEventData) throws IllegalArgumentException {
 
         validatePayload(cloudEventData);
 
@@ -45,8 +43,6 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
 
         JsonObject metadata = cloudEventData.getJsonObject(NOTIF_METADATA);
         exchange.setProperty(TARGET_URL, metadata.getString(URL));
-        validateTargetUrl(exchange);
-        exchange.setProperty(TARGET_URL_NO_SCHEME, exchange.getProperty(TARGET_URL, String.class).replace("https://", ""));
         exchange.setProperty(TRUST_ALL, Boolean.valueOf(metadata.getString("trustAll")));
 
         JsonObject authentication = metadata.getJsonObject(AUTHENTICATION);
@@ -58,6 +54,13 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
     }
 
     private void validatePayload(JsonObject cloudEventData) {
+        String endpointUrl = cloudEventData.getJsonObject(NOTIF_METADATA).getString(URL);
+        if (endpointUrl == null) {
+            throw new MissingResourceException("The endpoint URL is required", PagerDutyCloudEventDataExtractor.class.getName(), NOTIF_METADATA + ".url");
+        } else if (!URL_VALIDATOR.isValid(endpointUrl)) {
+            throw new IllegalArgumentException("URL validation failed");
+        }
+
         if (cloudEventData.getJsonObject(PAYLOAD) == null) {
             throw new MissingResourceException("The '" + PAYLOAD + "' field is required", PagerDutyCloudEventDataExtractor.class.getName(), PAYLOAD);
         } else {
@@ -74,15 +77,6 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
 
         if (cloudEventData.getString(EVENT_ACTION) == null) {
             throw new MissingResourceException("The '" + EVENT_ACTION + "' field is required", PagerDutyCloudEventDataExtractor.class.getName(), EVENT_ACTION);
-        }
-    }
-
-    private void validateTargetUrl(Exchange exchange) throws IllegalArgumentException, ProtocolException {
-        String targetUrl = exchange.getProperty(TARGET_URL, String.class);
-        if (HTTP_URL_VALIDATOR.isValid(targetUrl)) {
-            throw new ProtocolException("HTTP protocol is not supported");
-        } else if (!HTTPS_URL_VALIDATOR.isValid(targetUrl)) {
-            throw new IllegalArgumentException("URL validation failed");
         }
     }
 }

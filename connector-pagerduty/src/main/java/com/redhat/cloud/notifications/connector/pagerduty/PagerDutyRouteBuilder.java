@@ -5,20 +5,17 @@ import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLo
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
+
+import java.net.URLDecoder;
 
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.http.SslTrustAllManager.getSslContextParameters;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TARGET_URL_NO_SCHEME;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.camel.Exchange.CONTENT_TYPE;
 import static org.apache.camel.LoggingLevel.INFO;
-import static org.apache.camel.builder.endpoint.dsl.HttpEndpointBuilderFactory.HttpEndpointBuilder;
 
-// TODO: rewrite for PagerDuty
 @ApplicationScoped
 public class PagerDutyRouteBuilder extends EngineToConnectorRouteBuilder {
 
@@ -45,17 +42,11 @@ public class PagerDutyRouteBuilder extends EngineToConnectorRouteBuilder {
             .process(secretsLoader)
             .process(authenticationProcessor)
             .to(PAGERDUTY_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-            .toD(buildPagerDutyEndpoint(), connectorConfig.getEndpointCacheMaxSize())
+            .toD(URLDecoder.decode("${exchangeProperty." + TARGET_URL + "}", UTF_8), connectorConfig.getEndpointCacheMaxSize())
             .to(PAGERDUTY_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
-            .log(INFO, getClass().getName(), "Delivered event ${exchangeProperty." + ID + "} " +
-                "(orgId ${exchangeProperty." + ORG_ID + "} account ${exchangeProperty." + ACCOUNT_ID + "}) " +
-                "to ${exchangeProperty." + TARGET_URL + "}")
+            .log(INFO, getClass().getName(), "Sent PagerDuty notification " +
+                "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." +
+                ID + "}, targetUrl=${exchangeProperty." + TARGET_URL + "}]")
             .to(direct(SUCCESS));
-    }
-
-    private HttpEndpointBuilder buildPagerDutyEndpoint() {
-        return https("${exchangeProperty." + TARGET_URL_NO_SCHEME + "}").httpMethod("POST")
-                .sslContextParameters(getSslContextParameters())
-                .x509HostnameVerifier(NoopHostnameVerifier.INSTANCE);
     }
 }

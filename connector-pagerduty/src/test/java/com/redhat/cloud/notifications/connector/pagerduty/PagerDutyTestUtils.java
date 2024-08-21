@@ -5,7 +5,6 @@ import io.vertx.core.json.JsonObject;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.CUSTOM_DETAILS;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.EVENT_ACTION;
@@ -23,14 +22,13 @@ public class PagerDutyTestUtils {
     public static final String DEFAULT_SEVERITY = "warning";
     public static final String DEFAULT_SOURCE = "default-payload-source";
 
-    static JsonObject createCloudEventData(String url, boolean trustAll) {
+    static JsonObject createCloudEventData(String url) {
         JsonObject authentication = new JsonObject();
         authentication.put("type", SECRET_TOKEN.name());
         authentication.put("secretId", 123L);
 
         JsonObject metadata = new JsonObject();
         metadata.put("url", url);
-        metadata.put(TRUST_ALL, Boolean.toString(trustAll));
         metadata.put(METHOD, DEFAULT_HTTP_METHOD_POST);
         metadata.put(AUTHENTICATION, authentication);
 
