@@ -15,7 +15,7 @@ import org.project_kessel.api.inventory.v1beta1.CreateNotificationsIntegrationRe
 import org.project_kessel.api.inventory.v1beta1.DeleteNotificationsIntegrationRequest;
 import org.project_kessel.api.inventory.v1beta1.Metadata;
 import org.project_kessel.api.inventory.v1beta1.ReporterData;
-import org.project_kessel.client.NotificationsIntegrationClient;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 
 import java.util.UUID;
 

@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.auth.kessel.producer.inventory;
 
-import com.redhat.cloud.notifications.config.BackendConfig;
 import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -8,9 +7,11 @@ import jakarta.enterprise.inject.Alternative;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.project_kessel.client.InventoryGrpcClientsManager;
-import org.project_kessel.client.NotificationsIntegrationClient;
+import org.project_kessel.inventory.client.Config;
+import org.project_kessel.inventory.client.InventoryGrpcClientsManager;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
+
+import java.util.Optional;
 
 /**
  * We have implemented our own producer for the clients because we need our
@@ -21,20 +22,8 @@ import org.project_kessel.client.NotificationsIntegrationClient;
 @ApplicationScoped
 @Priority(1)
 public class KesselInventoryClientsProducer {
-    /**
-     * Constant for the configuration key that defines the inventory API's
-     * target URL.
-     */
-    private static final String RELATIONSHIPS_API_TARGET_URL = "notifications.kessel.inventory-api.target-url";
-
     @Inject
-    BackendConfig backendConfig;
-
-    /**
-     * The target URL the gRPC client will connect to.
-     */
-    @ConfigProperty(name = RELATIONSHIPS_API_TARGET_URL)
-    String targetUrl;
+    Config inventoryConfig;
 
     /**
      * Produces an inventory gRPC clients manager. Useful for being able to
@@ -45,14 +34,25 @@ public class KesselInventoryClientsProducer {
     @ApplicationScoped
     @Produces
     protected InventoryGrpcClientsManager getInventoryGrpcClientsManager() {
-        if (this.backendConfig.isKesselUseSecureClientEnabled()) {
-            Log.infof("Generated secure inventory gRPC client manager for Kessel with target url \"%s\"", this.targetUrl);
+        final Optional<Config.AuthenticationConfig> authenticationConfigOptional = this.inventoryConfig.authenticationConfig();
 
-            return InventoryGrpcClientsManager.forSecureClients(this.targetUrl);
+        if (this.inventoryConfig.isSecureClients()) {
+            Log.infof("Generated secure inventory gRPC client manager for Kessel with target url \"%s\"", this.inventoryConfig.targetUrl());
+
+            if (authenticationConfigOptional.isPresent()) {
+                return InventoryGrpcClientsManager.forSecureClients(this.inventoryConfig.targetUrl(), authenticationConfigOptional.get());
+            } else {
+                return InventoryGrpcClientsManager.forSecureClients(this.inventoryConfig.targetUrl());
+            }
+        } else {
+            Log.infof("Generated insecure inventory gRPC client manager for Kessel with target url \"%s\"", this.inventoryConfig.targetUrl());
+
+            if (authenticationConfigOptional.isPresent()) {
+                return InventoryGrpcClientsManager.forInsecureClients(this.inventoryConfig.targetUrl(), authenticationConfigOptional.get());
+            } else {
+                return InventoryGrpcClientsManager.forInsecureClients(this.inventoryConfig.targetUrl());
+            }
         }
-
-        Log.infof("Generated insecure inventory gRPC client manager for Kessel with target url \"%s\"", this.targetUrl);
-        return InventoryGrpcClientsManager.forInsecureClients(this.targetUrl);
     }
 
     /**

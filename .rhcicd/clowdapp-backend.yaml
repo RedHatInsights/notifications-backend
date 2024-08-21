@@ -128,10 +128,6 @@ objects:
               optional: true
         - name: NOTIFICATIONS_KESSEL_BACKEND_ENABLED
           value: ${NOTIFICATIONS_KESSEL_BACKEND_ENABLED}
-        - name: NOTIFICATIONS_KESSEL_SECURE_CLIENT
-          value: ${NOTIFICATIONS_KESSEL_SECURE_CLIENT}
-        - name: NOTIFICATIONS_KESSEL_TARGET_URL
-          value: ${NOTIFICATIONS_KESSEL_TARGET_URL}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
@@ -142,6 +138,18 @@ objects:
           value: ${INTERNAL_RBAC_ENABLED}
         - name: INTERNAL_ADMIN_ROLE
           value: ${INTERNAL_RBAC_ADMIN}
+        - name: INVENTORY_API_AUTHN_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: inventory.client.id
+        - name: INVENTORY_API_AUTHN_CLIENT_ISSUER
+          value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
+        - name: INVENTORY_API_AUTHN_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: inventory.client.secret
         - name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
           value: ${NOTIFICATIONS_INSTANT_EMAILS_ENABLED}
         - name: QUARKUS_HTTP_PORT
@@ -170,6 +178,18 @@ objects:
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
         - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
           value: ${QUARKUS_HIBERNATE_ORM_LOG_SQL}
+        - name: RELATIONS_API_AUTHN_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.id
+        - name: RELATIONS_API_AUTHN_CLIENT_ISSUER
+          value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
+        - name: RELATIONS_API_AUTHN_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.secret
         - name: SOURCES_PSK
           valueFrom:
             secretKeyRef:
@@ -236,12 +256,9 @@ parameters:
 - name: NOTIFICATIONS_KESSEL_BACKEND_ENABLED
   description: Enables using Kessel as the authentication and authorization back end.
   value: "false"
-- name: NOTIFICATIONS_KESSEL_SECURE_CLIENT
-  description: Is the Notifications gRPC client going to connect to Kessel using a secure channel?
-  value: "false"
-- name: NOTIFICATIONS_KESSEL_TARGET_URL
-  description: The hostname and the port for the Kessel service. The expected format is "hostname:port".
-  value: "localhost:9000"
+- name: NOTIFICATIONS_KESSEL_OIDC_ISSUER
+  description: Specifies the issuer of the OIDC authentication tokens.
+  value: "https://redhat.com/realms/redhat-external"
 - name: NOTIFICATIONS_UNLEASH_ENABLED
   value: "false"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT

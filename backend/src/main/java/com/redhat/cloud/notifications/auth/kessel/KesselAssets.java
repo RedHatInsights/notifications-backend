@@ -15,7 +15,7 @@ import org.project_kessel.api.inventory.v1beta1.DeleteNotificationsIntegrationRe
 import org.project_kessel.api.inventory.v1beta1.Metadata;
 import org.project_kessel.api.inventory.v1beta1.NotificationsIntegration;
 import org.project_kessel.api.inventory.v1beta1.ReporterData;
-import org.project_kessel.client.NotificationsIntegrationClient;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 
 @ApplicationScoped
 public class KesselAssets {
@@ -127,10 +127,11 @@ public class KesselAssets {
             .setIntegration(
                 NotificationsIntegration.newBuilder()
                     .setMetadata(Metadata.newBuilder()
-                        .setResourceType(ResourceType.INTEGRATION.getKesselName())
+                        .setResourceType("notifications-integration")
                         .setWorkspace(workspaceId)
                         .build()
                     ).setReporterData(ReporterData.newBuilder()
+                        .setReporterInstanceId("service-account-notifications")
                         .setReporterType(ReporterData.ReporterType.REPORTER_TYPE_OTHER)
                         .setLocalResourceId(integrationId)
                         .build()
