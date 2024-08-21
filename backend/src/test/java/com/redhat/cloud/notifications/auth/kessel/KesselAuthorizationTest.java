@@ -174,12 +174,11 @@ public class KesselAuthorizationTest {
      */
     @Test
     void testBuildCheckRequest() {
-        record TestCase(RhIdentity identity, String expectedIdentityType, ResourceType resourceType, KesselPermission permission, String resourceId) {
+        record TestCase(RhIdentity identity, ResourceType resourceType, KesselPermission permission, String resourceId) {
             @Override
             public String toString() {
                 return "TestCase{" +
                     "identity='" + this.identity + '\'' +
-                    ", expectedIdentityType='" + this.expectedIdentityType + '\'' +
                     ", resourceType='" + this.resourceType + '\'' +
                     ", kesselPermission='" + this.permission + '\'' +
                     ", resourceId='" + this.resourceId + '\'' +
@@ -199,10 +198,10 @@ public class KesselAuthorizationTest {
 
         // Loop through the supported identities.
         final List<TestCase> testCases = List.of(
-            new TestCase(userIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_USER, ResourceType.INTEGRATION, IntegrationPermission.VIEW, "12345"),
-            new TestCase(serviceAccountIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT, ResourceType.INTEGRATION, IntegrationPermission.EDIT, "54321"),
-            new TestCase(userIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_USER, ResourceType.WORKSPACE, WorkspacePermission.CREATE_DRAWER_INTEGRATION, "workspace-a"),
-            new TestCase(serviceAccountIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT, ResourceType.WORKSPACE, WorkspacePermission.EVENT_LOG_VIEW, "workspace-b")
+            new TestCase(userIdentity, ResourceType.INTEGRATION, IntegrationPermission.VIEW, "12345"),
+            new TestCase(serviceAccountIdentity, ResourceType.INTEGRATION, IntegrationPermission.EDIT, "54321"),
+            new TestCase(userIdentity, ResourceType.WORKSPACE, WorkspacePermission.CREATE_DRAWER_INTEGRATION, "workspace-a"),
+            new TestCase(serviceAccountIdentity, ResourceType.WORKSPACE, WorkspacePermission.EVENT_LOG_VIEW, "workspace-b")
         );
 
         for (final TestCase tc : testCases) {
@@ -217,7 +216,7 @@ public class KesselAuthorizationTest {
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), checkRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
             final SubjectReference subjectReference = checkRequest.getSubject();
-            Assertions.assertEquals(tc.expectedIdentityType(), subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
             Assertions.assertEquals(tc.identity().getName(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
         }
     }
@@ -228,12 +227,11 @@ public class KesselAuthorizationTest {
      */
     @Test
     void testBuildLookupResourcesRequest() {
-        record TestCase(RhIdentity identity, String expectedIdentityType, KesselPermission permission) {
+        record TestCase(RhIdentity identity, KesselPermission permission) {
             @Override
             public String toString() {
                 return "TestCase{" +
                     "identity='" + this.identity + '\'' +
-                    ", expectedIdentityType='" + this.expectedIdentityType + '\'' +
                     ", kesselPermission='" + this.permission + '\'' +
                     '}';
             }
@@ -251,8 +249,8 @@ public class KesselAuthorizationTest {
 
         // Loop through the supported identities.
         final List<TestCase> testCases = List.of(
-            new TestCase(userIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_USER, IntegrationPermission.VIEW),
-            new TestCase(serviceAccountIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT, IntegrationPermission.VIEW)
+            new TestCase(userIdentity, IntegrationPermission.VIEW),
+            new TestCase(serviceAccountIdentity, IntegrationPermission.VIEW)
         );
 
         for (final TestCase tc : testCases) {
@@ -261,22 +259,12 @@ public class KesselAuthorizationTest {
 
             // Make sure the request was built appropriately.
             final SubjectReference subjectReference = lookupResourcesRequest.getSubject();
-            Assertions.assertEquals(tc.expectedIdentityType(), subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
             Assertions.assertEquals(tc.identity().getName(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), lookupResourcesRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
             Assertions.assertEquals(ResourceType.INTEGRATION.getKesselName(), lookupResourcesRequest.getResourceType().getName(), String.format("unexpected resource type obtained on test case: %s", tc));
         }
-    }
-
-    /**
-     * Tests that the function under test correctly extracts the subject's
-     * type from its identity object.
-     */
-    @Test
-    void testExtractSubjectTypeFromRhIdentity() {
-        Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT, this.kesselAuthorization.extractSubjectTypeFromRhIdentity(new RhServiceAccountIdentity()));
-        Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_USER, this.kesselAuthorization.extractSubjectTypeFromRhIdentity(new RhUserIdentity()));
     }
 }

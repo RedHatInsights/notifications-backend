@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.auth.kessel;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
-import com.redhat.cloud.notifications.auth.principal.rhid.RhServiceAccountIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.grpc.StatusRuntimeException;
@@ -33,13 +32,10 @@ import java.util.UUID;
 @ApplicationScoped
 public class KesselAuthorization {
     /**
-     * Represents the "service account"'s subject's name in Kessel.
+     * Represents the subject's type in Kessel. As told by them, there is only
+     * going to exist the "user" type in the schema.
      */
-    public static final String KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT = "service-account";
-    /**
-     * Represents the "user"'s subject's name in Kessel.
-     */
-    public static final String KESSEL_IDENTITY_SUBJECT_USER = "user";
+    public static final String KESSEL_IDENTITY_SUBJECT_TYPE = "user";
     /**
      * Represents the key for the "permission" tag used in the timer.
      */
@@ -185,9 +181,6 @@ public class KesselAuthorization {
      * @return the built check request for Kessel ready to be sent.
      */
     protected CheckRequest buildCheckRequest(final RhIdentity identity, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
-        // Extract the subject's type from the subject's identity.
-        final String type = this.extractSubjectTypeFromRhIdentity(identity);
-
         return CheckRequest.newBuilder()
             .setResource(
                 ObjectReference.newBuilder()
@@ -200,7 +193,7 @@ public class KesselAuthorization {
                 SubjectReference.newBuilder()
                     .setSubject(
                         ObjectReference.newBuilder()
-                            .setType(ObjectType.newBuilder().setName(type).build())
+                            .setType(ObjectType.newBuilder().setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
                             .setId(identity.getName())
                             .build()
                     ).build()
@@ -216,32 +209,16 @@ public class KesselAuthorization {
      * given subject.
      */
     protected LookupResourcesRequest buildLookupResourcesRequest(final RhIdentity identity, final KesselPermission kesselPermission) {
-        // Extract the subject's type from the subject's identity.
-        final String type = this.extractSubjectTypeFromRhIdentity(identity);
-
         return LookupResourcesRequest.newBuilder()
             .setSubject(
                 SubjectReference.newBuilder()
                     .setSubject(
                         ObjectReference.newBuilder()
-                            .setType(ObjectType.newBuilder().setName(type).build())
+                            .setType(ObjectType.newBuilder().setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
                             .setId(identity.getName())
                     ).build()
             ).setRelation(kesselPermission.getKesselPermissionName())
             .setResourceType(ObjectType.newBuilder().setName(ResourceType.INTEGRATION.getKesselName()))
             .build();
-    }
-
-    /**
-     * Extracts the subject's type from the given identity.
-     * @param rhIdentity the identity to extract the subject's type from.
-     * @return service account or user.
-     */
-    protected String extractSubjectTypeFromRhIdentity(final RhIdentity rhIdentity) {
-        if (rhIdentity instanceof RhServiceAccountIdentity) {
-            return KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT;
-        } else {
-            return KESSEL_IDENTITY_SUBJECT_USER;
-        }
     }
 }
