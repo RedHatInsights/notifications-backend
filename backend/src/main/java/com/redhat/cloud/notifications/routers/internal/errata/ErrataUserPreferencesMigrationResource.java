@@ -12,15 +12,10 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
 import org.jboss.resteasy.reactive.RestForm;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,39 +29,6 @@ public class ErrataUserPreferencesMigrationResource {
 
     @Inject
     ErrataMigrationRepository errataMigrationRepository;
-
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Path("/migrate/csv")
-    @POST
-    public void migrateTeamNadoUserPreferencesCSV(@RestForm("csvFile") InputStream csvFile) throws IOException {
-        final byte[] contents = csvFile.readAllBytes();
-
-        // Set the format for the CSV file.
-        final CSVFormat csvFormat = CSVFormat.DEFAULT
-            .builder()
-            .setHeader(CSV_HEADERS)
-            .setRecordSeparator(System.lineSeparator())
-            .setSkipHeaderRecord(true)
-            .build();
-
-        // Extract the subscriptions from the CSV file.
-        final List<ErrataSubscription> errataSubscriptions = new ArrayList<>();
-        final Reader csvReader = new InputStreamReader(new ByteArrayInputStream(contents));
-        for (final CSVRecord record : csvFormat.parse(csvReader)) {
-            final String username = record.get(USERNAME_KEY);
-            final String orgId = record.get(ORG_ID_KEY);
-
-            errataSubscriptions.add(new ErrataSubscription(username, orgId));
-        }
-
-        Log.infof("Read CSV errata subscriptions file and extracted %s subscriptions from it", errataSubscriptions.size());
-
-        try {
-            this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);
-        } catch (final Exception e) {
-            Log.error("Unable to migrate errata subscriptions due to an exception. The insertions were rolled back", e);
-        }
-    }
 
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Path("/migrate/json")

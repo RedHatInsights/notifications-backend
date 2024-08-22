@@ -40,41 +40,6 @@ public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
     SubscriptionRepository subscriptionRepository;
 
     /**
-     * Tests that uploading a CSV file with the Errata subscriptions creates
-     * the corresponding subscriptions in our database.
-     * @throws URISyntaxException if the CSV file's URL is not properly built.
-     */
-    @Test
-    void testCsvMigration() throws URISyntaxException {
-        // Load the file input for the request.
-        final URL csvResourceUrl = this.getClass().getResource("/errata/subscriptions/errata_subscriptions.csv");
-        if (csvResourceUrl == null) {
-            Assertions.fail("The path of the CSV test file is incorrect");
-        }
-
-        final File file = Paths.get(csvResourceUrl.toURI()).toFile();
-
-        // Create a few event types we want to create the subscriptions for.
-        final Bundle errataBundle = this.resourceHelpers.createBundle("errata-bundle");
-        final Application errataApplication = this.resourceHelpers.createApplication(errataBundle.getId(), ErrataMigrationRepository.ERRATA_APPLICATION_NAME);
-        final EventType errataEventType1 = this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type-1");
-        final EventType errataEventType2 = this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type-2");
-
-        // Send the request.
-        given()
-            .basePath(Constants.API_INTERNAL)
-            .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
-            .when()
-            .contentType(MediaType.MULTIPART_FORM_DATA)
-            .multiPart("csvFile", file)
-            .post("/team-nado/migrate/csv")
-            .then()
-            .statusCode(HttpStatus.SC_NO_CONTENT);
-
-        this.assertEmailSubscriptionsWereCreated(List.of(errataEventType1, errataEventType2));
-    }
-
-    /**
      /**
      * Tests that uploading a JSON file with the Errata subscriptions creates
      * the corresponding subscriptions in our database.

@@ -158,13 +158,6 @@
             <version>${kessel.version}</version>
         </dependency>
 
-        <!-- Temporary dependency for the Errata subscriptions' migration service -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-csv</artifactId>
-            <version>1.11.0</version>
-        </dependency>
-
         <!-- Test dependencies -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
