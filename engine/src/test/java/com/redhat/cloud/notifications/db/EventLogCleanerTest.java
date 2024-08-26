@@ -32,8 +32,9 @@ public class EventLogCleanerTest {
         deleteAllEvents();
         EventType eventType = createEventType();
         createEvent(eventType, now().minus(Duration.ofHours(1L)));
+        createEvent(eventType, now().minus(Duration.ofDays(16L)));
         createEvent(eventType, now().minus(Duration.ofDays(62L)));
-        assertEquals(2L, count());
+        assertEquals(3L, count());
         entityManager.createNativeQuery("CALL cleanEventLog()").executeUpdate();
         assertEquals(1L, count());
     }
