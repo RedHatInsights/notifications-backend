@@ -122,30 +122,34 @@ public class ErrataMigrationRepositoryTest extends DbIsolatedTest {
     }
 
     /**
-     * Tests that when a "duplicate constraint" is raised, the transaction is
-     * rolled back and no email subscriptions are created.
+     * Tests that when an already existing email subscription is attempted to
+     * be inserted, the "on conflict do nothing" statement ensures that we do
+     * not raise duplicate constraint violations. This test is there to
+     * simulate that subsequent runs will execute fine if we try to insert
+     * duplicated subscriptions in the database.
      */
     @Test
-    void testErrorRollsBackInsertions() {
-        // Create a duplicated subscription to trigger a duplicated constraint
-        // in the database.
-        final String username1 = "username1";
-        final String orgId1 = "orgId1";
-        final ErrataSubscription subscription1 = new ErrataSubscription(username1, orgId1);
-        final ErrataSubscription subscription2 = new ErrataSubscription(username1, orgId1);
+    void testDuplicatedInsertionsDoNothing() {
+        // Create duplicated
+        final String username = "username";
+        final String orgId = "orgId";
 
-        final List<ErrataSubscription> subscriptions = List.of(subscription1, subscription2);
+        final List<ErrataSubscription> subscriptions = new ArrayList<>(5);
+        for (int i = 0; i < 5; i++) {
+            subscriptions.add(new ErrataSubscription(username, orgId));
+        }
 
-        // Create a few event types we want to create the subscriptions for.
+        // Create a single event type we want to create the subscription for.
         final Bundle errataBundle = this.resourceHelpers.createBundle("errata-bundle");
         final Application errataApplication = this.resourceHelpers.createApplication(errataBundle.getId(), ErrataMigrationRepository.ERRATA_APPLICATION_NAME);
-        this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type-1");
-        this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type-2");
+        this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type");
 
         // Call the function under test.
         this.errataMigrationRepository.saveErrataSubscriptions(subscriptions);
 
-        final List<EventTypeEmailSubscription> createdSubscriptions = this.subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId1, username1);
-        Assertions.assertEquals(0, createdSubscriptions.size());
+        // Assert that out of the five duplicated subscriptions we attempted to
+        // insert only one got inserted.
+        final List<EventTypeEmailSubscription> createdSubscriptions = this.subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
+        Assertions.assertEquals(1, createdSubscriptions.size());
     }
 }

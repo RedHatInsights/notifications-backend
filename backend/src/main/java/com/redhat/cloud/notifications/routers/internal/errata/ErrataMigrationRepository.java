@@ -2,15 +2,12 @@ package com.redhat.cloud.notifications.routers.internal.errata;
 
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
-import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
-import com.redhat.cloud.notifications.models.SubscriptionType;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolationException;
 import org.hibernate.StatelessSession;
 import org.hibernate.Transaction;
-import org.hibernate.resource.transaction.spi.TransactionStatus;
 
 import java.util.List;
 
@@ -62,32 +59,30 @@ public class ErrataMigrationRepository {
         final Transaction transaction = this.statelessSession.beginTransaction();
         transaction.begin();
 
+        final String insertSql =
+            "INSERT INTO " +
+                "email_subscriptions(user_id, org_id, event_type_id, subscription_type, subscribed) " +
+            "VALUES " +
+                "(:userId, :orgId, :eventTypeId, 'INSTANT', true) " +
+            "ON CONFLICT DO NOTHING";
+
         try {
             long totalInsertionCount = 0;
             for (final ErrataSubscription errataSubscription : errataSubscriptions) {
                 // For each errata subscription we need to insert subscriptions for
                 // every event type in our database.
                 for (final EventType errataEventType : errataEventTypes) {
-                    final EventTypeEmailSubscriptionId id = new EventTypeEmailSubscriptionId(
-                        errataSubscription.org_id(),
-                        errataSubscription.username(),
-                        errataEventType.getId(),
-                        SubscriptionType.INSTANT
-                    );
-
-                    final EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
-                    eventTypeEmailSubscription.setId(id);
-                    eventTypeEmailSubscription.setEventType(errataEventType);
-                    eventTypeEmailSubscription.setSubscribed(true);
-
-                    final TransactionStatus status = transaction.getStatus();
                     try {
-                        this.statelessSession.insert(eventTypeEmailSubscription);
+                        this.statelessSession
+                            .createNativeQuery(insertSql, EventTypeEmailSubscription.class)
+                            .setParameter("userId", errataSubscription.username())
+                            .setParameter("orgId", errataSubscription.org_id())
+                            .setParameter("eventTypeId", errataEventType.getId())
+                            .executeUpdate();
                     } catch (final ConstraintViolationException e) {
                         Log.errorf("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Unable to persist errata subscription due to a database constraint violation", e, errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
                         continue;
                     }
-                    final TransactionStatus status2 = transaction.getStatus();
 
                     Log.infof("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Persisted errata subscription", errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
 
