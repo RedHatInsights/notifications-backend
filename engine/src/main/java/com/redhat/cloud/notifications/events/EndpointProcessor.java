@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
+
 @ApplicationScoped
 public class EndpointProcessor {
 
@@ -80,6 +82,10 @@ public class EndpointProcessor {
     }
 
     public void process(Event event) {
+        process(event, false);
+    }
+
+    public void process(Event event, boolean replayEmailsOnly) {
         processedItems.increment();
         final List<Endpoint> endpoints;
         if (TestEventHelper.isIntegrationTestEvent(event)) {
@@ -89,7 +95,7 @@ public class EndpointProcessor {
 
             endpoints = List.of(endpoint);
         } else if (isAggregatorEvent(event)) {
-            endpoints = List.of(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION));
+            endpoints = List.of(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EMAIL_SUBSCRIPTION));
         } else {
             endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
         }
@@ -101,6 +107,9 @@ public class EndpointProcessor {
         DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
             for (Map.Entry<EndpointType, List<Endpoint>> endpointsByTypeEntry : endpointsByType.entrySet()) {
                 try {
+                    if (replayEmailsOnly && endpointsByTypeEntry.getKey() != EMAIL_SUBSCRIPTION) {
+                        continue;
+                    }
                     // For each endpoint type, the list of target endpoints is sent alongside with the event to the relevant processor.
                     switch (endpointsByTypeEntry.getKey()) {
                         // TODO Introduce EndpointType.SLACK?
