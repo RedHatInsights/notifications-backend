@@ -7,9 +7,10 @@ import com.redhat.cloud.notifications.models.SubscriptionType;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolationException;
+import org.hibernate.StatelessSession;
+import org.hibernate.Transaction;
+import org.hibernate.resource.transaction.spi.TransactionStatus;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class ErrataMigrationRepository {
     public static final String ERRATA_APPLICATION_NAME = "errata-notifications";
 
     @Inject
-    EntityManager entityManager;
+    StatelessSession statelessSession;
 
     /**
      * Finds all the Errata event types in the database.
@@ -42,7 +43,7 @@ public class ErrataMigrationRepository {
             "WHERE " +
                 "applications.name = :applicationName";
 
-        return this.entityManager
+        return this.statelessSession
             .createQuery(query, EventType.class)
             .setParameter("applicationName", ERRATA_APPLICATION_NAME)
             .getResultList();
@@ -53,52 +54,52 @@ public class ErrataMigrationRepository {
      * @param errataSubscriptions the list of the Errata subscriptions to save
      *                            in the database.
      */
-    @Transactional
     protected void saveErrataSubscriptions(final List<ErrataSubscription> errataSubscriptions) {
         Log.infof("Errata subscriptions' migration begins with a batch size of %s", INSERTION_BATCH_SIZE);
 
         final List<EventType> errataEventTypes = this.findErrataEventTypes();
 
-        long totalInsertionCount = 0;
-        long insertionCount = 0;
-        for (final ErrataSubscription errataSubscription : errataSubscriptions) {
-            // Make Hibernate send a batch query to the database to free
-            // memory.
-            if (insertionCount >= INSERTION_BATCH_SIZE) {
-                insertionCount = 0;
+        final Transaction transaction = this.statelessSession.beginTransaction();
+        transaction.begin();
 
-                this.entityManager.flush();
-                this.entityManager.clear();
-            }
+        try {
+            long totalInsertionCount = 0;
+            for (final ErrataSubscription errataSubscription : errataSubscriptions) {
+                // For each errata subscription we need to insert subscriptions for
+                // every event type in our database.
+                for (final EventType errataEventType : errataEventTypes) {
+                    final EventTypeEmailSubscriptionId id = new EventTypeEmailSubscriptionId(
+                        errataSubscription.org_id(),
+                        errataSubscription.username(),
+                        errataEventType.getId(),
+                        SubscriptionType.INSTANT
+                    );
 
-            // For each errata subscription we need to insert subscriptions for
-            // every event type in our database.
-            for (final EventType errataEventType : errataEventTypes) {
-                final EventTypeEmailSubscriptionId id = new EventTypeEmailSubscriptionId(
-                    errataSubscription.org_id(),
-                    errataSubscription.username(),
-                    errataEventType.getId(),
-                    SubscriptionType.INSTANT
-                );
+                    final EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
+                    eventTypeEmailSubscription.setId(id);
+                    eventTypeEmailSubscription.setEventType(errataEventType);
+                    eventTypeEmailSubscription.setSubscribed(true);
 
-                final EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
-                eventTypeEmailSubscription.setId(id);
-                eventTypeEmailSubscription.setEventType(errataEventType);
-                eventTypeEmailSubscription.setSubscribed(true);
+                    final TransactionStatus status = transaction.getStatus();
+                    try {
+                        this.statelessSession.insert(eventTypeEmailSubscription);
+                    } catch (final ConstraintViolationException e) {
+                        Log.errorf("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Unable to persist errata subscription due to a database constraint violation", e, errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
+                        continue;
+                    }
+                    final TransactionStatus status2 = transaction.getStatus();
 
-                try {
-                    this.entityManager.persist(eventTypeEmailSubscription);
-                } catch (final ConstraintViolationException e) {
-                    Log.errorf("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Unable to persist errata subscription due to a database constraint violation", e, errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
+                    Log.infof("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Persisted errata subscription", errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
+
+                    totalInsertionCount++;
                 }
-
-                Log.infof("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Persisted errata subscription", errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
-
-                insertionCount++;
-                totalInsertionCount++;
             }
-        }
 
-        Log.infof("Persisted %s errata subscriptions from a total number of %s scanned subscriptions from the file. For each errata subscription %s subscriptions were persisted in Notifications", totalInsertionCount, errataSubscriptions.size(), errataEventTypes.size());
+            transaction.commit();
+            Log.infof("Persisted %s errata subscriptions from a total number of %s scanned subscriptions from the file. For each errata subscription %s subscriptions were persisted in Notifications", totalInsertionCount, errataSubscriptions.size(), errataEventTypes.size());
+        } catch (final Exception e) {
+            transaction.rollback();
+            Log.error("The insertions of the Errata subscriptions were rolled back due to an exception", e);
+        }
     }
 }

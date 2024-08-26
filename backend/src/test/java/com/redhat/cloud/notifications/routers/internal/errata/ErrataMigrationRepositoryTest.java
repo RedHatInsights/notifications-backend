@@ -120,4 +120,32 @@ public class ErrataMigrationRepositoryTest extends DbIsolatedTest {
 
         Assertions.assertEquals(6, totalNumberEmailSubscriptions, "6 email subscriptions should have been created, two per the three users that we have in this test");
     }
+
+    /**
+     * Tests that when a "duplicate constraint" is raised, the transaction is
+     * rolled back and no email subscriptions are created.
+     */
+    @Test
+    void testErrorRollsBackInsertions() {
+        // Create a duplicated subscription to trigger a duplicated constraint
+        // in the database.
+        final String username1 = "username1";
+        final String orgId1 = "orgId1";
+        final ErrataSubscription subscription1 = new ErrataSubscription(username1, orgId1);
+        final ErrataSubscription subscription2 = new ErrataSubscription(username1, orgId1);
+
+        final List<ErrataSubscription> subscriptions = List.of(subscription1, subscription2);
+
+        // Create a few event types we want to create the subscriptions for.
+        final Bundle errataBundle = this.resourceHelpers.createBundle("errata-bundle");
+        final Application errataApplication = this.resourceHelpers.createApplication(errataBundle.getId(), ErrataMigrationRepository.ERRATA_APPLICATION_NAME);
+        this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type-1");
+        this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type-2");
+
+        // Call the function under test.
+        this.errataMigrationRepository.saveErrataSubscriptions(subscriptions);
+
+        final List<EventTypeEmailSubscription> createdSubscriptions = this.subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId1, username1);
+        Assertions.assertEquals(0, createdSubscriptions.size());
+    }
 }
