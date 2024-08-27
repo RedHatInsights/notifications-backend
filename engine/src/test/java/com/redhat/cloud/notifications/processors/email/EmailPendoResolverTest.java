@@ -15,6 +15,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_MESSAGE;
 import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_TITLE;
+import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.OUTAGE_PENDO_MESSAGE;
+import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.OUTAGE_PENDO_TITLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
@@ -37,9 +39,18 @@ class EmailPendoResolverTest {
     @Test
     void testDefaultEmailPendoMessage() {
         Event event = buildEvent(null, "rhel", "policies");
-        assertEquals(String.format(GENERAL_PENDO_MESSAGE, environment.url()), emailPendoResolver.getPendoEmailMessage(event, false).getPendoMessage(), "unexpected email pendo message returned from the function under test");
-        assertEquals(GENERAL_PENDO_TITLE, emailPendoResolver.getPendoEmailMessage(event, false).getPendoTitle(), "unexpected email pendo title returned from the function under test");
-        assertNull(emailPendoResolver.getPendoEmailMessage(event, true), "current pendo message should not be generated in case of forced email (ignoreUserPreferences)");
+        assertEquals(String.format(GENERAL_PENDO_MESSAGE, environment.url()), emailPendoResolver.getPendoEmailMessage(event, false, false).getPendoMessage(), "unexpected email pendo message returned from the function under test");
+        assertEquals(GENERAL_PENDO_TITLE, emailPendoResolver.getPendoEmailMessage(event, false, false).getPendoTitle(), "unexpected email pendo title returned from the function under test");
+        assertNull(emailPendoResolver.getPendoEmailMessage(event, true, false), "current pendo message should not be generated in case of forced email (ignoreUserPreferences)");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testDefaultEmailPendoMessageOutage(boolean ignoreUserPreferences) {
+        Event event = buildEvent(null, "rhel", "policies");
+        assertEquals(String.format(OUTAGE_PENDO_MESSAGE, environment.url()), emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, true).getPendoMessage(), "unexpected email pendo message returned from the function under test");
+        assertEquals(OUTAGE_PENDO_TITLE, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, true).getPendoTitle(), "unexpected email pendo title returned from the function under test");
+        assertEquals(OUTAGE_PENDO_TITLE, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, true).getPendoTitle(), "unexpected email pendo title returned from the function under test");
     }
 
     @ParameterizedTest
@@ -48,7 +59,7 @@ class EmailPendoResolverTest {
         when(engineConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
 
         Event event = buildEvent(null, "rhel", "policies");
-        assertNull(emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences), "unexpected email pendo message returned from the function under test");
+        assertNull(emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), "unexpected email pendo message returned from the function under test");
     }
 
     /**
@@ -58,10 +69,10 @@ class EmailPendoResolverTest {
     @ValueSource(booleans = {true, false})
     void testOpenshiftClusterManagerPendoMessage(boolean ignoreUserPreferences) {
         Event event = buildEvent("prod", "openshift", "cluster-manager");
-        assertNull(emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences), "unexpected email pendo message returned from the function under test");
+        assertNull(emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), "unexpected email pendo message returned from the function under test");
 
         event = buildEvent("stage", "openshift", "cluster-manager");
-        assertNull(emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences), "unexpected email pendo message returned from the function under test");
+        assertNull(emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), "unexpected email pendo message returned from the function under test");
     }
 
     private static Event buildEvent(String sourceEnvironment, String bundleName, String appName) {

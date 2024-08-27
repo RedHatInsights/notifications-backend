@@ -135,7 +135,7 @@ public class EndpointProcessor {
                             if (isAggregatorEvent(event) && !replayEmailsOnly) {
                                 emailAggregationProcessor.processAggregation(event);
                             } else {
-                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
+                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue(), replayEmailsOnly);
                             }
                             break;
                         case WEBHOOK:
