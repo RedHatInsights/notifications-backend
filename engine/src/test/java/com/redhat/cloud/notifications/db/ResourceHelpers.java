@@ -122,7 +122,7 @@ public class ResourceHelpers {
         event.setApplicationDisplayName(eventType.getApplication().getDisplayName());
         event.setBundleId(eventType.getApplication().getBundle().getId());
         event.setBundleDisplayName(eventType.getApplication().getBundle().getDisplayName());
-        if (event.getCreated() == null) {
+        if (created != null) {
             event.setCreated(created);
         }
         event.setPayload(payload);

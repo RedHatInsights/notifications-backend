@@ -32,7 +32,7 @@ import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static io.restassured.RestAssured.given;
 import static java.time.Month.AUGUST;
 import static java.time.ZoneOffset.UTC;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -115,11 +115,11 @@ public class ReplayResourceTest {
                 .then()
                 .statusCode(204);
 
-        verify(emailConnectorProcessor, never()).process(eq(event1), anyList());
-        verify(emailConnectorProcessor, never()).process(eq(event2), anyList());
-        verify(emailConnectorProcessor, times(1)).process(eq(event3), anyList());
-        verify(emailConnectorProcessor, never()).process(eq(event4), anyList());
-        verify(emailConnectorProcessor, times(1)).process(eq(event5), anyList());
+        verify(emailConnectorProcessor, never()).process(eq(event1), any(), eq(true));
+        verify(emailConnectorProcessor, never()).process(eq(event2), any(), eq(true));
+        verify(emailConnectorProcessor, times(1)).process(eq(event3), any(), eq(true));
+        verify(emailConnectorProcessor, never()).process(eq(event4), any(), eq(true));
+        verify(emailConnectorProcessor, times(1)).process(eq(event5), any(), eq(true));
     }
 
     @Test
@@ -132,11 +132,11 @@ public class ReplayResourceTest {
                 .then()
                 .statusCode(204);
 
-        verify(emailConnectorProcessor, never()).process(eq(event1), anyList());
-        verify(emailConnectorProcessor, never()).process(eq(event2), anyList());
-        verify(emailConnectorProcessor, times(1)).process(eq(event3), anyList());
-        verify(emailConnectorProcessor, never()).process(eq(event4), anyList());
-        verify(emailConnectorProcessor, never()).process(eq(event5), anyList());
+        verify(emailConnectorProcessor, never()).process(eq(event1), any(), eq(true));
+        verify(emailConnectorProcessor, never()).process(eq(event2), any(), eq(true));
+        verify(emailConnectorProcessor, times(1)).process(eq(event3), any(), eq(true));
+        verify(emailConnectorProcessor, never()).process(eq(event4), any(), eq(true));
+        verify(emailConnectorProcessor, never()).process(eq(event5), any(), eq(true));
     }
 
     @Transactional
