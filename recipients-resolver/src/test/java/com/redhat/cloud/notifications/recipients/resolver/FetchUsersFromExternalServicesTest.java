@@ -18,10 +18,13 @@ import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToService;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacUser;
+import dev.failsafe.FailsafeException;
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
+import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,15 +32,23 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_FAILURES;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_SUCCESSES;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_USER_PROVIDER;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_USER_PROVIDER_IT;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_USER_PROVIDER_MBOP;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_USER_PROVIDER_RBAC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -64,6 +75,9 @@ public class FetchUsersFromExternalServicesTest {
     @InjectMock
     @RestClient
     MBOPService mbopService;
+
+    @Inject
+    MicrometerAssertionHelper micrometerAssertionHelper;
 
     @InjectMock
     RecipientsResolverConfig recipientsResolverConfig;
@@ -335,6 +349,218 @@ public class FetchUsersFromExternalServicesTest {
         mockUsers.addAll(this.fetchUsersFromExternalServices.transformMBOPUserToUser(thirdPageMBOPUsers.users()));
 
         assertIterableEquals(mockUsers, result, "the list of users returned by the function under test is not correct");
+    }
+
+    /**
+     * Tests that when an {@link IOException} gets thrown, the retry mechanism
+     * makes the counters increment by {@link RecipientsResolverConfig#getMaxRetryAttempts()}
+     * times.
+     */
+    @Test
+    void testIoExceptionIncreaseFailuresCounters() {
+        when(this.rbacServiceToService.getUsers(Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyInt())).thenAnswer((answer) -> { throw new IOException(); });
+        when(this.mbopService.getUsersByOrgId(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyBoolean())).thenAnswer((answer) -> { throw new IOException(); });
+        when(this.itUserService.getUsers(Mockito.any())).thenAnswer((answer) -> { throw new IOException(); });
+
+        // Test that the RBAC failures counter gets incremented.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        // Call the function under test.
+        assertThrows(FailsafeException.class,
+            () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
+        );
+
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, this.recipientsResolverConfig.getMaxRetryAttempts());
+
+        // Test that the MBOP failures counter gets incremented.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
+
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP);
+
+        // Call the function under test.
+        assertThrows(FailsafeException.class,
+            () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
+        );
+
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP, this.recipientsResolverConfig.getMaxRetryAttempts());
+
+        // Test that the IT failures counter gets incremented.
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT);
+
+        // Call the function under test.
+        assertThrows(FailsafeException.class,
+            () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
+        );
+
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT, this.recipientsResolverConfig.getMaxRetryAttempts());
+    }
+
+    /**
+     * Tests that when an {@link WebApplicationException} gets thrown, or any
+     * other exception really, the failures counter only gets incremented once.
+     */
+    @Test
+    void testWebApplicationExceptionIncreaseFailuresCounters() {
+        when(this.rbacServiceToService.getUsers(Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyInt())).thenAnswer((answer) -> { throw new WebApplicationException(); });
+        when(this.mbopService.getUsersByOrgId(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyBoolean())).thenAnswer((answer) -> { throw new WebApplicationException(); });
+        when(this.itUserService.getUsers(Mockito.any())).thenAnswer((answer) -> { throw new WebApplicationException(); });
+
+        // Test that the RBAC failures counter gets incremented.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        // Call the function under test.
+        assertThrows(WebApplicationException.class,
+            () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
+        );
+
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, 1);
+
+        // Test that the MBOP failures counter gets incremented.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
+
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP);
+
+        // Call the function under test.
+        assertThrows(WebApplicationException.class,
+            () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
+        );
+
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP, 1);
+
+        // Test that the IT failures counter gets incremented.
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT);
+
+        // Call the function under test.
+        assertThrows(WebApplicationException.class,
+            () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
+        );
+
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT, 1);
+    }
+
+    /**
+     * Tests that when the RBAC group is not found the failures counter is
+     * increased.
+     */
+    @Test
+    void testGroupUsersFetchingGroupNotFoundFailureCounter() {
+        when(this.rbacServiceToService.getGroup(Mockito.anyString(), Mockito.any())).thenAnswer((answer) -> { throw new ClientWebApplicationException(HttpStatus.SC_NOT_FOUND); });
+
+        // Test that the RBAC failures counter gets incremented.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        // Call the function under test.
+        this.fetchUsersFromExternalServices.getGroupUsers("12345", true, UUID.randomUUID());
+
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, 1);
+    }
+
+    /**
+     * Tests that when the RBAC group cannot be fetched due to an {@link IOException}
+     * then the counter is increased by {@link RecipientsResolverConfig#getMaxRetryAttempts()}
+     * times.
+     */
+    @Test
+    void testGroupUsersFetchingGroupIOExceptionFailureCounter() {
+        when(this.rbacServiceToService.getGroup(Mockito.anyString(), Mockito.any())).thenAnswer((answer) -> { throw new IOException(); });
+
+        // Test that the RBAC failures counter gets incremented.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        // Call the function under test.
+        assertThrows(FailsafeException.class,
+            () -> this.fetchUsersFromExternalServices.getGroupUsers("12345", true, UUID.randomUUID())
+        );
+
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, this.recipientsResolverConfig.getMaxRetryAttempts());    }
+
+    /**
+     * Tests that when fetching users from RBAC succeeds, the success counter
+     * is incremented accordingly. It makes sure that it counts the number of
+     * requests sent, which means that takes into account the paginated
+     * requests.
+     */
+    @Test
+    void testIncrementSuccessfulUserFetchesRBAC() {
+        // Mock a call to RBAC.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+
+        final int mockedRbacPagesToFetch = 2;
+        this.mockGetUsersRBAC(this.recipientsResolverConfig.getMaxResultsPerPage() * mockedRbacPagesToFetch, false);
+
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        // Call the function under test.
+        this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
+
+        // Assert that the success counter with the "rbac" tag got incremented.
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, mockedRbacPagesToFetch + 1);
+    }
+
+    /**
+     * Tests that when fetching users from MBOP succeeds, the success counter
+     * is incremented accordingly. It makes sure that it counts the number of
+     * requests sent, which means that takes into account the paginated
+     * requests.
+     */
+    @Test
+    void testIncrementSuccessfulUserFetchesMBOP() {
+        // Mock a call to MBOP.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
+
+        final int mockedMbopPagesToFetch = 3;
+        final int mockedMbopElements = this.recipientsResolverConfig.getMaxResultsPerPage();
+        Mockito
+            .when(this.mbopService.getUsersByOrgId(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyInt(), anyInt(), anyBoolean(), anyString(), anyBoolean()))
+            .thenReturn(this.mockGetMBOPUsersPage(mockedMbopElements), this.mockGetMBOPUsersPage(mockedMbopElements), this.mockGetMBOPUsersPage(5));
+
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP);
+
+        // Call the function under test.
+        this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
+
+        // Assert that the success counter with the "mbop" tag got incremented.
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP, mockedMbopPagesToFetch);
+    }
+
+    /**
+     * Tests that when fetching users from IT succeeds, the success counter is
+     * incremented accordingly. It makes sure that it counts the number of
+     * requests sent, which means that takes into account the paginated
+     * requests.
+     */
+    @Test
+    void testIncrementSuccessfulUserFetchesIT() {
+        // Mock an IT call.
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+
+        final int mockedITUserPagesToFetch = 2;
+        this.mockGetUsers(this.recipientsResolverConfig.getMaxResultsPerPage() * mockedITUserPagesToFetch, false);
+
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT);
+        this.clearCached();
+
+        // Call the function under test.
+        this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
+
+        // Assert that the success counter with the "rbac" tag got incremented.
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT, mockedITUserPagesToFetch + 1);
     }
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
