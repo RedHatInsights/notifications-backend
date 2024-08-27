@@ -63,6 +63,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import java.net.URI;
 import java.time.LocalTime;
@@ -150,8 +151,8 @@ public class InternalResource {
     @POST
     @Path("/replay")
     @RolesAllowed(RBAC_INTERNAL_ADMIN)
-    public void replay() {
-        replayService.replay();
+    public void replay(@RestQuery String orgId) {
+        replayService.replay(orgId);
     }
 
     @GET

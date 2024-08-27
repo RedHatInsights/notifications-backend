@@ -16,8 +16,10 @@ import com.redhat.cloud.notifications.utils.ActionParsingException;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,32 +50,43 @@ public class ReplayResource {
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
-    public List<Event> getEvents(int firstResult, int maxResults) {
+    public List<Event> getEvents(String orgId, int firstResult, int maxResults) {
+
         String hql = "FROM Event e JOIN FETCH e.eventType " +
                 "WHERE e.created > :start AND e.created <= :end " +
                 "AND EXISTS (SELECT 1 FROM NotificationHistory " +
                 "WHERE e = event AND compositeEndpointType.type = :endpointType AND status = :failed) " +
                 "AND NOT EXISTS (SELECT 1 FROM NotificationHistory " +
                 "WHERE e = event AND compositeEndpointType.type = :endpointType AND status = :success) ";
-        return entityManager.createQuery(hql, Event.class)
+
+        if (orgId != null) {
+            hql += " AND orgId = :orgId";
+        }
+
+        TypedQuery<Event> typedQuery = entityManager.createQuery(hql, Event.class)
                 .setParameter("start", LocalDateTime.of(2024, AUGUST, 22, 7, 19, 34))
                 .setParameter("end", LocalDateTime.of(2024, AUGUST, 26, 12, 46, 28))
                 .setParameter("endpointType", EMAIL_SUBSCRIPTION)
                 .setParameter("failed", FAILED_EXTERNAL)
                 .setParameter("success", SUCCESS)
                 .setFirstResult(firstResult)
-                .setMaxResults(maxResults)
-                .getResultList();
+                .setMaxResults(maxResults);
+
+        if (orgId != null) {
+            typedQuery.setParameter("orgId", orgId);
+        }
+
+        return typedQuery.getResultList();
     }
 
     @POST
-    public void replay() {
+    public void replay(@RestQuery String orgId) {
         Log.info("Replay endpoint was called");
         int firstResult = 0;
         List<Event> events;
         do {
             Log.infof("Processing events from index %d", firstResult);
-            events = getEvents(firstResult, MAX_RESULTS);
+            events = getEvents(orgId, firstResult, MAX_RESULTS);
             firstResult += MAX_RESULTS;
             for (Event event : events) {
                 try {
