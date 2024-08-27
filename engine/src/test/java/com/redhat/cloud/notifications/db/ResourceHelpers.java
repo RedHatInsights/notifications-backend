@@ -23,6 +23,7 @@ import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -105,18 +106,24 @@ public class ResourceHelpers {
                 .getSingleResult();
     }
 
-    @Transactional
     public Event createEvent(EventType eventType) {
+        return createEvent(eventType, DEFAULT_ORG_ID, null, null);
+    }
+
+    @Transactional
+    public Event createEvent(EventType eventType, String orgId, LocalDateTime created, String payload) {
         Event event = new Event();
         event.setId(UUID.randomUUID());
         event.setAccountId("account-id");
-        event.setOrgId(DEFAULT_ORG_ID);
+        event.setOrgId(orgId);
         event.setEventType(eventType);
         event.setEventTypeDisplayName(eventType.getDisplayName());
         event.setApplicationId(eventType.getApplication().getId());
         event.setApplicationDisplayName(eventType.getApplication().getDisplayName());
         event.setBundleId(eventType.getApplication().getBundle().getId());
         event.setBundleDisplayName(eventType.getApplication().getBundle().getDisplayName());
+        event.setCreated(created);
+        event.setPayload(payload);
         entityManager.persist(event);
         return event;
     }

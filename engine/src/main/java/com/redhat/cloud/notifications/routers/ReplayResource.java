@@ -57,7 +57,7 @@ public class ReplayResource {
                 "AND EXISTS (SELECT 1 FROM NotificationHistory " +
                 "WHERE e = event AND compositeEndpointType.type = :endpointType AND status = :failed) " +
                 "AND NOT EXISTS (SELECT 1 FROM NotificationHistory " +
-                "WHERE e = event AND compositeEndpointType.type = :endpointType AND status = :success) ";
+                "WHERE e = event AND compositeEndpointType.type = :endpointType AND status = :success)";
 
         if (orgId != null) {
             hql += " AND orgId = :orgId";
