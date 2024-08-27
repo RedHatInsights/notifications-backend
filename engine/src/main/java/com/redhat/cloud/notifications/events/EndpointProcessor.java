@@ -132,7 +132,7 @@ public class EndpointProcessor {
                             }
                             break;
                         case EMAIL_SUBSCRIPTION:
-                            if (isAggregatorEvent(event)) {
+                            if (isAggregatorEvent(event) && !replayEmailsOnly) {
                                 emailAggregationProcessor.processAggregation(event);
                             } else {
                                 emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
