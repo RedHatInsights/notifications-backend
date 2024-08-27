@@ -25,6 +25,7 @@ import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
+import com.redhat.cloud.notifications.routers.engine.ReplayService;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
@@ -62,6 +63,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import java.net.URI;
 import java.time.LocalTime;
@@ -127,6 +129,10 @@ public class InternalResource {
     @Inject
     SubscriptionRepository subscriptionRepository;
 
+    @Inject
+    @RestClient
+    ReplayService replayService;
+
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
     @GET
     @Path("/version")
@@ -140,6 +146,13 @@ public class InternalResource {
             Log.infof("Git commit hash not found: %s", gitProperties);
             return "Git commit hash not found";
         }
+    }
+
+    @POST
+    @Path("/replay")
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
+    public void replay(@RestQuery String orgId) {
+        replayService.replay(orgId);
     }
 
     @GET

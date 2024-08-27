@@ -80,6 +80,10 @@ public class EndpointProcessor {
     }
 
     public void process(Event event) {
+        process(event, false);
+    }
+
+    public void process(Event event, boolean replayEmailsOnly) {
         processedItems.increment();
         final List<Endpoint> endpoints;
         if (TestEventHelper.isIntegrationTestEvent(event)) {
@@ -101,6 +105,9 @@ public class EndpointProcessor {
         DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
             for (Map.Entry<EndpointType, List<Endpoint>> endpointsByTypeEntry : endpointsByType.entrySet()) {
                 try {
+                    if (replayEmailsOnly && endpointsByTypeEntry.getKey() != EndpointType.EMAIL_SUBSCRIPTION) {
+                        continue;
+                    }
                     // For each endpoint type, the list of target endpoints is sent alongside with the event to the relevant processor.
                     switch (endpointsByTypeEntry.getKey()) {
                         // TODO Introduce EndpointType.SLACK?
@@ -123,10 +130,10 @@ public class EndpointProcessor {
                             }
                             break;
                         case EMAIL_SUBSCRIPTION:
-                            if (isAggregatorEvent(event)) {
+                            if (isAggregatorEvent(event) && !replayEmailsOnly) {
                                 emailAggregationProcessor.processAggregation(event);
                             } else {
-                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
+                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue(), replayEmailsOnly);
                             }
                             break;
                         case WEBHOOK:
