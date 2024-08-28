@@ -4,10 +4,21 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @ApplicationScoped
@@ -51,5 +62,43 @@ public class StartupUtils {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public List<String> readKeystore(Optional<String> keystoreFile, Optional<String> keystorePassword) {
+        List<String> result = new ArrayList<>();
+        String logMessage;
+        if (keystoreFile.isEmpty() || keystorePassword.isEmpty()) {
+            result.add("keystore file or password is empty");
+            return result;
+        }
+        try {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(new FileInputStream(keystoreFile.get()), keystorePassword.get().toCharArray());
+
+            Iterator<String> aliasesIt = ks.aliases().asIterator();
+            while (aliasesIt.hasNext()) {
+                String alias = aliasesIt.next();
+                Date notAfter = ((X509Certificate) ks.getCertificate(alias)).getNotAfter();
+                Date currentDate = new Date();
+                long diff = notAfter.getTime() - currentDate.getTime();
+                if (diff < 10) {
+                    logMessage = String.format("Certificate '%s' is about to expire! (on %s)", alias, notAfter);
+                    Log.fatalf(logMessage);
+                } else if (diff < 30) {
+                    logMessage = String.format("Certificate '%s' will expire within 30 days! (on %s)", alias, notAfter);
+                    Log.errorf(logMessage);
+                } else if (diff < 60) {
+                    logMessage = String.format("Certificate '%s' will expire within 60 days! (on %s)", alias, notAfter);
+                    Log.warnf(logMessage);
+                } else {
+                    logMessage = String.format("Certificate '%s' will expire on %s", alias, notAfter);
+                    Log.warnf(logMessage);
+                }
+                result.add(logMessage);
+            }
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 }
