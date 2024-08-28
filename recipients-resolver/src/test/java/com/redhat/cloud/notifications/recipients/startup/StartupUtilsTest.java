@@ -27,6 +27,6 @@ public class StartupUtilsTest {
 
         List<String> certificateData = startupUtils.readKeystore(Optional.of(file.getAbsolutePath()), Optional.of(testPassword));
         assertFalse(certificateData.isEmpty());
-        assertEquals("Certificate 'testexpcertif' will expire on Mon Sep 02 12:12:19 CEST 2024", certificateData.get(0));
+        assertEquals("Certificate 'testexpcertif' is about to expire! (on Mon Sep 02 10:12:19 UTC 2024)", certificateData.get(0));
     }
 }

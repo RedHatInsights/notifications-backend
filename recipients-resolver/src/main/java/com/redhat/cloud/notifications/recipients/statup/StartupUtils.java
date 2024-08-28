@@ -14,6 +14,10 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -75,23 +79,30 @@ public class StartupUtils {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(new FileInputStream(keystoreFile.get()), keystorePassword.get().toCharArray());
 
+            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
+            final ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneId.of("UTC"));
+
             Iterator<String> aliasesIt = ks.aliases().asIterator();
             while (aliasesIt.hasNext()) {
                 String alias = aliasesIt.next();
                 Date notAfter = ((X509Certificate) ks.getCertificate(alias)).getNotAfter();
-                Date currentDate = new Date();
-                long diff = notAfter.getTime() - currentDate.getTime();
+
+                ZonedDateTime utcExpDateTime = ZonedDateTime.ofInstant(notAfter.toInstant(), ZoneId.of("UTC"));
+
+                final String utcExpDateTimeStr = formatter.format(utcExpDateTime);
+
+                long diff = ChronoUnit.DAYS.between(currentUtcTime, utcExpDateTime);
                 if (diff < 10) {
-                    logMessage = String.format("Certificate '%s' is about to expire! (on %s)", alias, notAfter);
+                    logMessage = String.format("Certificate '%s' is about to expire! (on %s)", alias, utcExpDateTimeStr);
                     Log.fatalf(logMessage);
                 } else if (diff < 30) {
-                    logMessage = String.format("Certificate '%s' will expire within 30 days! (on %s)", alias, notAfter);
+                    logMessage = String.format("Certificate '%s' will expire within 30 days! (on %s)", alias, utcExpDateTimeStr);
                     Log.errorf(logMessage);
                 } else if (diff < 60) {
-                    logMessage = String.format("Certificate '%s' will expire within 60 days! (on %s)", alias, notAfter);
+                    logMessage = String.format("Certificate '%s' will expire within 60 days! (on %s)", alias, utcExpDateTimeStr);
                     Log.warnf(logMessage);
                 } else {
-                    logMessage = String.format("Certificate '%s' will expire on %s", alias, notAfter);
+                    logMessage = String.format("Certificate '%s' will expire on %s", alias, utcExpDateTimeStr);
                     Log.warnf(logMessage);
                 }
                 result.add(logMessage);
