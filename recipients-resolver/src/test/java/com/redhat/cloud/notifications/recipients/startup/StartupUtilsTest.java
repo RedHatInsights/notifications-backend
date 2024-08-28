@@ -5,6 +5,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import java.io.File;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,8 +25,8 @@ public class StartupUtilsTest {
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource(resourceName).getFile());
-
-        List<String> certificateData = startupUtils.readKeystore(Optional.of(file.getAbsolutePath()), Optional.of(testPassword));
+        URI fileUri = file.toURI();
+        List<String> certificateData = startupUtils.readKeystore(Optional.of(fileUri), Optional.of(testPassword));
         assertFalse(certificateData.isEmpty());
         assertEquals("Certificate 'testexpcertif' is about to expire! (on Mon Sep 02 10:12:19 UTC 2024)", certificateData.get(0));
     }

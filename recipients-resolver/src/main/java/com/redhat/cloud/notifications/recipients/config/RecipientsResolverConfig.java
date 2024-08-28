@@ -9,6 +9,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -95,7 +96,7 @@ public class RecipientsResolverConfig {
     Unleash unleash;
 
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store")
-    Optional<String> quarkusItServiceKeystore;
+    Optional<URI> quarkusItServiceKeystore;
 
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store-password")
     Optional<String> quarkusItServicePassword;
@@ -191,7 +192,7 @@ public class RecipientsResolverConfig {
         return logTooLongRequestLimit;
     }
 
-    public Optional<String> getQuarkusItServiceKeystore() {
+    public Optional<URI> getQuarkusItServiceKeystore() {
         return quarkusItServiceKeystore;
     }
 

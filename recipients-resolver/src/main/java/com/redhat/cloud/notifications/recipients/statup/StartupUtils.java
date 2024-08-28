@@ -4,11 +4,13 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -68,7 +70,7 @@ public class StartupUtils {
         }
     }
 
-    public List<String> readKeystore(Optional<String> keystoreFile, Optional<String> keystorePassword) {
+    public List<String> readKeystore(Optional<URI> keystoreFile, Optional<String> keystorePassword) {
         List<String> result = new ArrayList<>();
         String logMessage;
         if (keystoreFile.isEmpty() || keystorePassword.isEmpty()) {
@@ -76,8 +78,10 @@ public class StartupUtils {
             return result;
         }
         try {
+            File f = new File(keystoreFile.get());
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(keystoreFile.get()), keystorePassword.get().toCharArray());
+            FileInputStream keystoreFileInputStream = new FileInputStream(f);
+            ks.load(keystoreFileInputStream, keystorePassword.get().toCharArray());
 
             final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
             final ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -107,6 +111,7 @@ public class StartupUtils {
                 }
                 result.add(logMessage);
             }
+            keystoreFileInputStream.close();
         } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new RuntimeException(e);
         }
