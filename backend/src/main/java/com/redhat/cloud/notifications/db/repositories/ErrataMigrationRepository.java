@@ -8,7 +8,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolationException;
 import org.hibernate.StatelessSession;
-import org.hibernate.Transaction;
 
 import java.util.List;
 
@@ -47,9 +46,6 @@ public class ErrataMigrationRepository {
      *                            in the database.
      */
     public void saveErrataSubscriptions(final List<ErrataSubscription> errataSubscriptions) {
-        final Transaction transaction = this.statelessSession.beginTransaction();
-        transaction.begin();
-
         final String insertSql =
             "INSERT INTO " +
                 "email_subscriptions(user_id, org_id, event_type_id, subscription_type, subscribed) " +
@@ -57,35 +53,24 @@ public class ErrataMigrationRepository {
                 "(:userId, :orgId, :eventTypeId, 'INSTANT', true) " +
             "ON CONFLICT DO NOTHING";
 
-        try {
-            long totalInsertionCount = 0;
-            for (final ErrataSubscription errataSubscription : errataSubscriptions) {
-                // For each errata subscription we need to insert subscriptions for
-                // every event type in our database.
-                for (final EventType errataEventType : errataSubscription.eventTypeSubscriptions()) {
-                    try {
-                        this.statelessSession
-                            .createNativeQuery(insertSql, EventTypeEmailSubscription.class)
-                            .setParameter("userId", errataSubscription.username())
-                            .setParameter("orgId", errataSubscription.org_id())
-                            .setParameter("eventTypeId", errataEventType.getId())
-                            .executeUpdate();
-                    } catch (final ConstraintViolationException e) {
-                        Log.errorf("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Unable to persist errata subscription due to a database constraint violation", e, errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
-                        continue;
-                    }
-
-                    Log.infof("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Persisted errata subscription", errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
-
-                    totalInsertionCount++;
+        for (final ErrataSubscription errataSubscription : errataSubscriptions) {
+            // For each errata subscription we need to insert subscriptions for
+            // every event type in our database.
+            for (final EventType errataEventType : errataSubscription.eventTypeSubscriptions()) {
+                try {
+                    this.statelessSession
+                        .createNativeQuery(insertSql, EventTypeEmailSubscription.class)
+                        .setParameter("userId", errataSubscription.username())
+                        .setParameter("orgId", errataSubscription.org_id())
+                        .setParameter("eventTypeId", errataEventType.getId())
+                        .executeUpdate();
+                } catch (final ConstraintViolationException e) {
+                    Log.errorf("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Unable to persist errata subscription due to a database constraint violation", e, errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
+                    continue;
                 }
-            }
 
-            transaction.commit();
-            Log.infof("Persisted %s errata subscriptions from a total number of %s scanned subscriptions from the file.", totalInsertionCount, errataSubscriptions.size());
-        } catch (final Exception e) {
-            transaction.rollback();
-            Log.error("The insertions of the Errata subscriptions were rolled back due to an exception", e);
+                Log.infof("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Persisted errata subscription", errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
+            }
         }
     }
 }

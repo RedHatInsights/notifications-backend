@@ -1,25 +1,31 @@
 package com.redhat.cloud.notifications.routers.internal.errata;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.repositories.ErrataMigrationRepository;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.logging.Log;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
+import org.hibernate.StatelessSession;
+import org.hibernate.Transaction;
+import org.hibernate.resource.transaction.spi.TransactionStatus;
 import org.jboss.resteasy.reactive.RestForm;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +37,7 @@ import java.util.stream.Collectors;
 @Path(Constants.API_INTERNAL + "/team-nado")
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class ErrataUserPreferencesMigrationResource {
+    private static final int BATCH_SIZE = 1000;
     public static final String EVENT_TYPE_NAME_BUGFIX = "new-subscription-bugfix-errata";
     public static final String EVENT_TYPE_NAME_ENHANCEMENT = "new-subscription-enhancement-errata";
     public static final String EVENT_TYPE_NAME_SECURITY = "new-subscription-security-errata";
@@ -43,6 +50,12 @@ public class ErrataUserPreferencesMigrationResource {
 
     @Inject
     ErrataMigrationRepository errataMigrationRepository;
+
+    @Inject
+    ObjectMapper objectMapper;
+
+    @Inject
+    StatelessSession statelessSession;
 
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Path("/migrate/json")
@@ -72,34 +85,93 @@ public class ErrataUserPreferencesMigrationResource {
                 )
             );
 
-        // Extract the subscriptions from the JSON file.
-        final String stringContents = new String(contents, StandardCharsets.UTF_8);
-        final JsonArray jsonArray = new JsonArray(stringContents);
+        // Begin a transaction for the whole operation.
+        final Transaction transaction = this.statelessSession.beginTransaction();
+        transaction.begin();
 
-        final List<ErrataSubscription> errataSubscriptions = new ArrayList<>();
-        for (final Object rawJsonObject : jsonArray) {
-            final JsonObject teamNadoSubscription = (JsonObject) rawJsonObject;
-
-            final JsonArray eventTypeSubscriptions = teamNadoSubscription.getJsonArray(JSON_KEY_SUBSCRIPTION_PREFERENCES);
-            final Set<EventType> subscribedEventTypes = new HashSet<>();
-            if (null != eventTypeSubscriptions) {
-                eventTypeSubscriptions.forEach(sub -> {
-                    subscribedEventTypes.add(
-                        mappedEventTypes.get((String) sub)
-                    );
-                });
+        // Collect the user preferences in batches from the JSON file, so that
+        // we don't use excessive memory when processing it.
+        long totalInsertedElements = 0L;
+        try (JsonParser jsonParser = this.objectMapper.createParser(contents)) {
+            if (JsonToken.START_ARRAY != jsonParser.nextToken()) {
+                throw new BadRequestException("array of objects expected");
             }
 
-            errataSubscriptions.add(new ErrataSubscription(teamNadoSubscription.getString(JSON_KEY_USERNAME), teamNadoSubscription.getString(JSON_KEY_ORG_ID), subscribedEventTypes));
+            final List<ErrataSubscription> errataSubscriptions = new ArrayList<>(BATCH_SIZE);
+            while (JsonToken.START_OBJECT == jsonParser.nextToken()) {
+                final ObjectNode node = this.objectMapper.readTree(jsonParser);
+
+                // Extract the top level elements.
+                final String username = node.get(JSON_KEY_USERNAME).asText();
+                final String orgId = node.get(JSON_KEY_ORG_ID).asText();
+                final JsonNode preferences = node.get(JSON_KEY_SUBSCRIPTION_PREFERENCES);
+
+                // Extract the user preferences.
+                final Set<EventType> subscribedEventTypes = new HashSet<>();
+                if (preferences != null && preferences.isArray()) {
+                    for (final JsonNode preference : preferences) {
+                        final String userPreference = preference.asText();
+
+                        subscribedEventTypes.add(
+                            mappedEventTypes.get(userPreference)
+                        );
+                    }
+                }
+
+                // Add it to the collection of subscriptions we want to
+                // persist.
+                errataSubscriptions.add(new ErrataSubscription(username, orgId, subscribedEventTypes));
+
+                // Once we have a consdierable batch of elements to persist,
+                // go ahead with it.
+                if (errataSubscriptions.size() >= BATCH_SIZE) {
+                    Log.infof("Inserting a batch of %s Errata subscriptions into the database", BATCH_SIZE);
+
+                    try {
+                        this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);
+
+                        Log.infof("Persisted %s errata subscriptions to the database.", errataSubscriptions.size());
+
+                        // Clear the inserted subscriptions.
+                        totalInsertedElements += errataSubscriptions.size();
+                        errataSubscriptions.clear();
+                    } catch (final Exception e) {
+                        if (TransactionStatus.ROLLED_BACK != transaction.getStatus()) {
+                            transaction.rollback();
+                        }
+
+                        Log.error("Unable to migrate errata subscriptions due to an exception. The insertions were rolled back", e);
+
+                        throw new InternalServerErrorException("Unable to persist subscriptions. The operation was rolled back");
+                    }
+                }
+            }
+
+            // In case we finished parsing the JSON file but there are still
+            // some elements not persisted, we need to store those too.
+            if (!errataSubscriptions.isEmpty()) {
+                try {
+                    this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);
+
+                    Log.infof("Persisted %s errata subscriptions to the database.", errataSubscriptions.size());
+
+                    totalInsertedElements += errataSubscriptions.size();
+                    errataSubscriptions.clear();
+                } catch (final Exception e) {
+                    if (TransactionStatus.ROLLED_BACK != transaction.getStatus()) {
+                        transaction.rollback();
+                    }
+
+                    Log.error("Unable to migrate errata subscriptions due to an exception. The insertions were rolled back", e);
+
+                    throw new InternalServerErrorException("Unable to persist subscriptions. The operation was rolled back");
+                }
+            }
         }
 
-        Log.infof("Read JSON errata subscriptions file and extracted %s subscriptions from it", errataSubscriptions.size());
+        // Commit the changes to the database and finalize the operation.
+        transaction.commit();
 
-        // Persist the errata subscriptions in the database.
-        try {
-            this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);
-        } catch (final Exception e) {
-            Log.error("Unable to migrate errata subscriptions due to an exception. The insertions were rolled back", e);
-        }
+        Log.infof("A total of %d Errata subscriptions were persisted in the database", totalInsertedElements);
     }
 }

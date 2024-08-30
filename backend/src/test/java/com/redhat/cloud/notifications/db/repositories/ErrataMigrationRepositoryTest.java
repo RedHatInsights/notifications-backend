@@ -11,6 +11,8 @@ import com.redhat.cloud.notifications.routers.internal.errata.ErrataSubscription
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import org.hibernate.StatelessSession;
+import org.hibernate.Transaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +33,9 @@ public class ErrataMigrationRepositoryTest extends DbIsolatedTest {
 
     @Inject
     ResourceHelpers resourceHelpers;
+
+    @Inject
+    StatelessSession statelessSession;
 
     @Inject
     SubscriptionRepository subscriptionRepository;
@@ -102,7 +107,10 @@ public class ErrataMigrationRepositoryTest extends DbIsolatedTest {
         final List<ErrataSubscription> subscriptions = List.of(subscription1, subscription2, subscription3, subscription4);
 
         // Call the function under test.
+        final Transaction transaction = this.statelessSession.beginTransaction();
+        transaction.begin();
         this.errataMigrationRepository.saveErrataSubscriptions(subscriptions);
+        transaction.commit();
 
         // Assert that each user got subscribed to the event types they were
         // supposed to be subscribed to.
@@ -143,7 +151,10 @@ public class ErrataMigrationRepositoryTest extends DbIsolatedTest {
         }
 
         // Call the function under test.
+        final Transaction transaction = this.statelessSession.beginTransaction();
+        transaction.begin();
         this.errataMigrationRepository.saveErrataSubscriptions(subscriptions);
+        transaction.commit();
 
         // Assert that out of the five duplicated subscriptions we attempted to
         // insert only one got inserted.
