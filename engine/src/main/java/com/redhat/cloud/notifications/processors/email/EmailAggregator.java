@@ -124,7 +124,8 @@ public class EmailAggregator {
                     subscribers,
                     unsubscribers,
                     eventType.isSubscribedByDefault(),
-                externalAuthorizationCriteria);
+                    externalAuthorizationCriteria
+                );
 
                 /*
                  * We now have the final recipients list.
