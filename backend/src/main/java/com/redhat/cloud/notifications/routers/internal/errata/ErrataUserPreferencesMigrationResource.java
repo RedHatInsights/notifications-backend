@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.internal.errata;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.db.repositories.ErrataMigrationRepository;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

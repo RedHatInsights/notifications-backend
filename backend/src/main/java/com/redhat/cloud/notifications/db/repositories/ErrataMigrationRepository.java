@@ -1,7 +1,8 @@
-package com.redhat.cloud.notifications.routers.internal.errata;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
+import com.redhat.cloud.notifications.routers.internal.errata.ErrataSubscription;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -51,7 +52,7 @@ public class ErrataMigrationRepository {
      * @param errataSubscriptions the list of the Errata subscriptions to save
      *                            in the database.
      */
-    protected void saveErrataSubscriptions(final List<ErrataSubscription> errataSubscriptions) {
+    public void saveErrataSubscriptions(final List<ErrataSubscription> errataSubscriptions) {
         Log.infof("Errata subscriptions' migration begins with a batch size of %s", INSERTION_BATCH_SIZE);
 
         final List<EventType> errataEventTypes = this.findErrataEventTypes();
