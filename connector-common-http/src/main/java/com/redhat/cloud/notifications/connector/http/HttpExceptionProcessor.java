@@ -10,6 +10,7 @@ import org.apache.hc.client5.http.ConnectTimeoutException;
 import org.apache.hc.client5.http.HttpHostConnectException;
 import org.jboss.logging.Logger;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -24,6 +25,7 @@ import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_5
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.SOCKET_TIMEOUT;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.SSL_HANDSHAKE;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.UNKNOWN_HOST;
+import static com.redhat.cloud.notifications.connector.http.HttpErrorType.UNSUPPORTED_SSL_MESSAGE;
 import static org.apache.http.HttpStatus.SC_TOO_MANY_REQUESTS;
 import static org.jboss.logging.Logger.Level.ERROR;
 
@@ -61,6 +63,8 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
             exchange.setProperty(HTTP_ERROR_TYPE, SSL_HANDSHAKE);
         } else if (t instanceof UnknownHostException) {
             exchange.setProperty(HTTP_ERROR_TYPE, UNKNOWN_HOST);
+        } else if (t instanceof SSLException) {
+            exchange.setProperty(HTTP_ERROR_TYPE, UNSUPPORTED_SSL_MESSAGE);
         } else {
             logDefault(t, exchange);
         }

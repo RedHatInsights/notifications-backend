@@ -8,5 +8,6 @@ public enum HttpErrorType {
     HTTP_4XX,
     HTTP_5XX,
     SSL_HANDSHAKE,
-    UNKNOWN_HOST
+    UNKNOWN_HOST,
+    UNSUPPORTED_SSL_MESSAGE
 }

@@ -8,7 +8,8 @@ public enum HttpErrorType {
     HTTP_5XX("the HTTP server responded with an HTTP status"),
     SSL_HANDSHAKE("the validation of the HTTP server SSL/TLS certificate failed"),
     UNKNOWN_HOST("the IP address of the HTTP server could not be determined"),
-    HTTP_3XX("the HTTP server returned a redirection status code");
+    HTTP_3XX("the HTTP server returned a redirection status code"),
+    UNSUPPORTED_SSL_MESSAGE("the HTTP server returned an unsupported or unrecognized SSL message");
 
     private final String message;
 
