@@ -15,12 +15,6 @@ import java.util.List;
 @ApplicationScoped
 public class ErrataMigrationRepository {
     /**
-     * The maximum size of the batch of subscriptions we want to insert in the
-     * database.
-     */
-    private static final int INSERTION_BATCH_SIZE = 500;
-
-    /**
      * The internal name of the Errata application in our database.
      */
     public static final String ERRATA_APPLICATION_NAME = "errata-notifications";
@@ -32,7 +26,7 @@ public class ErrataMigrationRepository {
      * Finds all the Errata event types in the database.
      * @return the list of Errata event types in the database.
      */
-    protected List<EventType> findErrataEventTypes() {
+    public List<EventType> findErrataEventTypes() {
         final String query =
             "FROM " +
                 "EventType AS et " +
@@ -53,10 +47,6 @@ public class ErrataMigrationRepository {
      *                            in the database.
      */
     public void saveErrataSubscriptions(final List<ErrataSubscription> errataSubscriptions) {
-        Log.infof("Errata subscriptions' migration begins with a batch size of %s", INSERTION_BATCH_SIZE);
-
-        final List<EventType> errataEventTypes = this.findErrataEventTypes();
-
         final Transaction transaction = this.statelessSession.beginTransaction();
         transaction.begin();
 
@@ -72,7 +62,7 @@ public class ErrataMigrationRepository {
             for (final ErrataSubscription errataSubscription : errataSubscriptions) {
                 // For each errata subscription we need to insert subscriptions for
                 // every event type in our database.
-                for (final EventType errataEventType : errataEventTypes) {
+                for (final EventType errataEventType : errataSubscription.eventTypeSubscriptions()) {
                     try {
                         this.statelessSession
                             .createNativeQuery(insertSql, EventTypeEmailSubscription.class)
@@ -92,7 +82,7 @@ public class ErrataMigrationRepository {
             }
 
             transaction.commit();
-            Log.infof("Persisted %s errata subscriptions from a total number of %s scanned subscriptions from the file. For each errata subscription %s subscriptions were persisted in Notifications", totalInsertionCount, errataSubscriptions.size(), errataEventTypes.size());
+            Log.infof("Persisted %s errata subscriptions from a total number of %s scanned subscriptions from the file.", totalInsertionCount, errataSubscriptions.size());
         } catch (final Exception e) {
             transaction.rollback();
             Log.error("The insertions of the Errata subscriptions were rolled back due to an exception", e);

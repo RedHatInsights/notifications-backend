@@ -16,7 +16,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+
+import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_BUGFIX;
+import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_ENHANCEMENT;
+import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_SECURITY;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -70,55 +75,48 @@ public class ErrataMigrationRepositoryTest extends DbIsolatedTest {
      */
     @Test
     void testSaveErrataSubscriptions() {
-        // Create a list of subscriptions that we want to save in our database.
-        final String username1 = "username1";
-        final String orgId1 = "orgId1";
-        final ErrataSubscription subscription1 = new ErrataSubscription(username1, orgId1);
-
-        final String username2 = "username2";
-        final String orgId2 = "orgId2";
-        final ErrataSubscription subscription2 = new ErrataSubscription(username2, orgId2);
-
-        final String username3 = "username3";
-        final String orgId3 = "orgId3";
-        final ErrataSubscription subscription3 = new ErrataSubscription(username3, orgId3);
-
-        final List<ErrataSubscription> subscriptions = List.of(subscription1, subscription2, subscription3);
-
         // Create a few event types we want to create the subscriptions for.
         final Bundle errataBundle = this.resourceHelpers.createBundle("errata-bundle");
         final Application errataApplication = this.resourceHelpers.createApplication(errataBundle.getId(), ErrataMigrationRepository.ERRATA_APPLICATION_NAME);
-        final EventType errataEventType1 = this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type-1");
-        final EventType errataEventType2 = this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type-2");
+        final EventType eventTypeBugFix = this.resourceHelpers.createEventType(errataApplication.getId(), EVENT_TYPE_NAME_BUGFIX);
+        final EventType eventTypeEnhancement = this.resourceHelpers.createEventType(errataApplication.getId(), EVENT_TYPE_NAME_ENHANCEMENT);
+        final EventType eventTypeSecurity = this.resourceHelpers.createEventType(errataApplication.getId(), EVENT_TYPE_NAME_SECURITY);
+
+        // Create a list of subscriptions that we want to save in our database.
+        final String username1 = "username1";
+        final String orgId1 = "orgId1";
+        final ErrataSubscription subscription1 = new ErrataSubscription(username1, orgId1, Set.of(eventTypeBugFix, eventTypeEnhancement, eventTypeSecurity));
+
+        final String username2 = "username2";
+        final String orgId2 = "orgId2";
+        final ErrataSubscription subscription2 = new ErrataSubscription(username2, orgId2, Set.of(eventTypeBugFix));
+
+        final String username3 = "username3";
+        final String orgId3 = "orgId3";
+        final ErrataSubscription subscription3 = new ErrataSubscription(username3, orgId3, Set.of(eventTypeEnhancement));
+
+        final String username4 = "username4";
+        final String orgId4 = "orgId4";
+        final ErrataSubscription subscription4 = new ErrataSubscription(username4, orgId4, Set.of(eventTypeSecurity));
+
+        final List<ErrataSubscription> subscriptions = List.of(subscription1, subscription2, subscription3, subscription4);
 
         // Call the function under test.
         this.errataMigrationRepository.saveErrataSubscriptions(subscriptions);
 
-        // Assert that each user got subscribed to both event types.
-        int totalNumberEmailSubscriptions = 0;
+        // Assert that each user got subscribed to the event types they were
+        // supposed to be subscribed to.
         for (final ErrataSubscription errataSubscription : subscriptions) {
             final List<EventTypeEmailSubscription> createdSubscriptions = this.subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(errataSubscription.org_id(), errataSubscription.username());
-            Assertions.assertEquals(2, createdSubscriptions.size(), String.format("unexpected number of subscriptions created for user \"%s\" in the org ID \"%s\". Two expected.", errataSubscription.username(), errataSubscription.org_id()));
+            Assertions.assertEquals(errataSubscription.eventTypeSubscriptions().size(), createdSubscriptions.size(), String.format("unexpected number of subscriptions created for user \"%s\" in the org ID \"%s\"", errataSubscription.username(), errataSubscription.org_id()));
 
+            // Assert that the email subscription contains the correct data.
             for (final EventTypeEmailSubscription emailSubscription : createdSubscriptions) {
                 Assertions.assertEquals(errataSubscription.username(), emailSubscription.getUserId(), "the fetched email subscription belong to a different user than the specified errata subscription");
                 Assertions.assertEquals(errataSubscription.org_id(), emailSubscription.getOrgId(), "the fetched email subscription belong to a different user than the specified errata subscription");
-
-                if (emailSubscription.getEventType().getId().equals(errataEventType1.getId())) {
-                    totalNumberEmailSubscriptions++;
-                    continue;
-                }
-
-                if (emailSubscription.getEventType().getId().equals(errataEventType2.getId())) {
-                    totalNumberEmailSubscriptions++;
-                    continue;
-                }
-
-                Assertions.fail(String.format("The user \"%s\" from the org ID \"%s\" is not subscribed to the Errata notifications, which means that the function under test failed", errataSubscription.username(), errataSubscription.org_id()));
+                Assertions.assertTrue(errataSubscription.eventTypeSubscriptions().contains(emailSubscription.getEventType()), "the email subscription's event type ID was not found in the errata subscription test object we built earlier");
             }
         }
-
-        Assertions.assertEquals(6, totalNumberEmailSubscriptions, "6 email subscriptions should have been created, two per the three users that we have in this test");
     }
 
     /**
@@ -130,19 +128,19 @@ public class ErrataMigrationRepositoryTest extends DbIsolatedTest {
      */
     @Test
     void testDuplicatedInsertionsDoNothing() {
+        // Create a single event type we want to create the subscription for.
+        final Bundle errataBundle = this.resourceHelpers.createBundle("errata-bundle");
+        final Application errataApplication = this.resourceHelpers.createApplication(errataBundle.getId(), ErrataMigrationRepository.ERRATA_APPLICATION_NAME);
+        final EventType errataEventType = this.resourceHelpers.createEventType(errataApplication.getId(), EVENT_TYPE_NAME_BUGFIX);
+
         // Create duplicated
         final String username = "username";
         final String orgId = "orgId";
 
         final List<ErrataSubscription> subscriptions = new ArrayList<>(5);
         for (int i = 0; i < 5; i++) {
-            subscriptions.add(new ErrataSubscription(username, orgId));
+            subscriptions.add(new ErrataSubscription(username, orgId, Set.of(errataEventType)));
         }
-
-        // Create a single event type we want to create the subscription for.
-        final Bundle errataBundle = this.resourceHelpers.createBundle("errata-bundle");
-        final Application errataApplication = this.resourceHelpers.createApplication(errataBundle.getId(), ErrataMigrationRepository.ERRATA_APPLICATION_NAME);
-        this.resourceHelpers.createEventType(errataApplication.getId(), "errata-event-type");
 
         // Call the function under test.
         this.errataMigrationRepository.saveErrataSubscriptions(subscriptions);
