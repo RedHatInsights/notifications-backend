@@ -14,5 +14,6 @@ public class RunOnStartup {
     void postConstruct() {
         startupUtils.initAccessLogFilter();
         startupUtils.logGitProperties();
+        startupUtils.checkCertificatesExpiration();
     }
 }
