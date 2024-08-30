@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.recipients.statup;
 
+import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.io.BufferedReader;
 import java.io.File;
@@ -34,6 +36,9 @@ public class StartupUtils {
 
     @ConfigProperty(name = "quarkus.http.access-log.category")
     String accessLogCategory;
+
+    @Inject
+    RecipientsResolverConfig recipientsResolverConfig;
 
     public void initAccessLogFilter() {
         java.util.logging.Logger.getLogger(accessLogCategory).setFilter(logRecord ->
@@ -70,7 +75,9 @@ public class StartupUtils {
         }
     }
 
-    public List<String> readKeystore(Optional<URI> keystoreFile, Optional<String> keystorePassword) {
+    public List<String> checkCertificatesExpiration() {
+        Optional<URI> keystoreFile = recipientsResolverConfig.getQuarkusItServiceKeystore();
+        Optional<String> keystorePassword = recipientsResolverConfig.getQuarkusItServicePassword();
         List<String> result = new ArrayList<>();
         String logMessage;
         if (keystoreFile.isEmpty() || keystorePassword.isEmpty()) {
@@ -80,38 +87,39 @@ public class StartupUtils {
         try {
             File f = new File(keystoreFile.get());
             KeyStore ks = KeyStore.getInstance("JKS");
-            FileInputStream keystoreFileInputStream = new FileInputStream(f);
-            ks.load(keystoreFileInputStream, keystorePassword.get().toCharArray());
+            try (FileInputStream keystoreFileInputStream = new FileInputStream(f)) {
 
-            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
-            final ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneId.of("UTC"));
+                ks.load(keystoreFileInputStream, keystorePassword.get().toCharArray());
 
-            Iterator<String> aliasesIt = ks.aliases().asIterator();
-            while (aliasesIt.hasNext()) {
-                String alias = aliasesIt.next();
-                Date notAfter = ((X509Certificate) ks.getCertificate(alias)).getNotAfter();
+                final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
+                final ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneId.of("UTC"));
 
-                ZonedDateTime utcExpDateTime = ZonedDateTime.ofInstant(notAfter.toInstant(), ZoneId.of("UTC"));
+                Iterator<String> aliasesIt = ks.aliases().asIterator();
+                while (aliasesIt.hasNext()) {
+                    String alias = aliasesIt.next();
+                    Date notAfter = ((X509Certificate) ks.getCertificate(alias)).getNotAfter();
 
-                final String utcExpDateTimeStr = formatter.format(utcExpDateTime);
+                    ZonedDateTime utcExpDateTime = ZonedDateTime.ofInstant(notAfter.toInstant(), ZoneId.of("UTC"));
 
-                long diff = ChronoUnit.DAYS.between(currentUtcTime, utcExpDateTime);
-                if (diff < 10) {
-                    logMessage = String.format("Certificate '%s' is about to expire! (on %s)", alias, utcExpDateTimeStr);
-                    Log.fatalf(logMessage);
-                } else if (diff < 30) {
-                    logMessage = String.format("Certificate '%s' will expire within 30 days! (on %s)", alias, utcExpDateTimeStr);
-                    Log.errorf(logMessage);
-                } else if (diff < 60) {
-                    logMessage = String.format("Certificate '%s' will expire within 60 days! (on %s)", alias, utcExpDateTimeStr);
-                    Log.warnf(logMessage);
-                } else {
-                    logMessage = String.format("Certificate '%s' will expire on %s", alias, utcExpDateTimeStr);
-                    Log.warnf(logMessage);
+                    final String utcExpDateTimeStr = formatter.format(utcExpDateTime);
+
+                    long diff = ChronoUnit.DAYS.between(currentUtcTime, utcExpDateTime);
+                    if (diff < 10) {
+                        logMessage = String.format("Certificate '%s' is about to expire! (on %s)", alias, utcExpDateTimeStr);
+                        Log.fatal(logMessage);
+                    } else if (diff < 30) {
+                        logMessage = String.format("Certificate '%s' will expire within 30 days! (on %s)", alias, utcExpDateTimeStr);
+                        Log.error(logMessage);
+                    } else if (diff < 60) {
+                        logMessage = String.format("Certificate '%s' will expire within 60 days! (on %s)", alias, utcExpDateTimeStr);
+                        Log.warn(logMessage);
+                    } else {
+                        logMessage = String.format("Certificate '%s' will expire on %s", alias, utcExpDateTimeStr);
+                        Log.info(logMessage);
+                    }
+                    result.add(logMessage);
                 }
-                result.add(logMessage);
             }
-            keystoreFileInputStream.close();
         } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new RuntimeException(e);
         }
