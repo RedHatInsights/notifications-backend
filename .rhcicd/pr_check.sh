@@ -14,6 +14,7 @@ function buildAndPushToQuay() {
     source $CICD_ROOT/build.sh
 }
 
+buildAndPushToQuay "notifications-aggregator"
 buildAndPushToQuay "notifications-backend"
 buildAndPushToQuay "notifications-connector-drawer"
 buildAndPushToQuay "notifications-connector-email"

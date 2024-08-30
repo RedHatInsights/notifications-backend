@@ -264,6 +264,8 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         Map<User, List<ApplicationAggregatedData>> userData = new HashMap<>();
 
         for (AggregationCommand applicationAggregationCommand : aggregationCommands) {
+            Log.debugf("Processing aggregation command: %s", applicationAggregationCommand);
+
             try {
                 Application app = applicationRepository.getApplication(applicationAggregationCommand.getAggregationKey().getBundle(), applicationAggregationCommand.getAggregationKey().getApplication())
                         .orElseThrow(() -> {
@@ -288,6 +290,8 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         // Group users with same aggregated data
         Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameAggregatedData = userData.keySet().stream()
             .collect(Collectors.groupingBy(userData::get, Collectors.toSet()));
+
+        Log.debugf("Users with same aggregated data: %s", usersWithSameAggregatedData);
 
         String emailTitle = "Daily digest - " + bundle.getDisplayName();
 
@@ -348,6 +352,8 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 );
 
                 connectorSender.send(aggregatorEvent, endpoint, JsonObject.mapFrom(emailNotification));
+
+                Log.debugf("Sent email notification to connector: %s", emailNotification);
             }
         });
 

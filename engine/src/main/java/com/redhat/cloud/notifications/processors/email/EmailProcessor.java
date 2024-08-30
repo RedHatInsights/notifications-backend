@@ -125,6 +125,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             externalAuthorizationCriteriaExtractor.extract(event)
         );
 
+        Log.debugf("[org_id: %s] Sending email notification to connector", emailNotification);
+
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
         final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EMAIL_SUBSCRIPTION);
