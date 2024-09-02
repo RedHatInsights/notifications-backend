@@ -53,8 +53,10 @@ import static java.lang.Boolean.TRUE;
 @ApplicationScoped
 public class FetchUsersFromExternalServices {
 
-    public static final String COUNTER_FAILURES = "notifications.recipients-resolver.failures";
-    public static final String COUNTER_SUCCESSES = "notifications.recipients-resolver.successes";
+    public static final String COUNTER_REQUESTS = "notifications.recipients.resolver.requests";
+    protected static final String COUNTER_TAG_FAILURES = "failures";
+    protected static final String COUNTER_TAG_REQUEST_RESULT = "result";
+    protected static final String COUNTER_TAG_SUCCESSES = "successes";
     protected static final String COUNTER_TAG_USER_PROVIDER = "user-provider";
     protected static final String COUNTER_TAG_USER_PROVIDER_RBAC = "rbac";
     protected static final String COUNTER_TAG_USER_PROVIDER_MBOP = "mbop";
@@ -364,12 +366,12 @@ public class FetchUsersFromExternalServices {
     }
 
     /**
-     * Increments a counter.
-     * @param counterName the name of the counter to increment.
+     * Increments the requests counter.
+     * @param requestResult the resulting state of the request.
      * @param userProvider the user provider to add to the counter's tag.
      */
-    private void incrementCounter(final String counterName, final String userProvider) {
-        this.meterRegistry.counter(counterName, Tags.of(COUNTER_TAG_USER_PROVIDER, userProvider)).increment();
+    private void incrementCounter(final String requestResult, final String userProvider) {
+        this.meterRegistry.counter(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, requestResult, COUNTER_TAG_USER_PROVIDER, userProvider)).increment();
     }
 
     /**
@@ -388,18 +390,18 @@ public class FetchUsersFromExternalServices {
     }
 
     /**
-     * Increments the failures counter.
+     * Increments the "failed requests" count.
      * @param userProvider the user provider to add to the counter's tag.
      */
     private void incrementFailuresCounterWithTag(final String userProvider) {
-        this.incrementCounter(COUNTER_FAILURES, userProvider);
+        this.incrementCounter(COUNTER_TAG_FAILURES, userProvider);
     }
 
     /**
-     * Increments the successes counter.
+     * Increments the "succeeded requests" counter.
      * @param userProvider the user provider to add to the counter's tag.
      */
     private void incrementSuccessesCounterWithTag(final String userProvider) {
-        this.incrementCounter(COUNTER_SUCCESSES, userProvider);
+        this.incrementCounter(COUNTER_TAG_SUCCESSES, userProvider);
     }
 }

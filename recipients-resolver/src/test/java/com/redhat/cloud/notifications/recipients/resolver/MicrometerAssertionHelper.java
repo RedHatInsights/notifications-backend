@@ -5,20 +5,16 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Assertions;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -34,118 +30,77 @@ public class MicrometerAssertionHelper {
 
     private final Map<String, Double> counterValuesBeforeTest = new ConcurrentHashMap<>();
 
-    public void saveCounterValuesBeforeTest(String... counterNames) {
-        for (String counterName : counterNames) {
-            counterValuesBeforeTest.put(counterName, registry.counter(counterName).count());
-        }
-    }
+    /**
+     * Saves the given counter's value. It's supposed to be called before
+     * calling any function that might alter the counters. It only saves the
+     * count value for a full "counter name + all tags + values" match.
+     * @param counterName the name of the counter for which we want to save the
+     *                    values.
+     * @param tags the tags for the counter.
+     */
+    public void saveCounterValueBeforeTestFilteredByTags(final String counterName, final Tags tags) {
+        final List<String> tagKeys = tags.stream().map(Tag::getKey).toList();
 
-    public void saveCounterValueWithTagsBeforeTest(String counterName, String... tagKeys) {
-        Collection<Counter> counters = registry.find(counterName)
-            .tagKeys(tagKeys)
-                    .counters();
-        for (Counter counter : counters) {
-            Meter.Id id = counter.getId();
-            List<String> tags = new ArrayList<>();
-            for (Tag tag : id.getTags()) {
-                tags.add(tag.getKey());
-                tags.add(tag.getValue());
-            }
-            counterValuesBeforeTest.put(counterName + tags, registry.counter(counterName, id.getTags()).count());
-        }
-    }
-
-    public void assertCounterIncrement(String counterName, double expectedIncrement, String... tags) {
-        double actualIncrement = registry.counter(counterName, tags).count() - counterValuesBeforeTest.getOrDefault(
-                counterName + Arrays.toString(tags), 0D);
-        assertEquals(expectedIncrement, actualIncrement);
-    }
-
-    public void saveCounterValueFilteredByTagsBeforeTest(String counterName, String tagKeys, String tagValue) {
-        Collection<Counter> counters = registry.find(counterName)
+        final Collection<Counter> counters = this.registry
+            .find(counterName)
             .tagKeys(tagKeys)
             .counters();
-        for (Counter counter : counters) {
-            Meter.Id id = counter.getId();
-            if (id.getTag(tagKeys).equals(tagValue)) {
-                counterValuesBeforeTest.put(counterName + tagKeys + tagValue, counter.count());
-                break;
+
+        for (final Counter counter : counters) {
+            final Meter.Id id = counter.getId();
+
+            if (counterName.equals(id.getName()) && this.tagsAreEqual(id.getTags(), tags.stream().toList())) {
+                for (final Tag tag : tags) {
+                    this.counterValuesBeforeTest.put(counterName + tag.getKey() + tag.getValue(), counter.count());
+                }
             }
-        }
-    }
-
-    public void assertCounterValueFilteredByTagsIncrement(String counterName, String tagKeys, String tagValue, double expectedIncrement) {
-        Collection<Counter> counters = registry.find(counterName)
-            .tagKeys(tagKeys)
-            .counters();
-        for (Counter counter : counters) {
-            Meter.Id id = counter.getId();
-            if (id.getTag(tagKeys).equals(tagValue)) {
-                double actualIncrement = counter.count() - counterValuesBeforeTest.getOrDefault(
-                    counterName + tagKeys + tagValue, 0D);
-                assertEquals(expectedIncrement, actualIncrement);
-                break;
-            }
-        }
-    }
-
-    public void assertCounterIncrement(String counterName, double expectedIncrement) {
-        double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0D);
-        assertEquals(expectedIncrement, actualIncrement);
-    }
-
-    public void awaitAndAssertCounterIncrement(String counterName, double expectedIncrement) {
-        await().atMost(Duration.ofSeconds(30L)).until(() -> {
-            double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0D);
-            return expectedIncrement == actualIncrement;
-        });
-    }
-
-    public void awaitAndAssertCounterIncrementFilteredByTags(final String counterName, final String tagKey, final String tagValue, final double expectedIncrement) {
-        await().atMost(Duration.ofSeconds(30L)).until(() -> {
-            double actualIncrement = this.registry.counter(counterName, Tags.of(tagKey, tagValue)).count() - counterValuesBeforeTest.getOrDefault(
-                counterName + tagKey + tagValue, 0D);
-
-            return expectedIncrement == actualIncrement;
-        });
-    }
-
-    public void awaitAndAssertTimerIncrement(String timerName, long expectedIncrement) {
-        await().atMost(Duration.ofSeconds(30L)).until(() -> {
-            Timer timer = findTimerByNameOnly(timerName);
-            if (timer == null) {
-                // The timer may be created after this method is executed.
-                return false;
-            } else {
-                long actualIncrement = Optional.ofNullable(timer.count()).orElse(0L);
-                return expectedIncrement == actualIncrement;
-            }
-        });
-    }
-
-    public void clearSavedValues() {
-        counterValuesBeforeTest.clear();
-    }
-
-    public void removeDynamicTimer(String timerName) {
-        for (Timer timer : findTimersByNameOnly(timerName)) {
-            registry.remove(timer);
         }
     }
 
     /**
-     * Finds a timer from its name only, tags are ignored.
-     * If multiple timers match the name, the first one will be returned.
+     * Asserts that the specified increment was given in the given counter.
+     * Both the counter's name and their tags must match to perform the
+     * assertion.
+     * @param counterName the name of the counter to assert.
+     * @param expectedIncrement the expected increment to see in the counter.
+     * @param tags the tags for the counter.
      */
-    private Timer findTimerByNameOnly(String name) {
-        return registry.find(name).timer();
+    public void assertCounterIncrementFilteredByTags(final String counterName, final double expectedIncrement, final Tags tags) {
+        final List<String> tagKeys = tags.stream().map(Tag::getKey).toList();
+
+        final Collection<Counter> counters = this.registry
+            .find(counterName)
+            .tagKeys(tagKeys)
+            .counters();
+
+        boolean atLeastOneMatch = false;
+        for (final Counter counter : counters) {
+            final Meter.Id id = counter.getId();
+
+            if (counterName.equals(id.getName()) && this.tagsAreEqual(id.getTags(), tags.stream().toList())) {
+                atLeastOneMatch = true;
+
+                for (final Tag tag : tags) {
+                    final double count = counter.count();
+                    final double actualIncrement = count - this.counterValuesBeforeTest.getOrDefault(counterName + tag.getKey() + tag.getValue(), 0D);
+                    assertEquals(expectedIncrement, actualIncrement);
+                }
+            }
+        }
+
+        if (!atLeastOneMatch) {
+            Assertions.fail("No counters were found with the given name and tags, and no values could be checked.");
+        }
     }
 
     /**
-     * Finds a collection of timers from their name only, tags are ignored.
+     * Asserts that the given tag lists are equal.
+     * @param one one list of tags.
+     * @param another another list of tags.
+     * @return {@code true} if both collections have the same tags, regardless
+     * of the order.
      */
-    private Collection<Timer> findTimersByNameOnly(String name) {
-        return registry.find(name).timers();
+    private boolean tagsAreEqual(final List<Tag> one, final List<Tag> another) {
+        return new HashSet<>(one).equals(new HashSet<>(another));
     }
-
 }

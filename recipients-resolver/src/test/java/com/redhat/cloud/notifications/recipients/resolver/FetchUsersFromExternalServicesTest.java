@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToService;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacUser;
 import dev.failsafe.FailsafeException;
+import io.micrometer.core.instrument.Tags;
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -39,8 +40,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_FAILURES;
-import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_SUCCESSES;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_REQUESTS;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_FAILURES;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_REQUEST_RESULT;
+import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_SUCCESSES;
 import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_USER_PROVIDER;
 import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_USER_PROVIDER_IT;
 import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_TAG_USER_PROVIDER_MBOP;
@@ -364,39 +367,40 @@ public class FetchUsersFromExternalServicesTest {
 
         // Test that the RBAC failures counter gets incremented.
         when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Call the function under test.
         assertThrows(FailsafeException.class,
             () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
         );
 
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, this.recipientsResolverConfig.getMaxRetryAttempts());
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, this.recipientsResolverConfig.getMaxRetryAttempts(), Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Test that the MBOP failures counter gets incremented.
         when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
         when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
 
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP);
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
         // Call the function under test.
         assertThrows(FailsafeException.class,
             () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
         );
 
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP, this.recipientsResolverConfig.getMaxRetryAttempts());
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, this.recipientsResolverConfig.getMaxRetryAttempts(), Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
         // Test that the IT failures counter gets incremented.
         when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
 
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT);
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT));
 
         // Call the function under test.
         assertThrows(FailsafeException.class,
             () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
         );
 
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT, this.recipientsResolverConfig.getMaxRetryAttempts());
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, this.recipientsResolverConfig.getMaxRetryAttempts(), Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT));
     }
 
     /**
@@ -412,39 +416,40 @@ public class FetchUsersFromExternalServicesTest {
         // Test that the RBAC failures counter gets incremented.
         when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
         when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Call the function under test.
         assertThrows(WebApplicationException.class,
             () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
         );
 
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, 1);
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, 1, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Test that the MBOP failures counter gets incremented.
         when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
         when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
 
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP);
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
         // Call the function under test.
         assertThrows(WebApplicationException.class,
             () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
         );
 
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP, 1);
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, 1, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
         // Test that the IT failures counter gets incremented.
         when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
 
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT);
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT));
 
         // Call the function under test.
         assertThrows(WebApplicationException.class,
             () -> this.fetchUsersFromExternalServices.getUsers("12345", true)
         );
 
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT, 1);
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, 1, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT));
     }
 
     /**
@@ -458,12 +463,13 @@ public class FetchUsersFromExternalServicesTest {
         // Test that the RBAC failures counter gets incremented.
         when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
         when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Call the function under test.
         this.fetchUsersFromExternalServices.getGroupUsers("12345", true, UUID.randomUUID());
 
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, 1);
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, 1, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
     }
 
     /**
@@ -478,14 +484,16 @@ public class FetchUsersFromExternalServicesTest {
         // Test that the RBAC failures counter gets incremented.
         when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
         when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Call the function under test.
         assertThrows(FailsafeException.class,
             () -> this.fetchUsersFromExternalServices.getGroupUsers("12345", true, UUID.randomUUID())
         );
 
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, this.recipientsResolverConfig.getMaxRetryAttempts());    }
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, this.recipientsResolverConfig.getMaxRetryAttempts(), Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
+    }
 
     /**
      * Tests that when fetching users from RBAC succeeds, the success counter
@@ -502,13 +510,15 @@ public class FetchUsersFromExternalServicesTest {
         final int mockedRbacPagesToFetch = 2;
         this.mockGetUsersRBAC(this.recipientsResolverConfig.getMaxResultsPerPage() * mockedRbacPagesToFetch, false);
 
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC);
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Call the function under test.
         this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
 
         // Assert that the success counter with the "rbac" tag got incremented.
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC, mockedRbacPagesToFetch + 1);
+        // We will simulate fetching 2 full pages, which means that we will
+        // trigger one last call to fetch the fourth page that will be empty.
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, mockedRbacPagesToFetch + 1, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
     }
 
     /**
@@ -529,13 +539,13 @@ public class FetchUsersFromExternalServicesTest {
             .when(this.mbopService.getUsersByOrgId(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyInt(), anyInt(), anyBoolean(), anyString(), anyBoolean()))
             .thenReturn(this.mockGetMBOPUsersPage(mockedMbopElements), this.mockGetMBOPUsersPage(mockedMbopElements), this.mockGetMBOPUsersPage(5));
 
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP);
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
         // Call the function under test.
         this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
 
         // Assert that the success counter with the "mbop" tag got incremented.
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP, mockedMbopPagesToFetch);
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, mockedMbopPagesToFetch, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
     }
 
     /**
@@ -550,17 +560,21 @@ public class FetchUsersFromExternalServicesTest {
         when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
         when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
 
-        final int mockedITUserPagesToFetch = 2;
+        final int mockedITUserPagesToFetch = 3;
         this.mockGetUsers(this.recipientsResolverConfig.getMaxResultsPerPage() * mockedITUserPagesToFetch, false);
 
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT);
+        // Clear the cached results so that we don't fetch the cached results.
+        // Otherwise, we wouldn't simulate a call to the user provider.
+        this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT));
         this.clearCached();
 
         // Call the function under test.
         this.fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
 
-        // Assert that the success counter with the "rbac" tag got incremented.
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(COUNTER_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT, mockedITUserPagesToFetch + 1);
+        // Assert that the success counter with the "it" tag got incremented.
+        // We will simulate fetching 3 full pages, which means that we will
+        // trigger one last call to fetch the fourth page that will be empty.
+        this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, mockedITUserPagesToFetch + 1, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT));
     }
 
     private void mockGetUsers(int elements, boolean adminsOnly) {
