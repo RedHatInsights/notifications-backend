@@ -119,8 +119,8 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
 
         // Make sure that the section headline is present.
-        assertTrue(result.contains("Systems"), "the \"Systems\" header was not found as the section title");
-        assertTrue(result.contains(String.format("%s systems changed of state", newSystemsMap.size() + staleSystemsMap.size() + deletedSystemsMap.size())), "the header's subtitle should contain the number of systems that changed of state, but it was not found in the resulting HTML file");
+        assertTrue(result.contains("Inventory"), "the \"Inventory\" header was not found as the section title");
+        assertTrue(result.contains(String.format("%s systems changed state", newSystemsMap.size() + staleSystemsMap.size() + deletedSystemsMap.size())), "the header's subtitle should contain the number of systems that changed of state, but it was not found in the resulting HTML file");
 
         // Check that the new systems are present in the email.
         assertTrue(result.contains("New system registered"), "the email should contain the table's header for the new systems");

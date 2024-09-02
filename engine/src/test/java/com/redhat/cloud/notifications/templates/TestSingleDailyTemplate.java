@@ -103,8 +103,14 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         InventoryEmailAggregator aggregator = new InventoryEmailAggregator();
         aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
         aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_DELETED, UUID.randomUUID(), "host-name"));
+        aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_DELETED, UUID.randomUUID(), "host-name2"));
         aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, UUID.randomUUID(), "host-name"));
+        aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, UUID.randomUUID(), "host-name2"));
+        aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, UUID.randomUUID(), "host-name3"));
+        aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, UUID.randomUUID(), "host-name4"));
         aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_BECAME_STALE, UUID.randomUUID(), "host-name"));
+        aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_BECAME_STALE, UUID.randomUUID(), "host-name2"));
+        aggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(InventoryEmailAggregator.EVENT_TYPE_SYSTEM_BECAME_STALE, UUID.randomUUID(), "host-name3"));
 
         generateAggregatedEmailBody(aggregator.getContext(), "inventory", dataMap);
 

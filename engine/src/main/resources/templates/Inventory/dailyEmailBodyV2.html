@@ -1,13 +1,29 @@
-{@boolean renderSection1=true}
-{@boolean renderSection2=true}
+{@boolean renderSection1=action.context.inventory.errors.size}
+{@boolean renderSection2=action.context.inventory.new_systems.size}
 {@boolean renderSection3=true}
 {@boolean renderButtonSection3=true}
+{@boolean renderCustomLinks=true}
 {#include Common/insightsEmailBody}
-
+{#content-render-custom-links-section}
+    {#if action.context.inventory.errors.size() > 0}
+        <a href="#inventory-section1">{#insert content-title-section1}{/}</a><span class="pf-c-badge">{#insert content-title-right-part-section1}{/}</span>
+    {/if}
+    {#if action.context.inventory.new_systems.size() > 0}
+        <!-- next section -->
+        <a href="#inventory-section2-1">New systems registered</a><span class="pf-c-badge">{action.context.inventory.new_systems.size()}</span>
+    {/if}
+    {#if action.context.inventory.stale_systems.size() > 0}
+        <!-- next section -->
+        <a href="#inventory-section2-2">Stale system</a><span class="pf-c-badge">{action.context.inventory.stale_systems.size()}</span>
+    {/if}
+    {#if action.context.inventory.deleted_systems.size() > 0}
+        <!-- next section -->
+        <a href="#inventory-section2-3">Systems deleted</a><span class="pf-c-badge">{action.context.inventory.deleted_systems.size()}</span>
+    {/if}
+{/content-render-custom-links-section}
 {#content-title}
     Daily digest - Inventory - Red Hat Enterprise Linux
 {/content-title}
-
 {#content-title-section1}
     Host{#if action.context.inventory.errors.size() > 1}s{/if} with validation error
 {/content-title-section1}
@@ -43,11 +59,11 @@
 {/content-body-section1}
 
 {#content-title-section2}
-    Systems
+    Inventory
 {/content-title-section2}
 {#content-subtitle-section2}
     {#let total_systems_state_change=(action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size())}
-        {total_systems_state_change} system{#if total_systems_state_change > 1}s{/if} changed of state
+        {total_systems_state_change} system{#if total_systems_state_change > 1}s{/if} changed state
     {/let}
 {/content-subtitle-section2}
 {#content-title-right-part-section2}
@@ -55,6 +71,7 @@
 {/content-title-right-part-section2}
 {#content-body-section2}
 {#if action.context.inventory.new_systems.size() > 0}
+    <a id="inventory-section2-1" name="inventory-section2-1"></a>
     <table class="rh-data-table-bordered">
         <thead>
             <tr>
@@ -74,6 +91,7 @@
     {/if}
 {/if}
 {#if action.context.inventory.stale_systems.size() > 0}
+    <a id="inventory-section2-2" name="inventory-section2-2"></a>
     <table class="rh-data-table-bordered">
         <thead>
         <tr>
@@ -93,6 +111,7 @@
     {/if}
 {/if}
 {#if action.context.inventory.deleted_systems.size() > 0}
+    <a id="inventory-section2-3" name="inventory-section2-3"></a>
     <table class="rh-data-table-bordered">
         <thead>
         <tr>
