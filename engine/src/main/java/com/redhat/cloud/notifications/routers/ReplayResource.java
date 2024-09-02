@@ -29,7 +29,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_EXTERNAL;
 import static com.redhat.cloud.notifications.models.NotificationStatus.SUCCESS;
-import static java.time.Month.AUGUST;
+import static java.time.Month.SEPTEMBER;
 
 @Path(API_INTERNAL + "/replay")
 public class ReplayResource {
@@ -64,8 +64,8 @@ public class ReplayResource {
         }
 
         TypedQuery<Event> typedQuery = entityManager.createQuery(hql, Event.class)
-                .setParameter("start", LocalDateTime.of(2024, AUGUST, 22, 7, 19, 34))
-                .setParameter("end", LocalDateTime.of(2024, AUGUST, 26, 12, 46, 28))
+                .setParameter("start", LocalDateTime.of(2024, SEPTEMBER, 2, 7, 42, 27))
+                .setParameter("end", LocalDateTime.of(2024, SEPTEMBER, 2, 10, 19, 03))
                 .setParameter("endpointType", EMAIL_SUBSCRIPTION)
                 .setParameter("failed", FAILED_EXTERNAL)
                 .setParameter("success", SUCCESS)

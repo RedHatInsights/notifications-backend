@@ -30,7 +30,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.TestHelpers.createPoliciesAction;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static io.restassured.RestAssured.given;
-import static java.time.Month.AUGUST;
+import static java.time.Month.SEPTEMBER;
 import static java.time.ZoneOffset.UTC;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -74,7 +74,7 @@ public class ReplayResourceTest {
         eventType.setApplication(app);
         Endpoint endpoint = resourceHelpers.createEndpoint(EndpointType.EMAIL_SUBSCRIPTION, null, true, 0);
 
-        LocalDateTime aug24 = LocalDateTime.of(2024, AUGUST, 24, 12, 0);
+        LocalDateTime aug24 = LocalDateTime.of(2024, SEPTEMBER, 2, 10, 0);
 
         String payload = serializeAction(createPoliciesAction("123", bundle.getName(), app.getName(), "host"));
 
@@ -83,7 +83,7 @@ public class ReplayResourceTest {
         when(endpointRepository.getTargetEndpoints(eq(ORG_ID_1), eq(eventType))).thenReturn(List.of(endpoint));
 
         // The creation date of this event is before the incident time frame.
-        event1 = resourceHelpers.createEvent(eventType, ORG_ID_1, LocalDateTime.of(2024, AUGUST, 20, 12, 0), payload);
+        event1 = resourceHelpers.createEvent(eventType, ORG_ID_1, LocalDateTime.of(2024, SEPTEMBER, 1, 10, 0), payload);
         createNotificationHistory(NotificationStatus.FAILED_EXTERNAL, endpoint, event1);
 
         event2 = resourceHelpers.createEvent(eventType, ORG_ID_1, aug24, payload);

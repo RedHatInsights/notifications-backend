@@ -110,7 +110,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
 
         final String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
-        final String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, replayedEvent), ignoreUserPreferences);
+        // we don't want to include outage pendo message this time
+        final String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), ignoreUserPreferences);
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
