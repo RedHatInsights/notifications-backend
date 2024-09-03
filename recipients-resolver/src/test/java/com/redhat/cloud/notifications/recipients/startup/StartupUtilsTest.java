@@ -36,6 +36,6 @@ public class StartupUtilsTest {
         when(recipientsResolverConfig.getQuarkusItServicePassword()).thenReturn(Optional.of(testPassword));
         List<String> certificateData = startupUtils.checkCertificatesExpiration();
         assertEquals(1, certificateData.size());
-        assertEquals("@channel Certificate 'testexpcertif' is about to expire! (on Mon Sep 02 10:12:19 UTC 2024)", certificateData.get(0));
+        assertEquals("Certificate 'testexpcertif' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateData.get(0));
     }
 }
