@@ -32,6 +32,7 @@ import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
 import com.redhat.cloud.notifications.routers.internal.models.UpdateApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.dto.ApplicationDTO;
 import com.redhat.cloud.notifications.routers.internal.models.transformer.ApplicationDTOTransformer;
+import com.redhat.cloud.notifications.routers.replay.EventsReplayRequest;
 import io.quarkus.logging.Log;
 import io.quarkus.narayana.jta.runtime.TransactionConfiguration;
 import jakarta.annotation.security.PermitAll;
@@ -63,7 +64,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
-import org.jboss.resteasy.reactive.RestQuery;
 
 import java.net.URI;
 import java.time.LocalTime;
@@ -150,9 +150,10 @@ public class InternalResource {
 
     @POST
     @Path("/replay")
+    @Consumes(APPLICATION_JSON)
     @RolesAllowed(RBAC_INTERNAL_ADMIN)
-    public void replay(@RestQuery String orgId) {
-        replayService.replay(orgId);
+    public void replay(@NotNull @Valid EventsReplayRequest eventsReplayRequest) {
+        replayService.replay(eventsReplayRequest);
     }
 
     @GET

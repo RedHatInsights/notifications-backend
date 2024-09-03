@@ -11,15 +11,18 @@ import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
+import com.redhat.cloud.notifications.routers.replay.EventsReplayRequest;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import com.redhat.cloud.notifications.utils.ActionParsingException;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,7 +32,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_EXTERNAL;
 import static com.redhat.cloud.notifications.models.NotificationStatus.SUCCESS;
-import static java.time.Month.SEPTEMBER;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(API_INTERNAL + "/replay")
 public class ReplayResource {
@@ -50,7 +53,7 @@ public class ReplayResource {
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
-    public List<Event> getEvents(String orgId, int firstResult, int maxResults) {
+    public List<Event> getEvents(String orgId,  LocalDateTime startDate, LocalDateTime endDate, int firstResult, int maxResults) {
 
         String hql = "FROM Event e JOIN FETCH e.eventType " +
                 "WHERE e.created > :start AND e.created <= :end " +
@@ -64,8 +67,8 @@ public class ReplayResource {
         }
 
         TypedQuery<Event> typedQuery = entityManager.createQuery(hql, Event.class)
-                .setParameter("start", LocalDateTime.of(2024, SEPTEMBER, 2, 7, 42, 27))
-                .setParameter("end", LocalDateTime.of(2024, SEPTEMBER, 2, 10, 19, 03))
+                .setParameter("start", startDate)
+                .setParameter("end", endDate)
                 .setParameter("endpointType", EMAIL_SUBSCRIPTION)
                 .setParameter("failed", FAILED_EXTERNAL)
                 .setParameter("success", SUCCESS)
@@ -80,13 +83,15 @@ public class ReplayResource {
     }
 
     @POST
-    public void replay(@RestQuery String orgId) {
-        Log.info("Replay endpoint was called");
+    @Consumes(APPLICATION_JSON)
+    public void replay(@NotNull @Valid EventsReplayRequest eventsReplayRequest) {
+        Log.infof("Replay endpoint was called for events from %s to %s", eventsReplayRequest.startDate, eventsReplayRequest.endDate);
         int firstResult = 0;
         List<Event> events;
+        long processedEvents = 0;
         do {
             Log.infof("Processing events from index %d", firstResult);
-            events = getEvents(orgId, firstResult, MAX_RESULTS);
+            events = getEvents(eventsReplayRequest.orgId, eventsReplayRequest.startDate, eventsReplayRequest.endDate, firstResult, MAX_RESULTS);
             firstResult += MAX_RESULTS;
             for (Event event : events) {
                 try {
@@ -111,11 +116,13 @@ public class ReplayResource {
                     event.setEventWrapper(eventWrapper);
 
                     endpointProcessor.process(event, true);
+                    processedEvents++;
                 } catch (Exception e) {
                     Log.error("Event replay failed", e);
                 }
             }
         } while (MAX_RESULTS == events.size());
+        Log.infof("%d events where replayed", processedEvents);
     }
 
     private EventWrapper<?, ?> parsePayload(String payload) {
