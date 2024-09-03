@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -12,12 +13,14 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.processors.email.EmailProcessor;
+import com.redhat.cloud.notifications.routers.replay.EventsReplayRequest;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +33,7 @@ import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.TestHelpers.createPoliciesAction;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 import static java.time.Month.SEPTEMBER;
 import static java.time.ZoneOffset.UTC;
 import static org.mockito.ArgumentMatchers.any;
@@ -108,8 +112,12 @@ public class ReplayResourceTest {
 
     @Test
     void testReplayAll() {
+        EventsReplayRequest replayRequest = getEventsReplayRequest();
+
         given()
                 .basePath(API_INTERNAL)
+                .contentType(JSON)
+                .body(Json.encode(replayRequest))
                 .when()
                 .post("/replay")
                 .then()
@@ -122,11 +130,16 @@ public class ReplayResourceTest {
         verify(emailConnectorProcessor, times(1)).process(eq(event5), any(), eq(true));
     }
 
+
     @Test
     void testReplayOrgId123() {
+        EventsReplayRequest replayRequest = getEventsReplayRequest();
+        replayRequest.orgId = "123";
+
         given()
                 .basePath(API_INTERNAL)
-                .queryParam("orgId", "123")
+                .contentType(JSON)
+                .body(Json.encode(replayRequest))
                 .when()
                 .post("/replay")
                 .then()
@@ -152,5 +165,12 @@ public class ReplayResourceTest {
         notificationHistory.setEvent(event);
         notificationHistory.setEndpointType(endpoint.getType());
         entityManager.persist(notificationHistory);
+    }
+
+    private static @NotNull EventsReplayRequest getEventsReplayRequest() {
+        EventsReplayRequest replayRequest = new EventsReplayRequest();
+        replayRequest.startDate = LocalDateTime.of(2024, SEPTEMBER, 2, 8, 0);
+        replayRequest.endDate = LocalDateTime.of(2024, SEPTEMBER, 2, 11, 0);
+        return replayRequest;
     }
 }
