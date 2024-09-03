@@ -1,7 +1,11 @@
-    <a href="#{action.context.application}-section1">{#insert content-title-section1}{/}</a><span class="pf-c-badge">{#insert content-title-right-part-section1}{/}</span>
-     <!-- next section -->
-    {#if renderSection2.or(false) && renderButtonSection3.or(false)}
-        <a href="#{action.context.application}-section2">{#insert content-title-section2}{/}</a><span class="pf-c-badge" >{#insert content-title-right-part-section2}{/}</span>
+    {#if renderCustomLinks.or(false)}
+        {#insert content-render-custom-links-section}{/}
+    {#else}
+        <a href="#{action.context.application}-section1">{#insert content-title-section1}{/}</a><span class="pf-c-badge">{#insert content-title-right-part-section1}{/}</span>
+         <!-- next section -->
+        {#if renderSection2.or(false) && renderButtonSection3.or(false)}
+            <a href="#{action.context.application}-section2">{#insert content-title-section2}{/}</a><span class="pf-c-badge">{#insert content-title-right-part-section2}{/}</span>
+        {/if}
     {/if}
     <!-- Body section -->
     {#if renderSection1.or(false)}
