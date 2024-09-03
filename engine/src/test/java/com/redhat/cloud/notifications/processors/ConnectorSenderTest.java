@@ -75,6 +75,9 @@ public class ConnectorSenderTest {
         final JsonObject payload = new JsonObject();
         payload.put("Red Hat", "Red Hat Enterprise Linux");
 
+        // Enable the high volume topic for the test.
+        Mockito.when(this.engineConfig.isOutgoingKafkaHighVolumeTopicEnabled()).thenReturn(true);
+
         // Call the function under test.
         this.connectorSender.send(event, endpoint, payload);
 

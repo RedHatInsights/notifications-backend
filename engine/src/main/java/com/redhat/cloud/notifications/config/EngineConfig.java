@@ -23,6 +23,7 @@ public class EngineConfig {
     private static final String DEFAULT_TEMPLATE = "notifications.use-default-template";
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
     private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
+    private static final String NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED = "notifications.kafka.outgoing.high-volume.topic.enabled";
     private static final String KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE = "mp.messaging.outgoing.tocamel.max.request.size";
     private static final String UNLEASH = "notifications.unleash.enabled";
     public static final String PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS = "processor.connectors.max-server-errors";
@@ -45,6 +46,7 @@ public class EngineConfig {
     private String asyncAggregationToggle;
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
+    private String toggleKafkaOutgoingHighVolumeTopic;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -65,6 +67,10 @@ public class EngineConfig {
     @ConfigProperty(name = "notifications.kafka-consumed-total-checker.enabled", defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean kafkaConsumedTotalCheckerEnabled;
+
+    @ConfigProperty(name = NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED, defaultValue = "false")
+    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
+    Boolean outgoingKafkaHighVolumeTopicEnabled;
 
     @ConfigProperty(name = "notifications.use-rbac-for-fetching-users", defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -124,6 +130,7 @@ public class EngineConfig {
         asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
         drawerToggle = toggleRegistry.register("drawer", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
+        toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -142,6 +149,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
+        config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -217,5 +225,13 @@ public class EngineConfig {
 
     public int getKafkaToCamelMaximumRequestSize() {
         return kafkaToCamelMaximumRequestSize;
+    }
+
+    public boolean isOutgoingKafkaHighVolumeTopicEnabled() {
+        if (unleashEnabled) {
+            return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
+        } else {
+            return this.outgoingKafkaHighVolumeTopicEnabled;
+        }
     }
 }

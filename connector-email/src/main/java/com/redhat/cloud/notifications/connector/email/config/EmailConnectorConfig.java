@@ -77,10 +77,12 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     Optional<String> recipientsResolverTrustStoreType;
 
     private String enableBopEmailServiceWithSslChecks;
+    private String toggleKafkaIncomingHighVolumeTopic;
 
     @PostConstruct
     void emailConnectorPostConstruct() {
         enableBopEmailServiceWithSslChecks = toggleRegistry.register("enable-bop-service-ssl-checks", true);
+        toggleKafkaIncomingHighVolumeTopic = toggleRegistry.register("kafka-incoming-high-volume-topic", true);
     }
 
     @Override
@@ -103,6 +105,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
         config.put(enableBopEmailServiceWithSslChecks, isEnableBopServiceWithSslChecks());
+        config.put(toggleKafkaIncomingHighVolumeTopic, isIncomingKafkaHighVolumeTopicEnabled());
 
         /*
          * /!\ WARNING /!\
@@ -149,7 +152,11 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     }
 
     public boolean isIncomingKafkaHighVolumeTopicEnabled() {
-        return this.incomingKafkaHighVolumeTopicEnabled;
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleKafkaIncomingHighVolumeTopic, false);
+        } else {
+            return this.incomingKafkaHighVolumeTopicEnabled;
+        }
     }
 
     public int getMaxRecipientsPerEmail() {
