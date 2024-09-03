@@ -105,16 +105,16 @@ public class StartupUtils {
 
                     long diff = ChronoUnit.DAYS.between(currentUtcTime, utcExpDateTime);
                     if (diff < 0) {
-                        logMessage = String.format("@channel Certificate '%s' has expired since %s", alias, utcExpDateTimeStr);
+                        logMessage = String.format("Certificate '%s' has expired since %s", alias, utcExpDateTimeStr);
                         Log.fatal(logMessage);
                     } else if (diff < 10) {
-                        logMessage = String.format("@channel Certificate '%s' is about to expire! (on %s)", alias, utcExpDateTimeStr);
+                        logMessage = String.format("Certificate '%s' is about to expire! (on %s)", alias, utcExpDateTimeStr);
                         Log.fatal(logMessage);
                     } else if (diff < 30) {
-                        logMessage = String.format("@channel Certificate '%s' will expire within 30 days! (on %s)", alias, utcExpDateTimeStr);
+                        logMessage = String.format("Certificate '%s' will expire within 30 days! (on %s)", alias, utcExpDateTimeStr);
                         Log.error(logMessage);
                     } else if (diff < 60) {
-                        logMessage = String.format("@channel Certificate '%s' will expire within 60 days! (on %s)", alias, utcExpDateTimeStr);
+                        logMessage = String.format("Certificate '%s' will expire within 60 days! (on %s)", alias, utcExpDateTimeStr);
                         Log.warn(logMessage);
                     } else {
                         logMessage = String.format("Certificate '%s' will expire on %s", alias, utcExpDateTimeStr);
