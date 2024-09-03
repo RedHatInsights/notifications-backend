@@ -13,6 +13,8 @@ import org.mockito.Mockito;
 import java.net.SocketTimeoutException;
 import java.util.List;
 
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
+
 @QuarkusTest
 public class HttpRedeliveryPredicateTest extends CamelQuarkusTestSupport {
     @Inject
@@ -39,7 +41,7 @@ public class HttpRedeliveryPredicateTest extends CamelQuarkusTestSupport {
         // For each status that should positively match, mock the exception and
         // assert that the predicate gives the correct result.
         for (final int status : positiveStatuses) {
-            final Exchange exchange = this.createExchangeWithBody("");
+            final Exchange exchange = createExchangeWithBody(context, "");
 
             final HttpOperationFailedException exception = Mockito.mock(HttpOperationFailedException.class);
             Mockito.when(exception.getStatusCode()).thenReturn(status);
@@ -61,7 +63,7 @@ public class HttpRedeliveryPredicateTest extends CamelQuarkusTestSupport {
     @Test
     void testPositiveMatchIOException() {
         // Simulate a timeout exception.
-        final Exchange exchange = this.createExchangeWithBody("");
+        final Exchange exchange = createExchangeWithBody(context, "");
 
         exchange.setProperty(Exchange.EXCEPTION_CAUGHT, new SocketTimeoutException());
 
@@ -126,7 +128,7 @@ public class HttpRedeliveryPredicateTest extends CamelQuarkusTestSupport {
         // For each status that should negatively match, mock the exception and
         // assert that the predicate gives the correct result.
         for (final int status : negativeStatuses) {
-            final Exchange exchange = this.createExchangeWithBody("");
+            final Exchange exchange = createExchangeWithBody(context, "");
 
             final HttpOperationFailedException exception = Mockito.mock(HttpOperationFailedException.class);
             Mockito.when(exception.getStatusCode()).thenReturn(status);
@@ -157,7 +159,7 @@ public class HttpRedeliveryPredicateTest extends CamelQuarkusTestSupport {
         // For each exception make sure that the predicate under test returns
         // a negative match.
         for (final Exception exception : exceptions) {
-            final Exchange exchange = this.createExchangeWithBody("");
+            final Exchange exchange = createExchangeWithBody(context, "");
             exchange.setProperty(Exchange.EXCEPTION_CAUGHT, exception);
 
             // Call the predicate under test.

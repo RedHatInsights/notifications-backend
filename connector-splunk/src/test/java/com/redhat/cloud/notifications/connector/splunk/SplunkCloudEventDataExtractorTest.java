@@ -22,6 +22,7 @@ import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.T
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.NOTIF_METADATA;
 import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.SERVICES_COLLECTOR_EVENT;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -121,19 +122,19 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
     }
 
     private void assertValidTargetUrl(String url) {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, false);
         assertDoesNotThrow(() -> splunkCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, false);
         assertThrows(expectedException, () -> splunkCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void testExtract(String url, boolean trustAll) throws Exception {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, trustAll);
         /*
          * The 'extract' method will modify 'cloudEventData'.

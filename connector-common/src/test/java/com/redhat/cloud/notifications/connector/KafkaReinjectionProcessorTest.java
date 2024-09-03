@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.KAFKA_REINJECTION_COUNT;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.KAFKA_REINJECTION_DELAY;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 
 @QuarkusTest
 public class KafkaReinjectionProcessorTest extends CamelQuarkusTestSupport {
@@ -44,7 +45,7 @@ public class KafkaReinjectionProcessorTest extends CamelQuarkusTestSupport {
         for (final TestCase t : testCases) {
             // Prepare the exchange message.
             final String originalCloudEvent = "original cloud event body";
-            final Exchange exchange = this.createExchangeWithBody("");
+            final Exchange exchange = createExchangeWithBody(context, "");
             exchange.setProperty(ExchangeProperty.ORIGINAL_CLOUD_EVENT, originalCloudEvent);
             exchange.setProperty(KAFKA_REINJECTION_COUNT, t.reinjectedCount());
 

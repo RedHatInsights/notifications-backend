@@ -15,6 +15,7 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_USERNAME;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -41,7 +42,7 @@ public class SecretsLoaderTest extends CamelQuarkusTestSupport {
     @Test
     void testNoSecretId() {
 
-        Exchange exchange = createExchangeWithBody("");
+        Exchange exchange = createExchangeWithBody(context, "");
         exchange.setProperty(ORG_ID, "org-id");
         secretsLoader.process(exchange);
 
@@ -56,7 +57,7 @@ public class SecretsLoaderTest extends CamelQuarkusTestSupport {
         sourcesSecret.password = "passw0rd";
         when(sourcesClient.getById(anyString(), anyString(), anyLong())).thenReturn(sourcesSecret);
 
-        Exchange exchange = createExchangeWithBody("");
+        Exchange exchange = createExchangeWithBody(context, "");
         exchange.setProperty(ORG_ID, "org-id");
         exchange.setProperty(SECRET_ID, 123L);
         secretsLoader.process(exchange);

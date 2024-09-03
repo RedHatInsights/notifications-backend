@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
+
 @QuarkusTest
 public class OutgoingCloudEventBuilderTest extends CamelQuarkusTestSupport {
     @Inject
@@ -28,7 +30,7 @@ public class OutgoingCloudEventBuilderTest extends CamelQuarkusTestSupport {
         // Prepare the exchange with the minimal elements on it.
         final String payloadId = UUID.randomUUID().toString();
 
-        final Exchange exchange = this.createExchangeWithBody("");
+        final Exchange exchange = createExchangeWithBody(context, "");
         exchange.setProperty(ExchangeProperty.PAYLOAD_ID, payloadId);
         exchange.setProperty(ExchangeProperty.START_TIME, System.currentTimeMillis());
 

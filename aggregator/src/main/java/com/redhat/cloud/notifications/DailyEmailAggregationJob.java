@@ -14,7 +14,7 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.configuration.ProfileManager;
+import io.quarkus.runtime.LaunchMode;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
@@ -101,7 +101,8 @@ public class DailyEmailAggregationJob {
             throw ex;
         } finally {
             durationTimer.setDuration();
-            if (ProfileManager.getLaunchMode() == NORMAL) {
+            System.out.println(">>>>>>>> " + LaunchMode.current().getProfileKey());
+            if (LaunchMode.current().getProfileKey().equals(NORMAL)) {
                 PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
                 try {
                     pg.pushAdd(registry, "aggregator_job");

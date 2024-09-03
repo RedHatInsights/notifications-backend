@@ -24,6 +24,7 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.TYPE;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_DATA;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_ID;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_TYPE;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 
 @QuarkusTest
 public class IncomingCloudEventProcessorTest extends CamelQuarkusTestSupport {
@@ -61,7 +62,7 @@ public class IncomingCloudEventProcessorTest extends CamelQuarkusTestSupport {
         incomingCloudEvent.put(CLOUD_EVENT_DATA, cloudEventData);
 
         // Prepare the exchange.
-        final Exchange exchange = this.createExchangeWithBody(incomingCloudEvent.encode());
+        final Exchange exchange = createExchangeWithBody(context, incomingCloudEvent.encode());
 
         // Call the processor under test.
         this.incomingCloudEventProcessor.process(exchange);
@@ -101,7 +102,7 @@ public class IncomingCloudEventProcessorTest extends CamelQuarkusTestSupport {
         incomingCloudEvent.put(CLOUD_EVENT_DATA, cloudEventData);
 
         // Prepare the exchange.
-        final Exchange exchange = this.createExchangeWithBody(incomingCloudEvent.encode());
+        final Exchange exchange = createExchangeWithBody(context, incomingCloudEvent.encode());
 
         // Mock a response from the engine.
         final JsonObject payloadDetailsContent = new JsonObject();

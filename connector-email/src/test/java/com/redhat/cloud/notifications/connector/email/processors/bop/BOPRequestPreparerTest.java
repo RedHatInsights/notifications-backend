@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,7 +44,7 @@ public class BOPRequestPreparerTest extends CamelQuarkusTestSupport {
         final String emailBody = "this is a fake body";
         final Set<String> emails = Set.of("foo@bar.com", "bar@foo.com", "a@a.com", "b@b.com", "c@c.com");
 
-        final Exchange exchange = createExchangeWithBody(emails);
+        final Exchange exchange = createExchangeWithBody(context, emails);
         exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailSubject);
         exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailBody);
         exchange.setProperty(ExchangeProperty.USE_EMAIL_BOP_V1_SSL, useBopV2Service);
