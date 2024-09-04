@@ -15,10 +15,8 @@ import java.util.MissingResourceException;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.CUSTOM_DETAILS;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.NOTIF_METADATA;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.PAYLOAD;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.AUTHENTICATION;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -98,18 +96,15 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
         JsonObject cloudEventDataCopy = cloudEventData.copy();
         pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData);
 
-        assertEquals(cloudEventDataCopy.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS).getString("account_id"),
-                exchange.getProperty(ACCOUNT_ID, String.class));
+        assertEquals(cloudEventDataCopy.getString("url"), exchange.getProperty(TARGET_URL, String.class));
 
-        JsonObject expectedMetadata = cloudEventDataCopy.getJsonObject(NOTIF_METADATA);
-        assertEquals(expectedMetadata.getString("url"), exchange.getProperty(TARGET_URL, String.class));
-
-        JsonObject expectedAuthentication = expectedMetadata.getJsonObject("authentication");
+        JsonObject expectedAuthentication = cloudEventDataCopy.getJsonObject("authentication");
         assertEquals(expectedAuthentication.getString("type"), exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class).name());
         assertEquals(expectedAuthentication.getLong("secretId"), exchange.getProperty(SECRET_ID, Long.class));
 
-        // Check that metadata has been removed from the original JsonObject
-        assertNull(cloudEventData.getJsonObject(NOTIF_METADATA));
+        // Check that url and authentication elements has been removed from the original JsonObject
+        assertNull(cloudEventData.getJsonObject(URL));
+        assertNull(cloudEventData.getJsonObject(AUTHENTICATION));
     }
 
     private void assertValidTargetUrl(String url) {

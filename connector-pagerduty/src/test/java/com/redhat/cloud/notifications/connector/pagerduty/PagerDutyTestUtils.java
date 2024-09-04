@@ -2,18 +2,14 @@ package com.redhat.cloud.notifications.connector.pagerduty;
 
 import io.vertx.core.json.JsonObject;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.CUSTOM_DETAILS;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.EVENT_ACTION;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.METHOD;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.NOTIF_METADATA;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.PAYLOAD;
 
 public class PagerDutyTestUtils {
-    public static final String DEFAULT_HTTP_METHOD_POST = "POST";
 
     public static final String DEFAULT_EVENT_ACTION = "trigger";
 
@@ -27,14 +23,8 @@ public class PagerDutyTestUtils {
         authentication.put("type", SECRET_TOKEN.name());
         authentication.put("secretId", 123L);
 
-        JsonObject metadata = new JsonObject();
-        metadata.put("url", url);
-        metadata.put(METHOD, DEFAULT_HTTP_METHOD_POST);
-        metadata.put(AUTHENTICATION, authentication);
-
         JsonObject custom_details = new JsonObject();
         custom_details.put("org_id", DEFAULT_ORG_ID);
-        custom_details.put("account_id", DEFAULT_ACCOUNT_ID);
 
         JsonObject payload = new JsonObject();
         payload.put("summary", DEFAULT_SUMMARY);
@@ -43,9 +33,10 @@ public class PagerDutyTestUtils {
         payload.put(CUSTOM_DETAILS, custom_details);
 
         JsonObject cloudEventData = new JsonObject();
+        cloudEventData.put("url", url);
+        cloudEventData.put(AUTHENTICATION, authentication);
         cloudEventData.put(EVENT_ACTION, DEFAULT_EVENT_ACTION);
         cloudEventData.put(PAYLOAD, payload);
-        cloudEventData.put(NOTIF_METADATA, metadata);
 
         return cloudEventData;
     }

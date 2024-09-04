@@ -13,14 +13,12 @@ import org.apache.camel.Predicate;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.junit.jupiter.api.Test;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,12 +51,12 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
     protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
 
         JsonObject expectedPayload = incomingPayload.copy();
-        expectedPayload.remove(PagerDutyCloudEventDataExtractor.NOTIF_METADATA);
+        expectedPayload.remove(PagerDutyCloudEventDataExtractor.URL);
+        expectedPayload.remove(PagerDutyCloudEventDataExtractor.AUTHENTICATION);
 
         return exchange -> {
             String outgoingPayload = exchange.getIn().getBody(String.class);
 
-            assertEquals(DEFAULT_ACCOUNT_ID, exchange.getProperty(ACCOUNT_ID, String.class));
             assertEquals(expectedPayload.encode(), outgoingPayload);
             assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
             assertEquals(SECRET_TOKEN, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));

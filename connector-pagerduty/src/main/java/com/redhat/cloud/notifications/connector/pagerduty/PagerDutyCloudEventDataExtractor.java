@@ -11,16 +11,12 @@ import org.apache.commons.validator.routines.UrlValidator;
 import java.util.MissingResourceException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.pagerduty.ExchangeProperty.ACCOUNT_ID;
 import static org.apache.commons.validator.routines.UrlValidator.ALLOW_LOCAL_URLS;
 
 @ApplicationScoped
 public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
 
-    public static final String NOTIF_METADATA = "notif-metadata";
     public static final String AUTHENTICATION = "authentication";
-    public static final String METHOD = "method";
-    public static final String TRUST_ALL = "trustAll";
     public static final String URL = "url";
 
     public static final String PAYLOAD = "payload";
@@ -39,24 +35,23 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
         validatePayload(cloudEventData);
 
         JsonObject customDetails = cloudEventData.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS);
-        exchange.setProperty(ACCOUNT_ID, customDetails.getString("account_id"));
+        // TODO include in replacement for transformer: `exchange.setProperty(ACCOUNT_ID, customDetails.getString("account_id"));`
 
-        JsonObject metadata = cloudEventData.getJsonObject(NOTIF_METADATA);
-        exchange.setProperty(TARGET_URL, metadata.getString(URL));
-        exchange.setProperty(TRUST_ALL, Boolean.valueOf(metadata.getString("trustAll")));
+        exchange.setProperty(TARGET_URL, cloudEventData.getString(URL));
 
-        JsonObject authentication = metadata.getJsonObject(AUTHENTICATION);
+        JsonObject authentication = cloudEventData.getJsonObject(AUTHENTICATION);
         authenticationDataExtractor.extract(exchange, authentication);
 
-        cloudEventData.remove(NOTIF_METADATA);
+        cloudEventData.remove(URL);
+        cloudEventData.remove(AUTHENTICATION);
 
         exchange.getIn().setBody(cloudEventData.encode());
     }
 
     private void validatePayload(JsonObject cloudEventData) {
-        String endpointUrl = cloudEventData.getJsonObject(NOTIF_METADATA).getString(URL);
+        String endpointUrl = cloudEventData.getString(URL);
         if (endpointUrl == null) {
-            throw new MissingResourceException("The endpoint URL is required", PagerDutyCloudEventDataExtractor.class.getName(), NOTIF_METADATA + ".url");
+            throw new MissingResourceException("The endpoint URL is required", PagerDutyCloudEventDataExtractor.class.getName(), "url");
         } else if (!URL_VALIDATOR.isValid(endpointUrl)) {
             throw new IllegalArgumentException("URL validation failed");
         }
