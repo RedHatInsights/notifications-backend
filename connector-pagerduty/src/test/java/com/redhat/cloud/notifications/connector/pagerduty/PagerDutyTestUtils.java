@@ -14,8 +14,7 @@ public class PagerDutyTestUtils {
     public static final String DEFAULT_EVENT_ACTION = "trigger";
 
     public static final String DEFAULT_SUMMARY = "default-payload-summary";
-    // TODO update to match default as set in PagerDutyTransformer (RHCLOUD-33788)
-    public static final String DEFAULT_SEVERITY = "warning";
+    public static final PagerDutySeverity DEFAULT_SEVERITY = PagerDutySeverity.WARNING;
     public static final String DEFAULT_SOURCE = "default-payload-source";
 
     static JsonObject createCloudEventData(String url) {
