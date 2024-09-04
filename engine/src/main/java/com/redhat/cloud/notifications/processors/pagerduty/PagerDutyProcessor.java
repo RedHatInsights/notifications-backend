@@ -3,11 +3,12 @@ package com.redhat.cloud.notifications.processors.pagerduty;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.transformers.PagerDutyTransformer;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.PAYLOAD;
 
 @ApplicationScoped
 public class PagerDutyProcessor extends EndpointTypeProcessor {
@@ -27,10 +29,13 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
     public static final String PROCESSED_PAGERDUTY_COUNTER = "processor.pagerduty.processed";
 
     @Inject
-    PagerDutyTransformer transformer;
+    BaseTransformer transformer;
 
     @Inject
     EngineConfig engineConfig;
+
+    @Inject
+    Environment environment;
 
     @Inject
     MeterRegistry registry;
@@ -62,19 +67,12 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         });
     }
 
-    /**
-     * Constructs a <a href="https://support.pagerduty.com/main/docs/pd-cef">PD-CEF</a> format alert event.
-     *
-     * <ul>
-     *     <li>TODO determine how event severity is specified (at the endpoint level, or paired with behaviour
-     *     groups/workspaces) - see RHCLOUD-33788</li>
-     * </ul>
-     */
     private void process(Event event, Endpoint endpoint) {
         processedPagerDutyCounter.increment();
         PagerDutyProperties properties = endpoint.getProperties(PagerDutyProperties.class);
 
-        final JsonObject connectorData = transformer.toJsonObject(event);
+        JsonObject connectorData = new JsonObject();
+        connectorData.put(PAYLOAD, transformer.toJsonObject(event));
 
         if (properties.getSecretTokenSourcesId() != null) {
             JsonObject authentication = JsonObject.of(
@@ -85,6 +83,7 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         }
 
         connectorData.put("url", properties.getUrl());
+        connectorData.put("environment_url", environment.url());
 
         connectorSender.send(event, endpoint, connectorData);
     }
