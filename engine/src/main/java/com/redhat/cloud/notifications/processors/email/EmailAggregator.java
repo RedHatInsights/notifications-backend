@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
@@ -15,7 +14,6 @@ import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
 import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteriaExtractor;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
-import com.redhat.cloud.notifications.recipients.RecipientResolver;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
@@ -51,16 +49,10 @@ public class EmailAggregator {
     EndpointRepository endpointRepository;
 
     @Inject
-    RecipientResolver recipientResolver;
-
-    @Inject
     ExternalRecipientsResolver externalRecipientsResolver;
 
     @Inject
     SubscriptionRepository subscriptionRepository;
-
-    @Inject
-    EngineConfig engineConfig;
 
     @Inject
     EventTypeRepository eventTypeRepository;
@@ -121,30 +113,19 @@ public class EmailAggregator {
                 Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
                 ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(aggregation);
 
-                Set<User> recipients;
-                if (engineConfig.isAggregationWithRecipientsResolverEnabled()) {
-                    try {
-                        Log.info("Start calling external resolver service ");
-                        recipients = externalRecipientsResolver.recipientUsers(
-                            aggregationKey.getOrgId(),
-                            Stream.concat(
-                                endpoints
-                                    .stream()
-                                    .map(EndpointRecipientSettings::new),
-                                getActionRecipientSettings(aggregation)
-                            ).collect(toSet()),
-                            subscribers,
-                            unsubscribers,
-                            eventType.isSubscribedByDefault(),
-                            externalAuthorizationCriteria
-                        );
-                    } catch (Exception ex) {
-                        Log.error("Error calling external recipients resolver service", ex);
-                        recipients = getRecipients(aggregationKey, subscribers, getActionRecipientSettings(aggregation), endpoints);
-                    }
-                } else {
-                    recipients = getRecipients(aggregationKey, subscribers, getActionRecipientSettings(aggregation), endpoints);
-                }
+                Set<User> recipients = externalRecipientsResolver.recipientUsers(
+                    aggregationKey.getOrgId(),
+                    Stream.concat(
+                        endpoints
+                            .stream()
+                            .map(EndpointRecipientSettings::new),
+                        getActionRecipientSettings(aggregation)
+                    ).collect(toSet()),
+                    subscribers,
+                    unsubscribers,
+                    eventType.isSubscribedByDefault(),
+                    externalAuthorizationCriteria
+                );
 
                 /*
                  * We now have the final recipients list.
@@ -167,20 +148,6 @@ public class EmailAggregator {
                         Entry::getKey,
                         entry -> entry.getValue().getContext()
                 ));
-    }
-
-    @Deprecated(forRemoval = true)
-    private Set<User> getRecipients(EmailAggregationKey aggregationKey, Set<String> subscribers, Stream<ActionRecipientSettings> actionRecipientSettings, Set<Endpoint> endpoints) {
-        return recipientResolver.recipientUsers(
-            aggregationKey.getOrgId(),
-            Stream.concat(
-                endpoints
-                    .stream()
-                    .map(EndpointRecipientSettings::new),
-                    actionRecipientSettings
-            ).collect(toSet()),
-            subscribers
-        );
     }
 
     private String getEventType(EmailAggregation aggregation) {

@@ -17,8 +17,9 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
-import com.redhat.cloud.notifications.recipients.RecipientResolver;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
 import com.redhat.cloud.notifications.recipients.User;
+import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -62,7 +63,7 @@ class DrawerProcessorTest {
     DrawerNotificationRepository drawerNotificationRepository;
 
     @InjectMock
-    RecipientResolver recipientResolver;
+    ExternalRecipientsResolver externalRecipientsResolver;
 
     @Inject
     EntityManager entityManager;
@@ -108,8 +109,8 @@ class DrawerProcessorTest {
         user1.setId("bar");
         user2.setUsername("bar");
 
-        when(recipientResolver.recipientUsers(any(), any(), any(), eq(true)))
-            .thenReturn(Set.of(user1, user2));
+        when(externalRecipientsResolver.recipientUsers(any(), any(), any(), any(), eq(true), any(ExternalAuthorizationCriteria.class)))
+                .thenReturn(Set.of(user1, user2));
 
         Event createdEvent = createEvent();
 

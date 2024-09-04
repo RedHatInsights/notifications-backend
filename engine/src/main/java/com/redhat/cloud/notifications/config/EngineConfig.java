@@ -42,7 +42,6 @@ public class EngineConfig {
     /*
      * Unleash configuration
      */
-    private String aggregationWithRecipientsResolverToggle;
     private String asyncAggregationToggle;
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
@@ -122,7 +121,6 @@ public class EngineConfig {
 
     @PostConstruct
     void postConstruct() {
-        aggregationWithRecipientsResolverToggle = toggleRegistry.register("aggregation-with-recipients-resolver", true);
         asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
         drawerToggle = toggleRegistry.register("drawer", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
@@ -131,7 +129,6 @@ public class EngineConfig {
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
-        config.put(aggregationWithRecipientsResolverToggle, isAggregationWithRecipientsResolverEnabled());
         config.put(asyncAggregationToggle, isAsyncAggregationEnabled());
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
         config.put(drawerToggle, isDrawerEnabled());
@@ -150,14 +147,6 @@ public class EngineConfig {
         config.forEach((key, value) -> {
             Log.infof("%s=%s", key, value);
         });
-    }
-
-    public boolean isAggregationWithRecipientsResolverEnabled() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(aggregationWithRecipientsResolverToggle, false);
-        } else {
-            return useRecipientsResolverClowdappForDailyDigestEnabled;
-        }
     }
 
     public boolean isAsyncAggregationEnabled() {

@@ -15,7 +15,6 @@ objects:
     dependencies:
     - ingress
     - notifications-backend
-    - rbac
     - notifications-recipients-resolver
     optionalDependencies:
     - export-service
@@ -59,20 +58,9 @@ objects:
         volumes:
         - name: rds-client-ca
           emptyDir: {}
-        - name: keystore
-          secret:
-            secretName: it-services
-            items:
-              - key: keystore.jks
-                path: clientkeystore.jks
-            defaultMode: 420
-            optional: true
         volumeMounts:
         - name: rds-client-ca
           mountPath: /tmp
-        - name: keystore
-          readOnly: true
-          mountPath: /mnt/secrets
         readinessProbe:
           httpGet:
             path: /health/ready
@@ -132,59 +120,6 @@ objects:
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
-        - name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
-          value: ${NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS}
-        - name: PROCESSOR_EMAIL_BOP_APITOKEN
-          valueFrom:
-            secretKeyRef:
-              name: backoffice
-              key: token
-        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
-          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
-        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: it-services-keystorepassword
-              optional: true
-        - name: QUARKUS_REST_CLIENT_IT_S2S_URL
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: url
-              optional: true
-        - name: PROCESSOR_EMAIL_BOP_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: backoffice
-              key: client-id
-        - name: PROCESSOR_EMAIL_BOP_ENV
-          value: ${BACKOFFICE_CLIENT_ENV}
-        - name: PROCESSOR_EMAIL_BOP_URL
-          value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}/v1/sendEmails
-        - name: PROCESSOR_EMAIL_NO_REPLY
-          value: ${PROCESSOR_EMAIL_NO_REPLY}
-        - name: PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED
-          value: ${PROCESSOR_EMAIL_AGGREGATION_USE_RECIPIENTS_RESOLVER_CLOWDAPP_ENABLED}
-        - name: QUARKUS_REST_CLIENT_RBAC_S2S_READ_TIMEOUT
-          value: ${RBAC_S2S_READ_TIMEOUT}
-        - name: RBAC_SERVICE_TO_SERVICE_APPLICATION
-          value: ${RBAC_SERVICE_TO_SERVICE_APP}
-        - name: RBAC_SERVICE_TO_SERVICE_SECRET_MAP
-          valueFrom:
-            secretKeyRef:
-              name: rbac-psks
-              key: psks.json
-        - name: RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE
-          value: ${RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE}
-        - name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
-          value: ${RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE}
-        - name: RECIPIENT_PROVIDER_USE_IT_IMPL
-          value: ${RECIPIENT_PROVIDER_USE_IT_IMPL}
-        - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
-          value: ${RBAC_USERS_RETENTION_DELAY}
-        - name: QUARKUS_CACHE_CAFFEINE_RBAC_RECIPIENT_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
-          value: ${RBAC_GROUP_USERS_RETENTION_DELAY}
         - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
           value: ${QUARKUS_HIBERNATE_ORM_LOG_SQL}
         - name: QUARKUS_HTTP_PORT
@@ -237,8 +172,6 @@ objects:
           value: ${QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL}
         - name: NOTIFICATIONS_DRAWER_ENABLED
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
-        - name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
-          value: ${NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS}
         - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
           value: ${NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
@@ -250,15 +183,6 @@ objects:
         - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
           value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
 parameters:
-- name: BACKOFFICE_CLIENT_ENV
-  description: Back-office client environment
-  value: qa
-- name: BACKOFFICE_HOST
-  description: backoffice URL
-  value: backoffice-proxy.apps.ext.spoke.preprod.us-west-2.aws.paas.redhat.com
-- name: BACKOFFICE_SCHEME
-  description: The scheme for the backoffice host's URL
-  value: https
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"
@@ -350,30 +274,6 @@ parameters:
 - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
-- name: PROCESSOR_EMAIL_NO_REPLY
-  description: Email address
-  value: no-reply@redhat.com
-- name: RBAC_S2S_READ_TIMEOUT
-  description: Delay in milliseconds before an RBAC S2S query is interrupted
-  value: "120000"
-- name: RBAC_GROUP_USERS_RETENTION_DELAY
-  description: RBAC group users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
-  value: PT10M
-- name: RBAC_SERVICE_TO_SERVICE_APP
-  description: RBAC application name to use for service-to-service communication
-  value: notifications
-- name: RBAC_USERS_RETENTION_DELAY
-  description: RBAC users data cache retention delay. It must be expressed with the ISO-8601 duration format PnDTnHnMn.nS.
-  value: PT10M
-- name: RECIPIENT_PROVIDER_IT_MAX_RESULTS_PER_PAGE
-  description: Limit value sent to the IT API while querying users.
-  value: "1000"
-- name: RECIPIENT_PROVIDER_RBAC_ELEMENTS_PER_PAGE
-  description: Limit value sent as a query param to the RBAC REST API while querying RBAC users.
-  value: "1000"
-- name: RECIPIENT_PROVIDER_USE_IT_IMPL
-  description: Temporary recipients retrieval switch between RBAC and IT
-  value: "false"
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
@@ -381,12 +281,6 @@ parameters:
   value: "false"
 - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
   value: "false"
-- name: NOTIFICATIONS_USE_RBAC_FOR_FETCHING_USERS
-  description: Users from an organization will be retrieved from RBAC if true or from the IT users service otherwise.
-  value: "true"
-- name: IT_SERVICE_TO_SERVICE_KEY_STORE
-  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
-  value: ""
 - name: NOTIFICATIONS_USE_SECURED_EMAIL_TEMPLATES_ENABLED
   value: "true"
 - name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
@@ -412,8 +306,6 @@ parameters:
   description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
   value: INFO
 - name: NOTIFICATIONS_DRAWER_ENABLED
-  value: "false"
-- name: NOTIFICATIONS_USE_MBOP_FOR_FETCHING_USERS
   value: "false"
 - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
   value: "false"
