@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.quarkus.runtime.LaunchMode.NORMAL;
 import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
@@ -101,8 +100,7 @@ public class DailyEmailAggregationJob {
             throw ex;
         } finally {
             durationTimer.setDuration();
-            System.out.println(">>>>>>>> " + LaunchMode.current().getProfileKey());
-            if (LaunchMode.current().getProfileKey().equals(NORMAL)) {
+            if (!LaunchMode.current().isDevOrTest()) {
                 PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
                 try {
                     pg.pushAdd(registry, "aggregator_job");
