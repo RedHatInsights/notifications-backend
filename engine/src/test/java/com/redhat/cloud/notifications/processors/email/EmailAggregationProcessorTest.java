@@ -18,7 +18,6 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
@@ -148,25 +147,6 @@ class EmailAggregationProcessorTest {
             LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
             DAILY
         );
-
-        createAggregatorEventTypeIfNeeded();
-
-        User user1 = new User();
-        user1.setUsername("foo");
-        User user2 = new User();
-        user2.setUsername("bar");
-        User user3 = new User();
-        user3.setUsername("user3");
-
-        when(externalRecipientsResolver.recipientUsers(anyString(), anySet(), anySet(), anySet(), anyBoolean(), any(ExternalAuthorizationCriteria.class)))
-            .then(invocation -> {
-                    Set<RecipientSettings> list = invocation.getArgument(1);
-                    if (list.isEmpty()) {
-                        return Set.of(user1, user2);
-                    }
-                    return Set.of(user1, user2, user3);
-                }
-            );
 
         AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
         try {
@@ -477,7 +457,7 @@ class EmailAggregationProcessorTest {
     }
 
     private void mockUsers(User user1, User user2, User user3) {
-        when(externalRecipientsResolver.recipientUsers(anyString(), anySet(), anySet(), anySet(), anyBoolean(), any(ExternalAuthorizationCriteria.class)))
+        when(externalRecipientsResolver.recipientUsers(anyString(), anySet(), anySet(), anySet(), anyBoolean(), any()))
             .then(invocation -> {
                     Set<RecipientSettings> list = invocation.getArgument(1);
                     if (list.isEmpty()) {
