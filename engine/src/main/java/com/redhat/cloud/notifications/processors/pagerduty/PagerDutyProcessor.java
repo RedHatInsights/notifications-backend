@@ -24,7 +24,6 @@ import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRE
 @ApplicationScoped
 public class PagerDutyProcessor extends EndpointTypeProcessor {
 
-    public static final String NOTIF_METADATA_KEY = "notif-metadata";
     public static final String PROCESSED_PAGERDUTY_COUNTER = "processor.pagerduty.processed";
 
     @Inject
@@ -75,21 +74,17 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         processedPagerDutyCounter.increment();
         PagerDutyProperties properties = endpoint.getProperties(PagerDutyProperties.class);
 
-        JsonObject metadata = new JsonObject();
-        metadata.put("url", properties.getUrl());
-        metadata.put("method", properties.getMethod());
-        metadata.put("trustAll", properties.getDisableSslVerification());
+        final JsonObject connectorData = transformer.toJsonObject(event);
 
         if (properties.getSecretTokenSourcesId() != null) {
             JsonObject authentication = JsonObject.of(
                     "type", SECRET_TOKEN,
                     "secretId", properties.getSecretTokenSourcesId()
             );
-            metadata.put("authentication", authentication);
+            connectorData.put("authentication", authentication);
         }
 
-        final JsonObject connectorData = transformer.toJsonObject(event);
-        connectorData.put(NOTIF_METADATA_KEY, metadata);
+        connectorData.put("url", properties.getUrl());
 
         connectorSender.send(event, endpoint, connectorData);
     }
