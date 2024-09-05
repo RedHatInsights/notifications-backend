@@ -14,9 +14,6 @@ import java.time.format.DateTimeFormatter;
  * The severity is set to {@link PagerDutySeverity#WARNING}, and the action to {@link PagerDutyEventAction#TRIGGER} for
  * now. The following optional fields are not set (in jq format): <code>.payload.component, .payload.class, .dedup_key, .links[], .trigger[]</code>
  * <br>
- * <ul>
- *     <li>TODO determine which details to include/remove</li>
- * </ul>
  */
 @ApplicationScoped
 public class PagerDutyTransformer implements Processor {
@@ -57,7 +54,7 @@ public class PagerDutyTransformer implements Processor {
         JsonObject messagePayload = new JsonObject();
         messagePayload.put(SUMMARY, cloudEventPayload.getString(EVENT_TYPE));
         messagePayload.put(TIMESTAMP, LocalDateTime.parse(cloudEventPayload.getString(TIMESTAMP)).format(PD_DATE_TIME_FORMATTER));
-        // TODO is it possible for tenant apps to indicate what severity to use?
+        // TODO read from properties
         messagePayload.put(SEVERITY, PagerDutySeverity.WARNING);
         messagePayload.put(SOURCE, cloudEventPayload.getString(APPLICATION));
         messagePayload.put(GROUP, cloudEventPayload.getString(BUNDLE));
@@ -81,7 +78,7 @@ public class PagerDutyTransformer implements Processor {
     /**
      * Adapted from CamelProcessor template for Teams
      * <br>
-     * TODO should this be a template in notifications-engine for maintainability?
+     * TODO update to work more consistently and with other platforms
      *
      * @return {@link #CLIENT} and {@link #CLIENT_URL}
      */
