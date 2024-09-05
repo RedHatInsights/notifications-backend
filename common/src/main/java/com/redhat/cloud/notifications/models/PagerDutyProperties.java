@@ -23,16 +23,19 @@ import static com.redhat.cloud.notifications.Constants.PAGERDUTY_EVENT_V2_URL;
 @Entity
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
 @Table(name = "pagerduty_properties")
+// TODO add property for severity
 // TODO integrate with everything else for PagerDuty
 public class PagerDutyProperties extends EndpointProperties implements SourcesSecretable {
     @NotNull
     @ValidNonPrivateUrl
     private String url = PAGERDUTY_EVENT_V2_URL;
 
+    // TODO remove
     @Convert(converter = HttpTypeConverter.class)
     @NotNull
     private HttpType method = HttpType.POST;
 
+    // TODO remove
     @NotNull
     private Boolean disableSslVerification = Boolean.FALSE;
 
