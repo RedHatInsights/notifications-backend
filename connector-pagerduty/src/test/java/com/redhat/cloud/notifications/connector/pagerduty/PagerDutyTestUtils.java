@@ -5,9 +5,9 @@ import io.vertx.core.json.JsonObject;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.AUTHENTICATION;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.CUSTOM_DETAILS;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.EVENT_ACTION;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.PAYLOAD;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CUSTOM_DETAILS;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_ACTION;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
 
 public class PagerDutyTestUtils {
 

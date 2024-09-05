@@ -34,11 +34,15 @@ public class PagerDutyRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     AuthenticationProcessor authenticationProcessor;
 
+    @Inject
+    PagerDutyTransformer messageTransformer;
+
     @Override
     public void configureRoutes() {
         from(seda(ENGINE_TO_CONNECTOR))
             .setHeader(CONTENT_TYPE, constant(APPLICATION_JSON))
             .routeId(connectorConfig.getConnectorName())
+            .process(messageTransformer)
             .process(secretsLoader)
             .process(authenticationProcessor)
             .to(PAGERDUTY_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
