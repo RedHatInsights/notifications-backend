@@ -27,7 +27,6 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "id": 930018,
       "links": [
         {
           "asDropdown": false,
@@ -4972,6 +4971,19 @@ data:
               "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
               "range": true,
               "refId": "platform.notifications.aggregation"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.connector.email.high.volume\"}",
+              "hide": false,
+              "instant": false,
+              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "range": true,
+              "refId": "platform.notifications.connector.email.high.volume"
             }
           ],
           "title": "Kafka Lag (messages)",
@@ -5107,6 +5119,18 @@ data:
               "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
               "range": true,
               "refId": "platform.notifications.aggregation"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "builder",
+              "expr": "sum by(topic, group) (kafka_consumergroup_group_lag_seconds{topic=~\".*platform.notifications.connector.email.high.volume\"})",
+              "hide": false,
+              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "range": true,
+              "refId": "A"
             }
           ],
           "title": "Kafka Lag (seconds)",
@@ -9131,7 +9155,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 4,
+      "version": 1,
       "weekStart": ""
     }
 kind: ConfigMap
