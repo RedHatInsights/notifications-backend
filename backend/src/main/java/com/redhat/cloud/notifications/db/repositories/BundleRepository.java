@@ -27,7 +27,7 @@ public class BundleRepository {
     }
 
     public List<Bundle> getBundles() {
-        String query = "FROM Bundle";
+        String query = "FROM Bundle ORDER BY displayName ASC";
         return entityManager.createQuery(query, Bundle.class)
                 .getResultList();
     }
