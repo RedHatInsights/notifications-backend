@@ -111,10 +111,12 @@ public class ConnectorSender {
         try {
             Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
 
-            if (this.isEventFromHighVolumeApplication(event)) {
+            if (this.engineConfig.isOutgoingKafkaHighVolumeTopicEnabled() && this.isEventFromHighVolumeApplication(event)) {
                 this.highVolumeEmitter.send(message);
+                Log.debugf("[event_id: %s] Event sent through high volume Kafka topic", event.getId());
             } else {
                 this.emitter.send(message);
+                Log.debugf("[event_id: %s] Event sent through regular Kafka topic", event.getId());
             }
         } catch (Exception e) {
             history.setStatus(FAILED_INTERNAL);

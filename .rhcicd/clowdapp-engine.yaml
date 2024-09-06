@@ -120,6 +120,8 @@ objects:
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
+        - name: NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED
+          value: ${NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED}
         - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
           value: ${QUARKUS_HIBERNATE_ORM_LOG_SQL}
         - name: QUARKUS_HTTP_PORT
@@ -255,6 +257,9 @@ parameters:
 - name: NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD
   description: The email sender address for the OpenShift domain in production.
   value: "\"Red Hat OpenShift\" noreply@redhat.com"
+- name: NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED
+  description: Specifies whether the high volume topic is enabled in the engine or not.
+  value: "false"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
