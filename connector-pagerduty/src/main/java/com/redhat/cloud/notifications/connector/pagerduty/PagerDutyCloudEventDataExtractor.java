@@ -38,10 +38,9 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
         cloudEventData.remove(URL);
         cloudEventData.remove(AUTHENTICATION);
 
-        exchange.getIn().setBody(cloudEventData.encode());
+        exchange.getIn().setBody(cloudEventData);
     }
 
-    /* TODO update the test cases */
     private void validatePayload(JsonObject cloudEventData) {
         String endpointUrl = cloudEventData.getString(URL);
         if (endpointUrl == null) {

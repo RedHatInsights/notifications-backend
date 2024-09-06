@@ -18,7 +18,6 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ACCOUNT_ID;
@@ -26,6 +25,7 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.BUNDLE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CLIENT;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CLIENT_URL;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CONTEXT;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CUSTOM_DETAILS;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.DISPLAY_NAME;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ENVIRONMENT_URL;
@@ -102,7 +102,7 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         expectedPayload.remove(PagerDutyCloudEventDataExtractor.AUTHENTICATION);
 
         return exchange -> {
-            JsonObject outgoingPayload = exchange.getIn().getBody(JsonObject.class);
+            JsonObject outgoingPayload = new JsonObject(exchange.getIn().getBody(String.class));
 
             assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
             assertEquals(SECRET_TOKEN, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
@@ -112,8 +112,7 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
             assertNull(outgoingPayload.getString("dedup_key"));
 
             JsonObject expected = buildExpectedPayload(expectedPayload);
-            expected.put("routing_key", exchange.getProperty(SECRET_PASSWORD));
-            assertEquals(exchange.getIn().getBody(String.class), expected.encode());
+            assertEquals(expected.encode(), exchange.getIn().getBody(String.class));
 
             // In case of assertion failure, this return value won't be used.
             return true;
@@ -146,6 +145,7 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         JsonObject customDetails = JsonObject.of(
                 ACCOUNT_ID, DEFAULT_ACCOUNT_ID,
                 ORG_ID, DEFAULT_ORG_ID,
+                CONTEXT, null,
                 SOURCE_NAMES, sourceNames
         );
         customDetails.put(EVENTS, oldInnerPayload.getJsonArray(EVENTS));

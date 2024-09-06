@@ -40,7 +40,7 @@ public class PagerDutyTransformer implements Processor {
     public static final String SUMMARY = "summary";
     public static final String TIMESTAMP = "timestamp";
 
-    public static final DateTimeFormatter PD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    public static final DateTimeFormatter PD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS+0000");
 
     @Override
     public void process(Exchange exchange) {
@@ -59,11 +59,18 @@ public class PagerDutyTransformer implements Processor {
         messagePayload.put(SOURCE, cloudEventPayload.getString(APPLICATION));
         messagePayload.put(GROUP, cloudEventPayload.getString(BUNDLE));
 
+        JsonObject cloudSource = cloudEventPayload.getJsonObject(SOURCE);
+        JsonObject sourceNames = JsonObject.of(
+                APPLICATION, cloudSource.getJsonObject(APPLICATION).getString(DISPLAY_NAME),
+                BUNDLE, cloudSource.getJsonObject(BUNDLE).getString(DISPLAY_NAME),
+                EVENT_TYPE, cloudSource.getJsonObject(EVENT_TYPE).getString(DISPLAY_NAME)
+        );
+
         JsonObject customDetails = new JsonObject();
         customDetails.put(ACCOUNT_ID, cloudEventPayload.getString(ACCOUNT_ID));
         customDetails.put(ORG_ID, cloudEventPayload.getString(ORG_ID));
         customDetails.put(CONTEXT, JsonObject.mapFrom(cloudEventPayload.getJsonObject(CONTEXT)));
-        customDetails.put(SOURCE_NAMES, JsonObject.mapFrom(cloudEventPayload.getJsonObject(SOURCE)));
+        customDetails.put(SOURCE_NAMES, sourceNames);
         // Keep events, if provided
         if (cloudEventPayload.containsKey(EVENTS)) {
             customDetails.put(EVENTS, cloudEventPayload.getJsonArray(EVENTS));
@@ -84,7 +91,10 @@ public class PagerDutyTransformer implements Processor {
      */
     private JsonObject getClientLink(JsonObject cloudEventPayload, String environmentUrl) {
         JsonObject clientLink = new JsonObject();
-        String contextName = cloudEventPayload.getJsonObject(CONTEXT).getString(DISPLAY_NAME);
+
+        String contextName = cloudEventPayload.containsKey(CONTEXT)
+                ? cloudEventPayload.getJsonObject(CONTEXT).getString(DISPLAY_NAME)
+                : null;
 
         if (contextName != null) {
             clientLink.put(CLIENT, contextName);
