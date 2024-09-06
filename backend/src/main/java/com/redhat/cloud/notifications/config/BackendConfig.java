@@ -21,6 +21,7 @@ public class BackendConfig {
      */
     private static final String DEFAULT_TEMPLATE = "notifications.use-default-template";
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
+    private static final String ERRATA_MIGRATION_BATCH_SIZE = "notifications.errata.migration.batch.size";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_BACKEND_ENABLED = "notifications.kessel.backend.enabled";
     private static final String KESSEL_USE_SECURE_CLIENT = "notifications.kessel.secure-client";
@@ -61,6 +62,9 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_BACKEND_ENABLED, defaultValue = "false")
     boolean kesselBackendEnabled;
 
+    @ConfigProperty(name = ERRATA_MIGRATION_BATCH_SIZE, defaultValue = "1000")
+    int errataMigrationBatchSize;
+
     /**
      * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
      */
@@ -85,6 +89,7 @@ public class BackendConfig {
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
+        config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
         config.put(KESSEL_BACKEND_ENABLED, isKesselBackendEnabled());
         config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClientEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
@@ -110,6 +115,10 @@ public class BackendConfig {
 
     public boolean isEmailsOnlyModeEnabled() {
         return emailsOnlyModeEnabled;
+    }
+
+    public int getErrataMigrationBatchSize() {
+        return this.errataMigrationBatchSize;
     }
 
     public boolean isInstantEmailsEnabled() {
