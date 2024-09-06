@@ -64,7 +64,7 @@ public class ErrataMigrationRepository {
                         .setParameter("eventTypeId", errataEventType.getId())
                         .executeUpdate();
                 } catch (final ConstraintViolationException e) {
-                    Log.errorf("[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Unable to persist errata subscription due to a database constraint violation", e, errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
+                    Log.errorf(e, "[org_id: %s][username: %s][event_type_id: %s][event_type_name: %s] Unable to persist errata subscription due to a database constraint violation", errataSubscription.org_id(), errataSubscription.username(), errataEventType.getId(), errataEventType.getName());
                     continue;
                 }
 
