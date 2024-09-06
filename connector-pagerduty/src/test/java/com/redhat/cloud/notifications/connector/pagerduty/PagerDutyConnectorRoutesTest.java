@@ -7,20 +7,42 @@ import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLo
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
-import org.apache.camel.component.mock.MockEndpoint;
-import org.junit.jupiter.api.Test;
 
-import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
-import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
-import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
+import java.time.LocalDateTime;
+
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ACCOUNT_ID;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.BUNDLE;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CLIENT;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CLIENT_URL;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CUSTOM_DETAILS;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.DISPLAY_NAME;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ENVIRONMENT_URL;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENTS;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_ACTION;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_TYPE;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.GROUP;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ORG_ID;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PD_DATE_TIME_FORMATTER;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SEVERITY;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE_NAMES;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SUMMARY;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.TIMESTAMP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,7 +66,32 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
 
     @Override
     protected JsonObject buildIncomingPayload(String targetUrl) {
-        return createCloudEventData(targetUrl);
+        JsonObject cloudEventData = createCloudEventData(targetUrl);
+
+        JsonObject payload = new JsonObject();
+        payload.put(ACCOUNT_ID, DEFAULT_ACCOUNT_ID);
+        payload.put(APPLICATION, "default-application");
+        payload.put(BUNDLE, "default-bundle");
+        payload.put(EVENT_TYPE, "default-event-type");
+        payload.put(EVENTS, JsonArray.of(
+                JsonObject.of("event-1-key", "event-1-value"),
+                JsonObject.of("event-2-key", "event-2-value"),
+                JsonObject.of("event-3-key", "event-3-value")
+        ));
+        payload.put(ORG_ID, DEFAULT_ORG_ID);
+        payload.put(TIMESTAMP, LocalDateTime.of(2024, 8, 12, 17, 26, 19).toString());
+
+        JsonObject source = JsonObject.of(
+                APPLICATION, JsonObject.of(DISPLAY_NAME, "Default Application Name"),
+                BUNDLE, JsonObject.of(DISPLAY_NAME, "Default Bundle Name"),
+                EVENT_TYPE, JsonObject.of(DISPLAY_NAME, "Default Event Type Name")
+        );
+
+        payload.put(SOURCE, source);
+        cloudEventData.put(PAYLOAD, payload);
+        cloudEventData.put(ENVIRONMENT_URL, "https://console.redhat.com");
+
+        return cloudEventData;
     }
 
     @Override
@@ -55,77 +102,58 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         expectedPayload.remove(PagerDutyCloudEventDataExtractor.AUTHENTICATION);
 
         return exchange -> {
-            String outgoingPayload = exchange.getIn().getBody(String.class);
+            JsonObject outgoingPayload = exchange.getIn().getBody(JsonObject.class);
 
-            assertEquals(expectedPayload.encode(), outgoingPayload);
             assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
             assertEquals(SECRET_TOKEN, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
+
+            assertNull(outgoingPayload.getJsonObject(PAYLOAD).getString("component"));
+            assertNull(outgoingPayload.getJsonObject(PAYLOAD).getString("class"));
+            assertNull(outgoingPayload.getString("dedup_key"));
+
+            JsonObject expected = buildExpectedPayload(expectedPayload);
+            expected.put("routing_key", exchange.getProperty(SECRET_PASSWORD));
+            assertEquals(exchange.getIn().getBody(String.class), expected.encode());
 
             // In case of assertion failure, this return value won't be used.
             return true;
         };
     }
 
-    @Test
-    void testMissingPayloadParameter() throws Exception {
-        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
-        expectedPayload.remove("payload");
-        testMissingParameters(expectedPayload, "The 'payload' field is required");
-    }
+    private JsonObject buildExpectedPayload(JsonObject expected) {
+        expected.remove(PagerDutyCloudEventDataExtractor.URL);
+        expected.remove(PagerDutyCloudEventDataExtractor.AUTHENTICATION);
 
-    @Test
-    void testMissingPayloadSummaryParameter() throws Exception {
-        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
-        JsonObject payload = (JsonObject) expectedPayload.remove("payload");
-        payload.remove("summary");
-        expectedPayload.put("payload", payload);
+        JsonObject oldInnerPayload = expected.getJsonObject(PAYLOAD);
+        expected.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
+        expected.put(CLIENT, String.format("Open %s", oldInnerPayload.getString(APPLICATION)));
+        expected.put(CLIENT_URL, String.format("%s/insights/%s", expected.getString(ENVIRONMENT_URL), oldInnerPayload.getString(APPLICATION)));
+        expected.remove(ENVIRONMENT_URL);
 
-        testMissingParameters(expectedPayload, "The alert summary field is required");
-    }
+        JsonObject newInnerPayload = new JsonObject();
+        newInnerPayload.put(SUMMARY, oldInnerPayload.getString(EVENT_TYPE));
+        newInnerPayload.put(TIMESTAMP, LocalDateTime.parse(oldInnerPayload.getString(TIMESTAMP)).format(PD_DATE_TIME_FORMATTER));
+        newInnerPayload.put(SEVERITY, PagerDutySeverity.WARNING);
+        newInnerPayload.put(SOURCE, oldInnerPayload.getString(APPLICATION));
+        newInnerPayload.put(GROUP, oldInnerPayload.getString(BUNDLE));
 
-    @Test
-    void testMissingPayloadSeverityParameter() throws Exception {
-        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
-        JsonObject payload = (JsonObject) expectedPayload.remove("payload");
-        payload.remove("severity");
-        expectedPayload.put("payload", payload);
+        JsonObject sourceNames = JsonObject.of(
+                APPLICATION, oldInnerPayload.getJsonObject(SOURCE).getJsonObject(APPLICATION).getString(DISPLAY_NAME),
+                BUNDLE, oldInnerPayload.getJsonObject(SOURCE).getJsonObject(BUNDLE).getString(DISPLAY_NAME),
+                EVENT_TYPE, oldInnerPayload.getJsonObject(SOURCE).getJsonObject(EVENT_TYPE).getString(DISPLAY_NAME)
+        );
 
-        testMissingParameters(expectedPayload, "The alert severity field is required");
-    }
+        JsonObject customDetails = JsonObject.of(
+                ACCOUNT_ID, DEFAULT_ACCOUNT_ID,
+                ORG_ID, DEFAULT_ORG_ID,
+                SOURCE_NAMES, sourceNames
+        );
+        customDetails.put(EVENTS, oldInnerPayload.getJsonArray(EVENTS));
 
-    @Test
-    void testMissingPayloadSourceParameter() throws Exception {
-        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
-        JsonObject payload = (JsonObject) expectedPayload.remove("payload");
-        payload.remove("source");
-        expectedPayload.put("payload", payload);
-
-        testMissingParameters(expectedPayload, "The alert source field is required");
-
-    }
-
-    @Test
-    void testMissingEventActionParameter() throws Exception {
-        JsonObject expectedPayload = buildIncomingPayload(getMockServerUrl());
-        expectedPayload.remove("event_action");
-        testMissingParameters(expectedPayload, "The 'event_action' field is required");
-    }
-
-    void testMissingParameters(JsonObject incomingPayload, String expectedErrorMessage) throws Exception {
-
-        mockKafkaSourceEndpoint(); // This is the entry point of the connector.
-        MockEndpoint kafkaSinkMockEndpoint = mockKafkaSinkEndpoint(); // This is where the return message to the engine is sent.
-
-        String cloudEventId = sendMessageToKafkaSource(incomingPayload);
-
-        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, null, expectedErrorMessage);
-
-        checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
-        checkRouteMetrics(connectorConfig.getConnectorName(), 0, 0, 0);
-
-        checkRouteMetrics(SUCCESS, 0, 0, 0);
-        checkRouteMetrics(CONNECTOR_TO_ENGINE, 0, 1, 1);
-        micrometerAssertionHelper.assertCounterIncrement(connectorConfig.getRedeliveryCounterName(), 0);
+        newInnerPayload.put(CUSTOM_DETAILS, customDetails);
+        expected.remove(PAYLOAD);
+        expected.put(PAYLOAD, newInnerPayload);
+        return expected;
     }
 
     @Override
