@@ -118,6 +118,8 @@ objects:
           value: ${HOSTNAME}
         - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
           value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
+        - name: NOTIFICATIONS_ERRATA_MIGRATION_BATCH_SIZE
+          value: ${NOTIFICATIONS_ERRATA_MIGRATION_BATCH_SIZE}
         - name: NOTIFICATIONS_EPHEMERAL_DATA
           valueFrom:
             configMapKeyRef:
@@ -228,6 +230,9 @@ parameters:
 - name: NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED
   description: When this is true, all integration types except emails are disabled
   value: "true"
+- name: NOTIFICATIONS_ERRATA_MIGRATION_BATCH_SIZE
+  description: Defines the number of Errata subscription elements that will be loaded into memory before storing the batch in the database.
+  value: "1000"
 - name: NOTIFICATIONS_KESSEL_BACKEND_ENABLED
   description: Enables using Kessel as the authentication and authorization back end.
   value: "false"

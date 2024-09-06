@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.ErrataMigrationRepository;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.logging.Log;
@@ -37,7 +38,6 @@ import java.util.stream.Collectors;
 @Path(Constants.API_INTERNAL + "/team-nado")
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class ErrataUserPreferencesMigrationResource {
-    private static final int BATCH_SIZE = 1000;
     public static final String EVENT_TYPE_NAME_BUGFIX = "new-subscription-bugfix-errata";
     public static final String EVENT_TYPE_NAME_ENHANCEMENT = "new-subscription-enhancement-errata";
     public static final String EVENT_TYPE_NAME_SECURITY = "new-subscription-security-errata";
@@ -47,6 +47,9 @@ public class ErrataUserPreferencesMigrationResource {
     private static final String JSON_VALUE_PREFERENCE_BUGFIX = "bugfix";
     private static final String JSON_VALUE_PREFERENCE_ENHANCEMENT = "enhancement";
     private static final String JSON_VALUE_PREFERENCE_SECURITY = "security";
+
+    @Inject
+    BackendConfig backendConfig;
 
     @Inject
     ErrataMigrationRepository errataMigrationRepository;
@@ -97,7 +100,7 @@ public class ErrataUserPreferencesMigrationResource {
                 throw new BadRequestException("array of objects expected");
             }
 
-            final List<ErrataSubscription> errataSubscriptions = new ArrayList<>(BATCH_SIZE);
+            final List<ErrataSubscription> errataSubscriptions = new ArrayList<>(this.backendConfig.getErrataMigrationBatchSize());
             while (JsonToken.START_OBJECT == jsonParser.nextToken()) {
                 final ObjectNode node = this.objectMapper.readTree(jsonParser);
 
@@ -124,8 +127,8 @@ public class ErrataUserPreferencesMigrationResource {
 
                 // Once we have a consdierable batch of elements to persist,
                 // go ahead with it.
-                if (errataSubscriptions.size() >= BATCH_SIZE) {
-                    Log.infof("Inserting a batch of %s Errata subscriptions into the database", BATCH_SIZE);
+                if (errataSubscriptions.size() >= this.backendConfig.getErrataMigrationBatchSize()) {
+                    Log.infof("Inserting a batch of %s Errata subscriptions into the database", this.backendConfig.getErrataMigrationBatchSize());
 
                     try {
                         this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);

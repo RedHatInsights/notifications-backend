@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers.internal.errata;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ErrataMigrationRepository;
@@ -38,6 +39,9 @@ import static io.restassured.RestAssured.given;
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
     @InjectSpy
+    BackendConfig backendConfig;
+
+    @InjectSpy
     ErrataMigrationRepository errataMigrationRepository;
 
     @Inject
@@ -56,6 +60,10 @@ public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
      */
     @Test
     void testUnsupportedEventType() throws URISyntaxException {
+        // Reduce the batch size so that the loop runs more than once, and
+        // therefore we can test that it works for large files.
+        Mockito.when(this.backendConfig.getErrataMigrationBatchSize()).thenReturn(2);
+
         // Simulate that the repository returns a non-Errata event type.
         final EventType notAnErrataEventType = new EventType();
         notAnErrataEventType.setName("not-an-errata-event-type");
