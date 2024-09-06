@@ -191,7 +191,6 @@
                 <configuration>
                     <configLocation>${maven.multiModuleProjectDirectory}/checkstyle/src/main/resources/checkstyle/checkstyle.xml</configLocation>
                     <suppressionsLocation>${maven.multiModuleProjectDirectory}/checkstyle/src/main/resources/checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
-                    <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>
