@@ -3,20 +3,18 @@
 ###
 
 # Build the project
-FROM registry.access.redhat.com/ubi8/openjdk-21:latest AS build
+FROM registry.access.redhat.com/ubi9/openjdk-21:latest AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
 RUN ./mvnw clean package -Dmaven.test.skip -Dcheckstyle.skip -pl :notifications-connector-google-chat -am --no-transfer-progress
 
 # Build the container
-FROM registry.access.redhat.com/ubi8/openjdk-21-runtime:latest
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest
 
 # Update the base image packages
 USER root
 RUN microdnf update --refresh --nodocs && microdnf clean all
-# Temporary workaround for packages affected by a CVE and not needed to run our app which is why we're removing them from the base image
-RUN rpm -e --nodeps platform-python-setuptools
 USER jboss
 
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
