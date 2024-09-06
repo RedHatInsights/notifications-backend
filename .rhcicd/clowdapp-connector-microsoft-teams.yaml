@@ -11,6 +11,8 @@ objects:
   spec:
     dependencies:
     - notifications-engine
+    optionalDependencies:
+    - notifications-backend
     envName: ${ENV_NAME}
     featureFlags: true
     testing:
