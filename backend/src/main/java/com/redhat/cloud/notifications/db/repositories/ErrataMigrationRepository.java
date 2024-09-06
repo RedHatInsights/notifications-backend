@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.routers.internal.errata.ErrataSubscription;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -59,7 +58,7 @@ public class ErrataMigrationRepository {
             for (final EventType errataEventType : errataSubscription.eventTypeSubscriptions()) {
                 try {
                     this.statelessSession
-                        .createNativeQuery(insertSql, EventTypeEmailSubscription.class)
+                        .createNativeQuery(insertSql)
                         .setParameter("userId", errataSubscription.username())
                         .setParameter("orgId", errataSubscription.org_id())
                         .setParameter("eventTypeId", errataEventType.getId())
