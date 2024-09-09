@@ -22,6 +22,6 @@ jobs:
           git add -A
           git commit -m "Update ubi9/openjdk-21-runtime:latest image digest" || echo "No changes to commit"
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           title: 'Update ubi9/openjdk-21-runtime:latest image digest'
