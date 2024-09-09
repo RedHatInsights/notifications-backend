@@ -18,11 +18,12 @@ import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToService;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacUser;
 import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeException;
 import dev.failsafe.RetryPolicy;
 import dev.failsafe.function.CheckedSupplier;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
@@ -52,6 +53,15 @@ import static java.lang.Boolean.TRUE;
 @ApplicationScoped
 public class FetchUsersFromExternalServices {
 
+    public static final String COUNTER_REQUESTS = "notifications.recipients.resolver.requests";
+    protected static final String COUNTER_TAG_FAILURES = "failures";
+    protected static final String COUNTER_TAG_REQUEST_RESULT = "result";
+    protected static final String COUNTER_TAG_SUCCESSES = "successes";
+    protected static final String COUNTER_TAG_USER_PROVIDER = "user-provider";
+    protected static final String COUNTER_TAG_USER_PROVIDER_RBAC = "rbac";
+    protected static final String COUNTER_TAG_USER_PROVIDER_MBOP = "mbop";
+    protected static final String COUNTER_TAG_USER_PROVIDER_IT = "it";
+
     public static final String ORG_ADMIN_PERMISSION = "admin:org:all";
 
     @Inject
@@ -75,23 +85,14 @@ public class FetchUsersFromExternalServices {
     @Inject
     ObjectMapper objectMapper;
 
-    private Counter failuresCounter;
-
     private RetryPolicy<Object> retryPolicy;
 
     private Map</* orgId */ String, AtomicInteger> rbacUsers = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void postConstruct() {
-        if (recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
-            failuresCounter = meterRegistry.counter("rbac.failures");
-        } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
-            failuresCounter = meterRegistry.counter("mbop.failures");
-        } else {
-            failuresCounter = meterRegistry.counter("it.failures");
-        }
         retryPolicy = RetryPolicy.builder()
-                .onRetry(event -> failuresCounter.increment())
+                .onRetry(event -> this.incrementFailuresCounter())
                 .handle(IOException.class)
                 .withBackoff(recipientsResolverConfig.getInitialRetryBackoff(), recipientsResolverConfig.getMaxRetryBackoff())
                 .withMaxAttempts(recipientsResolverConfig.getMaxRetryAttempts())
@@ -108,27 +109,48 @@ public class FetchUsersFromExternalServices {
 
         List<User> users;
         String supplier;
-        if (recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
-            Log.debug("Fetching users with RBAC");
-            supplier = "RBAC";
-            users = getWithPagination(
-                page -> retryOnError(() -> {
-                    LocalDateTime startTime = LocalDateTime.now();
-                    Page<RbacUser> rbacUserPage = rbacServiceToService.getUsers(orgId, adminsOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage());
-                    Duration duration = Duration.between(startTime, LocalDateTime.now());
-                    if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
-                        Log.warnf("Rbac service response time was %ds for request OrgId: %s, adminOnly: %s, page %d ", duration.toSeconds(), orgId, adminsOnly, page);
-                    }
-                    return rbacUserPage;
-                }));
-        } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
-            Log.debug("Fetching users with BOP/MBOP");
-            supplier = "BOP";
-            users = fetchUsersWithMbop(orgId, adminsOnly);
-        } else {
-            Log.debug("Fetching users with IT service");
-            supplier = "IT";
-            users = fetchUsersWithItUserService(orgId, adminsOnly);
+
+        try {
+            if (recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
+                Log.debug("Fetching users with RBAC");
+                supplier = "RBAC";
+                users = getWithPagination(
+                    page -> retryOnError(() -> {
+                        LocalDateTime startTime = LocalDateTime.now();
+                        Page<RbacUser> rbacUserPage = rbacServiceToService.getUsers(orgId, adminsOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage());
+                        Duration duration = Duration.between(startTime, LocalDateTime.now());
+                        if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
+                            Log.warnf("Rbac service response time was %ds for request OrgId: %s, adminOnly: %s, page %d ", duration.toSeconds(), orgId, adminsOnly, page);
+                        }
+
+                        return rbacUserPage;
+                    }));
+            } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
+                Log.debug("Fetching users with BOP/MBOP");
+                supplier = "BOP";
+                users = fetchUsersWithMbop(orgId, adminsOnly);
+            } else {
+                Log.debug("Fetching users with IT service");
+                supplier = "IT";
+                users = fetchUsersWithItUserService(orgId, adminsOnly);
+            }
+        } catch (final FailsafeException | WebApplicationException e) {
+            // The counter needs to be incremented for the FailSafe exception
+            // that gets thrown. The Failsafe retry operation will increment
+            // the counter ${max_attempts} - 1 times, so, for example, if the
+            // ${max_attempts} is 3:
+            //
+            // - The first time the operation fails no counter gets incremented.
+            // - On the first retry, which is the second attempt, the counter
+            //   will get incremented.
+            // - On the second retry, which is the third attempt, the counter
+            //   will get incremented.
+            //
+            // Therefore, for three attempts the counter gets incremented only
+            // two times.
+            this.incrementFailuresCounter();
+
+            throw e;
         }
 
         // Micrometer doesn't like when tags are null and throws a NPE.
@@ -161,6 +183,8 @@ public class FetchUsersFromExternalServices {
             usersTotal.addAll(usersPaging);
 
             firstResult += recipientsResolverConfig.getMaxResultsPerPage();
+
+            this.incrementSuccessesCounterWithTag(COUNTER_TAG_USER_PROVIDER_IT);
         } while (usersPaging.size() == recipientsResolverConfig.getMaxResultsPerPage());
 
         users = transformItUserToUser(usersTotal);
@@ -213,6 +237,8 @@ public class FetchUsersFromExternalServices {
 
             offset += receivedUsers.size();
             pageSize = receivedUsers.size();
+
+            this.incrementSuccessesCounterWithTag(COUNTER_TAG_USER_PROVIDER_MBOP);
         } while (pageSize == recipientsResolverConfig.getMaxResultsPerPage());
 
         users = transformMBOPUserToUser(mbopUsers);
@@ -263,12 +289,18 @@ public class FetchUsersFromExternalServices {
         try {
             rbacGroup = retryOnError(() -> rbacServiceToService.getGroup(orgId, groupId));
         } catch (ClientWebApplicationException exception) {
+            this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_RBAC);
+
             // The group does not exist (or no longer exists - ignore)
             if (exception.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
                 return List.of();
             }
 
             throw exception;
+        } catch (final FailsafeException e) {
+            this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_RBAC);
+
+            throw e;
         }
 
         List<User> users;
@@ -315,6 +347,8 @@ public class FetchUsersFromExternalServices {
                     users.add(user);
                 }
             }
+
+            this.incrementSuccessesCounterWithTag(COUNTER_TAG_USER_PROVIDER_RBAC);
         } while (rbacUsers.getData().size() == recipientsResolverConfig.getMaxResultsPerPage());
         return users;
     }
@@ -329,5 +363,45 @@ public class FetchUsersFromExternalServices {
             users.add(user);
         }
         return users;
+    }
+
+    /**
+     * Increments the requests counter.
+     * @param requestResult the resulting state of the request.
+     * @param userProvider the user provider to add to the counter's tag.
+     */
+    private void incrementCounter(final String requestResult, final String userProvider) {
+        this.meterRegistry.counter(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, requestResult, COUNTER_TAG_USER_PROVIDER, userProvider)).increment();
+    }
+
+    /**
+     * Increments the failures counter by adding the RBAC, MBOP or IT tags
+     * depending on which user service is enabled. Useful for the retry policy
+     * which is used with the three different user back ends.
+     */
+    private void incrementFailuresCounter() {
+        if (this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
+            this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_RBAC);
+        } else if (this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
+            this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_MBOP);
+        } else {
+            this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_IT);
+        }
+    }
+
+    /**
+     * Increments the "failed requests" count.
+     * @param userProvider the user provider to add to the counter's tag.
+     */
+    private void incrementFailuresCounterWithTag(final String userProvider) {
+        this.incrementCounter(COUNTER_TAG_FAILURES, userProvider);
+    }
+
+    /**
+     * Increments the "succeeded requests" counter.
+     * @param userProvider the user provider to add to the counter's tag.
+     */
+    private void incrementSuccessesCounterWithTag(final String userProvider) {
+        this.incrementCounter(COUNTER_TAG_SUCCESSES, userProvider);
     }
 }
