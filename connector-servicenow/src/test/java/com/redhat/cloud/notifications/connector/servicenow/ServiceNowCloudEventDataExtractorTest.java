@@ -21,6 +21,7 @@ import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProper
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.servicenow.ServiceNowCloudEventDataExtractor.NOTIF_METADATA;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -99,19 +100,19 @@ public class ServiceNowCloudEventDataExtractorTest extends CamelQuarkusTestSuppo
     }
 
     private void assertValidTargetUrl(String url) {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, false);
         assertDoesNotThrow(() -> serviceNowCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, false);
         assertThrows(expectedException, () -> serviceNowCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void testExtract(String url, boolean trustAll) throws Exception {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url, trustAll);
         /*
          * The 'extract' method will modify 'cloudEventData'.

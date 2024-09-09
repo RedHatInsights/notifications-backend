@@ -21,6 +21,7 @@ import static com.redhat.cloud.notifications.connector.email.constants.ExchangeP
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.SUBSCRIBED_BY_DEFAULT;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.SUBSCRIBERS;
 import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.UNSUBSCRIBERS;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -86,7 +87,7 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         payload.put("email_sender", emailSender);
         payload.put("subscribed_by_default", true);
 
-        final Exchange exchange = this.createExchangeWithBody("");
+        final Exchange exchange = createExchangeWithBody(context, "");
 
         // Call the extractor under test. In order for the JSON object not to
         // contain the Java data structures, we encode it to a string and wrap

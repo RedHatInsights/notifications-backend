@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -51,7 +52,7 @@ public class IncomingCloudEventFilterTest extends CamelQuarkusTestSupport {
     }
 
     private Exchange buildExchange(String connectorHeader) {
-        Exchange exchange = createExchangeWithBody(null);
+        Exchange exchange = createExchangeWithBody(this.context, null);
         exchange.getIn().setHeader(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connectorHeader);
         return exchange;
     }

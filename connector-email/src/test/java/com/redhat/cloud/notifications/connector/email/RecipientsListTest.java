@@ -30,6 +30,7 @@ import static com.redhat.cloud.notifications.connector.email.constants.ExchangeP
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SEND_EMAIL_BOP;
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SPLIT_AND_SEND;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,7 +58,7 @@ public class RecipientsListTest extends CamelQuarkusTestSupport {
 
         getMockHttpRequest("/internal/recipients-resolver", "PUT", verifyEmptyRequest);
 
-        Exchange exchange = createExchangeWithBody(new HashSet<>());
+        Exchange exchange = createExchangeWithBody(context, new HashSet<>());
         exchange.setProperty(EMAIL_RECIPIENTS, new HashSet<>());
         exchange.setProperty(RECIPIENT_SETTINGS, new ArrayList<>());
         exchange.setProperty(START_TIME, System.currentTimeMillis());

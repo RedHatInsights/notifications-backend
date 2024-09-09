@@ -11,8 +11,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
-import static io.quarkus.runtime.LaunchMode.NORMAL;
-
 public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNonPrivateUrl, String> {
 
     // Error messages.
@@ -83,7 +81,7 @@ public class ValidNonPrivateUrlValidator implements ConstraintValidator<ValidNon
             return false;
         }
 
-        if (NORMAL.getProfileKey().equals(LaunchMode.current().getProfileKey()) && address.isLoopbackAddress()) {
+        if (!LaunchMode.current().isDevOrTest() && address.isLoopbackAddress()) {
             this.replaceDefaultMessage(constraintValidatorContext, LOOPBACK_ADDRESS);
 
             return false;

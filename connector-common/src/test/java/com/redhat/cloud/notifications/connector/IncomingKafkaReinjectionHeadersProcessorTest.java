@@ -7,6 +7,8 @@ import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
+
 @QuarkusTest
 public class IncomingKafkaReinjectionHeadersProcessorTest extends CamelQuarkusTestSupport {
     @Inject
@@ -18,7 +20,7 @@ public class IncomingKafkaReinjectionHeadersProcessorTest extends CamelQuarkusTe
      */
     @Test
     void testProcessNoHeader() {
-        final Exchange exchange = this.createExchangeWithBody("");
+        final Exchange exchange = createExchangeWithBody(context, "");
 
         // Call the processor under test.
         this.incomingKafkaReinjectionHeadersProcessor.process(exchange);
@@ -34,7 +36,7 @@ public class IncomingKafkaReinjectionHeadersProcessorTest extends CamelQuarkusTe
     void testProcess() {
         final int reinjectionCount = 2;
 
-        final Exchange exchange = this.createExchangeWithBody("");
+        final Exchange exchange = createExchangeWithBody(context, "");
         exchange.getMessage().setHeader(KafkaHeader.REINJECTION_COUNT, reinjectionCount);
 
         // Call the processor under test.

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,7 +31,7 @@ public class AuthenticationDataExtractorTest extends CamelQuarkusTestSupport {
     @Test
     void testValidAuthentication() {
 
-        Exchange exchange = createExchangeWithBody("");
+        Exchange exchange = createExchangeWithBody(context, "");
         JsonObject authentication = buildAuthentication("BASIC", 123L);
 
         authenticationDataExtractor.extract(exchange, authentication);
@@ -41,7 +42,7 @@ public class AuthenticationDataExtractorTest extends CamelQuarkusTestSupport {
     @Test
     void testNullType() {
 
-        Exchange exchange = createExchangeWithBody("");
+        Exchange exchange = createExchangeWithBody(context, "");
         JsonObject authentication = buildAuthentication(null, 123L);
 
         IllegalStateException e = assertThrows(IllegalStateException.class, () ->
@@ -52,7 +53,7 @@ public class AuthenticationDataExtractorTest extends CamelQuarkusTestSupport {
     @Test
     void testUnknownType() {
 
-        Exchange exchange = createExchangeWithBody("");
+        Exchange exchange = createExchangeWithBody(context, "");
         JsonObject authentication = buildAuthentication("UNKNOWN", 123L);
 
         IllegalStateException e = assertThrows(IllegalStateException.class, () ->
@@ -63,7 +64,7 @@ public class AuthenticationDataExtractorTest extends CamelQuarkusTestSupport {
     @Test
     void testNullSecretId() {
 
-        Exchange exchange = createExchangeWithBody("");
+        Exchange exchange = createExchangeWithBody(context, "");
         JsonObject authentication = buildAuthentication("BASIC", null);
 
         IllegalStateException e = assertThrows(IllegalStateException.class, () ->

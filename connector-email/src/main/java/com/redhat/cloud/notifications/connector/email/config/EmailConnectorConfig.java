@@ -9,8 +9,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.quarkus.runtime.LaunchMode.TEST;
-
 @ApplicationScoped
 public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_API_TOKEN = "notifications.connector.user-provider.bop.api_token";
@@ -194,7 +192,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
      * config value from tests only, preventing doing so from runtime code.
      */
     private static void checkTestLaunchMode() {
-        if (!TEST.getProfileKey().equals(LaunchMode.current().getProfileKey())) {
+        if (!LaunchMode.current().isDevOrTest()) {
             throw new IllegalStateException("Illegal config value override detected");
         }
     }
