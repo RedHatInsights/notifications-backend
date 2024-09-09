@@ -18,6 +18,7 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
+import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -87,7 +88,7 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
 
     @Test
     void testExtractWithValidTargetUrlPath() {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData("https://foo.bar");
         /*
          * The 'extract' method will modify 'cloudEventData'.
@@ -108,13 +109,13 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
     }
 
     private void assertValidTargetUrl(String url) {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url);
         assertDoesNotThrow(() -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
-        Exchange exchange = createExchangeWithBody("I am not used!");
+        Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url);
         assertThrows(expectedException, () -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
