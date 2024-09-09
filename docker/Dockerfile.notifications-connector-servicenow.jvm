@@ -14,7 +14,9 @@ FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest
 
 # Update the base image packages
 USER root
-RUN microdnf update --refresh --nodocs && microdnf clean all
+# See https://www.mankier.com/8/microdnf
+RUN microdnf upgrade --refresh --nodocs --setopt=install_weak_deps=0 -y
+RUN microdnf clean all
 USER jboss
 
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
