@@ -67,7 +67,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         // Fetch the template that will be used to hydrate it with the data.
         final Optional<InstantEmailTemplate> instantEmailTemplateMaybe = this.templateRepository.findInstantEmailTemplate(event.getEventType().getId());
         if (instantEmailTemplateMaybe.isEmpty()) {
-            Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getEventType().getName());
+            Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getId(), event.getEventType().getName());
             return;
         }
 
