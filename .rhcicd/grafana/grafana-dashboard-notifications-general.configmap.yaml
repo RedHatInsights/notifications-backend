@@ -27,6 +27,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
+      "id": 934718,
       "links": [
         {
           "asDropdown": false,
@@ -8154,6 +8155,7 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
+          "description": "Shows the increase of the successful requests made to the external services the application depends on.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -8166,7 +8168,7 @@ data:
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
-                "drawStyle": "line",
+                "drawStyle": "bars",
                 "fillOpacity": 10,
                 "gradientMode": "none",
                 "hideFrom": {
@@ -8200,10 +8202,6 @@ data:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               },
@@ -8238,38 +8236,14 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "max by(pod) (it_failures_total{service=\"notifications-recipients-resolver-service\"})",
+              "expr": "sum by (user_provider) (increase(notifications_recipients_resolver_requests_total{result=\"successes\"}[$__rate_interval]))",
               "hide": false,
-              "legendFormat": "It - {{pod}}",
+              "legendFormat": "__auto",
               "range": true,
-              "refId": "B"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "max by(pod) (mbop_failures_total{service=\"notifications-recipients-resolver-service\"})",
-              "hide": false,
-              "legendFormat": "MBOP - {{pod}}",
-              "range": true,
-              "refId": "C"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "expr": "max by(pod) (rbac_failures_total{service=\"notifications-recipients-resolver-service\"})",
-              "hide": false,
-              "legendFormat": "Rbac - {{pod}}",
-              "range": true,
-              "refId": "D"
+              "refId": "Successful requests"
             }
           ],
-          "title": "Recipients resolver - external call failures",
+          "title": "Recipients resolver — Successful requests",
           "type": "timeseries"
         },
         {
@@ -8474,6 +8448,102 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
+          "description": "Shows the increase of the failed requests made to the external services the application depends on.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "decimals": 0,
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 164
+          },
+          "id": 322,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum by (user_provider) (increase(notifications_recipients_resolver_requests_total{result=\"failures\"}[$__rate_interval]))",
+              "hide": false,
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "Failed requests"
+            }
+          ],
+          "title": "Recipients resolver — Failed requests",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
           "description": "Shows the maximum time the different services spent fetching the secrets from Sources",
           "fieldConfig": {
             "defaults": {
@@ -8534,7 +8604,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 164
+            "y": 172
           },
           "id": 293,
           "options": {
@@ -8631,7 +8701,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 164
+            "y": 172
           },
           "id": 294,
           "options": {
@@ -8674,7 +8744,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 172
+            "y": 180
           },
           "id": 24,
           "panels": [],
@@ -8748,7 +8818,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 173
+            "y": 181
           },
           "id": 22,
           "options": {
@@ -8840,7 +8910,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 173
+            "y": 181
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -8995,8 +9065,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -9012,7 +9081,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 182
+            "y": 190
           },
           "id": 85,
           "options": {
