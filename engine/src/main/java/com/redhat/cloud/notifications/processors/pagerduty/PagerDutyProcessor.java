@@ -83,6 +83,7 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         }
 
         connectorData.put("url", properties.getUrl());
+        connectorData.put("severity", properties.getSeverity().toString());
         connectorData.put("environment_url", environment.url());
 
         connectorSender.send(event, endpoint, connectorData);

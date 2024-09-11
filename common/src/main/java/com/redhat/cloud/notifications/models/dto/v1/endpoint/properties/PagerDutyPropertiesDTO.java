@@ -1,55 +1,27 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
-import com.redhat.cloud.notifications.models.HttpType;
-import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
+import com.redhat.cloud.notifications.models.PagerDutySeverity;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import static com.redhat.cloud.notifications.Constants.PAGERDUTY_EVENT_V2_URL;
-
-// TODO integrate with everything else for PagerDuty
 /**
  * See {@link com.redhat.cloud.notifications.models.PagerDutyProperties} for default options
  */
 public class PagerDutyPropertiesDTO extends EndpointPropertiesDTO {
 
     @NotNull
-    @ValidNonPrivateUrl
-    private String url = PAGERDUTY_EVENT_V2_URL;
+    private PagerDutySeverity severity;
 
-    @NotNull
-    private HttpType method = HttpType.POST;
-
-    @NotNull
-    private Boolean disableSslVerification = Boolean.FALSE;
-
-    // TODO rename to integration_key?
     @Size(max = 255)
     @NotNull
     private String secretToken;
 
-    public String getUrl() {
-        return url;
+    public PagerDutySeverity getSeverity() {
+        return severity;
     }
 
-    public void setUrl(final String url) {
-        this.url = url;
-    }
-
-    public Boolean getDisableSslVerification() {
-        return disableSslVerification;
-    }
-
-    public void setDisableSslVerification(Boolean disableSslVerification) {
-        this.disableSslVerification = disableSslVerification;
-    }
-
-    public HttpType getMethod() {
-        return method;
-    }
-
-    public void setMethod(final HttpType method) {
-        this.method = method;
+    public void setSeverity(PagerDutySeverity severity) {
+        this.severity = severity;
     }
 
     public String getSecretToken() {

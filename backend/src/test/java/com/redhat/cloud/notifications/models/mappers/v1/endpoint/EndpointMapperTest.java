@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
+import com.redhat.cloud.notifications.models.PagerDutySeverity;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+// TODO add PagerDuty
 @QuarkusTest
 public class EndpointMapperTest {
     private static final String ENDPOINT_CAMEL_CREATE_JSON = "json-schemas/v1/endpoint/implementations/create/endpoint-camel.json";
@@ -120,7 +122,7 @@ public class EndpointMapperTest {
 
         final PagerDutyProperties pagerDutyProperties = new PagerDutyProperties();
         pagerDutyProperties.setUrl("https://redhat.com");
-        pagerDutyProperties.setMethod(HttpType.POST);
+        pagerDutyProperties.setSeverity(PagerDutySeverity.ERROR);
         pagerDutyProperties.setSecretToken("secret token");
 
         // Loop through the properties and generate the JSON for the DTO.

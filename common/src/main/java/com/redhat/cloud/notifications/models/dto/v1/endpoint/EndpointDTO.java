@@ -71,8 +71,8 @@ public final class EndpointDTO {
         property = "type",
         include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     @Schema(oneOf = {
-            CamelPropertiesDTO.class, SystemSubscriptionPropertiesDTO.class,
-            WebhookPropertiesDTO.class, PagerDutyPropertiesDTO.class
+        CamelPropertiesDTO.class, SystemSubscriptionPropertiesDTO.class,
+        WebhookPropertiesDTO.class, PagerDutyPropertiesDTO.class
     })
     @Valid
     private EndpointPropertiesDTO properties;

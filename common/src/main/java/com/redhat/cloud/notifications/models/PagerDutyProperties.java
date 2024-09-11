@@ -3,10 +3,8 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.db.converters.HttpTypeConverter;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -16,28 +14,21 @@ import jakarta.validation.constraints.Size;
 import static com.redhat.cloud.notifications.Constants.PAGERDUTY_EVENT_V2_URL;
 
 /**
- * The PagerDuty API uses a single endpoint and HTTP method for requests from all users, distinguished by the
- * Integration Key stored in the {@link PagerDutyProperties#secretToken}. This URL and method do not need to be provided
- * by end users, but are included in this Entity for future migrations.
+ * PagerDuty uses {@link com.redhat.cloud.notifications.Constants#PAGERDUTY_EVENT_V2_URL a single REST endpoint} for
+ * all users, distinguishing between them with an Integration Key ({@link PagerDutyProperties#secretToken}) included in
+ * <em>the body of the POST request</em>, not the header. The endpoint URL is not provided by end users, but is included
+ * in this Entity for future migrations.
  */
 @Entity
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
 @Table(name = "pagerduty_properties")
-// TODO add property for severity
-// TODO integrate with everything else for PagerDuty
 public class PagerDutyProperties extends EndpointProperties implements SourcesSecretable {
     @NotNull
     @ValidNonPrivateUrl
     private String url = PAGERDUTY_EVENT_V2_URL;
 
-    // TODO remove
-    @Convert(converter = HttpTypeConverter.class)
     @NotNull
-    private HttpType method = HttpType.POST;
-
-    // TODO remove
-    @NotNull
-    private Boolean disableSslVerification = Boolean.FALSE;
+    private PagerDutySeverity severity;
 
     @NotNull
     @Size(max = 255)
@@ -59,20 +50,12 @@ public class PagerDutyProperties extends EndpointProperties implements SourcesSe
         this.url = url;
     }
 
-    public Boolean getDisableSslVerification() {
-        return disableSslVerification;
+    public PagerDutySeverity getSeverity() {
+        return severity;
     }
 
-    public void setDisableSslVerification(Boolean disableSslVerification) {
-        this.disableSslVerification = disableSslVerification;
-    }
-
-    public HttpType getMethod() {
-        return method;
-    }
-
-    public void setMethod(HttpType method) {
-        this.method = method;
+    public void setSeverity(PagerDutySeverity severity) {
+        this.severity = severity;
     }
 
     @Override
