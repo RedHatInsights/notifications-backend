@@ -47,6 +47,7 @@ public class TestErrataTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("There are 3 bug fixes affecting your subscriptions."));
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("secalert@redhat.com"));
     }
 
     @Test
@@ -61,6 +62,7 @@ public class TestErrataTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("There are 3 security updates affecting your subscriptions."));
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("secalert@redhat.com"));
     }
 
     @Test
@@ -75,5 +77,6 @@ public class TestErrataTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("There are 3 enhancements affecting your subscriptions."));
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("secalert@redhat.com"));
     }
 }
