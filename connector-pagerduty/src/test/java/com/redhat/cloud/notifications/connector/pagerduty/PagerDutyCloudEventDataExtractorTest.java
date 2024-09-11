@@ -15,13 +15,10 @@ import java.util.MissingResourceException;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.AUTHENTICATION;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
 import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @QuarkusTest
@@ -102,10 +99,6 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
         JsonObject expectedAuthentication = cloudEventDataCopy.getJsonObject("authentication");
         assertEquals(expectedAuthentication.getString("type"), exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class).name());
         assertEquals(expectedAuthentication.getLong("secretId"), exchange.getProperty(SECRET_ID, Long.class));
-
-        // Check that url and authentication elements has been removed from the original JsonObject
-        assertNull(cloudEventData.getJsonObject(URL));
-        assertNull(cloudEventData.getJsonObject(AUTHENTICATION));
     }
 
     private void assertValidTargetUrl(String url) {

@@ -11,6 +11,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 import java.util.MissingResourceException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
 import static org.apache.commons.validator.routines.UrlValidator.ALLOW_LOCAL_URLS;
 
 @ApplicationScoped
@@ -35,10 +36,7 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
         JsonObject authentication = cloudEventData.getJsonObject(AUTHENTICATION);
         authenticationDataExtractor.extract(exchange, authentication);
 
-        cloudEventData.remove(URL);
-        cloudEventData.remove(AUTHENTICATION);
-
-        exchange.getIn().setBody(cloudEventData);
+        exchange.getIn().setBody(cloudEventData.getJsonObject(PAYLOAD));
     }
 
     private void validatePayload(JsonObject cloudEventData) {

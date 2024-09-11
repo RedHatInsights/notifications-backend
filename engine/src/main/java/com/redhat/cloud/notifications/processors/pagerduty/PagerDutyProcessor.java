@@ -72,7 +72,12 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         PagerDutyProperties properties = endpoint.getProperties(PagerDutyProperties.class);
 
         JsonObject connectorData = new JsonObject();
-        connectorData.put(PAYLOAD, transformer.toJsonObject(event));
+        JsonObject transformedEvent = transformer.toJsonObject(event);
+        transformedEvent.put("environment_url", environment.url());
+        transformedEvent.put("severity", properties.getSeverity().toString());
+
+        connectorData.put(PAYLOAD, transformedEvent);
+        connectorData.put("url", properties.getUrl());
 
         if (properties.getSecretTokenSourcesId() != null) {
             JsonObject authentication = JsonObject.of(
@@ -81,10 +86,6 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
             );
             connectorData.put("authentication", authentication);
         }
-
-        connectorData.put("url", properties.getUrl());
-        connectorData.put("severity", properties.getSeverity().toString());
-        connectorData.put("environment_url", environment.url());
 
         connectorSender.send(event, endpoint, connectorData);
     }
