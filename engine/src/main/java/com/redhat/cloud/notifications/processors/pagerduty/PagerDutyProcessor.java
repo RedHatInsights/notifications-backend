@@ -25,6 +25,7 @@ import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRE
 public class PagerDutyProcessor extends EndpointTypeProcessor {
 
     public static final String PROCESSED_PAGERDUTY_COUNTER = "processor.pagerduty.processed";
+    public static final String PAYLOAD = "payload";
 
     @Inject
     BaseTransformer transformer;
@@ -62,16 +63,18 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         });
     }
 
+    // TODO reimplement to generate a PD-CEF format PagerDuty event
     private void process(Event event, Endpoint endpoint) {
         processedPagerDutyCounter.increment();
 
         final JsonObject connectorData = new JsonObject();
 
         final JsonObject payload = transformer.toJsonObject(event);
-        connectorData.put("payload", payload);
+        connectorData.put(PAYLOAD, payload);
 
         PagerDutyProperties properties = endpoint.getProperties(PagerDutyProperties.class);
         connectorData.put("url", properties.getUrl());
+        connectorData.put("method", properties.getMethod());
 
         if (properties.getSecretTokenSourcesId() != null) {
             JsonObject authentication = JsonObject.of(

@@ -219,7 +219,8 @@ public class EndpointRepository {
                 "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
         String camelQuery = "UPDATE CamelProperties SET url = :url, extras = :extras, " +
                 "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
-        String pagerDutyQuery = "UPDATE PagerDutyProperties SET url = :url WHERE endpoint.id = :endpointId";
+        String pagerDutyQuery = "UPDATE PagerDutyProperties SET url = :url, method = :method " +
+                "WHERE endpoint.id = :endpointId";
 
         if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
             throw new RuntimeException("Unable to update a system endpoint of type " + endpoint.getType());
@@ -260,6 +261,7 @@ public class EndpointRepository {
                     PagerDutyProperties pdAttr = (PagerDutyProperties) endpoint.getProperties();
                     return entityManager.createQuery(pagerDutyQuery)
                             .setParameter("url", pdAttr.getUrl())
+                            .setParameter("method", pdAttr.getMethod())
                             .setParameter("endpointId", endpoint.getId())
                             .executeUpdate() > 0;
                 default:

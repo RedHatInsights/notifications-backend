@@ -119,6 +119,8 @@ public class EndpointMapperTest {
         webhookProperties.setSecretToken("secret token");
 
         final PagerDutyProperties pagerDutyProperties = new PagerDutyProperties();
+        pagerDutyProperties.setUrl("https://redhat.com");
+        pagerDutyProperties.setMethod(HttpType.POST);
         pagerDutyProperties.setSecretToken("secret token");
 
         // Loop through the properties and generate the JSON for the DTO.
