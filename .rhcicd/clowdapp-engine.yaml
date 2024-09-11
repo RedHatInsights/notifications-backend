@@ -193,13 +193,29 @@ objects:
         - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
           value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
       autoScaler:
-        minReplicaCount: 3
+        minReplicaCount: ${{MIN_REPLICAS}}
         maxReplicaCount: 6
         triggers:
           - metadata:
-              query: sum(kafka_consumergroup_group_lag{topic=~".*platform.notifications.ingress", group="integrations"})
-              threshold: "1000"
+              serverAddress: http://prometheus-app-sre.openshift-customer-monitoring.svc.cluster.local:9090
+              query: kafka_consumergroup_group_topic_sum_lag{topic=~".*platform.notifications.ingress"}
+              threshold: "25"
             type: prometheus
+            metricType: Value
+        advanced:
+          horizontalPodAutoscalerConfig:
+            behavior:
+              scaleDown:
+                stabilizationWindowSeconds: 180
+                policies:
+                  - type: Pods
+                    value: 2
+                    periodSeconds: 60
+              scaleUp:
+                policies:
+                  - type: Pods
+                    value: 2
+                    periodSeconds: 30
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
