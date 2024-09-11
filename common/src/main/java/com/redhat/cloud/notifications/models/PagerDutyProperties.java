@@ -34,6 +34,9 @@ public class PagerDutyProperties extends EndpointProperties implements SourcesSe
     private HttpType method = HttpType.POST;
 
     @NotNull
+    private Boolean disableSslVerification = Boolean.FALSE;
+
+    @NotNull
     @Size(max = 255)
     @Transient
     private String secretToken;
@@ -51,6 +54,14 @@ public class PagerDutyProperties extends EndpointProperties implements SourcesSe
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public Boolean getDisableSslVerification() {
+        return disableSslVerification;
+    }
+
+    public void setDisableSslVerification(Boolean disableSslVerification) {
+        this.disableSslVerification = disableSslVerification;
     }
 
     public HttpType getMethod() {

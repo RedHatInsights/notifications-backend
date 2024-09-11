@@ -14,7 +14,9 @@ public enum EndpointTypeDTO {
     @JsonProperty("email_subscription")
     EMAIL_SUBSCRIPTION(false, true),
     @JsonProperty("webhook")
-    WEBHOOK(false, false);
+    WEBHOOK(false, false),
+    @JsonProperty("pagerduty")
+    PAGERDUTY(false, false);
 
     public final boolean requiresSubType;
     public final boolean isSystemEndpointType;

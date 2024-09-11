@@ -15,7 +15,7 @@ public enum EndpointType {
     ANSIBLE(false, false),
     @JsonProperty("drawer") // TODO remove them once the transition to DTOs have been completed.
     DRAWER(false, true),
-    @JsonProperty("pagerduty")
+    @JsonProperty("pagerduty") // TODO remove them once the transition to DTOs have been completed.
     PAGERDUTY(false, false);
 
     public final boolean requiresSubType;

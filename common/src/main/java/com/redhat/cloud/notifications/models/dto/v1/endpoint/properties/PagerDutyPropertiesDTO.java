@@ -18,8 +18,12 @@ public class PagerDutyPropertiesDTO extends EndpointPropertiesDTO {
     private String url = PAGERDUTY_EVENT_V2_URL;
 
     @NotNull
-    private HttpType method;
+    private HttpType method = HttpType.POST;
 
+    @NotNull
+    private Boolean disableSslVerification = Boolean.FALSE;
+
+    // TODO rename to integration_key?
     @Size(max = 255)
     @NotNull
     private String secretToken;
@@ -30,6 +34,14 @@ public class PagerDutyPropertiesDTO extends EndpointPropertiesDTO {
 
     public void setUrl(final String url) {
         this.url = url;
+    }
+
+    public Boolean getDisableSslVerification() {
+        return disableSslVerification;
+    }
+
+    public void setDisableSslVerification(Boolean disableSslVerification) {
+        this.disableSslVerification = disableSslVerification;
     }
 
     public HttpType getMethod() {

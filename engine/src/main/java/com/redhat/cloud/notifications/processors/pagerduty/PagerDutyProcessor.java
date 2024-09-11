@@ -75,6 +75,7 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         PagerDutyProperties properties = endpoint.getProperties(PagerDutyProperties.class);
         connectorData.put("url", properties.getUrl());
         connectorData.put("method", properties.getMethod());
+        connectorData.put("trustAll", properties.getDisableSslVerification());
 
         if (properties.getSecretTokenSourcesId() != null) {
             JsonObject authentication = JsonObject.of(
