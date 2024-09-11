@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import com.redhat.cloud.notifications.transformers.PagerDutyTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -24,11 +24,11 @@ import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRE
 @ApplicationScoped
 public class PagerDutyProcessor extends EndpointTypeProcessor {
 
+    public static final String NOTIF_METADATA_KEY = "notif-metadata";
     public static final String PROCESSED_PAGERDUTY_COUNTER = "processor.pagerduty.processed";
-    public static final String PAYLOAD = "payload";
 
     @Inject
-    BaseTransformer transformer;
+    PagerDutyTransformer transformer;
 
     @Inject
     EngineConfig engineConfig;
@@ -63,27 +63,33 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         });
     }
 
-    // TODO reimplement to generate a PD-CEF format PagerDuty event
+    /**
+     * Constructs a <a href="https://support.pagerduty.com/main/docs/pd-cef">PD-CEF</a> format alert event.
+     *
+     * <ul>
+     *     <li>TODO determine how event severity is specified (at the endpoint level, or paired with behaviour
+     *     groups/workspaces) - see RHCLOUD-33788</li>
+     * </ul>
+     */
     private void process(Event event, Endpoint endpoint) {
         processedPagerDutyCounter.increment();
-
-        final JsonObject connectorData = new JsonObject();
-
-        final JsonObject payload = transformer.toJsonObject(event);
-        connectorData.put(PAYLOAD, payload);
-
         PagerDutyProperties properties = endpoint.getProperties(PagerDutyProperties.class);
-        connectorData.put("url", properties.getUrl());
-        connectorData.put("method", properties.getMethod());
-        connectorData.put("trustAll", properties.getDisableSslVerification());
+
+        JsonObject metadata = new JsonObject();
+        metadata.put("url", properties.getUrl());
+        metadata.put("method", properties.getMethod());
+        metadata.put("trustAll", properties.getDisableSslVerification());
 
         if (properties.getSecretTokenSourcesId() != null) {
             JsonObject authentication = JsonObject.of(
                     "type", SECRET_TOKEN,
                     "secretId", properties.getSecretTokenSourcesId()
             );
-            connectorData.put("authentication", authentication);
+            metadata.put("authentication", authentication);
         }
+
+        final JsonObject connectorData = transformer.toJsonObject(event);
+        connectorData.put(NOTIF_METADATA_KEY, metadata);
 
         connectorSender.send(event, endpoint, connectorData);
     }
