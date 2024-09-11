@@ -15,4 +15,6 @@ public interface Constants {
     String X_RH_IDENTITY_HEADER = "x-rh-identity";
     String X_RH_SOURCES_ORG_ID = "x-rh-sources-org-id";
     String X_RH_SOURCES_PSK = "x-rh-sources-psk";
+
+    String PAGERDUTY_EVENT_V2_URL = "https://events.pagerduty.com/v2/enqueue";
 }

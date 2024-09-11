@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailProcessor;
 import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
+import com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -67,6 +68,9 @@ public class EndpointProcessor {
 
     @Inject
     DrawerProcessor drawerProcessor;
+
+    @Inject
+    PagerDutyProcessor pagerDutyProcessor;
 
     @Inject
     MeterRegistry registry;
@@ -149,6 +153,9 @@ public class EndpointProcessor {
                             break;
                         case DRAWER:
                             drawerProcessor.process(event, endpointsByTypeEntry.getValue());
+                            break;
+                        case PAGERDUTY:
+                            pagerDutyProcessor.process(event, endpointsByTypeEntry.getValue());
                             break;
                         default:
                             throw new IllegalArgumentException("Unexpected endpoint type: " + endpointsByTypeEntry.getKey());

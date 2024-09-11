@@ -3,11 +3,13 @@ package com.redhat.cloud.notifications.models.mappers.v1.endpoint;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
+import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.EndpointPropertiesDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutyPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.SystemSubscriptionPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
 import org.mapstruct.Mapper;
@@ -95,6 +97,23 @@ public interface EndpointMapper {
     WebhookProperties webhookToEntity(WebhookPropertiesDTO webhookPropertiesDTO);
 
     /**
+     * Maps a webhook properties' internal entity into a DTO.
+     * @param pagerDutyProperties the internal entity to map.
+     * @return the mapped DTO.
+     */
+    PagerDutyPropertiesDTO pagerDutyToDTO(PagerDutyProperties pagerDutyProperties);
+
+    /**
+     * Maps a PagerDuty properties DTO into an internal entity.
+     * @param pagerDutyPropertiesDTO the DTO to map.
+     * @return the mapped internal entity.
+     */
+    @Mapping(target = "endpoint", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "secretTokenSourcesId", ignore = true)
+    PagerDutyProperties pagerDutyToEntity(PagerDutyPropertiesDTO pagerDutyPropertiesDTO);
+
+    /**
      * Maps the internal endpoint properties' entity into one of the more specific classes that extend it, and then
      * maps them into an endpoint properties' DTO.
      * @param endpointProperties the internal entity to map.
@@ -110,6 +129,7 @@ public interface EndpointMapper {
             case CamelProperties properties -> this.camelToDTO(properties);
             case SystemSubscriptionProperties properties -> this.systemToDTO(properties);
             case WebhookProperties properties -> this.webhookToDTO(properties);
+            case PagerDutyProperties properties -> this.pagerDutyToDTO(properties);
             default -> throw new IllegalStateException("Invalid endpoint properties mapped to class");
         };
     }
@@ -130,6 +150,7 @@ public interface EndpointMapper {
             case CamelPropertiesDTO properties -> this.camelToEntity(properties);
             case SystemSubscriptionPropertiesDTO properties -> this.systemToEntity(properties);
             case WebhookPropertiesDTO properties -> this.webhookToEntity(properties);
+            case PagerDutyPropertiesDTO properties -> this.pagerDutyToEntity(properties);
             default -> throw new IllegalStateException("Invalid endpoint properties mapped to class");
         };
     }

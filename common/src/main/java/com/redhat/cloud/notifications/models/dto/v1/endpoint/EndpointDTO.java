@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.EndpointPropertiesDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutyPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.SystemSubscriptionPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
 import jakarta.validation.Valid;
@@ -63,12 +64,16 @@ public final class EndpointDTO {
         @JsonSubTypes.Type(value = SystemSubscriptionPropertiesDTO.class, name = "email_subscription"),
         @JsonSubTypes.Type(value = WebhookPropertiesDTO.class, name = "ansible"),
         @JsonSubTypes.Type(value = WebhookPropertiesDTO.class, name = "webhook"),
+        @JsonSubTypes.Type(value = PagerDutyPropertiesDTO.class, name = "pagerduty"),
     })
     @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         property = "type",
         include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
-    @Schema(oneOf = { CamelPropertiesDTO.class, SystemSubscriptionPropertiesDTO.class, WebhookPropertiesDTO.class })
+    @Schema(oneOf = {
+            CamelPropertiesDTO.class, SystemSubscriptionPropertiesDTO.class,
+            WebhookPropertiesDTO.class, PagerDutyPropertiesDTO.class
+    })
     @Valid
     private EndpointPropertiesDTO properties;
 

@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
@@ -116,6 +117,9 @@ public class EndpointMapperTest {
         webhookProperties.setBasicAuthentication(new BasicAuthentication("username", "password"));
         webhookProperties.setBearerAuthentication("bearer authentication");
         webhookProperties.setSecretToken("secret token");
+
+        final PagerDutyProperties pagerDutyProperties = new PagerDutyProperties();
+        pagerDutyProperties.setSecretToken("secret token");
 
         // Loop through the properties and generate the JSON for the DTO.
         for (final EndpointProperties properties : List.of(camelProperties, systemSubscriptionProperties, webhookProperties)) {
@@ -270,6 +274,19 @@ public class EndpointMapperTest {
 
         Assertions.assertEquals("w3bh00k-bearer-t0k3n", webhookProperties.getBearerAuthentication(), "the bearer authentication was not properly mapped");
         Assertions.assertEquals("w3bh00k-sup3r-s3cr3t-t0k3n", webhookProperties.getSecretToken(), "the secret token was not properly mapped");
+    }
+
+
+    /**
+     * Test that a payload which conforms to the endpoint schema is properly
+     * deserialized into a DTO, and that then that DTO gets properly mapped to
+     * an internal entity.
+     * @throws IOException if the JSON file cannot be read.
+     * @throws URISyntaxException if the path to the JSON file is incorrect.
+     */
+    @Test
+    void testEndpointMapperPagerDutyToDTOToEntity() throws IOException, URISyntaxException {
+        // TODO implement pagerduty endpoint mapper test
     }
 
     private void assertNoSchemaValidationErrors(final Set<ValidationMessage> validationMessages) {
