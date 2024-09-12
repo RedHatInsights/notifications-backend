@@ -54,7 +54,7 @@ public class KesselAssetsTest {
         this.kesselAssets.createIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
         // Verify that the inventory call was made.
-        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration((CreateNotificationsIntegrationRequest) Mockito.any());
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
     }
 
     /**
@@ -81,7 +81,7 @@ public class KesselAssetsTest {
         this.kesselAssets.deleteIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
         // Verify that the inventory call was made.
-        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).DeleteNotificationsIntegration((DeleteNotificationsIntegrationRequest) Mockito.any());
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).DeleteNotificationsIntegration(Mockito.any(DeleteNotificationsIntegrationRequest.class));
     }
 
     /**
