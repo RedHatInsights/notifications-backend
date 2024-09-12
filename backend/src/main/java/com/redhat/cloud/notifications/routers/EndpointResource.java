@@ -2,10 +2,11 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
-import com.redhat.cloud.notifications.auth.kessel.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.KesselAssets;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
-import com.redhat.cloud.notifications.auth.kessel.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -106,6 +107,9 @@ public class EndpointResource {
     @Inject
     @RestClient
     EndpointTestService endpointTestService;
+
+    @Inject
+    KesselAssets kesselAssets;
 
     @Inject
     KesselAuthorization kesselAuthorization;
@@ -431,7 +435,16 @@ public class EndpointResource {
 
         this.secretUtils.createSecretsForEndpoint(endpoint);
 
-        return this.endpointRepository.createEndpoint(endpoint);
+        final Endpoint createdEndpoint = this.endpointRepository.createEndpoint(endpoint);
+
+        // Attempt creating the integration in Kessel's inventory. Any
+        // exception here would roll back the operation and our integration
+        // would not be created in our database either.
+        if (this.backendConfig.isKesselBackendEnabled()) {
+            this.kesselAssets.createIntegration(sec, WORKSPACE_ID_PLACEHOLDER, createdEndpoint.getId().toString());
+        }
+
+        return createdEndpoint;
     }
 
     private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {
@@ -574,7 +587,14 @@ public class EndpointResource {
         if (this.backendConfig.isKesselBackendEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id.toString());
 
-            return this.internalDeleteEndpoint(sec, id);
+            final Response noContentResponse = this.internalDeleteEndpoint(sec, id);
+
+            // Attempt deleting the integration from Kessel. If any exception
+            // is thrown the whole transaction will be rolled back and the
+            // integration will not be deleted from our database.
+            this.kesselAssets.deleteIntegration(sec, WORKSPACE_ID_PLACEHOLDER, id.toString());
+
+            return noContentResponse;
         } else {
             return this.legacyRBACDeleteEndpoint(sec, id);
         }

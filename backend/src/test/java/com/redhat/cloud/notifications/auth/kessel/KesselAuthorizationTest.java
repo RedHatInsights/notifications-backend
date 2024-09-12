@@ -1,12 +1,13 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhServiceAccountIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhUserIdentity;
-import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikePrincipal;
-import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,7 +26,6 @@ import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -174,12 +174,11 @@ public class KesselAuthorizationTest {
      */
     @Test
     void testBuildCheckRequest() {
-        record TestCase(RhIdentity identity, String expectedIdentityType, ResourceType resourceType, KesselPermission permission, String resourceId) {
+        record TestCase(RhIdentity identity, ResourceType resourceType, KesselPermission permission, String resourceId) {
             @Override
             public String toString() {
                 return "TestCase{" +
                     "identity='" + this.identity + '\'' +
-                    ", expectedIdentityType='" + this.expectedIdentityType + '\'' +
                     ", resourceType='" + this.resourceType + '\'' +
                     ", kesselPermission='" + this.permission + '\'' +
                     ", resourceId='" + this.resourceId + '\'' +
@@ -199,10 +198,10 @@ public class KesselAuthorizationTest {
 
         // Loop through the supported identities.
         final List<TestCase> testCases = List.of(
-            new TestCase(userIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_USER, ResourceType.INTEGRATION, IntegrationPermission.VIEW, "12345"),
-            new TestCase(serviceAccountIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT, ResourceType.INTEGRATION, IntegrationPermission.EDIT, "54321"),
-            new TestCase(userIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_USER, ResourceType.WORKSPACE, WorkspacePermission.CREATE_DRAWER_INTEGRATION, "workspace-a"),
-            new TestCase(serviceAccountIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT, ResourceType.WORKSPACE, WorkspacePermission.EVENT_LOG_VIEW, "workspace-b")
+            new TestCase(userIdentity, ResourceType.INTEGRATION, IntegrationPermission.VIEW, "12345"),
+            new TestCase(serviceAccountIdentity, ResourceType.INTEGRATION, IntegrationPermission.EDIT, "54321"),
+            new TestCase(userIdentity, ResourceType.WORKSPACE, WorkspacePermission.CREATE_DRAWER_INTEGRATION, "workspace-a"),
+            new TestCase(serviceAccountIdentity, ResourceType.WORKSPACE, WorkspacePermission.EVENT_LOG_VIEW, "workspace-b")
         );
 
         for (final TestCase tc : testCases) {
@@ -217,7 +216,7 @@ public class KesselAuthorizationTest {
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), checkRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
             final SubjectReference subjectReference = checkRequest.getSubject();
-            Assertions.assertEquals(tc.expectedIdentityType(), subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
             Assertions.assertEquals(tc.identity().getName(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
         }
     }
@@ -228,12 +227,11 @@ public class KesselAuthorizationTest {
      */
     @Test
     void testBuildLookupResourcesRequest() {
-        record TestCase(RhIdentity identity, String expectedIdentityType, KesselPermission permission) {
+        record TestCase(RhIdentity identity, KesselPermission permission) {
             @Override
             public String toString() {
                 return "TestCase{" +
                     "identity='" + this.identity + '\'' +
-                    ", expectedIdentityType='" + this.expectedIdentityType + '\'' +
                     ", kesselPermission='" + this.permission + '\'' +
                     '}';
             }
@@ -251,8 +249,8 @@ public class KesselAuthorizationTest {
 
         // Loop through the supported identities.
         final List<TestCase> testCases = List.of(
-            new TestCase(userIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_USER, IntegrationPermission.VIEW),
-            new TestCase(serviceAccountIdentity, KesselAuthorization.KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT, IntegrationPermission.VIEW)
+            new TestCase(userIdentity, IntegrationPermission.VIEW),
+            new TestCase(serviceAccountIdentity, IntegrationPermission.VIEW)
         );
 
         for (final TestCase tc : testCases) {
@@ -261,113 +259,12 @@ public class KesselAuthorizationTest {
 
             // Make sure the request was built appropriately.
             final SubjectReference subjectReference = lookupResourcesRequest.getSubject();
-            Assertions.assertEquals(tc.expectedIdentityType(), subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
             Assertions.assertEquals(tc.identity().getName(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), lookupResourcesRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
             Assertions.assertEquals(ResourceType.INTEGRATION.getKesselName(), lookupResourcesRequest.getResourceType().getName(), String.format("unexpected resource type obtained on test case: %s", tc));
         }
-    }
-
-    /**
-     * Test that the {@link RhIdentity} is correctly extracted from a security
-     * context.
-     */
-    @Test
-    void testExtractRhIdentity() {
-        // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Create a RhIdentity principal and assign it to the mocked security
-        // context.
-        final RhIdentity identity = Mockito.mock(RhIdentity.class);
-        Mockito.when(identity.getName()).thenReturn("Red Hat user");
-
-        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
-
-        // Call the function under test.
-        final RhIdentity result = this.kesselAuthorization.extractRhIdentity(mockedSecurityContext);
-
-        // Assert that the objects are the same. Just by checking the object's
-        // reference we can be sure that our stubbed principal above is the
-        // one that was extracted.
-        Assertions.assertEquals(
-            identity,
-            result,
-            "the extracted identity object was not the same"
-        );
-    }
-
-    /**
-     * Test that when a "non-console" principal is extracted from the security
-     * context, an exception is raised.
-     */
-    @Test
-    void testExtractRhIdentityNoConsolePrincipalThrowsException() {
-        // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Mock a generic principal and make the context return it when asked
-        // for it.
-        final Principal mockedPrincipal = Mockito.mock(Principal.class);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(Mockito.mock(Principal.class));
-
-        // Call the function under test.
-        final IllegalStateException e = Assertions.assertThrows(
-            IllegalStateException.class,
-            () -> this.kesselAuthorization.extractRhIdentity(mockedSecurityContext)
-        );
-
-        // Assert that the correct exception has been thrown.
-        Assertions.assertEquals(
-            String.format("unable to extract RH Identity object from principal. Expected \"Console Principal\" object type, got \"%s\"", mockedPrincipal.getClass().getName()),
-            e.getMessage(),
-            "unexpected exception message"
-        );
-    }
-
-    /**
-     * Test that a "non-RhIdentity" identity inside a principal raises an
-     * exception.
-     */
-    @Test
-    void testExtractRhIdentityNoSupportedIdentityThrowsException() {
-        // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Mock an unexpected identity which should trigger an exception.
-        final TurnpikeSamlIdentity turnpikeSamlIdentity = new TurnpikeSamlIdentity();
-        turnpikeSamlIdentity.associate = new TurnpikeSamlIdentity.Associate();
-        turnpikeSamlIdentity.associate.email = "example@redhat.com";
-        turnpikeSamlIdentity.type = "turnpike";
-
-        // Make the identity part of the principal.
-        final ConsolePrincipal<?> turnpikePrincipal = new TurnpikePrincipal(turnpikeSamlIdentity);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(turnpikePrincipal);
-
-        // Call the function under test.
-        final IllegalStateException e = Assertions.assertThrows(
-            IllegalStateException.class,
-            () -> this.kesselAuthorization.extractRhIdentity(mockedSecurityContext)
-        );
-
-        // Assert that the correct exception has been thrown.
-        Assertions.assertEquals(
-            String.format("unable to extract RH Identity object from principal. Expected \"RhIdentity\" object type, got \"%s\"", turnpikeSamlIdentity.getClass().getName()),
-            e.getMessage(),
-            "unexpected exception message"
-        );
-    }
-
-    /**
-     * Tests that the function under test correctly extracts the subject's
-     * type from its identity object.
-     */
-    @Test
-    void testExtractSubjectTypeFromRhIdentity() {
-        Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_SERVICE_ACCOUNT, this.kesselAuthorization.extractSubjectTypeFromRhIdentity(new RhServiceAccountIdentity()));
-        Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_USER, this.kesselAuthorization.extractSubjectTypeFromRhIdentity(new RhUserIdentity()));
     }
 }
