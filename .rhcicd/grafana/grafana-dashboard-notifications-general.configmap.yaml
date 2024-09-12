@@ -27,7 +27,6 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "id": 934718,
       "links": [
         {
           "asDropdown": false,
@@ -8070,8 +8069,8 @@ data:
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
-                "drawStyle": "bars",
-                "fillOpacity": 100,
+                "drawStyle": "line",
+                "fillOpacity": 0,
                 "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
@@ -8085,7 +8084,7 @@ data:
                 "scaleDistribution": {
                   "type": "linear"
                 },
-                "showPoints": "never",
+                "showPoints": "auto",
                 "spanNulls": false,
                 "stacking": {
                   "group": "A",
@@ -8128,11 +8127,11 @@ data:
               "showLegend": true
             },
             "tooltip": {
-              "mode": "multi",
+              "mode": "single",
               "sort": "none"
             }
           },
-          "pluginVersion": "9.3.8",
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
@@ -8140,14 +8139,15 @@ data:
                 "uid": "$datasource"
               },
               "editorMode": "code",
-              "expr": "max by(pod) (user_provider_get_users_total_seconds_max{service=\"notifications-recipients-resolver-service\"})",
+              "expr": "sum(rate(user_provider_get_users_total_seconds_sum{service=\"notifications-recipients-resolver-service\"}[5m])) / sum(rate(user_provider_get_users_total_seconds_count{service=\"notifications-recipients-resolver-service\"}[5m]))",
               "hide": false,
-              "legendFormat": "{{pod}}",
+              "interval": "",
+              "legendFormat": "avg response time",
               "range": true,
               "refId": "C"
             }
           ],
-          "title": "Recipients resolver - Maximum time spent by external requests",
+          "title": "Recipients resolver - Average response time spent by external requests",
           "type": "timeseries"
         },
         {
@@ -8334,7 +8334,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(increase(webhook_endpoint_response_time_seconds_max{service=\"notifications-connector-webhook-service\"}[5m]))",
+              "expr": "sum(increase(webhook_endpoint_response_time_seconds_sum{service=\"notifications-connector-webhook-service\"}[5m])) / sum(increase(webhook_endpoint_response_time_seconds_count{service=\"notifications-connector-webhook-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "connector webhook endpoints",
@@ -8348,7 +8348,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(increase(email_bop_response_time_seconds_max{service=\"notifications-connector-email-service\"}[5m]))",
+              "expr": "sum(increase(email_bop_response_time_seconds_sum{service=\"notifications-connector-email-service\"}[5m])) / sum(increase(email_bop_response_time_seconds_count{service=\"notifications-connector-email-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "connector email BOP",
@@ -8362,7 +8362,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(increase(googlechat_response_time_seconds_max{service=\"notifications-connector-google-chat-service\"}[5m]))",
+              "expr": "sum(increase(googlechat_response_time_seconds_sum{service=\"notifications-connector-google-chat-service\"}[5m])) / sum(increase(googlechat_response_time_seconds_count{service=\"notifications-connector-google-chat-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "connector Google Chat",
@@ -8376,7 +8376,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(increase(splunk_response_time_seconds_max{service=\"notifications-connector-splunk-service\"}[5m]))",
+              "expr": "sum(increase(splunk_response_time_seconds_sum{service=\"notifications-connector-splunk-service\"}[5m])) / sum(increase(splunk_response_time_seconds_count{service=\"notifications-connector-splunk-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "connector Splunk",
@@ -8390,7 +8390,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(increase(servicenow_response_time_seconds_count{service=\"notifications-connector-servicenow-service\"}[5m]))",
+              "expr": "sum(increase(servicenow_response_time_seconds_sum{service=\"notifications-connector-servicenow-service\"}[5m])) / sum(increase(servicenow_response_time_seconds_count{service=\"notifications-connector-servicenow-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "connector ServiceNow",
@@ -8404,7 +8404,7 @@ data:
               },
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(increase(teams_response_time_seconds_count{service=\"notifications-connector-microsoft-teams-service\"}[5m]))",
+              "expr": "sum(increase(teams_response_time_seconds_sum{service=\"notifications-connector-microsoft-teams-service\"}[5m])) / sum(increase(teams_response_time_seconds_count{service=\"notifications-connector-microsoft-teams-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "connector Ms Teams",
@@ -8418,29 +8418,15 @@ data:
               },
               "editorMode": "code",
               "exemplar": true,
-              "expr": "sum(increase(slack_response_time_seconds_count{service=\"notifications-connector-slack-service\"}[5m]))",
+              "expr": "sum(increase(slack_response_time_seconds_sum{service=\"notifications-connector-slack-service\"}[5m])) / sum(increase(slack_response_time_seconds_count{service=\"notifications-connector-slack-service\"}[5m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "connector Slack",
               "range": true,
               "refId": "Slack"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "code",
-              "exemplar": true,
-              "expr": "sum(increase(email_bop_v2_response_time_seconds_max{service=\"notifications-connector-email-service\"}[5m]))",
-              "hide": false,
-              "interval": "",
-              "legendFormat": "connector email BOP V2",
-              "range": true,
-              "refId": "connector email BOP V2"
             }
           ],
-          "title": "Maximum time spent calling customers endpoints",
+          "title": "Average time spent calling customers endpoints",
           "type": "timeseries"
         },
         {
@@ -9065,7 +9051,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -9159,7 +9146,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "crcs02ue1-prometheus",
               "value": "crcs02ue1-prometheus"
             },
