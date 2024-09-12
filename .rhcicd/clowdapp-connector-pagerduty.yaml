@@ -10,9 +10,8 @@ objects:
     name: notifications-connector-pagerduty
   spec:
     envName: ${ENV_NAME}
-    # To be confirmed, see RHCLOUD-33798
-    # testing:
-    #   iqePlugin: notifications
+    testing:
+      iqePlugin: notifications
     dependencies:
     - notifications-engine
     - sources-api
