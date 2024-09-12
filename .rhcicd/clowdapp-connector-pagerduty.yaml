@@ -1,0 +1,204 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: notifications-connector-pagerduty
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
+  metadata:
+    name: notifications-connector-pagerduty
+  spec:
+    envName: ${ENV_NAME}
+    testing:
+      iqePlugin: notifications
+    dependencies:
+    - notifications-engine
+    - sources-api
+    optionalDependencies:
+    - notifications-backend
+    featureFlags: true
+    kafkaTopics:
+    - topicName: platform.notifications.tocamel
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.fromcamel
+      partitions: 3
+      replicas: 3
+    deployments:
+    - name: service
+      minReplicas: ${{MIN_REPLICAS}}
+      webServices:
+        private:
+          enabled: true
+      podSpec:
+        image: ${IMAGE}:${IMAGE_TAG}
+        resources:
+          requests:
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+        readinessProbe:
+          httpGet:
+            path: /q/health/ready
+            port: ${{QUARKUS_HTTP_PORT}}
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /q/health/live
+            port: ${{QUARKUS_HTTP_PORT}}
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        env:
+        - name: ENV_NAME
+          value: ${ENV_NAME}
+        - name: HOST_NAME
+          value: ${HOSTNAME}
+        - name: NOTIFICATIONS_CONNECTOR_AUTHENTICATION_SECRETS_LOADER_SOURCES_API_PSK
+          valueFrom:
+            secretKeyRef:
+              name: sources-api-psk
+              key: psk
+        - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
+          value: ${NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE}
+        - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS}
+        - name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
+          value: ${NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_INTERVAL_MS
+          value: ${KAFKA_MAX_POLL_INTERVAL_MS}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_MAX_POLL_RECORDS
+          value: ${KAFKA_MAX_POLL_RECORDS}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_INCOMING_POLL_ON_ERROR
+          value: ${KAFKA_POLL_ON_ERROR}
+        - name: NOTIFICATIONS_CONNECTOR_KAFKA_MAXIMUM_REINJECTIONS
+          value: ${NOTIFICATIONS_CONNECTOR_KAFKA_MAXIMUM_REINJECTIONS}
+        - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
+          value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY}
+        - name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
+          value: ${NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS}
+        - name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
+          value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
+        - name: NOTIFICATIONS_CONNECTOR_SEDA_QUEUE_SIZE
+          value: ${NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS}
+        - name: NOTIFICATIONS_UNLEASH_ENABLED
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
+        - name: QUARKUS_HTTP_PORT
+          value: ${QUARKUS_HTTP_PORT}
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+          value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CATEGORY__ORG_APACHE_KAFKA_CLIENTS__LEVEL
+          value: ${KAFKA_CLIENT_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+          value: ${QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT}
+        - name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
+          value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD}
+        - name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
+          value: ${QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${QUARKUS_LOG_CLOUDWATCH_ENABLED}
+        - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
+          value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
+        - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
+          value: ${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY
+          value: ${SENTRY_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_DSN
+          value: ${SENTRY_DSN}${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+          value: ${ENV_NAME}
+        - name: QUARKUS_UNLEASH_ACTIVE
+          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
+parameters:
+- name: CPU_LIMIT
+  description: CPU limit
+  value: 200m
+- name: CPU_REQUEST
+  description: CPU request
+  value: 100m
+- name: ENV_NAME
+  description: ClowdEnvironment name (ephemeral, stage, prod)
+  required: true
+- name: IMAGE
+  description: Image URL
+  value: quay.io/cloudservices/notifications-connector-pagerduty
+- name: IMAGE_TAG
+  value: latest
+- name: KAFKA_CLIENT_LOG_LEVEL
+  description: Log level of the Kafka client library
+  value: WARN
+- name: KAFKA_MAX_POLL_INTERVAL_MS
+  description: Maximum delay in milliseconds between two calls of poll(). Defaults to 300000 (5 minutes).
+  value: "300000"
+- name: KAFKA_MAX_POLL_RECORDS
+  description: Maximum number of records returned in a single call of poll(). Defaults to 500.
+  value: "500"
+- name: KAFKA_POLL_ON_ERROR
+  description: What to do if kafka threw an exception while polling for new messages. See https://camel.apache.org/components/latest/kafka-component.html for more details.
+  value: RECONNECT
+- name: MEMORY_LIMIT
+  description: Memory limit
+  value: 500Mi
+- name: MEMORY_REQUEST
+  description: Memory request
+  value: 250Mi
+- name: MIN_REPLICAS
+  value: "3"
+- name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
+  description: Maximum size of the Camel endpoints cache
+  value: "100"
+- name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
+  description: Maximum time in milliseconds allowed to establish an HTTP connection
+  value: "2500"
+- name: NOTIFICATIONS_CONNECTOR_HTTP_SOCKET_TIMEOUT_MS
+  description: Maximum time in milliseconds allowed to wait for HTTP data
+  value: "2500"
+- name: NOTIFICATIONS_CONNECTOR_KAFKA_MAXIMUM_REINJECTIONS
+  description: Maximum times a message will be reinjected in the incoming queue after having failed to deliver the notification
+  value: "0"
+- name: NOTIFICATIONS_CONNECTOR_REDELIVERY_DELAY
+  description: Delay in milliseconds between two redelivery attempts
+  value: "1000"
+- name: NOTIFICATIONS_CONNECTOR_REDELIVERY_MAX_ATTEMPTS
+  description: Maximum number of redelivery attempts (initial call not included)
+  value: "2"
+- name: NOTIFICATIONS_CONNECTOR_SEDA_CONCURRENT_CONSUMERS
+  description: Number of concurrent threads processing exchanges with SEDA; Maximum capacity of the SEDA queue
+  value: "50"
+- name: NOTIFICATIONS_LOG_LEVEL
+  description: Log level of Notifications
+  value: INFO
+- name: NOTIFICATIONS_UNLEASH_ENABLED
+  value: "false"
+- name: QUARKUS_HTTP_PORT
+  description: Quarkus HTTP server port, defaulting to the default Clowder private port
+  value: "9000"
+- name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
+  description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
+  value: PT30S
+- name: QUARKUS_LOG_CLOUDWATCH_BATCH_PERIOD
+  description: Period between two batch executions. Defaults to 5s.
+  value: 5s
+- name: QUARKUS_LOG_CLOUDWATCH_BATCH_SIZE
+  description: Number of log events sent to CloudWatch per batch. Defaults to 10,000 which is the maximum number of log events per batch allowed by CloudWatch.
+  value: "10000"
+- name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+  value: "false"
+- name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
+  description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
+  value: "100000"
+- name: SENTRY_DSN
+  description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
+- name: SENTRY_ENABLED
+  value: "false"

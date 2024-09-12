@@ -1,0 +1,37 @@
+####
+# This Dockerfile is used in order to build a container that runs the Quarkus application in JVM mode
+###
+
+# Build the project
+FROM registry.access.redhat.com/ubi9/openjdk-21:latest AS build
+USER root
+COPY . /home/jboss
+WORKDIR /home/jboss
+RUN ./mvnw clean package -Dmaven.test.skip -Dcheckstyle.skip -pl :notifications-connector-pagerduty -am --no-transfer-progress
+
+# Build the container
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest
+
+# Update the base image packages
+USER root
+# See https://www.mankier.com/8/microdnf
+RUN microdnf upgrade --refresh --nodocs --setopt=install_weak_deps=0 -y
+RUN microdnf clean all
+USER jboss
+
+ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
+ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -XX:+ExitOnOutOfMemoryError"
+
+# Konflux preflight check requires a license
+COPY --from=build /home/jboss/LICENSE.txt /licenses/LICENSE
+
+# Use four distinct layers so if there are application changes the library layers can be re-used
+COPY --from=build --chown=185 /home/jboss/connector-pagerduty/target/quarkus-app/lib/ /deployments/lib/
+COPY --from=build --chown=185 /home/jboss/connector-pagerduty/target/quarkus-app/*.jar /deployments/
+COPY --from=build --chown=185 /home/jboss/connector-pagerduty/target/quarkus-app/app/ /deployments/app/
+COPY --from=build --chown=185 /home/jboss/connector-pagerduty/target/quarkus-app/quarkus/ /deployments/quarkus/
+
+EXPOSE 8080
+USER 185
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTIONS -jar /deployments/quarkus-run.jar"]
