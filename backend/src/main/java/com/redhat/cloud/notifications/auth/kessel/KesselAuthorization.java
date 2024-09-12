@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
-import io.grpc.StatusRuntimeException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -94,7 +93,7 @@ public class KesselAuthorization {
         final CheckResponse response;
         try {
             response = this.checkClient.check(permissionCheckRequest);
-        } catch (final StatusRuntimeException e) {
+        } catch (final Exception e) {
             Log.errorf(
                 e,
                 "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Runtime error when querying Kessel for a permission check with request payload: %s",
@@ -144,7 +143,7 @@ public class KesselAuthorization {
         final Iterator<LookupResourcesResponse> responses;
         try {
             responses = this.lookupClient.lookupResources(request);
-        } catch (final StatusRuntimeException e) {
+        } catch (final Exception e) {
             Log.errorf(
                 e,
                 "[identity: %s][permission: %s][resource_type: %s] Runtime error when querying Kessel for integration resources with request payload: %s",

@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
-import io.grpc.StatusRuntimeException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -59,7 +58,7 @@ public class KesselAssets {
         final CreateNotificationsIntegrationResponse response;
         try {
             response = this.notificationsIntegrationClient.CreateNotificationsIntegration(request);
-        } catch (final StatusRuntimeException e) {
+        } catch (final Exception e) {
             Log.errorf(
                 e,
                 "[identity: %s][workspace_id: %s][integration_id: %s] Unable to create integration in Kessel's inventory",
@@ -98,7 +97,7 @@ public class KesselAssets {
         final DeleteNotificationsIntegrationResponse response;
         try {
             response = this.notificationsIntegrationClient.DeleteNotificationsIntegration(request);
-        } catch (final StatusRuntimeException e) {
+        } catch (final Exception e) {
             Log.errorf(
                 e,
                 "[identity: %s][workspace_id: %s][integration_id: %s] Unable to delete integration in Kessel's inventory",
