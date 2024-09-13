@@ -43,7 +43,7 @@ public class ErrataUserPreferencesMigrationResource {
     public static final String EVENT_TYPE_NAME_SECURITY = "new-subscription-security-errata";
     private static final String JSON_KEY_ORG_ID = "org_id";
     private static final String JSON_KEY_SUBSCRIPTION_PREFERENCES = "preferences";
-    private static final String JSON_KEY_USERNAME = "username";
+    private static final String JSON_KEY_USERNAME = "user_name";
     private static final String JSON_VALUE_PREFERENCE_BUGFIX = "bugfix";
     private static final String JSON_VALUE_PREFERENCE_ENHANCEMENT = "enhancement";
     private static final String JSON_VALUE_PREFERENCE_SECURITY = "security";
@@ -130,46 +130,34 @@ public class ErrataUserPreferencesMigrationResource {
                 if (errataSubscriptions.size() >= this.backendConfig.getErrataMigrationBatchSize()) {
                     Log.infof("Inserting a batch of %s Errata subscriptions into the database", this.backendConfig.getErrataMigrationBatchSize());
 
-                    try {
-                        this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);
+                    this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);
 
-                        Log.infof("Persisted %s errata subscriptions to the database.", errataSubscriptions.size());
+                    Log.infof("Persisted %s errata subscriptions to the database.", errataSubscriptions.size());
 
-                        // Clear the inserted subscriptions.
-                        totalInsertedElements += errataSubscriptions.size();
-                        errataSubscriptions.clear();
-                    } catch (final Exception e) {
-                        if (TransactionStatus.ROLLED_BACK != transaction.getStatus()) {
-                            transaction.rollback();
-                        }
-
-                        Log.error("Unable to migrate errata subscriptions due to an exception. The insertions were rolled back", e);
-
-                        throw new InternalServerErrorException("Unable to persist subscriptions. The operation was rolled back");
-                    }
+                    // Clear the inserted subscriptions.
+                    totalInsertedElements += errataSubscriptions.size();
+                    errataSubscriptions.clear();
                 }
             }
 
             // In case we finished parsing the JSON file but there are still
             // some elements not persisted, we need to store those too.
             if (!errataSubscriptions.isEmpty()) {
-                try {
-                    this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);
+                this.errataMigrationRepository.saveErrataSubscriptions(errataSubscriptions);
 
-                    Log.infof("Persisted %s errata subscriptions to the database.", errataSubscriptions.size());
+                Log.infof("Persisted %s errata subscriptions to the database.", errataSubscriptions.size());
 
-                    totalInsertedElements += errataSubscriptions.size();
-                    errataSubscriptions.clear();
-                } catch (final Exception e) {
-                    if (TransactionStatus.ROLLED_BACK != transaction.getStatus()) {
-                        transaction.rollback();
-                    }
-
-                    Log.error("Unable to migrate errata subscriptions due to an exception. The insertions were rolled back", e);
-
-                    throw new InternalServerErrorException("Unable to persist subscriptions. The operation was rolled back");
-                }
+                totalInsertedElements += errataSubscriptions.size();
+                errataSubscriptions.clear();
             }
+        } catch (final Exception e) {
+            if (TransactionStatus.ROLLED_BACK != transaction.getStatus()) {
+                transaction.rollback();
+            }
+
+            Log.error("Unable to migrate errata subscriptions due to an exception. The insertions were rolled back", e);
+
+            throw new InternalServerErrorException("Unable to persist subscriptions. The operation was rolled back");
         }
 
         // Commit the changes to the database and finalize the operation.
