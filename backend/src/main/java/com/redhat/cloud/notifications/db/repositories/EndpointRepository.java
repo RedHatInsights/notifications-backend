@@ -219,7 +219,7 @@ public class EndpointRepository {
                 "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
         String camelQuery = "UPDATE CamelProperties SET url = :url, extras = :extras, " +
                 "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
-        String pagerDutyQuery = "UPDATE PagerDutyProperties SET url = :url, severity = :severity " +
+        String pagerDutyQuery = "UPDATE PagerDutyProperties SET severity = :severity " +
                 "WHERE endpoint.id = :endpointId";
 
         if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
@@ -260,7 +260,6 @@ public class EndpointRepository {
                 case PAGERDUTY:
                     PagerDutyProperties pdAttr = (PagerDutyProperties) endpoint.getProperties();
                     return entityManager.createQuery(pagerDutyQuery)
-                            .setParameter("url", pdAttr.getUrl())
                             .setParameter("severity", pdAttr.getSeverity())
                             .setParameter("endpointId", endpoint.getId())
                             .executeUpdate() > 0;

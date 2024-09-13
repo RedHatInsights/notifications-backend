@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -11,10 +10,8 @@ import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import static com.redhat.cloud.notifications.Constants.PAGERDUTY_EVENT_V2_URL;
-
 /**
- * PagerDuty uses {@link com.redhat.cloud.notifications.Constants#PAGERDUTY_EVENT_V2_URL a single REST endpoint} for
+ * PagerDuty uses a single REST endpoint for
  * all users, distinguishing between them with an Integration Key ({@link PagerDutyProperties#secretToken}) included in
  * <em>the body of the POST request</em>, not the header. The endpoint URL is not provided by end users, but is included
  * in this Entity for future migrations.
@@ -23,15 +20,12 @@ import static com.redhat.cloud.notifications.Constants.PAGERDUTY_EVENT_V2_URL;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
 @Table(name = "pagerduty_properties")
 public class PagerDutyProperties extends EndpointProperties implements SourcesSecretable {
-    @NotNull
-    @ValidNonPrivateUrl
-    private String url = PAGERDUTY_EVENT_V2_URL;
 
     @NotNull
     private PagerDutySeverity severity;
 
     @NotNull
-    @Size(max = 255)
+    @Size(max = 32)
     @Transient
     private String secretToken;
 
@@ -41,14 +35,6 @@ public class PagerDutyProperties extends EndpointProperties implements SourcesSe
     @Column(name = "secret_token_id")
     @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private Long secretTokenSourcesId;
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
 
     public PagerDutySeverity getSeverity() {
         return severity;

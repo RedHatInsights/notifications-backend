@@ -97,7 +97,7 @@ public interface EndpointMapper {
     WebhookProperties webhookToEntity(WebhookPropertiesDTO webhookPropertiesDTO);
 
     /**
-     * Maps a webhook properties' internal entity into a DTO.
+     * Maps a PagerDuty properties' internal entity into a DTO.
      * @param pagerDutyProperties the internal entity to map.
      * @return the mapped DTO.
      */

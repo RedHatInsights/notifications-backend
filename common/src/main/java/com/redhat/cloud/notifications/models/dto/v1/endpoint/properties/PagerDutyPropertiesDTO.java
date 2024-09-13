@@ -12,7 +12,7 @@ public class PagerDutyPropertiesDTO extends EndpointPropertiesDTO {
     @NotNull
     private PagerDutySeverity severity;
 
-    @Size(max = 255)
+    @Size(max = 32)
     @NotNull
     private String secretToken;
 

@@ -27,6 +27,7 @@ import static com.redhat.cloud.notifications.transformers.BaseTransformer.PAYLOA
 public class PagerDutyProcessor extends EndpointTypeProcessor {
 
     public static final String PROCESSED_PAGERDUTY_COUNTER = "processor.pagerduty.processed";
+    public static final String PAGERDUTY_EVENT_V2_URL = "https://events.pagerduty.com/v2/enqueue";
 
     @Inject
     BaseTransformer transformer;
@@ -77,7 +78,7 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         transformedEvent.put("severity", properties.getSeverity().toString());
 
         connectorData.put(PAYLOAD, transformedEvent);
-        connectorData.put("url", properties.getUrl());
+        connectorData.put("url", PAGERDUTY_EVENT_V2_URL);
 
         if (properties.getSecretTokenSourcesId() != null) {
             JsonObject authentication = JsonObject.of(

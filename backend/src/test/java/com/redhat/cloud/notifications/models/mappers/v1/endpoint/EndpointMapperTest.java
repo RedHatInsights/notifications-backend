@@ -121,7 +121,6 @@ public class EndpointMapperTest {
         webhookProperties.setSecretToken("secret token");
 
         final PagerDutyProperties pagerDutyProperties = new PagerDutyProperties();
-        pagerDutyProperties.setUrl("https://redhat.com");
         pagerDutyProperties.setSeverity(PagerDutySeverity.ERROR);
         pagerDutyProperties.setSecretToken("secret token");
 
