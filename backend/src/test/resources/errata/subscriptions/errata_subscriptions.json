@@ -1,26 +1,26 @@
 [
   {
-    "username": "a",
+    "user_name": "a",
     "org_id": "12345",
     "preferences": ["bugfix", "enhancement", "security"]
   },
   {
-    "username": "b",
+    "user_name": "b",
     "org_id": "12345",
     "preferences": ["bugfix"]
   },
   {
-    "username": "c",
+    "user_name": "c",
     "org_id": "12345",
     "preferences": ["enhancement"]
   },
   {
-    "username": "d",
+    "user_name": "d",
     "org_id": "12345",
     "preferences": ["security"]
   },
   {
-    "username": "e",
+    "user_name": "e",
     "org_id": "12345"
   }
 ]

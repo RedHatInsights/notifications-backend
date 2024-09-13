@@ -43,7 +43,7 @@ public class ErrataUserPreferencesMigrationResource {
     public static final String EVENT_TYPE_NAME_SECURITY = "new-subscription-security-errata";
     private static final String JSON_KEY_ORG_ID = "org_id";
     private static final String JSON_KEY_SUBSCRIPTION_PREFERENCES = "preferences";
-    private static final String JSON_KEY_USERNAME = "username";
+    private static final String JSON_KEY_USERNAME = "user_name";
     private static final String JSON_VALUE_PREFERENCE_BUGFIX = "bugfix";
     private static final String JSON_VALUE_PREFERENCE_ENHANCEMENT = "enhancement";
     private static final String JSON_VALUE_PREFERENCE_SECURITY = "security";
