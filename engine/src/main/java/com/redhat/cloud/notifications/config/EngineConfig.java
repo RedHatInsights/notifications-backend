@@ -46,6 +46,7 @@ public class EngineConfig {
     private String asyncAggregationToggle;
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
+    private String fetchAggregationBasedOnEvents;
     private String toggleKafkaOutgoingHighVolumeTopic;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
@@ -130,6 +131,7 @@ public class EngineConfig {
         asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
         drawerToggle = toggleRegistry.register("drawer", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
+        fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events", true);
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
     }
 
@@ -149,6 +151,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
+        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnabled());
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
 
         Log.info("=== Startup configuration ===");
@@ -191,6 +194,14 @@ public class EngineConfig {
 
     public boolean isSecuredEmailTemplatesEnabled() {
         return useSecuredEmailTemplates;
+    }
+
+    public boolean isAggregationBasedOnEventEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(fetchAggregationBasedOnEvents, false);
+        } else {
+            return false;
+        }
     }
 
     @Deprecated(forRemoval = true)

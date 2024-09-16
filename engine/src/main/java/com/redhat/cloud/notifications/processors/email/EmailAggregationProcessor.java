@@ -18,6 +18,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.IAggregationCommand;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
@@ -198,7 +199,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
     public void processAggregationSync(Event event) {
 
-        List<AggregationCommand> aggregationCommands = new ArrayList<>();
+        List<IAggregationCommand> aggregationCommands = new ArrayList<>();
         Timer.Sample consumedTimer = Timer.start(registry);
 
         try {
@@ -218,7 +219,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             return;
         }
 
-        final String bundle  = aggregationCommands.get(0).getAggregationKey().getBundle();
+        final String bundle = aggregationCommands.get(0).getAggregationKey().getBundle();
 
         processedAggregationCommandCount.increment(aggregationCommands.size());
         try {
@@ -244,7 +245,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         }
     }
 
-    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent) {
+    private void processBundleAggregation(List<IAggregationCommand> aggregationCommands, Event aggregatorEvent) {
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
         // Patch event display name for event log rendering
         Bundle bundle = bundleRepository.getBundle(bundleName)
@@ -263,7 +264,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         //Store every aggregated application data for each user
         Map<User, List<ApplicationAggregatedData>> userData = new HashMap<>();
 
-        for (AggregationCommand applicationAggregationCommand : aggregationCommands) {
+        for (IAggregationCommand applicationAggregationCommand : aggregationCommands) {
             Log.debugf("Processing aggregation command: %s", applicationAggregationCommand);
 
             try {
@@ -357,7 +358,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             }
         });
 
-        for (AggregationCommand applicationAggregationCommand : aggregationCommands) {
+        for (IAggregationCommand applicationAggregationCommand : aggregationCommands) {
             emailAggregationRepository.purgeOldAggregation(applicationAggregationCommand.getAggregationKey(), applicationAggregationCommand.getEnd());
         }
     }
