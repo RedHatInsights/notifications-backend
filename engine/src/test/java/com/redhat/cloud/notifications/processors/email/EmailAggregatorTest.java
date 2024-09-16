@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -27,8 +28,6 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -40,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,6 +76,9 @@ class EmailAggregatorTest {
     @Inject
     CacheManager cacheManager;
 
+    @InjectMock
+    EngineConfig engineConfig;
+
     Application application;
     EventType eventType1;
     EventType eventType2;
@@ -86,7 +89,6 @@ class EmailAggregatorTest {
         emailAggregator.maxPageSize = 5;
         clearCachedData("recipients-resolver-results");
         clearInvocations(recipientsResolverService);
-        clearInvocations(recipientResolver);
         emailAggregationRepository.purgeOldAggregation(AGGREGATION_KEY, LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1));
         resourceHelpers.clearEvents();
     }
@@ -99,10 +101,9 @@ class EmailAggregatorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"true", "false"})
+    @ValueSource(booleans = {true, false})
     void shouldTestRecipientsFromSubscription(boolean isAggregationBasedOnEvents) {
-        //TOTO WHY ?
-        when(engineConfig.isAggregationBasedOnEventEnabled()).thenReturn(true);
+        when(engineConfig.isAggregationBasedOnEventEnabled()).thenReturn(isAggregationBasedOnEvents);
 
         // init test environment
         application = resourceHelpers.findApp("rhel", "policies");
@@ -192,7 +193,6 @@ class EmailAggregatorTest {
         result.putAll(emailAggregator.getAggregated(application.getId(), aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
         return result;
     }
-
 
     public void clearCachedData(String cacheName) {
         Optional<Cache> cache = cacheManager.getCache(cacheName);

@@ -72,6 +72,9 @@ public class EmailAggregator {
     @Inject
     ActionParser actionParser;
 
+    @Inject
+    EngineConfig engineConfig;
+
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
