@@ -19,6 +19,7 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
 
     public static final String AUTHENTICATION = "authentication";
     public static final String URL = "url";
+    public static final String PAGERDUTY_EVENT_V2_URL = "https://events.pagerduty.com/v2/enqueue";
 
     // HTTP URLs (or disabling SSL verification) must be permitted to run test cases
     private static final UrlValidator URL_VALIDATOR = new UrlValidator(new String[]{"http", "https"}, ALLOW_LOCAL_URLS);
@@ -31,7 +32,12 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
 
         validatePayload(cloudEventData);
 
-        exchange.setProperty(TARGET_URL, cloudEventData.getString(URL));
+        String providedUrl = cloudEventData.getString(TARGET_URL);
+        if (providedUrl == null || providedUrl.isEmpty()) {
+            exchange.setProperty(TARGET_URL, cloudEventData.getString(PAGERDUTY_EVENT_V2_URL));
+        } else {
+            exchange.setProperty(TARGET_URL, providedUrl);
+        }
 
         JsonObject authentication = cloudEventData.getJsonObject(AUTHENTICATION);
         authenticationDataExtractor.extract(exchange, authentication);

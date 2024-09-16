@@ -11,10 +11,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * PagerDuty uses a single REST endpoint for
- * all users, distinguishing between them with an Integration Key ({@link PagerDutyProperties#secretToken}) included in
- * <em>the body of the POST request</em>, not the header. The endpoint URL is not provided by end users, but is included
- * in this Entity for future migrations.
+ * PagerDuty uses a single REST endpoint for all users, distinguishing between them with an Integration Key
+ * ({@link PagerDutyProperties#secretToken}) included in <em>the body of the POST request</em>, not the header.
  */
 @Entity
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
