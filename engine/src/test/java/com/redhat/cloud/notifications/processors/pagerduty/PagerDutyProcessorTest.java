@@ -1,37 +1,187 @@
 package com.redhat.cloud.notifications.processors.pagerduty;
 
-import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
-import com.redhat.cloud.notifications.processors.camel.CamelProcessorTest;
+import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.EngineConfig;
+import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Context;
+import com.redhat.cloud.notifications.ingress.Metadata;
+import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Environment;
+import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.models.PagerDutyProperties;
+import com.redhat.cloud.notifications.models.PagerDutySeverity;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.reactive.messaging.memory.InMemoryConnector;
+import io.smallrye.reactive.messaging.memory.InMemorySink;
+import io.vertx.core.json.JsonObject;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
-// TODO implement processor test for PagerDuty
-public class PagerDutyProcessorTest extends CamelProcessorTest {
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.PROCESSED_PAGERDUTY_COUNTER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+@QuarkusTest
+@QuarkusTestResource(TestLifecycleManager.class)
+public class PagerDutyProcessorTest {
 
     @Inject
     PagerDutyProcessor pagerDutyProcessor;
 
-    @Override
-    protected String getQuteTemplate() {
-        return "";
+    @Inject
+    MicrometerAssertionHelper micrometerAssertionHelper;
+
+    @InjectMock
+    EngineConfig engineConfig;
+
+    @InjectMock
+    NotificationHistoryRepository notificationHistoryRepository;
+
+    @Inject
+    @Any
+    InMemoryConnector inMemoryConnector;
+
+    private InMemorySink<JsonObject> inMemorySink;
+
+    @Inject
+    BaseTransformer transformer;
+
+    @Inject
+    Environment environment;
+
+    @PostConstruct
+    void postConstruct() {
+        inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
     }
 
-    @Override
-    protected String getExpectedMessage() {
-        return "";
+    @BeforeEach
+    void beforeEach() {
+        inMemorySink.clear();
+        micrometerAssertionHelper.saveCounterValuesBeforeTest(PROCESSED_PAGERDUTY_COUNTER);
     }
 
-    @Override
-    protected String getSubType() {
-        return "";
+    @AfterEach
+    void afterEach() {
+        micrometerAssertionHelper.clearSavedValues();
     }
 
-    @Override
-    protected CamelProcessor getCamelProcessor() {
-        return null;
+    @Test
+    void testPagerDutyUsingConnector() {
+        // Make sure that the payload does not get stored in the database.
+        Mockito.when(this.engineConfig.getKafkaToCamelMaximumRequestSize()).thenReturn(Integer.MAX_VALUE);
+
+        Action pagerDutyActionMessage = buildPagerDutyAction();
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(pagerDutyActionMessage));
+        event.setApplicationDisplayName("policies");
+
+        Application application = new Application();
+        application.setName("policies");
+        EventType eventType = new EventType();
+        eventType.setApplication(application);
+        eventType.setName("policy-triggered");
+        event.setEventType(eventType);
+        event.setOrgId(DEFAULT_ORG_ID);
+        Endpoint ep = buildPagerDutyEndpoint();
+
+        pagerDutyProcessor.process(event, List.of(ep));
+        ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+        verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+        NotificationHistory history = historyArgumentCaptor.getAllValues().getFirst();
+        assertFalse(history.isInvocationResult());
+        assertEquals(NotificationStatus.PROCESSING, history.getStatus());
+        // Now let's check the Kafka messages sent to the outgoing channel.
+        // The channel should have received two messages.
+        assertEquals(1, inMemorySink.received().size());
+
+        // We'll only check the payload and metadata of the first Kafka message.
+        Message<JsonObject> message = inMemorySink.received().getFirst();
+        JsonObject payload = message.getPayload();
+
+        final JsonObject payloadToSent = transformer.toJsonObject(event);
+        payloadToSent.put("environment_url", environment.url());
+        payloadToSent.put("severity", PagerDutySeverity.ERROR);
+        assertEquals(payloadToSent, payload.getJsonObject("payload"));
+
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
     }
 
-    @Override
-    protected String getExpectedConnectorHeader() {
-        return "";
+    private static Action buildPagerDutyAction() {
+        Action pagerDutyActionMessage = new Action();
+        pagerDutyActionMessage.setBundle("mybundle");
+        pagerDutyActionMessage.setApplication("PagerDutyTest");
+        pagerDutyActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        pagerDutyActionMessage.setEventType("testPagerDuty");
+        pagerDutyActionMessage.setAccountId("tenant");
+        pagerDutyActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        Payload payload1 = new Payload.PayloadBuilder()
+                .withAdditionalProperty("any", "thing")
+                .withAdditionalProperty("we", 1)
+                .withAdditionalProperty("want", "here")
+                .build();
+
+        Context context = new Context.ContextBuilder()
+                .withAdditionalProperty("free", "more")
+                .withAdditionalProperty("format", 1)
+                .withAdditionalProperty("here", "stuff")
+                .build();
+
+        pagerDutyActionMessage.setEvents(
+                List.of(
+                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                .withMetadata(new Metadata.MetadataBuilder().build())
+                                .withPayload(payload1)
+                                .build(),
+                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                .withMetadata(new Metadata.MetadataBuilder().build())
+                                .withPayload(new Payload.PayloadBuilder().build())
+                                .build()
+                )
+        );
+
+        pagerDutyActionMessage.setContext(context);
+        return pagerDutyActionMessage;
+    }
+
+    private static Endpoint buildPagerDutyEndpoint() {
+        PagerDutyProperties properties = new PagerDutyProperties();
+        properties.setSeverity(PagerDutySeverity.ERROR);
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.WEBHOOK);
+        ep.setName("positive feeling");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+        ep.setCreated(LocalDateTime.now());
+
+        return ep;
     }
 }
