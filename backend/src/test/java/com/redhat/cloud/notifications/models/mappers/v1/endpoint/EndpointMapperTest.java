@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointStatusDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPropertiesDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutyPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.secrets.BasicAuthenticationDTO;
 import io.quarkus.test.junit.QuarkusTest;
@@ -35,10 +36,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-// TODO add PagerDuty
 @QuarkusTest
 public class EndpointMapperTest {
     private static final String ENDPOINT_CAMEL_CREATE_JSON = "json-schemas/v1/endpoint/implementations/create/endpoint-camel.json";
+    private static final String ENDPOINT_PAGERDUTY_CREATE_JSON = "json-schemas/v1/endpoint/implementations/create/endpoint-pagerduty.json";
     private static final String ENDPOINT_WEBHOOK_CREATE_JSON = "json-schemas/v1/endpoint/implementations/create/endpoint-webhook.json";
     private static final String SCHEMA_PATH_ENDPOINT_CREATE = "json-schemas/v1/endpoint/endpoint-schema-create.json";
     private static final String SCHEMA_PATH_ENDPOINT_READ = "json-schemas/v1/endpoint/endpoint-schema-read.json";
@@ -289,7 +290,48 @@ public class EndpointMapperTest {
      */
     @Test
     void testEndpointMapperPagerDutyToDTOToEntity() throws IOException, URISyntaxException {
-        // TODO implement pagerduty endpoint mapper test
+        final String endpointPagerDutyJson = this.readStringFromClasspathResource(ENDPOINT_PAGERDUTY_CREATE_JSON);
+
+        // Assert that the JSON file complies with the defined schema.
+        final Set<ValidationMessage> validationMessages = this.schemaEndpointCreate.validate(this.objectMapper.readTree(endpointPagerDutyJson));
+        this.assertNoSchemaValidationErrors(validationMessages);
+
+        // Attempt reading the JSON into a DTO, which should succeed.
+        final EndpointDTO dto = this.objectMapper.readValue(endpointPagerDutyJson, EndpointDTO.class);
+
+        // Assert that the DTO was properly built.
+        Assertions.assertEquals("PagerDuty endpoint", dto.getName(), "the name of the endpoint was not properly deserialized");
+        Assertions.assertEquals("A JSON structure which represents a PagerDuty endpoint", dto.getDescription(), "the description of the endpoint was not properly deserialized");
+        Assertions.assertTrue(dto.getEnabled(), "the \"enabled\" status of the endpoint was not properly deserialized");
+        Assertions.assertEquals(EndpointStatusDTO.READY, dto.getStatus(), "the status of the endpoint was not properly deserialized");
+        Assertions.assertEquals(17, dto.getServerErrors(), "the number of server errors of the endpoint were not properly deserialized");
+        Assertions.assertNull(dto.getSubType(), "the subtype of the endpoint was not properly deserialized");
+        Assertions.assertEquals(EndpointTypeDTO.PAGERDUTY, dto.getType(), "the type of the endpoint was not properly deserialized");
+
+        // Assert that the endpoint's properties were correctly deserialized.
+        Assertions.assertInstanceOf(PagerDutyPropertiesDTO.class, dto.getProperties(), "the properties of the PagerDuty endpoint were not properly deserialized as webhook properties");
+        final PagerDutyPropertiesDTO pagerDutyPropertiesDTO = (PagerDutyPropertiesDTO) dto.getProperties();
+
+        Assertions.assertEquals(PagerDutySeverity.CRITICAL, pagerDutyPropertiesDTO.getSeverity(), "the severity property of the PagerDuty endpoint was not properly deserialized");
+        Assertions.assertEquals("p8g3rduty-sup3r-s3cr3t-t0k3n", pagerDutyPropertiesDTO.getSecretToken(), "the secret token was not properly deserialized");
+
+        final Endpoint entity = this.endpointMapper.toEntity(dto);
+
+        // Assert that the entity was properly mapped.
+        Assertions.assertEquals("PagerDuty endpoint", entity.getName(), "the name of the endpoint was not properly mapped");
+        Assertions.assertEquals("A JSON structure which represents a PagerDuty endpoint", entity.getDescription(), "the description of the endpoint was not properly mapped");
+        Assertions.assertTrue(entity.isEnabled(), "the \"enabled\" status of the endpoint was not properly mapped");
+        Assertions.assertEquals(EndpointStatus.READY, entity.getStatus(), "the status of the endpoint was not properly mapped");
+        Assertions.assertEquals(17, entity.getServerErrors(), "the number of server errors of the endpoint were not properly mapped");
+        Assertions.assertNull(entity.getSubType(), "the subtype of the endpoint was not properly mapped");
+        Assertions.assertEquals(EndpointType.PAGERDUTY, entity.getType(), "the type of the endpoint was not properly mapped");
+
+        // Assert that the endpoint's properties were correctly deserialized.
+        Assertions.assertInstanceOf(PagerDutyProperties.class, entity.getProperties(), "the properties of the PagerDuty endpoint were not properly deserialized as webhook properties");
+        final PagerDutyProperties pagerDutyProperties = (PagerDutyProperties) entity.getProperties();
+
+        Assertions.assertEquals(PagerDutySeverity.CRITICAL, pagerDutyProperties.getSeverity(), "the severity property of the PagerDuty endpoint was not properly deserialized");
+        Assertions.assertEquals("p8g3rduty-sup3r-s3cr3t-t0k3n", pagerDutyProperties.getSecretToken(), "the secret token was not properly deserialized");
     }
 
     private void assertNoSchemaValidationErrors(final Set<ValidationMessage> validationMessages) {

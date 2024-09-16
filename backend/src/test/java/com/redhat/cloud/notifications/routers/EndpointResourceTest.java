@@ -16,6 +16,8 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.PagerDutyProperties;
+import com.redhat.cloud.notifications.models.PagerDutySeverity;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
@@ -93,7 +95,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-// TODO add PagerDuty
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class EndpointResourceTest extends DbIsolatedTest {
@@ -2883,6 +2884,80 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .get("/endpoints/{id}")
                 .then()
                 .statusCode(404);
+    }
+
+    @Test
+    void addPagerDutyEndpoint() {
+        String accountId = "testPagerDutyPropertiesAcct";
+        String orgId = "testPagerDutyPropertiesOrg";
+        String userName = "testPagerDutyPropertiesUser";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Add new endpoints
+        PagerDutyProperties pagerDutyProperties = new PagerDutyProperties();
+        pagerDutyProperties.setSeverity(PagerDutySeverity.WARNING);
+        pagerDutyProperties.setSecretToken("my-super-secret-token");
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.PAGERDUTY);
+        ep.setName("Paging floor fire chief");
+        ep.setDescription("Liquid cooling pump failed, server is on fire again");
+        ep.setEnabled(true);
+        ep.setProperties(pagerDutyProperties);
+
+        // Mock the Sources service calls.
+        final Secret secretTokenSecret = new Secret();
+        secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        secretTokenSecret.password = pagerDutyProperties.getSecretToken();
+
+        when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
+                .thenReturn(secretTokenSecret);
+
+        // Make sure that when the secrets are loaded when we fetch the
+        // endpoint again for checking the assertions, we simulate fetching
+        // the secrets from Sources too.
+        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
+                .post("/endpoints")
+                .then()
+                .statusCode(200)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(EndpointDTO.class);
+        String id = responsePoint.getString("id");
+        assertNotNull(id);
+
+        try {
+            // Fetch single endpoint also and verify
+            JsonObject endpoint = fetchSingle(responsePoint.getString("id"), identityHeader);
+            assertTrue(endpoint.getBoolean("enabled"));
+
+            JsonObject properties = responsePoint.getJsonObject("properties");
+            assertNotNull(properties);
+            String severity = properties.getString("severity");
+            assertNotNull(severity);
+            assertEquals(Json.decodeValue(Json.encode(PagerDutySeverity.WARNING), String.class), severity);
+
+            assertNotNull(properties.getString("secret_token"));
+            assertEquals(pagerDutyProperties.getSecretToken(), properties.getString("secret_token"));
+        } finally {
+            given()
+                    .header(identityHeader)
+                    .when().delete("/endpoints/" + id)
+                    .then()
+                    .statusCode(204)
+                    .extract().body().asString();
+        }
     }
 
     /**
