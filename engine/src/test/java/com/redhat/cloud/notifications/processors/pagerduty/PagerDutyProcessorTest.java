@@ -34,7 +34,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,8 +43,7 @@ import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_
 import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.PROCESSED_PAGERDUTY_COUNTER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -94,7 +92,7 @@ public class PagerDutyProcessorTest {
     @Test
     void testPagerDutyUsingConnector() {
         // Make sure that the payload does not get stored in the database.
-        Mockito.when(this.engineConfig.getKafkaToCamelMaximumRequestSize()).thenReturn(Integer.MAX_VALUE);
+        when(engineConfig.getKafkaToCamelMaximumRequestSize()).thenReturn(Integer.MAX_VALUE);
 
         Action pagerDutyActionMessage = buildPagerDutyAction();
         Event event = new Event();
@@ -130,6 +128,17 @@ public class PagerDutyProcessorTest {
         assertEquals(payloadToSent, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
+    }
+
+    @Test
+    void testEmailsOnlyMode() {
+        when(engineConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
+
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(buildPagerDutyAction()));
+
+        pagerDutyProcessor.process(event, List.of(new Endpoint()));
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 0);
     }
 
     private static Action buildPagerDutyAction() {
