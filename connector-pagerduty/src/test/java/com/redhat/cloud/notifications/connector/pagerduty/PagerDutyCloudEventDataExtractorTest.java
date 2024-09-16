@@ -10,8 +10,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Test;
 
-import java.util.MissingResourceException;
-
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
@@ -65,22 +63,12 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
 
     @Test
     void ftpProtocolShouldBeInvalid() {
-        assertInvalidTargetUrl("ftp://example.com/foo?bar=baz", IllegalArgumentException.class);
+        assertInvalidTargetUrl("ftp://example.com/foo?bar=baz");
     }
 
     @Test
     void nonSenseUrlShouldBeInvalid() {
-        assertInvalidTargetUrl("foo-bar_baz", IllegalArgumentException.class);
-    }
-
-    @Test
-    void nullUrlShouldBeInvalid() {
-        assertInvalidTargetUrl(null, MissingResourceException.class);
-    }
-
-    @Test
-    void emptyUrlShouldBeInvalid() {
-        assertInvalidTargetUrl("", IllegalArgumentException.class);
+        assertInvalidTargetUrl("foo-bar_baz");
     }
 
     @Test
@@ -107,9 +95,9 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
         assertDoesNotThrow(() -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
-    private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
+    private void assertInvalidTargetUrl(String url) {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData(url);
-        assertThrows(expectedException, () -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
+        assertThrows(IllegalArgumentException.class, () -> pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 }

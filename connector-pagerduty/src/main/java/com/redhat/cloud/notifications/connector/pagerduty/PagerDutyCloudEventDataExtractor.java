@@ -8,8 +8,6 @@ import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.commons.validator.routines.UrlValidator;
 
-import java.util.MissingResourceException;
-
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
 import static org.apache.commons.validator.routines.UrlValidator.ALLOW_LOCAL_URLS;
@@ -32,9 +30,9 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
 
         validatePayload(cloudEventData);
 
-        String providedUrl = cloudEventData.getString(TARGET_URL);
+        String providedUrl = cloudEventData.getString(URL);
         if (providedUrl == null || providedUrl.isEmpty()) {
-            exchange.setProperty(TARGET_URL, cloudEventData.getString(PAGERDUTY_EVENT_V2_URL));
+            exchange.setProperty(TARGET_URL, PAGERDUTY_EVENT_V2_URL);
         } else {
             exchange.setProperty(TARGET_URL, providedUrl);
         }
@@ -47,9 +45,7 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
 
     private void validatePayload(JsonObject cloudEventData) {
         String endpointUrl = cloudEventData.getString(URL);
-        if (endpointUrl == null) {
-            throw new MissingResourceException("The endpoint URL is required", PagerDutyCloudEventDataExtractor.class.getName(), "url");
-        } else if (!URL_VALIDATOR.isValid(endpointUrl)) {
+        if (endpointUrl != null && !endpointUrl.isEmpty() && !URL_VALIDATOR.isValid(endpointUrl)) {
             throw new IllegalArgumentException("URL validation failed");
         }
     }
