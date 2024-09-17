@@ -25,7 +25,6 @@ public class BackendConfig {
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
-    private static final String KESSEL_USE_SECURE_CLIENT = "notifications.kessel.secure-client";
     private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
@@ -34,8 +33,6 @@ public class BackendConfig {
     private String drawerToggle;
     private String kesselInventoryToggle;
     private String kesselRelationsToggle;
-    private String uniqueBgNameToggle;
-    private String uniqueIntegrationNameToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -69,12 +66,6 @@ public class BackendConfig {
 
     @ConfigProperty(name = ERRATA_MIGRATION_BATCH_SIZE, defaultValue = "1000")
     int errataMigrationBatchSize;
-
-    /**
-     * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
-     */
-    @ConfigProperty(name = KESSEL_USE_SECURE_CLIENT, defaultValue = "false")
-    boolean kesselUseSecureClientEnabled;
 
     @Inject
     ToggleRegistry toggleRegistry;
@@ -145,9 +136,5 @@ public class BackendConfig {
         } else {
             return kesselRelationsEnabled;
         }
-    }
-
-    public boolean isKesselUseSecureClientEnabled() {
-        return kesselUseSecureClientEnabled;
     }
 }
