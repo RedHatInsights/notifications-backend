@@ -155,7 +155,7 @@ public class EndpointResource {
                 )
         })
         public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
-            if (this.backendConfig.isKesselBackendEnabled()) {
+            if (this.backendConfig.isKesselRelationsEnabled()) {
                 this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, id.toString());
 
                 return this.internalGetEndpointHistory(sec, id, includeDetail, query);
@@ -209,7 +209,7 @@ public class EndpointResource {
                 @QueryParam("includeDetail") Boolean includeDetail,
                 @BeanParam Query query
         ) {
-            if (this.backendConfig.isKesselBackendEnabled()) {
+            if (this.backendConfig.isKesselRelationsEnabled()) {
                 this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, id.toString());
 
                 return this.internalGetEndpointHistory(sec, uriInfo, id, includeDetail, query);
@@ -262,7 +262,7 @@ public class EndpointResource {
         @QueryParam("active")   Boolean activeOnly,
         @QueryParam("name")     String name
     ) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             // Fetch the set of integration IDs the user is authorized to view.
             final Set<UUID> authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
             if (authorizedIds.isEmpty()) {
@@ -362,7 +362,7 @@ public class EndpointResource {
         @Context                        SecurityContext sec,
         @RequestBody(required = true)   EndpointDTO endpointDTO
     ) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
             return this.internalCreateEndpoint(sec, endpointDTO);
@@ -437,10 +437,10 @@ public class EndpointResource {
 
         final Endpoint createdEndpoint = this.endpointRepository.createEndpoint(endpoint);
 
-        // Attempt creating the integration in Kessel's inventory. Any
-        // exception here would roll back the operation and our integration
-        // would not be created in our database either.
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselInventoryEnabled()) {
+            // Attempt creating the integration in Kessel's inventory. Any
+            // exception here would roll back the operation and our integration
+            // would not be created in our database either.
             this.kesselAssets.createIntegration(sec, WORKSPACE_ID_PLACEHOLDER, createdEndpoint.getId().toString());
         }
 
@@ -479,7 +479,7 @@ public class EndpointResource {
     public EndpointDTO getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps) {
         final Endpoint endpoint;
 
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
             endpoint = this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION);
@@ -499,7 +499,7 @@ public class EndpointResource {
     public EndpointDTO getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec, @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps) {
         final Endpoint endpoint;
 
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
             endpoint = this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER);
@@ -548,7 +548,7 @@ public class EndpointResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
     public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString());
 
             return this.internalGetEndpoint(sec, id);
@@ -584,15 +584,17 @@ public class EndpointResource {
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id.toString());
 
             final Response noContentResponse = this.internalDeleteEndpoint(sec, id);
 
-            // Attempt deleting the integration from Kessel. If any exception
-            // is thrown the whole transaction will be rolled back and the
-            // integration will not be deleted from our database.
-            this.kesselAssets.deleteIntegration(sec, WORKSPACE_ID_PLACEHOLDER, id.toString());
+            if (this.backendConfig.isKesselInventoryEnabled()) {
+                // Attempt deleting the integration from Kessel. If any exception
+                // is thrown the whole transaction will be rolled back and the
+                // integration will not be deleted from our database.
+                this.kesselAssets.deleteIntegration(sec, WORKSPACE_ID_PLACEHOLDER, id.toString());
+            }
 
             return noContentResponse;
         } else {
@@ -629,7 +631,7 @@ public class EndpointResource {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, id.toString());
 
             return this.internalEnableEndpoint(sec, id);
@@ -660,7 +662,7 @@ public class EndpointResource {
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, id.toString());
 
             return this.internalDisableEndpoint(sec, id);
@@ -696,7 +698,7 @@ public class EndpointResource {
         @PathParam("id")                                UUID id,
         @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
     ) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, id.toString());
 
             return this.internalUpdateEndpoint(securityContext, id, endpointDTO);
@@ -784,7 +786,7 @@ public class EndpointResource {
     @Operation(summary = "Retrieve event notification details", description = "Retrieves extended information about the outcome of an event notification related to the specified endpoint. Use this endpoint to learn why an event delivery failed.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, endpointId.toString());
 
             return this.internalGetDetailedEndpointHistory(sec, endpointId, historyId);
@@ -831,7 +833,7 @@ public class EndpointResource {
             )
     })
     public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @RequestBody final EndpointTestRequest requestBody) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.TEST, ResourceType.INTEGRATION, uuid.toString());
 
             this.internalTestEndpoint(sec, uuid, requestBody);

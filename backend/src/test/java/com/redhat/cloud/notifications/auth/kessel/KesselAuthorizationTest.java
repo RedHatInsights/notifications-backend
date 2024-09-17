@@ -62,7 +62,7 @@ public class KesselAuthorizationTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Simulate that Kessel returns a positive response.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
@@ -98,7 +98,7 @@ public class KesselAuthorizationTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Simulate that Kessel returns a negative response.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
@@ -139,7 +139,7 @@ public class KesselAuthorizationTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Simulate that Kessel returns a few resource IDs in the response.
         final UUID firstUuid = UUID.randomUUID();

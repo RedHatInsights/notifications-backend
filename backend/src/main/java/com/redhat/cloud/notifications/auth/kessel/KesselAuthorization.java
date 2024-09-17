@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.auth.kessel;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -51,9 +50,6 @@ public class KesselAuthorization {
     private static final String KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME = "notifications.kessel.relationships.permission.check.requests";
 
     @Inject
-    BackendConfig backendConfig;
-
-    @Inject
     CheckClient checkClient;
 
     @Inject
@@ -73,11 +69,6 @@ public class KesselAuthorization {
      * @throws ForbiddenException in case of not being authorized.
      */
     public void hasPermissionOnResource(final SecurityContext securityContext, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
-        // Skip the authorization step with Kessel if it is not enabled.
-        if (!this.backendConfig.isKesselBackendEnabled()) {
-            return;
-        }
-
         // Identify the subject.
         final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
 

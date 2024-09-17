@@ -48,7 +48,7 @@ public class KesselAssetsTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Call the function under test.
         this.kesselAssets.createIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
@@ -75,7 +75,7 @@ public class KesselAssetsTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Call the function under test.
         this.kesselAssets.deleteIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());

@@ -38,7 +38,7 @@ public class KesselExceptionMapperTest {
     @Test
     void testInternalServerErrorReturned() {
         // Enable Kessel as the authorization back end.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Simulate that an error occurred when calling Kessel.
         Mockito.when(this.checkClient.check(Mockito.any())).thenThrow(new StatusRuntimeException(Status.INVALID_ARGUMENT));

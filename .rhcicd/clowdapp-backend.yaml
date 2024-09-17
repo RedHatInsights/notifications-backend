@@ -126,6 +126,10 @@ objects:
               name: notifications-ephemeral-data
               key: ephemeral_data.json
               optional: true
+        - name: NOTIFICATIONS_KESSEL_INVENTORY_ENABLED
+          value: ${NOTIFICATIONS_KESSEL_INVENTORY_ENABLED}
+        - name: NOTIFICATIONS_KESSEL_RELATIONS_ENABLED
+          value: ${NOTIFICATIONS_KESSEL_RELATIONS_ENABLED}
         - name: NOTIFICATIONS_KESSEL_BACKEND_ENABLED
           value: ${NOTIFICATIONS_KESSEL_BACKEND_ENABLED}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
@@ -253,8 +257,11 @@ parameters:
 - name: NOTIFICATIONS_ERRATA_MIGRATION_BATCH_SIZE
   description: Defines the number of Errata subscription elements that will be loaded into memory before storing the batch in the database.
   value: "1000"
-- name: NOTIFICATIONS_KESSEL_BACKEND_ENABLED
-  description: Enables using Kessel as the authentication and authorization back end.
+- name: NOTIFICATIONS_KESSEL_INVENTORY_ENABLED
+  description: Is the integration with Kessel's inventory enabled?
+  value: "false"
+- name: NOTIFICATIONS_KESSEL_RELATIONS_ENABLED
+  description: Is the integration with Kessel's relations enabled?
   value: "false"
 - name: NOTIFICATIONS_KESSEL_OIDC_ISSUER
   description: Specifies the issuer of the OIDC authentication tokens.

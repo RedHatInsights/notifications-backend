@@ -72,7 +72,7 @@ public class OrgConfigResource {
     @Transactional
     @Operation(summary = "Set the daily digest time", description = "Sets the daily digest UTC time. The accepted minute values are 00, 15, 30, and 45. Use this endpoint to set the time when daily emails are sent.")
     public void saveDailyDigestTimePreference(@Context SecurityContext sec, LocalTime expectedTime) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
             this.internalSaveDailyDigestTimePreference(sec, expectedTime);
@@ -103,7 +103,7 @@ public class OrgConfigResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the daily digest time", description = "Retrieves the daily digest time setting. Use this endpoint to check the time that daily emails are sent.")
     public Response getDailyDigestTimePreference(@Context SecurityContext sec) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
             return this.internalGetDailyDigestTimePreference(sec);

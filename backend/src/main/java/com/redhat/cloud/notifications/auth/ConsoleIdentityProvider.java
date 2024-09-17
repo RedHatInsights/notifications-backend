@@ -85,7 +85,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         // at the same time. That way we can jump from using RBAC to Kessel and
         // if we see that something is not working properly, we can instantly
         // switch back to RBAC by disabling Kessel.
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             try {
                 // Build the principal from the incoming "x-rh-identity" header.
                 final Optional<Principal> principal = this.buildPrincipalFromIdentityHeader(rhAuthReq);
