@@ -142,14 +142,14 @@ objects:
           valueFrom:
             secretKeyRef:
               name: kessel-authentication
-              key: inventory.client.id
+              key: inventory-api.client.id
         - name: INVENTORY_API_AUTHN_CLIENT_ISSUER
           value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
         - name: INVENTORY_API_AUTHN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: kessel-authentication
-              key: inventory.client.secret
+              key: inventory-api.client.secret
         - name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
           value: ${NOTIFICATIONS_INSTANT_EMAILS_ENABLED}
         - name: QUARKUS_HTTP_PORT
