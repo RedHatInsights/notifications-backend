@@ -154,6 +154,8 @@ objects:
             secretKeyRef:
               name: kessel-authentication
               key: inventory-api.client.secret
+        - name: INVENTORY_API_IS_SECURE_CLIENTS
+          value: ${NOTIFICATIONS_KESSEL_INVENTORY_SECURE_CLIENTS}
         - name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
           value: ${NOTIFICATIONS_INSTANT_EMAILS_ENABLED}
         - name: QUARKUS_HTTP_PORT
@@ -194,6 +196,8 @@ objects:
             secretKeyRef:
               name: kessel-authentication
               key: relations-api.client.secret
+        - name: RELATIONS_API_IS_SECURE_CLIENTS
+          value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
         - name: SOURCES_PSK
           valueFrom:
             secretKeyRef:
@@ -260,8 +264,14 @@ parameters:
 - name: NOTIFICATIONS_KESSEL_INVENTORY_ENABLED
   description: Is the integration with Kessel's inventory enabled?
   value: "false"
+- name: NOTIFICATIONS_KESSEL_INVENTORY_SECURE_CLIENTS
+  description: Should the inventory gRPC client open channels over TLS?
+  value: "false"
 - name: NOTIFICATIONS_KESSEL_RELATIONS_ENABLED
   description: Is the integration with Kessel's relations enabled?
+  value: "false"
+- name: NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS
+  description: Should the inventory gRPC client open channels over TLS?
   value: "false"
 - name: NOTIFICATIONS_KESSEL_OIDC_ISSUER
   description: Specifies the issuer of the OIDC authentication tokens.
