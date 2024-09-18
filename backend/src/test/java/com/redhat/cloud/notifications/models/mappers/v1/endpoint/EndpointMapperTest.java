@@ -126,7 +126,7 @@ public class EndpointMapperTest {
         pagerDutyProperties.setSecretToken("secret token");
 
         // Loop through the properties and generate the JSON for the DTO.
-        for (final EndpointProperties properties : List.of(camelProperties, systemSubscriptionProperties, webhookProperties)) {
+        for (final EndpointProperties properties : List.of(camelProperties, systemSubscriptionProperties, webhookProperties, pagerDutyProperties)) {
             endpoint.setProperties(properties);
 
             // Generate the DTO.

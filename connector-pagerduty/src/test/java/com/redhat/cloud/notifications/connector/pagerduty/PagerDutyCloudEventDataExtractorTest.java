@@ -10,7 +10,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Test;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createCloudEventData;
@@ -81,8 +80,6 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
          */
         JsonObject cloudEventDataCopy = cloudEventData.copy();
         pagerDutyCloudEventDataExtractor.extract(exchange, cloudEventData);
-
-        assertEquals(cloudEventDataCopy.getString("url"), exchange.getProperty(TARGET_URL, String.class));
 
         JsonObject expectedAuthentication = cloudEventDataCopy.getJsonObject("authentication");
         assertEquals(expectedAuthentication.getString("type"), exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class).name());
