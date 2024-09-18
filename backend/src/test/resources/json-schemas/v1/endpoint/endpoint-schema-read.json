@@ -56,6 +56,7 @@
         "camel",
         "drawer",
         "email_subscription",
+        "pagerduty",
         "webhook"
       ],
       "title": "Type of the endpoint",
@@ -127,6 +128,28 @@
               "format": "uuid",
               "title": "The identifier of the group to send the email to",
               "type": "string"
+            }
+          }
+        },
+        {
+          "title": "PagerDuty properties",
+          "type": "object",
+          "required": [
+            "severity",
+            "secret_token"
+          ],
+          "properties": {
+            "severity": {
+              "title": "The severity of the PagerDuty alert event",
+              "enum": [
+                "critical",
+                "error",
+                "warning",
+                "info"
+              ]
+            },
+            "secret_token": {
+              "$ref": "#/definitions/secret-token"
             }
           }
         },

@@ -693,7 +693,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
                 helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
-                helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL)
+                helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
+                helpers.createEndpoint(accountId, orgId, EndpointType.PAGERDUTY),
+                helpers.createEndpoint(accountId, orgId, EndpointType.PAGERDUTY)
         ).map(Endpoint::getId).collect(Collectors.toList());
         Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());
 
@@ -763,7 +765,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
                 helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
                 helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
-                helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL)
+                helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
+                helpers.createEndpoint(accountId, orgId, EndpointType.PAGERDUTY),
+                helpers.createEndpoint(accountId, orgId, EndpointType.PAGERDUTY)
         ).map(Endpoint::getId).collect(Collectors.toList());
 
         Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());

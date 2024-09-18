@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.logging.Log;
@@ -218,6 +219,8 @@ public class EndpointRepository {
                 "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
         String camelQuery = "UPDATE CamelProperties SET url = :url, extras = :extras, " +
                 "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
+        String pagerDutyQuery = "UPDATE PagerDutyProperties SET severity = :severity " +
+                "WHERE endpoint.id = :endpointId";
 
         if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
             throw new RuntimeException("Unable to update a system endpoint of type " + endpoint.getType());
@@ -254,6 +257,12 @@ public class EndpointRepository {
                             .setParameter("endpointId", endpoint.getId())
                             .setParameter("extras", cAttr.getExtras())
                             .executeUpdate() > 0;
+                case PAGERDUTY:
+                    PagerDutyProperties pdAttr = (PagerDutyProperties) endpoint.getProperties();
+                    return entityManager.createQuery(pagerDutyQuery)
+                            .setParameter("severity", pdAttr.getSeverity())
+                            .setParameter("endpointId", endpoint.getId())
+                            .executeUpdate() > 0;
                 default:
                     return true;
             }
@@ -273,6 +282,7 @@ public class EndpointRepository {
         loadTypedProperties(CamelProperties.class, endpointSet, EndpointType.CAMEL);
         loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EndpointType.EMAIL_SUBSCRIPTION);
         loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EndpointType.DRAWER);
+        loadTypedProperties(PagerDutyProperties.class, endpointSet, EndpointType.PAGERDUTY);
     }
 
     private <T extends EndpointProperties> void loadTypedProperties(Class<T> typedEndpointClass, Set<Endpoint> endpoints, EndpointType type) {

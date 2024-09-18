@@ -44,18 +44,16 @@ public class PagerDutyTransformer implements Processor {
 
     @Override
     public void process(Exchange exchange) {
-        JsonObject cloudEventData = exchange.getIn().getBody(JsonObject.class);
+        JsonObject cloudEventPayload = exchange.getIn().getBody(JsonObject.class);
 
-        JsonObject cloudEventPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject message = new JsonObject();
         message.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
-        message.mergeIn(getClientLink(cloudEventPayload, cloudEventData.getString(ENVIRONMENT_URL)));
+        message.mergeIn(getClientLink(cloudEventPayload, cloudEventPayload.getString(ENVIRONMENT_URL)));
 
         JsonObject messagePayload = new JsonObject();
         messagePayload.put(SUMMARY, cloudEventPayload.getString(EVENT_TYPE));
         messagePayload.put(TIMESTAMP, LocalDateTime.parse(cloudEventPayload.getString(TIMESTAMP)).format(PD_DATE_TIME_FORMATTER));
-        // TODO read from properties
-        messagePayload.put(SEVERITY, PagerDutySeverity.WARNING);
+        messagePayload.put(SEVERITY, cloudEventPayload.getString(SEVERITY));
         messagePayload.put(SOURCE, cloudEventPayload.getString(APPLICATION));
         messagePayload.put(GROUP, cloudEventPayload.getString(BUNDLE));
 

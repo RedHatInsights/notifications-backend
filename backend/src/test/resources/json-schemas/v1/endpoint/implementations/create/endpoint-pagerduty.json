@@ -1,0 +1,13 @@
+{
+  "name": "PagerDuty endpoint",
+  "description": "A JSON structure which represents a PagerDuty endpoint",
+  "enabled": true,
+  "status": "READY",
+  "server_errors": 17,
+  "subtype": null,
+  "type": "pagerduty",
+  "properties": {
+    "severity": "critical",
+    "secret_token": "p8g3rduty-sup3r-s3cr3t-t0k3n"
+  }
+}

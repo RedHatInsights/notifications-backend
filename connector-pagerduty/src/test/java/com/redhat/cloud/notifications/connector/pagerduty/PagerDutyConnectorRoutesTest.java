@@ -88,8 +88,9 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         );
 
         payload.put(SOURCE, source);
+        payload.put(ENVIRONMENT_URL, "https://console.redhat.com");
+        payload.put(SEVERITY, PagerDutySeverity.WARNING.toString());
         cloudEventData.put(PAYLOAD, payload);
-        cloudEventData.put(ENVIRONMENT_URL, "https://console.redhat.com");
 
         return cloudEventData;
     }
@@ -126,13 +127,12 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         JsonObject oldInnerPayload = expected.getJsonObject(PAYLOAD);
         expected.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
         expected.put(CLIENT, String.format("Open %s", oldInnerPayload.getString(APPLICATION)));
-        expected.put(CLIENT_URL, String.format("%s/insights/%s", expected.getString(ENVIRONMENT_URL), oldInnerPayload.getString(APPLICATION)));
-        expected.remove(ENVIRONMENT_URL);
+        expected.put(CLIENT_URL, String.format("%s/insights/%s", oldInnerPayload.getString(ENVIRONMENT_URL), oldInnerPayload.getString(APPLICATION)));
 
         JsonObject newInnerPayload = new JsonObject();
         newInnerPayload.put(SUMMARY, oldInnerPayload.getString(EVENT_TYPE));
         newInnerPayload.put(TIMESTAMP, LocalDateTime.parse(oldInnerPayload.getString(TIMESTAMP)).format(PD_DATE_TIME_FORMATTER));
-        newInnerPayload.put(SEVERITY, PagerDutySeverity.WARNING);
+        newInnerPayload.put(SEVERITY, oldInnerPayload.getString(SEVERITY));
         newInnerPayload.put(SOURCE, oldInnerPayload.getString(APPLICATION));
         newInnerPayload.put(GROUP, oldInnerPayload.getString(BUNDLE));
 
