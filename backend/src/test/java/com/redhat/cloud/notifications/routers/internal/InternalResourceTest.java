@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
+import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -21,6 +22,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -34,6 +36,7 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -401,6 +404,75 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         // Updating an unknown default behavior group will cause a 404 status.
         updateDefaultBehaviorGroup(identity, UUID.randomUUID().toString(), "Behavior group", bundleId, false, NOT_FOUND);
+    }
+
+    @Test
+    void testDefaultBehaviorGroupCRUDWithDepencies() {
+        Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        // We need to persist a bundle.
+        String bundleId = createBundle(identity, "dbg-bundle-name", "Bundle", OK).get();
+        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
+        EventType eventType1 = new EventType();
+        eventType1.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
+        eventType1.setDisplayName(RandomStringUtils.randomAlphabetic(10));
+        eventType1.setDescription(RandomStringUtils.randomAlphabetic(10));
+        eventType1.setApplicationId(UUID.fromString(appId));
+        UUID uuidEventType1 = UUID.fromString(createEventType(identity, eventType1, OK).get());
+
+        // Creates 2 behavior groups
+        UUID dbgId1 = UUID.fromString(createDefaultBehaviorGroup(identity, "DefaultBehaviorGroup1", bundleId, OK).get());
+        UUID dbgId2 = UUID.fromString(createDefaultBehaviorGroup(identity, "DefaultBehaviorGroup2", bundleId, OK).get());
+
+        RequestDefaultBehaviorGroupPropertyList defaultBehaviorGroupProperties = new RequestDefaultBehaviorGroupPropertyList();
+        defaultBehaviorGroupProperties.setOnlyAdmins(true);
+
+        given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", dbgId1)
+            .body(Json.encode(List.of(defaultBehaviorGroupProperties)))
+            .when()
+            .put("/behaviorGroups/default/{behaviorGroupId}/actions")
+            .then()
+            .statusCode(200);
+
+        List<BehaviorGroup> listBg = getDefaultBehaviorGroups(identity);
+        Optional<BehaviorGroup> createdBg1 = listBg.stream().filter(bg -> bg.getId().equals(dbgId1)).findFirst();
+        assertTrue(createdBg1.isPresent());
+        assertEquals(1, createdBg1.get().getActions().size());
+        assertEquals(0, createdBg1.get().getBehaviors().size());
+
+        UUID endpointId1 = createdBg1.get().getActions().getFirst().getId().endpointId;
+
+        assertEquals(0, resourceHelpers.getEndpoint(endpointId1).getEventTypes().size());
+
+        // link it to something
+        given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .pathParam("behaviorGroupId", dbgId1)
+            .pathParam("eventTypeId", uuidEventType1)
+            .when()
+            .put("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
+            .then()
+            .statusCode(200);
+
+        assertEquals(1, resourceHelpers.getEndpoint(endpointId1).getEventTypes().size());
+
+        // unlink it
+        given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .pathParam("behaviorGroupId", dbgId1)
+            .pathParam("eventTypeId", uuidEventType1)
+            .when()
+            .delete("/behaviorGroups/default/{behaviorGroupId}/eventType/{eventTypeId}")
+            .then()
+            .statusCode(200);
+
+        assertEquals(0, resourceHelpers.getEndpoint(endpointId1).getEventTypes().size());
+
     }
 
     @Test

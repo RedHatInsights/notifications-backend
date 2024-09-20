@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigReposi
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
 import com.redhat.cloud.notifications.db.repositories.StatusRepository;
@@ -70,10 +71,12 @@ import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
@@ -132,6 +135,9 @@ public class InternalResource {
     @Inject
     @RestClient
     ReplayService replayService;
+
+    @Inject
+    EndpointEventTypeRepository endpointEventTypeRepository;
 
     // This endpoint is used during the IQE tests to determine which version of the code is tested.
     @GET
@@ -469,7 +475,11 @@ public class InternalResource {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public BehaviorGroup createDefaultBehaviorGroup(@NotNull @Valid BehaviorGroup behaviorGroup) {
-        return behaviorGroupRepository.createDefault(behaviorGroup);
+        BehaviorGroup createdBehaviorGroup = behaviorGroupRepository.createDefault(behaviorGroup);
+
+        // Sync new endpoint to evenType data model
+        endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(null, Set.of(createdBehaviorGroup.getId()));
+        return createdBehaviorGroup;
     }
 
     @PUT
@@ -492,7 +502,12 @@ public class InternalResource {
     @Transactional
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public boolean deleteDefaultBehaviorGroup(@PathParam("id") UUID id) {
-        return behaviorGroupRepository.deleteDefault(id);
+        List<UUID> linkedEndpoints = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(null, Set.of(id));
+        boolean result = behaviorGroupRepository.deleteDefault(id);
+
+        // Sync new endpoint to evenType data model
+        endpointEventTypeRepository.refreshEndpointLinksToEventType(null, linkedEndpoints);
+        return result;
     }
 
     @PUT
@@ -512,6 +527,8 @@ public class InternalResource {
             throw new BadRequestException("The list of EmailSubscriptionProperties should not contain duplicates");
         }
 
+        List<UUID> endpointsBeforeUpdates = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(null, Set.of(behaviorGroupId));
+
         List<Endpoint> endpoints = propertiesList.stream().map(p -> {
             SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
             properties.setOnlyAdmins(p.isOnlyAdmins());
@@ -522,6 +539,11 @@ public class InternalResource {
                 behaviorGroupId,
                 endpoints.stream().distinct().map(Endpoint::getId).collect(Collectors.toList())
         );
+
+        // Sync new endpoint to evenType data model
+        List<UUID> endpointsAfterUpdates = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(null, Set.of(behaviorGroupId));
+        endpointEventTypeRepository.refreshEndpointLinksToEventType(null, Stream.concat(endpointsBeforeUpdates.stream(), endpointsAfterUpdates.stream()).toList());
+
         return Response.ok().build();
     }
 
@@ -536,6 +558,8 @@ public class InternalResource {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
         boolean isSuccess = behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
         if (isSuccess) {
+            // Sync new endpoint to evenType data model
+            endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(null, Set.of(behaviorGroupId));
             return Response.ok().build();
         } else {
             return Response.status(BAD_REQUEST).build();
@@ -553,6 +577,8 @@ public class InternalResource {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
         boolean isSuccess = behaviorGroupRepository.unlinkEventTypeDefaultBehavior(eventTypeId, behaviorGroupId);
         if (isSuccess) {
+            // Sync new endpoint to evenType data model
+            endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(null, Set.of(behaviorGroupId));
             return Response.ok().build();
         } else {
             return Response.status(BAD_REQUEST).build();
