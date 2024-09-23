@@ -80,7 +80,7 @@ public class EventResource {
                                          @RestQuery Set<EventLogEntryActionStatus> status,
                                          @BeanParam @Valid Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
-        if (this.backendConfig.isKesselBackendEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
             return this.getInternalEvents(securityContext, uriInfo, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, query, includeDetails, includePayload, includeActions);

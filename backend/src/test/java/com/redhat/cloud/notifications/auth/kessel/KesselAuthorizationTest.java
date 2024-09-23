@@ -62,7 +62,7 @@ public class KesselAuthorizationTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Simulate that Kessel returns a positive response.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
@@ -98,7 +98,7 @@ public class KesselAuthorizationTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Simulate that Kessel returns a negative response.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
@@ -139,7 +139,7 @@ public class KesselAuthorizationTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Simulate that Kessel returns a few resource IDs in the response.
         final UUID firstUuid = UUID.randomUUID();
@@ -210,7 +210,7 @@ public class KesselAuthorizationTest {
 
             // Make sure the request was built appropriately.
             final ObjectReference objectReference = checkRequest.getResource();
-            Assertions.assertEquals(tc.resourceType().getKesselName(), objectReference.getType().getName(), String.format("unexpected resource type obtained for the object's reference on test case: %s", tc));
+            Assertions.assertEquals(tc.resourceType().getKesselObjectType(), objectReference.getType(), String.format("unexpected resource type obtained for the object's reference on test case: %s", tc));
             Assertions.assertEquals(tc.resourceId(), objectReference.getId(), String.format("unexpected resource ID obtained for the object's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), checkRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
@@ -264,7 +264,7 @@ public class KesselAuthorizationTest {
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), lookupResourcesRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
-            Assertions.assertEquals(ResourceType.INTEGRATION.getKesselName(), lookupResourcesRequest.getResourceType().getName(), String.format("unexpected resource type obtained on test case: %s", tc));
+            Assertions.assertEquals(ResourceType.INTEGRATION.getKesselObjectType(), lookupResourcesRequest.getResourceType(), String.format("unexpected resource type obtained on test case: %s", tc));
         }
     }
 }

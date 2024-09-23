@@ -15,7 +15,7 @@ import org.project_kessel.api.inventory.v1beta1.CreateNotificationsIntegrationRe
 import org.project_kessel.api.inventory.v1beta1.DeleteNotificationsIntegrationRequest;
 import org.project_kessel.api.inventory.v1beta1.Metadata;
 import org.project_kessel.api.inventory.v1beta1.ReporterData;
-import org.project_kessel.client.NotificationsIntegrationClient;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 
 import java.util.UUID;
 
@@ -48,7 +48,7 @@ public class KesselAssetsTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Call the function under test.
         this.kesselAssets.createIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
@@ -75,7 +75,7 @@ public class KesselAssetsTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselBackendEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
 
         // Call the function under test.
         this.kesselAssets.deleteIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
@@ -98,7 +98,7 @@ public class KesselAssetsTest {
 
         // Assert that the request was properly built.
         final Metadata metadata = request.getIntegration().getMetadata();
-        Assertions.assertEquals(ResourceType.INTEGRATION.getKesselName(), metadata.getResourceType(), "the \"resource type\" should have been an integration");
+        Assertions.assertEquals(ResourceType.INTEGRATION.getKesselRepresentation(), metadata.getResourceType(), "the \"resource type\" should have been an integration");
         Assertions.assertEquals(workspaceId, metadata.getWorkspace(), "the workspace ID was incorrectly set");
 
         final ReporterData reporterData = request.getIntegration().getReporterData();

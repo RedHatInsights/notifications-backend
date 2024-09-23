@@ -23,17 +23,16 @@ public class BackendConfig {
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
     private static final String ERRATA_MIGRATION_BATCH_SIZE = "notifications.errata.migration.batch.size";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
-    private static final String KESSEL_BACKEND_ENABLED = "notifications.kessel.backend.enabled";
-    private static final String KESSEL_USE_SECURE_CLIENT = "notifications.kessel.secure-client";
+    private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
+    private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
     private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
      * Unleash configuration
      */
     private String drawerToggle;
-    private String kesselBackendToggle;
-    private String uniqueBgNameToggle;
-    private String uniqueIntegrationNameToggle;
+    private String kesselInventoryToggle;
+    private String kesselRelationsToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -59,17 +58,14 @@ public class BackendConfig {
     @ConfigProperty(name = INSTANT_EMAILS, defaultValue = "false")
     boolean instantEmailsEnabled;
 
-    @ConfigProperty(name = KESSEL_BACKEND_ENABLED, defaultValue = "false")
-    boolean kesselBackendEnabled;
+    @ConfigProperty(name = KESSEL_INVENTORY_ENABLED, defaultValue = "false")
+    boolean kesselInventoryEnabled;
+
+    @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "false")
+    boolean kesselRelationsEnabled;
 
     @ConfigProperty(name = ERRATA_MIGRATION_BATCH_SIZE, defaultValue = "1000")
     int errataMigrationBatchSize;
-
-    /**
-     * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
-     */
-    @ConfigProperty(name = KESSEL_USE_SECURE_CLIENT, defaultValue = "false")
-    boolean kesselUseSecureClientEnabled;
 
     @Inject
     ToggleRegistry toggleRegistry;
@@ -80,7 +76,8 @@ public class BackendConfig {
     @PostConstruct
     void postConstruct() {
         drawerToggle = toggleRegistry.register("drawer", true);
-        kesselBackendToggle = toggleRegistry.register("kessel-backend", true);
+        kesselInventoryToggle = toggleRegistry.register("kessel-inventory", true);
+        kesselRelationsToggle = toggleRegistry.register("kessel-relations", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -90,8 +87,8 @@ public class BackendConfig {
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
-        config.put(KESSEL_BACKEND_ENABLED, isKesselBackendEnabled());
-        config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClientEnabled());
+        config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled());
+        config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(UNLEASH, unleashEnabled);
 
@@ -125,15 +122,19 @@ public class BackendConfig {
         return instantEmailsEnabled;
     }
 
-    public boolean isKesselBackendEnabled() {
+    public boolean isKesselInventoryEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(kesselBackendToggle, false);
+            return unleash.isEnabled(kesselInventoryToggle, false);
         } else {
-            return kesselBackendEnabled;
+            return kesselInventoryEnabled;
         }
     }
 
-    public boolean isKesselUseSecureClientEnabled() {
-        return kesselUseSecureClientEnabled;
+    public boolean isKesselRelationsEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(kesselRelationsToggle, false);
+        } else {
+            return kesselRelationsEnabled;
+        }
     }
 }

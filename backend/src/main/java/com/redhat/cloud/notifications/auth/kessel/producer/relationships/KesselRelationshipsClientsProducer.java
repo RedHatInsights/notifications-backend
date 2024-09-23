@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.auth.kessel.producer.relationships;
 
-import com.redhat.cloud.notifications.config.BackendConfig;
 import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -8,10 +7,12 @@ import jakarta.enterprise.inject.Alternative;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.Config;
 import org.project_kessel.relations.client.LookupClient;
 import org.project_kessel.relations.client.RelationsGrpcClientsManager;
+
+import java.util.Optional;
 
 /**
  * We have implemented our own producer for the clients because we need our
@@ -22,20 +23,8 @@ import org.project_kessel.relations.client.RelationsGrpcClientsManager;
 @ApplicationScoped
 @Priority(1)
 public class KesselRelationshipsClientsProducer {
-    /**
-     * Constant for the configuration key that defines the relationships API's
-     * target URL.
-     */
-    private static final String RELATIONSHIPS_API_TARGET_URL = "notifications.kessel.relationships-api.target-url";
-
     @Inject
-    BackendConfig backendConfig;
-
-    /**
-     * The target URL the gRPC client will connect to.
-     */
-    @ConfigProperty(name = RELATIONSHIPS_API_TARGET_URL)
-    String targetUrl;
+    Config relationsConfig;
 
     /**
      * Produces a relations gRPC clients manager. Useful for being able to
@@ -46,14 +35,25 @@ public class KesselRelationshipsClientsProducer {
     @ApplicationScoped
     @Produces
     protected RelationsGrpcClientsManager getRelationsGrpcClientsManager() {
-        if (this.backendConfig.isKesselUseSecureClientEnabled()) {
-            Log.infof("Generated secure relationships gRPC client manager for Kessel with target url \"%s\"", this.targetUrl);
+        final Optional<Config.AuthenticationConfig> authenticationConfigOptional = this.relationsConfig.authenticationConfig();
 
-            return RelationsGrpcClientsManager.forSecureClients(this.targetUrl);
+        if (this.relationsConfig.isSecureClients()) {
+            Log.infof("Generated secure relationships gRPC client manager for Kessel with target url \"%s\"", this.relationsConfig.targetUrl());
+
+            if (authenticationConfigOptional.isPresent()) {
+                return RelationsGrpcClientsManager.forSecureClients(this.relationsConfig.targetUrl(), authenticationConfigOptional.get());
+            } else {
+                return RelationsGrpcClientsManager.forSecureClients(this.relationsConfig.targetUrl());
+            }
+        } else {
+            Log.infof("Generated insecure relationships gRPC client manager for Kessel with target url \"%s\"", this.relationsConfig.targetUrl());
+
+            if (authenticationConfigOptional.isPresent()) {
+                return RelationsGrpcClientsManager.forInsecureClients(this.relationsConfig.targetUrl(), authenticationConfigOptional.get());
+            } else {
+                return RelationsGrpcClientsManager.forInsecureClients(this.relationsConfig.targetUrl());
+            }
         }
-
-        Log.infof("Generated insecure relationships gRPC client manager for Kessel with target url \"%s\"", this.targetUrl);
-        return RelationsGrpcClientsManager.forInsecureClients(this.targetUrl);
     }
 
     /**
