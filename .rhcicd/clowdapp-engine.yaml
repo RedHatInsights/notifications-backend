@@ -114,6 +114,14 @@ objects:
           value: ${NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE}
         - name: NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD
           value: ${NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD}
+        - name: NOTIFICATIONS_EVENT_CONSUMER_CORE_THREAD_POOL_SIZE
+          value: ${NOTIFICATIONS_EVENT_CONSUMER_CORE_THREAD_POOL_SIZE}
+        - name: NOTIFICATIONS_EVENT_CONSUMER_MAX_THREAD_POOL_SIZE
+          value: ${NOTIFICATIONS_EVENT_CONSUMER_MAX_THREAD_POOL_SIZE}
+        - name: NOTIFICATIONS_EVENT_CONSUMER_KEEP_ALIVE_TIME_SECONDS
+          value: ${NOTIFICATIONS_EVENT_CONSUMER_KEEP_ALIVE_TIME_SECONDS}
+        - name: NOTIFICATIONS_EVENT_CONSUMER_QUEUE_CAPACITY
+          value: ${NOTIFICATIONS_EVENT_CONSUMER_QUEUE_CAPACITY}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED}
         - name: NOTIFICATIONS_KAFKA_CONSUMED_TOTAL_CHECKER_INITIAL_DELAY
@@ -257,6 +265,18 @@ parameters:
 - name: NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD
   description: The email sender address for the OpenShift domain in production.
   value: "\"Red Hat OpenShift\" noreply@redhat.com"
+- name: NOTIFICATIONS_EVENT_CONSUMER_CORE_THREAD_POOL_SIZE
+  description: Number of threads to keep in the pool, even if they are idle.
+  value: "10"
+- name: NOTIFICATIONS_EVENT_CONSUMER_MAX_THREAD_POOL_SIZE
+  description: Maximum number of threads to allow in the pool.
+  value: "10"
+- name: NOTIFICATIONS_EVENT_CONSUMER_KEEP_ALIVE_TIME_SECONDS
+  description: Maximum time that excess idle threads will wait for new tasks before terminating.
+  value: "60"
+- name: NOTIFICATIONS_EVENT_CONSUMER_QUEUE_CAPACITY
+  description: Capacity of the blocking Kafka messages queue.
+  value: "1"
 - name: NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED
   description: Specifies whether the high volume topic is enabled in the engine or not.
   value: "false"

@@ -22,12 +22,16 @@ public class EngineConfig {
      */
     private static final String DEFAULT_TEMPLATE = "notifications.use-default-template";
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
+    private static final String EVENT_CONSUMER_CORE_THREAD_POOL_SIZE = "notifications.event-consumer.core-thread-pool-size";
+    private static final String EVENT_CONSUMER_MAX_THREAD_POOL_SIZE = "notifications.event-consumer.max-thread-pool-size";
+    private static final String EVENT_CONSUMER_KEEP_ALIVE_TIME_SECONDS = "notifications.event-consumer.keep-alive-time-seconds";
+    private static final String EVENT_CONSUMER_QUEUE_CAPACITY = "notifications.event-consumer.queue-capacity";
     private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
     private static final String NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED = "notifications.kafka.outgoing.high-volume.topic.enabled";
     private static final String KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE = "mp.messaging.outgoing.tocamel.max.request.size";
     private static final String UNLEASH = "notifications.unleash.enabled";
-    public static final String PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS = "processor.connectors.max-server-errors";
-    public static final String PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR = "processor.connectors.min-delay-since-first-server-error";
+    private static final String PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS = "processor.connectors.max-server-errors";
+    private static final String PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR = "processor.connectors.min-delay-since-first-server-error";
 
     /**
      * Standard "Red Hat Hybrid Cloud Console" sender that the vast majority of the
@@ -44,6 +48,7 @@ public class EngineConfig {
      * Unleash configuration
      */
     private String asyncAggregationToggle;
+    private String asyncEventProcessingToggle;
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
     private String toggleKafkaOutgoingHighVolumeTopic;
@@ -88,6 +93,18 @@ public class EngineConfig {
     @ConfigProperty(name = EMAILS_ONLY_MODE, defaultValue = "false")
     boolean emailsOnlyModeEnabled;
 
+    @ConfigProperty(name = EVENT_CONSUMER_CORE_THREAD_POOL_SIZE, defaultValue = "10")
+    int eventConsumerCoreThreadPoolSize;
+
+    @ConfigProperty(name = EVENT_CONSUMER_MAX_THREAD_POOL_SIZE, defaultValue = "10")
+    int eventConsumerMaxThreadPoolSize;
+
+    @ConfigProperty(name = EVENT_CONSUMER_KEEP_ALIVE_TIME_SECONDS, defaultValue = "60")
+    long eventConsumerKeepAliveTimeSeconds;
+
+    @ConfigProperty(name = EVENT_CONSUMER_QUEUE_CAPACITY, defaultValue = "1")
+    int eventConsumerQueueCapacity;
+
     // Only used in special environments.
     @ConfigProperty(name = SECURED_EMAIL_TEMPLATES, defaultValue = "false")
     boolean useSecuredEmailTemplates;
@@ -128,6 +145,7 @@ public class EngineConfig {
     @PostConstruct
     void postConstruct() {
         asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
+        asyncEventProcessingToggle = toggleRegistry.register("async-event-processing", true);
         drawerToggle = toggleRegistry.register("drawer", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
@@ -140,6 +158,10 @@ public class EngineConfig {
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
+        config.put(EVENT_CONSUMER_CORE_THREAD_POOL_SIZE, eventConsumerCoreThreadPoolSize);
+        config.put(EVENT_CONSUMER_MAX_THREAD_POOL_SIZE, eventConsumerMaxThreadPoolSize);
+        config.put(EVENT_CONSUMER_KEEP_ALIVE_TIME_SECONDS, eventConsumerKeepAliveTimeSeconds);
+        config.put(EVENT_CONSUMER_QUEUE_CAPACITY, eventConsumerQueueCapacity);
         config.put(kafkaConsumedTotalCheckerToggle, isKafkaConsumedTotalCheckerEnabled());
         config.put(KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE, getKafkaToCamelMaximumRequestSize());
         config.put(SECURED_EMAIL_TEMPLATES, isSecuredEmailTemplatesEnabled());
@@ -150,6 +172,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
+        config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -162,6 +185,14 @@ public class EngineConfig {
             return unleash.isEnabled(asyncAggregationToggle, false);
         } else {
             return asyncAggregation;
+        }
+    }
+
+    public boolean isAsyncEventProcessing() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(asyncEventProcessingToggle, false);
+        } else {
+            return false;
         }
     }
 
@@ -179,6 +210,22 @@ public class EngineConfig {
 
     public boolean isEmailsOnlyModeEnabled() {
         return emailsOnlyModeEnabled;
+    }
+
+    public int getEventConsumerCoreThreadPoolSize() {
+        return eventConsumerCoreThreadPoolSize;
+    }
+
+    public int getEventConsumerMaxThreadPoolSize() {
+        return eventConsumerMaxThreadPoolSize;
+    }
+
+    public long getEventConsumerKeepAliveTimeSeconds() {
+        return eventConsumerKeepAliveTimeSeconds;
+    }
+
+    public int getEventConsumerQueueCapacity() {
+        return eventConsumerQueueCapacity;
     }
 
     public boolean isKafkaConsumedTotalCheckerEnabled() {

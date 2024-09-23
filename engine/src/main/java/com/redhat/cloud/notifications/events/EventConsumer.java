@@ -4,6 +4,7 @@ import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformer;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformerFactory;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -30,9 +31,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @ApplicationScoped
 public class EventConsumer {
@@ -75,12 +81,16 @@ public class EventConsumer {
     @Inject
     KafkaHeadersExtractor kafkaHeadersExtractor;
 
+    @Inject
+    EngineConfig config;
+
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
     private Counter rejectedCounter;
     private Counter processingErrorCounter;
     private Counter duplicateCounter;
     private Counter processingExceptionCounter;
+    private ExecutorService executor;
 
     @PostConstruct
     public void init() {
@@ -88,12 +98,59 @@ public class EventConsumer {
         processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
         processingExceptionCounter = registry.counter(PROCESSING_EXCEPTION_COUNTER_NAME);
         duplicateCounter = registry.counter(DUPLICATE_COUNTER_NAME);
+
+        /*
+         * The ThreadPoolExecutor#submit method from this executor is blocking. If it is called while all threads from
+         * the pool are busy, the calling thread will wait until a thread from the pool is available.
+         */
+        // TODO After we've confirmed the async processing works, additional code will be needed to shutdown the executor gracefully (wait until all threads are done with their work).
+        executor = new ThreadPoolExecutor(
+                config.getEventConsumerCoreThreadPoolSize(),
+                config.getEventConsumerMaxThreadPoolSize(),
+                config.getEventConsumerKeepAliveTimeSeconds(),
+                SECONDS,
+                buildBlockingQueue()
+        );
+    }
+
+    private BlockingQueue<Runnable> buildBlockingQueue() {
+        return new LinkedBlockingQueue<>(config.getEventConsumerQueueCapacity()) {
+            @Override
+            public boolean offer(Runnable runnable) {
+                try {
+                    /*
+                     * The ThreadPoolExecutor internal implementation can only insert elements in the queue by calling
+                     * the BlockingQueue#offer method, which is not a blocking method. Since we need a blocking behavior
+                     * to prevent Kafka messages from being consumed when all threads are busy, the call is delegated to
+                     * the BlockingQueue#put method.
+                     */
+                    put(runnable);
+                    return true;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+        };
     }
 
     @Incoming(INGRESS_CHANNEL)
     @Blocking
+    public CompletionStage<Void> consume(Message<String> message) {
+        if (config.isAsyncEventProcessing()) {
+            /*
+             * Even though the processing will be asynchronous, this call will block the current thread until a thread
+             * from the pool is available.
+             */
+            executor.submit(() -> process(message));
+        } else {
+            process(message);
+        }
+        return message.ack();
+    }
+
     @ActivateRequestContext
-    public CompletionStage<Void> process(Message<String> message) {
+    public void process(Message<String> message) {
         // This timer will have dynamic tag values based on the action parsed from the received message.
         Timer.Sample consumedTimer = Timer.start(registry);
         String payload = message.getPayload();
@@ -220,7 +277,6 @@ public class EventConsumer {
                     TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, "")
             ));
         }
-        return message.ack();
     }
 
     private EventWrapper<?, ?> parsePayload(String payload, Map<String, String> tags) {
