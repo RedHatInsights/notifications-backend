@@ -230,7 +230,7 @@ parameters:
   value: 500m
 - name: DB_CLEANER_SCHEDULE
   description: Execution time specified in cron format
-  value: "0 1 * * *"
+  value: "0 */6 * * *"
 - name: DISABLE_DB_CLEANER
   description: Should the DB cleaner CronJob be disabled?
   value: "false"
