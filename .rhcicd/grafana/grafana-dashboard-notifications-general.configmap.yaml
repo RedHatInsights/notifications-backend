@@ -9750,7 +9750,7 @@ data:
       "version": 1,
       "weekStart": ""
     }
-  kind: ConfigMap
+kind: ConfigMap
 metadata:
   name: grafana-dashboard-insights-notifications-general
   labels:
