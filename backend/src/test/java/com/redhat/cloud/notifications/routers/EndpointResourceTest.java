@@ -10,11 +10,14 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.model.Stats;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.PagerDutySeverity;
@@ -3091,5 +3094,129 @@ public class EndpointResourceTest extends DbIsolatedTest {
             responsePoint.mapTo(EndpointDTO.class);
             assertNotNull(responsePoint.getString("id"));
         }
+    }
+
+    @Test
+    void testCreateThenDeleteEndpointToEventTypeRelationship() {
+        final Bundle bundle = resourceHelpers.createBundle();
+
+        // Create event type and endpoint
+        final Application application = resourceHelpers.createApplication(bundle.getId());
+        final EventType eventType = resourceHelpers.createEventType(application.getId(), "name", "display-name", "description");
+        final Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Check that created endpoint don't have any event type associated
+        Endpoint endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+        assertEquals(0, endpointFromDb.getEventTypes().size());
+
+        // test event type or endpoint not exists
+        given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", UUID.randomUUID())
+            .pathParam("endpointUuid", endpoint.getId())
+            .when()
+            .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
+            .then()
+            .statusCode(404);
+        given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("endpointUuid", UUID.randomUUID())
+            .when()
+            .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
+            .then()
+            .statusCode(404);
+
+        // link endpoint and event type
+        given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("endpointUuid", endpoint.getId())
+            .when()
+            .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
+            .then()
+            .statusCode(204);
+
+        endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+        assertEquals(1, endpointFromDb.getEventTypes().size());
+        assertEquals(eventType.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
+
+        // Try to link again same endpoint and event type
+        given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("endpointUuid", endpoint.getId())
+            .when()
+            .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
+            .then()
+            .statusCode(204);
+
+        // Check that endpoint is linked to the event type only once
+        endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+        assertEquals(1, endpointFromDb.getEventTypes().size());
+        assertEquals(eventType.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
+
+        // Delete endpoint to event type relationship
+        given()
+            .header(identityHeader)
+            .pathParam("endpointUuid", endpoint.getId())
+            .pathParam("eventTypeUuid", eventType.getId())
+            .when()
+            .delete("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
+            .then()
+            .statusCode(204);
+
+        // test event type or endpoint not exists
+        endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+        assertEquals(0, endpointFromDb.getEventTypes().size());
+
+        final EventType eventType1 = resourceHelpers.createEventType(application.getId(), "name1", "display-name-1", "description1");
+        final EventType eventType2 = resourceHelpers.createEventType(application.getId(), "name2", "display-name-2", "description1");
+
+        Set<UUID> eventsIdsToLink = Set.of(eventType.getId(), eventType1.getId(), eventType2.getId());
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(eventsIdsToLink))
+            .pathParam("endpointUuid", endpoint.getId())
+            .put("/endpoints/{endpointUuid}/eventTypes")
+            .then()
+            .statusCode(204);
+
+        endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+        assertEquals(3, endpointFromDb.getEventTypes().size());
+
+        // test delete one event type
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(Set.of(eventType.getId(), eventType2.getId())))
+            .pathParam("endpointUuid", endpoint.getId())
+            .put("/endpoints/{endpointUuid}/eventTypes")
+            .then()
+            .statusCode(204);
+
+        endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+        assertEquals(2, endpointFromDb.getEventTypes().size());
+
+        // test delete all event types
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(new HashSet<>()))
+            .pathParam("endpointUuid", endpoint.getId())
+            .put("/endpoints/{endpointUuid}/eventTypes")
+            .then()
+            .statusCode(204);
+
+        endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+        assertEquals(0, endpointFromDb.getEventTypes().size());
     }
 }

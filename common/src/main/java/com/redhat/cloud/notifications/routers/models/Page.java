@@ -3,6 +3,8 @@ package com.redhat.cloud.notifications.routers.models;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +16,8 @@ public class Page<T> {
     private Map<String, String> links;
     @NotNull
     private Meta meta;
+
+    public static final Page EMPTY_PAGE = new Page<>(new ArrayList<>(), new HashMap<>(), new Meta(0L));
 
     public Page() {
 

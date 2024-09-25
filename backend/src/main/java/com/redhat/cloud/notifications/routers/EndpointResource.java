@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
@@ -25,6 +26,7 @@ import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
+import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
@@ -67,6 +69,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
@@ -122,6 +125,9 @@ public class EndpointResource {
 
     @Inject
     BackendConfig backendConfig;
+
+    @Inject
+    EndpointEventTypeRepository endpointEventTypeRepository;
 
     /**
      * Used to create the secrets in Sources and update the endpoint's properties' IDs.
@@ -904,5 +910,91 @@ public class EndpointResource {
                 }
             }
         }
+    }
+
+    @DELETE
+    @Path("/{endpointId}/eventType/{eventTypeId}")
+    @Operation(summary = "Delete the link between an endpoint and an event type", description = "Delete the link between an endpoint and an event type.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.STRING))),
+        @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
+            description = "No event type or endpoint found with the passed id.")
+    })
+    @Tag(name = OApiFilter.PRIVATE)
+    public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
+            internalDeleteEventTypeFromEndpoint(securityContext, eventTypeId, endpointId);
+        } else {
+            legacyRBACDeleteEventTypeFromEndpoint(securityContext, eventTypeId, endpointId);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    protected void legacyRBACDeleteEventTypeFromEndpoint(final SecurityContext securityContext, final UUID eventTypeId, final UUID endpointId) {
+        internalDeleteEventTypeFromEndpoint(securityContext, eventTypeId, endpointId);
+    }
+
+    private void internalDeleteEventTypeFromEndpoint(final SecurityContext securityContext, final UUID eventTypeId, final UUID endpointId) {
+        final String orgId = getOrgId(securityContext);
+        endpointEventTypeRepository.deleteEndpointFromEventType(eventTypeId, endpointId, orgId);
+    }
+
+    @PUT
+    @Path("/{endpointId}/eventType/{eventTypeId}")
+    @Operation(summary = "Add a link between an endpoint and an event type", description = "Add a link between an endpoint and an event type.")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.STRING))),
+        @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
+            description = "No event type or endpoint found with the passed id.")
+    })
+    @Tag(name = OApiFilter.PRIVATE)
+    public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
+
+            internalAddEventTypeToEndpoint(securityContext, eventTypeId, endpointId);
+        } else {
+            legacyRbacAddEventTypeToEndpoint(securityContext, eventTypeId, endpointId);
+        }
+    }
+
+    public void legacyRbacAddEventTypeToEndpoint(final SecurityContext securityContext, final UUID eventTypeId, final UUID endpointId) {
+        internalAddEventTypeToEndpoint(securityContext, eventTypeId, endpointId);
+    }
+
+    private void internalAddEventTypeToEndpoint(final SecurityContext securityContext, final UUID eventTypeId, final UUID endpointId) {
+        final String orgId = getOrgId(securityContext);
+        endpointEventTypeRepository.addEventTypeToEndpoint(eventTypeId, endpointId, orgId);
+    }
+
+    @PUT
+    @Path("/{endpointId}/eventTypes")
+    @Operation(summary = "Update  links between an endpoint and event types", description = "Update  links between an endpoint and event types.")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.STRING))),
+        @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
+            description = "No event type or endpoint found with passed ids.")
+    })
+    @Tag(name = OApiFilter.PRIVATE)
+    public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds) {
+        if (this.backendConfig.isKesselRelationsEnabled()) {
+            kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
+
+            internalUpdateEventTypesLinkedToEndpoint(securityContext, endpointId, eventTypeIds);
+        } else {
+            legacyRbacUpdateEventTypesLinkedToEndpoint(securityContext, endpointId, eventTypeIds);
+        }
+    }
+
+    public void legacyRbacUpdateEventTypesLinkedToEndpoint(final SecurityContext securityContext, final UUID endpointId, final Set<UUID> eventTypeIds) {
+        internalUpdateEventTypesLinkedToEndpoint(securityContext, endpointId, eventTypeIds);
+    }
+
+    private void internalUpdateEventTypesLinkedToEndpoint(final SecurityContext securityContext, final UUID endpointId, final Set<UUID> eventTypeIds) {
+        final String orgId = getOrgId(securityContext);
+        endpointEventTypeRepository.updateEventTypesLinkedToEndpoint(endpointId, eventTypeIds, orgId);
     }
 }
