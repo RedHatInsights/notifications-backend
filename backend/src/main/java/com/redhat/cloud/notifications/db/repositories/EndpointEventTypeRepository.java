@@ -109,7 +109,7 @@ public class EndpointEventTypeRepository {
 
     @Transactional
     public void refreshEndpointLinksToEventType(String orgId, List<UUID> endpointsList) {
-        if (endpointsList == null || endpointsList.size() == 0) {
+        if (endpointsList == null || endpointsList.isEmpty()) {
             return;
         }
 
@@ -155,7 +155,7 @@ public class EndpointEventTypeRepository {
 
         List<Endpoint> endpoints = selectQuery.getResultList();
 
-        return endpoints.stream().map(ep -> ep.getId()).toList();
+        return endpoints.stream().map(Endpoint::getId).toList();
     }
 
     private Endpoint getEndpoint(UUID endpointId, String orgId) {

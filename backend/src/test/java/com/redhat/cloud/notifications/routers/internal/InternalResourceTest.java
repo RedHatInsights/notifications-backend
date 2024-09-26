@@ -419,9 +419,8 @@ public class InternalResourceTest extends DbIsolatedTest {
         eventType1.setApplicationId(UUID.fromString(appId));
         UUID uuidEventType1 = UUID.fromString(createEventType(identity, eventType1, OK).get());
 
-        // Creates 2 behavior groups
+        // Creates 1 behavior groups
         UUID dbgId1 = UUID.fromString(createDefaultBehaviorGroup(identity, "DefaultBehaviorGroup1", bundleId, OK).get());
-        UUID dbgId2 = UUID.fromString(createDefaultBehaviorGroup(identity, "DefaultBehaviorGroup2", bundleId, OK).get());
 
         RequestDefaultBehaviorGroupPropertyList defaultBehaviorGroupProperties = new RequestDefaultBehaviorGroupPropertyList();
         defaultBehaviorGroupProperties.setOnlyAdmins(true);
