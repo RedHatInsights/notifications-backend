@@ -23,7 +23,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -89,7 +88,8 @@ public class EventType {
     private Set<EventTypeBehavior> behaviors;
 
     @ManyToMany(mappedBy = "eventTypes")
-    private Set<Endpoint> endpoints = new HashSet<>();
+    @JsonIgnore
+    private Set<Endpoint> endpoints;
 
     public UUID getId() {
         return id;

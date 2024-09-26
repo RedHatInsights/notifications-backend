@@ -511,7 +511,7 @@ public class NotificationResource {
             description = "No event type found with the passed id.")
     })
     @Tag(name = OApiFilter.PRIVATE)
-    public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @PathParam("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
+    public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
         if (backendConfig.isKesselRelationsEnabled()) {
             // Fetch the set of integration IDs the user is authorized to view.
             final Set<UUID> authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);

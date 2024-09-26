@@ -35,16 +35,13 @@ public class EndpointEventTypeRepository {
         String query = "SELECT e FROM Endpoint e JOIN e.eventTypes ev WHERE (e.orgId = :orgId OR e.orgId IS NULL) AND ev.id = :eventTypeId";
 
         if (authorizedIds.isPresent()) {
-            query += " AND ev.authorizedIds = :authorizedIds";
+            query += " AND ev.id in (:authorizedIds)";
         }
 
         if (limiter != null) {
             limiter.setSortFields(Endpoint.SORT_FIELDS);
             limiter.setDefaultSortBy("name:DESC");
-            Optional<Query.Sort> sort = limiter.getSort();
-            if (sort.isPresent()) {
-                query += " " + sort.get().getSortQuery();
-            }
+            query = limiter.getModifiedQuery(query);
         }
 
         TypedQuery<Endpoint> typedQuery = entityManager.createQuery(query, Endpoint.class)
@@ -86,6 +83,9 @@ public class EndpointEventTypeRepository {
             throw new NotFoundException(EVENT_TYPE_NOT_FOUND_MESSAGE);
         }
 
+        if (endpoint.getEventTypes() == null) {
+            endpoint.setEventTypes(new HashSet<>());
+        }
         endpoint.getEventTypes().add(eventType);
         entityManager.merge(endpoint);
     }
@@ -109,7 +109,7 @@ public class EndpointEventTypeRepository {
 
     private Endpoint getEndpoint(UUID endpointId, String orgId) {
         Endpoint endpoint = endpointRepository.getEndpoint(orgId, endpointId);
-        if (endpoint == null || !endpoint.getOrgId().equals(orgId)) {
+        if (endpoint == null) {
             throw new NotFoundException("Endpoint not found");
         }
         return endpoint;

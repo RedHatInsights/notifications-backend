@@ -80,11 +80,11 @@ public class EndpointEventType {
             return false;
         }
         EndpointEventType that = (EndpointEventType) o;
-        return Objects.equals(id, that.id) && Objects.equals(eventType, that.eventType) && Objects.equals(endpoint, that.endpoint);
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, eventType, endpoint);
+        return Objects.hash(id);
     }
 }

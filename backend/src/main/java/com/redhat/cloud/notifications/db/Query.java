@@ -216,9 +216,6 @@ public class Query {
     }
 
     private static String modifyWithSort(String theQuery, Query.Sort sorter) {
-        return theQuery +
-                " ORDER BY " +
-                sorter.getSortColumn() + " " +
-                sorter.getSortOrder().toString();
+        return theQuery + " " + sorter.getSortQuery();
     }
 }

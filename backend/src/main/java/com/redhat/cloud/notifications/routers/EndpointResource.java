@@ -943,7 +943,6 @@ public class EndpointResource {
     @PUT
     @Path("/{endpointId}/eventType/{eventTypeId}")
     @Operation(summary = "Add a link between an endpoint and an event type", description = "Add a link between an endpoint and an event type.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponses(value = {
         @APIResponse(responseCode = "204", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.STRING))),
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
@@ -960,6 +959,7 @@ public class EndpointResource {
         }
     }
 
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public void legacyRbacAddEventTypeToEndpoint(final SecurityContext securityContext, final UUID eventTypeId, final UUID endpointId) {
         internalAddEventTypeToEndpoint(securityContext, eventTypeId, endpointId);
     }
@@ -972,7 +972,6 @@ public class EndpointResource {
     @PUT
     @Path("/{endpointId}/eventTypes")
     @Operation(summary = "Update  links between an endpoint and event types", description = "Update  links between an endpoint and event types.")
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponses(value = {
         @APIResponse(responseCode = "204", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.STRING))),
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
@@ -989,6 +988,7 @@ public class EndpointResource {
         }
     }
 
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     public void legacyRbacUpdateEventTypesLinkedToEndpoint(final SecurityContext securityContext, final UUID endpointId, final Set<UUID> eventTypeIds) {
         internalUpdateEventTypesLinkedToEndpoint(securityContext, endpointId, eventTypeIds);
     }
