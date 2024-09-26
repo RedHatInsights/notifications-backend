@@ -192,6 +192,8 @@ objects:
           value: ${PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS}
         - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
           value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
+        - name: NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES
+          value: ${NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -342,3 +344,5 @@ parameters:
 - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
   description: min delay since the first error before an endpoint is eligible to be disabled
   value: P2D
+- name: NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES
+  value: "false"

@@ -88,7 +88,8 @@ public abstract class EmailTemplatesInDbHelper {
             eventTypes.put(eventTypeToCreate, eventType.getId());
         }
         when(engineConfig.isSecuredEmailTemplatesEnabled()).thenReturn(useSecuredTemplates());
-        if (engineConfig.isSecuredEmailTemplatesEnabled()) {
+        when(engineConfig.isUseOCMRefactoredTemplates()).thenReturn(useOcmRefactoredTemplates());
+        if (engineConfig.isSecuredEmailTemplatesEnabled() || engineConfig.isUseOCMRefactoredTemplates()) {
             emailTemplateMigrationService.deleteAllTemplates();
         }
         migrate();
@@ -204,6 +205,10 @@ public abstract class EmailTemplatesInDbHelper {
     }
 
     protected Boolean useSecuredTemplates() {
+        return false;
+    }
+
+    protected Boolean useOcmRefactoredTemplates() {
         return false;
     }
 
