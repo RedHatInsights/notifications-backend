@@ -2,16 +2,24 @@ package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
+import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
+import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -19,6 +27,7 @@ import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
+import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -48,6 +57,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestPath;
 
 import java.util.Collection;
@@ -60,6 +70,7 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -75,7 +86,19 @@ public class NotificationResource {
     BehaviorGroupRepository behaviorGroupRepository;
 
     @Inject
+    EndpointEventTypeRepository endpointEventTypeRepository;
+
+    @Inject
     EndpointRepository endpointRepository;
+
+    @Inject
+    EndpointMapper endpointMapper;
+
+    @Inject
+    KesselAuthorization kesselAuthorization;
+
+    @Inject
+    BackendConfig backendConfig;
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
     public static class V1 extends NotificationResource {
@@ -476,5 +499,48 @@ public class NotificationResource {
                 .collect(Collectors.toList())
         );
         return behaviorGroups;
+    }
+
+    @GET
+    @Path("/eventTypes/{eventTypeId}/endpoints")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Retrieve the endpoints linked to an event type.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.STRING))),
+        @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
+            description = "No event type found with the passed id.")
+    })
+    @Tag(name = OApiFilter.PRIVATE)
+    public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
+        if (backendConfig.isKesselRelationsEnabled()) {
+            // Fetch the set of integration IDs the user is authorized to view.
+            final Set<UUID> authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            if (authorizedIds.isEmpty()) {
+                Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
+                return Page.EMPTY_PAGE;
+            }
+
+            return internalGetLinkedEndpoints(sec, eventTypeId, query, uriInfo, Optional.of(authorizedIds));
+        } else {
+            return legacyRBACGetLinkedEndpoints(sec, eventTypeId, query, uriInfo);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
+    protected Page<EndpointDTO> legacyRBACGetLinkedEndpoints(final SecurityContext sec, final UUID eventTypeId, final Query query, UriInfo uriInfo) {
+        return internalGetLinkedEndpoints(sec, eventTypeId, query, uriInfo, Optional.empty());
+    }
+
+    private Page<EndpointDTO> internalGetLinkedEndpoints(final SecurityContext sec, final UUID eventTypeId, Query query, final UriInfo uriInfo, final Optional<Set<UUID>> authorizedIds) {
+        String orgId = getOrgId(sec);
+
+        final List<Endpoint> endpoints = endpointEventTypeRepository.findEndpointsByEventTypeId(orgId, eventTypeId, query, authorizedIds);
+
+        List<EndpointDTO> endpointDTOS = endpoints.stream().map(endpoint -> endpointMapper.toDTO(endpoint)).toList();
+        return new Page<>(
+            endpointDTOS,
+            PageLinksBuilder.build(uriInfo.getPath(), endpointDTOS.size(), query),
+            new Meta(Long.valueOf(endpointDTOS.size()))
+        );
     }
 }

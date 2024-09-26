@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -17,12 +18,14 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Facet;
+import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
+import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
@@ -84,6 +87,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
+
+    @Inject
+    EndpointEventTypeRepository endpointEventTypeRepository;
 
     @BeforeEach
     void beforeEach() {
@@ -1693,5 +1699,47 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .stream()
                 .map(EventType::getId)
                 .collect(Collectors.toSet());
+    }
+
+
+    @Test
+    void testGetEndpointsLinkedToAnEventType() {
+        final Bundle bundle = helpers.createBundle();
+
+        // Create event type and endpoint
+        final Application application = helpers.createApplication(bundle.getId());
+        final EventType eventType = helpers.createEventType(application.getId(), "name", "display-name", "description");
+        final Endpoint endpoint = helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
+        final Endpoint endpoint1 = helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.ANSIBLE);
+
+        final Header identityHeader = initRbacMock("tenant", DEFAULT_ORG_ID, "user", FULL_ACCESS);
+
+        // Check that created endpoint don't ave any event type associated
+        Page<Endpoint> endpointPage = given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .when()
+            .given()
+            .get("/notifications/eventTypes/{eventTypeUuid}/endpoints")
+            .then()
+            .statusCode(200)
+            .extract().as(Page.class);
+        assertEquals(0, endpointPage.getData().size());
+
+        endpointEventTypeRepository.addEventTypeToEndpoint(eventType.getId(), endpoint.getId(), DEFAULT_ORG_ID);
+        endpointEventTypeRepository.addEventTypeToEndpoint(eventType.getId(), endpoint1.getId(), DEFAULT_ORG_ID);
+
+        // Check that endpoint is linked to the event type
+        endpointPage = given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .when()
+            .given()
+            .get("/notifications/eventTypes/{eventTypeUuid}/endpoints")
+            .then()
+            .statusCode(200)
+            .extract().as(new TypeRef<>() { });
+        assertEquals(2, endpointPage.getData().size());
+        assertEquals(Set.of(endpoint.getId(), endpoint1.getId()), endpointPage.getData().stream().map(ep -> ep.getId()).collect(Collectors.toSet()));
     }
 }

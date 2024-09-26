@@ -25,6 +25,7 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
@@ -140,6 +141,18 @@ public class ResourceHelpers {
 
     public Endpoint getEndpoint(String orgId, UUID id) {
         return endpointRepository.getEndpoint(orgId, id);
+    }
+
+    public Endpoint getEndpoint(UUID id) {
+        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.eventTypes WHERE e.id = :id";
+        try {
+            Endpoint endpoint = entityManager.createQuery(query, Endpoint.class)
+                .setParameter("id", id)
+                .getSingleResult();
+            return endpoint;
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type) {

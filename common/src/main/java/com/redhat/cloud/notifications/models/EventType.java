@@ -13,6 +13,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -85,6 +86,10 @@ public class EventType {
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
     @JsonIgnore
     private Set<EventTypeBehavior> behaviors;
+
+    @ManyToMany(mappedBy = "eventTypes")
+    @JsonIgnore
+    private Set<Endpoint> endpoints;
 
     public UUID getId() {
         return id;

@@ -9,6 +9,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -96,6 +99,15 @@ public class Endpoint extends CreationUpdateTimestamped {
     private boolean isSubTypeNotPresentWhenNotRequired() {
         return compositeType.getType().requiresSubType || compositeType.getSubType() == null;
     }
+
+    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
+    @ManyToMany(cascade = {CascadeType.ALL})
+    @JoinTable(
+        name = "endpoint_event_type",
+        joinColumns = { @JoinColumn(name = "endpoint_id") },
+        inverseJoinColumns = { @JoinColumn(name = "event_type_id") }
+    )
+    private Set<EventType> eventTypes;
 
     @Override
     protected void additionalPrePersist() {
@@ -227,6 +239,14 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setServerErrorsSince(LocalDateTime serverErrorsSince) {
         this.serverErrorsSince = serverErrorsSince;
+    }
+
+    public Set<EventType> getEventTypes() {
+        return eventTypes;
+    }
+
+    public void setEventTypes(Set<EventType> eventTypes) {
+        this.eventTypes = eventTypes;
     }
 
     @Override
