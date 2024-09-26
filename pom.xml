@@ -45,7 +45,7 @@
         <mapstruct.version>1.6.2</mapstruct.version>
         <kessel.inventory-client.version>0.2</kessel.inventory-client.version>
         <kessel.oauth-client.version>11.19.1</kessel.oauth-client.version>
-        <kessel.relationships-client.version>0.4</kessel.relationships-client.version>
+        <kessel.relationships-client.version>0.8</kessel.relationships-client.version>
 
         <enforcer-plugin.version>3.5.0</enforcer-plugin.version>
         <maven-minimum-version>3.8.4</maven-minimum-version>
