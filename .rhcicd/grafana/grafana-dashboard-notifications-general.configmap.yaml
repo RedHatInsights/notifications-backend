@@ -2926,24 +2926,32 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "description": "Number of current restarts (since pod deployment)",
+          "description": "Number of pods currently UP",
           "fieldConfig": {
             "defaults": {
-              "mappings": [],
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "red",
+                      "index": 0,
+                      "text": "Down"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
+              "max": 1,
+              "min": 0,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 1
-                  },
-                  {
-                    "color": "red",
-                    "value": 5
                   }
                 ]
               }
@@ -2956,7 +2964,7 @@ data:
             "x": 0,
             "y": 30
           },
-          "id": 256,
+          "id": 255,
           "options": {
             "colorMode": "value",
             "graphMode": "none",
@@ -2966,7 +2974,7 @@ data:
               "calcs": [
                 "last"
               ],
-              "fields": "",
+              "fields": "/^Up$/",
               "values": false
             },
             "showPercentChange": false,
@@ -2981,15 +2989,15 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "code",
-              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-connector-splunk-service\"})",
+              "editorMode": "builder",
+              "expr": "sum(up{container=\"notifications-connector-splunk-service\"})",
               "hide": false,
-              "legendFormat": "Restarts",
+              "legendFormat": "Up",
               "range": true,
               "refId": "B"
             }
           ],
-          "title": "Splunk - Restarts",
+          "title": "Splunk - UPs",
           "type": "stat"
         },
         {
@@ -3223,32 +3231,24 @@ data:
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "description": "Number of pods currently UP",
+          "description": "Number of current restarts (since pod deployment)",
           "fieldConfig": {
             "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "color": "red",
-                      "index": 0,
-                      "text": "Down"
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
-              "max": 1,
-              "min": 0,
+              "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
                   }
                 ]
               }
@@ -3261,7 +3261,7 @@ data:
             "x": 0,
             "y": 34
           },
-          "id": 255,
+          "id": 256,
           "options": {
             "colorMode": "value",
             "graphMode": "none",
@@ -3271,7 +3271,7 @@ data:
               "calcs": [
                 "last"
               ],
-              "fields": "/^Up$/",
+              "fields": "",
               "values": false
             },
             "showPercentChange": false,
@@ -3286,15 +3286,15 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "builder",
-              "expr": "sum(up{container=\"notifications-connector-splunk-service\"})",
+              "editorMode": "code",
+              "expr": "sum(kube_pod_container_status_restarts_total{container=\"notifications-connector-splunk-service\"})",
               "hide": false,
-              "legendFormat": "Up",
+              "legendFormat": "Restarts",
               "range": true,
               "refId": "B"
             }
           ],
-          "title": "Splunk - UPs",
+          "title": "Splunk - Restarts",
           "type": "stat"
         },
         {
@@ -9682,7 +9682,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "crcs02ue1-prometheus",
               "value": "crcs02ue1-prometheus"
             },
@@ -9716,7 +9716,7 @@ data:
         ]
       },
       "time": {
-        "from": "now-15m",
+        "from": "now-7d",
         "to": "now"
       },
       "timepicker": {
