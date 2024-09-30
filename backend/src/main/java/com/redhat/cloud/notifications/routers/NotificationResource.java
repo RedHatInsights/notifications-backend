@@ -60,6 +60,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestPath;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -67,6 +68,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -341,6 +343,7 @@ public class NotificationResource {
 
         response.created = behaviorGroup.getCreated();
 
+        endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(orgId, Set.of(behaviorGroup.getId()));
         return response;
     }
 
@@ -372,7 +375,9 @@ public class NotificationResource {
             behaviorGroupRepository.update(orgId, behaviorGroup);
         }
 
+        List<UUID> endpointLinkedToBgBeforeUpdate = new ArrayList<>();
         if (request.endpointIds != null) {
+            endpointLinkedToBgBeforeUpdate = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(orgId, Set.of(id));
             behaviorGroupRepository.updateBehaviorGroupActions(orgId, id, request.endpointIds);
         }
 
@@ -380,6 +385,8 @@ public class NotificationResource {
             behaviorGroupRepository.updateBehaviorEventTypes(orgId, id, request.eventTypeIds);
         }
 
+        final List<UUID> endpointLinkedToBgAfterUpdate = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(orgId, Set.of(id));
+        endpointEventTypeRepository.refreshEndpointLinksToEventType(orgId, Stream.concat(endpointLinkedToBgBeforeUpdate.stream(), endpointLinkedToBgAfterUpdate.stream()).toList());
         return Response.status(200).type(APPLICATION_JSON).entity(true).build();
     }
 
@@ -392,7 +399,10 @@ public class NotificationResource {
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec,
                                        @Parameter(description = "The UUID of the behavior group to delete") @PathParam("id") UUID behaviorGroupId) {
         String orgId = getOrgId(sec);
-        return behaviorGroupRepository.delete(orgId, behaviorGroupId);
+        final List<UUID> endpointsLinkedToBgToDelete = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(orgId, Set.of(behaviorGroupId));
+        final Boolean response = behaviorGroupRepository.delete(orgId, behaviorGroupId);
+        endpointEventTypeRepository.refreshEndpointLinksToEventType(orgId, endpointsLinkedToBgToDelete);
+        return response;
     }
 
     @PUT
@@ -417,7 +427,12 @@ public class NotificationResource {
             throw new BadRequestException("The endpoints identifiers list should not contain duplicates");
         }
         String orgId = getOrgId(sec);
+        final List<UUID> endpointLinkedToBgBeforeUpdate = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(orgId, Set.of(behaviorGroupId));
         behaviorGroupRepository.updateBehaviorGroupActions(orgId, behaviorGroupId, endpointIds);
+        final List<UUID> endpointLinkedToBgAfterUpdate = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(orgId, Set.of(behaviorGroupId));
+
+        // Sync new endpoint to evenType data model
+        endpointEventTypeRepository.refreshEndpointLinksToEventType(orgId, Stream.concat(endpointLinkedToBgBeforeUpdate.stream(), endpointLinkedToBgAfterUpdate.stream()).toList());
         return Response.ok().build();
     }
 
@@ -441,6 +456,9 @@ public class NotificationResource {
         }
         String orgId = getOrgId(sec);
         behaviorGroupRepository.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
+
+        // Sync new endpoint to evenType data model
+        endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(orgId, behaviorGroupIds);
         return Response.ok().build();
     }
 
@@ -463,11 +481,14 @@ public class NotificationResource {
         final String orgId = getOrgId(securityContext);
 
         this.behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, behaviorGroupUuid, eventTypeUuid);
+
+        // Sync new endpoint to evenType data model
+        endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(orgId, Set.of(behaviorGroupUuid));
     }
 
     @DELETE
     @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
-    @Operation(summary = "Add a behavior group to an event type", description = "Adds a behavior group to the specified event type.")
+    @Operation(summary = "Delete a behavior group from an event type", description = "Delete a behavior group from the specified event type.")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
     @APIResponse(responseCode = "204")
     public void deleteBehaviorGroupFromEventType(
@@ -478,6 +499,9 @@ public class NotificationResource {
         final String orgId = getOrgId(securityContext);
 
         this.behaviorGroupRepository.deleteBehaviorGroupFromEventType(eventTypeId, behaviorGroupId, orgId);
+
+        // Sync new endpoint to evenType data model
+        endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(orgId, Set.of(behaviorGroupId));
     }
 
     @GET

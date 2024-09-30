@@ -1,10 +1,14 @@
 package com.redhat.cloud.notifications;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.BehaviorGroupAction;
+import com.redhat.cloud.notifications.models.BehaviorGroupActionId;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import com.redhat.cloud.notifications.models.Template;
@@ -19,6 +23,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -514,12 +520,31 @@ public abstract class CrudTestHelpers {
                 .extract()
                 .body().as(List.class);
 
+        final ObjectMapper mapper = new ObjectMapper();
+
         return behaviorGroups.stream().map(rawBg -> {
             Map<String, Object> mbg = (Map<String, Object>) rawBg;
             BehaviorGroup bg = new BehaviorGroup();
+            bg.setActions(new ArrayList<>());
+            bg.setBehaviors(new HashSet<>());
             bg.setId(UUID.fromString(mbg.get("id").toString()));
             bg.setDisplayName(mbg.get("display_name").toString());
             bg.setBundleId(UUID.fromString(mbg.get("bundle_id").toString()));
+
+            List<Object> actions =  (List<Object>) mbg.get("actions");
+            for (Object action : actions) {
+                Map<String, Object> actionMap = (Map<String, Object>) action;
+                actionMap.get("id");
+                BehaviorGroupActionId bgaId = mapper.convertValue(actionMap.get("id"), BehaviorGroupActionId.class);
+                BehaviorGroupAction bgaAction = new BehaviorGroupAction();
+                bgaAction.setId(bgaId);
+                bg.getActions().add(bgaAction);
+            }
+
+            List<Object> behaviors =  (List<Object>) mbg.get("behaviors");
+            for (Object behavior : behaviors) {
+                bg.getBehaviors().add(mapper.convertValue(behavior, EventTypeBehavior.class));
+            }
 
             return bg;
         }).collect(Collectors.toList());
