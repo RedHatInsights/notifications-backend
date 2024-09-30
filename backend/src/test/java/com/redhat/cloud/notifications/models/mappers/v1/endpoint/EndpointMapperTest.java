@@ -21,6 +21,7 @@ import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointStatusDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutyPropertiesDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutySeverityDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.secrets.BasicAuthenticationDTO;
 import io.quarkus.test.junit.QuarkusTest;
@@ -312,7 +313,7 @@ public class EndpointMapperTest {
         Assertions.assertInstanceOf(PagerDutyPropertiesDTO.class, dto.getProperties(), "the properties of the PagerDuty endpoint were not properly deserialized as webhook properties");
         final PagerDutyPropertiesDTO pagerDutyPropertiesDTO = (PagerDutyPropertiesDTO) dto.getProperties();
 
-        Assertions.assertEquals(PagerDutySeverity.CRITICAL, pagerDutyPropertiesDTO.getSeverity(), "the severity property of the PagerDuty endpoint was not properly deserialized");
+        Assertions.assertEquals(PagerDutySeverityDTO.CRITICAL, pagerDutyPropertiesDTO.getSeverity(), "the severity property of the PagerDuty endpoint was not properly deserialized");
         Assertions.assertEquals("p8g3rduty-sup3r-s3cr3t-t0k3n", pagerDutyPropertiesDTO.getSecretToken(), "the secret token was not properly deserialized");
 
         final Endpoint entity = this.endpointMapper.toEntity(dto);

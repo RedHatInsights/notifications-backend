@@ -89,7 +89,7 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
 
         payload.put(SOURCE, source);
         payload.put(ENVIRONMENT_URL, "https://console.redhat.com");
-        payload.put(SEVERITY, PagerDutySeverity.WARNING.toString());
+        payload.put(SEVERITY, PagerDutySeverity.WARNING);
         cloudEventData.put(PAYLOAD, payload);
 
         return cloudEventData;
@@ -132,7 +132,7 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         JsonObject newInnerPayload = new JsonObject();
         newInnerPayload.put(SUMMARY, oldInnerPayload.getString(EVENT_TYPE));
         newInnerPayload.put(TIMESTAMP, LocalDateTime.parse(oldInnerPayload.getString(TIMESTAMP)).format(PD_DATE_TIME_FORMATTER));
-        newInnerPayload.put(SEVERITY, oldInnerPayload.getString(SEVERITY));
+        newInnerPayload.put(SEVERITY, PagerDutySeverity.valueOf(oldInnerPayload.getString(SEVERITY)));
         newInnerPayload.put(SOURCE, oldInnerPayload.getString(APPLICATION));
         newInnerPayload.put(GROUP, oldInnerPayload.getString(BUNDLE));
 

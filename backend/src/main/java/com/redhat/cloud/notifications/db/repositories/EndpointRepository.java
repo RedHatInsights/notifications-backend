@@ -86,6 +86,7 @@ public class EndpointRepository {
                 case WEBHOOK:
                 case EMAIL_SUBSCRIPTION:
                 case DRAWER:
+                case PAGERDUTY:
                     entityManager.persist(endpoint.getProperties());
                 default:
                     // Do nothing.
