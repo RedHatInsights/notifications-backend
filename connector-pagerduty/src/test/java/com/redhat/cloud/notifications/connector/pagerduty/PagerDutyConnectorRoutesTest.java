@@ -132,7 +132,7 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
         JsonObject newInnerPayload = new JsonObject();
         newInnerPayload.put(SUMMARY, oldInnerPayload.getString(EVENT_TYPE));
         newInnerPayload.put(TIMESTAMP, LocalDateTime.parse(oldInnerPayload.getString(TIMESTAMP)).format(PD_DATE_TIME_FORMATTER));
-        newInnerPayload.put(SEVERITY, PagerDutySeverity.valueOf(oldInnerPayload.getString(SEVERITY)));
+        newInnerPayload.put(SEVERITY, PagerDutySeverity.fromJson(oldInnerPayload.getString(SEVERITY)));
         newInnerPayload.put(SOURCE, oldInnerPayload.getString(APPLICATION));
         newInnerPayload.put(GROUP, oldInnerPayload.getString(BUNDLE));
 
