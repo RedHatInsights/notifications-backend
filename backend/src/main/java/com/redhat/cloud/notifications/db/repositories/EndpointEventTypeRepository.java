@@ -113,10 +113,9 @@ public class EndpointEventTypeRepository {
             return;
         }
 
-        String deleteQueryStr = "DELETE FROM EndpointEventType eet WHERE eet in " +
-            "(from EndpointEventType where " +
-                "endpoint.orgId " + (orgId == null ? "is null " : "=: orgId ") +
-                "and id.endpointId in (:endpointList))";
+        String deleteQueryStr = "DELETE FROM EndpointEventType eet WHERE " +
+            "endpoint.orgId " + (orgId == null ? "is null " : "=: orgId ") +
+            "and id.endpointId in (:endpointList)";
 
         jakarta.persistence.Query deleteQuery = entityManager.createQuery(deleteQueryStr)
             .setParameter("endpointList", endpointsList);
@@ -144,18 +143,16 @@ public class EndpointEventTypeRepository {
     }
 
     public List<UUID> findEndpointsByBehaviorGroupId(String orgId, Set<UUID> behaviorGroupIds) {
-        String query = "SELECT bga.endpoint FROM BehaviorGroupAction bga WHERE bga.behaviorGroup.id in (:behaviorGroupIds) AND " +
+        String query = "SELECT bga.endpoint.id FROM BehaviorGroupAction bga WHERE bga.behaviorGroup.id in (:behaviorGroupIds) AND " +
             " bga.endpoint.orgId " + (orgId == null ? "is null " : "=: orgId ");
 
-        jakarta.persistence.Query selectQuery = entityManager.createQuery(query, Endpoint.class)
+        TypedQuery<UUID> selectQuery = entityManager.createQuery(query, UUID.class)
             .setParameter("behaviorGroupIds", behaviorGroupIds);
         if (orgId != null) {
             selectQuery.setParameter("orgId", orgId);
         }
 
-        List<Endpoint> endpoints = selectQuery.getResultList();
-
-        return endpoints.stream().map(Endpoint::getId).toList();
+        return selectQuery.getResultList();
     }
 
     private Endpoint getEndpoint(UUID endpointId, String orgId) {
