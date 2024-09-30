@@ -53,7 +53,7 @@ public class PagerDutyTransformer implements Processor {
         JsonObject messagePayload = new JsonObject();
         messagePayload.put(SUMMARY, cloudEventPayload.getString(EVENT_TYPE));
         messagePayload.put(TIMESTAMP, LocalDateTime.parse(cloudEventPayload.getString(TIMESTAMP)).format(PD_DATE_TIME_FORMATTER));
-        messagePayload.put(SEVERITY, cloudEventPayload.getString(SEVERITY));
+        messagePayload.put(SEVERITY, PagerDutySeverity.fromJson(cloudEventPayload.getString(SEVERITY)));
         messagePayload.put(SOURCE, cloudEventPayload.getString(APPLICATION));
         messagePayload.put(GROUP, cloudEventPayload.getString(BUNDLE));
 

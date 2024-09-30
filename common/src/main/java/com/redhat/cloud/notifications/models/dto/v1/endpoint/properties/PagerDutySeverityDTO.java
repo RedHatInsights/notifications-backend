@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.models;
+package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -7,7 +7,7 @@ import java.util.Locale;
 
 /** @apiNote For converting from a JSON string, use {@link #fromJson(String)} instead of {@link #valueOf(String)}. */
 @Schema(enumeration = { "critical", "error", "warning", "info" })
-public enum PagerDutySeverity {
+public enum PagerDutySeverityDTO {
     @JsonProperty("critical")
     CRITICAL,
     @JsonProperty("error")
@@ -19,9 +19,9 @@ public enum PagerDutySeverity {
 
     /** Parses the lowercase or uppercase severity into this enum
      *
-     * @return a {@link PagerDutySeverity} constant
+     * @return a {@link PagerDutySeverityDTO} constant
      */
-    public static PagerDutySeverity fromJson(String value) {
+    public static PagerDutySeverityDTO fromJson(String value) {
         return valueOf(value.toUpperCase(Locale.ENGLISH));
     }
 }

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
@@ -20,6 +22,7 @@ import jakarta.validation.constraints.Size;
 public class PagerDutyProperties extends EndpointProperties implements SourcesSecretable {
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     private PagerDutySeverity severity;
 
     @NotNull

@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
-import com.redhat.cloud.notifications.models.PagerDutySeverity;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -10,17 +9,17 @@ import jakarta.validation.constraints.Size;
 public class PagerDutyPropertiesDTO extends EndpointPropertiesDTO {
 
     @NotNull
-    private PagerDutySeverity severity;
+    private PagerDutySeverityDTO severity;
 
     @Size(max = 32)
     @NotNull
     private String secretToken;
 
-    public PagerDutySeverity getSeverity() {
+    public PagerDutySeverityDTO getSeverity() {
         return severity;
     }
 
-    public void setSeverity(PagerDutySeverity severity) {
+    public void setSeverity(PagerDutySeverityDTO severity) {
         this.severity = severity;
     }
 
