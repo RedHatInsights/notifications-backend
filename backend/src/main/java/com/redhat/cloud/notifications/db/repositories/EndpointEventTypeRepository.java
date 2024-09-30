@@ -114,7 +114,7 @@ public class EndpointEventTypeRepository {
         }
 
         String deleteQueryStr = "DELETE FROM EndpointEventType eet WHERE " +
-            "endpoint.orgId " + (orgId == null ? "is null " : "=: orgId ") +
+            "endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ") +
             "and id.endpointId in (:endpointList)";
 
         jakarta.persistence.Query deleteQuery = entityManager.createQuery(deleteQueryStr)
@@ -127,7 +127,7 @@ public class EndpointEventTypeRepository {
         String insertQueryStr = "INSERT INTO EndpointEventType (eventType, endpoint) " +
             "SELECT DISTINCT etb.eventType, bga.endpoint " +
             "from EventTypeBehavior etb inner join BehaviorGroupAction bga on etb.behaviorGroup.id = bga.behaviorGroup.id where " +
-            "bga.endpoint.orgId " + (orgId == null ? "is null " : "=: orgId ") +
+            "bga.endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ") +
             "and bga.endpoint.id in (:endpointList)";
 
         jakarta.persistence.Query insertQuery = entityManager.createQuery(insertQueryStr)
@@ -144,7 +144,7 @@ public class EndpointEventTypeRepository {
 
     public List<UUID> findEndpointsByBehaviorGroupId(String orgId, Set<UUID> behaviorGroupIds) {
         String query = "SELECT bga.endpoint.id FROM BehaviorGroupAction bga WHERE bga.behaviorGroup.id in (:behaviorGroupIds) AND " +
-            " bga.endpoint.orgId " + (orgId == null ? "is null " : "=: orgId ");
+            " bga.endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ");
 
         TypedQuery<UUID> selectQuery = entityManager.createQuery(query, UUID.class)
             .setParameter("behaviorGroupIds", behaviorGroupIds);
