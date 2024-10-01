@@ -314,7 +314,7 @@ public class EmailTemplateMigrationService {
                 "OCM/clusterUpdateInstantEmailBody", "html", "OCM cluster update email body"
             );
 
-            if (engineConfig.isUseOCMRefactoredTemplates()) {
+            if (!engineConfig.isUseOCMRefactoredTemplates()) {
                 createInstantEmailTemplate(
                     warnings, "openshift", "cluster-manager", List.of("cluster-lifecycle"),
                     "OCM/genericInstantEmailTitle", "txt", "OCM cluster lifecycle title",
