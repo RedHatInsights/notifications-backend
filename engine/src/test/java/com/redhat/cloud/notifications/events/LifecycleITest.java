@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -28,6 +29,7 @@ import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.smallrye.reactive.messaging.memory.InMemorySink;
@@ -36,8 +38,10 @@ import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -45,6 +49,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -65,6 +70,7 @@ import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOT
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -77,9 +83,6 @@ public class LifecycleITest {
      * here. The deserialization is still performed only to verify that the JSON responses data structure is correct.
      */
 
-    private static final String APP_NAME = "policies-lifecycle-test";
-    private static final String BUNDLE_NAME = "my-bundle";
-    private static final String EVENT_TYPE_NAME = "all";
     private static final String WEBHOOK_MOCK_PATH = "/test/lifecycle";
     private static final String SECRET_TOKEN = "super-secret-token";
 
@@ -99,15 +102,28 @@ public class LifecycleITest {
     @Inject
     ResourceHelpers resourceHelpers;
 
-    @Test
-    void test() {
+    @InjectSpy
+    EngineConfig engineConfig;
+
+    String bundleName;
+    String applicationName;
+    String eventTypeName;
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void test(final boolean useEndpointToEventTypeDirectLink) {
         final String accountId = "tenant";
         final String username = "user";
 
+        when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
+        bundleName = RandomStringUtils.randomAlphabetic(10).toLowerCase();
+        applicationName = RandomStringUtils.randomAlphabetic(10).toLowerCase();
+        eventTypeName = RandomStringUtils.randomAlphabetic(10).toLowerCase();
+
         // First, we need a bundle, an app and an event type. Let's create them!
-        Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
-        Application app = resourceHelpers.createApp(bundle.getId(), APP_NAME);
-        EventType eventType = resourceHelpers.createEventType(app.getId(), EVENT_TYPE_NAME);
+        Bundle bundle = resourceHelpers.createBundle(bundleName);
+        Application app = resourceHelpers.createApp(bundle.getId(), applicationName);
+        EventType eventType = resourceHelpers.createEventType(app.getId(), eventTypeName);
         setupEmailMock();
 
         // We also need behavior groups.
@@ -228,9 +244,14 @@ public class LifecycleITest {
 
     @Transactional
     void deleteBehaviorGroup(BehaviorGroup behaviorGroup) {
-        entityManager.createQuery("DELETE FROM BehaviorGroup WHERE id = :id")
-                .setParameter("id", behaviorGroup.getId())
-                .executeUpdate();
+        List<UUID> endpoints = resourceHelpers.findEndpointsByBehaviorGroupId(behaviorGroup.getOrgId(), Set.of(behaviorGroup.getId()));
+        int result = entityManager.createQuery("DELETE FROM BehaviorGroup WHERE id = :id")
+            .setParameter("id", behaviorGroup.getId())
+            .executeUpdate();
+
+        if (result > 0) {
+            resourceHelpers.refreshEndpointLinksToEventType(behaviorGroup.getOrgId(), endpoints);
+        }
     }
 
     Endpoint getAccountCanonicalEmailEndpoint(String accountId, String orgId) {
@@ -249,7 +270,7 @@ public class LifecycleITest {
     private void addDefaultBehaviorGroupAction(BehaviorGroup behaviorGroup) {
         SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
         properties.setOnlyAdmins(true);
-        Endpoint endpoint = createEndpoint(null, EMAIL_SUBSCRIPTION, "Email endpoint", "System email endpoint", properties);
+        Endpoint endpoint = createEndpoint(null, EMAIL_SUBSCRIPTION, "Email endpoint " + RandomStringUtils.randomAlphabetic(10), "System email endpoint", properties);
         addBehaviorGroupAction(behaviorGroup.getId(), endpoint.getId());
     }
 
@@ -280,6 +301,7 @@ public class LifecycleITest {
         action.setBehaviorGroup(behaviorGroup);
         action.setEndpoint(endpoint);
         entityManager.persist(action);
+        resourceHelpers.refreshEndpointLinksToEventType(behaviorGroup.getOrgId(), List.of(endpoint.getId()));
     }
 
     /*
@@ -345,9 +367,9 @@ public class LifecycleITest {
         action.setAccountId("tenant");
         action.setOrgId(DEFAULT_ORG_ID);
         action.setVersion("v1.0.0");
-        action.setBundle(BUNDLE_NAME);
-        action.setApplication(APP_NAME);
-        action.setEventType(EVENT_TYPE_NAME);
+        action.setBundle(bundleName);
+        action.setApplication(applicationName);
+        action.setEventType(eventTypeName);
         action.setTimestamp(LocalDateTime.now());
         action.setContext(new Context.ContextBuilder().build());
         action.setRecipients(List.of());
@@ -363,7 +385,7 @@ public class LifecycleITest {
     }
 
     private void setupEmailMock() {
-        resourceHelpers.createBlankInstantEmailTemplate(BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
+        resourceHelpers.createBlankInstantEmailTemplate(bundleName, applicationName, eventTypeName);
     }
 
     @Transactional
@@ -375,13 +397,22 @@ public class LifecycleITest {
         behavior.setEventType(eventType);
         behavior.setBehaviorGroup(behaviorGroup);
         entityManager.persist(behavior);
+        resourceHelpers.refreshEndpointLinksToEventTypeFromBehaviorGroup(behaviorGroup.getOrgId(), Set.of(behaviorGroupId));
     }
 
     @Transactional
     void clearEventTypeBehaviors(EventType eventType) {
-        entityManager.createQuery("DELETE FROM EventTypeBehavior WHERE eventType = :eventType")
+        List<BehaviorGroup> listOfImpactedBg = entityManager.createQuery("SELECT behaviorGroup FROM EventTypeBehavior WHERE eventType = :eventType", BehaviorGroup.class)
+            .setParameter("eventType", eventType)
+            .getResultList();
+
+        int result = entityManager.createQuery("DELETE FROM EventTypeBehavior WHERE eventType = :eventType")
                 .setParameter("eventType", eventType)
                 .executeUpdate();
+
+        if (result > 0) {
+            resourceHelpers.refreshEndpointLinksToEventTypeFromBehaviorGroup(listOfImpactedBg.getFirst().getOrgId(), listOfImpactedBg.stream().map(BehaviorGroup::getId).collect(Collectors.toSet()));
+        }
     }
 
     private void retry(Supplier<Boolean> checkEndpointHistoryResult) {

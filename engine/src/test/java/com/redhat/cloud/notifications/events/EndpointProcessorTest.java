@@ -161,6 +161,7 @@ public class EndpointProcessorTest {
         event.setOrgId(orgId);
 
         Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(endpointFixture));
+        Mockito.when(this.endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(endpointFixture));
 
         Mockito.doNothing().when(this.webhookProcessor).process(Mockito.any(Event.class), Mockito.anyList());
 

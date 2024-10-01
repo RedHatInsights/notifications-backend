@@ -119,6 +119,28 @@ public class EndpointRepository {
         return endpoints;
     }
 
+    public List<Endpoint> getTargetEndpointsWithoutUsingBgs(String orgId, EventType eventType) {
+        String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.eventTypes " +
+            "WHERE (e.orgId = :orgId OR e.orgId IS NULL) AND e.enabled IS TRUE AND e.status = :status AND :eventType member of e.eventTypes ";
+
+        List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
+            .setParameter("status", READY)
+            .setParameter("eventType", eventType)
+            .setParameter("orgId", orgId)
+            .getResultList();
+        loadProperties(endpoints);
+        for (Endpoint endpoint : endpoints) {
+            if (endpoint.getOrgId() == null) {
+                if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
+                    endpoint.setOrgId(orgId);
+                } else {
+                    Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
+                }
+            }
+        }
+        return endpoints;
+    }
+
     @CacheResult(cacheName = "aggregation-target-email-subscription-endpoints")
     public List<Endpoint> getTargetEmailSubscriptionEndpoints(String orgId, UUID eventTypeId) {
         String query = "SELECT DISTINCT e FROM Endpoint e JOIN e.behaviorGroupActions bga JOIN bga.behaviorGroup.behaviors b " +

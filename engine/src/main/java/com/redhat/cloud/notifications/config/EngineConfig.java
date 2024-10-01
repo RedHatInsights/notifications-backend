@@ -53,6 +53,8 @@ public class EngineConfig {
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
     private String toggleKafkaOutgoingHighVolumeTopic;
+    private String toggleDirectEndpointToEventTypeDryRunEnabled;
+    private String toggleUseDirectEndpointToEventTypeEnabled;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -153,6 +155,8 @@ public class EngineConfig {
         drawerToggle = toggleRegistry.register("drawer", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
+        toggleDirectEndpointToEventTypeDryRunEnabled = toggleRegistry.register("endpoint-to-event-type-dry-run", true);
+        toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -178,6 +182,8 @@ public class EngineConfig {
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
         config.put(NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES, isUseOCMRefactoredTemplates());
+        config.put(toggleDirectEndpointToEventTypeDryRunEnabled, isDirectEndpointToEventTypeDryRunEnabled());
+        config.put(toggleUseDirectEndpointToEventTypeEnabled, isUseDirectEndpointToEventTypeEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -277,6 +283,22 @@ public class EngineConfig {
 
     public int getKafkaToCamelMaximumRequestSize() {
         return kafkaToCamelMaximumRequestSize;
+    }
+
+    public boolean isDirectEndpointToEventTypeDryRunEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleDirectEndpointToEventTypeDryRunEnabled, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isUseDirectEndpointToEventTypeEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleUseDirectEndpointToEventTypeEnabled, false);
+        } else {
+            return false;
+        }
     }
 
     public boolean isOutgoingKafkaHighVolumeTopicEnabled() {
