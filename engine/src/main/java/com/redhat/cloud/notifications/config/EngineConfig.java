@@ -177,7 +177,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
-        config.put(NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES, isOutgoingKafkaHighVolumeTopicEnabled());
+        config.put(NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES, isUseOCMRefactoredTemplates());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
