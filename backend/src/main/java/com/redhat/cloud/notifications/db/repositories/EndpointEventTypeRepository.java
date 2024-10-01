@@ -75,7 +75,7 @@ public class EndpointEventTypeRepository {
     }
 
     @Transactional
-    public void addEventTypeToEndpoint(UUID eventTypeId, UUID endpointId, String orgId) {
+    public Endpoint addEventTypeToEndpoint(UUID eventTypeId, UUID endpointId, String orgId) {
         Endpoint endpoint = getEndpoint(endpointId, orgId);
 
         EventType eventType = entityManager.find(EventType.class, eventTypeId);
@@ -87,11 +87,11 @@ public class EndpointEventTypeRepository {
             endpoint.setEventTypes(new HashSet<>());
         }
         endpoint.getEventTypes().add(eventType);
-        entityManager.merge(endpoint);
+        return entityManager.merge(endpoint);
     }
 
     @Transactional
-    public void updateEventTypesLinkedToEndpoint(UUID endpointId, Set<UUID> eventTypeIds, String orgId) {
+    public Endpoint updateEventTypesLinkedToEndpoint(UUID endpointId, Set<UUID> eventTypeIds, String orgId) {
         Endpoint endpoint = getEndpoint(endpointId, orgId);
 
         Set<EventType> eventTypes = new HashSet<>();
@@ -104,7 +104,7 @@ public class EndpointEventTypeRepository {
         }
 
         endpoint.setEventTypes(eventTypes);
-        entityManager.merge(endpoint);
+        return entityManager.merge(endpoint);
     }
 
     @Transactional

@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.db.model.Stats;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -155,6 +156,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ConfigProperty(name = "sources.psk")
     String sourcesPsk;
+
+    @ConfigProperty(name = "internal.admin-role")
+    String adminRole;
 
     // Mock the Sources service calls.
     private Secret mockSources(SourcesSecretable properties) {
@@ -3099,8 +3103,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @Test
     void testCreateThenDeleteEndpointToEventTypeRelationship() {
         final Bundle bundle = resourceHelpers.createBundle();
-
-        // Create event type and endpoint
         final Application application = resourceHelpers.createApplication(bundle.getId());
         final EventType eventType = resourceHelpers.createEventType(application.getId(), "name", "display-name", "description");
         final Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
@@ -3112,6 +3114,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Check that created endpoint don't have any event type associated
         Endpoint endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(0, endpointFromDb.getEventTypes().size());
+
+        // Check that created endpoint don't have any linked behavior group
+        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(0, behaviorGroups.size());
 
         // test event type or endpoint not exists
         given()
@@ -3145,6 +3151,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, endpointFromDb.getEventTypes().size());
         assertEquals(eventType.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
 
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(1, behaviorGroups.getFirst().getActions().size());
+        assertEquals(1, behaviorGroups.getFirst().getBehaviors().size());
+
         // Try to link again same endpoint and event type
         given()
             .header(identityHeader)
@@ -3160,6 +3171,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, endpointFromDb.getEventTypes().size());
         assertEquals(eventType.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
 
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(1, behaviorGroups.getFirst().getActions().size());
+        assertEquals(1, behaviorGroups.getFirst().getBehaviors().size());
+
         // Delete endpoint to event type relationship
         given()
             .header(identityHeader)
@@ -3173,6 +3189,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // test event type or endpoint not exists
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(0, endpointFromDb.getEventTypes().size());
+
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(0, behaviorGroups.size());
 
         final EventType eventType1 = resourceHelpers.createEventType(application.getId(), "name1", "display-name-1", "description1");
         final EventType eventType2 = resourceHelpers.createEventType(application.getId(), "name2", "display-name-2", "description1");
@@ -3191,6 +3210,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(3, endpointFromDb.getEventTypes().size());
 
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(1, Set.of(behaviorGroups.getFirst().getActions()).size());
+        assertEquals(3, behaviorGroups.getFirst().getBehaviors().size());
+
         // test delete one event type
         given()
             .header(identityHeader)
@@ -3205,6 +3229,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(2, endpointFromDb.getEventTypes().size());
 
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(1, Set.of(behaviorGroups.getFirst().getActions()).size());
+        assertEquals(2, behaviorGroups.getFirst().getBehaviors().size());
+
         // test delete all event types
         given()
             .header(identityHeader)
@@ -3218,5 +3247,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(0, endpointFromDb.getEventTypes().size());
+
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(0, behaviorGroups.size());
     }
 }

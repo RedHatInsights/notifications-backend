@@ -281,6 +281,14 @@ public class ResourceHelpers {
         return behaviorGroupRepository.findBehaviorGroupsByEndpointId(DEFAULT_ORG_ID, endpointId);
     }
 
+    public List<BehaviorGroup> findBehaviorGroupsByOrgId(String orgId) {
+        String query = "SELECT bg FROM BehaviorGroup bg JOIN FETCH bg.behaviors JOIN FETCH bg.actions a WHERE bg.orgId = :orgId";
+        List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
+            .setParameter("orgId", orgId)
+            .getResultList();
+        return behaviorGroups;
+    }
+
     public void updateBehaviorGroup(BehaviorGroup behaviorGroup) {
         behaviorGroupRepository.update(DEFAULT_ORG_ID, behaviorGroup);
     }
