@@ -15,7 +15,7 @@ objects:
         debug: false
         dynaconfEnvName: stage_post_deploy
         filter: ''
-        marker: '' # 'notif_pagerduty and api'
+        marker: 'notif_pagerduty and api'
 parameters:
 - name: IMAGE_TAG
   value: ''
