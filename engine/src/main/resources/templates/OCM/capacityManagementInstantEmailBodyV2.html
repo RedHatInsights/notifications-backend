@@ -43,7 +43,7 @@ More info
 {#content-body-section2}
 {#let global_vars=action.events[0].payload.global_vars}
 {#switch global_vars.template_sub_type.or("")}
-{#case 'osd-trial-creation-template'} --Cluster Lifecycle
+{#case 'osd-trial-creation-template'}
     <p>
         To learn more about the OpenShift Dedicated trial, please refer to <a href="https://access.redhat.com/articles/5990101" target="_blank">our documentation</a>. You can upgrade your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a href="https://cloud.redhat.com/openshift/details/{action.events[0].payload.global_vars.internal_cluster_id}" target="_blank">OpenShift Cluster Manager</a>.
     </p>
