@@ -27,6 +27,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
+      "id": 951332,
       "links": [
         {
           "asDropdown": false,
@@ -4560,7 +4561,7 @@ data:
                   "mode": "none"
                 },
                 "thresholdsStyle": {
-                  "mode": "off"
+                  "mode": "dashed"
                 }
               },
               "mappings": [],
@@ -4570,6 +4571,10 @@ data:
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 3000
                   }
                 ]
               },
@@ -4584,6 +4589,18 @@ data:
             "y": 63
           },
           "id": 315,
+          "links": [
+            {
+              "targetBlank": true,
+              "title": "Database's IOPS and throughput details",
+              "url": "https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=notifications-backend-prod;is-cluster=false;tab=configuration"
+            },
+            {
+              "targetBlank": true,
+              "title": "View in CloudWatch",
+              "url": "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~(title~'EBS*20IO*20operations~metrics~(~(~'AWS*2fRDS~'ReadIOPS~'DBInstanceIdentifier~'notifications-backend-prod~(region~'us-east-1~label~'ReadIOPS~id~'m1~color~'*231f77b4))~(~'.~'WriteIOPS~'.~'.~(region~'us-east-1~label~'WriteIOPS~id~'m2~color~'*23ff7f0e)))~stacked~true~region~'us-east-1~view~'timeSeries~stat~'Average~period~60~yAxis~(left~(min~0~label~'Per*20second~showUnits~false))~annotations~(horizontal~(~(label~'Current*20Provisioned*20IOPS~value~3000)))~start~'-PT168H~end~'P0D)"
+            }
+          ],
           "options": {
             "legend": {
               "calcs": [
@@ -4600,6 +4617,7 @@ data:
               "sort": "none"
             }
           },
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
@@ -4649,34 +4667,25 @@ data:
               "region": "default",
               "sqlExpression": "",
               "statistic": "Average"
-            },
-            {
-              "datasource": {
-                "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
-              },
-              "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
-              },
-              "expression": "",
-              "hide": false,
-              "id": "",
-              "label": "",
-              "logGroups": [],
-              "matchExact": true,
-              "metricEditorMode": 0,
-              "metricName": "BurstBalance",
-              "metricQueryType": 0,
-              "namespace": "AWS/RDS",
-              "period": "",
-              "queryMode": "Metrics",
-              "refId": "BurstBalance",
-              "region": "default",
-              "sqlExpression": "",
-              "statistic": "Average"
             }
           ],
           "title": "Operations",
+          "transformations": [
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "TotalIOPS",
+                "binary": {
+                  "left": "ReadIOPS",
+                  "right": "WriteIOPS"
+                },
+                "mode": "binary",
+                "reduce": {
+                  "reducer": "sum"
+                }
+              }
+            }
+          ],
           "type": "timeseries"
         },
         {
@@ -4828,7 +4837,7 @@ data:
                   "mode": "none"
                 },
                 "thresholdsStyle": {
-                  "mode": "off"
+                  "mode": "dashed"
                 }
               },
               "mappings": [],
@@ -4838,10 +4847,14 @@ data:
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 125000000
                   }
                 ]
               },
-              "unit": "bytes"
+              "unit": "binbps"
             },
             "overrides": []
           },
@@ -4852,11 +4865,23 @@ data:
             "y": 71
           },
           "id": 320,
+          "links": [
+            {
+              "targetBlank": true,
+              "title": "Database's IOPS and throughput details",
+              "url": "https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=notifications-backend-prod;is-cluster=false;tab=configuration"
+            },
+            {
+              "targetBlank": true,
+              "title": "View in CloudWatch",
+              "url": "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~(metrics~(~(~'AWS*2fRDS~'WriteThroughput~'DBInstanceIdentifier~'notifications-backend-prod~(color~'*239467bd))~(~'.~'ReadThroughput~'.~'.~(color~'*23ff7f0e)))~title~'EBS*20IO*20operations~stacked~true~region~'us-east-1~view~'timeSeries~stat~'Average~period~60~yAxis~(left~(min~0~label~'Per*20second~showUnits~false))~annotations~(horizontal~(~(label~'Maximum*20throughput~value~125000000)))~start~'-PT168H~end~'P0D)&query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20ReadThroughput"
+            }
+          ],
           "options": {
             "legend": {
               "calcs": [
-                "min",
                 "max",
+                "min",
                 "mean"
               ],
               "displayMode": "table",
@@ -4920,6 +4945,23 @@ data:
             }
           ],
           "title": "Throughput",
+          "transformations": [
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "Total troughput",
+                "binary": {
+                  "left": "ReadThroughput",
+                  "right": "WriteThroughput"
+                },
+                "mode": "binary",
+                "reduce": {
+                  "reducer": "sum"
+                },
+                "replaceFields": false
+              }
+            }
+          ],
           "type": "timeseries"
         },
         {
@@ -9015,8 +9057,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -9109,8 +9150,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -9210,8 +9250,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -9323,8 +9362,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -9587,8 +9625,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -9682,7 +9719,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "crcs02ue1-prometheus",
               "value": "crcs02ue1-prometheus"
             },
@@ -9747,7 +9784,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 1,
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap
