@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -102,7 +103,6 @@ import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockS
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
-import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -202,6 +202,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
     SourcesService sourcesServiceMock;
 
     /**
+     * Mocked RBAC's workspace utilities so that the {@link KesselTestHelper}
+     * can be used.
+     */
+    @InjectMock
+    WorkspaceUtils workspaceUtils;
+
+    /**
      * Required to set up the mock calls to the sources service mock.
      */
     @ConfigProperty(name = "sources.psk")
@@ -268,7 +275,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         mockSources(properties);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
                 .header(identityHeader)
@@ -468,7 +476,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         mockSources(properties);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
                 .header(identityHeader)
@@ -641,7 +650,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * @param ep the endpoint to create.
      */
     private void expectReturn400(final String DEFAULT_USER, final Header identityHeader, final Endpoint ep) {
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
                  .header(identityHeader)
@@ -694,7 +704,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // the secrets from Sources too.
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(basicAuthSecret.id))).thenReturn(basicAuthSecret);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String responseBody = given()
                 .header(identityHeader)
@@ -769,7 +780,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(cAttr);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
                 .header(identityHeader)
@@ -795,7 +807,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void testForbidSlackChannelUsage(final boolean isKesselRelationsApiEnabled) {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", DEFAULT_USER);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
@@ -811,7 +823,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setDescription("description");
         endpoint.setProperties(camelProperties);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String responseBody = given()
             .header(identityHeader)
@@ -918,7 +931,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setDescription("description");
         endpoint.setProperties(camelProperties);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String invalidResp = given()
                 .header(identityHeader)
@@ -1026,7 +1040,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(cAttr);
         ep.setStatus(EndpointStatus.DELETING); // Trying to set other status
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String responseBody = given()
                 .header(identityHeader)
@@ -1131,7 +1146,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Secret secretTokenSecret = mockSources(properties);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
                 .header(identityHeader)
@@ -1268,7 +1284,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         mockSources(properties);
 
         final Set<UUID> createdEndpointIds = new HashSet<>();
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -1376,7 +1393,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final Set<UUID> createdEndpointsIdentifiers = addEndpoints(29, identityHeader);
 
@@ -1581,7 +1599,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(bearerTokenSecret.id))).thenReturn(bearerTokenSecret);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
                 .header(identityHeader)
@@ -1637,7 +1656,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String stringResponse = given()
                 .header(identityHeader)
@@ -1653,8 +1673,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
-        // EmailSubscription can be fetch from the properties
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        // EmailSubscription can be fetched from the properties
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
                 .header(identityHeader)
@@ -1815,7 +1836,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String stringResponse = given()
             .header(identityHeader)
@@ -1832,7 +1854,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
         // Drawer endpoints can be created from the dedicated endpoint
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
             .header(identityHeader)
@@ -1989,7 +2012,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, HttpStatus.SC_NOT_FOUND);
 
         // valid group id
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
         requestProps.setGroupId(UUID.fromString(validGroupId));
@@ -2111,7 +2135,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         final Set<UUID> createdEndpointIds = new HashSet<>();
         for (int i = 0; i < 200; i++) {
             // Add new endpoints
@@ -2231,7 +2256,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final Set<UUID> createdEndpoints = addEndpoints(10, identityHeader);
 
@@ -2280,7 +2306,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final Set<UUID> createdEndpoints = addEndpoints(10, identityHeader);
 
@@ -2398,7 +2425,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
         try {
             LaunchMode.set(LaunchMode.NORMAL);
-            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+            this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
             // Test the URLs with both camel and webhook endpoints.
             for (final var testCase : testCases) {
@@ -2498,7 +2526,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
             .thenReturn(secret);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         for (final String url : ValidNonPrivateUrlValidatorTest.validUrls) {
             // Test with a camel endpoint.
             camelProperties.setUrl(url);
@@ -2552,8 +2581,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     public void testEndpointSubtypeIsOnlyAllowedWhenRequired(final boolean isKesselRelationsApiEnabled) {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
-        String EMPTY = "empty";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(EMPTY, EMPTY, DEFAULT_USER);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -2573,7 +2601,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(properties);
         ep.setServerErrors(3);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         given()
                 .header(identityHeader)
                 .when()
@@ -2797,7 +2826,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setStatus(EndpointStatus.PROVISIONING);
         endpoint.setType(EndpointType.WEBHOOK);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         final String response = given()
             .header(identityHeader)
             .when()
@@ -2922,7 +2952,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretTokenSecret
         );
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         final String response = given()
             .header(identityHeader)
             .when()
@@ -3030,7 +3061,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretTokenSecret
         );
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         final String response = given()
             .header(identityHeader)
             .when()
@@ -3134,7 +3166,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setProperties(properties);
 
         // POST the endpoint.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         String responseBody = given()
                 .header(identityHeader)
                 .contentType(JSON)
@@ -3231,7 +3264,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // the secrets from Sources too.
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -3327,7 +3361,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Mockito.doThrow(new RuntimeException()).when(this.endpointRepository).createEndpoint(Mockito.any());
 
         // Call the endpoint under test.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         given()
             .header(identityHeader)
             .when()
@@ -3428,6 +3463,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body("meta.count", Matchers.is(0));
 
         // Create an endpoint.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
         given()
             .header(identityHeader)
             .when()
@@ -4161,7 +4197,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Give the principal the "create endpoints" permission.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         // Create the integration.
         final Set<UUID> createdIntegration = this.addEndpoints(1, identityHeader);
@@ -4177,7 +4214,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     NotificationsIntegration.newBuilder()
                         .setMetadata(Metadata.newBuilder()
                             .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
-                            .setWorkspace(WORKSPACE_ID_PLACEHOLDER)
+                            .setWorkspace(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString())
                             .build()
                         ).setReporterData(ReporterData.newBuilder()
                             .setLocalResourceId(integrationId.toString())
@@ -4235,7 +4272,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Mock the Kessel permission to be able to create the integration.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         // Simulate an error when saving the integration in our database.
         Mockito.doThrow(IllegalStateException.class).when(this.endpointRepository).createEndpoint(Mockito.any());
@@ -4293,7 +4331,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Mock the Kessel permission to be able to create the integration.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         // Simulate an error when saving the integration in the Inventory API.
         Mockito.when(this.notificationsIntegrationClient.CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class))).thenThrow(StatusRuntimeException.class);
@@ -4454,6 +4493,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
 
         // Attempt deleting the integration.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
         given()
             .header(identityHeader)
             .pathParam("id", integration.getId())

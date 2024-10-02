@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -33,6 +34,15 @@ public class KesselTestHelper {
 
     @Inject
     LookupClient lookupClient;
+
+    @Inject
+    WorkspaceUtils workspaceUtils;
+
+    /**
+     * The {@link UUID} that the {@link WorkspaceUtils#getDefaultWorkspaceId(String)}
+     * method will return no matter what workspace is passed to it. The re
+     */
+    public static final UUID RBAC_DEFAULT_WORKSPACE_ID = UUID.randomUUID();
 
     /**
      * Mocks the {@link LookupClient} so that it simulates that no authorized
@@ -73,6 +83,28 @@ public class KesselTestHelper {
         ).thenReturn(
             lookupResourcesResponses.iterator()
         );
+    }
+
+    /**
+     * Mocks the call to {@link WorkspaceUtils#getDefaultWorkspaceId(String)}
+     * and returns the identifier defined in {@link KesselTestHelper#RBAC_DEFAULT_WORKSPACE_ID}.
+     * @param orgId the organization identifier the mocked method is expecting
+     *              to be able to return the mocked value.
+     */
+    public void mockDefaultWorkspaceId(final String orgId) {
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(orgId)).thenReturn(RBAC_DEFAULT_WORKSPACE_ID);
+    }
+
+    /**
+     * Mocks the call to {@link WorkspaceUtils#getDefaultWorkspaceId(String)}
+     * by returning the given ID for the given org ID.
+     * @param orgId the organization identifier the mocked method is expecting
+     *              to be able to return the mocked value.
+     * @param returningWorkspaceId the mocked identifier we are going to
+     *                             simulate that RBAC returns.
+     */
+    public void mockDefaultWorkspaceId(final String orgId, final UUID returningWorkspaceId) {
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(orgId)).thenReturn(returningWorkspaceId);
     }
 
     /**
