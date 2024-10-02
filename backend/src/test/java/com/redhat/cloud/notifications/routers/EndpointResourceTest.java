@@ -25,6 +25,7 @@ import com.redhat.cloud.notifications.models.PagerDutySeverity;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
@@ -36,6 +37,7 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -49,6 +51,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.core.UriBuilder;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -63,6 +66,8 @@ import org.mockito.Mockito;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -91,6 +96,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -445,7 +451,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject endpoint = new JsonObject(response.getBody().asString());
-        endpoint.mapTo(EndpointDTO.class);
         return endpoint;
     }
 
@@ -3102,22 +3107,28 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Test
     void testCreateThenDeleteEndpointToEventTypeRelationship() {
-        final Bundle bundle = resourceHelpers.createBundle();
-        final Application application = resourceHelpers.createApplication(bundle.getId());
-        final EventType eventType = resourceHelpers.createEventType(application.getId(), "name", "display-name", "description");
+        final Bundle bundle1 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 1");
+
+        // Create event type and endpoint
+        final Application application1 = resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
+        final EventType eventType1 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description");
         final Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
+        // Check that created endpoint don't have any linked behavior group
+        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(0, behaviorGroups.size());
+
         // Check that created endpoint don't have any event type associated
         Endpoint endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(0, endpointFromDb.getEventTypes().size());
 
-        // Check that created endpoint don't have any linked behavior group
-        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
-        assertEquals(0, behaviorGroups.size());
+        // Check that created endpoint don't have any event type associated using API
+        EndpointDTO endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
+        assertNull(endpointDTO.getEventTypes());
 
         // test event type or endpoint not exists
         given()
@@ -3130,7 +3141,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .statusCode(404);
         given()
             .header(identityHeader)
-            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("eventTypeUuid", eventType1.getId())
             .pathParam("endpointUuid", UUID.randomUUID())
             .when()
             .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
@@ -3140,7 +3151,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // link endpoint and event type
         given()
             .header(identityHeader)
-            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("eventTypeUuid", eventType1.getId())
             .pathParam("endpointUuid", endpoint.getId())
             .when()
             .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
@@ -3149,7 +3160,27 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(1, endpointFromDb.getEventTypes().size());
-        assertEquals(eventType.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
+        assertEquals(eventType1.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
+
+        // Check endpoint has one associated event type using get single endpoint api
+        endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
+        assertEquals(1, endpointDTO.getEventTypes().size());
+        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().size());
+        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
+        EventTypeDTO eventTypeDTO = endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().stream().findFirst().get();
+        assertEquals(eventType1.getId(), eventTypeDTO.getId());
+
+        // Check endpoint has one associated event type using get all endpoints api
+        EndpointPage endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_2);
+        assertEquals(1L, endpointPage.getMeta().getCount());
+        assertEquals(1, endpointPage.getData().size());
+        assertEquals(1, endpointPage.getData().getFirst().getEventTypes().size());
+
+        // Check get all endpoints api V1 has not been updated
+        endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_1);
+        assertEquals(1L, endpointPage.getMeta().getCount());
+        assertEquals(1, endpointPage.getData().size());
+        assertNull(endpointPage.getData().getFirst().getEventTypes());
 
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(1, behaviorGroups.size());
@@ -3159,7 +3190,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Try to link again same endpoint and event type
         given()
             .header(identityHeader)
-            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("eventTypeUuid", eventType1.getId())
             .pathParam("endpointUuid", endpoint.getId())
             .when()
             .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
@@ -3169,7 +3200,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Check that endpoint is linked to the event type only once
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(1, endpointFromDb.getEventTypes().size());
-        assertEquals(eventType.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
+        assertEquals(eventType1.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
+
+        endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
+        assertEquals(1, endpointDTO.getEventTypes().size());
+        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().size());
+        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
+        eventTypeDTO = endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().stream().findFirst().get();
+        assertEquals(eventType1.getId(), eventTypeDTO.getId());
 
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(1, behaviorGroups.size());
@@ -3180,7 +3218,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         given()
             .header(identityHeader)
             .pathParam("endpointUuid", endpoint.getId())
-            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("eventTypeUuid", eventType1.getId())
             .when()
             .delete("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
             .then()
@@ -3190,13 +3228,20 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(0, endpointFromDb.getEventTypes().size());
 
+        endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
+        assertNull(endpointDTO.getEventTypes());
+
+        endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_2);
+        assertEquals(1L, endpointPage.getMeta().getCount());
+        assertEquals(1, endpointPage.getData().size());
+        assertNull(endpointPage.getData().getFirst().getEventTypes());
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(0, behaviorGroups.size());
 
-        final EventType eventType1 = resourceHelpers.createEventType(application.getId(), "name1", "display-name-1", "description1");
-        final EventType eventType2 = resourceHelpers.createEventType(application.getId(), "name2", "display-name-2", "description1");
+        final EventType eventType2 = resourceHelpers.createEventType(application1.getId(), "name1", "event type 2", "description1");
+        final EventType eventType3 = resourceHelpers.createEventType(application1.getId(), "name2", "event type 3", "description1");
 
-        Set<UUID> eventsIdsToLink = Set.of(eventType.getId(), eventType1.getId(), eventType2.getId());
+        Set<UUID> eventsIdsToLink = Set.of(eventType1.getId(), eventType2.getId(), eventType3.getId());
         given()
             .header(identityHeader)
             .when()
@@ -3210,6 +3255,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(3, endpointFromDb.getEventTypes().size());
 
+        endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
+        assertEquals(1, endpointDTO.getEventTypes().size());
+        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().size());
+        assertEquals(3, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
+
+        // check that return of endpoint V1 does not contain event types
+        JsonObject endpointJsonObject = fetchSingle(endpoint.getId().toString(), identityHeader);
+        endpointDTO = endpointJsonObject.mapTo(EndpointDTO.class);
+        assertNull(endpointDTO.getEventTypes());
+
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(1, behaviorGroups.size());
         assertEquals(1, Set.of(behaviorGroups.getFirst().getActions()).size());
@@ -3220,7 +3275,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .body(Json.encode(Set.of(eventType.getId(), eventType2.getId())))
+            .body(Json.encode(Set.of(eventType1.getId(), eventType3.getId())))
             .pathParam("endpointUuid", endpoint.getId())
             .put("/endpoints/{endpointUuid}/eventTypes")
             .then()
@@ -3234,22 +3289,97 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, Set.of(behaviorGroups.getFirst().getActions()).size());
         assertEquals(2, behaviorGroups.getFirst().getBehaviors().size());
 
-        // test delete all event types
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(Json.encode(new HashSet<>()))
-            .pathParam("endpointUuid", endpoint.getId())
-            .put("/endpoints/{endpointUuid}/eventTypes")
-            .then()
-            .statusCode(204);
+        endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
+        assertEquals(1, endpointDTO.getEventTypes().size());
+        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().size());
+        assertEquals(2, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
 
-        endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
-        assertEquals(0, endpointFromDb.getEventTypes().size());
+        // test orders
+        final Bundle bundle3 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 3");
+        final Bundle bundle2 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 2");
 
-        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
-        assertEquals(0, behaviorGroups.size());
+        // Create event type and endpoint
+        final Application application2 = resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 2");
+        final Application application3 = resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 3");
+        final EventType eventType21 = resourceHelpers.createEventType(application2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description1");
+        final EventType eventType31 = resourceHelpers.createEventType(application3.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description1");
+
+        final Application application21 = resourceHelpers.createApplication(bundle2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
+        final EventType eventType211 = resourceHelpers.createEventType(application21.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description1");
+
+        final Application application31 = resourceHelpers.createApplication(bundle3.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
+        final EventType eventType311 = resourceHelpers.createEventType(application31.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description1");
+
+        // Bundle1
+        //      application 1
+        //          event type 1
+        //          event type 2
+        //          event type 3
+        //      application 2
+        //          event type 1
+        //      application 3
+        //          event type 1
+        // Bundle2
+        //      application 1
+        //          event type 1
+        // Bundle3
+        //      application 1
+        //          event type 1
+
+        List<UUID> eventType = Arrays.asList(eventType1.getId(), eventType2.getId(), eventType3.getId(), eventType21.getId(), eventType211.getId(), eventType31.getId(), eventType311.getId());
+
+        for (int attempt = 0; attempt < 10; attempt++) {
+            List<UUID> previousEventTypeList = new ArrayList(eventType);
+            Collections.shuffle(eventType);
+            assertNotEquals(previousEventTypeList, eventType);
+
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(eventType))
+                .pathParam("endpointUuid", endpoint.getId())
+                .put("/endpoints/{endpointUuid}/eventTypes")
+                .then()
+                .statusCode(204);
+
+            String result = fetchSingleEndpointV2Raw(endpoint.getId(), identityHeader);
+
+            // check bundles order
+            assertTrue(result.indexOf(bundle1.getId().toString()) < result.indexOf(bundle2.getId().toString()));
+            assertTrue(result.indexOf(bundle2.getId().toString()) < result.indexOf(bundle3.getId().toString()));
+
+            // check applications order
+            assertTrue(result.indexOf(application1.getId().toString()) < result.indexOf(application2.getId().toString()));
+            assertTrue(result.indexOf(application2.getId().toString()) < result.indexOf(application3.getId().toString()));
+            assertTrue(result.indexOf(application3.getId().toString()) < result.indexOf(application21.getId().toString()));
+            assertTrue(result.indexOf(application21.getId().toString()) < result.indexOf(application31.getId().toString()));
+
+            // check eventTypes order
+            assertTrue(result.indexOf(eventType1.getId().toString()) < result.indexOf(eventType2.getId().toString()));
+            assertTrue(result.indexOf(eventType2.getId().toString()) < result.indexOf(eventType3.getId().toString()));
+            assertTrue(result.indexOf(eventType3.getId().toString()) < result.indexOf(eventType21.getId().toString()));
+            assertTrue(result.indexOf(eventType21.getId().toString()) < result.indexOf(eventType31.getId().toString()));
+            assertTrue(result.indexOf(eventType31.getId().toString()) < result.indexOf(eventType211.getId().toString()));
+            assertTrue(result.indexOf(eventType211.getId().toString()) < result.indexOf(eventType311.getId().toString()));
+
+            // test delete all event types
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(new HashSet<>()))
+                .pathParam("endpointUuid", endpoint.getId())
+                .put("/endpoints/{endpointUuid}/eventTypes")
+                .then()
+                .statusCode(204);
+
+            endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+            assertEquals(0, endpointFromDb.getEventTypes().size());
+
+            behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+            assertEquals(0, behaviorGroups.size());
+        }
     }
 
     @Test
@@ -3309,5 +3439,40 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, behaviorGroups.get(0).getActions().size());
 
         resourceHelpers.deleteBehaviorGroup(behaviorGroup.getId());
+    }
+
+    private EndpointDTO fetchSingleEndpointV2(UUID endpointUuid, Header identityHeader) {
+        String response = fetchSingleEndpointV2Raw(endpointUuid, identityHeader);
+
+        JsonObject endpoint = new JsonObject(response);
+        return endpoint.mapTo(EndpointDTO.class);
+    }
+
+    private String fetchSingleEndpointV2Raw(UUID endpointUuid, Header identityHeader) {
+        String response = given()
+            .basePath(TestConstants.API_INTEGRATIONS_V_2_0)
+            .header(identityHeader)
+            .pathParam("id", endpointUuid)
+            .when().get("/endpoints/{id}")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().asString();
+
+        return response;
+    }
+
+    private EndpointPage fetchEndpoints(Header identityHeader, String basePath) {
+        EndpointPage response = given()
+            .basePath(basePath)
+            .header(identityHeader)
+            .when().get("/endpoints")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(EndpointPage.class);
+
+        Log.info(response);
+        return response;
     }
 }

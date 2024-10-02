@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.models.dto.v1.BundleDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.EndpointPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutyPropertiesDTO;
@@ -21,11 +22,12 @@ import jakarta.validation.constraints.Size;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public final class EndpointDTO {
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+
     private UUID id;
 
     @NotNull
@@ -88,6 +90,9 @@ public final class EndpointDTO {
     private boolean isSubTypeNotPresentWhenNotRequired() {
         return this.type.requiresSubType || this.subType == null;
     }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Set<BundleDTO> eventTypes;
 
     public UUID getId() {
         return id;
@@ -175,5 +180,13 @@ public final class EndpointDTO {
 
     public void setProperties(final EndpointPropertiesDTO properties) {
         this.properties = properties;
+    }
+
+    public Set<BundleDTO> getEventTypes() {
+        return eventTypes;
+    }
+
+    public void setEventTypes(Set<BundleDTO> eventTypes) {
+        this.eventTypes = eventTypes;
     }
 }

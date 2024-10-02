@@ -25,6 +25,7 @@ public interface EndpointMapper {
      * @return the mapped DTO.
      */
     @Mapping(source = "properties", target = "properties", qualifiedByName = "mapEntityProperties")
+    @Mapping(target = "eventTypes", ignore = true)
     EndpointDTO toDTO(Endpoint endpoint);
 
     /**
