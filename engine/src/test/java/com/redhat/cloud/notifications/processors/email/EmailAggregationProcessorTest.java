@@ -456,6 +456,45 @@ class EmailAggregationProcessorTest {
         verifyNoInteractions(connectorSender);
     }
 
+    @Test
+    void shouldNotSendAggregatedEmailBecausePatchAggIsEmpty() {
+        try {
+
+            // Because this test will use a real Payload Aggregator
+            EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
+
+            initData("patch", "new-advisory");
+            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "unknown", "host-01"));
+            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "unknown", "host-01"));
+
+            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1)));
+
+            micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
+            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
+            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
+            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
+
+            // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
+            verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
+                eq(aggregationKey1),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class),
+                eq(0),
+                anyInt()
+            );
+
+            verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
+                eq(aggregationKey1),
+                any(LocalDateTime.class)
+            );
+
+            verifyNoInteractions(connectorSender);
+
+        } finally {
+            resourceHelpers.deleteApp("rhel", "patch");
+        }
+    }
+
     private void mockUsers(User user1, User user2, User user3) {
         when(externalRecipientsResolver.recipientUsers(anyString(), anySet(), anySet(), anySet(), anyBoolean(), any()))
             .then(invocation -> {

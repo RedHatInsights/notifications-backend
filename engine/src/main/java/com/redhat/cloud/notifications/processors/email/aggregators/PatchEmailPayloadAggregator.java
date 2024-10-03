@@ -11,13 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
     // Notification common
-    private static final String CONTEXT_KEY = "context";
     private static final String EVENT_TYPE_KEY = "event_type";
     private static final String EVENTS_KEY = "events";
     private static final String PAYLOAD_KEY = "payload";
-
-    // Patch context
-    private static final String INVENTORY_ID = "inventory_id";
 
     // Patch event payload
     private static final String ADVISORY_NAME = "advisory_name";
@@ -26,7 +22,6 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
 
     // Patch aggregator
     private static final String PATCH_KEY = "patch";
-    private static final String ADVISORIES_KEY = "advisories";
 
     private static final String NEW_ADVISORIES_EVENT = "new-advisory";
     private static final List<String> EVENT_TYPES = Arrays.asList(NEW_ADVISORIES_EVENT);
@@ -54,6 +49,11 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     }
 
     @Override
+    public boolean isEmpty() {
+        return totalAdvisories.get() == 0;
+    }
+
+    @Override
     void processEmailAggregation(EmailAggregation notification) {
         JsonObject patch = context.getJsonObject(PATCH_KEY);
         JsonObject notificationPayload = notification.getPayload();
@@ -62,8 +62,6 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
         if (!EVENT_TYPES.contains(eventType)) {
             return;
         }
-
-        JsonObject payloadContext = notificationPayload.getJsonObject(CONTEXT_KEY);
 
         // Put and group advisories
         notificationPayload.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
