@@ -500,21 +500,18 @@ public class BehaviorGroupRepository {
     }
 
     @Transactional
-    public void appendActionToBehaviorGroup(final String orgId, final UUID behaviorGroupUuid, final UUID endpointUuid, final int position) {
+    public void appendActionToBehaviorGroup(final UUID behaviorGroupUuid, final UUID endpointUuid, final int position) {
         final String appendBehaviorGroupQuery =
             "INSERT INTO " +
                 "behavior_group_action(behavior_group_id, endpoint_id, created, position) " +
-                "SELECT bg.id, ep.id, :created, :position " +
-                "FROM behavior_group AS bg, endpoints AS ep " +
-                "WHERE ep.id = :endpointUuid AND ep.org_id = :orgId AND bg.id = :behaviorGroupUuid AND bg.org_id = :orgId " +
-                "ON CONFLICT (behavior_group_id, endpoint_id) DO NOTHING";
+                "VALUES (:behaviorGroupUuid, :endpointUuid, :created, :position) " +
+                "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";
 
         final jakarta.persistence.Query query = this.entityManager.createNativeQuery(appendBehaviorGroupQuery)
             .setParameter("behaviorGroupUuid", behaviorGroupUuid)
             .setParameter("endpointUuid", endpointUuid)
             .setParameter("created", LocalDateTime.now(UTC))
-            .setParameter("position", position)
-            .setParameter("orgId", orgId);
+            .setParameter("position", position);
 
         final int affectedRows = query.executeUpdate();
         if (affectedRows == 0) {

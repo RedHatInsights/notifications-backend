@@ -993,11 +993,12 @@ public class EndpointResource {
 
     private void internalAddEventTypeToEndpoint(final SecurityContext securityContext, final UUID eventTypeId, final UUID endpointId) {
         final String orgId = getOrgId(securityContext);
+        final String accountId = getAccountId(securityContext);
 
         Endpoint updatedEndpoint = endpointEventTypeRepository.addEventTypeToEndpoint(eventTypeId, endpointId, orgId);
 
         // Sync behavior group model
-        createOrUpdateLinkedBehaviorGroup(Set.of(eventTypeId), endpointId, updatedEndpoint.getName(), orgId);
+        createOrUpdateLinkedBehaviorGroup(Set.of(eventTypeId), endpointId, updatedEndpoint.getName(), orgId, accountId);
     }
 
     @PUT
@@ -1027,6 +1028,7 @@ public class EndpointResource {
 
     private void internalUpdateEventTypesLinkedToEndpoint(final SecurityContext securityContext, final UUID endpointId, final Set<UUID> eventTypeIds) {
         final String orgId = getOrgId(securityContext);
+        final String accountId = getAccountId(securityContext);
         Endpoint updatedEndpoint =  endpointEventTypeRepository.updateEventTypesLinkedToEndpoint(endpointId, eventTypeIds, orgId);
 
         // Sync behavior group model
@@ -1042,11 +1044,11 @@ public class EndpointResource {
         }
 
         // Create or update relevant behavior groups
-        createOrUpdateLinkedBehaviorGroup(eventTypeIds, endpointId, updatedEndpoint.getName(), orgId);
+        createOrUpdateLinkedBehaviorGroup(eventTypeIds, endpointId, updatedEndpoint.getName(), orgId, accountId);
     }
 
-    private void createOrUpdateLinkedBehaviorGroup(Set<UUID> eventTypeIds, UUID endpointId, String endpointName, String orgId) {
-        String behaviorGroupName = String.format("Integration \"%s\" behaviour group", endpointName);
+    private void createOrUpdateLinkedBehaviorGroup(Set<UUID> eventTypeIds, UUID endpointId, String endpointName, String orgId, String accountId) {
+        String behaviorGroupName = String.format("Integration \"%s\" behavior group", endpointName);
 
         // group event types by bundle
         Map<UUID, Set<UUID>> eventTypesGroupedByBundle = new HashMap<>();
@@ -1065,7 +1067,7 @@ public class EndpointResource {
 
                 if (!alreadyAssociatedAction) {
                     int position = existingBg.get().getActions().stream().mapToInt(ba -> ba.getPosition()).max().orElse(-1) + 1;
-                    behaviorGroupRepository.appendActionToBehaviorGroup(orgId, existingBg.get().getId(), endpointId, position);
+                    behaviorGroupRepository.appendActionToBehaviorGroup(existingBg.get().getId(), endpointId, position);
                 }
                 for (UUID eventTypeId : eventTypesGroupedByBundle.get(bundleId)) {
                     Boolean alreadyAssociatedEventType = existingBg.get().getBehaviors().stream().anyMatch(bh -> bh.getId().eventTypeId.equals(eventTypeId));
@@ -1080,7 +1082,7 @@ public class EndpointResource {
                 behaviorGroup.setDisplayName(behaviorGroupName);
 
                 behaviorGroupRepository.createFull(
-                    null,
+                    accountId,
                     orgId,
                     behaviorGroup,
                     List.of(endpointId),

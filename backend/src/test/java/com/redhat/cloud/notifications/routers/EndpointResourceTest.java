@@ -3251,4 +3251,63 @@ public class EndpointResourceTest extends DbIsolatedTest {
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(0, behaviorGroups.size());
     }
+
+    @Test
+    void testUpdateExistingBehaviorGroupUsingEndpointToEventTypeRelationship() {
+        final Bundle bundle = resourceHelpers.createBundle();
+        final Application application = resourceHelpers.createApplication(bundle.getId());
+        final EventType eventType = resourceHelpers.createEventType(application.getId(), "name", "display-name", "description");
+        final Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
+
+        final String behaviorGroupName = String.format("Integration \"%s\" behavior group", endpoint.getName());
+        final BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, behaviorGroupName, bundle.getId());
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Check that created endpoint don't have any event type associated
+        Endpoint endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
+        assertEquals(0, endpointFromDb.getEventTypes().size());
+
+        // Check that created endpoint don't have any linked behavior group
+        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(behaviorGroup.getId(), behaviorGroups.get(0).getId());
+
+        assertEquals(0, behaviorGroups.get(0).getBehaviors().size());
+        assertEquals(0, behaviorGroups.get(0).getActions().size());
+
+        // link endpoint and event type
+        given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("endpointUuid", endpoint.getId())
+            .when()
+            .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
+            .then()
+            .statusCode(204);
+
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(1, behaviorGroups.get(0).getBehaviors().size());
+        assertEquals(1, behaviorGroups.get(0).getActions().size());
+
+        // Try to link again same endpoint and event type
+        given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .pathParam("endpointUuid", endpoint.getId())
+            .when()
+            .put("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
+            .then()
+            .statusCode(204);
+
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(1, behaviorGroups.get(0).getBehaviors().size());
+        assertEquals(1, behaviorGroups.get(0).getActions().size());
+
+        resourceHelpers.deleteBehaviorGroup(behaviorGroup.getId());
+    }
 }

@@ -282,7 +282,7 @@ public class ResourceHelpers {
     }
 
     public List<BehaviorGroup> findBehaviorGroupsByOrgId(String orgId) {
-        String query = "SELECT bg FROM BehaviorGroup bg JOIN FETCH bg.behaviors JOIN FETCH bg.actions a WHERE bg.orgId = :orgId";
+        String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.behaviors LEFT JOIN FETCH bg.actions a WHERE bg.orgId = :orgId";
         List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
             .setParameter("orgId", orgId)
             .getResultList();
