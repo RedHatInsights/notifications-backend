@@ -956,7 +956,7 @@ public class EndpointResource {
         // Sync behavior group model
         List<BehaviorGroup> behaviorGroupsLinkedToThisEndpoint = behaviorGroupRepository.findBehaviorGroupsByEndpointId(orgId, endpointId);
         for (BehaviorGroup behaviorGroup : behaviorGroupsLinkedToThisEndpoint) {
-            if (!behaviorGroup.getBehaviors().isEmpty() && behaviorGroup.getBehaviors().stream().anyMatch(bg -> bg.getId().eventTypeId.equals(eventTypeId))) {
+            if (behaviorGroup.getBehaviors().stream().anyMatch(bg -> bg.getId().eventTypeId.equals(eventTypeId))) {
                 if (behaviorGroup.getActions().size() == 1) {
                     behaviorGroupRepository.delete(orgId, behaviorGroup.getId());
                 } else {
