@@ -38,6 +38,10 @@ public abstract class AbstractEmailPayloadAggregator {
         return payload;
     }
 
+    public boolean isEmpty() {
+        return false;
+    }
+
     void copyStringField(JsonObject to, JsonObject from, final String field) {
         to.put(field, from.getString(field));
     }

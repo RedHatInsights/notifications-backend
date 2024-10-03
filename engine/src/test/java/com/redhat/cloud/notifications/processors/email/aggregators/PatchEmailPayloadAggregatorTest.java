@@ -75,8 +75,6 @@ public class PatchEmailPayloadAggregatorTest {
         Map<String, Object> patch = aggregator.getContext();
         patch.put("start_time", startTime.toString());
         patch.put("end_time", endTime.toString());
-
-        //System.out.println(JsonObject.mapFrom(patch).toString());
     }
 
     @Test

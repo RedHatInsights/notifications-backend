@@ -144,6 +144,7 @@ public class EmailAggregator {
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
 
         return aggregated.entrySet().stream()
+                .filter(entry -> !entry.getValue().isEmpty())
                 .collect(toMap(
                         Entry::getKey,
                         entry -> entry.getValue().getContext()
