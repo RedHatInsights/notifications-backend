@@ -1053,13 +1053,8 @@ public class EndpointResource {
         for (UUID eventTypeId : eventTypeIds) {
             Optional<Bundle> bundle = eventTypeRepository.findBundleByEventTypeId(eventTypeId);
             if (bundle.isPresent()) {
-                if (eventTypesGroupedByBundle.containsKey(bundle.get().getId())) {
-                    eventTypesGroupedByBundle.get(bundle.get().getId()).add(eventTypeId);
-                } else {
-                    Set<UUID> eventTypes = new HashSet<>();
-                    eventTypes.add(eventTypeId);
-                    eventTypesGroupedByBundle.put(bundle.get().getId(), eventTypes);
-                }
+                eventTypesGroupedByBundle.computeIfAbsent(bundle.get().getId(), ignored -> new HashSet<>())
+                        .add(eventTypeId);
             }
         }
 
