@@ -11,10 +11,14 @@ import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
+import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -76,7 +80,10 @@ import org.jboss.resteasy.reactive.RestPath;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -128,6 +135,12 @@ public class EndpointResource {
 
     @Inject
     EndpointEventTypeRepository endpointEventTypeRepository;
+
+    @Inject
+    BehaviorGroupRepository behaviorGroupRepository;
+
+    @Inject
+    EventTypeRepository eventTypeRepository;
 
     /**
      * Used to create the secrets in Sources and update the endpoint's properties' IDs.
@@ -920,6 +933,7 @@ public class EndpointResource {
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
             description = "No event type or endpoint found with the passed id.")
     })
+    @Transactional
     @Tag(name = OApiFilter.PRIVATE)
     public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
         if (this.backendConfig.isKesselRelationsEnabled()) {
@@ -938,6 +952,18 @@ public class EndpointResource {
     private void internalDeleteEventTypeFromEndpoint(final SecurityContext securityContext, final UUID eventTypeId, final UUID endpointId) {
         final String orgId = getOrgId(securityContext);
         endpointEventTypeRepository.deleteEndpointFromEventType(eventTypeId, endpointId, orgId);
+
+        // Sync behavior group model
+        List<BehaviorGroup> behaviorGroupsLinkedToThisEndpoint = behaviorGroupRepository.findBehaviorGroupsByEndpointId(orgId, endpointId);
+        for (BehaviorGroup behaviorGroup : behaviorGroupsLinkedToThisEndpoint) {
+            if (behaviorGroup.getBehaviors().stream().anyMatch(bg -> bg.getId().eventTypeId.equals(eventTypeId))) {
+                if (behaviorGroup.getActions().size() == 1) {
+                    behaviorGroupRepository.delete(orgId, behaviorGroup.getId());
+                } else {
+                    behaviorGroupRepository.deleteEndpointFromBehaviorGroup(behaviorGroup.getId(), endpointId, orgId);
+                }
+            }
+        }
     }
 
     @PUT
@@ -948,6 +974,7 @@ public class EndpointResource {
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
             description = "No event type or endpoint found with the passed id.")
     })
+    @Transactional
     @Tag(name = OApiFilter.PRIVATE)
     public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
         if (this.backendConfig.isKesselRelationsEnabled()) {
@@ -966,7 +993,12 @@ public class EndpointResource {
 
     private void internalAddEventTypeToEndpoint(final SecurityContext securityContext, final UUID eventTypeId, final UUID endpointId) {
         final String orgId = getOrgId(securityContext);
-        endpointEventTypeRepository.addEventTypeToEndpoint(eventTypeId, endpointId, orgId);
+        final String accountId = getAccountId(securityContext);
+
+        Endpoint updatedEndpoint = endpointEventTypeRepository.addEventTypeToEndpoint(eventTypeId, endpointId, orgId);
+
+        // Sync behavior group model
+        createOrUpdateLinkedBehaviorGroup(Set.of(eventTypeId), endpointId, updatedEndpoint.getName(), orgId, accountId);
     }
 
     @PUT
@@ -977,6 +1009,7 @@ public class EndpointResource {
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
             description = "No event type or endpoint found with passed ids.")
     })
+    @Transactional
     @Tag(name = OApiFilter.PRIVATE)
     public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds) {
         if (this.backendConfig.isKesselRelationsEnabled()) {
@@ -995,6 +1028,67 @@ public class EndpointResource {
 
     private void internalUpdateEventTypesLinkedToEndpoint(final SecurityContext securityContext, final UUID endpointId, final Set<UUID> eventTypeIds) {
         final String orgId = getOrgId(securityContext);
-        endpointEventTypeRepository.updateEventTypesLinkedToEndpoint(endpointId, eventTypeIds, orgId);
+        final String accountId = getAccountId(securityContext);
+        Endpoint updatedEndpoint =  endpointEventTypeRepository.updateEventTypesLinkedToEndpoint(endpointId, eventTypeIds, orgId);
+
+        // Sync behavior group model
+
+        // delete endpoint from existing behavior group
+        List<BehaviorGroup> behaviorGroupsLinkedToThisEndpoint = behaviorGroupRepository.findBehaviorGroupsByEndpointId(orgId, endpointId);
+        for (BehaviorGroup behaviorGroup : behaviorGroupsLinkedToThisEndpoint) {
+            if (behaviorGroup.getActions().size() == 1) {
+                behaviorGroupRepository.delete(orgId, behaviorGroup.getId());
+            } else {
+                behaviorGroupRepository.deleteEndpointFromBehaviorGroup(behaviorGroup.getId(), endpointId, orgId);
+            }
+        }
+
+        // Create or update relevant behavior groups
+        createOrUpdateLinkedBehaviorGroup(eventTypeIds, endpointId, updatedEndpoint.getName(), orgId, accountId);
+    }
+
+    private void createOrUpdateLinkedBehaviorGroup(Set<UUID> eventTypeIds, UUID endpointId, String endpointName, String orgId, String accountId) {
+        String behaviorGroupName = String.format("Integration \"%s\" behavior group", endpointName);
+
+        // group event types by bundle
+        Map<UUID, Set<UUID>> eventTypesGroupedByBundle = new HashMap<>();
+        for (UUID eventTypeId : eventTypeIds) {
+            Optional<Bundle> bundle = eventTypeRepository.findBundleByEventTypeId(eventTypeId);
+            if (bundle.isPresent()) {
+                eventTypesGroupedByBundle.computeIfAbsent(bundle.get().getId(), ignored -> new HashSet<>())
+                        .add(eventTypeId);
+            }
+        }
+
+        for (UUID bundleId : eventTypesGroupedByBundle.keySet()) {
+            Optional<BehaviorGroup> existingBg = behaviorGroupRepository.findBehaviorGroupsByName(orgId, bundleId, behaviorGroupName);
+            if (existingBg.isPresent()) {
+                Boolean alreadyAssociatedAction = existingBg.get().getActions().stream().anyMatch(bga -> bga.getId().endpointId.equals(endpointId));
+
+                if (!alreadyAssociatedAction) {
+                    int position = existingBg.get().getActions().stream().mapToInt(ba -> ba.getPosition()).max().orElse(-1) + 1;
+                    behaviorGroupRepository.appendActionToBehaviorGroup(existingBg.get().getId(), endpointId, position, orgId);
+                }
+                for (UUID eventTypeId : eventTypesGroupedByBundle.get(bundleId)) {
+                    Boolean alreadyAssociatedEventType = existingBg.get().getBehaviors().stream().anyMatch(bh -> bh.getId().eventTypeId.equals(eventTypeId));
+                    if (!alreadyAssociatedEventType) {
+                        behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, existingBg.get().getId(), eventTypeId);
+                    }
+                }
+            } else {
+                // Create or update legacy behavior group structure
+                BehaviorGroup behaviorGroup = new BehaviorGroup();
+                behaviorGroup.setBundleId(bundleId);
+                behaviorGroup.setDisplayName(behaviorGroupName);
+
+                behaviorGroupRepository.createFull(
+                    accountId,
+                    orgId,
+                    behaviorGroup,
+                    List.of(endpointId),
+                    eventTypeIds
+                );
+            }
+        }
     }
 }

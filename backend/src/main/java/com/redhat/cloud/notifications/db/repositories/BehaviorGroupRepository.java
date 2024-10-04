@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -498,6 +499,28 @@ public class BehaviorGroupRepository {
         }
     }
 
+    @Transactional
+    public void appendActionToBehaviorGroup(final UUID behaviorGroupUuid, final UUID endpointUuid, final int position, final String orgId) {
+        final String appendBehaviorGroupQuery =
+            "INSERT INTO behavior_group_action(behavior_group_id, endpoint_id, created, position) " +
+                "SELECT :behaviorGroupUuid, :endpointUuid, :created, :position " +
+                "WHERE EXISTS (SELECT 1 FROM behavior_group bg WHERE bg.id = :behaviorGroupUuid AND bg.org_id = :orgId) " +
+                "AND EXISTS (SELECT 1 FROM endpoints ep WHERE ep.id = :endpointUuid AND ep.org_id = :orgId) " +
+                "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";
+
+        final jakarta.persistence.Query query = this.entityManager.createNativeQuery(appendBehaviorGroupQuery)
+            .setParameter("behaviorGroupUuid", behaviorGroupUuid)
+            .setParameter("endpointUuid", endpointUuid)
+            .setParameter("created", LocalDateTime.now(UTC))
+            .setParameter("orgId", orgId)
+            .setParameter("position", position);
+
+        final int affectedRows = query.executeUpdate();
+        if (affectedRows == 0) {
+            throw new NotFoundException("the specified behavior group doesn't exist or the specified endpoint doesn't exist or the specified endpoint is already associated to the specified behavior group");
+        }
+    }
+
     /**
      * Deletes the specified behavior group from the event type, by deleting the relation in the "event_type_behavior"
      * table.
@@ -534,6 +557,26 @@ public class BehaviorGroupRepository {
         final int affectedRows = query.executeUpdate();
         if (affectedRows == 0) {
             throw new NotFoundException("the specified behavior group was not found for the given event type");
+        }
+    }
+
+    @Transactional
+    public void deleteEndpointFromBehaviorGroup(final UUID behaviorGroupUuid, final UUID endpointUuid, final String orgId) {
+        final var deleteFromEventTypeQuery =
+            "DELETE FROM BehaviorGroupAction AS bga " +
+                "WHERE bga.behaviorGroup.id = :behaviorGroupUuid " +
+                "AND bga.endpoint.id = :endpointUuid " +
+                "AND EXISTS (SELECT 1 FROM BehaviorGroup AS bg WHERE bg.id = :behaviorGroupUuid AND bg.orgId = :orgId) " +
+                "AND EXISTS (SELECT 1 FROM Endpoint ep WHERE ep.id = :endpointUuid AND ep.orgId = :orgId)";
+
+        final jakarta.persistence.Query query = this.entityManager.createQuery(deleteFromEventTypeQuery);
+        query.setParameter("behaviorGroupUuid", behaviorGroupUuid)
+            .setParameter("endpointUuid", endpointUuid)
+            .setParameter("orgId", orgId);
+
+        final int affectedRows = query.executeUpdate();
+        if (affectedRows == 0) {
+            throw new NotFoundException("the specified endpoint was not found for the given behavior group");
         }
     }
 
@@ -679,6 +722,19 @@ public class BehaviorGroupRepository {
             behaviorGroup.filterOutActions().filterOutBehaviors();
         }
         return behaviorGroups;
+    }
+
+    public Optional<BehaviorGroup> findBehaviorGroupsByName(String orgId, UUID bundleId, String behaviorGroupName) {
+        String query = "SELECT bg FROM BehaviorGroup bg WHERE bg.orgId = :orgId AND bg.bundle.id = :bundleId AND bg.displayName = :displayName";
+        try {
+            return Optional.of(entityManager.createQuery(query, BehaviorGroup.class)
+                .setParameter("orgId", orgId)
+                .setParameter("bundleId", bundleId)
+                .setParameter("displayName", behaviorGroupName)
+                .getSingleResult());
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
     }
 
     private void checkBehaviorGroup(UUID behaviorGroupId, boolean isDefaultBehaviorGroup) {
