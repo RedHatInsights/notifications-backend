@@ -114,7 +114,8 @@ public class EndpointProcessor {
                 endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
                 if (engineConfig.isDirectEndpointToEventTypeDryRunEnabled()) {
                     final List<Endpoint> fetchEndpointWithoutBg = endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType());
-                    if (!endpoints.equals(fetchEndpointWithoutBg)) {
+                    if (!endpoints.stream().collect(Collectors.toSet())
+                        .equals(fetchEndpointWithoutBg.stream().collect(Collectors.toSet()))) {
                         Log.errorf("Fetching endpoints with and without BG don't have the same result for orgId '%s' and Event type '%s (%s)'", event.getOrgId(), event.getEventType().getName(), event.getId());
                     }
                 }
