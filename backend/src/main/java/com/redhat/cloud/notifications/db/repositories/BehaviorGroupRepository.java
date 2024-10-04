@@ -500,17 +500,19 @@ public class BehaviorGroupRepository {
     }
 
     @Transactional
-    public void appendActionToBehaviorGroup(final UUID behaviorGroupUuid, final UUID endpointUuid, final int position) {
+    public void appendActionToBehaviorGroup(final UUID behaviorGroupUuid, final UUID endpointUuid, final int position, final String orgId) {
         final String appendBehaviorGroupQuery =
-            "INSERT INTO " +
-                "behavior_group_action(behavior_group_id, endpoint_id, created, position) " +
-                "VALUES (:behaviorGroupUuid, :endpointUuid, :created, :position) " +
+            "INSERT INTO behavior_group_action(behavior_group_id, endpoint_id, created, position) " +
+                "SELECT :behaviorGroupUuid, :endpointUuid, :created, :position " +
+                "WHERE EXISTS (SELECT 1 FROM behavior_group bg WHERE bg.id = :behaviorGroupUuid AND bg.org_id = :orgId) " +
+                "AND EXISTS (SELECT 1 FROM endpoints ep WHERE ep.id = :endpointUuid AND ep.org_id = :orgId) " +
                 "ON CONFLICT (behavior_group_id, endpoint_id) DO UPDATE SET position = :position";
 
         final jakarta.persistence.Query query = this.entityManager.createNativeQuery(appendBehaviorGroupQuery)
             .setParameter("behaviorGroupUuid", behaviorGroupUuid)
             .setParameter("endpointUuid", endpointUuid)
             .setParameter("created", LocalDateTime.now(UTC))
+            .setParameter("orgId", orgId)
             .setParameter("position", position);
 
         final int affectedRows = query.executeUpdate();
@@ -564,9 +566,8 @@ public class BehaviorGroupRepository {
             "DELETE FROM BehaviorGroupAction AS bga " +
                 "WHERE bga.behaviorGroup.id = :behaviorGroupUuid " +
                 "AND bga.endpoint.id = :endpointUuid " +
-                "AND EXISTS (" +
-                "SELECT 1 FROM BehaviorGroup AS bg " +
-                "WHERE bg.id = :behaviorGroupUuid AND bg.orgId = :orgId)";
+                "AND EXISTS (SELECT 1 FROM BehaviorGroup AS bg WHERE bg.id = :behaviorGroupUuid AND bg.orgId = :orgId) " +
+                "AND EXISTS (SELECT 1 FROM Endpoint ep WHERE ep.id = :endpointUuid AND ep.orgId = :orgId)";
 
         final jakarta.persistence.Query query = this.entityManager.createQuery(deleteFromEventTypeQuery);
         query.setParameter("behaviorGroupUuid", behaviorGroupUuid)

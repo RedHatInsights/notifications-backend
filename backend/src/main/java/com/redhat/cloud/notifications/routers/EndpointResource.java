@@ -1067,7 +1067,7 @@ public class EndpointResource {
 
                 if (!alreadyAssociatedAction) {
                     int position = existingBg.get().getActions().stream().mapToInt(ba -> ba.getPosition()).max().orElse(-1) + 1;
-                    behaviorGroupRepository.appendActionToBehaviorGroup(existingBg.get().getId(), endpointId, position);
+                    behaviorGroupRepository.appendActionToBehaviorGroup(existingBg.get().getId(), endpointId, position, orgId);
                 }
                 for (UUID eventTypeId : eventTypesGroupedByBundle.get(bundleId)) {
                     Boolean alreadyAssociatedEventType = existingBg.get().getBehaviors().stream().anyMatch(bh -> bh.getId().eventTypeId.equals(eventTypeId));
