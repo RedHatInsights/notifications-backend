@@ -312,17 +312,15 @@ public class ResourceHelpers {
     }
 
     public List<UUID> findEndpointsByBehaviorGroupId(String orgId, Set<UUID> behaviorGroupIds) {
-        String query = "SELECT bga.endpoint FROM BehaviorGroupAction bga WHERE bga.behaviorGroup.id in (:behaviorGroupIds) AND " +
-            " bga.endpoint.orgId " + (orgId == null ? "is null " : "=: orgId ");
+        String query = "SELECT bga.endpoint.id FROM BehaviorGroupAction bga WHERE bga.behaviorGroup.id in (:behaviorGroupIds) AND " +
+            " bga.endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ");
 
-        jakarta.persistence.Query selectQuery = entityManager.createQuery(query, Endpoint.class)
+        TypedQuery<UUID> selectQuery = entityManager.createQuery(query, UUID.class)
             .setParameter("behaviorGroupIds", behaviorGroupIds);
         if (orgId != null) {
             selectQuery.setParameter("orgId", orgId);
         }
 
-        List<Endpoint> endpoints = selectQuery.getResultList();
-
-        return endpoints.stream().map(ep -> ep.getId()).toList();
+        return selectQuery.getResultList();
     }
 }
