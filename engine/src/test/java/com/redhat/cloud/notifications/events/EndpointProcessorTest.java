@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -15,8 +16,11 @@ import com.redhat.cloud.notifications.processors.camel.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
@@ -24,6 +28,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static java.time.ZoneOffset.UTC;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class EndpointProcessorTest {
@@ -43,6 +48,9 @@ public class EndpointProcessorTest {
 
     @InjectMock
     EndpointRepository endpointRepository;
+
+    @InjectSpy
+    EngineConfig engineConfig;
 
     /**
      * Tests that when an "integration customer test" event is processed, the
@@ -120,11 +128,13 @@ public class EndpointProcessorTest {
     /**
      * Tests Event-Driven Ansible endpoint type being aliased to a WebHook processor.
      */
-    @Test
-    void testTestEndpointAnsibleAliasToWebhook() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testTestEndpointAnsibleAliasToWebhook(final boolean useEndpointToEventTypeDirectLink) {
         // Create an Endpoint which will be simulated to be fetched from the database.
         final String orgId = "test-org-id";
         final UUID endpointUuid = UUID.randomUUID();
+        when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
 
         final Endpoint endpointFixture = new Endpoint();
         endpointFixture.setId(endpointUuid);
@@ -168,7 +178,14 @@ public class EndpointProcessorTest {
         this.endpointProcessor.process(event);
 
         Mockito.verify(this.endpointRepository, Mockito.times(0)).findByUuidAndOrgId(endpointUuid, orgId);
-        Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
         Mockito.verify(this.webhookProcessor, Mockito.times(1)).process(Mockito.eq(event), Mockito.anyList());
+
+        if (useEndpointToEventTypeDirectLink) {
+            Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
+            Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
+        } else {
+            Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
+            Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
+        }
     }
 }

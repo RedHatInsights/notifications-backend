@@ -19,6 +19,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 
