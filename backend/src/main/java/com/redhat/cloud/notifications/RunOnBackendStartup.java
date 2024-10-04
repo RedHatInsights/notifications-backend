@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
@@ -10,6 +11,9 @@ public class RunOnBackendStartup {
     @Inject
     StartupUtils startupUtils;
 
+    @Inject
+    EndpointEventTypeRepository endpointEventTypeRepository;
+
     @PostConstruct
     void postConstruct() {
         startupUtils.initAccessLogFilter();
@@ -17,5 +21,7 @@ public class RunOnBackendStartup {
         startupUtils.logExternalServiceUrl("quarkus.rest-client.rbac-authentication.url");
         startupUtils.logExternalServiceUrl("quarkus.rest-client.sources.url");
         startupUtils.disableRestClientContextualErrors();
+
+        endpointEventTypeRepository.migrateData();
     }
 }

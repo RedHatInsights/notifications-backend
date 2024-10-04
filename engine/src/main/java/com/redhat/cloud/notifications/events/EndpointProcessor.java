@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.DelayedThrower;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -75,6 +76,9 @@ public class EndpointProcessor {
     @Inject
     MeterRegistry registry;
 
+    @Inject
+    EngineConfig engineConfig;
+
     private Counter processedItems;
     private Counter endpointTargeted;
 
@@ -104,7 +108,18 @@ public class EndpointProcessor {
 
             Log.debugf("[org_id: %s] Found %s endpoints for the aggregation event: %s", event.getOrgId(), endpoints.size(), event);
         } else {
-            endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
+            if (engineConfig.isUseDirectEndpointToEventTypeEnabled()) {
+                endpoints = endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType());
+            } else {
+                endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
+                if (engineConfig.isDirectEndpointToEventTypeDryRunEnabled()) {
+                    final List<Endpoint> fetchEndpointWithoutBg = endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType());
+                    if (!endpoints.stream().collect(Collectors.toSet())
+                        .equals(fetchEndpointWithoutBg.stream().collect(Collectors.toSet()))) {
+                        Log.errorf("Fetching endpoints with and without BG don't have the same result for orgId '%s' and Event type '%s (%s)'", event.getOrgId(), event.getEventType().getName(), event.getId());
+                    }
+                }
+            }
         }
 
         // Target endpoints are grouped by endpoint type.

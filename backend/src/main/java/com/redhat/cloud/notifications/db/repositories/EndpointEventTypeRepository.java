@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -161,5 +162,17 @@ public class EndpointEventTypeRepository {
             throw new NotFoundException("Endpoint not found");
         }
         return endpoint;
+    }
+
+    @Transactional
+    public void migrateData() {
+        String query = "insert into endpoint_event_type (event_type_id, endpoint_id) " +
+            "select distinct etb.event_type_id, bga.endpoint_id " +
+            "from event_type_behavior etb inner join behavior_group_action bga on etb.behavior_group_id = bga.behavior_group_id " +
+            "ON CONFLICT (event_type_id, endpoint_id) DO NOTHING";
+
+        int result = entityManager.createNativeQuery(query).executeUpdate();
+
+        Log.infof("Migrate away from behavior groups: %d records were inserted in 'endpoint_event_type' db table", result);
     }
 }
