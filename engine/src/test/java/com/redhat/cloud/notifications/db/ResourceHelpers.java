@@ -282,10 +282,9 @@ public class ResourceHelpers {
             return;
         }
 
-        String deleteQueryStr = "DELETE FROM EndpointEventType eet WHERE eet in " +
-            "(from EndpointEventType where " +
-            "endpoint.orgId " + (orgId == null ? "is null " : "=: orgId ") +
-            "and id.endpointId in (:endpointList))";
+        String deleteQueryStr = "DELETE FROM EndpointEventType eet WHERE " +
+            "endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ") +
+            "and id.endpointId in (:endpointList)";
 
         jakarta.persistence.Query deleteQuery = entityManager.createQuery(deleteQueryStr)
             .setParameter("endpointList", endpointsList);
