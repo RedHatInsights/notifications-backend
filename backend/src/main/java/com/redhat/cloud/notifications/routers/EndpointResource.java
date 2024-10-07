@@ -1189,7 +1189,7 @@ public class EndpointResource {
                 bundleDTO.setApplications(applicationDTOSet);
                 bundleDTOSet.add(bundleDTO);
             }
-            endpointDTO.setEventTypes(bundleDTOSet);
+            endpointDTO.setEventTypesGroupByBundlesAndApplications(bundleDTOSet);
         }
     }
 }

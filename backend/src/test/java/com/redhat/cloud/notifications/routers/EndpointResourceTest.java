@@ -3128,7 +3128,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Check that created endpoint don't have any event type associated using API
         EndpointDTO endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
-        assertNull(endpointDTO.getEventTypes());
+        assertNull(endpointDTO.getEventTypesGroupByBundlesAndApplications());
 
         // test event type or endpoint not exists
         given()
@@ -3164,23 +3164,23 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Check endpoint has one associated event type using get single endpoint api
         endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
-        assertEquals(1, endpointDTO.getEventTypes().size());
-        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().size());
-        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
-        EventTypeDTO eventTypeDTO = endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().stream().findFirst().get();
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().size());
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().size());
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
+        EventTypeDTO eventTypeDTO = endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().stream().findFirst().get();
         assertEquals(eventType1.getId(), eventTypeDTO.getId());
 
         // Check endpoint has one associated event type using get all endpoints api
         EndpointPage endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_2);
         assertEquals(1L, endpointPage.getMeta().getCount());
         assertEquals(1, endpointPage.getData().size());
-        assertEquals(1, endpointPage.getData().getFirst().getEventTypes().size());
+        assertEquals(1, endpointPage.getData().getFirst().getEventTypesGroupByBundlesAndApplications().size());
 
         // Check get all endpoints api V1 has not been updated
         endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_1);
         assertEquals(1L, endpointPage.getMeta().getCount());
         assertEquals(1, endpointPage.getData().size());
-        assertNull(endpointPage.getData().getFirst().getEventTypes());
+        assertNull(endpointPage.getData().getFirst().getEventTypesGroupByBundlesAndApplications());
 
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(1, behaviorGroups.size());
@@ -3203,10 +3203,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(eventType1.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
 
         endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
-        assertEquals(1, endpointDTO.getEventTypes().size());
-        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().size());
-        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
-        eventTypeDTO = endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().stream().findFirst().get();
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().size());
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().size());
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
+        eventTypeDTO = endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().stream().findFirst().get();
         assertEquals(eventType1.getId(), eventTypeDTO.getId());
 
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
@@ -3229,12 +3229,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(0, endpointFromDb.getEventTypes().size());
 
         endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
-        assertNull(endpointDTO.getEventTypes());
+        assertNull(endpointDTO.getEventTypesGroupByBundlesAndApplications());
 
         endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_2);
         assertEquals(1L, endpointPage.getMeta().getCount());
         assertEquals(1, endpointPage.getData().size());
-        assertNull(endpointPage.getData().getFirst().getEventTypes());
+        assertNull(endpointPage.getData().getFirst().getEventTypesGroupByBundlesAndApplications());
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(0, behaviorGroups.size());
 
@@ -3256,14 +3256,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(3, endpointFromDb.getEventTypes().size());
 
         endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
-        assertEquals(1, endpointDTO.getEventTypes().size());
-        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().size());
-        assertEquals(3, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().size());
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().size());
+        assertEquals(3, endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
 
         // check that return of endpoint V1 does not contain event types
         JsonObject endpointJsonObject = fetchSingle(endpoint.getId().toString(), identityHeader);
         endpointDTO = endpointJsonObject.mapTo(EndpointDTO.class);
-        assertNull(endpointDTO.getEventTypes());
+        assertNull(endpointDTO.getEventTypesGroupByBundlesAndApplications());
 
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(1, behaviorGroups.size());
@@ -3290,9 +3290,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(2, behaviorGroups.getFirst().getBehaviors().size());
 
         endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
-        assertEquals(1, endpointDTO.getEventTypes().size());
-        assertEquals(1, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().size());
-        assertEquals(2, endpointDTO.getEventTypes().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().size());
+        assertEquals(1, endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().size());
+        assertEquals(2, endpointDTO.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
 
         // test orders
         final Bundle bundle3 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 3");

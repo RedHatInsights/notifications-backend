@@ -92,7 +92,7 @@ public final class EndpointDTO {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Set<BundleDTO> eventTypes;
+    private Set<BundleDTO> eventTypesGroupByBundlesAndApplications;
 
     public UUID getId() {
         return id;
@@ -182,11 +182,11 @@ public final class EndpointDTO {
         this.properties = properties;
     }
 
-    public Set<BundleDTO> getEventTypes() {
-        return eventTypes;
+    public Set<BundleDTO> getEventTypesGroupByBundlesAndApplications() {
+        return eventTypesGroupByBundlesAndApplications;
     }
 
-    public void setEventTypes(Set<BundleDTO> eventTypes) {
-        this.eventTypes = eventTypes;
+    public void setEventTypesGroupByBundlesAndApplications(Set<BundleDTO> eventTypesGroupByBundlesAndApplications) {
+        this.eventTypesGroupByBundlesAndApplications = eventTypesGroupByBundlesAndApplications;
     }
 }
