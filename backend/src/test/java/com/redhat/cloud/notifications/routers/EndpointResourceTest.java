@@ -27,6 +27,8 @@ import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
 import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
@@ -321,6 +323,68 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .statusCode(200)
                 .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
+    }
+
+    @Test
+    void testCreateEndpointWithEventTypes() {
+        String accountId = "empty";
+        String orgId = "empty";
+        String userName = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        final Bundle bundle1 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 1");
+
+        // Create event type and endpoint
+        final Application application1 = resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
+        final EventType eventType1 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description");
+        final EventType eventType2 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 2", "description");
+
+        // Add new endpoints
+        WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
+        properties.setMethod(POST);
+        properties.setDisableSslVerification(false);
+        properties.setSecretToken("my-super-secret-token");
+        properties.setUrl(getMockServerUrl());
+
+        EndpointDTO ep = new EndpointDTO();
+        ep.setType(EndpointTypeDTO.WEBHOOK);
+        ep.setName("endpoint to find");
+        ep.setDescription("needle in the haystack");
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+        ep.setServerErrors(3);
+        ep.eventTypes = Set.of(eventType1.getId(), eventType2.getId());
+
+        mockSources(new WebhookProperties());
+
+        Response response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .post("/endpoints")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().response();
+
+        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(EndpointDTO.class);
+        assertNotNull(responsePoint.getString("id"));
+        assertEquals(3, responsePoint.getInteger("server_errors"));
+        assertEquals(READY.toString(), responsePoint.getString("status"));
+
+        EndpointDTO resultDto = fetchSingleEndpointV2(UUID.fromString(responsePoint.getString("id")), identityHeader);
+        assertNotNull(resultDto.getEventTypesGroupByBundlesAndApplications());
+        assertEquals(1, resultDto.getEventTypesGroupByBundlesAndApplications().size());
+        assertEquals(1, resultDto.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().size());
+        assertEquals(2, resultDto.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().size());
+
+        Set<UUID> linkedIds = resultDto.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().stream().map(e -> e.getId()).collect(Collectors.toSet());
+        assertEquals(ep.eventTypes, linkedIds);
     }
 
     @Test

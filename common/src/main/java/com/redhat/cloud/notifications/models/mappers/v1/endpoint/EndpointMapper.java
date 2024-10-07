@@ -26,6 +26,7 @@ public interface EndpointMapper {
      */
     @Mapping(source = "properties", target = "properties", qualifiedByName = "mapEntityProperties")
     @Mapping(target = "eventTypesGroupByBundlesAndApplications", ignore = true)
+    @Mapping(target = "eventTypes", ignore = true)
     EndpointDTO toDTO(Endpoint endpoint);
 
     /**
@@ -40,6 +41,7 @@ public interface EndpointMapper {
     @Mapping(target = "orgId", ignore = true)
     @Mapping(target = "updated", ignore = true)
     @Mapping(target = "serverErrorsSince", ignore = true)
+    @Mapping(target = "eventTypes", ignore = true)
     Endpoint toEntity(EndpointDTO endpoint);
 
     /**

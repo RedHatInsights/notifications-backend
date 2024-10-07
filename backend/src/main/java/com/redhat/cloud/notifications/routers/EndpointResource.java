@@ -467,7 +467,7 @@ public class EndpointResource {
 
         try {
             return this.endpointMapper.toDTO(
-                this.internalCreateEndpoint(securityContext, endpoint)
+                this.internalCreateEndpoint(securityContext, endpoint, endpointDTO.eventTypes)
             );
         } catch (final Exception e) {
             // Clean up the secrets from Sources if any were created.
@@ -484,15 +484,17 @@ public class EndpointResource {
      * raised upon saving the endpoint, we can call Sources again to clean up
      * the secrets, as otherwise we would be leaving dangling secrets in
      * Sources.
-     * @param sec the security context of the request.
-     * @param endpoint the endpoint to be created.
+     *
+     * @param sec        the security context of the request.
+     * @param endpoint   the endpoint to be created.
+     * @param eventTypes
      * @return the created endpoint in the database.
      */
     @Transactional
     protected Endpoint internalCreateEndpoint(
             @Context                                        SecurityContext sec,
-            @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint
-    )  {
+            @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint,
+            Set<UUID> eventTypes)  {
         if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
@@ -519,6 +521,8 @@ public class EndpointResource {
 
         endpoint.setStatus(EndpointStatus.READY);
 
+        endpoint.setEventTypes(fetchEventTypes(eventTypes));
+
         this.secretUtils.createSecretsForEndpoint(endpoint);
 
         final Endpoint createdEndpoint = this.endpointRepository.createEndpoint(endpoint);
@@ -531,6 +535,22 @@ public class EndpointResource {
         }
 
         return createdEndpoint;
+    }
+
+    private Set<EventType> fetchEventTypes(Set<UUID> endpointsId) {
+        if (null != endpointsId && !endpointsId.isEmpty()) {
+            Set<EventType> linkedEventTypes = new HashSet<>();
+            for (UUID evtId : endpointsId) {
+                Optional<EventType> eventTypeFromDb = eventTypeRepository.findById(evtId);
+                if (eventTypeFromDb.isPresent()) {
+                    linkedEventTypes.add(eventTypeFromDb.get());
+                } else {
+                    throw new NotFoundException(String.format("Event type '%s' not found", evtId));
+                }
+            }
+            return linkedEventTypes;
+        }
+        return null;
     }
 
     private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {

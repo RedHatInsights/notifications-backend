@@ -94,6 +94,9 @@ public final class EndpointDTO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Set<BundleDTO> eventTypesGroupByBundlesAndApplications;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Set<UUID> eventTypes;
+
     public UUID getId() {
         return id;
     }

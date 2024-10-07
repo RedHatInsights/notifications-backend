@@ -38,4 +38,12 @@ public class EventTypeRepository {
             return Optional.empty();
         }
     }
+
+    public Optional<EventType> findById(UUID eventTypeId) {
+        try {
+            return Optional.of(entityManager.find(EventType.class, eventTypeId));
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
+    }
 }
