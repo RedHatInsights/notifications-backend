@@ -30,7 +30,6 @@ import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
-import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
@@ -73,7 +72,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
@@ -934,7 +932,6 @@ public class EndpointResource {
             description = "No event type or endpoint found with the passed id.")
     })
     @Transactional
-    @Tag(name = OApiFilter.PRIVATE)
     public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
@@ -975,7 +972,6 @@ public class EndpointResource {
             description = "No event type or endpoint found with the passed id.")
     })
     @Transactional
-    @Tag(name = OApiFilter.PRIVATE)
     public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
@@ -1010,7 +1006,6 @@ public class EndpointResource {
             description = "No event type or endpoint found with passed ids.")
     })
     @Transactional
-    @Tag(name = OApiFilter.PRIVATE)
     public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds) {
         if (this.backendConfig.isKesselRelationsEnabled()) {
             kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
