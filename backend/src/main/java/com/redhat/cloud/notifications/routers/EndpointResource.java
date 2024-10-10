@@ -56,6 +56,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -988,8 +989,25 @@ public class EndpointResource {
      */
     @Deprecated(forRemoval = true)
     protected void redactSecretsForEndpoint(final SecurityContext securityContext, final Endpoint endpoint) {
-        // Only redact the secrets for those users who have read only permissions.
-        if (!securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)) {
+        // Figure out if the principal has "write" permissions on the
+        // integration or not, to decide whether we should redact the secrets
+        // from the returning payload.
+        //
+        // Users with just read permissions will get the secrets redacted for
+        // them.
+        boolean shouldRedactSecrets;
+        if (this.backendConfig.isKesselRelationsEnabled()) {
+            try {
+                this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpoint.getId().toString());
+                shouldRedactSecrets = false;
+            } catch (final ForbiddenException e) {
+                shouldRedactSecrets = true;
+            }
+        } else {
+            shouldRedactSecrets = !securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
+        }
+
+        if (shouldRedactSecrets) {
             if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
                 final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
                 if (basicAuthentication != null) {
