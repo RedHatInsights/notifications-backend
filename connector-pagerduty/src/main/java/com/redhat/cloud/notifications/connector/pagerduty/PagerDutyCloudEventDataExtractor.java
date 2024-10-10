@@ -28,7 +28,7 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
     @Override
     public void extract(Exchange exchange, JsonObject cloudEventData) throws IllegalArgumentException {
 
-        validatePayload(cloudEventData);
+        validateCloudEventData(cloudEventData);
 
         String providedUrl = cloudEventData.getString(URL);
         if (providedUrl == null || providedUrl.isEmpty()) {
@@ -43,7 +43,7 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.getIn().setBody(cloudEventData.getJsonObject(PAYLOAD));
     }
 
-    private void validatePayload(JsonObject cloudEventData) {
+    private void validateCloudEventData(JsonObject cloudEventData) {
         String endpointUrl = cloudEventData.getString(URL);
         if (endpointUrl != null && !endpointUrl.isEmpty() && !URL_VALIDATOR.isValid(endpointUrl)) {
             throw new IllegalArgumentException("URL validation failed");

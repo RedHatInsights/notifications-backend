@@ -1,12 +1,15 @@
 package com.redhat.cloud.notifications.connector.pagerduty;
 
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Constructs a <a href="https://support.pagerduty.com/main/docs/pd-cef">PD-CEF</a> alert event.
@@ -45,6 +48,7 @@ public class PagerDutyTransformer implements Processor {
     @Override
     public void process(Exchange exchange) {
         JsonObject cloudEventPayload = exchange.getIn().getBody(JsonObject.class);
+        validatePayload(cloudEventPayload);
 
         JsonObject message = new JsonObject();
         message.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
@@ -52,23 +56,48 @@ public class PagerDutyTransformer implements Processor {
 
         JsonObject messagePayload = new JsonObject();
         messagePayload.put(SUMMARY, cloudEventPayload.getString(EVENT_TYPE));
-        messagePayload.put(TIMESTAMP, LocalDateTime.parse(cloudEventPayload.getString(TIMESTAMP)).format(PD_DATE_TIME_FORMATTER));
+
+        String timestamp = cloudEventPayload.getString(TIMESTAMP);
+        try {
+            messagePayload.put(TIMESTAMP, LocalDateTime.parse(timestamp).format(PD_DATE_TIME_FORMATTER));
+        } catch (DateTimeParseException e) {
+            Log.warnf(e, "Unable to parse timestamp %s, dropped from payload", timestamp);
+        } catch (DateTimeException e) {
+            Log.warnf(e, "Timestamp %s was successfully parsed, but could not be reformatted for PagerDuty, dropped from payload", timestamp);
+        }
+
         messagePayload.put(SEVERITY, PagerDutySeverity.fromJson(cloudEventPayload.getString(SEVERITY)));
         messagePayload.put(SOURCE, cloudEventPayload.getString(APPLICATION));
         messagePayload.put(GROUP, cloudEventPayload.getString(BUNDLE));
-
-        JsonObject cloudSource = cloudEventPayload.getJsonObject(SOURCE);
-        JsonObject sourceNames = JsonObject.of(
-                APPLICATION, cloudSource.getJsonObject(APPLICATION).getString(DISPLAY_NAME),
-                BUNDLE, cloudSource.getJsonObject(BUNDLE).getString(DISPLAY_NAME),
-                EVENT_TYPE, cloudSource.getJsonObject(EVENT_TYPE).getString(DISPLAY_NAME)
-        );
 
         JsonObject customDetails = new JsonObject();
         customDetails.put(ACCOUNT_ID, cloudEventPayload.getString(ACCOUNT_ID));
         customDetails.put(ORG_ID, cloudEventPayload.getString(ORG_ID));
         customDetails.put(CONTEXT, JsonObject.mapFrom(cloudEventPayload.getJsonObject(CONTEXT)));
-        customDetails.put(SOURCE_NAMES, sourceNames);
+
+        // Add source names, if provided
+        JsonObject cloudSource = cloudEventPayload.getJsonObject(SOURCE);
+        if (cloudSource != null) {
+            JsonObject sourceNames = new JsonObject();
+
+            JsonObject application = cloudSource.getJsonObject(APPLICATION);
+            if (application != null) {
+                sourceNames.put(APPLICATION, application.getString(DISPLAY_NAME));
+            }
+            JsonObject bundle = cloudSource.getJsonObject(BUNDLE);
+            if (bundle != null) {
+                sourceNames.put(BUNDLE, bundle.getString(DISPLAY_NAME));
+            }
+            JsonObject eventType = cloudSource.getJsonObject(EVENT_TYPE);
+            if (eventType != null) {
+                sourceNames.put(EVENT_TYPE, eventType.getString(DISPLAY_NAME));
+            }
+
+            if (!sourceNames.isEmpty()) {
+                customDetails.put(SOURCE_NAMES, sourceNames);
+            }
+        }
+
         // Keep events, if provided
         if (cloudEventPayload.containsKey(EVENTS)) {
             customDetails.put(EVENTS, cloudEventPayload.getJsonArray(EVENTS));
@@ -78,6 +107,30 @@ public class PagerDutyTransformer implements Processor {
         message.put(PAYLOAD, messagePayload);
 
         exchange.getIn().setBody(message.encode());
+    }
+
+    /** Validates that the inputs for the required Alert Event fields are present */
+    private void validatePayload(JsonObject cloudEventPayload) {
+        String summary = cloudEventPayload.getString(EVENT_TYPE);
+        if (summary == null || summary.isEmpty()) {
+            throw new IllegalArgumentException("Event type must be specified for PagerDuty payload summary");
+        }
+
+        String source = cloudEventPayload.getString(APPLICATION);
+        if (source == null || source.isEmpty()) {
+            throw new IllegalArgumentException("Application must be specified for PagerDuty payload source");
+        }
+
+        String severity = cloudEventPayload.getString(SEVERITY);
+        if (severity == null || severity.isEmpty()) {
+            throw new IllegalArgumentException("Severity must be specified for PagerDuty payload");
+        } else {
+            try {
+                PagerDutySeverity.fromJson(severity);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid severity value provided for PagerDuty payload: " + severity);
+            }
+        }
     }
 
     /**
