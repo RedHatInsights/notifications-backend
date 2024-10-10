@@ -30,10 +30,15 @@ import java.util.UUID;
 @ApplicationScoped
 public class KesselAuthorization {
     /**
+     * Represents the namespace to be used for the requests that must specify
+     * a subject.
+     */
+    public static final String KESSEL_RBAC_NAMESPACE = "rbac";
+    /**
      * Represents the subject's type in Kessel. As told by them, there is only
      * going to exist the "user" type in the schema.
      */
-    public static final String KESSEL_IDENTITY_SUBJECT_TYPE = "user";
+    public static final String KESSEL_IDENTITY_SUBJECT_TYPE = "principal";
     /**
      * Represents the key for the "permission" tag used in the timer.
      */
@@ -183,7 +188,7 @@ public class KesselAuthorization {
                 SubjectReference.newBuilder()
                     .setSubject(
                         ObjectReference.newBuilder()
-                            .setType(ObjectType.newBuilder().setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
+                            .setType(ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
                             .setId(identity.getName())
                             .build()
                     ).build()
@@ -204,7 +209,7 @@ public class KesselAuthorization {
                 SubjectReference.newBuilder()
                     .setSubject(
                         ObjectReference.newBuilder()
-                            .setType(ObjectType.newBuilder().setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
+                            .setType(ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
                             .setId(identity.getName())
                     ).build()
             ).setRelation(kesselPermission.getKesselPermissionName())
