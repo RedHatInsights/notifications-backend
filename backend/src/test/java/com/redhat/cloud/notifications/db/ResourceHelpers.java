@@ -216,6 +216,8 @@ public class ResourceHelpers {
             ep.setAccountId(accountId);
             ep.setOrgId(orgId);
             endpointRepository.createEndpoint(ep);
+
+            stats.addEndpointId(ep.getId());
         }
         return stats;
     }

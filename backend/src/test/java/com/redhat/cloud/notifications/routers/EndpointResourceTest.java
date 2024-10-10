@@ -5,6 +5,10 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -52,14 +56,18 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.LookupClient;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -78,6 +86,7 @@ import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockS
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
+import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -125,6 +134,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @InjectMock
     BackendConfig backendConfig;
 
+    /**
+     * Mocked Kessel's check client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    CheckClient checkClient;
+
     @Inject
     EndpointMapper endpointMapper;
 
@@ -141,6 +157,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @InjectMock
     @RestClient
     EndpointTestService endpointTestService;
+
+    @Inject
+    KesselTestHelper kesselTestHelper;
+
+    /**
+     * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    LookupClient lookupClient;
 
     /**
      * We mock the sources service's REST client because there are a few tests
@@ -179,15 +205,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
         return secret;
     }
 
-    @Test
-    void testEndpointAdding() {
-        String accountId = "empty";
-        String orgId = "empty";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointAdding(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
 
         // Test empty tenant
         given()
@@ -195,7 +223,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200) // TODO Maybe 204 here instead?
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
@@ -216,6 +244,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         mockSources(properties);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -223,7 +253,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -233,13 +263,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(3, responsePoint.getInteger("server_errors"));
         assertEquals(READY.toString(), responsePoint.getString("status"));
 
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.fromString(responsePoint.getString("id"))));
+
         // Fetch the list
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -256,44 +288,50 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, endpoints.size());
 
         // Fetch single endpoint also and verify
-        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
+        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
         assertEquals(READY.toString(), responsePoint.getString("status"));
 
         // Disable and fetch
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, responsePoint.getString("id"));
+
         String body =
                 given()
                         .header(identityHeader)
                         .when().delete("/endpoints/" + responsePoint.getString("id") + "/enable")
                         .then()
-                        .statusCode(204)
+                        .statusCode(HttpStatus.SC_NO_CONTENT)
                         .extract().body().asString();
         assertEquals(0, body.length());
 
-        responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
+        responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertFalse(responsePointSingle.getBoolean("enabled"));
 
         // Enable and fetch
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, responsePoint.getString("id"));
+
         given()
                 .header(identityHeader)
                 .when().put("/endpoints/" + responsePoint.getString("id") + "/enable")
                 .then()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
 
-        responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
+        responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
         assertEquals(0, responsePointSingle.getInteger("server_errors"));
 
         // Delete
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, responsePoint.getString("id"));
+
         body =
                 given()
                         .header(identityHeader)
                         .when().delete("/endpoints/" + responsePoint.getString("id"))
                         .then()
-                        .statusCode(204)
+                        .statusCode(HttpStatus.SC_NO_CONTENT)
                         .extract().body().asString();
         assertEquals(0, body.length());
 
@@ -303,7 +341,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when().get("/endpoints/" + responsePoint.getString("id"))
                 .then()
-                .statusCode(404)
+                .statusCode(HttpStatus.SC_NOT_FOUND)
                 .contentType(TEXT);
 
         // Fetch all, nothing should be left
@@ -312,17 +350,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
     }
 
-    @Test
-    void testRepeatedEndpointName() {
-        String orgId = "repeatEndpoint";
-        String userName = "user";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testRepeatedEndpointName(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(orgId, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -344,6 +382,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         mockSources(properties);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -351,13 +391,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(endpoint1))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .extract().response();
 
         String endpoint1Id = new JsonObject(response.getBody().asString()).getString("id");
         assertNotNull(endpoint1Id);
 
-        // Trying to add the same endpoint name again results in a 400 error
+        // Trying to add the same endpoint name again results in a bad request
+        // error
         given()
                 .header(identityHeader)
                 .when()
@@ -365,7 +406,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(endpoint1))
                 .post("/endpoints")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
 
         // Endpoint2
         Endpoint ep = new Endpoint();
@@ -383,7 +424,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
 
         // Different endpoint type with same name
         CamelProperties camelProperties = new CamelProperties();
@@ -408,9 +449,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
 
         // Updating endpoint1 name is possible
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpoint1Id);
+
         endpoint1.setName("Endpoint1-updated");
         given()
                 .header(identityHeader)
@@ -419,7 +462,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .put("/endpoints/" + endpoint1Id)
                 .then()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
 
         // Updating to the name of an already existing endpoint is not possible
         endpoint1.setName("Endpoint2");
@@ -430,16 +473,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .put("/endpoints/" + endpoint1Id)
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
-    private JsonObject fetchSingle(String id, Header identityHeader) {
+    private JsonObject fetchSingle(String id, String identityUsername, Header identityHeader) {
+        this.kesselTestHelper.mockKesselPermission(identityUsername, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id);
+
         Response response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get("/endpoints/" + id)
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .body("id", equalTo(id))
                 .extract().response();
@@ -449,12 +494,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         return endpoint;
     }
 
-    @Test
-    void testEndpointValidation() {
-        String accountId = "validation";
-        String orgId = "validation2";
-        String userName = "testEndpointValidation";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointValidation(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -466,7 +511,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setDescription("Destined to fail");
         ep.setEnabled(true);
 
-        expectReturn400(identityHeader, ep);
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
 
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(POST);
@@ -478,29 +523,38 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(properties);
         ep.setType(null);
 
-        expectReturn400(identityHeader, ep);
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
 
         // Test with incorrect webhook properties
         ep.setType(EndpointType.WEBHOOK);
         ep.setName("endpoint with incorrect webhook properties");
         properties.setMethod(null);
-        expectReturn400(identityHeader, ep);
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
 
         // Type and attributes don't match
         properties.setMethod(POST);
         ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
-        expectReturn400(identityHeader, ep);
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
 
         ep.setType(EndpointType.DRAWER);
-        expectReturn400(identityHeader, ep);
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
 
         ep.setName("endpoint with subtype too long");
         ep.setType(EndpointType.CAMEL);
         ep.setSubType("something-longer-than-20-chars");
-        expectReturn400(identityHeader, ep);
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
     }
 
-    private void expectReturn400(Header identityHeader, Endpoint ep) {
+    /**
+     * Attempts creating the endpoint and asserts that a "bad request" response
+     * is returned.
+     * @param DEFAULT_USER the username associated with the identity header.
+     * @param identityHeader the encoded identity header.
+     * @param ep the endpoint to create.
+     */
+    private void expectReturn400(final String DEFAULT_USER, final Header identityHeader, final Endpoint ep) {
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         given()
                  .header(identityHeader)
                  .when()
@@ -508,16 +562,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
                  .body(Json.encode(ep))
                  .post("/endpoints")
                  .then()
-                 .statusCode(400);
+                 .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
-    @Test
-    void addCamelEndpoint() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void addCamelEndpoint(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        String accountId = "empty";
-        String orgId = "empty";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -553,6 +606,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // the secrets from Sources too.
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(basicAuthSecret.id))).thenReturn(basicAuthSecret);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         String responseBody = given()
                 .header(identityHeader)
                 .when()
@@ -560,7 +615,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().asString();
 
@@ -570,7 +625,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertNotNull(id);
 
         try {
-            JsonObject endpoint = fetchSingle(id, identityHeader);
+            JsonObject endpoint = fetchSingle(id, DEFAULT_USER, identityHeader);
             JsonObject properties = responsePoint.getJsonObject("properties");
             assertNotNull(properties);
             assertTrue(endpoint.getBoolean("enabled"));
@@ -589,23 +644,23 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             assertEquals("secret-token", properties.getString("secret_token"));
         } finally {
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id);
 
             given()
                     .header(identityHeader)
                     .when().delete("/endpoints/" + id)
                     .then()
-                    .statusCode(204)
+                    .statusCode(HttpStatus.SC_NO_CONTENT)
                     .extract().body().asString();
         }
     }
 
-    @Test
-    void addBogusCamelEndpoint() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void addBogusCamelEndpoint(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        String accountId = "empty";
-        String orgId = "empty";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -626,14 +681,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(cAttr);
 
-        given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(ep))
-                .post("/endpoints")
-                .then()
-                .statusCode(400);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
         given()
                 .header(identityHeader)
@@ -642,14 +690,24 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(ep))
                 .post("/endpoints")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
 
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .post("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
-    @Test
-    void testForbidSlackChannelUsage() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testForbidSlackChannelUsage(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", "user");
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
@@ -665,6 +723,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setDescription("description");
         endpoint.setProperties(camelProperties);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         String responseBody = given()
             .header(identityHeader)
             .when()
@@ -672,7 +732,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().asString();
 
         assertEquals(DEPRECATED_SLACK_CHANNEL_ERROR, responseBody);
@@ -686,7 +746,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .extract().asString();
 
         final JsonObject jsonResponse = new JsonObject(createdEndpoint);
@@ -697,6 +757,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setName(UUID.randomUUID().toString());
 
         // try to update endpoint without channel
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuidRaw);
+
         given()
             .header(identityHeader)
             .contentType(JSON)
@@ -705,7 +767,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .when()
             .put("/endpoints/{id}")
             .then()
-            .statusCode(200);
+            .statusCode(HttpStatus.SC_OK);
 
         // try to update endpoint with channel
         extras.put("channel", "refused");
@@ -717,7 +779,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .when()
             .put("/endpoints/{id}")
             .then()
-            .statusCode(400);
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
 
         // test create slack integration without extras object
         camelProperties.setExtras(null);
@@ -732,19 +794,25 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .extract().asString();
     }
 
-    @Test
-    void testRequireHttpsSchemeServiceNow() {
-        URI sNowUri = URI.create("http://webhook.site/3074bfbb-366c-4f54-8513-b66a483985aa");
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testRequireHttpsSchemeServiceNow(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        URI sNowUri = URI.create("http://redhat.com");
         testRequireHttpsScheme("servicenow", sNowUri);
     }
 
-    @Test
-    void testRequireHttpsSchemeSplunk() {
-        URI splunkUri = URI.create("http://webhook.site/20832c6c-6493-487d-bbf5-d4f8cbfd1fc6");
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testRequireHttpsSchemeSplunk(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        URI splunkUri = URI.create("http://redhat.com");
         testRequireHttpsScheme("splunk", splunkUri);
     }
 
@@ -762,6 +830,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setDescription("description");
         endpoint.setProperties(camelProperties);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         String invalidResp = given()
                 .header(identityHeader)
                 .when()
@@ -769,7 +839,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
                 .post("/endpoints")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().asString();
 
         assertEquals(HTTPS_ENDPOINT_SCHEME_REQUIRED, invalidResp);
@@ -785,10 +855,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .extract().asString();
 
         final String endpointUuidRaw = new JsonObject(createdEndpoint).getString("id");
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuidRaw);
 
         // try to update endpoint with HTTPS URI
         URI exampleUri = URI.create("https://webhook.site/a6de9c30-f4c9-49af-8d03-c9ce7e78fdb3");
@@ -802,7 +873,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .put("/endpoints/{id}")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .extract().asString();
 
         // try to update endpoint with HTTP URI
@@ -817,7 +888,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .put("/endpoints/{id}")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().asString();
 
         assertEquals(HTTPS_ENDPOINT_SCHEME_REQUIRED, sNowInvalidUpdate);
@@ -839,16 +910,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(slackEndpoint)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
     }
 
-    @Test
-    void addSlackEndpoint() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void addSlackEndpoint(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        String accountId = "empty";
-        String orgId = "empty";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -866,6 +936,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(cAttr);
         ep.setStatus(EndpointStatus.DELETING); // Trying to set other status
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         String responseBody = given()
                 .header(identityHeader)
                 .when()
@@ -873,7 +945,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().asString();
 
@@ -884,7 +956,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(READY.toString(), responsePoint.getString("status"));
 
         try {
-            JsonObject endpoint = fetchSingle(id, identityHeader);
+            JsonObject endpoint = fetchSingle(id, DEFAULT_USER, identityHeader);
             JsonObject properties = responsePoint.getJsonObject("properties");
             assertNotNull(properties);
             assertTrue(endpoint.getBoolean("enabled"));
@@ -894,6 +966,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             ep.getProperties(CamelProperties.class).setUrl("https://redhat.com");
 
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, id);
+
             // Now update
             responseBody = given()
                     .header(identityHeader)
@@ -902,7 +976,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .when()
                     .put("/endpoints/" + id)
                     .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.SC_OK)
                     .extract().asString();
 
             assertNotNull(responseBody);
@@ -913,28 +987,34 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertEquals(ep.getProperties(CamelProperties.class).getUrl(), updatedProperties.getUrl());
 
         } finally {
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id);
+
             given()
                     .header(identityHeader)
                     .when().delete("/endpoints/" + id)
                     .then()
-                    .statusCode(204);
+                    .statusCode(HttpStatus.SC_NO_CONTENT);
+
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id);
 
             given()
                     .header(identityHeader)
                     .when().get("/endpoints/" + id)
-                    .then().statusCode(404);
+                    .then().statusCode(HttpStatus.SC_NOT_FOUND);
         }
     }
 
-    @Test
-    void testEndpointUpdates() {
-        String accountId = "updates";
-        String orgId = "updates2";
-        String userName = "testEndpointUpdates";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointUpdates(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
 
         // Test empty tenant
         given()
@@ -942,7 +1022,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .header(identityHeader)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200) // TODO Maybe 204 here instead?
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
@@ -963,6 +1043,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Secret secretTokenSecret = mockSources(properties);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -970,7 +1052,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -980,13 +1062,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(7, responsePoint.getInteger("server_errors"));
 
         // Fetch the list
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.fromString(responsePoint.getString("id"))));
+
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .contentType(JSON)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1003,7 +1087,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, endpoints.size());
 
         // Fetch single endpoint also and verify
-        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
+        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
 
@@ -1020,9 +1104,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .put(String.format("/endpoints/%s", responsePointSingle.getString("id")))
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
 
         // With payload
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, responsePointSingle.getString("id"));
+
         given()
                 .header(identityHeader)
                 .contentType(JSON)
@@ -1030,7 +1116,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(responsePointSingle.encode())
                 .put(String.format("/endpoints/%s", responsePointSingle.getString("id")))
                 .then()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
 
         // We need to mock the Sources call a second time, because when we
         // updated the endpoint with the secret token above, in theory
@@ -1048,7 +1134,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(updatedSecretTokenSecret);
 
         // Fetch single one again to see that the updates were done
-        JsonObject updatedEndpoint = fetchSingle(responsePointSingle.getString("id"), identityHeader);
+        JsonObject updatedEndpoint = fetchSingle(responsePointSingle.getString("id"), DEFAULT_USER, identityHeader);
         JsonObject attrSingleUpdated = updatedEndpoint.getJsonObject("properties");
         attrSingleUpdated.mapTo(WebhookProperties.class);
         assertEquals("endpoint found", updatedEndpoint.getString("name"));
@@ -1058,19 +1144,21 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     private static Stream<Arguments> testEndpointTypeQuery() {
         return Stream.of(
-                Arguments.of(Set.of(EndpointType.WEBHOOK)),
-                Arguments.of(Set.of(EndpointType.CAMEL)),
-                        Arguments.of(Set.of(EndpointType.WEBHOOK, EndpointType.CAMEL))
+            Arguments.of(true, Set.of(EndpointType.WEBHOOK)),
+            Arguments.of(true, Set.of(EndpointType.CAMEL)),
+            Arguments.of(true, Set.of(EndpointType.WEBHOOK, EndpointType.CAMEL)),
+            Arguments.of(false, Set.of(EndpointType.WEBHOOK)),
+            Arguments.of(false, Set.of(EndpointType.CAMEL)),
+            Arguments.of(false, Set.of(EndpointType.WEBHOOK, EndpointType.CAMEL))
         );
     }
 
     @ParameterizedTest
     @MethodSource
-    void testEndpointTypeQuery(Set<EndpointType> types) {
-        String accountId = "limiter";
-        String orgId = "limiter2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    void testEndpointTypeQuery(final boolean isKesselEnabled, final Set<EndpointType> types) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -1091,6 +1179,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         mockSources(properties);
 
+        final Set<UUID> createdEndpointIds = new HashSet<>();
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -1098,13 +1188,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
+        createdEndpointIds.add(UUID.fromString(responsePoint.getString("id")));
 
         // Add Camel
         CamelProperties camelProperties = new CamelProperties();
@@ -1128,21 +1219,23 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(camelEp)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
         responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
+        createdEndpointIds.add(UUID.fromString(responsePoint.getString("id")));
 
         // Fetch the list to ensure everything was inserted correctly.
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointIds);
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1158,13 +1251,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(2, endpoints.size());
 
         // Fetch the list with types
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointIds);
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .queryParam("type", types)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1185,16 +1279,20 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
     }
 
-    @Test
-    void testEndpointLimiter() {
-        String accountId = "limiter";
-        String orgId = "limiter2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointLimiter(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-        addEndpoints(29, identityHeader);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        final Set<UUID> createdEndpointsIdentifiers = addEndpoints(29, identityHeader);
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointsIdentifiers);
 
         // Fetch the list, page 1
         Response response = given()
@@ -1204,7 +1302,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("offset", "0")
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1220,6 +1318,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(10, endpoints.size());
         assertEquals(29, endpointPage.getMeta().getCount());
 
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointsIdentifiers);
+
         // Fetch the list, page 3
         response = given()
                 // Set header to x-rh-identity
@@ -1228,7 +1328,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("pageNumber", "2")
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1246,25 +1346,26 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(29, endpointPage.getMeta().getCount());
     }
 
-    @Test
-    void testSortingOrder() {
-        String accountId = "testSortingOrder";
-        String orgId = "testSortingOrder2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testSortingOrder(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Create 50 test-ones with sanely sortable name & enabled & disabled & type
-        final Stats stats = helpers.createTestEndpoints(accountId, orgId, 50);
+        final Stats stats = helpers.createTestEndpoints(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, 50);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
 
         Response response = given()
                 .header(identityHeader)
                 .when()
                 .get("/endpoints?limit=100")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1277,13 +1378,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         assertEquals(stats.getCreatedEndpointsCount(), endpoints.size());
 
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         response = given()
                 .header(identityHeader)
                 .queryParam("sort_by", "enabled")
                 .when()
                 .get("/endpoints?limit=100")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1299,6 +1402,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertTrue(endpoints.get(stats.getDisabledCount()).isEnabled());
         assertTrue(endpoints.get(stats.getCreatedEndpointsCount() - 1).isEnabled());
 
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         response = given()
                 .header(identityHeader)
                 .queryParam("sort_by", "name:desc")
@@ -1307,7 +1412,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .get("/endpoints?limit=100")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1323,22 +1428,24 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals("Endpoint 10", endpoints.get(endpoints.size() - 2).getName());
         assertEquals("Endpoint 27", endpoints.get(0).getName());
 
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         given()
                 .header(identityHeader)
                 .queryParam("sort_by", "hulla:desc")
                 .when()
                 .get("/endpoints?limit=100")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
 
     }
 
-    @Test
-    void testWebhookAttributes() {
-        String accountId = "testWebhookAttributes";
-        String orgId = "testWebhookAttributes2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testWebhookAttributes(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -1386,6 +1493,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(bearerTokenSecret.id))).thenReturn(bearerTokenSecret);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -1393,7 +1502,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1401,8 +1510,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         responsePoint.mapTo(EndpointDTO.class);
         assertNotNull(responsePoint.getString("id"));
 
-        // Fetch single endpoint also and verify
-        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
+        // Fetch single endpoint and make the verifications. Make the user have
+        // "edit" permission in the integration so that the secrets are not
+        // redacted.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, responsePoint.getString("id"));
+
+        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
 
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
@@ -1416,12 +1529,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(properties.getBearerAuthentication(), attr.getString("bearer_authentication"));
     }
 
-    @Test
-    void testAddEndpointEmailSubscription() {
-        String accountId = "adding-email-subscription";
-        String orgId = "adding-email-subscription2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAddEndpointEmailSubscription(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -1436,6 +1549,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         String stringResponse = given()
                 .header(identityHeader)
                 .when()
@@ -1443,7 +1558,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().asString();
 
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
@@ -1451,6 +1566,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
         // EmailSubscription can be fetch from the properties
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -1458,7 +1575,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1479,7 +1596,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1500,7 +1617,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1516,7 +1633,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1525,39 +1642,47 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertTrue(endpointIds.contains(responsePoint.getString("id")));
 
         // It is not possible to delete it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, defaultEndpointId);
+
         stringResponse = given()
                 .header(identityHeader)
                 .when().delete("/endpoints/" + defaultEndpointId)
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
         // It is not possible to disable or enable it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, defaultEndpointId);
+
         stringResponse = given()
                 .header(identityHeader)
                 .when().delete("/endpoints/" + defaultEndpointId + "/enable")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, defaultEndpointId);
 
         stringResponse = given()
                 .header(identityHeader)
                 .when().put("/endpoints/" + defaultEndpointId + "/enable")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
         // It is not possible to update it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, defaultEndpointId);
+
         stringResponse = given()
                 .header(identityHeader)
                 .contentType(JSON)
                 .body(Json.encode(ep))
                 .when().put("/endpoints/" + defaultEndpointId)
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
@@ -1577,17 +1702,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(ep))
                 .when().put("/endpoints/" + defaultEndpointId)
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
     }
 
-    @Test
-    void testAddEndpointDrawerSubscription() {
-        String accountId = "adding-drawer-subscription";
-        String orgId = "adding-drawer-subscription2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAddEndpointDrawerSubscription(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -1602,6 +1727,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         String stringResponse = given()
             .header(identityHeader)
             .when()
@@ -1609,7 +1736,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(ep))
             .post("/endpoints")
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().asString();
 
         assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
@@ -1617,6 +1744,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
         // Drawer endpoints can be created from the dedicated endpoint
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         Response response = given()
             .header(identityHeader)
             .when()
@@ -1624,7 +1753,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(requestProps))
             .post("/endpoints/system/drawer_subscription")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
             .extract().response();
 
@@ -1645,7 +1774,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(requestProps))
             .post("/endpoints/system/drawer_subscription")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
             .extract().response();
 
@@ -1666,7 +1795,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(requestProps))
             .post("/endpoints/system/drawer_subscription")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
             .extract().response();
 
@@ -1682,7 +1811,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(requestProps))
             .post("/endpoints/system/drawer_subscription")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
             .extract().response();
 
@@ -1691,39 +1820,47 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertTrue(endpointIds.contains(responsePoint.getString("id")));
 
         // It is not possible to delete it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, defaultEndpointId);
+
         stringResponse = given()
             .header(identityHeader)
             .when().delete("/endpoints/" + defaultEndpointId)
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
 
         // It is not possible to disable or enable it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, defaultEndpointId);
+
         stringResponse = given()
             .header(identityHeader)
             .when().delete("/endpoints/" + defaultEndpointId + "/enable")
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, defaultEndpointId);
 
         stringResponse = given()
             .header(identityHeader)
             .when().put("/endpoints/" + defaultEndpointId + "/enable")
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
 
         // It is not possible to update it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, defaultEndpointId);
+
         stringResponse = given()
             .header(identityHeader)
             .contentType(JSON)
             .body(Json.encode(ep))
             .when().put("/endpoints/" + defaultEndpointId)
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
 
@@ -1743,27 +1880,29 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(ep))
             .when().put("/endpoints/" + defaultEndpointId)
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().asString();
         assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
     }
 
-    @Test
-    void testAddEndpointEmailSubscriptionRbac() {
-        String accountId = "adding-email-subscription";
-        String orgId = "adding-email-subscription2";
-        String userName = "user";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAddEndpointEmailSubscriptionRbac(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
         String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
         String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-        MockServerConfig.addGroupResponse(identityHeaderValue, validGroupId, 200);
-        MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, 404);
+        MockServerConfig.addGroupResponse(identityHeaderValue, validGroupId, HttpStatus.SC_OK);
+        MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, HttpStatus.SC_NOT_FOUND);
 
         // valid group id
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
         requestProps.setGroupId(UUID.fromString(validGroupId));
 
@@ -1774,7 +1913,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1791,7 +1930,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1808,7 +1947,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1822,24 +1961,35 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(requestProps))
                 .post("/endpoints/system/email_subscription")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .contentType(JSON)
                 .extract().response();
     }
 
-    @Test
-    void testUnknownEndpointTypes() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testUnknownEndpointTypes(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-orgid", "test-user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // If Kessel doesn't return any authorized IDs we return an empty page
+        // to the user, so we need to simulate that there would be some
+        // endpoints that the user would be able to fetch.
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.randomUUID()));
 
         given()
                 .header(identityHeader)
                 .queryParam("type", "foo")
                 .when().get("/endpoints")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .body(is("Unknown endpoint type: [foo]"));
+
+        // Same thing here.
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.randomUUID()));
 
         given()
                 .header(identityHeader)
@@ -1847,30 +1997,34 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("type", "bar")
                 .when().get("/endpoints")
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .body(is("Unknown endpoint type: [bar]"));
     }
 
-    @Test
-    void testConnectionCount() {
-        String accountId = "count";
-        String orgId = "count2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testConnectionCount(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Test empty tenant
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
+
         given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200) // TODO Maybe 204 here instead?
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        final Set<UUID> createdEndpointIds = new HashSet<>();
         for (int i = 0; i < 200; i++) {
             // Add new endpoints
             WebhookProperties properties = new WebhookProperties();
@@ -1895,7 +2049,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .body(Json.encode(ep))
                     .post("/endpoints")
                     .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.SC_OK)
                     .contentType(JSON)
                     .extract().response();
 
@@ -1903,35 +2057,40 @@ public class EndpointResourceTest extends DbIsolatedTest {
             responsePoint.mapTo(EndpointDTO.class);
             assertNotNull(responsePoint.getString("id"));
 
+            createdEndpointIds.add(UUID.fromString(responsePoint.getString("id")));
+            this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointIds);
+
             // Fetch the list
             given()
                     // Set header to x-rh-identity
                     .header(identityHeader)
                     .when().get("/endpoints")
                     .then()
-                    .statusCode(200)
-                    .contentType(JSON)
-                    .extract().response();
+                    .statusCode(HttpStatus.SC_OK)
+                    .contentType(JSON);
         }
     }
 
-    @Test
-    void testActive() {
-        String orgId = "queries-without-type";
-        String username = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, orgId, username);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testActive(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        final Stats stats = resourceHelpers.createTestEndpoints(TestConstants.DEFAULT_ACCOUNT_ID, orgId, 11);
+        final Stats stats = resourceHelpers.createTestEndpoints(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, 11);
 
         // Get all endpoints
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         Response response = given()
                 .header(identityHeader)
                 .when()
                 .get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1940,13 +2099,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(stats.getCreatedEndpointsCount(), endpointPage.getData().size());
 
         // Only active
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         response = given()
                 .header(identityHeader)
                 .when()
                 .queryParam("active", "true")
                 .get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1955,13 +2116,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(stats.getCreatedEndpointsCount() - stats.getDisabledCount(), endpointPage.getData().size());
 
         // Only inactive
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         response = given()
                 .header(identityHeader)
                 .when()
                 .queryParam("active", "false")
                 .get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -1971,16 +2134,21 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     }
 
-    @Test
-    void testSearch() {
-        String accountId = "search";
-        String orgId = "search2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testSearch(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        addEndpoints(10, identityHeader);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        final Set<UUID> createdEndpoints = addEndpoints(10, identityHeader);
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpoints);
+
         Response response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
@@ -1989,7 +2157,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("name", "2")
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -2006,7 +2174,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("name", "foo")
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -2015,16 +2183,21 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(0, endpointPage.getData().size());
     }
 
-    @Test
-    void testSearchWithType() {
-        String accountId = "search-type";
-        String orgId = "search-type2";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testSearchWithType(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        addEndpoints(10, identityHeader);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        final Set<UUID> createdEndpoints = addEndpoints(10, identityHeader);
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpoints);
+
         Response response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
@@ -2034,7 +2207,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("type", "WEBHOOK")
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -2052,7 +2225,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("type", "WEBHOOK")
                 .when().get("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -2066,10 +2239,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * {@link CamelProperties} or {@link WebhookProperties}, the proper constraint violation message is returned from
      * the handler.
      */
-    @Test
-    void testEndpointInvalidUrls() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointInvalidUrls(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
         // Set up the RBAC access for the test.
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("endpoint-invalid-urls", "endpoint-invalid-urls", "user");
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -2134,6 +2310,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
         try {
             LaunchMode.set(LaunchMode.NORMAL);
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
             // Test the URLs with both camel and webhook endpoints.
             for (final var testCase : testCases) {
                 for (final var url : testCase.testUrls) {
@@ -2151,7 +2329,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
                             .post("/endpoints")
                             .then()
-                            .statusCode(400)
+                            .statusCode(HttpStatus.SC_BAD_REQUEST)
                             .extract()
                             .asString();
 
@@ -2174,7 +2352,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                             .body(Json.encode(endpoint))
                             .post("/endpoints")
                             .then()
-                            .statusCode(400)
+                            .statusCode(HttpStatus.SC_BAD_REQUEST)
                             .extract()
                             .asString();
 
@@ -2192,8 +2370,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * Tests that when a valid URL is provided via the endpoint's properties, regardless if those properties are
      * {@link CamelProperties} or {@link WebhookProperties}, no constraint violations are raised.
      */
-    @Test
-    void testEndpointValidUrls() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointValidUrls(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
         // Set up the RBAC access for the test.
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2229,6 +2410,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
             .thenReturn(secret);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         for (final String url : ValidNonPrivateUrlValidatorTest.validUrls) {
             // Test with a camel endpoint.
             camelProperties.setUrl(url);
@@ -2277,11 +2459,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * Test that endpoint.sub_type is only allowed when it's required.
      * If it's not required, then it should be rejected.
      */
-    @Test
-    public void testEndpointSubtypeIsOnlyAllowedWhenRequired() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testEndpointSubtypeIsOnlyAllowedWhenRequired(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
         String EMPTY = "empty";
-        String userName = "user";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(EMPTY, EMPTY, userName);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(EMPTY, EMPTY, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -2301,6 +2485,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(properties);
         ep.setServerErrors(3);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         given()
                 .header(identityHeader)
                 .when()
@@ -2308,7 +2493,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
 
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
@@ -2333,26 +2518,28 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(camelEp))
                 .post("/endpoints")
                 .then()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
     /**
      * Tests that when sending a payload to the "/test" REST endpoint, a Kafka message is sent with a test event for
      * that endpoint.
      */
-    @Test
-    void testEndpointTest() {
-        final String accountId = "test-endpoint-test-account-number";
-        final String orgId = "test-endpoint-test-org-id";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointTest(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Call the endpoint under test.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, createdEndpoint.getId().toString());
+
         final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
         given()
             .header(identityHeader)
@@ -2360,7 +2547,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .post(path)
             .then()
-            .statusCode(204);
+            .statusCode(HttpStatus.SC_NO_CONTENT);
 
         // Capture the sent payload to verify it.
         final ArgumentCaptor<InternalEndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(InternalEndpointTestRequest.class);
@@ -2369,7 +2556,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final InternalEndpointTestRequest sentPayload = capturedPayload.getValue();
 
         Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
-        Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
+        Assertions.assertEquals(DEFAULT_ORG_ID, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
         assertNull(sentPayload.message, "the sent message should be null since no custom message was specified");
     }
 
@@ -2377,26 +2564,28 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * Tests that when the "test endpoint" handler is called with an endpoint
      * UUID that doesn't exist, a not found response is returned.
      */
-    @Test
-    void testEndpointTestNotFound() {
-        final String accountId = "test-endpoint-test-account-number";
-        final String orgId = "test-endpoint-test-org-id";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointTestNotFound(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Call the endpoint under test.
-        final String path = String.format("/endpoints/%s/test", UUID.randomUUID());
+        final UUID randomId = UUID.randomUUID();
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, randomId.toString());
 
         final String responseBody = given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .post(path)
+            .pathParam("id", randomId)
+            .post("/endpoints/{id}/test")
             .then()
-            .statusCode(404)
+            .statusCode(HttpStatus.SC_NOT_FOUND)
             .extract()
             .body()
             .asString();
@@ -2408,14 +2597,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * Tests that when a user specifies a custom message, then it gets properly
      * sent to the engine.
      */
-    @Test
-    void testEndpointTestCustomMessage() {
-        final String accountId = "test-endpoint-test-account-number";
-        final String orgId = "test-endpoint-test-org-id";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointTestCustomMessage(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -2425,15 +2614,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointTestRequest.message = customTestMessage;
 
         // Call the endpoint under test.
-        final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, createdEndpoint.getId().toString());
         given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
+            .pathParam("id", createdEndpoint.getId())
             .body(Json.encode(endpointTestRequest))
-            .post(path)
+            .post("/endpoints/{id}/test")
             .then()
-            .statusCode(204);
+            .statusCode(HttpStatus.SC_NO_CONTENT);
 
         // Capture the sent payload to verify it.
         final ArgumentCaptor<InternalEndpointTestRequest> capturedPayload = ArgumentCaptor.forClass(InternalEndpointTestRequest.class);
@@ -2442,7 +2632,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final InternalEndpointTestRequest sentPayload = capturedPayload.getValue();
 
         Assertions.assertEquals(createdEndpoint.getId(), sentPayload.endpointUuid, "the sent endpoint UUID in the payload doesn't match the one from the fixture");
-        Assertions.assertEquals(orgId, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
+        Assertions.assertEquals(DEFAULT_ORG_ID, sentPayload.orgId, "the sent org id in the payload doesn't match the one from the fixture");
         Assertions.assertEquals(customTestMessage, sentPayload.message, "the sent message does not match the one from the fixture");
     }
 
@@ -2450,32 +2640,32 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * Tests that when a user specifies a blank custom message, then a bad
      * request response is returned.
      */
-    @Test
-    void testEndpointTestBlankMessageReturnsBadRequest() {
-        final String accountId = "test-endpoint-test-account-number";
-        final String orgId = "test-endpoint-test-org-id";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointTestBlankMessageReturnsBadRequest(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(accountId, orgId, EndpointType.CAMEL);
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, "user-name");
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
-        final String blankTestMessage = "";
         final EndpointTestRequest endpointTestRequest = new EndpointTestRequest();
-        endpointTestRequest.message = blankTestMessage;
+        endpointTestRequest.message = "";
 
         // Call the endpoint under test.
-        final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, createdEndpoint.getId().toString());
         final String rawResponse = given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
+            .pathParam("id", createdEndpoint.getId())
             .body(Json.encode(endpointTestRequest))
-            .post(path)
+            .post("/endpoints/{id}/test")
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract()
             .asString();
 
@@ -2494,9 +2684,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * and the user provides new ones, then Sources gets called and the
      * references to those secrets are stored in the database.
     */
-    @Test
-    public void testUpdateEndpointCreateSecrets() {
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user");
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testUpdateEndpointCreateSecrets(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
@@ -2516,6 +2709,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setStatus(EndpointStatus.PROVISIONING);
         endpoint.setType(EndpointType.WEBHOOK);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         final String response = given()
             .header(identityHeader)
             .when()
@@ -2523,7 +2717,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .extract()
             .asString();
 
@@ -2562,14 +2756,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretBearer
         );
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuid.toString());
         given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
-            .put(String.format("/endpoints/%s", endpointUuid))
+            .pathParam("id", endpointUuid)
+            .put("/endpoints/{id}")
             .then()
-            .statusCode(200);
+            .statusCode(HttpStatus.SC_OK);
 
         // Verify that both secrets were created in Sources.
         Mockito.verify(this.sourcesServiceMock, Mockito.times(3)).create(
@@ -2592,9 +2788,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * authentication" and "secret token" secrets, then the secrets are deleted
      * from Sources and their references deleted from our database.
      */
-    @Test
-    public void testUpdateEndpointDeleteSecrets() {
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user");
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testUpdateEndpointDeleteSecrets(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
@@ -2635,6 +2834,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretTokenSecret
         );
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         final String response = given()
             .header(identityHeader)
             .when()
@@ -2642,7 +2842,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .extract()
             .asString();
 
@@ -2657,14 +2857,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setBasicAuthentication(null);
         properties.setSecretToken(null);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuid.toString());
         given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
+            .pathParam("id", endpointUuid)
             .body(Json.encode(endpoint))
-            .put(String.format("/endpoints/%s", endpointUuid))
+            .put("/endpoints/{id}")
             .then()
-            .statusCode(200);
+            .statusCode(HttpStatus.SC_OK);
 
         // Verify that the basic authentication secret was deleted from
         // Sources.
@@ -2694,9 +2896,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * secrets, then Sources gets called twice, and that the database
      * references for the secrets don't change.
      */
-    @Test
-    public void testUpdateEndpointUpdateSecrets() {
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user");
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testUpdateEndpointUpdateSecrets(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
@@ -2737,6 +2942,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretTokenSecret
         );
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         final String response = given()
             .header(identityHeader)
             .when()
@@ -2744,7 +2950,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
             .post("/endpoints")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .extract()
             .asString();
 
@@ -2788,14 +2994,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretTokenUpdatedSecret
         );
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuid.toString());
         given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
+            .pathParam("id", endpointUuid)
             .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
-            .put(String.format("/endpoints/%s", endpointUuid))
+            .put("/endpoints/{id}")
             .then()
-            .statusCode(200);
+            .statusCode(HttpStatus.SC_OK);
 
         // Verify that both secrets were updated in Sources.
         Mockito.verify(this.sourcesServiceMock, Mockito.times(2)).update(
@@ -2816,10 +3024,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Assertions.assertEquals(secretTokenReferencePreUpdate, secretTokenReferenceAfterUpdate, "the ID of the secret token's secret got updated after updating the secret in Sources, which should never happen");
     }
 
-    @Test
-    void testAnsibleEndpointCRUD() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAnsibleEndpointCRUD(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
@@ -2836,6 +3046,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setProperties(properties);
 
         // POST the endpoint.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         String responseBody = given()
                 .header(identityHeader)
                 .contentType(JSON)
@@ -2843,7 +3054,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().asString();
 
@@ -2855,10 +3066,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
 
         // GET the endpoint and check the properties.url field value.
-        jsonEndpoint = fetchSingle(jsonEndpoint.getString("id"), identityHeader);
+        jsonEndpoint = fetchSingle(jsonEndpoint.getString("id"), DEFAULT_USER, identityHeader);
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
 
         // PUT the endpoint (update).
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, jsonEndpoint.getString("id"));
+
         properties.setUrl("https://console.redhat.com");
         given()
                 .header(identityHeader)
@@ -2868,20 +3081,22 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .put("/endpoints/{id}")
                 .then()
-                .statusCode(200);
+                .statusCode(HttpStatus.SC_OK);
 
         // GET the endpoint and check the properties.url field value.
-        jsonEndpoint = fetchSingle(jsonEndpoint.getString("id"), identityHeader);
+        jsonEndpoint = fetchSingle(jsonEndpoint.getString("id"), DEFAULT_USER, identityHeader);
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
 
         // DELETE the endpoint.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, jsonEndpoint.getString("id"));
+
         given()
                 .header(identityHeader)
                 .pathParam("id", jsonEndpoint.getString("id"))
                 .when()
                 .delete("/endpoints/{id}")
                 .then()
-                .statusCode(204);
+                .statusCode(HttpStatus.SC_NO_CONTENT);
 
         // GET the endpoint and check that it no longer exists.
         given()
@@ -2890,15 +3105,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .get("/endpoints/{id}")
                 .then()
-                .statusCode(404);
+                .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    @Test
-    void addPagerDutyEndpoint() {
-        String accountId = "testPagerDutyPropertiesAcct";
-        String orgId = "testPagerDutyPropertiesOrg";
-        String userName = "testPagerDutyPropertiesUser";
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, userName);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void addPagerDutyEndpoint(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -2928,6 +3143,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // the secrets from Sources too.
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -2935,7 +3151,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(Json.encode(this.endpointMapper.toDTO(ep)))
                 .post("/endpoints")
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().response();
 
@@ -2946,7 +3162,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         try {
             // Fetch single endpoint also and verify
-            JsonObject endpoint = fetchSingle(responsePoint.getString("id"), identityHeader);
+            JsonObject endpoint = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
             assertTrue(endpoint.getBoolean("enabled"));
 
             JsonObject properties = responsePoint.getJsonObject("properties");
@@ -2958,11 +3174,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(properties.getString("secret_token"));
             assertEquals(pagerDutyProperties.getSecretToken(), properties.getString("secret_token"));
         } finally {
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id);
             given()
                     .header(identityHeader)
                     .when().delete("/endpoints/" + id)
                     .then()
-                    .statusCode(204)
+                    .statusCode(HttpStatus.SC_NO_CONTENT)
                     .extract().body().asString();
         }
     }
@@ -2971,8 +3188,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * Test that when an endpoint creation fails, and therefore it doesn't get
      * stored in the database, its created secrets in Sources are cleaned up.
      */
-    @Test
-    void testSourcesSecretsDeletedWhenEndpointCreationFails() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testSourcesSecretsDeletedWhenEndpointCreationFails(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
         WebhookProperties properties = new WebhookProperties();
         properties.setBasicAuthentication(new BasicAuthentication("username", "password"));
         properties.setBearerAuthentication("bearer-authentication");
@@ -2988,7 +3208,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         webhookEndpoint.setProperties(properties);
         webhookEndpoint.setType(WEBHOOK);
 
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
@@ -3019,6 +3239,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Mockito.doThrow(new RuntimeException()).when(this.endpointRepository).createEndpoint(Mockito.any());
 
         // Call the endpoint under test.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
         given()
             .header(identityHeader)
             .when()
@@ -3058,6 +3279,180 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
     }
 
+    /**
+     * Tests that when using Kessel, if the user is not authorized to send
+     * requests to the endpoints from the "EndpointResource", a {@link HttpStatus#SC_UNAUTHORIZED}
+     * response is returned.
+     */
+    @Test
+    void testKesselUnauthorized() {
+        // Enable the Kessel back end integration for this test.
+        this.kesselTestHelper.mockKesselRelations(true);
+
+        // Create an identity header.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        // Call the notifications history endpoint.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("endpointId", UUID.randomUUID())
+            .queryParam("includeDetail", false)
+            .get("/endpoints/{endpointId}/history")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        try {
+            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
+
+            // Call the notifications history endpoint in the V2 path.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", UUID.randomUUID())
+                .queryParam("includeDetail", false)
+                .get("/endpoints/{endpointId}/history")
+                .then()
+                .statusCode(HttpStatus.SC_FORBIDDEN);
+        } finally {
+            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
+        }
+
+        // Get the list of endpoints.
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .get("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .body("data", Matchers.hasSize(0))
+            .body("links", Matchers.anEmptyMap())
+            .body("meta.count", Matchers.is(0));
+
+        // Create a new endpoint.
+        final CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
+        camelProperties.setDisableSslVerification(false);
+        camelProperties.setExtras(Map.of("template", "11"));
+        camelProperties.setSecretToken("secret-token");
+        camelProperties.setUrl(getMockServerUrl());
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setDescription("How many humps has a camel?");
+        endpoint.setEnabled(true);
+        endpoint.setName("Push the camel through the needle's ear");
+        endpoint.setProperties(camelProperties);
+        endpoint.setSubType("ansible");
+        endpoint.setType(EndpointType.CAMEL);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Create a drawer subscription.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(new RequestSystemSubscriptionProperties()))
+            .post("/endpoints/system/drawer_subscription")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Create an email subscription.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(new RequestSystemSubscriptionProperties()))
+            .post("/endpoints/system/email_subscription")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Get an endpoint.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("id", UUID.randomUUID())
+            .get("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Delete an endpoint.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("id", UUID.randomUUID())
+            .delete("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Enable an endpoint.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("id", UUID.randomUUID())
+            .put("/endpoints/{id}/enable")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Disable an endpoint.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("id", UUID.randomUUID())
+            .delete("/endpoints/{id}/enable")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Update an endpoint.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("id", UUID.randomUUID())
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Retrieve the history details.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("endpointId", UUID.randomUUID())
+            .pathParam("historyId", UUID.randomUUID())
+            .get("/endpoints/{endpointId}/history/{historyId}/details")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Test an endpoint.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("id", UUID.randomUUID())
+            .post("/endpoints/{id}/test")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+    }
+
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
         assertTrue(message.contains(String.format(
                 "Is not possible to create or alter endpoint with type %s, check API for alternatives",
@@ -3065,7 +3460,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
         )));
     }
 
-    private void addEndpoints(int count, Header identityHeader) {
+    /**
+     * Creates endpoints via the REST endpoint.
+     * @param count the number of endpoints to create.
+     * @param identityHeader the identity header to use to create th
+     *                       endpoints.
+     * @return the set of IDs of the created endpoints.
+     */
+    private Set<UUID> addEndpoints(final int count, final Header identityHeader) {
+        final Set<UUID> createdEndpoints = new HashSet<>(count);
+
         for (int i = 0; i < count; i++) {
             // Add new endpoints
             WebhookProperties properties = new WebhookProperties();
@@ -3090,14 +3494,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .body(Json.encode(ep))
                     .post("/endpoints")
                     .then()
-                    .statusCode(200)
+                    .statusCode(HttpStatus.SC_OK)
                     .contentType(JSON)
                     .extract().response();
 
             JsonObject responsePoint = new JsonObject(response.getBody().asString());
             responsePoint.mapTo(EndpointDTO.class);
             assertNotNull(responsePoint.getString("id"));
+
+            createdEndpoints.add(UUID.fromString(responsePoint.getString("id")));
         }
+
+        return createdEndpoints;
     }
 
     @Test
