@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.config;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -25,6 +26,7 @@ public class BackendConfig {
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
+    private static final String RBAC_PSKS = "notifications.rbac.psks";
     private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
@@ -66,6 +68,9 @@ public class BackendConfig {
 
     @ConfigProperty(name = ERRATA_MIGRATION_BATCH_SIZE, defaultValue = "1000")
     int errataMigrationBatchSize;
+
+    @ConfigProperty(name = RBAC_PSKS, defaultValue = "{\"notifications\": {\"secret\": \"development-psk-value\"}}")
+    protected String rbacPskSecrets;
 
     @Inject
     ToggleRegistry toggleRegistry;
@@ -136,5 +141,9 @@ public class BackendConfig {
         } else {
             return kesselRelationsEnabled;
         }
+    }
+
+    public JsonObject getRbacPskSecrets() {
+        return new JsonObject(this.rbacPskSecrets);
     }
 }

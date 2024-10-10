@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "count": 2,
+    "limit": 2,
+    "offset": 0
+  },
+  "links": {
+    "first": "/api/rbac/v2/workspaces/?limit=2&offset=0",
+    "next": "/api/rbac/v2/workspaces/?limit=2&offset=2",
+    "previous": "/api/rbac/v2/workspaces/?limit=2&offset=0",
+    "last": "/api/rbac/v2/workspaces/?limit=2&offset=2"
+  },
+  "data": [
+    {
+      "uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "parent_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "type": "default",
+      "name": "Workspace A",
+      "description": "Description of Workspace A",
+      "created": "2024-10-01T00:00:00.000Z",
+      "modified": "2024-10-01T00:00:00.000Z"
+    },
+    {
+      "uuid": "79d410d8-80ca-11ef-aba6-c3907103cb82",
+      "parent_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "type": "default",
+      "name": "Workspace B",
+      "description": "Description of Workspace B",
+      "created": "2024-10-01T00:00:00.000Z",
+      "modified": "2024-10-01T00:00:00.000Z"
+    }
+  ]
+}
