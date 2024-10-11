@@ -7,7 +7,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -39,11 +41,16 @@ public class EventTypeRepository {
         }
     }
 
-    public Optional<EventType> findById(UUID eventTypeId) {
-        try {
-            return Optional.of(entityManager.find(EventType.class, eventTypeId));
-        } catch (NoResultException e) {
-            return Optional.empty();
-        }
+    /**
+     * Finds the event types by the given event type identifiers.
+     * @param eventTypeIds the identifiers to find the event types with.
+     * @return a map containing the event type's {@link UUID} as the key, and
+     * the event type itself as the value, so that lookups by identifier are
+     * fast. */
+    public List<EventType> findByIds(final Set<UUID> eventTypeIds) {
+        return entityManager
+            .createQuery("FROM EventType WHERE id IN (:eventTypeIds)", EventType.class)
+            .setParameter("eventTypeIds", eventTypeIds)
+            .getResultList();
     }
 }

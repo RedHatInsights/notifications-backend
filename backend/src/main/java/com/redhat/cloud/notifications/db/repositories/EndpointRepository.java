@@ -372,17 +372,21 @@ public class EndpointRepository {
         }
     }
 
-    public Endpoint getEndpointWithLinkedEventTypes(String orgId, UUID id) {
-        String query = "SELECT e FROM Endpoint e LEFT JOIN FETCH e.eventTypes ep LEFT JOIN FETCH ep.application ap LEFT JOIN FETCH ap.bundle WHERE e.orgId = :orgId AND e.id = :id";
+    public Optional<Endpoint> getEndpointWithLinkedEventTypes(String orgId, UUID id) {
+        String query = "SELECT e FROM Endpoint e " +
+            "LEFT JOIN FETCH e.eventTypes ep " +
+            "LEFT JOIN FETCH ep.application ap " +
+            "LEFT JOIN FETCH ap.bundle " +
+            "WHERE e.orgId = :orgId AND e.id = :id";
         try {
             Endpoint endpoint = entityManager.createQuery(query, Endpoint.class)
                 .setParameter("id", id)
                 .setParameter("orgId", orgId)
                 .getSingleResult();
             loadProperties(endpoint);
-            return endpoint;
+            return Optional.of(endpoint);
         } catch (NoResultException e) {
-            return null;
+            return Optional.empty();
         }
     }
 }

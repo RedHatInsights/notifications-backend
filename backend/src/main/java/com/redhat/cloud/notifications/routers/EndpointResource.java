@@ -537,18 +537,14 @@ public class EndpointResource {
         return createdEndpoint;
     }
 
-    private Set<EventType> fetchEventTypes(Set<UUID> endpointsId) {
-        if (null != endpointsId && !endpointsId.isEmpty()) {
-            Set<EventType> linkedEventTypes = new HashSet<>();
-            for (UUID evtId : endpointsId) {
-                Optional<EventType> eventTypeFromDb = eventTypeRepository.findById(evtId);
-                if (eventTypeFromDb.isPresent()) {
-                    linkedEventTypes.add(eventTypeFromDb.get());
-                } else {
-                    throw new NotFoundException(String.format("Event type '%s' not found", evtId));
-                }
+    private Set<EventType> fetchEventTypes(Set<UUID> eventTypesIds) {
+        if (null != eventTypesIds && !eventTypesIds.isEmpty()) {
+            List<EventType> eventTypes = eventTypeRepository.findByIds(eventTypesIds);
+            if (eventTypes.size() != eventTypesIds.size()) {
+                eventTypesIds.removeAll(eventTypes.stream().map(EventType::getId).toList());
+                throw new NotFoundException(String.format("Event type '%s' not found", eventTypesIds.stream().findFirst().get()));
             }
-            return linkedEventTypes;
+            return eventTypes.stream().collect(Collectors.toSet());
         }
         return null;
     }
@@ -670,19 +666,19 @@ public class EndpointResource {
 
     protected EndpointDTO internalGetEndpoint(final SecurityContext securityContext, final UUID id, final boolean includeLinkedEventTypes) {
         String orgId = getOrgId(securityContext);
-        Endpoint endpoint = endpointRepository.getEndpointWithLinkedEventTypes(orgId, id);
-        if (endpoint == null) {
+        Optional<Endpoint> endpoint = endpointRepository.getEndpointWithLinkedEventTypes(orgId, id);
+        if (endpoint.isEmpty()) {
             throw new NotFoundException();
         } else {
             // Fetch the secrets from Sources.
-            this.secretUtils.loadSecretsForEndpoint(endpoint);
+            this.secretUtils.loadSecretsForEndpoint(endpoint.get());
 
             // Redact all the credentials from the endpoint's properties.
-            this.redactSecretsForEndpoint(securityContext, endpoint);
+            this.redactSecretsForEndpoint(securityContext, endpoint.get());
 
-            EndpointDTO endpointDTO = this.endpointMapper.toDTO(endpoint);
+            EndpointDTO endpointDTO = this.endpointMapper.toDTO(endpoint.get());
             if (includeLinkedEventTypes) {
-                includeLinkedEventTypes(endpoint.getEventTypes(), endpointDTO);
+                includeLinkedEventTypes(endpoint.get().getEventTypes(), endpointDTO);
             }
             return endpointDTO;
         }
