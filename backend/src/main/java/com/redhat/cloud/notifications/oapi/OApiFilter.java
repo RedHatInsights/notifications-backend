@@ -220,6 +220,11 @@ public class OApiFilter {
                         findDependencies(returnedSet, refToFetch, schemasAsMap);
                     });
                 }
+                if (null != propertyValue.get("additionalProperties") && null != ((HashMap) propertyValue.get("additionalProperties")).get("$ref")) {
+                    String refToFetch = removeSchemaPrefix(((HashMap) propertyValue.get("additionalProperties")).get("$ref").toString());
+                    returnedSet.add(refToFetch);
+                    findDependencies(returnedSet, refToFetch, schemasAsMap);
+                }
             });
         }
     }
