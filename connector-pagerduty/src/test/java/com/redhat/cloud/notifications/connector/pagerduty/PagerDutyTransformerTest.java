@@ -3,12 +3,15 @@ package com.redhat.cloud.notifications.connector.pagerduty;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Test;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.buildExpectedOutgoingPayload;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createIncomingPayload;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION;
@@ -75,6 +78,38 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     @Test
     void testSuccessfulPayloadTransform() {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
+
+        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
+        validatePayloadTransform(cloudEventData, expectedPayload);
+    }
+
+    /** This is a real test message generated from the {@code /endpoints/{uuid}/test} integrations endpoint, with the
+     * account and org id replaced. */
+    @Test
+    void testSuccessfulTestMessage() {
+        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
+
+        JsonObject cloudEventPayload = JsonObject.of(
+                "version", "2.0.0",
+                "id", "13bb45fe-28a9-416d-81a1-aeb9abb24d41",
+                "bundle", "console",
+                "application", "integrations",
+                "event_type", "integration-test",
+                "timestamp", "2024-10-10T14:20:22.485454606",
+                "account_id", DEFAULT_ACCOUNT_ID,
+                "org_id", DEFAULT_ORG_ID,
+                "context", JsonObject.of("integration-uuid", "e531af59-1c7f-4a6a-89e3-2a68954db8e9"),
+                "events", JsonArray.of(
+                        JsonObject.of(
+                                "metadata", JsonObject.of("meta-information", "Meta information about the action"),
+                                "payload", JsonObject.of("message", "A test alert, should be critical severity")
+                        )
+                )
+        );
+        cloudEventPayload.put("recipients", JsonArray.of());
+        cloudEventPayload.put("environment_url", "https://console.redhat.com");
+        cloudEventPayload.put("severity", "warning");
+        cloudEventData.put(PAYLOAD, cloudEventPayload);
 
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
         validatePayloadTransform(cloudEventData, expectedPayload);
