@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepositor
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -25,10 +26,15 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
+import com.redhat.cloud.notifications.models.dto.v1.ApplicationDTO;
+import com.redhat.cloud.notifications.models.dto.v1.BundleDTO;
+import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
+import com.redhat.cloud.notifications.models.mappers.v1.CommonMapper;
 import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
@@ -77,8 +83,10 @@ import org.jboss.resteasy.reactive.RestPath;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -111,6 +119,9 @@ public class EndpointResource {
 
     @Inject
     EndpointMapper endpointMapper;
+
+    @Inject
+    CommonMapper commonMapper;
 
     @Inject
     @RestClient
@@ -253,6 +264,59 @@ public class EndpointResource {
                 new Meta(notificationHistoryCount)
             );
         }
+
+        @GET
+        @Path("/{id}")
+        @Produces(APPLICATION_JSON)
+        @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
+        public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+            if (this.backendConfig.isKesselRelationsEnabled()) {
+                this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString());
+
+                return internalGetEndpoint(sec, id, true);
+            } else {
+                return legacyGetEndpoint(sec, id, true);
+            }
+        }
+
+        @GET
+        @Produces(APPLICATION_JSON)
+        @Operation(summary = "List endpoints", description = "Provides a list of endpoints. Use this endpoint to find specific endpoints.")
+        @Parameters({
+            @Parameter(
+                    name = "limit",
+                    in = ParameterIn.QUERY,
+                    description = "Number of items per page. If the value is 0, it will return all elements",
+                    schema = @Schema(type = SchemaType.INTEGER)
+                ),
+            @Parameter(
+                    name = "pageNumber",
+                    in = ParameterIn.QUERY,
+                    description = "Page number. Starts at first page (0), if not specified starts at first page.",
+                    schema = @Schema(type = SchemaType.INTEGER)
+                )
+            })
+        public EndpointPage getEndpoints(
+            @Context                SecurityContext sec,
+            @BeanParam @Valid       Query query,
+            @QueryParam("type")     List<String> targetType,
+            @QueryParam("active")   Boolean activeOnly,
+            @QueryParam("name")     String name
+        ) {
+            if (this.backendConfig.isKesselRelationsEnabled()) {
+                // Fetch the set of integration IDs the user is authorized to view.
+                final Set<UUID> authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+                if (authorizedIds.isEmpty()) {
+                    Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
+
+                    return new EndpointPage(new ArrayList<>(), new HashMap<>(), new Meta(0L));
+                }
+
+                return internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, true);
+            }
+
+            return getEndpointsLegacyRBACRoles(sec, query, targetType, activeOnly, name, true);
+        }
     }
 
     @GET
@@ -288,10 +352,10 @@ public class EndpointResource {
                 return new EndpointPage(new ArrayList<>(), new HashMap<>(), new Meta(0L));
             }
 
-            return this.internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds);
+            return this.internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, false);
         }
 
-        return this.getEndpointsLegacyRBACRoles(sec, query, targetType, activeOnly, name);
+        return this.getEndpointsLegacyRBACRoles(sec, query, targetType, activeOnly, name, false);
     }
 
     /**
@@ -305,8 +369,8 @@ public class EndpointResource {
      * @return a page containing the requested endpoints.
      */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    protected EndpointPage getEndpointsLegacyRBACRoles(final SecurityContext securityContext, final Query query, final List<String> targetType, final Boolean activeOnly, final String name) {
-        return this.internalGetEndpoints(securityContext, query, targetType, activeOnly, name, null);
+    protected EndpointPage getEndpointsLegacyRBACRoles(final SecurityContext securityContext, final Query query, final List<String> targetType, final Boolean activeOnly, final String name, final boolean includeLinkedEventTypes) {
+        return this.internalGetEndpoints(securityContext, query, targetType, activeOnly, name, null, includeLinkedEventTypes);
     }
 
     /**
@@ -320,13 +384,14 @@ public class EndpointResource {
      *                      to fetch.
      * @return a page containing the requested endpoints.
      */
-    private EndpointPage internalGetEndpoints(
+    protected EndpointPage internalGetEndpoints(
         final SecurityContext sec,
         final Query query,
         final List<String> targetType,
         final Boolean activeOnly,
         final String name,
-        final Set<UUID> authorizedIds
+        final Set<UUID> authorizedIds,
+        final boolean includeLinkedEventTypes
     ) {
         String orgId = getOrgId(sec);
 
@@ -359,9 +424,11 @@ public class EndpointResource {
             // permission.
             this.redactSecretsForEndpoint(sec, endpoint);
 
-            endpointDTOS.add(
-                this.endpointMapper.toDTO(endpoint)
-            );
+            EndpointDTO endpointDTO = endpointMapper.toDTO(endpoint);
+            if (includeLinkedEventTypes) {
+                includeLinkedEventTypes(endpoint.getEventTypes(), endpointDTO);
+            }
+            endpointDTOS.add(endpointDTO);
         }
 
         return new EndpointPage(endpointDTOS, new HashMap<>(), new Meta(count));
@@ -398,7 +465,7 @@ public class EndpointResource {
 
         try {
             return this.endpointMapper.toDTO(
-                this.internalCreateEndpoint(securityContext, endpoint)
+                this.internalCreateEndpoint(securityContext, endpoint, endpointDTO.eventTypes)
             );
         } catch (final Exception e) {
             // Clean up the secrets from Sources if any were created.
@@ -415,15 +482,17 @@ public class EndpointResource {
      * raised upon saving the endpoint, we can call Sources again to clean up
      * the secrets, as otherwise we would be leaving dangling secrets in
      * Sources.
-     * @param sec the security context of the request.
-     * @param endpoint the endpoint to be created.
+     *
+     * @param sec        the security context of the request.
+     * @param endpoint   the endpoint to be created.
+     * @param eventTypes
      * @return the created endpoint in the database.
      */
     @Transactional
     protected Endpoint internalCreateEndpoint(
             @Context                                        SecurityContext sec,
-            @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint
-    )  {
+            @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint,
+            Set<UUID> eventTypes)  {
         if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
@@ -450,6 +519,8 @@ public class EndpointResource {
 
         endpoint.setStatus(EndpointStatus.READY);
 
+        endpoint.setEventTypes(fetchEventTypes(eventTypes));
+
         this.secretUtils.createSecretsForEndpoint(endpoint);
 
         final Endpoint createdEndpoint = this.endpointRepository.createEndpoint(endpoint);
@@ -462,6 +533,18 @@ public class EndpointResource {
         }
 
         return createdEndpoint;
+    }
+
+    private Set<EventType> fetchEventTypes(Set<UUID> eventTypesIds) {
+        if (null != eventTypesIds && !eventTypesIds.isEmpty()) {
+            List<EventType> eventTypes = eventTypeRepository.findByIds(eventTypesIds);
+            if (eventTypes.size() != eventTypesIds.size()) {
+                eventTypesIds.removeAll(eventTypes.stream().map(EventType::getId).toList());
+                throw new NotFoundException(String.format("Event type '%s' not found", eventTypesIds.stream().findFirst().get()));
+            }
+            return eventTypes.stream().collect(Collectors.toSet());
+        }
+        return null;
     }
 
     private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {
@@ -568,30 +651,34 @@ public class EndpointResource {
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString());
 
-            return this.internalGetEndpoint(sec, id);
+            return this.internalGetEndpoint(sec, id, false);
         } else {
-            return this.legacyGetEndpoint(sec, id);
+            return this.legacyGetEndpoint(sec, id, false);
         }
     }
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    protected EndpointDTO legacyGetEndpoint(final SecurityContext securityContext, final UUID id) {
-        return this.internalGetEndpoint(securityContext, id);
+    protected EndpointDTO legacyGetEndpoint(final SecurityContext securityContext, final UUID id, final boolean includeLinkedEventTypes) {
+        return this.internalGetEndpoint(securityContext, id, includeLinkedEventTypes);
     }
 
-    private EndpointDTO internalGetEndpoint(final SecurityContext securityContext, final UUID id) {
+    protected EndpointDTO internalGetEndpoint(final SecurityContext securityContext, final UUID id, final boolean includeLinkedEventTypes) {
         String orgId = getOrgId(securityContext);
-        Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
-        if (endpoint == null) {
+        Optional<Endpoint> endpoint = endpointRepository.getEndpointWithLinkedEventTypes(orgId, id);
+        if (endpoint.isEmpty()) {
             throw new NotFoundException();
         } else {
             // Fetch the secrets from Sources.
-            this.secretUtils.loadSecretsForEndpoint(endpoint);
+            this.secretUtils.loadSecretsForEndpoint(endpoint.get());
 
             // Redact all the credentials from the endpoint's properties.
-            this.redactSecretsForEndpoint(securityContext, endpoint);
+            this.redactSecretsForEndpoint(securityContext, endpoint.get());
 
-            return this.endpointMapper.toDTO(endpoint);
+            EndpointDTO endpointDTO = this.endpointMapper.toDTO(endpoint.get());
+            if (includeLinkedEventTypes) {
+                includeLinkedEventTypes(endpoint.get().getEventTypes(), endpointDTO);
+            }
+            return endpointDTO;
         }
     }
 
@@ -1081,9 +1168,39 @@ public class EndpointResource {
                     orgId,
                     behaviorGroup,
                     List.of(endpointId),
-                    eventTypeIds
+                    eventTypesGroupedByBundle.get(bundleId)
                 );
             }
+        }
+    }
+
+    private void includeLinkedEventTypes(Set<EventType> eventTypes, EndpointDTO endpointDTO) {
+        if (null != eventTypes && !eventTypes.isEmpty()) {
+            Map<Application, List<EventType>> applicationMap = eventTypes.stream()
+                .sorted(Comparator.comparing(EventType::getDisplayName))
+                .collect(Collectors.groupingBy(EventType::getApplication));
+            Map<Bundle, List<Application>> bundleMap = applicationMap.keySet().stream()
+                .sorted(Comparator.comparing(Application::getDisplayName))
+                .collect(Collectors.groupingBy(Application::getBundle));
+
+            List<Bundle> bundleList = bundleMap.keySet().stream().sorted(Comparator.comparing(Bundle::getDisplayName)).toList();
+
+            Set<BundleDTO> bundleDTOSet = new LinkedHashSet<>();
+            for (Bundle bundle : bundleList) {
+                Set<ApplicationDTO> applicationDTOSet = new LinkedHashSet<>();
+                List<Application> applications = bundleMap.get(bundle);
+                for (Application application : applications) {
+                    ApplicationDTO applicationDTO = commonMapper.applicationToApplicationDTO(application);
+                    Set<EventTypeDTO> eventTypesDTO = new LinkedHashSet<>();
+                    eventTypesDTO.addAll(commonMapper.eventTypeListToEventTypeDTOList(applicationMap.get(application)));
+                    applicationDTO.setEventTypes(eventTypesDTO);
+                    applicationDTOSet.add(applicationDTO);
+                }
+                BundleDTO bundleDTO = commonMapper.bundleToBundleDTO(bundle);
+                bundleDTO.setApplications(applicationDTOSet);
+                bundleDTOSet.add(bundleDTO);
+            }
+            endpointDTO.setEventTypesGroupByBundlesAndApplications(bundleDTOSet);
         }
     }
 }
