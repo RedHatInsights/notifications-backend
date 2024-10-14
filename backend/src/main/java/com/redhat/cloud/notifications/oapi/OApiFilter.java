@@ -198,34 +198,32 @@ public class OApiFilter {
                 }
                 if (null != propertyValue.get("items") && null != propertyValue.get("items")) {
                     Object refToFetchObj = ((HashMap) propertyValue.get("items")).get("$ref");
-                    if (null != refToFetchObj) {
-                        String refToFetch = removeSchemaPrefix(refToFetchObj.toString());
-                        if (!returnedSet.contains(refToFetch)) {
-                            returnedSet.add(refToFetch);
-                            findDependencies(returnedSet, refToFetch, schemasAsMap);
-                        }
-                    }
+                    saveFoundDependency(returnedSet, schemasAsMap, refToFetchObj);
                 }
                 if (null != propertyValue.get("allOf")) {
                     ((List) propertyValue.get("allOf")).stream().forEach(entryMap -> {
-                        String refToFetch = removeSchemaPrefix(((HashMap) entryMap).get("$ref").toString());
-                        returnedSet.add(refToFetch);
-                        findDependencies(returnedSet, refToFetch, schemasAsMap);
+                        saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) entryMap).get("$ref"));
                     });
                 }
                 if (null != propertyValue.get("oneOf")) {
                     ((List) propertyValue.get("oneOf")).stream().forEach(entryMap -> {
-                        String refToFetch = removeSchemaPrefix(((HashMap) entryMap).get("$ref").toString());
-                        returnedSet.add(refToFetch);
-                        findDependencies(returnedSet, refToFetch, schemasAsMap);
+                        saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) entryMap).get("$ref"));
                     });
                 }
                 if (null != propertyValue.get("additionalProperties") && null != ((HashMap) propertyValue.get("additionalProperties")).get("$ref")) {
-                    String refToFetch = removeSchemaPrefix(((HashMap) propertyValue.get("additionalProperties")).get("$ref").toString());
-                    returnedSet.add(refToFetch);
-                    findDependencies(returnedSet, refToFetch, schemasAsMap);
+                    saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) propertyValue.get("additionalProperties")).get("$ref"));
                 }
             });
+        }
+    }
+
+    private void saveFoundDependency(Set<String> returnedSet, Map<String, Object> schemasAsMap, Object refToFetchObj) {
+        if (null != refToFetchObj) {
+            String refToFetch = removeSchemaPrefix(refToFetchObj.toString());
+            if (!returnedSet.contains(refToFetch)) {
+                returnedSet.add(refToFetch);
+                findDependencies(returnedSet, refToFetch, schemasAsMap);
+            }
         }
     }
 
