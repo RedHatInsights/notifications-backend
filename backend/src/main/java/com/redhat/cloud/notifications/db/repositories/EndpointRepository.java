@@ -389,4 +389,19 @@ public class EndpointRepository {
             return Optional.empty();
         }
     }
+
+    /**
+     * Retrieves a list of endpoints.
+     * @param limit the size of the list to retrieve.
+     * @param offset the offset we should apply to skip the already read
+     *               endpoints.
+     * @return a list of endpoints.
+     */
+    public List<Endpoint> getEndpointsWithLimitAndOffset(final int limit, final int offset) {
+        return this.entityManager
+            .createQuery("FROM Endpoint", Endpoint.class)
+            .setFirstResult(offset)
+            .setMaxResults(limit)
+            .getResultList();
+    }
 }

@@ -28,6 +28,7 @@ public class BackendConfig {
     private static final String KESSEL_INVENTORY_CLIENT_ID = "inventory-api.authn.client.id";
     private static final String KESSEL_INVENTORY_URL = "inventory-api.target-url";
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
+    private static final String KESSEL_MIGRATION_BATCH_SIZE = "notifications.kessel.migration.batch.size";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
     private static final String KESSEL_RELATIONS_URL = "relations-api.target-url";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
@@ -73,6 +74,9 @@ public class BackendConfig {
 
     @ConfigProperty(name = KESSEL_INVENTORY_ENABLED, defaultValue = "false")
     boolean kesselInventoryEnabled;
+
+    @ConfigProperty(name = KESSEL_MIGRATION_BATCH_SIZE, defaultValue = "1000")
+    int kesselMigrationBatchSize;
 
     @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "false")
     boolean kesselRelationsEnabled;
@@ -175,6 +179,10 @@ public class BackendConfig {
      */
     public String getKesselInventoryReporterInstanceId() {
         return "service-account-" + kesselInventoryClientId;
+    }
+
+    public int getKesselMigrationBatchSize() {
+        return this.kesselMigrationBatchSize;
     }
 
     public boolean isKesselRelationsEnabled(String orgId) {
