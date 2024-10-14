@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -296,7 +297,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, endpoints.size());
 
         // Fetch single endpoint also and verify
-        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
+        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
         assertEquals(READY.toString(), responsePoint.getString("status"));
@@ -313,7 +314,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                         .extract().body().asString();
         assertEquals(0, body.length());
 
-        responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
+        responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertFalse(responsePointSingle.getBoolean("enabled"));
 
@@ -326,7 +327,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK);
 
-        responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
+        responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
         assertEquals(0, responsePointSingle.getInteger("server_errors"));
@@ -546,8 +547,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
-    private JsonObject fetchSingle(String id, String identityUsername, Header identityHeader) {
-        this.kesselTestHelper.mockKesselPermission(identityUsername, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id);
+    private JsonObject fetchSingle(String id, Header identityHeader) {
+        // Decode the header and grab the username to mock the Kessel
+        // permission.
+        final ConsoleIdentity identity = TestHelpers.decodeRhIdentityHeader(identityHeader.getValue());
+        this.kesselTestHelper.mockKesselPermission(identity.getName(), IntegrationPermission.VIEW, ResourceType.INTEGRATION, id);
 
         Response response = given()
                 // Set header to x-rh-identity
@@ -694,7 +698,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertNotNull(id);
 
         try {
-            JsonObject endpoint = fetchSingle(id, DEFAULT_USER, identityHeader);
+            JsonObject endpoint = fetchSingle(id, identityHeader);
             JsonObject properties = responsePoint.getJsonObject("properties");
             assertNotNull(properties);
             assertTrue(endpoint.getBoolean("enabled"));
@@ -988,6 +992,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final ConsoleIdentity ide = TestHelpers.decodeRhIdentityHeader(identityHeaderValue);
+
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
@@ -1025,7 +1031,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(READY.toString(), responsePoint.getString("status"));
 
         try {
-            JsonObject endpoint = fetchSingle(id, DEFAULT_USER, identityHeader);
+            JsonObject endpoint = fetchSingle(id, identityHeader);
             JsonObject properties = responsePoint.getJsonObject("properties");
             assertNotNull(properties);
             assertTrue(endpoint.getBoolean("enabled"));
@@ -1154,7 +1160,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, endpoints.size());
 
         // Fetch single endpoint also and verify
-        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
+        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
 
@@ -1201,7 +1207,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(updatedSecretTokenSecret);
 
         // Fetch single one again to see that the updates were done
-        JsonObject updatedEndpoint = fetchSingle(responsePointSingle.getString("id"), DEFAULT_USER, identityHeader);
+        JsonObject updatedEndpoint = fetchSingle(responsePointSingle.getString("id"), identityHeader);
         JsonObject attrSingleUpdated = updatedEndpoint.getJsonObject("properties");
         attrSingleUpdated.mapTo(WebhookProperties.class);
         assertEquals("endpoint found", updatedEndpoint.getString("name"));
@@ -1582,7 +1588,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // redacted.
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, responsePoint.getString("id"));
 
-        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
+        JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
 
         assertNotNull(responsePoint.getJsonObject("properties"));
         assertTrue(responsePointSingle.getBoolean("enabled"));
@@ -3133,7 +3139,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
 
         // GET the endpoint and check the properties.url field value.
-        jsonEndpoint = fetchSingle(jsonEndpoint.getString("id"), DEFAULT_USER, identityHeader);
+        jsonEndpoint = fetchSingle(jsonEndpoint.getString("id"), identityHeader);
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
 
         // PUT the endpoint (update).
@@ -3151,7 +3157,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .statusCode(HttpStatus.SC_OK);
 
         // GET the endpoint and check the properties.url field value.
-        jsonEndpoint = fetchSingle(jsonEndpoint.getString("id"), DEFAULT_USER, identityHeader);
+        jsonEndpoint = fetchSingle(jsonEndpoint.getString("id"), identityHeader);
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
 
         // DELETE the endpoint.
@@ -3229,7 +3235,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         try {
             // Fetch single endpoint also and verify
-            JsonObject endpoint = fetchSingle(responsePoint.getString("id"), DEFAULT_USER, identityHeader);
+            JsonObject endpoint = fetchSingle(responsePoint.getString("id"), identityHeader);
             assertTrue(endpoint.getBoolean("enabled"));
 
             JsonObject properties = responsePoint.getJsonObject("properties");

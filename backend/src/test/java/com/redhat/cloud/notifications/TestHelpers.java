@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 import com.redhat.cloud.notifications.db.Query;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
@@ -128,5 +129,25 @@ public class TestHelpers {
         final JsonObject arrayElement = constraintViolations.getJsonObject(0);
 
         return arrayElement.getString("message");
+    }
+
+    /**
+     * Decodes the Base64 encoded x-rh-identity header back into a complex
+     * object.
+     * @param header the header to decode the identity from.
+     * @return a complex {@link ConsoleIdentity} object.
+     */
+    public static ConsoleIdentity decodeRhIdentityHeader(final String header) {
+        final JsonObject xRhIdentity = new JsonObject(Base64Utils.decode(header));
+
+        // In order to be able to map the identity object we mock in the
+        // "encodeRHIdentityInfo" method of this class, we need to get the
+        // inner object, as otherwise Jackson cannot deserialize the identity
+        // object.
+        //
+        // Check "ConsoleIdentityProvider#getRhIdentityFromString" to
+        // understand how we do it for incoming "x-rh-identity" headers to the
+        // application, and understand why we are doing it here.
+        return xRhIdentity.getJsonObject("identity").mapTo(ConsoleIdentity.class);
     }
 }
