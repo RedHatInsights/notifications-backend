@@ -68,7 +68,7 @@ public class OApiFilter {
 
     private JsonObject filterJson(JsonObject oapiModelJson, String openApiOption, String version) {
 
-        JsonObject root = new JsonObject();
+        final JsonObject root = new JsonObject();
         JsonObject components = new JsonObject();
         Set<String> objectSchemasToKeep = new HashSet<>();
         oapiModelJson.stream().forEach(entry -> {
@@ -137,6 +137,8 @@ public class OApiFilter {
         JsonObject schemaAsComponents = filterUsedSchemasOnly(components, objectSchemasToKeep);
         root.put("components", schemaAsComponents);
 
+        JsonObject rootWithoutDTO = removeSchemaDTOextWhenPossible(root);
+
         JsonObject info = new JsonObject()
                 .put("version", version == null ? "v1.0" : version)
                 .put("title", capitalize(openApiOption));
@@ -157,11 +159,26 @@ public class OApiFilter {
 
         // Add info section
         info.put("description", infoDescription);
-        root.put("info", info);
+        rootWithoutDTO.put("info", info);
 
-        root.put("servers", serversArray);
+        rootWithoutDTO.put("servers", serversArray);
 
-        return root;
+        return rootWithoutDTO;
+    }
+
+    private JsonObject removeSchemaDTOextWhenPossible(JsonObject root) {
+        if (root.getJsonObject("components") == null || root.getJsonObject("components").getJsonObject("schemas") == null) {
+            return root;
+        }
+
+        String rootStr = root.toString();
+        List<String> schemasNames = root.getJsonObject("components").getJsonObject("schemas").stream().map(entry -> entry.getKey()).toList();
+        for (String schemaName : schemasNames) {
+            if (schemaName.endsWith("DTO") && !schemasNames.contains(schemaName.replace("DTO", ""))) {
+                rootStr = rootStr.replaceAll(schemaName, schemaName.replace("DTO", ""));
+            }
+        }
+        return new JsonObject(rootStr);
     }
 
     private JsonObject filterUsedSchemasOnly(JsonObject components, Set<String> objectSchemasToKeep) {
