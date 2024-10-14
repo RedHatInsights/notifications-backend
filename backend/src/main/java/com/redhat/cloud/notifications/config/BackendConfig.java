@@ -25,6 +25,7 @@ public class BackendConfig {
     private static final String ERRATA_MIGRATION_BATCH_SIZE = "notifications.errata.migration.batch.size";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
+    private static final String KESSEL_MIGRATION_BATCH_SIZE = "notifications.kessel.migration.batch.size";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
     private static final String UNLEASH = "notifications.unleash.enabled";
@@ -63,6 +64,9 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_INVENTORY_ENABLED, defaultValue = "false")
     boolean kesselInventoryEnabled;
 
+    @ConfigProperty(name = KESSEL_MIGRATION_BATCH_SIZE, defaultValue = "1000")
+    int kesselMigrationBatchSize;
+
     @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "false")
     boolean kesselRelationsEnabled;
 
@@ -93,6 +97,7 @@ public class BackendConfig {
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
         config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled());
+        config.put(KESSEL_MIGRATION_BATCH_SIZE, getKesselMigrationBatchSize());
         config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(UNLEASH, unleashEnabled);
@@ -133,6 +138,10 @@ public class BackendConfig {
         } else {
             return kesselInventoryEnabled;
         }
+    }
+
+    public int getKesselMigrationBatchSize() {
+        return this.kesselMigrationBatchSize;
     }
 
     public boolean isKesselRelationsEnabled() {
