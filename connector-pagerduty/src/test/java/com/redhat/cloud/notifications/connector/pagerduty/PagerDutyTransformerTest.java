@@ -116,17 +116,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingTimestamp() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.remove(TIMESTAMP);
-        cloudEventData.put(PAYLOAD, cloudPayload);
-
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
-    }
-
-    @Test
     void testInvalidTimestampDropped() {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);

@@ -58,16 +58,12 @@ public class PagerDutyTransformer implements Processor {
         messagePayload.put(SUMMARY, cloudEventPayload.getString(EVENT_TYPE));
 
         String timestamp = cloudEventPayload.getString(TIMESTAMP);
-        if (timestamp != null) {
-            try {
-                messagePayload.put(TIMESTAMP, LocalDateTime.parse(timestamp).format(PD_DATE_TIME_FORMATTER));
-            } catch (DateTimeParseException e) {
-                Log.warnf(e, "Unable to parse timestamp %s, dropped from payload", timestamp);
-            } catch (DateTimeException e) {
-                Log.warnf(e, "Timestamp %s was successfully parsed, but could not be reformatted for PagerDuty, dropped from payload", timestamp);
-            }
-        } else {
-            Log.warn("Timestamp not provided for payload, ignored");
+        try {
+            messagePayload.put(TIMESTAMP, LocalDateTime.parse(timestamp).format(PD_DATE_TIME_FORMATTER));
+        } catch (DateTimeParseException e) {
+            Log.warnf(e, "Unable to parse timestamp %s, dropped from payload", timestamp);
+        } catch (DateTimeException e) {
+            Log.warnf(e, "Timestamp %s was successfully parsed, but could not be reformatted for PagerDuty, dropped from payload", timestamp);
         }
 
         messagePayload.put(SEVERITY, PagerDutySeverity.fromJson(cloudEventPayload.getString(SEVERITY)));
@@ -82,7 +78,7 @@ public class PagerDutyTransformer implements Processor {
         // Add source names, if provided
         JsonObject cloudSource = getSourceNames(cloudEventPayload.getJsonObject(SOURCE));
         if (cloudSource != null) {
-            customDetails.put(SOURCE, cloudSource);
+            customDetails.put(SOURCE_NAMES, cloudSource);
         }
 
         // Keep events, if provided

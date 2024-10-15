@@ -28,6 +28,7 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PD_DATE_TIME_FORMATTER;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SEVERITY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE_NAMES;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SUMMARY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.TIMESTAMP;
 
@@ -114,7 +115,7 @@ public class PagerDutyTestUtils {
         );
         JsonObject newInnerSourceNames = getSourceNames(oldInnerPayload.getJsonObject(SOURCE));
         if (newInnerSourceNames != null) {
-            customDetails.put(SOURCE, newInnerSourceNames);
+            customDetails.put(SOURCE_NAMES, newInnerSourceNames);
         }
 
         if (oldInnerPayload.containsKey(EVENTS)) {
