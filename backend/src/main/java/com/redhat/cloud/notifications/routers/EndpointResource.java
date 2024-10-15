@@ -56,6 +56,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -183,6 +184,10 @@ public class EndpointResource {
                 )
         })
         public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
+            if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
+                throw new NotFoundException("Endpoint not found");
+            }
+
             if (this.backendConfig.isKesselRelationsEnabled()) {
                 this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, id.toString());
 
@@ -237,6 +242,10 @@ public class EndpointResource {
                 @QueryParam("includeDetail") Boolean includeDetail,
                 @BeanParam Query query
         ) {
+            if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
+                throw new NotFoundException("Endpoint not found");
+            }
+
             if (this.backendConfig.isKesselRelationsEnabled()) {
                 this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, id.toString());
 
@@ -271,9 +280,14 @@ public class EndpointResource {
         @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
         public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
             if (this.backendConfig.isKesselRelationsEnabled()) {
+                // First get the endpoint so that a "not found" is returned in case
+                // it doesn't exist in our database, as Kessel returns "non
+                // authorized" for the integrations that do not exist in their end.
+                final EndpointDTO endpoint = this.internalGetEndpoint(sec, id, false);
+
                 this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString());
 
-                return internalGetEndpoint(sec, id, true);
+                return endpoint;
             } else {
                 return legacyGetEndpoint(sec, id, true);
             }
@@ -649,9 +663,14 @@ public class EndpointResource {
     @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
     public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         if (this.backendConfig.isKesselRelationsEnabled()) {
+            // First get the endpoint so that a "not found" is returned in case
+            // it doesn't exist in our database, as Kessel returns "non
+            // authorized" for the integrations that do not exist in their end.
+            final EndpointDTO endpoint = this.internalGetEndpoint(sec, id, false);
+
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString());
 
-            return this.internalGetEndpoint(sec, id, false);
+            return endpoint;
         } else {
             return this.legacyGetEndpoint(sec, id, false);
         }
@@ -688,6 +707,10 @@ public class EndpointResource {
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id.toString());
 
@@ -735,6 +758,10 @@ public class EndpointResource {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, id.toString());
 
@@ -766,6 +793,10 @@ public class EndpointResource {
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, id.toString());
 
@@ -802,6 +833,10 @@ public class EndpointResource {
         @PathParam("id")                                UUID id,
         @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
     ) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(securityContext))) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, id.toString());
 
@@ -847,9 +882,6 @@ public class EndpointResource {
         endpoint.setId(id);
 
         final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
-        if (dbEndpoint == null) {
-            throw new NotFoundException("Endpoint not found");
-        }
         EndpointType endpointType = dbEndpoint.getType();
 
         // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
@@ -890,6 +922,10 @@ public class EndpointResource {
     @Operation(summary = "Retrieve event notification details", description = "Retrieves extended information about the outcome of an event notification related to the specified endpoint. Use this endpoint to learn why an event delivery failed.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(endpointId, getOrgId(sec))) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, endpointId.toString());
 
@@ -937,6 +973,10 @@ public class EndpointResource {
             )
     })
     public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @RequestBody final EndpointTestRequest requestBody) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(uuid, getOrgId(sec))) {
+            throw new NotFoundException("integration not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.TEST, ResourceType.INTEGRATION, uuid.toString());
 
@@ -952,15 +992,9 @@ public class EndpointResource {
     }
 
     protected void internalTestEndpoint(final SecurityContext securityContext, final UUID uuid, @Valid final EndpointTestRequest requestBody) {
-        final String orgId = SecurityContextUtil.getOrgId(securityContext);
-
-        if (!this.endpointRepository.existsByUuidAndOrgId(uuid, orgId)) {
-            throw new NotFoundException("integration not found");
-        }
-
         final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest();
         internalEndpointTestRequest.endpointUuid = uuid;
-        internalEndpointTestRequest.orgId = orgId;
+        internalEndpointTestRequest.orgId = getOrgId(securityContext);
         if (requestBody != null) {
             internalEndpointTestRequest.message = requestBody.message;
         }
@@ -988,8 +1022,25 @@ public class EndpointResource {
      */
     @Deprecated(forRemoval = true)
     protected void redactSecretsForEndpoint(final SecurityContext securityContext, final Endpoint endpoint) {
-        // Only redact the secrets for those users who have read only permissions.
-        if (!securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS)) {
+        // Figure out if the principal has "write" permissions on the
+        // integration or not, to decide whether we should redact the secrets
+        // from the returning payload.
+        //
+        // Users with just read permissions will get the secrets redacted for
+        // them.
+        boolean shouldRedactSecrets;
+        if (this.backendConfig.isKesselRelationsEnabled()) {
+            try {
+                this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpoint.getId().toString());
+                shouldRedactSecrets = false;
+            } catch (final ForbiddenException e) {
+                shouldRedactSecrets = true;
+            }
+        } else {
+            shouldRedactSecrets = !securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
+        }
+
+        if (shouldRedactSecrets) {
             if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
                 final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
                 if (basicAuthentication != null) {
@@ -1020,6 +1071,10 @@ public class EndpointResource {
     })
     @Transactional
     public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(endpointId, getOrgId(securityContext))) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
             internalDeleteEventTypeFromEndpoint(securityContext, eventTypeId, endpointId);
@@ -1060,6 +1115,10 @@ public class EndpointResource {
     })
     @Transactional
     public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(endpointId, getOrgId(securityContext))) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
 
@@ -1094,6 +1153,10 @@ public class EndpointResource {
     })
     @Transactional
     public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(endpointId, getOrgId(securityContext))) {
+            throw new NotFoundException("Endpoint not found");
+        }
+
         if (this.backendConfig.isKesselRelationsEnabled()) {
             kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
 

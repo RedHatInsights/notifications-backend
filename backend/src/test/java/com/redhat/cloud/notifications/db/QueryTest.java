@@ -2,6 +2,8 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.http.Header;
@@ -11,14 +13,20 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -30,6 +38,8 @@ public class QueryTest {
 
     @Inject
     Validator validator;
+    @InjectMock
+    EndpointRepository endpointRepository;
 
     @Test
     public void testEmptySort() {
@@ -234,7 +244,7 @@ public class QueryTest {
         final long minQueryOffsetValue = this.getMinValueFromAnnotation("offset");
 
         // Set up the RBAC access for the test.
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("endpoint-invalid-urls", "endpoint-invalid-urls", "user");
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -260,10 +270,14 @@ public class QueryTest {
             "offset", offsetValuesErrorMessages
         );
 
+        // Create an endpoint that will used in one of the URLs below.
+        final UUID endpointId = UUID.randomUUID();
+        Mockito.when(this.endpointRepository.existsByUuidAndOrgId(endpointId, DEFAULT_ORG_ID)).thenReturn(true);
+
         // Declare the URLs that will be tested.
         final List<String> urls = new ArrayList<>();
         urls.add("/api/integrations/v1.0/endpoints");
-        urls.add("/api/integrations/v1.0/endpoints/467431eb-5fd5-49f8-a47a-b35165f9cc3f/history");
+        urls.add(String.format("/api/integrations/v1.0/endpoints/%s/history", endpointId));
         urls.add("/api/notifications/v1.0/notifications/events");
         urls.add("/api/notifications/v1.0/notifications/eventTypes");
         urls.add("/api/notifications/v1.0/notifications/eventTypes/467431eb-5fd5-49f8-a47a-b35165f9cc3f/behaviorGroups");
@@ -281,7 +295,7 @@ public class QueryTest {
                         .queryParam(queryParamGroup.getKey(), queryParam.getKey())
                         .get(url)
                         .then()
-                        .statusCode(400)
+                        .statusCode(HttpStatus.SC_BAD_REQUEST)
                         .extract()
                         .asString();
 
