@@ -17,9 +17,10 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.models.dto.v1.NotificationHistoryDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
-import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
@@ -813,7 +814,7 @@ public class LifecycleITest extends DbIsolatedTest {
     private void checkEndpointHistoryDetails(Header identityHeader, String endpointId, boolean expectedInvocationResult, int expectedHttpStatus, JsonArray jsonEndpointHistory) {
         for (int i = 0; i < jsonEndpointHistory.size(); i++) {
             JsonObject jsonNotificationHistory = jsonEndpointHistory.getJsonObject(i);
-            jsonNotificationHistory.mapTo(NotificationHistory.class);
+            jsonNotificationHistory.mapTo(NotificationHistoryDTO.class);
             assertEquals(expectedInvocationResult, jsonNotificationHistory.getBoolean("invocationResult"));
 
             if (!expectedInvocationResult) {

@@ -32,10 +32,11 @@ import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.dto.v1.ApplicationDTO;
 import com.redhat.cloud.notifications.models.dto.v1.BundleDTO;
+import com.redhat.cloud.notifications.models.dto.v1.CommonMapper;
 import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
+import com.redhat.cloud.notifications.models.dto.v1.NotificationHistoryDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
-import com.redhat.cloud.notifications.models.mappers.v1.CommonMapper;
-import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
@@ -183,7 +184,7 @@ public class EndpointResource {
                 schema = @Schema(type = SchemaType.BOOLEAN)
                 )
         })
-        public List<NotificationHistory> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
+        public List<NotificationHistoryDTO> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
             if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
                 throw new NotFoundException("Endpoint not found");
             }
@@ -198,15 +199,15 @@ public class EndpointResource {
         }
 
         @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-        protected List<NotificationHistory> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, final Query query) {
+        protected List<NotificationHistoryDTO> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, final Query query) {
             return this.internalGetEndpointHistory(securityContext, id, includeDetail, query);
         }
 
-        protected List<NotificationHistory> internalGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, @Valid final Query query) {
+        protected List<NotificationHistoryDTO> internalGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, @Valid final Query query) {
             // TODO We need globally limitations (Paging support and limits etc)
             String orgId = getOrgId(securityContext);
             boolean doDetail = includeDetail != null && includeDetail;
-            return notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
+            return commonMapper.notificationHistoryListToNotificationHistoryDTOList(notificationRepository.getNotificationHistory(orgId, id, doDetail, query));
         }
     }
 
@@ -235,7 +236,7 @@ public class EndpointResource {
                 schema = @Schema(type = SchemaType.BOOLEAN)
                 )
         })
-        public Page<NotificationHistory> getEndpointHistory(
+        public Page<NotificationHistoryDTO> getEndpointHistory(
                 @Context SecurityContext sec,
                 @Context UriInfo uriInfo,
                 @PathParam("id") UUID id,
@@ -256,11 +257,11 @@ public class EndpointResource {
         }
 
         @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-        protected Page<NotificationHistory> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, final Query query) {
+        protected Page<NotificationHistoryDTO> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, final Query query) {
             return this.internalGetEndpointHistory(securityContext, uriInfo, id, includeDetail, query);
         }
 
-        protected Page<NotificationHistory> internalGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, @Valid final Query query) {
+        protected Page<NotificationHistoryDTO> internalGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, @Valid final Query query) {
             String orgId = getOrgId(securityContext);
             boolean doDetail = includeDetail != null && includeDetail;
 
@@ -268,7 +269,7 @@ public class EndpointResource {
             final long notificationHistoryCount = this.notificationRepository.countNotificationHistoryElements(id, orgId);
 
             return new Page<>(
-                notificationHistory,
+                commonMapper.notificationHistoryListToNotificationHistoryDTOList(notificationHistory),
                 PageLinksBuilder.build(uriInfo.getPath(), notificationHistoryCount, query.getLimit().getLimit(), query.getLimit().getOffset()),
                 new Meta(notificationHistoryCount)
             );

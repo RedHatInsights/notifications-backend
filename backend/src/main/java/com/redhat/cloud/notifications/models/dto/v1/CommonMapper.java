@@ -1,11 +1,9 @@
-package com.redhat.cloud.notifications.models.mappers.v1;
+package com.redhat.cloud.notifications.models.dto.v1;
 
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.dto.v1.ApplicationDTO;
-import com.redhat.cloud.notifications.models.dto.v1.BundleDTO;
-import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -25,4 +23,7 @@ public interface CommonMapper {
     EventTypeDTO eventTypeToEventTypeDTO(EventType eventType);
 
     List<EventTypeDTO> eventTypeListToEventTypeDTOList(List<EventType> eventType);
+
+    @Mapping(source = "isInvocationResult", target = "invocationResult")
+    List<NotificationHistoryDTO> notificationHistoryListToNotificationHistoryDTOList(List<NotificationHistory> notificationHistory);
 }

@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.models.mappers.v1.endpoint;
+package com.redhat.cloud.notifications.models.dto.v1.endpoint;
 
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.EndpointPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutyPropertiesDTO;
