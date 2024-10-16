@@ -8,8 +8,11 @@ import com.reprezen.kaizen.oasparser.model3.Path;
 import com.reprezen.kaizen.oasparser.model3.SecurityParameter;
 import com.reprezen.kaizen.oasparser.model3.SecurityRequirement;
 import com.reprezen.kaizen.oasparser.val.ValidationResults;
+import io.quarkus.logging.Log;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
@@ -61,11 +64,18 @@ public class OpenApiTest {
 
         for (URL url : urls) {
             OpenApi3 model = new OpenApi3Parser().parse(url, true);
+            Log.infof("testing api %s", url);
             if (!model.isValid()) {
                 for (ValidationResults.ValidationItem item : model.getValidationItems()) {
-                    System.err.println(item);
+                    Log.error(item);
                 }
                 fail("OpenAPI spec is not valid");
+            }
+
+            SwaggerParseResult result = new OpenAPIParser().readLocation(url.toString(), null, null);
+            if (result.getMessages().size() > 0) {
+                result.getMessages().stream().forEach(message -> Log.error(message));
+                fail("OpenAPI is not valid, check messages above");
             }
         }
     }

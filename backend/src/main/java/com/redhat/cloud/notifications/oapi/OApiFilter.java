@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.oapi;
 
 import com.redhat.cloud.notifications.Constants;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -15,7 +16,11 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -63,12 +68,15 @@ public class OApiFilter {
 
     private JsonObject filterJson(JsonObject oapiModelJson, String openApiOption, String version) {
 
-        JsonObject root = new JsonObject();
-
+        final JsonObject root = new JsonObject();
+        JsonObject components = new JsonObject();
+        Set<String> objectSchemasToKeep = new HashSet<>();
         oapiModelJson.stream().forEach(entry -> {
             String key = entry.getKey();
             switch (key) {
                 case "components":
+                    components.put(key, entry.getValue());
+                    break;
                 case "openapi":
                     // We just copy all of them even if they may only apply to one
                     root.put(key, entry.getValue());
@@ -105,6 +113,7 @@ public class OApiFilter {
                                 }
 
                                 if (newPathValue != null) {
+                                    objectSchemasToKeep.addAll(findSchemas(newPathValue));
                                     pathObject2.put(mangledPath, newPathValue);
                                 }
                             }
@@ -124,6 +133,11 @@ public class OApiFilter {
         if (root.getJsonObject("paths").isEmpty()) {
             throw new NotFoundException();
         }
+
+        JsonObject schemaAsComponents = filterUsedSchemasOnly(components, objectSchemasToKeep);
+        root.put("components", schemaAsComponents);
+
+        JsonObject rootWithoutDTO = removeSchemaDTOextWhenPossible(root);
 
         JsonObject info = new JsonObject()
                 .put("version", version == null ? "v1.0" : version)
@@ -145,11 +159,89 @@ public class OApiFilter {
 
         // Add info section
         info.put("description", infoDescription);
-        root.put("info", info);
+        rootWithoutDTO.put("info", info);
 
-        root.put("servers", serversArray);
+        rootWithoutDTO.put("servers", serversArray);
 
-        return root;
+        return rootWithoutDTO;
+    }
+
+    private JsonObject removeSchemaDTOextWhenPossible(JsonObject root) {
+        if (root.getJsonObject("components") == null || root.getJsonObject("components").getJsonObject("schemas") == null) {
+            return root;
+        }
+
+        String rootStr = root.toString();
+        List<String> schemasNames = root.getJsonObject("components").getJsonObject("schemas").stream().map(entry -> entry.getKey()).toList();
+        for (String schemaName : schemasNames) {
+            if (schemaName.endsWith("DTO") && !schemasNames.contains(schemaName.replace("DTO", ""))) {
+                rootStr = rootStr.replaceAll(schemaName, schemaName.replace("DTO", ""));
+            }
+        }
+        return new JsonObject(rootStr);
+    }
+
+    private JsonObject filterUsedSchemasOnly(JsonObject components, Set<String> objectSchemasToKeep) {
+        Set<String> returnedSet = new HashSet<>();
+        Map<String, Object> schemasAsMap = components.getJsonObject("components").getJsonObject("schemas").getMap();
+        objectSchemasToKeep.stream().forEach(s -> findDependencies(returnedSet, s, schemasAsMap));
+        objectSchemasToKeep.addAll(returnedSet);
+
+        JsonObject schemaComponents = new JsonObject();
+
+        objectSchemasToKeep.stream().sorted().forEach(schemaName ->
+            schemaComponents.put(
+                schemaName,
+                components.getJsonObject("components").getJsonObject("schemas").getJsonObject(schemaName)
+            )
+        );
+
+        JsonObject schemaAsComponents = new JsonObject();
+        schemaAsComponents.put("schemas", schemaComponents);
+        return schemaAsComponents;
+    }
+
+    private void findDependencies(Set<String> returnedSet,  final String schemaDependenciesToFind, final Map<String, Object> schemasAsMap) {
+        Map<String, HashMap> jsonSchema = (HashMap) schemasAsMap.get(schemaDependenciesToFind);
+        Map<String, HashMap> properties = jsonSchema.get("properties");
+        if (null != properties) {
+            properties.keySet().stream().forEach(prop -> {
+                Map<String, Object> propertyValue = (HashMap) properties.get(prop);
+
+                if (null != propertyValue.get("$ref")) {
+                    String refToFetch = removeSchemaPrefix(propertyValue.get("$ref").toString());
+                    returnedSet.add(refToFetch);
+                    findDependencies(returnedSet, refToFetch, schemasAsMap);
+                }
+                if (null != propertyValue.get("items") && null != propertyValue.get("items")) {
+                    Object refToFetchObj = ((HashMap) propertyValue.get("items")).get("$ref");
+                    saveFoundDependency(returnedSet, schemasAsMap, refToFetchObj);
+                }
+                if (null != propertyValue.get("allOf")) {
+                    ((List) propertyValue.get("allOf")).stream().forEach(entryMap -> {
+                        saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) entryMap).get("$ref"));
+                    });
+                }
+                if (null != propertyValue.get("oneOf")) {
+                    ((List) propertyValue.get("oneOf")).stream().forEach(entryMap -> {
+                        saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) entryMap).get("$ref"));
+                    });
+                }
+                if (null != propertyValue.get("additionalProperties") && null != ((HashMap) propertyValue.get("additionalProperties")).get("$ref")) {
+                    saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) propertyValue.get("additionalProperties")).get("$ref"));
+                }
+            });
+        }
+    }
+
+    private void saveFoundDependency(Set<String> returnedSet, Map<String, Object> schemasAsMap, Object refToFetchObj) {
+        if (null != refToFetchObj) {
+            String refToFetch = removeSchemaPrefix(refToFetchObj.toString());
+            if (!returnedSet.contains(refToFetch)) {
+                returnedSet.add(refToFetch);
+                findDependencies(returnedSet, refToFetch, schemasAsMap);
+            }
+        }
     }
 
     private String capitalize(String name) {
@@ -173,6 +265,84 @@ public class OApiFilter {
 
         return newPathObject;
     }
+
+    private String removeSchemaPrefix(String schema) {
+        return schema.replace("#/components/schemas/", "");
+    }
+
+    private Set<String> findSchemas(JsonObject pathObject) {
+        Set<String> schemasToKeep = new HashSet<>();
+        pathObject.stream().forEach(entry -> {
+            JsonObject operation = (JsonObject) entry.getValue();
+
+            JsonArray parameters = operation.getJsonArray("parameters");
+            if (parameters != null) {
+                parameters.stream().forEach(parameter -> {
+                    try {
+                        String schemaRef = ((JsonObject) parameter)
+                            .getJsonObject("schema")
+                            .getString("$ref");
+                        schemasToKeep.add(removeSchemaPrefix(schemaRef));
+                    } catch (NullPointerException e) {
+                        Log.debug("No linked ref for query parameter " + ((JsonObject) parameter).getString("name") + " of operation " + operation.getString("operationId"));
+                    }
+                });
+
+                parameters.stream().forEach(parameter -> {
+                    try {
+                        String schemaRef = ((JsonObject) parameter)
+                            .getJsonObject("schema")
+                            .getJsonObject("items")
+                            .getString("$ref");
+                        schemasToKeep.add(removeSchemaPrefix(schemaRef));
+                    } catch (NullPointerException e) {
+                        Log.debug("No linked ref for query parameter " + ((JsonObject) parameter).getString("name") + " of operation " + operation.getString("operationId"));
+                    }
+                });
+            }
+
+            JsonObject requestBody = operation.getJsonObject("requestBody");
+            try {
+                String schemaRef = requestBody
+                    .getJsonObject("content")
+                    .getJsonObject("application/json")
+                    .getJsonObject("schema")
+                    .getString("$ref");
+                schemasToKeep.add(removeSchemaPrefix(schemaRef));
+            } catch (NullPointerException e) {
+                Log.debug("No linked ref for request of " + operation.getString("operationId"));
+            }
+
+            JsonObject responses = operation.getJsonObject("responses");
+            responses.stream().forEach(responseCodeEntry -> {
+                JsonObject responseFormat = (JsonObject) responseCodeEntry.getValue();
+                try {
+                    String schemaRef = responseFormat
+                        .getJsonObject("content")
+                        .getJsonObject("application/json")
+                        .getJsonObject("schema")
+                        .getString("$ref");
+                    schemasToKeep.add(removeSchemaPrefix(schemaRef));
+                } catch (NullPointerException e) {
+                    Log.debug("No linked ref for response code " + responseCodeEntry + " of operation " + operation.getString("operationId"));
+                }
+
+                try {
+                    String schemaRef = responseFormat
+                        .getJsonObject("content")
+                        .getJsonObject("application/json")
+                        .getJsonObject("schema")
+                        .getJsonObject("items")
+                        .getString("$ref");
+                    schemasToKeep.add(removeSchemaPrefix(schemaRef));
+                } catch (NullPointerException e) {
+                    Log.debug("No linked ref for response code " + responseCodeEntry + " of operation " + operation.getString("operationId"));
+                }
+            });
+        });
+        return schemasToKeep;
+    }
+
 
     private JsonObject createProdServer(String openApiOption, String version) {
         JsonObject job = new JsonObject();
