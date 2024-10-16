@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -8,13 +9,13 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.SecurityContext;
-import org.project_kessel.api.inventory.v1beta1.CreateNotificationsIntegrationRequest;
-import org.project_kessel.api.inventory.v1beta1.CreateNotificationsIntegrationResponse;
-import org.project_kessel.api.inventory.v1beta1.DeleteNotificationsIntegrationRequest;
-import org.project_kessel.api.inventory.v1beta1.DeleteNotificationsIntegrationResponse;
-import org.project_kessel.api.inventory.v1beta1.Metadata;
-import org.project_kessel.api.inventory.v1beta1.NotificationsIntegration;
-import org.project_kessel.api.inventory.v1beta1.ReporterData;
+import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationResponse;
+import org.project_kessel.api.inventory.v1beta1.resources.DeleteNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.DeleteNotificationsIntegrationResponse;
+import org.project_kessel.api.inventory.v1beta1.resources.Metadata;
+import org.project_kessel.api.inventory.v1beta1.resources.NotificationsIntegration;
+import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
 import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 
 @ApplicationScoped
@@ -24,11 +25,9 @@ public class KesselAssets {
      * perform operations in Kessel for the "integration" resource.
      */
     private static final String KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME = "notifications.kessel.inventory.resources";
-    /**
-     * The resource format we need to use when deleting resources from the
-     * Kessel inventory.
-     */
-    public static final String RESOURCE_FORMAT = "reporter_data.%s:reporter_data.%s";
+
+    @Inject
+    BackendConfig backendConfig;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -85,6 +84,10 @@ public class KesselAssets {
      *                      our side.
      */
     public void deleteIntegration(final SecurityContext securityContext, final String workspaceId, final String integrationId) {
+        if (!this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()) {
+            return;
+        }
+
         // Build the request for Kessel's inventory.
         final DeleteNotificationsIntegrationRequest request = this.buildDeleteIntegrationRequest(integrationId);
 
@@ -131,9 +134,9 @@ public class KesselAssets {
                         .setWorkspace(workspaceId)
                         .build()
                     ).setReporterData(ReporterData.newBuilder()
-                        .setReporterInstanceId("service-account-notifications")
-                        .setReporterType(ReporterData.ReporterType.REPORTER_TYPE_OTHER)
                         .setLocalResourceId(integrationId)
+                        .setReporterInstanceId(this.backendConfig.getKesselInventoryReporterInstanceId())
+                        .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
                         .build()
                     ).build()
             ).build();
@@ -147,8 +150,11 @@ public class KesselAssets {
      */
     protected DeleteNotificationsIntegrationRequest buildDeleteIntegrationRequest(final String integrationId) {
         return DeleteNotificationsIntegrationRequest.newBuilder()
-            .setResource(
-                String.format(RESOURCE_FORMAT, ReporterData.ReporterType.REPORTER_TYPE_OTHER_VALUE, integrationId)
+            .setReporterData(
+                ReporterData.newBuilder()
+                    .setLocalResourceId(integrationId)
+                    .setReporterInstanceId(this.backendConfig.getKesselInventoryReporterInstanceId())
+                    .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
             ).build();
     }
 }
