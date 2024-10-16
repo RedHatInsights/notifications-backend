@@ -3,6 +3,10 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -17,6 +21,7 @@ import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryActionStatus;
 import com.redhat.cloud.notifications.routers.models.Page;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
@@ -26,7 +31,12 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.LookupClient;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -45,6 +55,8 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCE
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
+import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -68,14 +80,39 @@ public class EventResourceTest extends DbIsolatedTest {
 
     private static final String OTHER_ACCOUNT_ID = "other-account-id";
     private static final String OTHER_ORG_ID = "other-org-id";
+    private static final String OTHER_USERNAME = "other-username";
     private static final LocalDateTime NOW = LocalDateTime.now(UTC);
     private static final String PAYLOAD = "payload";
     private static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
     private static final String PATH_V_1 = API_NOTIFICATIONS_V_1 + "/notifications/events";
 
+    /**
+     * Mocked the backend's configuration so that the {@link KesselTestHelper}
+     * can be used.
+     */
+    @InjectMock
+    BackendConfig backendConfig;
+
+    /**
+     * Mocked Kessel's check client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    CheckClient checkClient;
 
     @Inject
     EntityManager entityManager;
+
+
+    @Inject
+    KesselTestHelper kesselTestHelper;
+
+    /**
+     * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    LookupClient lookupClient;
 
     @Inject
     ResourceHelpers resourceHelpers;
@@ -83,27 +120,35 @@ public class EventResourceTest extends DbIsolatedTest {
     @Inject
     EndpointRepository endpointRepository;
 
-    @Test
-    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
         given()
                 .header(defaultIdentityHeader)
                 .when().get(PATH)
                 .then()
-                .statusCode(403);
+                .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
-    @Test
-    void testAllQueryParams() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAllQueryParams(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
         /*
          * This method is very long, but splitting it into several smaller ones would mean we have to recreate lots of
          * database records for each test. To avoid doing that, the data is only persisted once and many tests are run
          * from the same data.
          */
 
-        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
-        Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, OTHER_ORG_ID, "other-username", FULL_ACCESS);
-        Header emptyIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, "none", "other-username", FULL_ACCESS);
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, OTHER_ORG_ID, OTHER_USERNAME, FULL_ACCESS);
+        Header emptyIdentityHeader = mockRbac(OTHER_ACCOUNT_ID,  "none", OTHER_USERNAME, FULL_ACCESS);
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
         Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
         Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
@@ -594,55 +639,73 @@ public class EventResourceTest extends DbIsolatedTest {
         assertLinks(page.getLinks(), "first", "last");
     }
 
-    @Test
-    void testInsufficientPrivileges() {
-        Header noAccessIdentityHeader = mockRbac("tenant", DEFAULT_ORG_ID, "noAccess", NO_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInsufficientPrivileges(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        Header noAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
         given()
                 .header(noAccessIdentityHeader)
                 .when().get(PATH)
                 .then()
-                .statusCode(403);
+                .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
-    @Test
-    void testInvalidSortBy() {
-        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInvalidSortBy(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         given()
                 .header(identityHeader)
                 .param("sortBy", "I am not valid!")
                 .when().get(PATH)
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .contentType(JSON);
     }
 
-    @Test
-    void testInvalidLimit() {
-        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInvalidLimit(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         given()
                 .header(identityHeader)
                 .param("limit", 0)
                 .when().get(PATH)
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .contentType(JSON);
         given()
                 .header(identityHeader)
                 .param("limit", 999999)
                 .when().get(PATH)
                 .then()
-                .statusCode(400)
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .contentType(JSON);
     }
 
-    @Test
-    void shouldBeAllowedToGetEventLogs() {
-        Header readAccessIdentityHeader = mockRbac("tenant", DEFAULT_ORG_ID, "user-read-access", NOTIFICATIONS_READ_ACCESS_ONLY);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldBeAllowedToGetEventLogs(final boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+
+        Header readAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, NOTIFICATIONS_READ_ACCESS_ONLY);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
         given()
                 .header(readAccessIdentityHeader)
                 .when().get(PATH)
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON);
     }
 
@@ -801,7 +864,7 @@ public class EventResourceTest extends DbIsolatedTest {
         return request
                 .when().get(path)
                 .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
                 .extract().body().as(new TypeRef<>() {
                 });
