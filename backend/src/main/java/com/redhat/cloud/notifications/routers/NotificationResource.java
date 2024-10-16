@@ -18,7 +18,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
-import com.redhat.cloud.notifications.models.mappers.v1.endpoint.EndpointMapper;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import com.redhat.cloud.notifications.routers.models.Meta;

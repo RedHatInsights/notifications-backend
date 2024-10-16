@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.models.dto.v1.endpoint;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-@Schema(enumeration = { "ansible", "camel",  "drawer", "email_subscription", "webhook" })
+@Schema(enumeration = { "ansible", "camel",  "drawer", "email_subscription", "webhook", "pagerduty" })
 public enum EndpointTypeDTO {
     @JsonProperty("ansible")
     ANSIBLE(false, false),

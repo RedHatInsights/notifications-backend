@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.PagerDutySeverity;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointStatusDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPropertiesDTO;
