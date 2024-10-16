@@ -6,22 +6,23 @@ import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.project_kessel.api.inventory.v1beta1.CreateNotificationsIntegrationRequest;
-import org.project_kessel.api.inventory.v1beta1.DeleteNotificationsIntegrationRequest;
-import org.project_kessel.api.inventory.v1beta1.Metadata;
-import org.project_kessel.api.inventory.v1beta1.ReporterData;
+import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.DeleteNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.Metadata;
+import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
 import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 
 import java.util.UUID;
 
 @QuarkusTest
 public class KesselAssetsTest {
-    @InjectMock
+    @InjectSpy
     BackendConfig backendConfig;
 
     @Inject
@@ -63,6 +64,9 @@ public class KesselAssetsTest {
      */
     @Test
     void testDeleteIntegration() {
+        // Simulate that removing integrations is enabled.
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
+
         // Mock the security context.
         final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
 
@@ -85,6 +89,36 @@ public class KesselAssetsTest {
     }
 
     /**
+     * Test that when the "removing integrations" toggle is disabled, no calls
+     * are made to Kessel to delete the integration from the inventory.
+     */
+    @Test
+    void testDeleteIntegrationDisabled() {
+        // Simulate that removing integrations is enabled.
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(false);
+
+        // Mock the security context.
+        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
+
+        // Create a RhIdentity principal and assign it to the mocked security
+        // context.
+        final RhIdentity identity = Mockito.mock(RhIdentity.class);
+        Mockito.when(identity.getName()).thenReturn("Red Hat user");
+
+        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
+        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+
+        // Enable the Kessel back end integration for this test.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
+
+        // Call the function under test.
+        this.kesselAssets.deleteIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+
+        // Verify that the inventory call was made.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).DeleteNotificationsIntegration(Mockito.any(DeleteNotificationsIntegrationRequest.class));
+    }
+
+    /**
      * Tests that the request for creating an integration in Kessel's inventory
      * is properly built.
      */
@@ -102,8 +136,9 @@ public class KesselAssetsTest {
         Assertions.assertEquals(workspaceId, metadata.getWorkspace(), "the workspace ID was incorrectly set");
 
         final ReporterData reporterData = request.getIntegration().getReporterData();
-        Assertions.assertEquals(ReporterData.ReporterType.REPORTER_TYPE_OTHER, reporterData.getReporterType(), "the \"reporter type\" should be other");
         Assertions.assertEquals(integrationId, reporterData.getLocalResourceId(), "the \"local resource id\" was incorrectly set");
+        Assertions.assertEquals(this.backendConfig.getKesselInventoryReporterInstanceId(), reporterData.getReporterInstanceId(), "the \"reporter instance id\" was incorrectly set");
+        Assertions.assertEquals(ReporterData.ReporterType.NOTIFICATIONS, reporterData.getReporterType(), "the \"reporter type\" was incorrectly set");
     }
 
     /**
@@ -118,8 +153,9 @@ public class KesselAssetsTest {
         final DeleteNotificationsIntegrationRequest request = this.kesselAssets.buildDeleteIntegrationRequest(integrationId);
 
         // Assert that the request was properly built.
-        final String expectedResource = String.format(KesselAssets.RESOURCE_FORMAT, ReporterData.ReporterType.REPORTER_TYPE_OTHER_VALUE, integrationId);
-
-        Assertions.assertEquals(expectedResource, request.getResource(), "unexpected resource format created for the request.");
+        final ReporterData reporterData = request.getReporterData();
+        Assertions.assertEquals(integrationId, reporterData.getLocalResourceId(), "the \"local resource id\" was incorrectly set");
+        Assertions.assertEquals(this.backendConfig.getKesselInventoryReporterInstanceId(), reporterData.getReporterInstanceId(), "the \"reporter instance id\" was incorrectly set");
+        Assertions.assertEquals(ReporterData.ReporterType.NOTIFICATIONS, reporterData.getReporterType(), "the \"reporter type\" was incorrectly set");
     }
 }

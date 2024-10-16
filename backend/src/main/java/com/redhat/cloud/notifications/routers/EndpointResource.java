@@ -714,16 +714,7 @@ public class EndpointResource {
         if (this.backendConfig.isKesselRelationsEnabled()) {
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id.toString());
 
-            final Response noContentResponse = this.internalDeleteEndpoint(sec, id);
-
-            if (this.backendConfig.isKesselInventoryEnabled()) {
-                // Attempt deleting the integration from Kessel. If any exception
-                // is thrown the whole transaction will be rolled back and the
-                // integration will not be deleted from our database.
-                this.kesselAssets.deleteIntegration(sec, WORKSPACE_ID_PLACEHOLDER, id.toString());
-            }
-
-            return noContentResponse;
+            return this.internalDeleteEndpoint(sec, id);
         } else {
             return this.legacyRBACDeleteEndpoint(sec, id);
         }
@@ -747,6 +738,13 @@ public class EndpointResource {
         this.secretUtils.deleteSecretsForEndpoint(endpoint);
 
         endpointRepository.deleteEndpoint(orgId, id);
+
+        if (this.backendConfig.isKesselInventoryEnabled()) {
+            // Attempt deleting the integration from Kessel. If any exception
+            // is thrown the whole transaction will be rolled back and the
+            // integration will not be deleted from our database.
+            this.kesselAssets.deleteIntegration(securityContext, WORKSPACE_ID_PLACEHOLDER, id.toString());
+        }
 
         return Response.noContent().build();
     }
