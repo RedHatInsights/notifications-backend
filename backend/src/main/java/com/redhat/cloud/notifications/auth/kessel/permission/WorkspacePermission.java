@@ -10,6 +10,7 @@ public enum WorkspacePermission implements KesselPermission {
     EVENT_LOG_VIEW("notifications_event_log_view"),
     EVENT_TYPES_VIEW("notifications_event_types_view"),
     INTEGRATIONS_CREATE("notifications_integration_create"),
+    INTEGRATIONS_VIEW("notifications_integration_view"),
     DAILY_DIGEST_PREFERENCE_EDIT("notifications_daily_digest_preference_edit"),
     DAILY_DIGEST_PREFERENCE_VIEW("notifications_daily_digest_preference_view");
 

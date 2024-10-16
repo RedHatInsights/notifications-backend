@@ -14,6 +14,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -81,6 +82,61 @@ public class KesselAuthorizationTest {
 
         // Verify that we called Kessel.
         Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
+    }
+
+    /**
+     * Tests that when the principal is authorized for the given permission on
+     * the given integration, the function under test does not throw an
+     * exception.
+     */
+    @Test
+    void testHasPermissionOnIntegration() {
+        // Mock the security context.
+        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
+
+        // Create a RhIdentity principal and assign it to the mocked security
+        // context.
+        final RhIdentity identity = Mockito.mock(RhIdentity.class);
+        Mockito.when(identity.getName()).thenReturn("Red Hat user");
+
+        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
+        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+
+        // Simulate an "authorized" response from Kessel.
+        final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
+
+        // Call the function under test.
+        this.kesselAuthorization.hasPermissionOnIntegration(mockedSecurityContext, IntegrationPermission.VIEW, UUID.randomUUID());
+    }
+
+    /**
+     * Tests that when the principal is not authorized for the given permission
+     * on the given integration, the function under test throws a "not found"
+     * exception.
+     */
+    @Test
+    void testHasPermissionOnIntegrationThrowsNotFoundException() {
+        // Mock the security context.
+        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
+
+        // Create a RhIdentity principal and assign it to the mocked security
+        // context.
+        final RhIdentity identity = Mockito.mock(RhIdentity.class);
+        Mockito.when(identity.getName()).thenReturn("Red Hat user");
+
+        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
+        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+
+        // Simulate an "unauthorized" response coming from Kessel.
+        final CheckResponse negativeCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(negativeCheckResponse);
+
+        // Call the function under test.
+        Assertions.assertThrows(
+            NotFoundException.class,
+            () -> this.kesselAuthorization.hasPermissionOnIntegration(mockedSecurityContext, IntegrationPermission.VIEW, UUID.randomUUID())
+        );
     }
 
     /**

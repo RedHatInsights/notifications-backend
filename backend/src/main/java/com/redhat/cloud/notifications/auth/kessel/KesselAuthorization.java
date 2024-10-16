@@ -10,9 +10,11 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
@@ -168,6 +170,27 @@ public class KesselAuthorization {
         }
 
         return uuids;
+    }
+
+    /**
+     * Checks whether the provided principal has the specified permission on
+     * the given integration, and throws a {@link NotFoundException} if they
+     * do not.
+     * @param securityContext the security context to extract the principal
+     *                        from.
+     * @param integrationPermission the integration permission we want to
+     *                              check.
+     * @param integrationId the integration's identifier.
+        */
+    public void hasPermissionOnIntegration(final SecurityContext securityContext, final IntegrationPermission integrationPermission, final UUID integrationId) {
+        try {
+            this.hasPermissionOnResource(securityContext, integrationPermission, ResourceType.INTEGRATION, integrationId.toString());
+        } catch (final ForbiddenException ignored) {
+            final JsonObject responseBody = new JsonObject();
+            responseBody.put("error", "Integration not found");
+
+            throw new NotFoundException(responseBody.encode());
+        }
     }
 
     /**
