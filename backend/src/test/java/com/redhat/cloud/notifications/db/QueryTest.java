@@ -270,7 +270,7 @@ public class QueryTest {
             "offset", offsetValuesErrorMessages
         );
 
-        // Create an endpoint that will used in one of the URLs below.
+        // Create an endpoint that will be used in one of the URLs below.
         final UUID endpointId = UUID.randomUUID();
         Mockito.when(this.endpointRepository.existsByUuidAndOrgId(endpointId, DEFAULT_ORG_ID)).thenReturn(true);
 
