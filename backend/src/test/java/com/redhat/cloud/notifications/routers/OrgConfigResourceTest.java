@@ -93,8 +93,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testSaveDailyDigestTimePreference(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testSaveDailyDigestTimePreference(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         // check regular parameter
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
@@ -113,8 +113,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testMinuteFilter(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testMinuteFilter(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         final String ERROR_MESSAGE_WRONG_MINUTE_VALUE = "Accepted minute values are: 00, 15, 30, 45.";
 
@@ -132,8 +132,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetDailyDigestTimePreference(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testGetDailyDigestTimePreference(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
         LocalTime foundedPreference = given()
