@@ -44,6 +44,8 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesService;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.test.InjectMock;
@@ -72,6 +74,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.DeleteNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.Metadata;
+import org.project_kessel.api.inventory.v1beta1.resources.NotificationsIntegration;
+import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -176,6 +184,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @InjectMock
     LookupClient lookupClient;
+
+    /**
+     * Mocked Kessel's inventory client so that the {@link KesselTestHelper}
+     * can be used.
+     */
+    @InjectMock
+    NotificationsIntegrationClient notificationsIntegrationClient;
 
     /**
      * We mock the sources service's REST client because there are a few tests
@@ -4114,5 +4129,407 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .put("/endpoints/{endpointId}/eventTypes")
             .then()
             .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    /**
+     * Tests that when the Kessel inventory back end's toggle is enabled, the
+     * integration creations and removals are notified to Kessel's Inventory
+     * API. We need to test for both cases when the Relations API is enabled or
+     * not, because we might enable the Inventory API way before we start using
+     * the Relations API.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testIntegrationCreationRemovalKesselInventory(final boolean isKesselRelationsApiEnabled) {
+        // Enable the Inventory API, and enable the integration removals too so
+        // that Kessel gets notified about them.
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+
+        // Mock the reporter instance id.
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
+
+        // Create the identity header to be used in the requests.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        // Add full RBAC access for when the Relations API is disabled.
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Give the principal the "create endpoints" permission.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        // Create the integration.
+        final Set<UUID> createdIntegration = this.addEndpoints(1, identityHeader);
+        Assertions.assertEquals(1, createdIntegration.size(), "only a single integration should have been created");
+
+        final UUID integrationId = createdIntegration.iterator().next();
+
+        // Verify that the integration's creation was communicated to the
+        // Inventory API.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(
+            CreateNotificationsIntegrationRequest.newBuilder()
+                .setIntegration(
+                    NotificationsIntegration.newBuilder()
+                        .setMetadata(Metadata.newBuilder()
+                            .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
+                            .setWorkspace(WORKSPACE_ID_PLACEHOLDER)
+                            .build()
+                        ).setReporterData(ReporterData.newBuilder()
+                            .setLocalResourceId(integrationId.toString())
+                            .setReporterInstanceId(this.backendConfig.getKesselInventoryReporterInstanceId())
+                            .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                            .build()
+                        ).build()
+                ).build()
+        );
+
+        // Give the principal the permission to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integrationId.toString());
+
+        // Delete the integration.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("endpointId", integrationId)
+            .delete("/endpoints/{endpointId}")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // Verify that the integration's removal was communicated to the
+        // Inventory API.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).DeleteNotificationsIntegration(
+            DeleteNotificationsIntegrationRequest.newBuilder()
+                .setReporterData(
+                    ReporterData.newBuilder()
+                        .setLocalResourceId(integrationId.toString())
+                        .setReporterInstanceId(this.backendConfig.getKesselInventoryReporterInstanceId())
+                        .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                ).build()
+        );
+    }
+
+    /**
+     * Tests that when we fail to save an integration in our database for some
+     * reason, the Inventory API does not get called to create an integration
+     * there.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testCreateIntegrationFailInventoryNotNotified(final boolean isKesselRelationsApiEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to create the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        // Simulate an error when saving the integration in our database.
+        Mockito.doThrow(IllegalStateException.class).when(this.endpointRepository).createEndpoint(Mockito.any());
+
+        // Create the integration.
+        final CamelProperties slackProperties = new CamelProperties();
+        slackProperties.setDisableSslVerification(false);
+        slackProperties.setUrl(getMockServerUrl());
+
+        final Endpoint slackIntegration = new Endpoint();
+        slackIntegration.setDescription("I guess the camel is slacking");
+        slackIntegration.setEnabled(true);
+        slackIntegration.setName("Push the camel through the needle's ear");
+        slackIntegration.setProperties(slackProperties);
+        slackIntegration.setStatus(EndpointStatus.PROVISIONING);
+        slackIntegration.setSubType("slack");
+        slackIntegration.setType(EndpointType.CAMEL);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(slackIntegration)))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            .contentType(JSON);
+
+        // Assert that the Inventory API never got called.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not created.
+        this.assertNoIntegrationsInDatabase(identityHeader);
+    }
+
+    /**
+     * Tests that when the Inventory API returns any kind of error when
+     * attempting to create an integration, we also do not save it in our
+     * database.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInventoryCreateIntegrationFailNotSavedInDatabase(final boolean isKesselRelationsApiEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to create the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        // Simulate an error when saving the integration in the Inventory API.
+        Mockito.when(this.notificationsIntegrationClient.CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class))).thenThrow(StatusRuntimeException.class);
+
+        // Create the integration.
+        final CamelProperties slackProperties = new CamelProperties();
+        slackProperties.setDisableSslVerification(false);
+        slackProperties.setUrl(getMockServerUrl());
+
+        final Endpoint slackIntegration = new Endpoint();
+        slackIntegration.setDescription("I guess the camel is slacking");
+        slackIntegration.setEnabled(true);
+        slackIntegration.setName("Push the camel through the needle's ear");
+        slackIntegration.setProperties(slackProperties);
+        slackIntegration.setStatus(EndpointStatus.PROVISIONING);
+        slackIntegration.setSubType("slack");
+        slackIntegration.setType(EndpointType.CAMEL);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(slackIntegration)))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            .contentType(JSON);
+
+        // Assert that the Inventory API never got called.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not created.
+        this.assertNoIntegrationsInDatabase(identityHeader);
+    }
+
+    /**
+     * Tests that when we fail to delete an integration from our database for
+     * some reason, the Inventory API does not get called to delete an
+     * integration from there.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testRemoveIntegrationFailInventoryNotNotified(final boolean isKesselRelationsApiEnabled) {
+        // Enable the Inventory API, and enable the integration removals too so
+        // that we can spot whether Kessel gets notified about them or not.
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+
+        // Mock the reporter instance id.
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
+
+        // Create the integration we are going to attempt to delete.
+        final Endpoint integration = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+
+        // Simulate that removing the integration from our database throws an
+        // exception.
+        Mockito.doThrow(IllegalStateException.class).when(this.endpointRepository).deleteEndpoint(DEFAULT_ORG_ID, integration.getId());
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
+
+        // Attempt deleting the integration.
+        given()
+            .header(identityHeader)
+            .pathParam("id", integration.getId())
+            .when()
+            .delete("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        // Assert that the Inventory API never got called.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).DeleteNotificationsIntegration(Mockito.any(DeleteNotificationsIntegrationRequest.class));
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not deleted.
+        this.assertIntegrationExists(identityHeader, integration);
+    }
+
+    /**
+     * Tests that when we attempt to remove an integration from our database,
+     * if the Inventory API throws an exception, the whole transaction is
+     * rolled back and the integration does not get deleted from our database.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInventoryDeleteIntegrationFailFailIntegrationNotRemovedFromDatabase(final boolean isKesselRelationsApiEnabled) {
+        // Enable the Inventory API, , and enable the integration removals too so
+        // that we can spot whether Kessel gets notified about them or not.
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+
+        // Mock the reporter instance id.
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
+
+        // Create the integration we are going to attempt to delete.
+        final Endpoint integration = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+
+        // Simulate that the Kessel Inventory throws an exception.
+        Mockito.when(this.notificationsIntegrationClient.DeleteNotificationsIntegration(Mockito.any())).thenThrow(new StatusRuntimeException(Status.NOT_FOUND));
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
+
+        // Attempt deleting the integration.
+        given()
+            .header(identityHeader)
+            .pathParam("id", integration.getId())
+            .when()
+            .delete("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not deleted.
+        this.assertIntegrationExists(identityHeader, integration);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testKesselInventoryIntegrationRemovalsDisabled(final boolean isKesselRelationsApiEnabled) {
+        // Enable the Inventory API, and disable integration removals so that
+        // we can test that the toggle works as expected.
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(false);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+
+        // Create the integration we are going to attempt to delete.
+        final Endpoint integration = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
+
+        // Attempt deleting the integration.
+        given()
+            .header(identityHeader)
+            .pathParam("id", integration.getId())
+            .when()
+            .delete("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // Assert that the Inventory API never got called.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).DeleteNotificationsIntegration(Mockito.any(DeleteNotificationsIntegrationRequest.class));
+
+        // Assert that the integration we created no longer exists in the
+        // database.
+        this.assertNoIntegrationsInDatabase(identityHeader);
+    }
+
+    /**
+     * Asserts that no integrations are present in the database by issuing a
+     * query directly and by calling the "/endpoints" REST endpoint.
+     * @param identityHeader the identity header to be used when fetching the
+     *                       list of integrations via the REST endpoint.
+     */
+    void assertNoIntegrationsInDatabase(final Header identityHeader) {
+        Assertions.assertTrue(this.entityManager.createQuery("FROM Endpoint").getResultList().isEmpty(), "when fetching all the integrations from the database, the list was not empty");
+
+        // It does not make sense to attempt fetching all the integrations from
+        // the back end when using the Relations API, because we would need to
+        // mock which integrations the principal is authorized to list, and
+        // since we are just trying to fetch them all to verify that none got
+        // created, it kind of defeats the purpose. We also do not have an ID
+        // we could use to even mock the Relations API, because the integration
+        // does not get created in the database.
+        if (this.backendConfig.isKesselRelationsEnabled()) {
+            return;
+        }
+
+        given()
+            .header(identityHeader)
+            .when()
+            .get("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("data", Matchers.hasSize(0))
+            .body("links", Matchers.anEmptyMap())
+            .body("meta.count", Matchers.is(0));
+    }
+
+    /**
+     * Assert that the given integration is present in the database by issuing
+     * a query directly and by calling the "/endpoints/{id}" REST endpoint.
+     * @param identityHeader the identity header to be used when fetching the
+     *                       integration.
+     * @param endpoint the integration that we want to make sure that still
+     *                 exists on our end.
+     */
+    void assertIntegrationExists(final Header identityHeader, final Endpoint endpoint) {
+        Assertions.assertEquals(1, this.entityManager.createQuery("FROM Endpoint WHERE id=:id").setParameter("id", endpoint.getId()).getResultList().size(), "the integration was unexpectedly deleted from the database");
+
+        // Mock the Kessel permission to be able to fetch the endpoint. Also,
+        // simulate that the principal has edit permissions so that the Sources
+        // secrets are not redacted. We are not interested in testing any
+        // Sources' stuff in this assertion, but we need to give the principal
+        // this permission so that the check evaluates to something instead of
+        // throwing a "null pointer" exception.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpoint.getId().toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpoint.getId().toString());
+
+        given()
+            .header(identityHeader)
+            .when()
+            .pathParam("id", endpoint.getId())
+            .get("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("id", Matchers.is(endpoint.getId().toString()));
     }
 }
