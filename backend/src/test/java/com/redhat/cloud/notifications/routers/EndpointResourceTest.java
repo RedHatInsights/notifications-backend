@@ -57,12 +57,12 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriBuilder;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +72,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -2648,14 +2649,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Call the endpoint under test.
-        final UUID randomId = UUID.randomUUID();
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, randomId.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
 
         final String responseBody = given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .pathParam("id", randomId)
+            .pathParam("id", UUID.randomUUID())
             .post("/endpoints/{id}/test")
             .then()
             .statusCode(HttpStatus.SC_NOT_FOUND)
@@ -2663,7 +2663,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body()
             .asString();
 
-        Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
+        if (this.backendConfig.isKesselRelationsEnabled()) {
+            final JsonObject expectedBody = new JsonObject();
+            expectedBody.put("error", "Integration not found");
+
+            Assertions.assertEquals(expectedBody.encode(), responseBody, "unexpected not found error message returned");
+        } else {
+            Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
+        }
     }
 
     /**
@@ -3352,184 +3359,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
     }
 
-    /**
-     * Tests that when using Kessel, if the user is not authorized to send
-     * requests to the endpoints from the "EndpointResource", a {@link HttpStatus#SC_UNAUTHORIZED}
-     * response is returned.
-     */
-    @Test
-    void testKesselUnauthorized() {
-        // Enable the Kessel back end integration for this test.
-        this.kesselTestHelper.mockKesselRelations(true);
-
-        // Create an identity header.
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
-        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-
-        // Create an endpoint so that we don't get a 404 instead of an
-        // unauthorized response from the endpoints.
-        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
-
-        // Call the notifications history endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", createdEndpoint.getId())
-            .queryParam("includeDetail", false)
-            .get("/endpoints/{endpointId}/history")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        try {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
-
-            // Call the notifications history endpoint in the V2 path.
-            given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .pathParam("endpointId", createdEndpoint.getId())
-                .queryParam("includeDetail", false)
-                .get("/endpoints/{endpointId}/history")
-                .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
-        } finally {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        }
-
-        // Get the list of endpoints.
-        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
-
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .get("/endpoints")
-            .then()
-            .statusCode(HttpStatus.SC_OK)
-            .body("data", Matchers.hasSize(0))
-            .body("links", Matchers.anEmptyMap())
-            .body("meta.count", Matchers.is(0));
-
-        // Create an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(Json.encode(this.endpointMapper.toDTO(createdEndpoint)))
-            .post("/endpoints")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        // Create a drawer subscription.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(Json.encode(new RequestSystemSubscriptionProperties()))
-            .post("/endpoints/system/drawer_subscription")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        // Create an email subscription.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(Json.encode(new RequestSystemSubscriptionProperties()))
-            .post("/endpoints/system/email_subscription")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        try {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
-
-            // Call the "get endpoint" endpoint in the V2 path.
-            given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .pathParam("id", createdEndpoint.getId())
-                .get("/endpoints/{id}")
-                .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
-        } finally {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        }
-        // Get an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .get("/endpoints/{id}")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        // Delete an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .delete("/endpoints/{id}")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        // Enable an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .put("/endpoints/{id}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        // Disable an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .delete("/endpoints/{id}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        // Update an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .body(Json.encode(this.endpointMapper.toDTO(createdEndpoint)))
-            .put("/endpoints/{id}")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        // Retrieve the history details.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", createdEndpoint.getId())
-            .pathParam("historyId", UUID.randomUUID())
-            .get("/endpoints/{endpointId}/history/{historyId}/details")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        // Test an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .post("/endpoints/{id}/test")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-    }
-
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
         assertTrue(message.contains(String.format(
                 "Is not possible to create or alter endpoint with type %s, check API for alternatives",
@@ -3956,163 +3785,223 @@ public class EndpointResourceTest extends DbIsolatedTest {
         return response;
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testNotFoundResponsesUnknownEndpointId(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    /**
+     * Tests the logic path from {@link com.redhat.cloud.notifications.auth.kessel.KesselAuthorization#isPrincipalAuthorizedAndDoesIntegrationExist(SecurityContext, IntegrationPermission, UUID)}.
+     * For that, it performs the following tests:
+     *
+     * <ul>
+     *     <li>
+     *         Simulates that the principal does not have permission to perform
+     *         the different actions, but that the integration exists in our
+     *         database. Tests that the response is "forbidden".
+     *     </li>
+     *     <li>
+     *         Simulates that the principal does not have permission to perform
+     *         the different actions, and that the integration does not exist
+     *         in our database. Since the principal is not given the workspace
+     *         permission, it tests that the response is "forbidden".
+     *     </li>
+     *     <li>
+     *         Simulates that the principal does not have permission to perform
+     *         the different actions, that the integration does not exist
+     *         in our database, but that the principal has the required
+     *         workspace permission. Tests that the response is "not found".
+     *     </li>
+     * </ul>
+     */
+    @Test
+    void testNotFoundResponsesUnknownEndpointId() {
+        this.kesselTestHelper.mockKesselRelations(true);
 
-        // Add RBAC access.
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+        // Build an identity header for Quarkus.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
-        final UUID nonExistentEndpointId = UUID.randomUUID();
+        for (int i = 0; i < 3; i++) {
+            final int expectedReturnedStatusCode;
+            final UUID endpointId = UUID.randomUUID();
 
-        try {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
+            if (i == 0) {
+                // In the first test case the principal is not given any
+                // permissions to perform the actions, but we simulate that the
+                // integration exists in our database. Therefore, we simulate
+                // that the user simply is not authorized.
 
-            // Call the notifications history endpoint in the V2 path.
+                Mockito.when(this.endpointRepository.existsByUuidAndOrgId(endpointId, DEFAULT_ORG_ID)).thenReturn(true);
+
+                expectedReturnedStatusCode = HttpStatus.SC_FORBIDDEN;
+            } else if (i == 1) {
+                // In the second test case the principal is not given any
+                // permissions to perform the actions, and we simulate that the
+                // integration does not exist in our database. Also, we make
+                // sure that the principal does not have the required workspace
+                // permission to know that the integration does not exist.
+
+                Mockito.when(this.endpointRepository.existsByUuidAndOrgId(endpointId, DEFAULT_ORG_ID)).thenReturn(false);
+
+                this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER, CheckResponse.Allowed.ALLOWED_FALSE);
+
+                expectedReturnedStatusCode = HttpStatus.SC_FORBIDDEN;
+            } else {
+                // In the final test the principal is not given any permissions
+                // again, we simulate that the integration does not exist, but
+                // we pretend that the principal has the required workspace
+                // permission to know that the integration does indeed not
+                // exist in our database.
+
+                Mockito.when(this.endpointRepository.existsByUuidAndOrgId(endpointId, DEFAULT_ORG_ID)).thenReturn(false);
+
+                this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+                expectedReturnedStatusCode = HttpStatus.SC_NOT_FOUND;
+            }
+
+            try {
+                RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
+
+                // Call the notifications history endpoint in the V2 path.
+                given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .pathParam("endpointId", endpointId)
+                    .get("/endpoints/{endpointId}/history")
+                    .then()
+                    .statusCode(expectedReturnedStatusCode);
+            } finally {
+                RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
+            }
+
+            // Call the notifications history endpoint in the V1 path.
             given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .pathParam("endpointId", nonExistentEndpointId)
+                .pathParam("endpointId", endpointId)
                 .get("/endpoints/{endpointId}/history")
                 .then()
-                .statusCode(HttpStatus.SC_NOT_FOUND);
-        } finally {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        }
+                .statusCode(expectedReturnedStatusCode);
 
-        // Call the notifications history endpoint in the V1 path.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .get("/endpoints/{endpointId}/history")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+            try {
+                RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
 
-        try {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
-
-            // Call the "get endpoint" endpoint in the V2 path.
+                // Call the "get endpoint" endpoint in the V2 path.
+                given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .pathParam("endpointId", endpointId)
+                    .get("/endpoints/{endpointId}")
+                    .then()
+                    .statusCode(expectedReturnedStatusCode);
+            } finally {
+                RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
+            }
+            // Get an endpoint.
             given()
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
-                .pathParam("endpointId", nonExistentEndpointId)
+                .pathParam("endpointId", endpointId)
                 .get("/endpoints/{endpointId}")
                 .then()
-                .statusCode(HttpStatus.SC_NOT_FOUND);
-        } finally {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
+                .statusCode(expectedReturnedStatusCode);
+
+            // Delete an endpoint.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", endpointId)
+                .delete("/endpoints/{endpointId}")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
+
+            // Enable an endpoint.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", endpointId)
+                .put("/endpoints/{endpointId}/enable")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
+
+            // Disable an endpoint.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", endpointId)
+                .delete("/endpoints/{endpointId}/enable")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
+
+            // Update an endpoint. Create an endpoint so that we can avoid
+            // receiving a "bad request" response for not including a body.
+            final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(this.endpointMapper.toDTO(createdEndpoint)))
+                .pathParam("endpointId", endpointId)
+                .delete("/endpoints/{endpointId}/enable")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
+
+            // Get the history details.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", endpointId)
+                .pathParam("historyId", UUID.randomUUID())
+                .get("/endpoints/{endpointId}/history/{historyId}/details")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
+
+            // Test an endpoint.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", endpointId)
+                .post("/endpoints/{endpointId}/test")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
+
+            // Delete an event type.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", endpointId)
+                .pathParam("eventTypeId", UUID.randomUUID())
+                .delete("/endpoints/{endpointId}/eventType/{eventTypeId}")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
+
+            // Add a link between an endpoint and an event type.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", endpointId)
+                .pathParam("eventTypeId", UUID.randomUUID())
+                .put("/endpoints/{endpointId}/eventType/{eventTypeId}")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
+
+            // Update links between an endpoint and event types.
+            given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", endpointId)
+                .put("/endpoints/{endpointId}/eventTypes")
+                .then()
+                .statusCode(expectedReturnedStatusCode);
         }
-        // Get an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .get("/endpoints/{endpointId}")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Delete an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .delete("/endpoints/{endpointId}")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Enable an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .put("/endpoints/{endpointId}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Disable an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .delete("/endpoints/{endpointId}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Update an endpoint. Create an endpoint so that we can avoid
-        // receiving a "bad request" response for not including a body.
-        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(Json.encode(this.endpointMapper.toDTO(createdEndpoint)))
-            .pathParam("endpointId", nonExistentEndpointId)
-            .delete("/endpoints/{endpointId}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Get the history details.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .pathParam("historyId", UUID.randomUUID())
-            .get("/endpoints/{endpointId}/history/{historyId}/details")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Test an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .post("/endpoints/{endpointId}/test")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Delete an event type.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .pathParam("eventTypeId", UUID.randomUUID())
-            .delete("/endpoints/{endpointId}/eventType/{eventTypeId}")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Add a link between an endpoint and an event type.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .pathParam("eventTypeId", UUID.randomUUID())
-            .put("/endpoints/{endpointId}/eventType/{eventTypeId}")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        // Update links between an endpoint and event types.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .put("/endpoints/{endpointId}/eventTypes")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 }

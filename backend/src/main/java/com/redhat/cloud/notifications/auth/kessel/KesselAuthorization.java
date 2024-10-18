@@ -2,15 +2,19 @@ package com.redhat.cloud.notifications.auth.kessel;
 
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
@@ -26,6 +30,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
+
+import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 
 @ApplicationScoped
 public class KesselAuthorization {
@@ -56,6 +62,9 @@ public class KesselAuthorization {
 
     @Inject
     CheckClient checkClient;
+
+    @Inject
+    EndpointRepository endpointRepository;
 
     @Inject
     LookupClient lookupClient;
@@ -163,6 +172,84 @@ public class KesselAuthorization {
         }
 
         return uuids;
+    }
+
+    /**
+     * <p>Checks whether the principal is authorized to perform the given
+     * action with the given integration, and returns a proper response
+     * depending on the principal's authorization level.</p>
+     *
+     * <p>When an integration does not exist in Kessel, the Relations API
+     * simply returns an "unauthorized" response, which of course does not tell
+     * us whether it's a real "unauthorized" response or rather a masked "not
+     * found" one. Therefore, in this case, and depending on the principal's
+     * authorization, we need to determine whether we should return a
+     * {@link ForbiddenException} or a {@link NotFoundException}. The decission
+     * is made as follows:</p>
+     *
+     * <ul>
+     *     <li>
+     *         We first check with Kessel if the principal is authorized to
+     *         perform the given action on the given integration. If Kessel
+     *         returns an "authorized" response, then we know that both the
+     *         integration exists and that the principal is authorized to
+     *         perform the action, so we simply return and let the caller's
+     *         flow continue.
+     *     </li>
+     *     <li>
+     *         When the principal is "unauthorized", we need to verify that the
+     *         integration exists in our database. When it does, we know that
+     *         the principal is simply not authorized to perform the action,
+     *         so it is safe to throw a {@link ForbiddenException}.
+     *     </li>
+     *     <li>
+     *         If the integration does not exist, we cannot simply throw a
+     *         {@link NotFoundException}, because we do not really know if the
+     *         principal is authorized to know that in the given workspace they
+     *         might be trying to perform the action. Therefore, we check for
+     *         the {@link WorkspacePermission#INTEGRATIONS_VIEW} permission at
+     *         the workspace level. When the principal is "unauthorized", the
+     *         underlying {@link KesselAuthorization#hasPermissionOnResource(SecurityContext, KesselPermission, ResourceType, String)}
+     *         method will already throw a {@link ForbiddenException}. On the
+     *         other hand, if the principal is authorized to view integrations
+     *         in the workspace, then they are authorized to know that the
+     *         requested integration does not simply exist.
+     *     </li>
+     * </ul>
+     * @param securityContext the security context to pull the principal from.
+     * @param permission the permission we need to check for the principal.
+     * @param integrationId the integration's identifier.
+     */
+    public void isPrincipalAuthorizedAndDoesIntegrationExist(final SecurityContext securityContext, final IntegrationPermission permission, final UUID integrationId) {
+        // First perform a normal check on the integration. If the principal is
+        // authorized for that permission it means that both the integration
+        // exists and that the principal has permission to perform that action.
+        // Therefore, there is nothing else we need to do.
+        try {
+            this.hasPermissionOnResource(securityContext, permission, ResourceType.INTEGRATION, integrationId.toString());
+            return;
+        } catch (final ForbiddenException ignored) { }
+
+        // If the principal did not have permission to perform the action but
+        // the integration does exist, that means that we can be sure that the
+        // principal is simply unauthorized to perform that action.
+        if (this.endpointRepository.existsByUuidAndOrgId(integrationId, SecurityContextUtil.getOrgId(securityContext))) {
+            throw new ForbiddenException();
+        }
+
+        // When the integration does not exist in our database, we need to
+        // determine if the principal is supposed to know that the integration
+        // does not exist. For that, we need to make sure that they can view
+        // integrations in the given workspace.
+        this.hasPermissionOnResource(securityContext, WorkspacePermission.INTEGRATIONS_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        // Finally, if the principal is allowed to "view" integrations in the
+        // workspace, then they are authorized to know that the integration
+        // they specified simply does not exist on our end.
+        final JsonObject responseBody = new JsonObject();
+        responseBody.put("error", "Integration not found");
+
+        throw new NotFoundException(responseBody.encode());
     }
 
     /**
