@@ -29,8 +29,15 @@ public class RhServiceAccountIdentity extends RhIdentity {
         @JsonProperty("client_id")
         private String clientId;
 
+        @JsonProperty("user_id")
+        private String userId;
+
         public String getClientId() {
             return clientId;
+        }
+
+        public String getUserId() {
+            return userId;
         }
     }
 
@@ -41,7 +48,7 @@ public class RhServiceAccountIdentity extends RhIdentity {
 
     @Override
     public String getUserId() {
-        return getServiceAccount().getClientId();
+        return getServiceAccount().getUserId();
     }
 
     @Override
@@ -50,6 +57,7 @@ public class RhServiceAccountIdentity extends RhIdentity {
             "orgId='" + this.orgId + '\'' +
             ", serviceAccount=" + this.serviceAccount.username +
             ", type='" + this.type + '\'' +
+            ", userId=" + this.getUserId() +
             '}';
     }
 }
