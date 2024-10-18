@@ -26,9 +26,9 @@ public class AuthenticationProcessor implements Processor {
                 case BEARER -> throw new IllegalStateException("Unsupported authentication type: BEARER");
                 case SECRET_TOKEN -> {
                     if (secretPassword != null) {
-                        JsonObject message = exchange.getIn().getBody(JsonObject.class);
+                        JsonObject message = new JsonObject(exchange.getIn().getBody(String.class));
                         message.put(ROUTING_KEY, secretPassword);
-                        exchange.getIn().setBody(message);
+                        exchange.getIn().setBody(message.encode());
                     }
                 }
                 default -> throw new IllegalStateException("Unexpected authentication type: " + authType);
