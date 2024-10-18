@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.cache.CacheResult;
@@ -33,6 +34,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
+import static com.redhat.cloud.notifications.models.EndpointType.PAGERDUTY;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
 
@@ -341,6 +343,7 @@ public class EndpointRepository {
             loadTypedProperties(CamelProperties.class, endpointSet, CAMEL);
             loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, EMAIL_SUBSCRIPTION);
             loadTypedProperties(SystemSubscriptionProperties.class, endpointSet, DRAWER);
+            loadTypedProperties(PagerDutyProperties.class, endpointSet, PAGERDUTY);
         }
     }
 
