@@ -20,6 +20,7 @@ public class TestHelpers {
         JsonObject identity = new JsonObject();
         JsonObject user = new JsonObject();
         user.put("username", username);
+        user.put("user_id", username);
         identity.put("account_number", accountId);
         identity.put("org_id", orgId);
         identity.put("user", user);
@@ -35,6 +36,7 @@ public class TestHelpers {
         JsonObject serviceAccount = new JsonObject();
         serviceAccount.put("username", username);
         serviceAccount.put("client_id", uuid);
+        serviceAccount.put("user_id", uuid);
         identity.put("org_id", orgId);
         identity.put("service_account", serviceAccount);
         identity.put("type", "ServiceAccount");

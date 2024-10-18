@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.auth.principal.rhid.RhUserIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.SecurityContext;
@@ -32,7 +33,7 @@ import java.util.UUID;
 
 @QuarkusTest
 public class KesselAuthorizationTest {
-    @InjectMock
+    @InjectSpy
     BackendConfig backendConfig;
 
     @InjectMock
@@ -189,12 +190,12 @@ public class KesselAuthorizationTest {
         // Create a user identity object.
         final String username = "Red Hat user";
         final RhIdentity userIdentity = Mockito.mock(RhUserIdentity.class);
-        Mockito.when(userIdentity.getName()).thenReturn(username);
+        Mockito.when(userIdentity.getUserId()).thenReturn(username);
 
         // Create a service account identity object.
         final String serviceAccountName = String.format("service-account-%s", UUID.randomUUID());
         final RhIdentity serviceAccountIdentity = Mockito.mock(RhServiceAccountIdentity.class);
-        Mockito.when(serviceAccountIdentity.getName()).thenReturn(serviceAccountName);
+        Mockito.when(serviceAccountIdentity.getUserId()).thenReturn(serviceAccountName);
 
         // Loop through the supported identities.
         final List<TestCase> testCases = List.of(
@@ -217,7 +218,7 @@ public class KesselAuthorizationTest {
 
             final SubjectReference subjectReference = checkRequest.getSubject();
             Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
-            Assertions.assertEquals(tc.identity().getName(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(backendConfig.getKesselDomain() + "/" + tc.identity().getUserId(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
         }
     }
 
@@ -260,7 +261,7 @@ public class KesselAuthorizationTest {
             // Make sure the request was built appropriately.
             final SubjectReference subjectReference = lookupResourcesRequest.getSubject();
             Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
-            Assertions.assertEquals(tc.identity().getName(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(backendConfig.getKesselDomain() + "/" + tc.identity().getUserId(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), lookupResourcesRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 

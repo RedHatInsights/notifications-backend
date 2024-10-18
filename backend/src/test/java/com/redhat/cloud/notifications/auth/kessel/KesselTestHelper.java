@@ -105,7 +105,7 @@ public class KesselTestHelper {
                             .setSubject(
                                 ObjectReference.newBuilder()
                                     .setType(ObjectType.newBuilder().setName(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE).setNamespace(KesselAuthorization.KESSEL_RBAC_NAMESPACE).build())
-                                    .setId(subjectUsername)
+                                    .setId(backendConfig.getKesselDomain() + "/" + subjectUsername)
                                     .build()
                             ).build()
                     ).build()

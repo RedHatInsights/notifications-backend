@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.auth.kessel;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -62,6 +63,9 @@ public class KesselAuthorization {
 
     @Inject
     MeterRegistry meterRegistry;
+
+    @Inject
+    BackendConfig backendConfig;
 
     /**
      * Checks if the subject on the security context has permission on the
@@ -189,7 +193,7 @@ public class KesselAuthorization {
                     .setSubject(
                         ObjectReference.newBuilder()
                             .setType(ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
-                            .setId(identity.getName())
+                            .setId(getUserId(identity))
                             .build()
                     ).build()
             ).build();
@@ -210,10 +214,14 @@ public class KesselAuthorization {
                     .setSubject(
                         ObjectReference.newBuilder()
                             .setType(ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
-                            .setId(identity.getName())
+                            .setId(getUserId(identity))
                     ).build()
             ).setRelation(kesselPermission.getKesselPermissionName())
             .setResourceType(ResourceType.INTEGRATION.getKesselObjectType())
             .build();
+    }
+
+    private String getUserId(RhIdentity identity) {
+        return backendConfig.getKesselDomain() + "/" + identity.getUserId();
     }
 }

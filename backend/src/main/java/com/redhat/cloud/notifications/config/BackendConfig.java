@@ -27,6 +27,7 @@ public class BackendConfig {
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
     private static final String KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED = "notifications.kessel-inventory.integrations-removal.enabled";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
+    private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
@@ -76,6 +77,9 @@ public class BackendConfig {
     @ConfigProperty(name = ERRATA_MIGRATION_BATCH_SIZE, defaultValue = "1000")
     int errataMigrationBatchSize;
 
+    @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
+    String kesselDomain;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -101,6 +105,7 @@ public class BackendConfig {
         config.put(KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED, areKesselInventoryIntegrationRemovalsEnabled());
         config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
+        config.put(KESSEL_DOMAIN, getKesselDomain());
         config.put(UNLEASH, unleashEnabled);
 
         Log.info("=== Startup configuration ===");
@@ -177,5 +182,9 @@ public class BackendConfig {
         } else {
             return kesselRelationsEnabled;
         }
+    }
+
+    public String getKesselDomain() {
+        return kesselDomain;
     }
 }
