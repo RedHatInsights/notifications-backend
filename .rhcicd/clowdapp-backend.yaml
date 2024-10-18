@@ -206,6 +206,8 @@ objects:
               name: sources-api-psk
               key: psk
               optional: true
+        - name: KESSEL_DOMAIN
+          value: ${KESSEL_DOMAIN}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -312,3 +314,5 @@ parameters:
   value: "false"
 - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
   value: "false"
+- name: KESSEL_DOMAIN
+  value: "redhat"

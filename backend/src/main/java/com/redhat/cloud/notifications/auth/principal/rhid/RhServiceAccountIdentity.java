@@ -40,6 +40,11 @@ public class RhServiceAccountIdentity extends RhIdentity {
     }
 
     @Override
+    public String getUserId() {
+        return getServiceAccount().getClientId();
+    }
+
+    @Override
     public String toString() {
         return "RhServiceAccountIdentity{" +
             "orgId='" + this.orgId + '\'' +

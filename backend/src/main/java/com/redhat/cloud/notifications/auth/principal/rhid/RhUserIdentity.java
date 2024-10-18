@@ -33,8 +33,15 @@ public class RhUserIdentity extends RhIdentity {
         @JsonProperty("username")
         private String username;
 
+        @JsonProperty("user_id")
+        private String userId;
+
         public String getUsername() {
             return username;
+        }
+
+        public String getUserId() {
+            return userId;
         }
     }
 
@@ -44,11 +51,17 @@ public class RhUserIdentity extends RhIdentity {
     }
 
     @Override
+    public String getUserId() {
+        return getUser().getUserId();
+    }
+
+    @Override
     public String toString() {
         return "RhUserIdentity{" +
             "accountNumber='" + this.accountNumber + '\'' +
             ", orgId='" + this.orgId + '\'' +
             ", username='" + this.user.username + '\'' +
+            ", userid='" + this.user.userId + '\'' +
             ", type='" + this.type + '\'' +
             '}';
     }

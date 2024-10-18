@@ -9,4 +9,6 @@ public abstract class RhIdentity extends ConsoleIdentity {
     public String getAccountNumber() {
         return null;
     }
+
+    public abstract String getUserId();
 }
