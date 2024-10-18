@@ -122,8 +122,8 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
         given()
@@ -135,8 +135,8 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testAllQueryParams(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testAllQueryParams(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
         /*
          * This method is very long, but splitting it into several smaller ones would mean we have to recreate lots of
          * database records for each test. To avoid doing that, the data is only persisted once and many tests are run
@@ -641,8 +641,8 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testInsufficientPrivileges(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testInsufficientPrivileges(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         Header noAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
         given()
@@ -654,8 +654,8 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testInvalidSortBy(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testInvalidSortBy(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
@@ -671,8 +671,8 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testInvalidLimit(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testInvalidLimit(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
@@ -695,8 +695,8 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void shouldBeAllowedToGetEventLogs(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void shouldBeAllowedToGetEventLogs(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         Header readAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, NOTIFICATIONS_READ_ACCESS_ONLY);
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);

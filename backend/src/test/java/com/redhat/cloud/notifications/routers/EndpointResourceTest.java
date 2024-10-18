@@ -231,8 +231,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointAdding(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointAdding(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -443,8 +443,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testRepeatedEndpointName(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testRepeatedEndpointName(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -584,8 +584,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointValidation(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointValidation(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -655,8 +655,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void addCamelEndpoint(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void addCamelEndpoint(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -745,8 +745,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void addBogusCamelEndpoint(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void addBogusCamelEndpoint(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -792,8 +792,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testForbidSlackChannelUsage(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testForbidSlackChannelUsage(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("account-id", "org-id", DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -888,8 +888,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testRequireHttpsSchemeServiceNow(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testRequireHttpsSchemeServiceNow(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         URI sNowUri = URI.create("http://redhat.com");
         testRequireHttpsScheme("servicenow", sNowUri);
@@ -897,8 +897,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testRequireHttpsSchemeSplunk(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testRequireHttpsSchemeSplunk(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         URI splunkUri = URI.create("http://redhat.com");
         testRequireHttpsScheme("splunk", splunkUri);
@@ -1003,8 +1003,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void addSlackEndpoint(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void addSlackEndpoint(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final ConsoleIdentity ide = TestHelpers.decodeRhIdentityHeader(identityHeaderValue);
@@ -1094,8 +1094,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointUpdates(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointUpdates(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1243,8 +1243,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @MethodSource
-    void testEndpointTypeQuery(final boolean isKesselEnabled, final Set<EndpointType> types) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointTypeQuery(final boolean isKesselRelationsApiEnabled, final Set<EndpointType> types) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1369,8 +1369,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointLimiter(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointLimiter(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1436,8 +1436,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testSortingOrder(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testSortingOrder(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1530,8 +1530,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testWebhookAttributes(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testWebhookAttributes(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1619,8 +1619,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testAddEndpointEmailSubscription(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testAddEndpointEmailSubscription(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1797,8 +1797,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testAddEndpointDrawerSubscription(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testAddEndpointDrawerSubscription(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1975,8 +1975,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testAddEndpointEmailSubscriptionRbac(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testAddEndpointEmailSubscriptionRbac(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
         String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
@@ -2056,8 +2056,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testUnknownEndpointTypes(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testUnknownEndpointTypes(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-orgid", "test-user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2091,8 +2091,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testConnectionCount(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testConnectionCount(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2161,8 +2161,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testActive(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testActive(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2224,8 +2224,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testSearch(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testSearch(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2273,8 +2273,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testSearchWithType(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testSearchWithType(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2329,8 +2329,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointInvalidUrls(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointInvalidUrls(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         // Set up the RBAC access for the test.
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -2460,8 +2460,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointValidUrls(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointValidUrls(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         // Set up the RBAC access for the test.
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -2549,8 +2549,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    public void testEndpointSubtypeIsOnlyAllowedWhenRequired(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    public void testEndpointSubtypeIsOnlyAllowedWhenRequired(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String EMPTY = "empty";
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(EMPTY, EMPTY, DEFAULT_USER);
@@ -2615,8 +2615,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointTest(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointTest(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
@@ -2654,8 +2654,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointTestNotFound(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointTestNotFound(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2687,8 +2687,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointTestCustomMessage(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointTestCustomMessage(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
@@ -2730,8 +2730,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testEndpointTestBlankMessageReturnsBadRequest(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testEndpointTestBlankMessageReturnsBadRequest(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
@@ -2774,8 +2774,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
     */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    public void testUpdateEndpointCreateSecrets(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    public void testUpdateEndpointCreateSecrets(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2878,8 +2878,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    public void testUpdateEndpointDeleteSecrets(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    public void testUpdateEndpointDeleteSecrets(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2986,8 +2986,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    public void testUpdateEndpointUpdateSecrets(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    public void testUpdateEndpointUpdateSecrets(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -3114,8 +3114,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testAnsibleEndpointCRUD(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testAnsibleEndpointCRUD(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -3198,8 +3198,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void addPagerDutyEndpoint(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void addPagerDutyEndpoint(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -3278,8 +3278,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testSourcesSecretsDeletedWhenEndpointCreationFails(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testSourcesSecretsDeletedWhenEndpointCreationFails(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         WebhookProperties properties = new WebhookProperties();
         properties.setBasicAuthentication(new BasicAuthentication("username", "password"));
@@ -3973,8 +3973,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testNotFoundResponsesUnknownEndpointId(final boolean isKesselEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselEnabled);
+    void testNotFoundResponsesUnknownEndpointId(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         // Add RBAC access.
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
