@@ -6,15 +6,18 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -288,5 +291,57 @@ public class EndpointRepositoryTest {
 
         // Assert that the fetched endpoints are just the authorized ones.
         fetchedEndpoints.forEach(endpoint -> Assertions.assertTrue(authorizedIds.contains(endpoint.getId()), "the \"getEndpointsPerCompositeType\" function fetched an endpoint which we were not authorized to fetch"));
+    }
+
+    /**
+     * Tests that the {@link EndpointRepository#getNonSystemEndpointsWithLimitAndOffset(int, int)}
+     * function only fetches regular endpoints, and that it respects the
+     * "limit" and "offset" values.
+     */
+    @Test
+    void testGetNonSystemEndpointsWithLimitAndOffset() {
+        // Create a few regular endpoints.
+        for (int i = 0; i < 5; i++) {
+            this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
+        }
+
+        // Create a few system endpoints.
+        final Random random = new Random();
+        for (int i = 0; i < 5; i++) {
+            final SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
+            properties.setOnlyAdmins(random.nextBoolean());
+
+            this.resourceHelpers.createEndpoint(
+                null,
+                null,
+                EndpointType.EMAIL_SUBSCRIPTION,
+                null,
+                "Email endpoint",
+                "System email endpoint",
+                properties,
+                true,
+                LocalDateTime.now()
+            );
+        }
+
+        // Call the function under test.
+        final List<Endpoint> fetchedEndpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(50, 0);
+        Assertions.assertEquals(5, fetchedEndpoints.size(), "unexpected number of endpoints fetched");
+
+        // Make sure all the endpoints are non system endpoints.
+        fetchedEndpoints.forEach(
+            endpoint -> Assertions.assertFalse(
+                EndpointType.DRAWER.equals(endpoint.getType()) || EndpointType.EMAIL_SUBSCRIPTION.equals(endpoint.getType()),
+                "fetched a system endpoint type when the function under test should not have fetched any"
+            )
+        );
+
+        // Call the function under test with a limit.
+        final List<Endpoint> limitedEndpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(1, 0);
+        Assertions.assertEquals(1, limitedEndpoints.size(), "only one endpoint should have been fetched. The limit option has not been respected");
+
+        // Call the function under test with an offset.
+        final List<Endpoint> offsetedEndpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(5, 3);
+        Assertions.assertEquals(2, offsetedEndpoints.size(), "since the offset was \"3\", only the two last endpoints should have been fetched");
     }
 }

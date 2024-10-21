@@ -397,9 +397,9 @@ public class EndpointRepository {
      *               endpoints.
      * @return a list of endpoints.
      */
-    public List<Endpoint> getEndpointsWithLimitAndOffset(final int limit, final int offset) {
+    public List<Endpoint> getNonSystemEndpointsWithLimitAndOffset(final int limit, final int offset) {
         return this.entityManager
-            .createQuery("FROM Endpoint", Endpoint.class)
+            .createQuery("FROM Endpoint WHERE orgId IS NOT NULL", Endpoint.class)
             .setFirstResult(offset)
             .setMaxResults(limit)
             .getResultList();

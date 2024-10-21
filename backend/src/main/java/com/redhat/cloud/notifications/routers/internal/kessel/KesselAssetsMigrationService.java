@@ -68,7 +68,7 @@ public class KesselAssetsMigrationService {
         int fetchedEndpointsSize = 0;
         int offset = 0;
         do {
-            final List<Endpoint> fetchedEndpoints = this.endpointRepository.getEndpointsWithLimitAndOffset(this.backendConfig.getKesselMigrationBatchSize(), offset);
+            final List<Endpoint> fetchedEndpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(this.backendConfig.getKesselMigrationBatchSize(), offset);
 
             // If for some reason we have fetched full pages from the database
             // all the time, the last one might be empty, so there is no need
