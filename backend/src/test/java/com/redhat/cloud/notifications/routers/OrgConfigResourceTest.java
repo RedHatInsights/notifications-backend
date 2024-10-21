@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import io.quarkus.test.InjectMock;
@@ -33,7 +34,6 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_AC
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
-import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -55,6 +55,13 @@ class OrgConfigResourceTest extends DbIsolatedTest {
      */
     @InjectMock
     CheckClient checkClient;
+
+    /**
+     * Mocked RBAC's workspace utilities so that the {@link KesselTestHelper}
+     * can be used.
+     */
+    @InjectMock
+    WorkspaceUtils workspaceUtils;
 
     @Inject
     EntityManager entityManager;
@@ -97,7 +104,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         // check regular parameter
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         recordDefaultDailyDigestTimePreference();
 
@@ -120,7 +128,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
         Header testMinIdentityHeader = TestHelpers.createRHIdentityHeader(testMinIdentityHeaderValue);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 00), Response.Status.NO_CONTENT.getStatusCode());
         recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 15), Response.Status.NO_CONTENT.getStatusCode());
@@ -134,7 +143,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     @ValueSource(booleans = {false, true})
     void testGetDailyDigestTimePreference(final boolean isKesselRelationsApiEnabled) {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         LocalTime foundedPreference = given()
                 .header(identityHeader)
@@ -146,7 +156,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
                 .extract().as(LocalTime.class);
         assertEquals(LocalTime.MIDNIGHT, foundedPreference);
 
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         recordDefaultDailyDigestTimePreference();
 
         foundedPreference = given()
@@ -219,6 +230,7 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     @Test
     void testKesselUnauthorized() {
         this.kesselTestHelper.mockKesselRelations(true);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         // Get the time preferences.
         given()

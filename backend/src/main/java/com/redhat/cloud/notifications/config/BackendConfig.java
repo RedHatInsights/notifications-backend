@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.config;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -28,6 +29,7 @@ public class BackendConfig {
     private static final String KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED = "notifications.kessel-inventory.integrations-removal.enabled";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
+    private static final String RBAC_PSKS = "notifications.rbac.psks";
     private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
@@ -79,6 +81,9 @@ public class BackendConfig {
 
     @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
     String kesselDomain;
+
+    @ConfigProperty(name = RBAC_PSKS, defaultValue = "{\"notifications\": {\"secret\": \"development-psk-value\"}}")
+    protected String rbacPskSecrets;
 
     @Inject
     ToggleRegistry toggleRegistry;
@@ -186,5 +191,9 @@ public class BackendConfig {
 
     public String getKesselDomain() {
         return kesselDomain;
+    }
+
+    public JsonObject getRbacPskSecrets() {
+        return new JsonObject(this.rbacPskSecrets);
     }
 }

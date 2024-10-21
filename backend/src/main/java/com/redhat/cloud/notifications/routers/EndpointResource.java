@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermissi
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
@@ -96,7 +97,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
@@ -152,6 +152,9 @@ public class EndpointResource {
 
     @Inject
     EventTypeRepository eventTypeRepository;
+
+    @Inject
+    WorkspaceUtils workspaceUtils;
 
     /**
      * Used to create the secrets in Sources and update the endpoint's properties' IDs.
@@ -462,7 +465,9 @@ public class EndpointResource {
         @RequestBody(required = true)   EndpointDTO endpointDTO
     ) {
         if (this.backendConfig.isKesselRelationsEnabled()) {
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
+
+            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, workspaceId.toString());
 
             return this.internalCreateEndpoint(sec, endpointDTO);
         } else {
@@ -544,7 +549,9 @@ public class EndpointResource {
             // Attempt creating the integration in Kessel's inventory. Any
             // exception here would roll back the operation and our integration
             // would not be created in our database either.
-            this.kesselAssets.createIntegration(sec, WORKSPACE_ID_PLACEHOLDER, createdEndpoint.getId().toString());
+            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
+
+            this.kesselAssets.createIntegration(sec, workspaceId.toString(), createdEndpoint.getId().toString());
         }
 
         return createdEndpoint;
@@ -595,7 +602,9 @@ public class EndpointResource {
         final Endpoint endpoint;
 
         if (this.backendConfig.isKesselRelationsEnabled()) {
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
+
+            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, workspaceId.toString());
 
             endpoint = this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION);
         } else {
@@ -615,7 +624,9 @@ public class EndpointResource {
         final Endpoint endpoint;
 
         if (this.backendConfig.isKesselRelationsEnabled()) {
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
+
+            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, workspaceId.toString());
 
             endpoint = this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER);
         } else {
@@ -744,7 +755,9 @@ public class EndpointResource {
             // Attempt deleting the integration from Kessel. If any exception
             // is thrown the whole transaction will be rolled back and the
             // integration will not be deleted from our database.
-            this.kesselAssets.deleteIntegration(securityContext, WORKSPACE_ID_PLACEHOLDER, id.toString());
+            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(orgId);
+
+            this.kesselAssets.deleteIntegration(securityContext, workspaceId.toString(), id.toString());
         }
 
         return Response.noContent().build();

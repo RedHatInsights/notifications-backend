@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -56,7 +57,6 @@ import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
-import static com.redhat.cloud.notifications.auth.kessel.Constants.WORKSPACE_ID_PLACEHOLDER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -120,12 +120,20 @@ public class EventResourceTest extends DbIsolatedTest {
     @Inject
     EndpointRepository endpointRepository;
 
+    /**
+     * Mocked RBAC's workspace utilities so that the {@link KesselTestHelper}
+     * can be used.
+     */
+    @InjectMock
+    WorkspaceUtils workspaceUtils;
+
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly(final boolean isKesselRelationsApiEnabled) {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
-        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user2", NOTIFICATIONS_ACCESS_ONLY);
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "non-default-user", NOTIFICATIONS_ACCESS_ONLY);
         given()
                 .header(defaultIdentityHeader)
                 .when().get(PATH)
@@ -144,11 +152,19 @@ public class EventResourceTest extends DbIsolatedTest {
          */
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, OTHER_ORG_ID, OTHER_USERNAME, FULL_ACCESS);
         Header emptyIdentityHeader = mockRbac(OTHER_ACCOUNT_ID,  "none", OTHER_USERNAME, FULL_ACCESS);
-        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+
+        final UUID noneId = UUID.randomUUID();
+        this.kesselTestHelper.mockDefaultWorkspaceId("none", noneId);
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, noneId.toString());
+
+        final UUID otherWorkspaceId = UUID.randomUUID();
+        this.kesselTestHelper.mockDefaultWorkspaceId(OTHER_ORG_ID, otherWorkspaceId);
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, otherWorkspaceId.toString());
 
         Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
         Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
@@ -643,6 +659,7 @@ public class EventResourceTest extends DbIsolatedTest {
     @ValueSource(booleans = {false, true})
     void testInsufficientPrivileges(final boolean isKesselRelationsApiEnabled) {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         Header noAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
         given()
@@ -658,7 +675,8 @@ public class EventResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
                 .header(identityHeader)
@@ -675,7 +693,8 @@ public class EventResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
                 .header(identityHeader)
@@ -699,7 +718,8 @@ public class EventResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         Header readAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, NOTIFICATIONS_READ_ACCESS_ONLY);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, WORKSPACE_ID_PLACEHOLDER);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
                 .header(readAccessIdentityHeader)
