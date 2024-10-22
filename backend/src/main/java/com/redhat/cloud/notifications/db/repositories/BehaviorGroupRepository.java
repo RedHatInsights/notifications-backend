@@ -19,6 +19,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -382,7 +383,9 @@ public class BehaviorGroupRepository {
     }
 
     @Transactional
-    public void updateEventTypeBehaviors(String orgId, UUID eventTypeId, Set<UUID> behaviorGroupIds) {
+    public Set<UUID> updateEventTypeBehaviors(String orgId, UUID eventTypeId, Set<UUID> behaviorGroupIds) {
+        Set<UUID> updatedBg = new HashSet<>();
+
         // First, let's make sure the event type exists.
         EventType eventType = entityManager.find(EventType.class, eventTypeId);
         if (eventType == null) {
@@ -420,6 +423,7 @@ public class BehaviorGroupRepository {
              */
             List<UUID> behaviorsToDelete = new ArrayList<>(behaviorsFromDb);
             behaviorsToDelete.removeAll(behaviorGroupIds);
+            updatedBg.addAll(behaviorsToDelete);
             if (!behaviorsToDelete.isEmpty()) {
                 String deleteQuery = "DELETE FROM EventTypeBehavior " +
                         "WHERE eventType.id = :eventTypeId AND behaviorGroup.id IN (:behaviorsToDelete)";
@@ -436,6 +440,7 @@ public class BehaviorGroupRepository {
                  */
                 List<UUID> behaviorsToInsert = new ArrayList<>(behaviorGroupIds);
                 behaviorsToInsert.removeAll(behaviorsFromDb);
+                updatedBg.addAll(behaviorsToInsert);
                 for (UUID behaviorGroupId : behaviorsToInsert) {
                     String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
                             "SELECT :eventTypeId, :behaviorGroupId, :created " +
@@ -450,6 +455,7 @@ public class BehaviorGroupRepository {
                 }
             }
         }
+        return updatedBg;
     }
 
     /**

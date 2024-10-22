@@ -669,10 +669,10 @@ public class NotificationResource {
             throw new BadRequestException("The behavior groups identifiers list should not contain empty values");
         }
         String orgId = getOrgId(securityContext);
-        behaviorGroupRepository.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
+        Set<UUID> updatedBgs = behaviorGroupRepository.updateEventTypeBehaviors(orgId, eventTypeId, behaviorGroupIds);
 
         // Sync new endpoint to evenType data model
-        endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(orgId, behaviorGroupIds);
+        endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(orgId, updatedBgs);
         return Response.ok().build();
     }
 
