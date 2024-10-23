@@ -165,6 +165,39 @@ public class EndpointEventTypeRepository {
     }
 
     @Transactional
+    public void updateEventTypeEndpoints(String orgId, UUID eventTypeId, Set<UUID> endpointsList) {
+        EventType eventType = entityManager.find(EventType.class, eventTypeId);
+        if (eventType == null) {
+            throw new NotFoundException(EVENT_TYPE_NOT_FOUND_MESSAGE);
+        }
+
+        String deleteQueryStr = "DELETE FROM EndpointEventType eet WHERE " +
+            "endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ") +
+            "and id.eventTypeId = :eventTypeId";
+
+        jakarta.persistence.Query deleteQuery = entityManager.createQuery(deleteQueryStr)
+            .setParameter("eventTypeId", eventTypeId);
+        if (orgId != null) {
+            deleteQuery.setParameter("orgId", orgId);
+        }
+        deleteQuery.executeUpdate();
+
+        String insertQueryStr = "INSERT INTO EndpointEventType (eventType, endpoint) " +
+            "SELECT DISTINCT evt, ep " +
+            "from EventType evt, Endpoint ep where " +
+            "ep.orgId " + (orgId == null ? "is null " : "= :orgId ") +
+            "and ep.id in (:endpointList) and evt.id = :eventTypeId";
+
+        jakarta.persistence.Query insertQuery = entityManager.createQuery(insertQueryStr)
+            .setParameter("endpointList", endpointsList)
+            .setParameter("eventTypeId", eventTypeId);
+        if (orgId != null) {
+            insertQuery.setParameter("orgId", orgId);
+        }
+        insertQuery.executeUpdate();
+    }
+
+    @Transactional
     public void migrateData() {
         String query = "insert into endpoint_event_type (event_type_id, endpoint_id) " +
             "select distinct etb.event_type_id, bga.endpoint_id " +
