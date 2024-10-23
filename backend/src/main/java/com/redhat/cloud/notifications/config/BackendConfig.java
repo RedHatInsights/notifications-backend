@@ -27,6 +27,7 @@ public class BackendConfig {
     private static final String KESSEL_INVENTORY_CLIENT_ID = "inventory-api.authn.client.id";
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
     private static final String KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED = "notifications.kessel-inventory.integrations-removal.enabled";
+    private static final String KESSEL_MIGRATION_BATCH_SIZE = "notifications.kessel.migration.batch.size";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
@@ -73,6 +74,9 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED, defaultValue = "false")
     boolean kesselInventoryIntegrationRemovalsEnabled;
 
+    @ConfigProperty(name = KESSEL_MIGRATION_BATCH_SIZE, defaultValue = "1000")
+    int kesselMigrationBatchSize;
+
     @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "false")
     boolean kesselRelationsEnabled;
 
@@ -108,6 +112,7 @@ public class BackendConfig {
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
         config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled());
         config.put(KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED, areKesselInventoryIntegrationRemovalsEnabled());
+        config.put(KESSEL_MIGRATION_BATCH_SIZE, getKesselMigrationBatchSize());
         config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled());
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
@@ -179,6 +184,10 @@ public class BackendConfig {
      */
     public String getKesselInventoryReporterInstanceId() {
         return "service-account-" + kesselInventoryClientId;
+    }
+
+    public int getKesselMigrationBatchSize() {
+        return this.kesselMigrationBatchSize;
     }
 
     public boolean isKesselRelationsEnabled() {

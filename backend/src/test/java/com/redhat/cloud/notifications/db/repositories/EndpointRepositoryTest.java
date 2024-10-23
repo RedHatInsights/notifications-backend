@@ -6,15 +6,23 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -288,5 +296,98 @@ public class EndpointRepositoryTest {
 
         // Assert that the fetched endpoints are just the authorized ones.
         fetchedEndpoints.forEach(endpoint -> Assertions.assertTrue(authorizedIds.contains(endpoint.getId()), "the \"getEndpointsPerCompositeType\" function fetched an endpoint which we were not authorized to fetch"));
+    }
+
+    /**
+     * Tests that the {@link EndpointRepository#getNonSystemEndpointsWithLimitAndOffset(int, int)}
+     * function only fetches regular endpoints, and that it respects the
+     * "limit" and "offset" values.
+     */
+    @Test
+    void testGetNonSystemEndpointsWithLimitAndOffset() {
+        // Create a few regular and migratable endpoints.
+        final int regularEndpointsToCreate = 10;
+        final ArrayList<Endpoint> createdEndpoints = new ArrayList<>(regularEndpointsToCreate);
+        final Random random = new Random();
+        for (int i = 0; i < regularEndpointsToCreate; i++) {
+            final WebhookProperties webhookProperties = new WebhookProperties();
+            webhookProperties.setDisableSslVerification(random.nextBoolean());
+            webhookProperties.setMethod(HttpType.GET);
+            webhookProperties.setUrl("https://redhat.com");
+
+            final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(
+                DEFAULT_ACCOUNT_ID,
+                DEFAULT_ORG_ID,
+                EndpointType.WEBHOOK,
+                null,
+                String.format("Webhook integration %s", i),
+                String.format("Webhook integration %s", i),
+                webhookProperties,
+                true,
+                LocalDateTime.now(ZoneOffset.UTC).minusDays(i)
+            );
+
+            createdEndpoints.add(createdEndpoint);
+        }
+
+        // Create a few system endpoints.
+        for (int i = 0; i < 5; i++) {
+            final SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
+            properties.setOnlyAdmins(random.nextBoolean());
+
+            this.resourceHelpers.createEndpoint(
+                null,
+                null,
+                EndpointType.EMAIL_SUBSCRIPTION,
+                null,
+                "Email endpoint",
+                "System email endpoint",
+                properties,
+                true,
+                LocalDateTime.now()
+            );
+        }
+
+        // Call the function under test.
+        final List<Endpoint> fetchedEndpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(50, 0);
+        Assertions.assertEquals(regularEndpointsToCreate, fetchedEndpoints.size(), "unexpected number of endpoints fetched");
+
+        // Make sure all the endpoints are non system endpoints.
+        fetchedEndpoints.forEach(
+            endpoint -> Assertions.assertFalse(
+                EndpointType.DRAWER.equals(endpoint.getType()) || EndpointType.EMAIL_SUBSCRIPTION.equals(endpoint.getType()),
+                "fetched a system endpoint type when the function under test should not have fetched any"
+            )
+        );
+
+        // Call the function under test with a limit.
+        final List<Endpoint> limitedEndpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(1, 0);
+        Assertions.assertEquals(1, limitedEndpoints.size(), "only one endpoint should have been fetched. The limit option has not been respected");
+
+        // Call the function under test with an offset. Reverse the created
+        // endpoints so that the "oldest" one goes first in the list.+
+        final List<Endpoint> reversedEndpoints = createdEndpoints.reversed();
+        final Iterator<Endpoint> expectedEndpoints = reversedEndpoints.iterator();
+        for (int i = 0; i < regularEndpointsToCreate; i++) {
+            final List<Endpoint> offsetedEndpoint = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(1, i);
+            Assertions.assertEquals(1, offsetedEndpoint.size(), "only a single endpoint should hav been fetched since the limit is set to \"1\"");
+
+            // Compare the fetched endpoint from the database with the one we
+            // expect. ChronoUnit is used because the nanoseconds get trimmed
+            // when getting stored in the database, so technically both
+            // instants are not the same, but we know they are.
+            final Endpoint expectedEndpoint = expectedEndpoints.next();
+            Assertions.assertEquals(0, ChronoUnit.DAYS.between(expectedEndpoint.getCreated(), offsetedEndpoint.getFirst().getCreated()), String.format("the function under test should have fetched an endpoint created \"%s\" days ago", i));
+        }
+
+        // When applied the offset "0", we should get the oldest integration by
+        // default due to the "order by" clause.
+        final List<Endpoint> oldestEndpoint = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(1, 0);
+        Assertions.assertEquals(0, ChronoUnit.DAYS.between(reversedEndpoints.getFirst().getCreated(), oldestEndpoint.getFirst().getCreated()), "when the offset is \"0\", the oldest endpoint should have been fetched from the database");
+
+        // When applied the highest offset, the newest endpoint should have
+        // been fetched due to the "order by" clause.
+        final List<Endpoint> newestEndpoint = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(1, regularEndpointsToCreate - 1);
+        Assertions.assertEquals(0, ChronoUnit.DAYS.between(reversedEndpoints.getLast().getCreated(), newestEndpoint.getFirst().getCreated()), "when the offset is the highest one, the newest endpoint should have been fetched from the database");
     }
 }
