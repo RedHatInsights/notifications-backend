@@ -6,6 +6,12 @@ import com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -22,6 +28,7 @@ import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -38,6 +45,10 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.LookupClient;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -55,6 +66,7 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_AC
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME_2;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_2_NAME;
@@ -79,9 +91,37 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * here. The deserialization is still performed only to verify that the JSON responses data structure is correct.
      */
 
-    private static final String ACCOUNT_ID = "NotificationServiceTest";
-    private static final String ORG_ID = "NotificationServiceTestOrgId";
-    private static final String USERNAME = "user";
+    private static final String ACCOUNT_ID = DEFAULT_ACCOUNT_ID;
+    private static final String ORG_ID = DEFAULT_ORG_ID;
+    private static final String USERNAME = DEFAULT_ACCOUNT_ID;
+
+    /**
+     * Mocked the backend configuration so that the {@link KesselTestHelper}
+     * can be used.
+     */
+    @InjectMock
+    BackendConfig backendConfig;
+
+    /**
+     * Mocked Kessel's check client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    CheckClient checkClient;
+
+    /**
+     * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    LookupClient lookupClient;
+
+    /**
+     * Mocked RBAC's workspace utilities so that the {@link KesselTestHelper}
+     * can be used.
+     */
+    @InjectMock
+    WorkspaceUtils workspaceUtils;
 
     @Inject
     ResourceHelpers helpers;
@@ -95,6 +135,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     @Inject
     EndpointEventTypeRepository endpointEventTypeRepository;
 
+    @Inject
+    KesselTestHelper kesselTestHelper;
+
     @BeforeEach
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
@@ -107,20 +150,26 @@ public class NotificationResourceTest extends DbIsolatedTest {
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
-    @Test
-    void testEventTypeFetching() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEventTypeFetching(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         // no offset
         Response response = given()
-                .when()
-                .header(identityHeader)
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject page = new JsonObject(response.getBody().asString());
         JsonArray eventTypes = page.getJsonArray("data");
@@ -135,29 +184,29 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         // offset = 200
         response = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("offset", "200")
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("offset", "200")
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         page = new JsonObject(response.getBody().asString());
         eventTypes = page.getJsonArray("data");
-        assertEquals(1, eventTypes.size()); // only one element past 200
+        assertEquals(1, eventTypes.size()); // only one element past HttpStatus.SC_OK
         assertEquals(201, page.getJsonObject("meta").getNumber("count")); // One of the event types is part of the default DB records.
 
         // different limit
         response = given()
-                .when()
-                .header(identityHeader)
-                .get("/notifications/eventTypes?limit=100")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .get("/notifications/eventTypes?limit=100")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         page = new JsonObject(response.getBody().asString());
         eventTypes = page.getJsonArray("data");
@@ -166,13 +215,13 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         // different limit and offset
         response = given()
-                .when()
-                .header(identityHeader)
-                .get("/notifications/eventTypes?limit=100&offset=150")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .get("/notifications/eventTypes?limit=100&offset=150")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         page = new JsonObject(response.getBody().asString());
         eventTypes = page.getJsonArray("data");
@@ -180,22 +229,28 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(201, page.getJsonObject("meta").getNumber("count")); // One of the event types is part of the default DB records.
     }
 
-    @Test
-    void testEventTypeFetchingByApplication() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEventTypeFetchingByApplication(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myOtherTesterApplicationId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getId();
-        Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("applicationIds", myOtherTesterApplicationId)
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("applicationIds", myOtherTesterApplicationId)
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject page = new JsonObject(response.getBody().asString());
         JsonArray eventTypes = page.getJsonArray("data");
@@ -209,23 +264,28 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(20, eventTypes.size());
     }
 
-    @Test
-    void testEventTypeFetchingByBundle() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEventTypeFetchingByBundle(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get().getBundleId();
 
-        Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("bundleId", myBundleId)
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("bundleId", myBundleId)
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject page = new JsonObject(response.getBody().asString());
         JsonArray eventTypes = page.getJsonArray("data");
@@ -235,29 +295,35 @@ public class NotificationResourceTest extends DbIsolatedTest {
             assertEquals(myBundleId.toString(), ev.getJsonObject("application").getString("bundle_id"));
         }
 
-        assertEquals(200, page.getJsonObject("meta").getInteger("count"));
+        assertEquals(HttpStatus.SC_OK, page.getJsonObject("meta").getInteger("count"));
         assertEquals(20, eventTypes.size());
     }
 
-    @Test
-    void testEventTypeFetchingByBundleAndApplicationId() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEventTypeFetchingByBundleAndApplicationId(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID myOtherTesterApplicationId = app.getId();
         UUID myBundleId = app.getBundleId();
-        Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("bundleId", myBundleId)
-                .queryParam("applicationIds", myOtherTesterApplicationId)
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("bundleId", myBundleId)
+            .queryParam("applicationIds", myOtherTesterApplicationId)
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject page = new JsonObject(response.getBody().asString());
         JsonArray eventTypes = page.getJsonArray("data");
@@ -272,20 +338,26 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(20, eventTypes.size());
     }
 
-    @Test
-    void testEventTypeFetchingByEventTypeName() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEventTypeFetchingByEventTypeName(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         helpers.createTestAppAndEventTypes();
-        Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("eventTypeName", "50")
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("eventTypeName", "50")
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject page = new JsonObject(response.getBody().asString());
         JsonArray eventTypes = page.getJsonArray("data");
@@ -299,26 +371,32 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(2, eventTypes.size());
     }
 
-    @Test
-    void testEventTypeFetchingByBundleApplicationAndEventTypeName() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEventTypeFetchingByBundleApplicationAndEventTypeName(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID myOtherTesterApplicationId = app.getId();
         UUID myBundleId = app.getBundleId();
-        Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, USERNAME, RbacAccess.FULL_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("bundleId", myBundleId)
-                .queryParam("applicationIds", myOtherTesterApplicationId)
-                .queryParam("eventTypeName", "50")
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("bundleId", myBundleId)
+            .queryParam("applicationIds", myOtherTesterApplicationId)
+            .queryParam("eventTypeName", "50")
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject page = new JsonObject(response.getBody().asString());
         JsonArray eventTypes = page.getJsonArray("data");
@@ -334,32 +412,38 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(1, eventTypes.size());
     }
 
-    @Test
-    void testEventTypeFetchingAndExcludeMutedTypes() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEventTypeFetchingAndExcludeMutedTypes(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         UUID bundleId = helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         Application app = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID appId = app.getId();
-        Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, "user", FULL_ACCESS);
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behavior-group-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behavior-group-2", bundleId).getId();
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-2", bundleId).getId();
 
         List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
         // bgroup1 assigned to ev0 and ev1, bgroup2 assigned to ev14, all other event types unassigned
         ArrayList<String> unmutedEventTypeNames = new ArrayList<>(List.of(String.format(TEST_EVENT_TYPE_FORMAT, 0), String.format(TEST_EVENT_TYPE_FORMAT, 1), String.format(TEST_EVENT_TYPE_FORMAT, 14)));
-        behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.getFirst())).findFirst().get().getId(), Set.of(behaviorGroupId1));
-        behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.get(1))).findFirst().get().getId(), Set.of(behaviorGroupId1));
-        behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.get(2))).findFirst().get().getId(), Set.of(behaviorGroupId2));
+        behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.getFirst())).findFirst().get().getId(), Set.of(behaviorGroupId1));
+        behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.get(1))).findFirst().get().getId(), Set.of(behaviorGroupId1));
+        behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventTypes.stream().filter(ev -> ev.getName().equals(unmutedEventTypeNames.get(2))).findFirst().get().getId(), Set.of(behaviorGroupId2));
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String response = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("excludeMutedTypes", "true")
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            .when()
+            .header(identityHeader)
+            .queryParam("excludeMutedTypes", "true")
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().asString();
 
         JsonObject page = new JsonObject(response);
         JsonArray respEventTypes = page.getJsonArray("data");
@@ -376,7 +460,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         // Should not match: default bgroup assigned to ev20, bgroup from different org assigned to ev30
         String otherOrganization = "otherOrganizationId";
         UUID defaultBehaviorGroup = helpers.createDefaultBehaviorGroup("default-behavior-group", bundleId).getId();
-        UUID otherOrgBehaviorGroup = helpers.createBehaviorGroup(ACCOUNT_ID, otherOrganization, "other-org-bgroup", bundleId).getId();
+        UUID otherOrgBehaviorGroup = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, otherOrganization, "other-org-bgroup", bundleId).getId();
 
         String defaultEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 20);
         String otherOrgEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 30);
@@ -384,14 +468,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
         behaviorGroupRepository.updateEventTypeBehaviors(otherOrganization, eventTypes.stream().filter(ev -> ev.getName().equals(otherOrgEventTypeName)).findFirst().get().getId(), Set.of(otherOrgBehaviorGroup));
 
         String multiOrgResponse = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("excludeMutedTypes", "true")
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            .when()
+            .header(identityHeader)
+            .queryParam("excludeMutedTypes", "true")
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().asString();
 
         JsonObject multiOrgPage = new JsonObject(multiOrgResponse);
         JsonArray multiOrgEventTypes = multiOrgPage.getJsonArray("data");
@@ -406,41 +490,47 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(3, multiOrgPage.getJsonObject("meta").getInteger("count"));
     }
 
-    @Test
-    void testEventTypeFetchingByBundleApplicationEventTypeNameAndExcludeMutedTypes() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEventTypeFetchingByBundleApplicationEventTypeNameAndExcludeMutedTypes(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         UUID bundleId = helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         Application app1 = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME)).findFirst().get();
         UUID appId1 = app1.getId();
         Application app2 = apps.stream().filter(a -> a.getName().equals(TEST_APP_NAME_2)).findFirst().get();
         UUID appId2 = app2.getId();
-        Header identityHeader = initRbacMock(ACCOUNT_ID, ORG_ID, "user", FULL_ACCESS);
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behavior-group-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(ACCOUNT_ID, ORG_ID, "behavior-group-2", bundleId).getId();
-        UUID defaultBehaviorGroup = helpers.createDefaultBehaviorGroup(ACCOUNT_ID, bundleId).getId();
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-2", bundleId).getId();
+        UUID defaultBehaviorGroup = helpers.createDefaultBehaviorGroup(DEFAULT_ACCOUNT_ID, bundleId).getId();
 
         // bgroup1 assigned to ev0 and ev1 on TEST_APP_NAME, bgroup2 assigned to ev1 on TEST_APP_NAME_2,
         // default bgroup assigned to ev20 on TEST_APP_NAME_2 (should not match), all other event types unassigned
         String defaultEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 20);
         List<EventType> eventTypesApp1 = applicationRepository.getEventTypes(appId1);
-        behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypesApp1.getFirst().getId(), Set.of(behaviorGroupId1));
-        behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypesApp1.get(1).getId(), Set.of(behaviorGroupId1));
+        behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventTypesApp1.getFirst().getId(), Set.of(behaviorGroupId1));
+        behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventTypesApp1.get(1).getId(), Set.of(behaviorGroupId1));
         List<EventType> eventTypesApp2 = applicationRepository.getEventTypes(appId2);
-        behaviorGroupRepository.updateEventTypeBehaviors(ORG_ID, eventTypesApp2.get(1).getId(), Set.of(behaviorGroupId2));
+        behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventTypesApp2.get(1).getId(), Set.of(behaviorGroupId2));
         behaviorGroupRepository.linkEventTypeDefaultBehavior(eventTypesApp2.stream().filter(ev -> ev.getName().equals(defaultEventTypeName)).findFirst().get().getId(), defaultBehaviorGroup);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         Response unmutedResponse = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("bundleId", bundleId)
-                .queryParam("applicationIds", appId1)
-                .queryParam("eventTypeName", "1")
-                .queryParam("excludeMutedTypes", "true")
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("bundleId", bundleId)
+            .queryParam("applicationIds", appId1)
+            .queryParam("eventTypeName", "1")
+            .queryParam("excludeMutedTypes", "true")
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject unmutedPage = new JsonObject(unmutedResponse.getBody().asString());
         JsonArray unmutedEventTypes = unmutedPage.getJsonArray("data");
@@ -454,34 +544,34 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(1, unmutedEventTypes.size());
 
         Response unmutedDefaultGroupResponse = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("bundleId", bundleId)
-                .queryParam("applicationIds", appId2)
-                .queryParam("eventTypeName", "20")
-                .queryParam("excludeMutedTypes", "true")
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("bundleId", bundleId)
+            .queryParam("applicationIds", appId2)
+            .queryParam("eventTypeName", "20")
+            .queryParam("excludeMutedTypes", "true")
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject unmutedDefaultGroupPage = new JsonObject(unmutedDefaultGroupResponse.getBody().asString());
         JsonArray unmutedDefaultGroupEventTypes = unmutedDefaultGroupPage.getJsonArray("data");
         assertTrue(unmutedDefaultGroupEventTypes.isEmpty());
 
         Response mutedResponse = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("bundleId", bundleId)
-                .queryParam("applicationIds", appId2)
-                .queryParam("eventTypeName", "50")
-                .queryParam("excludeMutedTypes", "true")
-                .get("notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("bundleId", bundleId)
+            .queryParam("applicationIds", appId2)
+            .queryParam("eventTypeName", "50")
+            .queryParam("excludeMutedTypes", "true")
+            .get("notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject mutedPage = new JsonObject(mutedResponse.getBody().asString());
         JsonArray mutedEventTypes = mutedPage.getJsonArray("data");
@@ -489,23 +579,27 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         // bgroup in different org assigned to ev30 on TEST_APP_NAME_2. Although unmuted, this should not match since the org is different.
         String otherOrganization = "otherOrganizationId";
-        UUID otherOrgBehaviorGroup = helpers.createBehaviorGroup(ACCOUNT_ID, otherOrganization, "other-org-bgroup", bundleId).getId();
+        UUID otherOrgBehaviorGroup = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, otherOrganization, "other-org-bgroup", bundleId).getId();
 
         String otherOrgEventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 30);
         behaviorGroupRepository.updateEventTypeBehaviors(otherOrganization, eventTypesApp2.stream().filter(ev -> ev.getName().equals(otherOrgEventTypeName)).findFirst().get().getId(), Set.of(otherOrgBehaviorGroup));
 
+        final UUID otherOrganizationWorkspaceId = UUID.randomUUID();
+        this.kesselTestHelper.mockDefaultWorkspaceId(otherOrganization, otherOrganizationWorkspaceId);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, otherOrganizationWorkspaceId.toString());
+
         Response otherOrgUnmatchedResponse = given()
-                .when()
-                .header(identityHeader)
-                .queryParam("bundleId", bundleId)
-                .queryParam("applicationIds", appId2)
-                .queryParam("eventTypeName", "30")
-                .queryParam("excludeMutedTypes", "true")
-                .get("notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(identityHeader)
+            .queryParam("bundleId", bundleId)
+            .queryParam("applicationIds", appId2)
+            .queryParam("eventTypeName", "30")
+            .queryParam("excludeMutedTypes", "true")
+            .get("notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject otherOrgUnmatchedPage = new JsonObject(otherOrgUnmatchedResponse.getBody().asString());
         JsonArray otherOrgUnmatchedEventTypes = otherOrgUnmatchedPage.getJsonArray("data");
@@ -513,17 +607,17 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         // Query as other org, should match
         Response otherOrgMatchedResponse = given()
-                .when()
-                .header(initRbacMock(ACCOUNT_ID, otherOrganization, "user", FULL_ACCESS))
-                .queryParam("bundleId", bundleId)
-                .queryParam("applicationIds", appId2)
-                .queryParam("eventTypeName", "30")
-                .queryParam("excludeMutedTypes", "true")
-                .get("notifications/eventTypes")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().response();
+            .when()
+            .header(initRbacMock(DEFAULT_ACCOUNT_ID, otherOrganization, DEFAULT_USER, FULL_ACCESS))
+            .queryParam("bundleId", bundleId)
+            .queryParam("applicationIds", appId2)
+            .queryParam("eventTypeName", "30")
+            .queryParam("excludeMutedTypes", "true")
+            .get("notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
 
         JsonObject otherOrgMatchedPage = new JsonObject(otherOrgMatchedResponse.getBody().asString());
         JsonArray otherOrgMatchedEventTypes = otherOrgMatchedPage.getJsonArray("data");
@@ -537,65 +631,72 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(1, otherOrgMatchedEventTypes.size());
     }
 
-    @Test
-    void testGetEventTypesAffectedByEndpoint() {
-        String accountId = "testGetEventTypesAffectedByEndpoint";
-        String orgId = "testGetEventTypesAffectedByEndpointOrgId";
-        Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testGetEventTypesAffectedByEndpoint(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         UUID bundleId = helpers.createTestAppAndEventTypes();
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(accountId, orgId, "behavior-group-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(accountId, orgId, "behavior-group-2", bundleId).getId();
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-2", bundleId).getId();
         UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
-                .filter(a -> a.getName().equals(TEST_APP_NAME_2))
-                .findFirst().get().getId();
-        UUID endpointId1 = helpers.createWebhookEndpoint(accountId, orgId);
-        UUID endpointId2 = helpers.createWebhookEndpoint(accountId, orgId);
+            .filter(a -> a.getName().equals(TEST_APP_NAME_2))
+            .findFirst().get().getId();
+        UUID endpointId1 = helpers.createWebhookEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID);
+        UUID endpointId2 = helpers.createWebhookEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID);
         List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
         // ep1 assigned to ev0; ep2 not assigned.
-        behaviorGroupRepository.updateEventTypeBehaviors(orgId, eventTypes.get(0).getId(), Set.of(behaviorGroupId1));
-        behaviorGroupRepository.updateBehaviorGroupActions(orgId, behaviorGroupId1, List.of(endpointId1));
+        behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventTypes.get(0).getId(), Set.of(behaviorGroupId1));
+        behaviorGroupRepository.updateBehaviorGroupActions(DEFAULT_ORG_ID, behaviorGroupId1, List.of(endpointId1));
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpointId1.toString());
 
         String responseBody = given()
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId1.toString())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            .header(identityHeader)
+            .pathParam("endpointId", endpointId1.toString())
+            .when()
+            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().asString();
 
         JsonArray behaviorGroups = new JsonArray(responseBody);
         assertEquals(1, behaviorGroups.size());
         behaviorGroups.getJsonObject(0).mapTo(BehaviorGroup.class);
         assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpointId2.toString());
+
         responseBody = given()
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId2.toString())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            .header(identityHeader)
+            .pathParam("endpointId", endpointId2.toString())
+            .when()
+            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().asString();
 
         behaviorGroups = new JsonArray(responseBody);
         assertEquals(0, behaviorGroups.size());
 
         // ep1 assigned to event ev0; ep2 assigned to event ev1
-        behaviorGroupRepository.updateEventTypeBehaviors(orgId, eventTypes.get(0).getId(), Set.of(behaviorGroupId2));
-        behaviorGroupRepository.updateBehaviorGroupActions(orgId, behaviorGroupId2, List.of(endpointId2));
+        behaviorGroupRepository.updateEventTypeBehaviors(DEFAULT_ORG_ID, eventTypes.get(0).getId(), Set.of(behaviorGroupId2));
+        behaviorGroupRepository.updateBehaviorGroupActions(DEFAULT_ORG_ID, behaviorGroupId2, List.of(endpointId2));
 
         responseBody = given()
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId1.toString())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            .header(identityHeader)
+            .pathParam("endpointId", endpointId1.toString())
+            .when()
+            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().asString();
 
         behaviorGroups = new JsonArray(responseBody);
         assertEquals(1, behaviorGroups.size());
@@ -603,14 +704,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(behaviorGroupId1.toString(), behaviorGroups.getJsonObject(0).getString("id"));
 
         responseBody = given()
-                .header(identityHeader)
-                .pathParam("endpointId", endpointId2.toString())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(200)
-                .contentType(JSON)
-                .extract().asString();
+            .header(identityHeader)
+            .pathParam("endpointId", endpointId2.toString())
+            .when()
+            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().asString();
 
         behaviorGroups = new JsonArray(responseBody);
         assertEquals(1, behaviorGroups.size());
@@ -620,13 +721,13 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @Test
     void testGetApplicationFacets() {
-        Header identityHeader = initRbacMock("test", "test2", "user", READ_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, READ_ACCESS);
         List<Facet> applications = given()
                 .header(identityHeader)
                 .when()
                 .get("/notifications/facets/applications?bundleName=rhel")
                 .then()
-                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+                .statusCode(HttpStatus.SC_OK).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(applications.size() > 0);
         Optional<Facet> policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
@@ -639,7 +740,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .when()
                 .get("/notifications/facets/applications")
                 .then()
-                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+                .statusCode(HttpStatus.SC_OK).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(applications.size() > 0);
         policies = applications.stream().filter(facet -> facet.getName().equals("policies")).findFirst();
@@ -657,7 +758,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .contentType(JSON)
                 .get("/notifications/facets/bundles")
                 .then()
-                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+                .statusCode(HttpStatus.SC_OK).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(bundles.size() > 0);
         Optional<Facet> rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
@@ -673,7 +774,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .queryParam("includeApplications", "true")
                 .get("/notifications/facets/bundles")
                 .then()
-                .statusCode(200).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
+                .statusCode(HttpStatus.SC_OK).contentType(JSON).extract().response().jsonPath().getList(".", Facet.class);
 
         assertTrue(bundles.size() > 0);
         rhel = bundles.stream().filter(facet -> facet.getName().equals("rhel")).findFirst();
@@ -686,32 +787,35 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals("Policies", policies.get().getDisplayName());
     }
 
-    @Test
-    void testCreateFullBehaviorGroup() {
-        String accountId = "tenant-bg-create-full";
-        String orgId = "org-bg-create-full";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testCreateFullBehaviorGroup(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
-        Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().findFirst().get().getBundleId();
 
         List<UUID> endpoints = Stream.of(
-                helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
-                helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
-                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
-                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
-                helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
-                helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
-                helpers.createEndpoint(accountId, orgId, EndpointType.PAGERDUTY),
-                helpers.createEndpoint(accountId, orgId, EndpointType.PAGERDUTY)
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.EMAIL_SUBSCRIPTION),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.EMAIL_SUBSCRIPTION),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.DRAWER),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.DRAWER),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.PAGERDUTY),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.PAGERDUTY)
         ).map(Endpoint::getId).collect(Collectors.toList());
         Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());
 
         CreateBehaviorGroupRequest behaviorGroupRequest = new CreateBehaviorGroupRequest();
         behaviorGroupRequest.bundleId = myBundleId;
         behaviorGroupRequest.displayName = "My behavior group 1";
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         CreateBehaviorGroupResponse response = createBehaviorGroup(identityHeader, behaviorGroupRequest);
 
@@ -756,47 +860,57 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(eventTypes, response.eventTypes);
     }
 
-    @Test
-    void testUpdateFullBehaviorGroup() {
-        String accountId = "tenant-bg-update-full";
-        String orgId = "orgId-bg-update-full";
-        Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testUpdateFullBehaviorGroup(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
         UUID myBundleId = apps.stream().findFirst().get().getBundleId();
 
-        UUID behaviorGroupId = helpers.createBehaviorGroup(accountId, orgId, "My behavior group 1", myBundleId).getId();
-        UUID behaviorGroupIdOtherTenant = helpers.createBehaviorGroup(accountId + "-other", orgId + "-other", "My behavior", myBundleId).getId();
+        UUID behaviorGroupId = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "My behavior group 1", myBundleId).getId();
+        UUID behaviorGroupIdOtherTenant = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID + "-other", DEFAULT_ORG_ID + "-other", "My behavior", myBundleId).getId();
 
         List<UUID> endpoints = Stream.of(
-                helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
-                helpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION),
-                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
-                helpers.createEndpoint(accountId, orgId, EndpointType.DRAWER),
-                helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
-                helpers.createEndpoint(accountId, orgId, EndpointType.CAMEL),
-                helpers.createEndpoint(accountId, orgId, EndpointType.PAGERDUTY),
-                helpers.createEndpoint(accountId, orgId, EndpointType.PAGERDUTY)
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.EMAIL_SUBSCRIPTION),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.EMAIL_SUBSCRIPTION),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.DRAWER),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.DRAWER),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.PAGERDUTY),
+            helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.PAGERDUTY)
         ).map(Endpoint::getId).collect(Collectors.toList());
 
         Set<UUID> eventTypes = apps.stream().findFirst().get().getEventTypes().stream().map(EventType::getId).collect(Collectors.toSet());
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+
+        // Mock the workspace identifier for the different tenant so that the
+        // function which grabs the default workspace identifier does not cause
+        // an exception.
+        final UUID otherWorkspaceId = UUID.randomUUID();
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID + "-other", otherWorkspaceId);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         // Updating a behavior of other tenant yields 404 - i.e. can't find the behavior group
         UpdateBehaviorGroupRequest behaviorGroupRequest = new UpdateBehaviorGroupRequest();
         behaviorGroupRequest.displayName = "My behavior group 1.0";
-        updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest, 404);
+        updateBehaviorGroup(identityHeader, behaviorGroupIdOtherTenant, behaviorGroupRequest, HttpStatus.SC_NOT_FOUND);
         BehaviorGroup behaviorGroup = helpers.getBehaviorGroup(behaviorGroupIdOtherTenant);
         assertEquals("My behavior", behaviorGroup.getDisplayName()); // No change
 
         // Updating the behavior group displayName only
-        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, 200);
+        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, HttpStatus.SC_OK);
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 1.0", behaviorGroup.getDisplayName());
 
         // Updating with all null is effectively a no-op
         behaviorGroupRequest.displayName = null;
-        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, 200);
+        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, HttpStatus.SC_OK);
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 1.0", behaviorGroup.getDisplayName());
 
@@ -804,347 +918,463 @@ public class NotificationResourceTest extends DbIsolatedTest {
         behaviorGroupRequest.displayName = "My behavior group 2.0";
         behaviorGroupRequest.endpointIds = endpoints;
         behaviorGroupRequest.eventTypeIds = null;
-        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, 200);
+        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, HttpStatus.SC_OK);
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 2.0", behaviorGroup.getDisplayName());
-        assertEquals(endpoints, getEndpointsIds(orgId, behaviorGroupId));
-        assertEquals(Set.of(), getEventTypeIds(orgId, behaviorGroupId));
+        assertEquals(endpoints, getEndpointsIds(DEFAULT_ORG_ID, behaviorGroupId));
+        assertEquals(Set.of(), getEventTypeIds(DEFAULT_ORG_ID, behaviorGroupId));
 
         // Updating only event types (endpoints remain the same)
         behaviorGroupRequest.displayName = "My behavior group 3.0";
         behaviorGroupRequest.endpointIds = null;
         behaviorGroupRequest.eventTypeIds = eventTypes;
-        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, 200);
+        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, HttpStatus.SC_OK);
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 3.0", behaviorGroup.getDisplayName());
-        assertEquals(endpoints, getEndpointsIds(orgId, behaviorGroupId));
-        assertEquals(eventTypes, getEventTypeIds(orgId, behaviorGroupId));
+        assertEquals(endpoints, getEndpointsIds(DEFAULT_ORG_ID, behaviorGroupId));
+        assertEquals(eventTypes, getEventTypeIds(DEFAULT_ORG_ID, behaviorGroupId));
 
         // Updating both to empty
         behaviorGroupRequest.displayName = "My behavior group 4.0";
         behaviorGroupRequest.endpointIds = List.of();
         behaviorGroupRequest.eventTypeIds = Set.of();
-        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, 200);
+        updateBehaviorGroup(identityHeader, behaviorGroupId, behaviorGroupRequest, HttpStatus.SC_OK);
         behaviorGroup = helpers.getBehaviorGroup(behaviorGroupId);
         assertEquals("My behavior group 4.0", behaviorGroup.getDisplayName());
-        assertEquals(List.of(), getEndpointsIds(orgId, behaviorGroupId));
-        assertEquals(Set.of(), getEventTypeIds(orgId, behaviorGroupId));
+        assertEquals(List.of(), getEndpointsIds(DEFAULT_ORG_ID, behaviorGroupId));
+        assertEquals(Set.of(), getEventTypeIds(DEFAULT_ORG_ID, behaviorGroupId));
     }
 
-    @Test
-    void testBundleApplicationEventTypeByName() {
-        String accountId = "tenant-bundle-app-eventtype";
-        String orgId = "orgId-bundle-app-eventtype";
-        Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testBundleApplicationEventTypeByName(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         helpers.createTestAppAndEventTypes();
 
         String eventTypeName = String.format(TEST_EVENT_TYPE_FORMAT, 1);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         Bundle bundle = given()
-                .header(identityHeader)
-                .when()
-                .given()
-                .pathParam("bundleName", TEST_BUNDLE_NAME)
-                .get("/notifications/bundles/{bundleName}")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(Bundle.class);
+            .header(identityHeader)
+            .when()
+            .given()
+            .pathParam("bundleName", TEST_BUNDLE_NAME)
+            .get("/notifications/bundles/{bundleName}")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract()
+            .as(Bundle.class);
         assertEquals(bundle.getName(), TEST_BUNDLE_NAME);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.APPLICATIONS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         Application application = given()
-                .header(identityHeader)
-                .pathParam("bundleName", TEST_BUNDLE_NAME)
-                .pathParam("applicationName", TEST_APP_NAME)
-                .when()
-                .given()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(Application.class);
+            .header(identityHeader)
+            .pathParam("bundleName", TEST_BUNDLE_NAME)
+            .pathParam("applicationName", TEST_APP_NAME)
+            .when()
+            .given()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract()
+            .as(Application.class);
         assertEquals(application.getName(), TEST_APP_NAME);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         EventType eventType = given()
-                .header(identityHeader)
-                .pathParam("bundleName", TEST_BUNDLE_NAME)
-                .pathParam("applicationName", TEST_APP_NAME)
-                .pathParam("eventTypeName", eventTypeName)
-                .when()
-                .given()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(EventType.class);
+            .header(identityHeader)
+            .pathParam("bundleName", TEST_BUNDLE_NAME)
+            .pathParam("applicationName", TEST_APP_NAME)
+            .pathParam("eventTypeName", eventTypeName)
+            .when()
+            .given()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract()
+            .as(EventType.class);
         assertEquals(eventType.getName(), eventTypeName);
 
         // Not found cases
         given()
-                .header(identityHeader)
-                .pathParam("bundleName", "bla bla")
-                .when()
-                .given()
-                .get("/notifications/bundles/{bundleName}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("bundleName", "bla bla")
+            .when()
+            .given()
+            .get("/notifications/bundles/{bundleName}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         given()
-                .header(identityHeader)
-                .pathParam("bundleName", TEST_BUNDLE_NAME)
-                .pathParam("applicationName", "bla bla")
-                .when()
-                .given()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("bundleName", TEST_BUNDLE_NAME)
+            .pathParam("applicationName", "bla bla")
+            .when()
+            .given()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         given()
-                .header(identityHeader)
-                .pathParam("bundleName", "bla bla")
-                .pathParam("applicationName", TEST_APP_NAME)
-                .when()
-                .given()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("bundleName", "bla bla")
+            .pathParam("applicationName", TEST_APP_NAME)
+            .when()
+            .given()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         given()
-                .header(identityHeader)
-                .pathParam("bundleName", "bla bla")
-                .pathParam("applicationName", TEST_APP_NAME)
-                .pathParam("eventTypeName", eventTypeName)
-                .when()
-                .given()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("bundleName", "bla bla")
+            .pathParam("applicationName", TEST_APP_NAME)
+            .pathParam("eventTypeName", eventTypeName)
+            .when()
+            .given()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         given()
-                .header(identityHeader)
-                .pathParam("bundleName", TEST_BUNDLE_NAME)
-                .pathParam("applicationName", "bla bla")
-                .pathParam("eventTypeName", eventTypeName)
-                .when()
-                .given()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("bundleName", TEST_BUNDLE_NAME)
+            .pathParam("applicationName", "bla bla")
+            .pathParam("eventTypeName", eventTypeName)
+            .when()
+            .given()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         given()
-                .header(identityHeader)
-                .pathParam("bundleName", TEST_BUNDLE_NAME)
-                .pathParam("applicationName", TEST_APP_NAME)
-                .pathParam("eventTypeName", "blabla")
-                .when()
-                .given()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("bundleName", TEST_BUNDLE_NAME)
+            .pathParam("applicationName", TEST_APP_NAME)
+            .pathParam("eventTypeName", "blabla")
+            .when()
+            .given()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    @Test
-    void testInsufficientPrivileges() {
-        Header noAccessIdentityHeader = initRbacMock("tenant", "orgId", "noAccess", NO_ACCESS);
-        Header readAccessIdentityHeader = initRbacMock("tenant", "orgId", "readAccess", READ_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInsufficientPrivileges(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
-        given()
-                .header(noAccessIdentityHeader)
-                .when()
-                .get("/notifications/eventTypes")
-                .then()
-                .statusCode(403);
+        Header noAccessIdentityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
+        Header readAccessIdentityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "read-access", READ_ACCESS);
 
-        given()
-                .header(noAccessIdentityHeader)
-                .pathParam("behaviorGroupId", UUID.randomUUID())
-                .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
-                .then()
-                .statusCode(403);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
-        given()
-                .header(noAccessIdentityHeader)
-                .pathParam("endpointId", UUID.randomUUID())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(403);
+        try {
+            RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_2_0;
 
-        given()
-                .header(readAccessIdentityHeader)
-                .contentType(JSON)
-                .pathParam("eventTypeId", UUID.randomUUID())
-                .body(Json.encode(List.of(UUID.randomUUID())))
-                .when()
-                .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(403);
-
-        given()
+            given()
                 .header(noAccessIdentityHeader)
                 .pathParam("eventTypeId", UUID.randomUUID())
                 .when()
                 .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
-                .statusCode(403);
+                .statusCode(HttpStatus.SC_FORBIDDEN);
+        } finally {
+            RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
 
-        given()
-                .header(readAccessIdentityHeader)
-                .contentType(JSON)
-                .when()
-                .post("/notifications/behaviorGroups")
-                .then()
-                .statusCode(403);
-
-        given()
-                .header(readAccessIdentityHeader)
-                .contentType(JSON)
-                .pathParam("id", UUID.randomUUID())
-                .when()
-                .put("/notifications/behaviorGroups/{id}")
-                .then()
-                .statusCode(403);
-
-        given()
-                .header(readAccessIdentityHeader)
-                .pathParam("id", UUID.randomUUID())
-                .when()
-                .delete("/notifications/behaviorGroups/{id}")
-                .then()
-                .statusCode(403);
-
-        given()
-                .header(readAccessIdentityHeader)
-                .contentType(JSON)
-                .pathParam("behaviorGroupId", UUID.randomUUID())
-                .body(Json.encode(List.of(UUID.randomUUID())))
-                .when()
-                .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
-                .then()
-                .statusCode(403);
-
-        given()
+            given()
                 .header(noAccessIdentityHeader)
-                .pathParam("bundleId", UUID.randomUUID())
+                .pathParam("eventTypeId", UUID.randomUUID())
                 .when()
-                .get("/notifications/bundles/{bundleId}/behaviorGroups")
+                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
                 .then()
-                .statusCode(403);
+                .statusCode(HttpStatus.SC_FORBIDDEN);
+        }
 
         given()
-                .header(noAccessIdentityHeader)
-                .pathParam("bundleName", "myBundle")
-                .when()
-                .get("/notifications/bundles/{bundleName}")
-                .then()
-                .statusCode(403);
+            .header(noAccessIdentityHeader)
+            .when()
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
 
         given()
-                .header(noAccessIdentityHeader)
-                .pathParam("bundleName", "myBundle")
-                .pathParam("applicationName", "myApp")
-                .when()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
-                .then()
-                .statusCode(403);
+            .header(noAccessIdentityHeader)
+            .pathParam("bundleName", "myBundle")
+            .when()
+            .get("/notifications/bundles/{bundleName}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
 
         given()
-                .header(noAccessIdentityHeader)
-                .pathParam("bundleName", "myBundle")
-                .pathParam("applicationName", "myApp")
-                .pathParam("eventTypeName", "myEventType")
-                .when()
-                .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
-                .then()
-                .statusCode(403);
+            .header(noAccessIdentityHeader)
+            .pathParam("bundleName", "myBundle")
+            .pathParam("applicationName", "myApp")
+            .when()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .pathParam("bundleName", "myBundle")
+            .pathParam("applicationName", "myApp")
+            .pathParam("eventTypeName", "myEventType")
+            .when()
+            .get("/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .pathParam("behaviorGroupId", UUID.randomUUID())
+            .when()
+            .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .pathParam("endpointId", UUID.randomUUID())
+            .when()
+            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", UUID.randomUUID())
+            .body(Json.encode(List.of(UUID.randomUUID())))
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .contentType(JSON)
+            .when()
+            .post("/notifications/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .contentType(JSON)
+            .pathParam("id", UUID.randomUUID())
+            .when()
+            .put("/notifications/behaviorGroups/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .pathParam("id", UUID.randomUUID())
+            .when()
+            .delete("/notifications/behaviorGroups/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", UUID.randomUUID())
+            .when()
+            .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", UUID.randomUUID())
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", UUID.randomUUID())
+            .pathParam("behaviorGroupId", UUID.randomUUID())
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", UUID.randomUUID())
+            .pathParam("behaviorGroupId", UUID.randomUUID())
+            .when()
+            .delete("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .pathParam("bundleId", UUID.randomUUID())
+            .when()
+            .get("/notifications/bundles/{bundleId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .pathParam("eventTypeId", UUID.randomUUID())
+            .when()
+            .get("/notifications/eventTypes/{eventTypeId}/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
-    @Test
-    void testUpdateUnknownBehaviorGroupId() {
-        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testUpdateUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
         BehaviorGroup behaviorGroup = new BehaviorGroup();
         behaviorGroup.setDisplayName("Behavior group");
         behaviorGroup.setBundleId(UUID.randomUUID()); // Only used for @NotNull validation.
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         given()
-                .header(identityHeader)
-                .contentType(JSON)
-                .pathParam("id", UUID.randomUUID())
-                .body(Json.encode(behaviorGroup))
-                .when()
-                .put("/notifications/behaviorGroups/{id}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", UUID.randomUUID())
+            .body(Json.encode(behaviorGroup))
+            .when()
+            .put("/notifications/behaviorGroups/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    @Test
-    void testDeleteUnknownBehaviorGroupId() {
-        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testDeleteUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         given()
-                .header(identityHeader)
-                .pathParam("id", UUID.randomUUID())
-                .when()
-                .delete("/notifications/behaviorGroups/{id}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("id", UUID.randomUUID())
+            .when()
+            .delete("/notifications/behaviorGroups/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    @Test
-    void testFindBehaviorGroupsByUnknownBundleId() {
-        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testFindBehaviorGroupsByUnknownBundleId(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         given()
-                .header(identityHeader)
-                .pathParam("bundleId", UUID.randomUUID())
-                .when()
-                .get("/notifications/bundles/{bundleId}/behaviorGroups")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("bundleId", UUID.randomUUID())
+            .when()
+            .get("/notifications/bundles/{bundleId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    @Test
-    void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId() {
-        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         given()
-                .header(identityHeader)
-                .pathParam("behaviorGroupId", UUID.randomUUID())
-                .when()
-                .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("behaviorGroupId", UUID.randomUUID())
+            .when()
+            .get("/notifications/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    @Test
-    void testFindBehaviorGroupsByUnknownEventTypeId() {
-        Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testFindBehaviorGroupsByUnknownEventTypeId(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         given()
-                .header(identityHeader)
-                .pathParam("eventTypeId", UUID.randomUUID())
-                .when()
-                .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("eventTypeId", UUID.randomUUID())
+            .when()
+            .get("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    @Test
-    void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId() {
-        Header identityHeader = initRbacMock("tenant", "someOrgId", "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        final UUID integrationId = UUID.randomUUID();
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, integrationId.toString());
+
         given()
-                .header(identityHeader)
-                .pathParam("endpointId", UUID.randomUUID())
-                .when()
-                .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
-                .then()
-                .statusCode(404);
+            .header(identityHeader)
+            .pathParam("endpointId", integrationId)
+            .when()
+            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
-    @Test
-    void testBehaviorGroupSameName() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testBehaviorGroupSameName(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         final String BEHAVIOR_GROUP_1_NAME = "BehaviorGroup1";
         final String BEHAVIOR_GROUP_2_NAME = "BehaviorGroup2";
 
-        Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Bundle bundle1 = helpers.createBundle(TEST_BUNDLE_NAME, "Bundle1");
         Bundle bundle2 = helpers.createBundle(TEST_BUNDLE_2_NAME, "Bundle2");
@@ -1153,34 +1383,34 @@ public class NotificationResourceTest extends DbIsolatedTest {
         createBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_1_NAME;
         createBehaviorGroupRequest.bundleId = bundle1.getId();
 
-        UUID behaviorGroup1Id = createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200).get().id;
+        UUID behaviorGroup1Id = createBehaviorGroup(identityHeader, createBehaviorGroupRequest, HttpStatus.SC_OK).get().id;
         assertNotNull(behaviorGroup1Id);
 
         // same display name in same bundle is not possible
-        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 400);
+        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, HttpStatus.SC_BAD_REQUEST);
 
         // same display name in a different bundle is OK
         createBehaviorGroupRequest.bundleId = bundle2.getId();
-        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200);
+        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, HttpStatus.SC_OK);
 
         // Different display name in bundle1
         createBehaviorGroupRequest.bundleId = bundle1.getId();
         createBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_2_NAME;
-        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, 200);
+        createBehaviorGroup(identityHeader, createBehaviorGroupRequest, HttpStatus.SC_OK);
 
         // Cannot update Behavior Group 1 name to "BehaviorGroup2"  as it already exists
         UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
         updateBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_2_NAME;
-        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 400);
+        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, HttpStatus.SC_BAD_REQUEST);
 
         // Can update other properties without changing the name
         updateBehaviorGroupRequest.displayName = BEHAVIOR_GROUP_1_NAME;
         updateBehaviorGroupRequest.eventTypeIds = Set.of();
-        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 200);
+        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, HttpStatus.SC_OK);
 
         // Can use other name
         updateBehaviorGroupRequest.displayName = "OtherName";
-        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, 200);
+        updateBehaviorGroup(identityHeader, behaviorGroup1Id, updateBehaviorGroupRequest, HttpStatus.SC_OK);
     }
 
     /**
@@ -1207,16 +1437,22 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .statusCode(200);
     }
 
+
     /**
      * Tests that a bad request response is returned when attempting to create
      * a behavior group without specifying a bundle ID or its name.
      */
-    @Test
-    void testBadRequestBehaviorGroupInvalidBundle() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testBadRequestBehaviorGroupInvalidBundle(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
         createBehaviorGroupRequest.displayName = "behavior-group-display-name";
 
-        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final String response = given()
             .header(identityHeader)
@@ -1225,7 +1461,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .body(Json.encode(createBehaviorGroupRequest))
             .post("/notifications/behaviorGroups")
             .then()
-            .statusCode(400)
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract()
             .body()
             .asString();
@@ -1248,9 +1484,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * bundle ID or its name don't correspond to any existing bundle in the
      * database.
      */
-    @Test
-    void testNotFoundBehaviorGroupNotExists() {
-        final Header identityHeader = initRbacMock("tenant", "sameBehaviorGroupName", "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testNotFoundBehaviorGroupNotExists(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final var bgNoBundleId = new CreateBehaviorGroupRequest();
         bgNoBundleId.bundleId = UUID.randomUUID();
@@ -1269,7 +1510,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .body(Json.encode(bg))
                 .post("/notifications/behaviorGroups")
                 .then()
-                .statusCode(404)
+                .statusCode(HttpStatus.SC_NOT_FOUND)
                 .extract()
                 .body()
                 .asString();
@@ -1297,8 +1538,11 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * @throws NoSuchFieldException if the field in the request class to grab
      * the maximum value for the display name does not exist.
      */
-    @Test
-    void testBehaviorGroupDisplayNameTooLong() throws NoSuchFieldException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testBehaviorGroupDisplayNameTooLong(final boolean isKesselRelationsApiEnabled) throws NoSuchFieldException {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
 
         // Get the value of the "max" property for the "Size" annotation.
@@ -1309,19 +1553,21 @@ public class NotificationResourceTest extends DbIsolatedTest {
         createBehaviorGroupRequest.bundleId = bundle.getId();
         createBehaviorGroupRequest.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
 
-        final Header identityHeader = initRbacMock("behavior-group-display-name-too-long-account-number", "behavior-group-display-name-too-long-org-id", "user", FULL_ACCESS);
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final String response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(createBehaviorGroupRequest))
-                .post("/notifications/behaviorGroups")
-                .then()
-                .statusCode(400)
-                .extract()
-                .body()
-                .asString();
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(createBehaviorGroupRequest))
+            .post("/notifications/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract()
+            .body()
+            .asString();
 
         final JsonObject responseJson = new JsonObject(response);
         final JsonArray constraintViolations = responseJson.getJsonArray("violations");
@@ -1344,15 +1590,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * @throws NoSuchFieldException if the field in the request class to grab
      * the maximum value for the display name does not exist.
      */
-    @Test
-    void testUpdateBehaviorGroupDisplayNameTooLong() throws NoSuchFieldException {
-        // The tenant's identification elements will be reused below.
-        final String accountId = "update-bg-display-name-too-long-account-id";
-        final String orgId = "update-bg-display-name-too-long-org-id";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testUpdateBehaviorGroupDisplayNameTooLong(final boolean isKesselRelationsApiEnabled) throws NoSuchFieldException {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         // Create the fixtures in the database.
         final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
-        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(accountId, orgId, "valid display name", bundle.getId());
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "valid display name", bundle.getId());
 
         // Get the value of the "max" property for the "Size" annotation.
         final Field classField = UpdateBehaviorGroupRequest.class.getDeclaredField("displayName");
@@ -1361,19 +1606,21 @@ public class NotificationResourceTest extends DbIsolatedTest {
         final UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
         updateBehaviorGroupRequest.displayName = "a".repeat(sizeClassAnnotation.max() + 1);
 
-        final Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
-        final String url = String.format("/notifications/behaviorGroups/%s", behaviorGroup.getId());
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final String response = given()
-                .header(identityHeader)
-                .when()
-                .contentType(JSON)
-                .body(Json.encode(updateBehaviorGroupRequest))
-                .put(url)
-                .then()
-                .statusCode(400)
-                .extract()
-                .asString();
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", behaviorGroup.getId())
+            .body(Json.encode(updateBehaviorGroupRequest))
+            .put("/notifications/behaviorGroups/{behaviorGroupId}")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract()
+            .asString();
 
         final JsonObject responseJson = new JsonObject(response);
         final JsonArray constraintViolations = responseJson.getJsonArray("violations");
@@ -1394,15 +1641,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * Tests that when updating a behavior group, if the specified display name
      * is blank, a bad request response is returned.
      */
-    @Test
-    void testUpdateBehaviorGroupDisplayNameBlank() {
-        // The tenant's identification elements will be reused below.
-        final String accountId = "update-bg-blank-display-name-account-id";
-        final String orgId = "update-bg-blank-display-name-org-id";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testUpdateBehaviorGroupDisplayNameBlank(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
         // Create the fixtures in the database.
         final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
-        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(accountId, orgId, "valid display name", bundle.getId());
+        final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "valid display name", bundle.getId());
 
         final String[] blankDisplayNames = {"", "     "};
         for (final String blankDisplayName : blankDisplayNames) {
@@ -1410,19 +1656,21 @@ public class NotificationResourceTest extends DbIsolatedTest {
             final UpdateBehaviorGroupRequest updateBehaviorGroupRequest = new UpdateBehaviorGroupRequest();
             updateBehaviorGroupRequest.displayName = blankDisplayName;
 
-            final Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
-            final String url = String.format("/notifications/behaviorGroups/%s", behaviorGroup.getId());
+            final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+            this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
             final String response = given()
-                    .header(identityHeader)
-                    .when()
-                    .contentType(JSON)
-                    .body(Json.encode(updateBehaviorGroupRequest))
-                    .put(url)
-                    .then()
-                    .statusCode(400)
-                    .extract()
-                    .asString();
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("behaviorGroupId", behaviorGroup.getId())
+                .body(Json.encode(updateBehaviorGroupRequest))
+                .put("/notifications/behaviorGroups/{behaviorGroupId}")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .extract()
+                .asString();
 
             final JsonObject responseJson = new JsonObject(response);
             final JsonArray constraintViolations = responseJson.getJsonArray("violations");
@@ -1441,15 +1689,22 @@ public class NotificationResourceTest extends DbIsolatedTest {
     /**
      * Tests that a behavior group can be successfully appended to an event type.
      */
-    @Test
-    void testAppendBehaviorEventType() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAppendBehaviorEventType(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         final Bundle bundle = this.helpers.createBundle();
         final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
 
         final Application application = this.helpers.createApplication(bundle.getId());
         final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
 
-        final Header identityHeader = initRbacMock("tenant", DEFAULT_ORG_ID, "user", FULL_ACCESS);
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         RestAssured.given()
             .header(identityHeader)
             .pathParam("eventTypeUuid", eventType.getId())
@@ -1457,25 +1712,31 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .when()
             .put("/notifications/eventTypes/{eventTypeUuid}/behaviorGroups/{behaviorGroupUuid}")
             .then()
-            .statusCode(204);
+            .statusCode(HttpStatus.SC_NO_CONTENT);
     }
 
     /**
      * Tests that a not found response is returned when the behavior group does
      * not exist.
      */
-    @Test
-    void testAppendBehaviorEventBehaviorGroupNotFound() {
-        final Header identityHeader = initRbacMock("tenant", "orgId", "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAppendBehaviorEventBehaviorGroupNotFound(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
 
-        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", UUID.randomUUID(), UUID.randomUUID());
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final String response = RestAssured.given()
             .header(identityHeader)
             .when()
-            .put(url)
+            .pathParam("eventTypeId", UUID.randomUUID())
+            .pathParam("behaviorGroupId", UUID.randomUUID())
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
             .then()
-            .statusCode(404)
+            .statusCode(HttpStatus.SC_NOT_FOUND)
             .extract()
             .asString();
 
@@ -1487,24 +1748,30 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * exists, but the tenant that is performing the operation is a different
      * one.
      */
-    @Test
-    void testAppendBehaviorEventBehaviorGroupWrongTenantNotFound() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAppendBehaviorEventBehaviorGroupWrongTenantNotFound(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         final Bundle bundle = this.helpers.createBundle();
         final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
 
         final Application application = this.helpers.createApplication(bundle.getId());
         final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
 
-        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, "different-tenant-org-id", "user", FULL_ACCESS);
-
-        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID + "different-tenant", DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID + "different-tenant");
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final String response = RestAssured.given()
             .header(identityHeader)
             .when()
-            .put(url)
+            .pathParam("eventTypeId", eventType.getId())
+            .pathParam("behaviorGroupId", behaviorGroup.getId())
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
             .then()
-            .statusCode(404)
+            .statusCode(HttpStatus.SC_NOT_FOUND)
             .extract()
             .asString();
 
@@ -1515,8 +1782,11 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * Tests that a "not found" response is returned when the event type and
      * the behavior group are of incompatible types.
      */
-    @Test
-    void testAppendBehaviorEventBehaviorGroupIncompatibleEventTypeBehaviorGroup() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testAppendBehaviorEventBehaviorGroupIncompatibleEventTypeBehaviorGroup(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         // Create a bundle and a set of fixtures...
         final Bundle bundle = this.helpers.createBundle();
         final Application application = this.helpers.createApplication(bundle.getId());
@@ -1526,16 +1796,19 @@ public class NotificationResourceTest extends DbIsolatedTest {
         final Bundle differentBundle = this.helpers.createBundle("bundle-name-different", "bundle-display-name-different");
         final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", differentBundle.getId());
 
-        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
-
-        final String url = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final String response = RestAssured.given()
             .header(identityHeader)
             .when()
-            .put(url)
+            .pathParam("eventTypeId", eventType.getId())
+            .pathParam("behaviorGroupId", behaviorGroup.getId())
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
             .then()
-            .statusCode(404)
+            .statusCode(HttpStatus.SC_NOT_FOUND)
             .extract()
             .asString();
 
@@ -1545,8 +1818,11 @@ public class NotificationResourceTest extends DbIsolatedTest {
     /**
      * Test that deleting an existing behavior group from an event type works as expected.
      */
-    @Test
-    void testDeleteBehaviorEventType() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testDeleteBehaviorEventType(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         // Create the fixtures.
         final Bundle bundle = this.helpers.createBundle();
         final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
@@ -1555,28 +1831,30 @@ public class NotificationResourceTest extends DbIsolatedTest {
         final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
 
         // Generate the identity header.
-        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
-
-        // Construct the URL we are going to send the request to.
-        final String createUrl = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         // First add the behavior group to the event type.
         RestAssured.given()
             .header(identityHeader)
             .when()
-            .put(createUrl)
+            .pathParam("eventTypeId", eventType.getId())
+            .pathParam("behaviorGroupId", behaviorGroup.getId())
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
             .then()
-            .statusCode(204);
-
-        final String deleteUrl = String.format("/notifications/eventTypes/%s/behaviorGroups/%s", eventType.getId(), behaviorGroup.getId());
+            .statusCode(HttpStatus.SC_NO_CONTENT);
 
         // Call the "delete" endpoint and expect a proper deletion.
         RestAssured.given()
             .header(identityHeader)
             .when()
-            .delete(deleteUrl)
+            .pathParam("eventTypeId", eventType.getId())
+            .pathParam("behaviorGroupId", behaviorGroup.getId())
+            .delete("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
             .then()
-            .statusCode(204);
+            .statusCode(HttpStatus.SC_NO_CONTENT);
     }
 
     /**
@@ -1584,8 +1862,11 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * returned. The same thing when the user tries to delete the behavior group - event type relation that doesn't
      * exist.
      */
-    @Test
-    void testDeleteBehaviorEventTypeError() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testDeleteBehaviorEventTypeError(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         // Create the fixtures.
         final Bundle bundle = this.helpers.createBundle();
         final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
@@ -1594,50 +1875,43 @@ public class NotificationResourceTest extends DbIsolatedTest {
         final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
 
         // Generate the identity header.
-        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "user", FULL_ACCESS);
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         // Create a small test class to help structure the inputs and outputs.
-        class TestCase {
-            public final String expectedErrorMessage;
-            public final int expectedStatusCode;
-            public final String url;
-
-            TestCase(final String expectedErrorMessage, final int expectedStatusCode, final String url) {
-                this.expectedErrorMessage = expectedErrorMessage;
-                this.expectedStatusCode = expectedStatusCode;
-                this.url = url;
-            }
-        }
-
-        // Use a base URL to construct the final URLs we will be sending requests to.
-        final String baseUrlFormat = "/notifications/eventTypes/%s/behaviorGroups/%s";
+        record TestCase(UUID behaviorGroupId, UUID eventTypeId, String expectedErrorMessage, int expectedStatusCode) { }
 
         final var testCases = new ArrayList<TestCase>(3);
 
         // Test a bad request response when the event type does not exist.
         testCases.add(
             new TestCase(
+                behaviorGroup.getId(),
+                UUID.randomUUID(),
                 "the specified behavior group was not found for the given event type",
-                404,
-                String.format(baseUrlFormat, UUID.randomUUID(), behaviorGroup.getId())
+                HttpStatus.SC_NOT_FOUND
             )
         );
 
         // Test a bad request response when the behavior group does not exist.
         testCases.add(
             new TestCase(
+                UUID.randomUUID(),
+                eventType.getId(),
                 "the specified behavior group was not found for the given event type",
-                404,
-                String.format(baseUrlFormat, eventType.getId(), UUID.randomUUID())
+                HttpStatus.SC_NOT_FOUND
             )
         );
 
         //  Test a not found response when the behavior group - event type relation does not exist.
         testCases.add(
             new TestCase(
+                behaviorGroup.getId(),
+                eventType.getId(),
                 "the specified behavior group was not found for the given event type",
-                404,
-                String.format(baseUrlFormat, eventType.getId(), behaviorGroup.getId())
+                HttpStatus.SC_NOT_FOUND
             )
         );
 
@@ -1645,9 +1919,11 @@ public class NotificationResourceTest extends DbIsolatedTest {
             final String response = RestAssured.given()
                 .header(identityHeader)
                 .when()
-                .delete(testCase.url)
+                .pathParam("eventTypeId", testCase.eventTypeId())
+                .pathParam("behaviorGroupId", testCase.behaviorGroupId())
+                .delete("/notifications/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
                 .then()
-                .statusCode(testCase.expectedStatusCode)
+                .statusCode(testCase.expectedStatusCode())
                 .extract()
                 .body()
                 .asString();
@@ -1705,8 +1981,11 @@ public class NotificationResourceTest extends DbIsolatedTest {
                 .collect(Collectors.toSet());
     }
 
-    @Test
-    void testGetEndpointsLinkedToAnEventType() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testGetEndpointsLinkedToAnEventType(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
         final Bundle bundle = helpers.createBundle();
 
         // Create event type and endpoint
@@ -1715,7 +1994,10 @@ public class NotificationResourceTest extends DbIsolatedTest {
         final Endpoint endpoint = helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
         final Endpoint endpoint1 = helpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.ANSIBLE);
 
-        final Header identityHeader = initRbacMock("tenant", DEFAULT_ORG_ID, "user", FULL_ACCESS);
+        final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(endpoint.getId(), endpoint1.getId()));
 
         // Check that created endpoint don't ave any event type associated
         Page<Endpoint> endpointPage = given()
@@ -1725,12 +2007,13 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .given()
             .get("/notifications/eventTypes/{eventTypeUuid}/endpoints")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .extract().as(Page.class);
         assertEquals(0, endpointPage.getData().size());
 
         endpointEventTypeRepository.addEventTypeToEndpoint(eventType.getId(), endpoint.getId(), DEFAULT_ORG_ID);
         endpointEventTypeRepository.addEventTypeToEndpoint(eventType.getId(), endpoint1.getId(), DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(endpoint.getId(), endpoint1.getId()));
 
         // Check that endpoint is linked to the event type
         endpointPage = given()
@@ -1740,25 +2023,31 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .given()
             .get("/notifications/eventTypes/{eventTypeUuid}/endpoints")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .extract().as(new TypeRef<>() { });
         assertEquals(2, endpointPage.getData().size());
         assertEquals(Set.of(endpoint.getId(), endpoint1.getId()), endpointPage.getData().stream().map(ep -> ep.getId()).collect(Collectors.toSet()));
     }
 
-    @Test
-    void testEndpointEventTypeLinksUpdatesFromBehaviorGroupActions() {
-        String accountId = RandomStringUtils.randomAlphanumeric(25);
-        String orgId = RandomStringUtils.randomAlphanumeric(25);
-        Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testEndpointEventTypeLinksUpdatesFromBehaviorGroupActions(final boolean isKesselRelationsApiEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         UUID bundleId = helpers.createTestAppAndEventTypes();
-        UUID behaviorGroupId1 = helpers.createBehaviorGroup(accountId, orgId, "behavior-group-ep-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(accountId, orgId, "behavior-group-ep-2", bundleId).getId();
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-ep-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "behavior-group-ep-2", bundleId).getId();
         UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
             .filter(a -> a.getName().equals(TEST_APP_NAME_2))
             .findFirst().get().getId();
-        UUID endpointId1 = helpers.createWebhookEndpoint(accountId, orgId);
-        UUID endpointId2 = helpers.createWebhookEndpoint(accountId, orgId);
+        UUID endpointId1 = helpers.createWebhookEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID);
+        UUID endpointId2 = helpers.createWebhookEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID);
         List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
 
         // assign event type 1 to behavior group 1

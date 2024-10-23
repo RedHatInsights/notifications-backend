@@ -36,7 +36,7 @@ public class EndpointEventTypeRepository {
         String query = "SELECT e FROM Endpoint e JOIN e.eventTypes ev WHERE (e.orgId = :orgId OR e.orgId IS NULL) AND ev.id = :eventTypeId";
 
         if (authorizedIds.isPresent()) {
-            query += " AND ev.id in (:authorizedIds)";
+            query += " AND e.id in (:authorizedIds)";
         }
 
         if (limiter != null) {
