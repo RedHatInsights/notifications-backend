@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -107,6 +108,9 @@ public class NotificationResource {
 
     @Inject
     WorkspaceUtils workspaceUtils;
+
+    @Inject
+    EventTypeRepository eventTypeRepository;
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
     public static class V1 extends NotificationResource {
@@ -832,5 +836,103 @@ public class NotificationResource {
             PageLinksBuilder.build(uriInfo.getPath(), endpointDTOS.size(), query),
             new Meta(Long.valueOf(endpointDTOS.size()))
         );
+    }
+
+    @PUT
+    @Path("/eventTypes/{eventTypeId}/endpoints")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
+    @Operation(summary = "Update the list of behavior groups for an event type", description = "Updates the list of behavior groups associated with an event type.")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Transactional
+    public Response updateEventTypeEndpoints(@Context SecurityContext securityContext,
+                                             @Parameter(description = "UUID of the eventType to associate with the behavior group(s)") @PathParam("eventTypeId") UUID eventTypeId,
+                                             @Parameter(description = "Set of endpoint ids to associate") Set<UUID> endpointsIds) {
+        if (endpointsIds == null) {
+            throw new BadRequestException("The request body must contain a list (possibly empty) of endpoints identifiers");
+        }
+        // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
+        if (endpointsIds.contains(null)) {
+            throw new BadRequestException("The endpoints identifiers list should not contain empty values");
+        }
+
+        if (backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
+            for (UUID endpointId : endpointsIds) {
+                kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
+            }
+            return internalUpdateEventTypeEndpoints(securityContext, endpointsIds, eventTypeId);
+        } else {
+            return legacyRbacUpdateEventTypeEndpoints(securityContext, endpointsIds, eventTypeId);
+        }
+    }
+
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    public Response legacyRbacUpdateEventTypeEndpoints(SecurityContext securityContext, Set<UUID> endpointsIds, UUID eventTypeId) {
+        return internalUpdateEventTypeEndpoints(securityContext, endpointsIds, eventTypeId);
+    }
+
+    public Response internalUpdateEventTypeEndpoints(SecurityContext securityContext, Set<UUID> endpointsIds, UUID eventTypeId) {
+        String orgId = getOrgId(securityContext);
+        String accountId = getAccountId(securityContext);
+
+        endpointEventTypeRepository.updateEventTypeEndpoints(orgId, eventTypeId, endpointsIds);
+
+        // Sync behavior group model
+
+        // delete endpoint from existing behavior group
+        List<BehaviorGroup> behaviorGroupsLinkedToThisEndpoint = behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, null);
+        for (BehaviorGroup behaviorGroup : behaviorGroupsLinkedToThisEndpoint) {
+            Set<UUID> associatedEventTypes = behaviorGroup.getBehaviors().stream().map(b -> b.getEventType().getId()).collect(Collectors.toSet());
+            associatedEventTypes.remove(eventTypeId);
+            if (associatedEventTypes.isEmpty()) {
+                behaviorGroupRepository.delete(orgId, behaviorGroup.getId());
+            } else {
+                behaviorGroupRepository.updateBehaviorEventTypes(orgId, behaviorGroup.getId(), associatedEventTypes);
+            }
+        }
+
+        createOrUpdateLinkedBehaviorGroup(eventTypeId, endpointsIds, orgId, accountId);
+
+        return Response.ok().build();
+    }
+
+
+    private void createOrUpdateLinkedBehaviorGroup(UUID eventTypeId, Set<UUID> endpointIds, String orgId, String accountId) {
+
+        for (UUID endpointId : endpointIds) {
+            EventType eventType = eventTypeRepository.findByIds(Set.of(eventTypeId)).getFirst();
+            String behaviorGroupName = String.format("Event type \"%s\" behavior group", eventType.getName());
+
+            Optional<Bundle> bundle = eventTypeRepository.findBundleByEventTypeId(eventTypeId);
+
+            Optional<BehaviorGroup> existingBg = behaviorGroupRepository.findBehaviorGroupsByName(orgId, bundle.get().getId(), behaviorGroupName);
+            if (existingBg.isPresent()) {
+                Boolean alreadyAssociatedAction = existingBg.get().getActions().stream().anyMatch(bga -> bga.getId().endpointId.equals(endpointId));
+
+                if (!alreadyAssociatedAction) {
+                    int position = existingBg.get().getActions().stream().mapToInt(ba -> ba.getPosition()).max().orElse(-1) + 1;
+                    behaviorGroupRepository.appendActionToBehaviorGroup(existingBg.get().getId(), endpointId, position, orgId);
+                }
+
+                Boolean alreadyAssociatedEventType = existingBg.get().getBehaviors().stream().anyMatch(bh -> bh.getId().eventTypeId.equals(eventTypeId));
+                if (!alreadyAssociatedEventType) {
+                    behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, existingBg.get().getId(), eventTypeId);
+                }
+            } else {
+                // Create or update legacy behavior group structure
+                BehaviorGroup behaviorGroup = new BehaviorGroup();
+                behaviorGroup.setBundleId(bundle.get().getId());
+                behaviorGroup.setDisplayName(behaviorGroupName);
+
+                behaviorGroupRepository.createFull(
+                    accountId,
+                    orgId,
+                    behaviorGroup,
+                    List.of(endpointId),
+                    Set.of(eventTypeId)
+                );
+            }
+
+        }
     }
 }

@@ -566,18 +566,22 @@ public class BehaviorGroupRepository {
         }
     }
 
-    @Transactional
     public void deleteEndpointFromBehaviorGroup(final UUID behaviorGroupUuid, final UUID endpointUuid, final String orgId) {
+        deleteEndpointFromBehaviorGroup(behaviorGroupUuid, Set.of(endpointUuid), orgId);
+    }
+
+    @Transactional
+    public void deleteEndpointFromBehaviorGroup(final UUID behaviorGroupUuid, final Set<UUID> endpointUuids, final String orgId) {
         final var deleteFromEventTypeQuery =
             "DELETE FROM BehaviorGroupAction AS bga " +
                 "WHERE bga.behaviorGroup.id = :behaviorGroupUuid " +
-                "AND bga.endpoint.id = :endpointUuid " +
+                "AND bga.endpoint.id in (:endpointUuid) " +
                 "AND EXISTS (SELECT 1 FROM BehaviorGroup AS bg WHERE bg.id = :behaviorGroupUuid AND bg.orgId = :orgId) " +
-                "AND EXISTS (SELECT 1 FROM Endpoint ep WHERE ep.id = :endpointUuid AND ep.orgId = :orgId)";
+                "AND EXISTS (SELECT 1 FROM Endpoint ep WHERE ep.id in (:endpointUuids) AND ep.orgId = :orgId)";
 
         final jakarta.persistence.Query query = this.entityManager.createQuery(deleteFromEventTypeQuery);
         query.setParameter("behaviorGroupUuid", behaviorGroupUuid)
-            .setParameter("endpointUuid", endpointUuid)
+            .setParameter("endpointUuids", endpointUuids)
             .setParameter("orgId", orgId);
 
         final int affectedRows = query.executeUpdate();
@@ -713,16 +717,21 @@ public class BehaviorGroupRepository {
         updateBehaviorGroupActions(null, behaviorGroupId, endpointIds);
     }
 
-    public List<BehaviorGroup> findBehaviorGroupsByEndpointId(String orgId, UUID endpointId) {
-        Endpoint endpoint = entityManager.find(Endpoint.class, endpointId);
-        if (endpoint == null) {
-            throw new NotFoundException("Endpoint not found");
+    public List<BehaviorGroup> findBehaviorGroupsByEndpointId(String orgId, UUID endpointIds) {
+        return findBehaviorGroupsByEndpointId(orgId, Set.of(endpointIds));
+    }
+
+    public List<BehaviorGroup> findBehaviorGroupsByEndpointId(String orgId, Set<UUID> endpointIds) {
+        for (UUID endpointId : endpointIds) {
+            if (entityManager.find(Endpoint.class, endpointId) == null) {
+                throw new NotFoundException("Endpoint not found");
+            }
         }
 
-        String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.orgId = :orgId AND a.endpoint.id = :endpointId";
+        String query = "SELECT bg FROM BehaviorGroup bg LEFT JOIN FETCH bg.bundle JOIN bg.actions a WHERE bg.orgId = :orgId AND a.endpoint.id in (:endpointIds)";
         List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
                 .setParameter("orgId", orgId)
-                .setParameter("endpointId", endpointId)
+                .setParameter("endpointIds", endpointIds)
                 .getResultList();
         for (BehaviorGroup behaviorGroup : behaviorGroups) {
             behaviorGroup.filterOutActions().filterOutBehaviors();

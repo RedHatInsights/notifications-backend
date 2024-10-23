@@ -164,12 +164,16 @@ public class ResourceHelpers {
     }
 
     public UUID createWebhookEndpoint(String accountId, String orgId) {
+        String name = "Endpoint " + UUID.randomUUID();
+        return createWebhookEndpoint(accountId, orgId, name);
+    }
+
+    public UUID createWebhookEndpoint(String accountId, String orgId, String name) {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
         properties.setUrl("https://localhost");
-        String name = "Endpoint " + UUID.randomUUID();
         return createEndpoint(accountId, orgId, WEBHOOK, null, name, "Automatically generated", properties, TRUE, null)
-                .getId();
+            .getId();
     }
 
     public Endpoint createEndpoint(String accountId, String orgId, EndpointType type, String subType, String name, String description, EndpointProperties properties, Boolean enabled) {

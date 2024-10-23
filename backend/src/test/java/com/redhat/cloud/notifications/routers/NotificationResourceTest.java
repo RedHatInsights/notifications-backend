@@ -53,6 +53,7 @@ import org.project_kessel.relations.client.LookupClient;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -79,6 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -2213,5 +2215,158 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         assertEquals(1, helpers.getEndpoint(endpointId2).getEventTypes().size());
         assertEquals(0, helpers.getEndpoint(endpointId1).getEventTypes().size());
+    }
+
+    @Test
+    void testUpdateEventTypeEndpoints() {
+        String accountId = RandomStringUtils.randomAlphanumeric(25);
+        String orgId = RandomStringUtils.randomAlphanumeric(25);
+        Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+        UUID bundleId = helpers.createTestAppAndEventTypes();
+        UUID behaviorGroupId1 = helpers.createBehaviorGroup(accountId, orgId, "behavior-group-ep-1", bundleId).getId();
+        UUID behaviorGroupId2 = helpers.createBehaviorGroup(accountId, orgId, "behavior-group-ep-2", bundleId).getId();
+        UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
+            .filter(a -> a.getName().equals(TEST_APP_NAME_2))
+            .findFirst().get().getId();
+        UUID endpointId1 = helpers.createWebhookEndpoint(accountId, orgId, "endpoint1");
+        UUID endpointId2 = helpers.createWebhookEndpoint(accountId, orgId, "endpoint2");
+        List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
+
+        EventType eventType1 = eventTypes.get(1);
+        EventType eventType2 = eventTypes.get(2);
+
+        // assign event type 1 to behavior group 1
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", eventType1.getId())
+            .body(Json.encode(Set.of(behaviorGroupId1)))
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        assertEquals(0, helpers.getEndpoint(endpointId1).getEventTypes().size());
+
+        // assign endpoint 1 to behavior group 1
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", behaviorGroupId1)
+            .body(Json.encode(Arrays.asList(endpointId1)))
+            .when()
+            .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+        assertEquals(1, helpers.getEndpoint(endpointId1).getEventTypes().size());
+
+        // add event type 2 to behavior group 1
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", eventType2.getId())
+            .body(Json.encode(Set.of(behaviorGroupId1)))
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+        assertEquals(2, helpers.getEndpoint(endpointId1).getEventTypes().size());
+
+        List<BehaviorGroup> behaviorGroupList = helpers.findBehaviorGroupsByOrgId(orgId);
+        assertEquals(2, behaviorGroupList.size());
+
+        // assign event type 1 to endpoint2 only
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", eventType1.getId())
+            .body(Json.encode(Set.of(endpointId2)))
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        // event type 1 was removed from endpoint 1
+        assertEquals(1, helpers.getEndpoint(endpointId1).getEventTypes().size());
+        // event type 1 was added to endpoint 2
+        assertEquals(1, helpers.getEndpoint(endpointId2).getEventTypes().size());
+
+        behaviorGroupList = helpers.findBehaviorGroupsByOrgId(orgId);
+        // a new behavior group was created
+        // endpoint 1 was removed from behavior group 1
+        assertEquals(3, behaviorGroupList.size());
+        for (BehaviorGroup bg : behaviorGroupList)  {
+            switch (bg.getDisplayName()) {
+                case "behavior-group-ep-1":
+                    assertEquals(1, bg.getActions().size());
+                    assertEquals("endpoint1", bg.getActions().getFirst().getEndpoint().getName());
+                    assertEquals(1, bg.getBehaviors().size());
+                    assertEquals(eventType2.getName(), bg.getBehaviors().stream().findFirst().get().getEventType().getName());
+                    break;
+                case "behavior-group-ep-2":
+                    assertEquals(0, bg.getActions().size());
+                    break;
+                default:
+                    assertTrue(bg.getDisplayName().startsWith("Event type \""));
+                    assertEquals(1, bg.getActions().size());
+                    assertEquals("endpoint2", bg.getActions().getFirst().getEndpoint().getName());
+                    assertEquals(1, bg.getBehaviors().size());
+                    assertEquals(eventType1.getName(), bg.getBehaviors().stream().findFirst().get().getEventType().getName());
+                    break;
+            }
+        }
+
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", eventType1.getId())
+            .body(Json.encode(new HashSet<>()))
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        behaviorGroupList = helpers.findBehaviorGroupsByOrgId(orgId);
+        // a new behavior group was created
+        // endpoint 1 was removed from behavior group 1
+        assertEquals(2, behaviorGroupList.size());
+        for (BehaviorGroup bg : behaviorGroupList)  {
+            switch (bg.getDisplayName()) {
+                case "behavior-group-ep-1":
+                    assertEquals(1, bg.getActions().size());
+                    assertEquals("endpoint1", bg.getActions().getFirst().getEndpoint().getName());
+                    assertEquals(1, bg.getBehaviors().size());
+                    assertEquals(eventType2.getName(), bg.getBehaviors().stream().findFirst().get().getEventType().getName());
+                    break;
+                case "behavior-group-ep-2":
+                    assertEquals(0, bg.getActions().size());
+                    break;
+                default:
+                    fail();
+                    break;
+            }
+        }
+
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", eventType2.getId())
+            .body(Json.encode(new HashSet<>()))
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        behaviorGroupList = helpers.findBehaviorGroupsByOrgId(orgId);
+        // endpoint 1 was removed from behavior group 1
+        assertEquals(1, behaviorGroupList.size());
+        assertEquals("behavior-group-ep-2", behaviorGroupList.get(0).getDisplayName());
+        assertEquals(0, behaviorGroupList.get(0).getActions().size());
     }
 }
