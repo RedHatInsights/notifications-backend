@@ -66,7 +66,8 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
                     body: [
                         {
                             ignore_preferences: false,
-                            only_admins: systemBehaviorGroup.actions === 'email-admin'
+                            only_admins: systemBehaviorGroup.actions === 'email-admin' || systemBehaviorGroup.actions === 'drawer-admin',
+                            endpoint_type: systemBehaviorGroup.actions.startsWith('drawer') ? 'DRAWER' : 'EMAIL_SUBSCRIPTION'
                         }
                     ]
                 });

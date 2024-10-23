@@ -467,6 +467,7 @@ export namespace Schemas {
   export type RequestDefaultBehaviorGroupPropertyList = {
     ignore_preferences: boolean;
     only_admins: boolean;
+    endpoint_type: string;
   };
 
   export const RequestSystemSubscriptionProperties =
