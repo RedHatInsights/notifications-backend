@@ -799,7 +799,7 @@ public class NotificationResource {
     })
     @Tag(name = OApiFilter.PRIVATE)
     public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
-        if (backendConfig.isKesselRelationsEnabled()) {
+        if (backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
             this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
 

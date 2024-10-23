@@ -83,7 +83,7 @@ public class EventResource {
                                          @RestQuery Set<EventLogEntryActionStatus> status,
                                          @BeanParam @Valid Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
-        if (this.backendConfig.isKesselRelationsEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
 
             this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, workspaceId.toString());

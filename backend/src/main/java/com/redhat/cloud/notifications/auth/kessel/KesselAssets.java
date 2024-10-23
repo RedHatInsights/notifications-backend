@@ -84,7 +84,7 @@ public class KesselAssets {
      *                      our side.
      */
     public void deleteIntegration(final SecurityContext securityContext, final String workspaceId, final String integrationId) {
-        if (!this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()) {
+        if (!this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled(SecurityContextUtil.getOrgId(securityContext))) {
             return;
         }
 

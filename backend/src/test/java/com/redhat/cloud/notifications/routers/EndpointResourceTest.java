@@ -4179,12 +4179,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void testIntegrationCreationRemovalKesselInventory(final boolean isKesselRelationsApiEnabled) {
         // Enable the Inventory API, and enable the integration removals too so
         // that Kessel gets notified about them.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled(anyString())).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
         // scenarios.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
 
         // Mock the reporter instance id.
         Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
@@ -4260,11 +4260,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @ValueSource(booleans = {false, true})
     void testCreateIntegrationFailInventoryNotNotified(final boolean isKesselRelationsApiEnabled) {
         // Enable the Inventory API.
-        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
         // scenarios.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
 
         // Create the identity header to be used in the request.
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -4319,11 +4319,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @ValueSource(booleans = {false, true})
     void testInventoryCreateIntegrationFailNotSavedInDatabase(final boolean isKesselRelationsApiEnabled) {
         // Enable the Inventory API.
-        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
         // scenarios.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
 
         // Create the identity header to be used in the request.
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -4379,12 +4379,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void testRemoveIntegrationFailInventoryNotNotified(final boolean isKesselRelationsApiEnabled) {
         // Enable the Inventory API, and enable the integration removals too so
         // that we can spot whether Kessel gets notified about them or not.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled(anyString())).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
         // scenarios.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
 
         // Mock the reporter instance id.
         Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
@@ -4431,12 +4431,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void testInventoryDeleteIntegrationFailFailIntegrationNotRemovedFromDatabase(final boolean isKesselRelationsApiEnabled) {
         // Enable the Inventory API, , and enable the integration removals too so
         // that we can spot whether Kessel gets notified about them or not.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled(anyString())).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
         // scenarios.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
 
         // Mock the reporter instance id.
         Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
@@ -4474,12 +4474,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void testKesselInventoryIntegrationRemovalsDisabled(final boolean isKesselRelationsApiEnabled) {
         // Enable the Inventory API, and disable integration removals so that
         // we can test that the toggle works as expected.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(false);
-        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled(anyString())).thenReturn(false);
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
         // scenarios.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
 
         // Create the integration we are going to attempt to delete.
         final Endpoint integration = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
@@ -4526,7 +4526,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // created, it kind of defeats the purpose. We also do not have an ID
         // we could use to even mock the Relations API, because the integration
         // does not get created in the database.
-        if (this.backendConfig.isKesselRelationsEnabled()) {
+        if (this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
         }
 

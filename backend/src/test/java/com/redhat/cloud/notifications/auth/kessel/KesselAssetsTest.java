@@ -20,6 +20,9 @@ import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
+
 @QuarkusTest
 public class KesselAssetsTest {
     @InjectSpy
@@ -49,7 +52,7 @@ public class KesselAssetsTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
 
         // Call the function under test.
         this.kesselAssets.createIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
@@ -65,7 +68,7 @@ public class KesselAssetsTest {
     @Test
     void testDeleteIntegration() {
         // Simulate that removing integrations is enabled.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled(isNull())).thenReturn(true);
 
         // Mock the security context.
         final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
@@ -79,7 +82,7 @@ public class KesselAssetsTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
 
         // Call the function under test.
         this.kesselAssets.deleteIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
@@ -95,7 +98,7 @@ public class KesselAssetsTest {
     @Test
     void testDeleteIntegrationDisabled() {
         // Simulate that removing integrations is enabled.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(false);
+        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled(anyString())).thenReturn(false);
 
         // Mock the security context.
         final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
@@ -109,7 +112,7 @@ public class KesselAssetsTest {
         Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
 
         // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
 
         // Call the function under test.
         this.kesselAssets.deleteIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
