@@ -194,6 +194,38 @@ objects:
           value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
         - name: NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES
           value: ${NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES}
+- apiVersion: keda.sh/v1alpha1
+  kind: ScaledObject
+  metadata:
+    name: notifications-engine
+    labels:
+      app: notifications-engine
+  spec:
+    scaleTargetRef:
+      name: notifications-engine
+    minReplicaCount: ${{MIN_REPLICAS}}
+    maxReplicaCount: 6
+    triggers:
+      - metadata:
+          serverAddress: http://prometheus-app-sre.openshift-customer-monitoring.svc.cluster.local:9090
+          query: kafka_consumergroup_group_topic_sum_lag{topic=~".*platform.notifications.ingress"}
+          threshold: "25"
+        type: prometheus
+        metricType: Value
+    advanced:
+      horizontalPodAutoscalerConfig:
+        behavior:
+          scaleDown:
+            stabilizationWindowSeconds: 180
+            policies:
+              - type: Pods
+                value: 2
+                periodSeconds: 60
+          scaleUp:
+            policies:
+              - type: Pods
+                value: 2
+                periodSeconds: 30
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
