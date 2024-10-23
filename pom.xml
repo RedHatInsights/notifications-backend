@@ -63,7 +63,7 @@
         <jacoco-plugin.version>0.8.12</jacoco-plugin.version>
         <checkstyle.version>10.18.2</checkstyle.version>
 
-        <testcontainers.version>1.20.2</testcontainers.version>
+        <testcontainers.version>1.20.3</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <swagger-v3-core.version>2.2.25</swagger-v3-core.version>
