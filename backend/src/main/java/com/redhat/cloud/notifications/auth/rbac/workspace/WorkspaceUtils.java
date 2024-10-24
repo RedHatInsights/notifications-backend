@@ -78,9 +78,15 @@ public class WorkspaceUtils {
 
         // We have been told we are only going to have one workspace per
         // organization.
-        if (workspacePage.getMeta().getCount() > 1) {
-            Log.errorf("[org_id: %s] More than one workspace found for the organization: %s", orgId, workspacePage.getData());
-
+        final Long receivedWorkspaceCount = workspacePage.getMeta().getCount();
+        if (receivedWorkspaceCount == null) {
+            Log.errorf("[org_id: %s] Unable to get the workspace count from the response", orgId);
+            throw new UnauthorizedException();
+        } else if (receivedWorkspaceCount == 0) {
+            Log.errorf("[org_id: %s] No workspace was received in the response", orgId);
+            throw new UnauthorizedException();
+        } else if (receivedWorkspaceCount > 1) {
+            Log.errorf("[org_id: %s][received_workspace_count: %s] More than one workspace received for the organization: %s", orgId, receivedWorkspaceCount, workspacePage.getData());
             throw new UnauthorizedException();
         }
 

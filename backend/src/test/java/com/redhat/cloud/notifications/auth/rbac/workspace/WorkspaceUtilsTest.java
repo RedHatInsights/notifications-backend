@@ -49,6 +49,22 @@ public class WorkspaceUtilsTest {
      */
     @Test
     void testInvalidNonDefaultWorkspacesReturnedThrowsException() {
+        MockServerConfig.addMissingCountFromWorkspacesResponseRbacEndpoint();
+
+        Assertions.assertThrows(
+            UnauthorizedException.class,
+            () -> this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)
+        );
+
+        MockServerConfig.clearRbacWorkspaces();
+        MockServerConfig.addNoReturnedWorkspacesResponseRbacEndpoint();
+
+        Assertions.assertThrows(
+            UnauthorizedException.class,
+            () -> this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)
+        );
+
+        MockServerConfig.clearRbacWorkspaces();
         MockServerConfig.addMultipleReturningMultipleWorkspacesRbacEndpoint();
 
         Assertions.assertThrows(
