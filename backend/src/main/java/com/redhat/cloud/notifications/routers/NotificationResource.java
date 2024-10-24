@@ -842,7 +842,7 @@ public class NotificationResource {
     @Path("/eventTypes/{eventTypeId}/endpoints")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @Operation(summary = "Update the list of behavior groups for an event type", description = "Updates the list of behavior groups associated with an event type.")
+    @Operation(summary = "Update the list of endpoints for an event type", description = "Updates the list of endpoints associated with an event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateEventTypeEndpoints(@Context SecurityContext securityContext,
