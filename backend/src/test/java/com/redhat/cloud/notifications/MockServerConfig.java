@@ -75,6 +75,29 @@ public class MockServerConfig {
 
     /**
      * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacServer#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * method, which simulates RBAC returning a response which does not have
+     * the expected "count" JSON key.
+     */
+    public static void addMissingCountFromWorkspacesResponseRbacEndpoint() {
+        getClient()
+            .when(
+                request()
+                    .withHeader("x-rh-rbac-psk", "development-psk-value")
+                    .withHeader("x-rh-rbac-client-id", WorkspaceUtils.APPLICATION_KEY)
+                    .withHeader("x-rh-rbac-org-id", DEFAULT_ORG_ID)
+                    .withQueryStringParameter(Parameter.param("offset", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                    .withQueryStringParameter(Parameter.param("limit", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                    .withPath("/api/rbac/v2/workspaces/")
+            ).respond(
+                response()
+                    .withHeader("Content-Type", MediaType.APPLICATION_JSON)
+                    .withStatusCode(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/missing-count-response.json"))
+            );
+    }
+
+    /**
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacServer#getWorkspaces(String, String, String, String, Integer, Integer)}
      * method, which simulates RBAC returning more than one workspace in the
      * response.
      */
@@ -116,6 +139,29 @@ public class MockServerConfig {
                     .withHeader("Content-Type", MediaType.APPLICATION_JSON)
                     .withStatusCode(HttpStatus.SC_OK)
                     .withBody(getFileAsString("rbac-examples/workspaces/single-default-workspace-response.json"))
+            );
+    }
+
+    /**
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacServer#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * method, which simulates RBAC returning a response with no workspaces in
+     * it.
+     */
+    public static void addNoReturnedWorkspacesResponseRbacEndpoint() {
+        getClient()
+            .when(
+                request()
+                    .withHeader("x-rh-rbac-psk", "development-psk-value")
+                    .withHeader("x-rh-rbac-client-id", WorkspaceUtils.APPLICATION_KEY)
+                    .withHeader("x-rh-rbac-org-id", DEFAULT_ORG_ID)
+                    .withQueryStringParameter(Parameter.param("offset", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                    .withQueryStringParameter(Parameter.param("limit", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                    .withPath("/api/rbac/v2/workspaces/")
+            ).respond(
+                response()
+                    .withHeader("Content-Type", MediaType.APPLICATION_JSON)
+                    .withStatusCode(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/no-workspaces-response.json"))
             );
     }
 

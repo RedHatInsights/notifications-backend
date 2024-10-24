@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "count": 0,
+    "limit": 0,
+    "offset": 0
+  },
+  "links": {
+    "first": "/api/rbac/v2/workspaces/?limit=0&offset=0",
+    "next": "/api/rbac/v2/workspaces/?limit=0&offset=0",
+    "previous": "/api/rbac/v2/workspaces/?limit=0&offset=0",
+    "last": "/api/rbac/v2/workspaces/?limit=0&offset=0"
+  },
+  "data": []
+}
