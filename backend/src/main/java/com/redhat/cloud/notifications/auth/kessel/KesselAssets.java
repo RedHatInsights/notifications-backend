@@ -84,10 +84,6 @@ public class KesselAssets {
      *                      our side.
      */
     public void deleteIntegration(final SecurityContext securityContext, final String workspaceId, final String integrationId) {
-        if (!this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()) {
-            return;
-        }
-
         // Build the request for Kessel's inventory.
         final DeleteNotificationsIntegrationRequest request = this.buildDeleteIntegrationRequest(integrationId);
 

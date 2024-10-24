@@ -64,9 +64,6 @@ public class KesselAssetsTest {
      */
     @Test
     void testDeleteIntegration() {
-        // Simulate that removing integrations is enabled.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
-
         // Mock the security context.
         final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
 
@@ -86,36 +83,6 @@ public class KesselAssetsTest {
 
         // Verify that the inventory call was made.
         Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).DeleteNotificationsIntegration(Mockito.any(DeleteNotificationsIntegrationRequest.class));
-    }
-
-    /**
-     * Test that when the "removing integrations" toggle is disabled, no calls
-     * are made to Kessel to delete the integration from the inventory.
-     */
-    @Test
-    void testDeleteIntegrationDisabled() {
-        // Simulate that removing integrations is enabled.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(false);
-
-        // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Create a RhIdentity principal and assign it to the mocked security
-        // context.
-        final RhIdentity identity = Mockito.mock(RhIdentity.class);
-        Mockito.when(identity.getName()).thenReturn("Red Hat user");
-
-        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
-
-        // Enable the Kessel back end integration for this test.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
-
-        // Call the function under test.
-        this.kesselAssets.deleteIntegration(mockedSecurityContext, UUID.randomUUID().toString(), UUID.randomUUID().toString());
-
-        // Verify that the inventory call was made.
-        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).DeleteNotificationsIntegration(Mockito.any(DeleteNotificationsIntegrationRequest.class));
     }
 
     /**

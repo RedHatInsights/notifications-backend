@@ -4177,9 +4177,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testIntegrationCreationRemovalKesselInventory(final boolean isKesselRelationsApiEnabled) {
-        // Enable the Inventory API, and enable the integration removals too so
-        // that Kessel gets notified about them.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
+        // Enable the Inventory API.
         Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
@@ -4377,9 +4375,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testRemoveIntegrationFailInventoryNotNotified(final boolean isKesselRelationsApiEnabled) {
-        // Enable the Inventory API, and enable the integration removals too so
-        // that we can spot whether Kessel gets notified about them or not.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
+        // Enable the Inventory API.
         Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
@@ -4429,9 +4425,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testInventoryDeleteIntegrationFailFailIntegrationNotRemovedFromDatabase(final boolean isKesselRelationsApiEnabled) {
-        // Enable the Inventory API, , and enable the integration removals too so
-        // that we can spot whether Kessel gets notified about them or not.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(true);
+        // Enable the Inventory API.
         Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
 
         // Conditionally enable the Relations API to test this in both
@@ -4467,47 +4461,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Assert that the transaction was rolled back and that the integration
         // was not deleted.
         this.assertIntegrationExists(identityHeader, integration);
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testKesselInventoryIntegrationRemovalsDisabled(final boolean isKesselRelationsApiEnabled) {
-        // Enable the Inventory API, and disable integration removals so that
-        // we can test that the toggle works as expected.
-        Mockito.when(this.backendConfig.areKesselInventoryIntegrationRemovalsEnabled()).thenReturn(false);
-        Mockito.when(this.backendConfig.isKesselInventoryEnabled()).thenReturn(true);
-
-        // Conditionally enable the Relations API to test this in both
-        // scenarios.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(isKesselRelationsApiEnabled);
-
-        // Create the integration we are going to attempt to delete.
-        final Endpoint integration = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
-
-        // Create the identity header to be used in the request.
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
-        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-
-        // Mock the Kessel permission to be able to delete the integration.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
-
-        // Attempt deleting the integration.
-        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        given()
-            .header(identityHeader)
-            .pathParam("id", integration.getId())
-            .when()
-            .delete("/endpoints/{id}")
-            .then()
-            .statusCode(HttpStatus.SC_NO_CONTENT);
-
-        // Assert that the Inventory API never got called.
-        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).DeleteNotificationsIntegration(Mockito.any(DeleteNotificationsIntegrationRequest.class));
-
-        // Assert that the integration we created no longer exists in the
-        // database.
-        this.assertNoIntegrationsInDatabase(identityHeader);
     }
 
     /**
