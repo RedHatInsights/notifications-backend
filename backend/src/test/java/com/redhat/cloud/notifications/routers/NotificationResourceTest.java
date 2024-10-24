@@ -2101,6 +2101,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
             .then()
             .statusCode(HttpStatus.SC_OK);
+        assertEquals(1, helpers.getEndpoint(endpointId1).getEventTypes().size());
 
         // assign endpoint 2 to behavior group 2
         given()
