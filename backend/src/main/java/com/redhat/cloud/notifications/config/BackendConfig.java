@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
+import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
@@ -106,9 +107,9 @@ public class BackendConfig {
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
-        config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled());
-        config.put(KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED, areKesselInventoryIntegrationRemovalsEnabled());
-        config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled());
+        config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled(null));
+        config.put(KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED, areKesselInventoryIntegrationRemovalsEnabled(null));
+        config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled(null));
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
         config.put(UNLEASH, unleashEnabled);
@@ -152,17 +153,19 @@ public class BackendConfig {
      * @return {@code true} if we are allowed to delete integrations from the
      * Kessel inventory.
      */
-    public boolean areKesselInventoryIntegrationRemovalsEnabled() {
+    public boolean areKesselInventoryIntegrationRemovalsEnabled(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(kesselInventoryIntegrationsRemovalToggle, false);
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(kesselInventoryIntegrationsRemovalToggle, unleashContext, false);
         } else {
             return kesselInventoryIntegrationRemovalsEnabled;
         }
     }
 
-    public boolean isKesselInventoryEnabled() {
+    public boolean isKesselInventoryEnabled(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(kesselInventoryToggle, false);
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(kesselInventoryToggle, unleashContext, false);
         } else {
             return kesselInventoryEnabled;
         }
@@ -181,9 +184,10 @@ public class BackendConfig {
         return "service-account-" + kesselInventoryClientId;
     }
 
-    public boolean isKesselRelationsEnabled() {
+    public boolean isKesselRelationsEnabled(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(kesselRelationsToggle, false);
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(kesselRelationsToggle, unleashContext, false);
         } else {
             return kesselRelationsEnabled;
         }
@@ -195,5 +199,13 @@ public class BackendConfig {
 
     public JsonObject getRbacPskSecrets() {
         return new JsonObject(this.rbacPskSecrets);
+    }
+
+
+    private static UnleashContext buildUnleashContextWithOrgId(String orgId) {
+        UnleashContext unleashContext = UnleashContext.builder()
+            .addProperty("orgId", orgId)
+            .build();
+        return unleashContext;
     }
 }

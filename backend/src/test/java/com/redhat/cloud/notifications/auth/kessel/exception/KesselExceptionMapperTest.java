@@ -20,6 +20,7 @@ import org.project_kessel.relations.client.CheckClient;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.CoreMatchers.is;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -38,7 +39,7 @@ public class KesselExceptionMapperTest {
     @Test
     void testInternalServerErrorReturned() {
         // Enable Kessel as the authorization back end.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
 
         // Simulate that an error occurred when calling Kessel.
         Mockito.when(this.checkClient.check(Mockito.any())).thenThrow(new StatusRuntimeException(Status.INVALID_ARGUMENT));

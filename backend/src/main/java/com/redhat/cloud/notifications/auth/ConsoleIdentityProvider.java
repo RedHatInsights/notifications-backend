@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.auth.principal.ConsoleIdentityWrapper;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipalFactory;
 import com.redhat.cloud.notifications.auth.principal.IllegalIdentityHeaderException;
+import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeSamlIdentity;
 import com.redhat.cloud.notifications.auth.rbac.RbacServer;
@@ -85,10 +86,14 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         // at the same time. That way we can jump from using RBAC to Kessel and
         // if we see that something is not working properly, we can instantly
         // switch back to RBAC by disabling Kessel.
-        if (this.backendConfig.isKesselRelationsEnabled()) {
-            try {
-                // Build the principal from the incoming "x-rh-identity" header.
-                final Optional<Principal> principal = this.buildPrincipalFromIdentityHeader(rhAuthReq);
+        try {
+            String orgId = "-none-";
+            // Build the principal from the incoming "x-rh-identity" header.
+            Optional<Principal> principal = this.buildPrincipalFromIdentityHeader(rhAuthReq);
+            if (principal.get() instanceof RhIdPrincipal rhIdPrincipal) {
+                orgId = rhIdPrincipal.getOrgId();
+            }
+            if (this.backendConfig.isKesselRelationsEnabled(orgId)) {
 
                 final QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder();
 
@@ -99,9 +104,9 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
 
                 // Build the security identity for Quarkus.
                 return Uni.createFrom().item(builder.build());
-            } catch (final IllegalIdentityHeaderException e) {
-                return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
             }
+        } catch (final IllegalIdentityHeaderException | IllegalArgumentException e) {
+            return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
         }
 
         if (!isRbacEnabled) {

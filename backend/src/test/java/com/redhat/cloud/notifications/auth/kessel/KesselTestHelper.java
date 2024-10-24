@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyString;
+
 /**
  * Helps mocking Kessel's responses for testing purposes. It requires the
  * Kessel clients to be mocked by the test class for these to work.
@@ -61,7 +63,7 @@ public class KesselTestHelper {
     public void mockAuthorizedIntegrationsLookup(final Set<UUID> authorizedIntegrationsIds) {
         // It does not make sense to mock anything if we are not testing with
         // Kessel.
-        if (!this.backendConfig.isKesselRelationsEnabled()) {
+        if (!this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
         }
 
@@ -118,7 +120,7 @@ public class KesselTestHelper {
      * @param resourceId the reource's identifier.
      */
     public void mockKesselPermission(final String subjectUsername, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
-        if (!this.backendConfig.isKesselRelationsEnabled()) {
+        if (!this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
         }
 
@@ -159,10 +161,10 @@ public class KesselTestHelper {
      */
     public void mockKesselRelations(final boolean isKesselRelationsEnabled) {
         Mockito
-            .when(this.backendConfig.isKesselRelationsEnabled())
+            .when(this.backendConfig.isKesselRelationsEnabled(anyString()))
             .thenReturn(isKesselRelationsEnabled);
 
-        if (!this.backendConfig.isKesselRelationsEnabled()) {
+        if (!this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
         }
 
