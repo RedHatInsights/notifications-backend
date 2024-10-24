@@ -846,7 +846,7 @@ public class NotificationResource {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
     public Response updateEventTypeEndpoints(@Context SecurityContext securityContext,
-                                             @Parameter(description = "UUID of the eventType to associate with the behavior group(s)") @PathParam("eventTypeId") UUID eventTypeId,
+                                             @Parameter(description = "UUID of the eventType to associate with the endpoint(s)") @PathParam("eventTypeId") UUID eventTypeId,
                                              @Parameter(description = "Set of endpoint ids to associate") Set<UUID> endpointsIds) {
         if (endpointsIds == null) {
             throw new BadRequestException("The request body must contain a list (possibly empty) of endpoints identifiers");
