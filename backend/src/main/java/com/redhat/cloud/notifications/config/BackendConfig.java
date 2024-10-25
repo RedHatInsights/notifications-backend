@@ -27,7 +27,6 @@ public class BackendConfig {
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_INVENTORY_CLIENT_ID = "inventory-api.authn.client.id";
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
-    private static final String KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED = "notifications.kessel-inventory.integrations-removal.enabled";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
@@ -71,9 +70,6 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_INVENTORY_ENABLED, defaultValue = "false")
     boolean kesselInventoryEnabled;
 
-    @ConfigProperty(name = KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED, defaultValue = "false")
-    boolean kesselInventoryIntegrationRemovalsEnabled;
-
     @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "false")
     boolean kesselRelationsEnabled;
 
@@ -108,7 +104,6 @@ public class BackendConfig {
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
         config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled(null));
-        config.put(KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED, areKesselInventoryIntegrationRemovalsEnabled(null));
         config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled(null));
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
@@ -142,24 +137,6 @@ public class BackendConfig {
 
     public boolean isInstantEmailsEnabled() {
         return instantEmailsEnabled;
-    }
-
-    /**
-     * In the beginning, only the creation of the integrations was supported in
-     * the Kessel inventory. The removal of them was not implemented nor
-     * supported. There is a <a href="https://issues.redhat.com/browse/RHCLOUD-35755">
-     * bug filed</a> for an issue related to integration removals, so once we
-     * confirm everything works we can simply remove the feature flag.
-     * @return {@code true} if we are allowed to delete integrations from the
-     * Kessel inventory.
-     */
-    public boolean areKesselInventoryIntegrationRemovalsEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(kesselInventoryIntegrationsRemovalToggle, unleashContext, false);
-        } else {
-            return kesselInventoryIntegrationRemovalsEnabled;
-        }
     }
 
     public boolean isKesselInventoryEnabled(String orgId) {

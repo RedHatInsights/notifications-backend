@@ -128,8 +128,6 @@ objects:
               optional: true
         - name: NOTIFICATIONS_KESSEL_INVENTORY_ENABLED
           value: ${NOTIFICATIONS_KESSEL_INVENTORY_ENABLED}
-        - name: NOTIFICATIONS_KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED
-          value: ${NOTIFICATIONS_KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED}
         - name: NOTIFICATIONS_KESSEL_RELATIONS_ENABLED
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_ENABLED}
         - name: NOTIFICATIONS_KESSEL_BACKEND_ENABLED
@@ -267,9 +265,6 @@ parameters:
   value: "1000"
 - name: NOTIFICATIONS_KESSEL_INVENTORY_ENABLED
   description: Is the integration with Kessel's inventory enabled?
-  value: "false"
-- name: NOTIFICATIONS_KESSEL_INVENTORY_INTEGRATIONS_REMOVAL_ENABLED
-  description: Are integration removals enabled in Kessel?
   value: "false"
 - name: NOTIFICATIONS_KESSEL_INVENTORY_SECURE_CLIENTS
   description: Should the inventory gRPC client open channels over TLS?
