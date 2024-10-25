@@ -55,6 +55,9 @@ public class WorkspaceUtils {
         final JsonObject psks = this.backendConfig.getRbacPskSecrets();
         final JsonObject notifications = psks.getJsonObject(APPLICATION_KEY);
         this.notificationsPsk = notifications.getString("secret");
+        if (this.notificationsPsk == null) {
+            this.notificationsPsk = notifications.getString("alt-secret");
+        }
     }
 
     /**
