@@ -134,6 +134,11 @@ objects:
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_ENABLED}
         - name: NOTIFICATIONS_KESSEL_BACKEND_ENABLED
           value: ${NOTIFICATIONS_KESSEL_BACKEND_ENABLED}
+        - name: NOTIFICATIONS_RBAC_PSKS
+          valueFrom:
+            secretKeyRef:
+              name: rbac-psks
+              key: psks.json
         - name: NOTIFICATIONS_UNLEASH_ENABLED
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
