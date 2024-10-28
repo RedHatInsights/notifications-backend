@@ -3,9 +3,14 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.HttpType;
+import com.redhat.cloud.notifications.models.PagerDutyProperties;
+import com.redhat.cloud.notifications.models.PagerDutySeverity;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -24,9 +29,15 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
+import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
+import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
+import static com.redhat.cloud.notifications.models.EndpointType.PAGERDUTY;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -182,60 +193,122 @@ public class EndpointRepositoryTest {
     }
 
     /**
-     * Tests that the "findByUuid" function works as expected. The test creates an endpoint first, and then fetches
-     * it to ensure that the function works.
+     * Tests that the {@link EndpointRepository#findByUuidAndOrgId(UUID, String)} function works as expected for a
+     * webhook endpoint and an Ansible endpoint.
      */
     @Test
-    void findByUuidAndOrgIdTest() {
-        final String orgId = "find-by-uuid-org-id-test";
-
-        final Endpoint endpoint = new Endpoint();
-        endpoint.setCreated(LocalDateTime.now());
-        endpoint.setDescription("Endpoint description");
-        endpoint.setEnabled(true);
-        endpoint.setId(UUID.randomUUID());
-        endpoint.setName("endpoint-" + new SecureRandom().nextInt());
-        endpoint.setOrgId(orgId);
-        endpoint.setServerErrors(123);
-        endpoint.setType(WEBHOOK);
-
+    void findByUuidAndOrgIdWebhookAnsibleTest() {
         final WebhookProperties webhookProperties = new WebhookProperties();
+
         webhookProperties.setId(UUID.randomUUID());
         webhookProperties.setBasicAuthenticationSourcesId(512L);
         webhookProperties.setDisableSslVerification(true);
-        webhookProperties.setEndpoint(endpoint);
         webhookProperties.setMethod(HttpType.PUT);
         webhookProperties.setSecretTokenSourcesId(213L);
         webhookProperties.setUrl("https://example.org");
 
-        // Since we are not using a repository to create the associated
-        // properties, we do it manually by first storing the endpoint and then
-        // its properties.
-        persist(endpoint, webhookProperties);
+        WebhookProperties dbProperties = findByUuidAndOrgIdInternal(WEBHOOK, null, webhookProperties, WebhookProperties.class);
 
-        final Endpoint[] dbEndpoints = new Endpoint[1];
-
-        // Call the function under test.
-        dbEndpoints[0] = this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), orgId);
-
-        Assertions.assertEquals(1, dbEndpoints.length, "only one endpoint should have been fetched");
-
-        final Endpoint dbEndpoint = dbEndpoints[0];
-
-        Assertions.assertEquals(endpoint.getId(), dbEndpoint.getId(), "unexpected id from the fetched endpoint");
-        Assertions.assertEquals(endpoint.getType(), dbEndpoint.getType(), "unexpected endpoint type from the fetched endpoint");
-        Assertions.assertTrue(dbEndpoint.isEnabled(), "unexpected enabled value from the fetched endpoint");
-        Assertions.assertEquals(endpoint.getServerErrors(), dbEndpoint.getServerErrors(), "unexpected server errors value from the fetched endpoint");
-
-        Assertions.assertNotNull(dbEndpoint.getProperties());
-
-        final WebhookProperties dbProperties = dbEndpoint.getProperties(WebhookProperties.class);
-        Assertions.assertEquals(webhookProperties.getId(), dbProperties.getId(), "the ID of the associated properties doesn't match");
+        Assertions.assertEquals(webhookProperties.getId(), dbProperties.getId(), "the ID of the associated webhook properties doesn't match");
         Assertions.assertEquals(webhookProperties.getBasicAuthenticationSourcesId(), dbProperties.getBasicAuthenticationSourcesId(), "unexpected basic authentication sources id value");
         Assertions.assertEquals(webhookProperties.getDisableSslVerification(), dbProperties.getDisableSslVerification(), "unexpected ssl verification value");
         Assertions.assertEquals(webhookProperties.getMethod(), dbProperties.getMethod(), "unexpected http method value");
         Assertions.assertEquals(webhookProperties.getSecretTokenSourcesId(), dbProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");
         Assertions.assertEquals(webhookProperties.getUrl(), dbProperties.getUrl(), "unexpected url value");
+
+        // Repeat for Ansible endpoint, with some modified values
+        final WebhookProperties ansibleProperties = webhookProperties;
+        ansibleProperties.setId(UUID.randomUUID());
+        ansibleProperties.setSecretTokenSourcesId(242L);
+        ansibleProperties.setMethod(HttpType.POST);
+
+        WebhookProperties dbAnsibleProperties = findByUuidAndOrgIdInternal(ANSIBLE, null, webhookProperties, WebhookProperties.class);
+
+        Assertions.assertEquals(ansibleProperties.getId(), dbAnsibleProperties.getId(), "the ID of the associated Ansible properties doesn't match");
+        Assertions.assertEquals(ansibleProperties.getBasicAuthenticationSourcesId(), dbAnsibleProperties.getBasicAuthenticationSourcesId(), "unexpected basic authentication sources id value");
+        Assertions.assertEquals(ansibleProperties.getDisableSslVerification(), dbAnsibleProperties.getDisableSslVerification(), "unexpected ssl verification value");
+        Assertions.assertEquals(ansibleProperties.getMethod(), dbAnsibleProperties.getMethod(), "unexpected http method value");
+        Assertions.assertEquals(ansibleProperties.getSecretTokenSourcesId(), dbAnsibleProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");
+        Assertions.assertEquals(ansibleProperties.getUrl(), dbAnsibleProperties.getUrl(), "unexpected url value");
+    }
+
+    /**
+     * Tests that the {@link EndpointRepository#findByUuidAndOrgId(UUID, String)} function works as expected for an
+     * email endpoint and a Drawer endpoint.
+     */
+    @Test
+    void findByUuidAndOrgIdEmailDrawerTest() {
+        final SystemSubscriptionProperties systemSubscriptionProperties = new SystemSubscriptionProperties();
+
+        systemSubscriptionProperties.setId(UUID.randomUUID());
+        systemSubscriptionProperties.setGroupId(UUID.randomUUID());
+        systemSubscriptionProperties.setOnlyAdmins(true);
+        systemSubscriptionProperties.setIgnorePreferences(false);
+
+        SystemSubscriptionProperties dbProperties = findByUuidAndOrgIdInternal(EMAIL_SUBSCRIPTION, null, systemSubscriptionProperties, SystemSubscriptionProperties.class);
+
+        Assertions.assertEquals(systemSubscriptionProperties.getId(), dbProperties.getId(), "the ID of the associated email properties doesn't match");
+        Assertions.assertEquals(systemSubscriptionProperties.getGroupId(), dbProperties.getGroupId(), "unexpected group id value");
+        Assertions.assertEquals(systemSubscriptionProperties.isOnlyAdmins(), dbProperties.isOnlyAdmins(), "unexpected only admins setting");
+        Assertions.assertEquals(systemSubscriptionProperties.isIgnorePreferences(), dbProperties.isIgnorePreferences(), "unexpected ignore preferences setting");
+
+        // Repeat for drawer endpoint, with some modified values
+        final SystemSubscriptionProperties drawerProperties = systemSubscriptionProperties;
+        drawerProperties.setId(UUID.randomUUID());
+        drawerProperties.setGroupId(UUID.randomUUID());
+        drawerProperties.setIgnorePreferences(true);
+
+        SystemSubscriptionProperties dbDrawerProperties = findByUuidAndOrgIdInternal(DRAWER, null, systemSubscriptionProperties, SystemSubscriptionProperties.class);
+
+        Assertions.assertEquals(drawerProperties.getId(), dbDrawerProperties.getId(), "the ID of the associated drawer properties doesn't match");
+        Assertions.assertEquals(drawerProperties.getGroupId(), dbDrawerProperties.getGroupId(), "unexpected group id value");
+        Assertions.assertEquals(drawerProperties.isOnlyAdmins(), dbDrawerProperties.isOnlyAdmins(), "unexpected only admins setting");
+        Assertions.assertEquals(drawerProperties.isIgnorePreferences(), dbDrawerProperties.isIgnorePreferences(), "unexpected ignore preferences setting");
+    }
+
+    /**
+     * Tests that the {@link EndpointRepository#findByUuidAndOrgId(UUID, String)} function works as expected for an
+     * Camel (Slack) endpoint.
+     */
+    @Test
+    void findByUuidAndOrgIdCamelTest() {
+        final CamelProperties camelProperties = new CamelProperties();
+
+        camelProperties.setId(UUID.randomUUID());
+        camelProperties.setBasicAuthenticationSourcesId(513L);
+        camelProperties.setDisableSslVerification(false);
+        camelProperties.setExtras(Map.of("channel", "#notifications"));
+        camelProperties.setSecretTokenSourcesId(214L);
+        camelProperties.setUrl("https://example.org");
+
+        CamelProperties dbProperties = findByUuidAndOrgIdInternal(CAMEL, "slack", camelProperties, CamelProperties.class);
+
+        Assertions.assertEquals(camelProperties.getId(), dbProperties.getId(), "the ID of the associated camel properties doesn't match");
+        Assertions.assertEquals(camelProperties.getBasicAuthenticationSourcesId(), dbProperties.getBasicAuthenticationSourcesId(), "unexpected basic authentication sources id value");
+        Assertions.assertEquals(camelProperties.getDisableSslVerification(), dbProperties.getDisableSslVerification(), "unexpected ssl verification value");
+        Assertions.assertEquals(camelProperties.getExtras(), dbProperties.getExtras(), "unexpected extras map (slack channel)");
+        Assertions.assertEquals(camelProperties.getSecretTokenSourcesId(), dbProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");
+        Assertions.assertEquals(camelProperties.getUrl(), dbProperties.getUrl(), "unexpected url value");
+    }
+
+    /**
+     * Tests that the {@link EndpointRepository#findByUuidAndOrgId(UUID, String)} function works as expected for an
+     * PagerDuty endpoint.
+     */
+    @Test
+    void findByUuidAndOrgIdPagerDutyTest() {
+        final PagerDutyProperties pagerDutyProperties = new PagerDutyProperties();
+
+        pagerDutyProperties.setId(UUID.randomUUID());
+        pagerDutyProperties.setSeverity(PagerDutySeverity.WARNING);
+        pagerDutyProperties.setSecretToken("23990f-1234e89ff-24t");
+        pagerDutyProperties.setSecretTokenSourcesId(269L);
+
+        PagerDutyProperties dbProperties = findByUuidAndOrgIdInternal(PAGERDUTY, null, pagerDutyProperties, PagerDutyProperties.class);
+
+        Assertions.assertEquals(pagerDutyProperties.getId(), dbProperties.getId(), "the ID of the associated PagerDuty properties doesn't match");
+        Assertions.assertEquals(pagerDutyProperties.getSeverity(), dbProperties.getSeverity(), "unexpected severity value");
+        Assertions.assertEquals(pagerDutyProperties.getSecretTokenSourcesId(), dbProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");
     }
 
     /**
@@ -295,9 +368,56 @@ public class EndpointRepositoryTest {
     }
 
     @Transactional
-    void persist(Endpoint endpoint, WebhookProperties webhookProperties) {
+    <T extends EndpointProperties> void persist(Endpoint endpoint, T endpointProperties) {
         entityManager.persist(endpoint);
-        entityManager.persist(webhookProperties);
+        entityManager.persist(endpointProperties);
+    }
+
+    /**
+     * Persist an implementation of {@link com.redhat.cloud.notifications.models.EndpointProperties EndpointProperties} to the database, and verify that it can be retrieved. Perform some
+     * assertions on the base endpoint.
+     *
+     * @return the cast endpoint implementation retrieved from the database
+     */
+    private <T extends EndpointProperties> T findByUuidAndOrgIdInternal(EndpointType endpointType, String endpointSubType, T endpointProperties, Class<T> endpointPropertiesClass) {
+        final String orgId = "find-by-uuid-org-id-test";
+
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setCreated(LocalDateTime.now());
+        endpoint.setDescription("Endpoint description");
+        endpoint.setEnabled(true);
+        endpoint.setId(UUID.randomUUID());
+        endpoint.setName("endpoint-" + new SecureRandom().nextInt());
+        endpoint.setOrgId(orgId);
+        endpoint.setServerErrors(123);
+        endpoint.setType(endpointType);
+        if (endpointSubType != null && !endpointSubType.isEmpty()) {
+            endpoint.setSubType(endpointSubType);
+        }
+
+        endpointProperties.setEndpoint(endpoint);
+        // Since we are not using a repository to create the associated
+        // properties, we do it manually by first storing the endpoint and then
+        // its properties.
+        persist(endpoint, endpointProperties);
+
+        final Endpoint[] dbEndpoints = new Endpoint[1];
+
+        // Call the function under test.
+        dbEndpoints[0] = this.endpointRepository.findByUuidAndOrgId(endpoint.getId(), orgId);
+
+        Assertions.assertEquals(1, dbEndpoints.length, "only one endpoint should have been fetched");
+
+        final Endpoint dbEndpoint = dbEndpoints[0];
+
+        Assertions.assertEquals(endpoint.getId(), dbEndpoint.getId(), "unexpected id from the fetched endpoint");
+        Assertions.assertEquals(endpoint.getType(), dbEndpoint.getType(), "unexpected endpoint type from the fetched endpoint");
+        Assertions.assertTrue(dbEndpoint.isEnabled(), "unexpected enabled value from the fetched endpoint");
+        Assertions.assertEquals(endpoint.getServerErrors(), dbEndpoint.getServerErrors(), "unexpected server errors value from the fetched endpoint");
+
+        Assertions.assertNotNull(dbEndpoint.getProperties());
+
+        return dbEndpoint.getProperties(endpointPropertiesClass);
     }
 
     /**
