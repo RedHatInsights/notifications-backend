@@ -31,6 +31,7 @@ public class BackendConfig {
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
     private static final String UNLEASH = "notifications.unleash.enabled";
+    private static final String MAINTENANCE_MODE = "notifications.maintenance.mode";
 
     /*
      * Unleash configuration
@@ -39,6 +40,7 @@ public class BackendConfig {
     private String kesselInventoryToggle;
     private String kesselInventoryIntegrationsRemovalToggle;
     private String kesselRelationsToggle;
+    private String maintenanceModeToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -82,6 +84,9 @@ public class BackendConfig {
     @ConfigProperty(name = RBAC_PSKS, defaultValue = "{\"notifications\": {\"secret\": \"development-psk-value\"}}")
     protected String rbacPskSecrets;
 
+    @ConfigProperty(name = MAINTENANCE_MODE, defaultValue = "false")
+    boolean maintenanceModeEnabled;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -94,6 +99,7 @@ public class BackendConfig {
         kesselInventoryToggle = toggleRegistry.register("kessel-inventory", true);
         kesselInventoryIntegrationsRemovalToggle = toggleRegistry.register("kessel-inventory-integrations-removal", true);
         kesselRelationsToggle = toggleRegistry.register("kessel-relations", true);
+        maintenanceModeToggle = toggleRegistry.register("notifications-maintenance-mode", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -184,5 +190,15 @@ public class BackendConfig {
             .addProperty("orgId", orgId)
             .build();
         return unleashContext;
+    }
+
+    public boolean isMaintenanceModeEnabled(String path) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("method_and_path", path)
+                .build();
+            return unleash.isEnabled(maintenanceModeToggle, unleashContext, false);
+        }
+        return maintenanceModeEnabled;
     }
 }
