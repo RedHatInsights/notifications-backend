@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
-import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -86,7 +85,7 @@ public class EventResource {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
 
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.EVENT_LOG_VIEW, workspaceId);
 
             return this.getInternalEvents(securityContext, uriInfo, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, query, includeDetails, includePayload, includeActions);
         } else {
