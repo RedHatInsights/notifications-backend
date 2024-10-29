@@ -9,14 +9,12 @@ import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.InternalRoleAccessRepository;
-import com.redhat.cloud.notifications.db.repositories.StatusRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.CurrentStatus;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Environment;
@@ -112,9 +110,6 @@ public class InternalResource {
 
     @Inject
     Environment environment;
-
-    @Inject
-    StatusRepository statusRepository;
 
     @Inject
     InternalRoleAccessRepository internalRoleAccessRepository;
@@ -441,15 +436,6 @@ public class InternalResource {
     public boolean deleteEventType(@Context SecurityContext sec, @PathParam("eventTypeId") UUID eventTypeId) {
         securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
         return applicationRepository.deleteEventTypeById(eventTypeId);
-    }
-
-    @PUT
-    @Path("/status")
-    @Consumes(APPLICATION_JSON)
-    @Transactional
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
-    public void setCurrentStatus(@NotNull @Valid CurrentStatus status) {
-        statusRepository.setCurrentStatus(status);
     }
 
     @GET

@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.routers.filters;
 
-import com.redhat.cloud.notifications.db.repositories.StatusRepository;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,7 +14,6 @@ import java.util.List;
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
-import static com.redhat.cloud.notifications.models.Status.MAINTENANCE;
 import static jakarta.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 
 @ApplicationScoped
@@ -29,10 +28,10 @@ public class MaintenanceModeRequestFilter {
             API_NOTIFICATIONS_V_2_0 + "/status"
     );
 
-    private static final Response MAINTENANCE_IN_PROGRESS = Response.status(SERVICE_UNAVAILABLE).entity("Maintenance in progress").build();
+    protected static final Response MAINTENANCE_IN_PROGRESS = Response.status(SERVICE_UNAVAILABLE).entity("Maintenance in progress").build();
 
     @Inject
-    StatusRepository statusRepository;
+    BackendConfig backendConfig;
 
     @ServerRequestFilter
     public Response filter(ContainerRequestContext requestContext) {
@@ -47,7 +46,7 @@ public class MaintenanceModeRequestFilter {
          * If this point is reached, the current request path can be affected by the maintenance mode.
          * Let's check if maintenance is on in the database.
          */
-        if (isMaintenance()) {
+        if (isMaintenance(requestContext.getMethod() + "_" + requestPath)) {
             Log.trace("Maintenance mode is enabled in the database, aborting request and returning HTTP status 503");
             return MAINTENANCE_IN_PROGRESS;
         } else {
@@ -69,7 +68,7 @@ public class MaintenanceModeRequestFilter {
     }
 
     @CacheResult(cacheName = "maintenance")
-    public Boolean isMaintenance() {
-        return statusRepository.getCurrentStatus().status == MAINTENANCE;
+    public Boolean isMaintenance(String methodAndRequestPath) {
+        return backendConfig.isMaintenanceModeEnabled(methodAndRequestPath);
     }
 }
