@@ -54,6 +54,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
+import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import io.vertx.core.json.JsonArray;
@@ -447,6 +448,20 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Set<UUID> linkedIds = resultDto.getEventTypesGroupByBundlesAndApplications().stream().findFirst().get().getApplications().stream().findFirst().get().getEventTypes().stream().map(e -> e.getId()).collect(Collectors.toSet());
         assertEquals(ep.eventTypes, linkedIds);
+
+        List<BehaviorGroup> bgList = given()
+            .header(identityHeader)
+            .basePath(TestConstants.API_NOTIFICATIONS_V_1)
+            .pathParam("endpointId", responsePoint.getString("id"))
+            .when()
+            .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(new TypeRef<>() {
+        });
+
+        assertEquals(1, bgList.size());
     }
 
     @ParameterizedTest

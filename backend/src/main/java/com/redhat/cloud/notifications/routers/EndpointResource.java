@@ -554,6 +554,11 @@ public class EndpointResource {
             this.kesselAssets.createIntegration(sec, workspaceId.toString(), createdEndpoint.getId().toString());
         }
 
+        // Sync behavior group model
+        if (null != eventTypes && !eventTypes.isEmpty()) {
+            createOrUpdateLinkedBehaviorGroup(eventTypes, createdEndpoint.getId(), createdEndpoint.getName(), orgId, accountId);
+        }
+
         return createdEndpoint;
     }
 
