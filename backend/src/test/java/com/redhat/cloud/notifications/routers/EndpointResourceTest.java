@@ -459,7 +459,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .statusCode(200)
             .contentType(JSON)
             .extract().body().as(new TypeRef<>() {
-        });
+            });
 
         assertEquals(1, bgList.size());
     }
