@@ -125,8 +125,8 @@ public class NotificationResource {
         ) {
             if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
                 final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-                this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-                this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+                this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+                this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, workspaceId);
 
                 return this.internalGetLinkedBehaviorGroups(sec, eventTypeId, query);
             } else {
@@ -160,8 +160,8 @@ public class NotificationResource {
         ) {
             if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
                 final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-                this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-                this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+                this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+                this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, workspaceId);
 
                 return this.internalGetLinkedBehaviorGroups(sec, eventTypeId, query, uriInfo);
             } else {
@@ -198,7 +198,7 @@ public class NotificationResource {
     ) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
 
             return this.internalGetEventTypes(securityContext, uriInfo, query, applicationIds, bundleId, eventTypeName, excludeMutedTypes);
         } else {
@@ -232,7 +232,7 @@ public class NotificationResource {
     public Bundle getBundleByName(@Context final SecurityContext securityContext, @PathParam("bundleName") String bundleName) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.BUNDLES_VIEW, workspaceId);
 
             return this.internalGetBundleByName(bundleName);
         } else {
@@ -266,8 +266,8 @@ public class NotificationResource {
     ) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.APPLICATIONS_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.BUNDLES_VIEW, workspaceId);
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.APPLICATIONS_VIEW, workspaceId);
 
             return this.internalGetApplicationByNameAndBundleName(bundleName, applicationName);
         } else {
@@ -302,9 +302,9 @@ public class NotificationResource {
     ) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.APPLICATIONS_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.BUNDLES_VIEW, workspaceId);
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.APPLICATIONS_VIEW, workspaceId);
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
 
             return this.internalGetEventTypesByNameAndBundleAndApplicationName(bundleName, applicationName, eventTypeName);
         } else {
@@ -339,8 +339,8 @@ public class NotificationResource {
                                                                          @Parameter(description = "The UUID of the behavior group to check") @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, workspaceId);
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
 
             return this.internalGetEventTypesAffectedByRemovalOfBehaviorGroup(sec, behaviorGroupId);
         } else {
@@ -369,7 +369,7 @@ public class NotificationResource {
     public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, workspaceId);
             this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpointId.toString());
 
             return this.internalGetBehaviorGroupsAffectedByRemovalOfEndpoint(sec, endpointId);
@@ -445,7 +445,7 @@ public class NotificationResource {
     ) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, workspaceId);
 
             return this.internalCreateBehaviorGroup(sec, request);
         } else {
@@ -520,7 +520,7 @@ public class NotificationResource {
                                         @RequestBody(description = "New parameters", required = true) UpdateBehaviorGroupRequest request) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, workspaceId);
 
             return this.internalUpdateBehaviorGroup(sec, id, request);
         } else {
@@ -570,7 +570,7 @@ public class NotificationResource {
                                        @Parameter(description = "The UUID of the behavior group to delete") @PathParam("id") UUID behaviorGroupId) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, workspaceId);
 
             return this.internalDeleteBehaviorGroup(sec, behaviorGroupId);
         } else {
@@ -603,7 +603,7 @@ public class NotificationResource {
                                                @Parameter(description = "List of endpoint ids of the actions") List<UUID> endpointIds) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, workspaceId);
 
             return this.internalUpdateBehaviorGroupActions(sec, behaviorGroupId, endpointIds);
         } else {
@@ -650,8 +650,8 @@ public class NotificationResource {
 
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, workspaceId.toString());
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, workspaceId);
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
 
             return this.internalUpdateEventTypeBehaviors(sec, eventTypeId, behaviorGroupIds);
         } else {
@@ -697,8 +697,8 @@ public class NotificationResource {
     ) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, workspaceId);
 
             this.internalAppendBehaviorGroupToEventType(securityContext, behaviorGroupUuid, eventTypeUuid);
         } else {
@@ -731,8 +731,8 @@ public class NotificationResource {
     ) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-            this.kesselAuthorization.hasPermissionOnResource(securityContext, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.BEHAVIOR_GROUPS_EDIT, workspaceId);
 
             this.internalDeleteBehaviorGroupFromEventType(securityContext, eventTypeId, behaviorGroupId);
         } else {
@@ -763,8 +763,8 @@ public class NotificationResource {
                                                             @Parameter(description = "UUID of the bundle to retrieve the behavior groups for.") @PathParam("bundleId") UUID bundleId) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BUNDLES_VIEW, workspaceId);
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, workspaceId);
 
             return this.internalFindBehaviorGroupsByBundleId(sec, bundleId);
         } else {
@@ -805,7 +805,7 @@ public class NotificationResource {
     public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
         if (backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
 
             // Fetch the set of integration IDs the user is authorized to view.
             final Set<UUID> authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);

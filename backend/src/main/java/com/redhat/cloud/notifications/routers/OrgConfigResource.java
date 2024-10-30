@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
-import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -79,7 +78,7 @@ public class OrgConfigResource {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
 
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, workspaceId);
 
             this.internalSaveDailyDigestTimePreference(sec, expectedTime);
         } else {
@@ -112,7 +111,7 @@ public class OrgConfigResource {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
 
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW, workspaceId);
 
             return this.internalGetDailyDigestTimePreference(sec);
         } else {

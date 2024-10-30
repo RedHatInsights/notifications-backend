@@ -467,7 +467,7 @@ public class EndpointResource {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
 
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.INTEGRATIONS_CREATE, workspaceId);
 
             return this.internalCreateEndpoint(sec, endpointDTO);
         } else {
@@ -604,7 +604,7 @@ public class EndpointResource {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
 
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, workspaceId);
 
             endpoint = this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION);
         } else {
@@ -626,7 +626,7 @@ public class EndpointResource {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
 
-            this.kesselAuthorization.hasPermissionOnResource(sec, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, workspaceId.toString());
+            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.CREATE_DRAWER_INTEGRATION, workspaceId);
 
             endpoint = this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER);
         } else {

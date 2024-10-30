@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.auth.kessel;
 
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
@@ -167,6 +168,19 @@ public class KesselAuthorization {
         }
 
         return uuids;
+    }
+
+    /**
+     * Checks whether the provided principal has the specified permission on
+     * the given workspace.
+     * @param securityContext the security context to extract the principal
+     *                        from.
+     * @param workspacePermission the workspace permission we want to
+     *                            check.
+     * @param workspaceId the workspace's identifier.
+     */
+    public void hasPermissionOnWorkspace(final SecurityContext securityContext, final WorkspacePermission workspacePermission, final UUID workspaceId) {
+        this.hasPermissionOnResource(securityContext, workspacePermission, ResourceType.WORKSPACE, workspaceId.toString());
     }
 
     /**
