@@ -230,13 +230,13 @@ public class EmailTemplateMigrationService {
              */
             createInstantEmailTemplate(
                 warnings, "rhel", "edge-management", List.of("image-creation"),
-                "EdgeManagement/imageCreationTitle", "txt", "EdgeManagement image creation email title",
-                "EdgeManagement/imageCreationBody", "html", "EdgeManagement image creation email body"
+                "EdgeManagement/imageCreationEmailTitle", "txt", "EdgeManagement image creation email title",
+                "EdgeManagement/imageCreationEmailBody", "html", "EdgeManagement image creation email body"
             );
             createInstantEmailTemplate(
                 warnings, "rhel", "edge-management", List.of("update-devices"),
-                "EdgeManagement/updateDeviceTitle", "txt", "EdgeManagement update devices email title",
-                "EdgeManagement/updateDeviceBody", "html", "EdgeManagement update devices email body"
+                "EdgeManagement/updateDeviceEmailTitle", "txt", "EdgeManagement update devices email title",
+                "EdgeManagement/updateDeviceEmailBody", "html", "EdgeManagement update devices email body"
             );
 
             /*
@@ -582,8 +582,8 @@ public class EmailTemplateMigrationService {
              */
             createInstantEmailTemplate(
                 warnings, "rhel", "vulnerability", List.of("any-cve-known-exploit"),
-                "Vulnerability/anyCveKnownExploitTitle", "txt", "Vulnerability any CVE known exploit email title",
-                "Vulnerability/anyCveKnownExploitBody", "html", "Vulnerability any CVE known exploit email body"
+                "Vulnerability/anyCveKnownExploitEmailTitle", "txt", "Vulnerability any CVE known exploit email title",
+                "Vulnerability/anyCveKnownExploitEmailBody", "html", "Vulnerability any CVE known exploit email body"
             );
             createInstantEmailTemplate(
                 warnings, "rhel", "vulnerability", List.of("new-cve-severity"),
@@ -597,8 +597,8 @@ public class EmailTemplateMigrationService {
             );
             createInstantEmailTemplate(
                 warnings, "rhel", "vulnerability", List.of("new-cve-security-rule"),
-                "Vulnerability/newCveSecurityRuleTitle", "txt", "Vulnerability new CVE security rule email title",
-                "Vulnerability/newCveSecurityRuleBody", "html", "Vulnerability new CVE security rule email body"
+                "Vulnerability/newCveSecurityRuleEmailTitle", "txt", "Vulnerability new CVE security rule email title",
+                "Vulnerability/newCveSecurityRuleEmailBody", "html", "Vulnerability new CVE security rule email body"
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "vulnerability",
