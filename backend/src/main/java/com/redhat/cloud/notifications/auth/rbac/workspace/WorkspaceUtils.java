@@ -97,11 +97,11 @@ public class WorkspaceUtils {
 
         // Double check that the fetched workspace is the default one.
         if (!rbacWorkspace.workspaceType().equals(WorkspaceType.DEFAULT)) {
-            Log.errorf("[org_id: %s][workspace_id: %s][workspace_type: %s] The fetched workspace is not a default workspace", orgId, rbacWorkspace.uuid(), rbacWorkspace.workspaceType());
+            Log.errorf("[org_id: %s][workspace_id: %s][workspace_type: %s] The fetched workspace is not a default workspace", orgId, rbacWorkspace.id(), rbacWorkspace.workspaceType());
 
             throw new UnauthorizedException();
         }
 
-        return rbacWorkspace.uuid();
+        return rbacWorkspace.id();
     }
 }
