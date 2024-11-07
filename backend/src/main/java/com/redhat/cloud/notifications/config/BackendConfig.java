@@ -26,8 +26,10 @@ public class BackendConfig {
     private static final String ERRATA_MIGRATION_BATCH_SIZE = "notifications.errata.migration.batch.size";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_INVENTORY_CLIENT_ID = "inventory-api.authn.client.id";
+    private static final String KESSEL_INVENTORY_URL = "inventory-api.target-url";
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
+    private static final String KESSEL_RELATIONS_URL = "relations-api.target-url";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
     private static final String UNLEASH = "notifications.unleash.enabled";
@@ -87,6 +89,12 @@ public class BackendConfig {
     @ConfigProperty(name = MAINTENANCE_MODE, defaultValue = "false")
     boolean maintenanceModeEnabled;
 
+    @ConfigProperty(name = KESSEL_INVENTORY_URL, defaultValue = "localhost:9081")
+    String kesselInventoryUrl;
+
+    @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "localhost:9000")
+    String kesselRelationsUrl;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -110,7 +118,9 @@ public class BackendConfig {
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
         config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled(null));
+        config.put(KESSEL_INVENTORY_URL, kesselInventoryUrl);
         config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled(null));
+        config.put(KESSEL_RELATIONS_URL, kesselRelationsUrl);
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
         config.put(UNLEASH, unleashEnabled);
