@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.config;
 
+import io.quarkus.logging.Log;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -45,10 +46,10 @@ public class KesselConfigInterceptor implements ConfigSourceInterceptor {
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext configSourceInterceptorContext, final String name) {
         final ConfigValue configValue = SecretKeys.doLocked(() -> configSourceInterceptorContext.proceed(name));
-
+        Log.infof("Configuration property to load : %s", name);
         if ((configValue != null) && (name.equals("inventory-api.target-url") || name.equals("relations-api.target-url"))) {
             final String kesselUrl = configValue.getValue();
-
+            Log.infof("kesselUrl for '%s' is '%s'", name, kesselUrl);
             if (kesselUrl.startsWith("http://")) {
                 return configValue.withValue(kesselUrl.replace("http://", ""));
             } else {
