@@ -16,7 +16,8 @@ objects:
     - notifications-engine
     - rbac
     optionalDependencies:
-    - relations-api-ephemeral
+    - relations-api
+    - inventory-api
     - sources-api # https://issues.redhat.com/browse/RHCLOUD-23993
     database:
       name: notifications-backend
