@@ -92,7 +92,7 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_INVENTORY_URL, defaultValue = "localhost:9081")
     String kesselInventoryUrl;
 
-    @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "localhost:9000")
+    @ConfigProperty(name = KESSEL_RELATIONS_URL, defaultValue = "localhost:9000")
     String kesselRelationsUrl;
 
     @Inject
