@@ -213,10 +213,6 @@ objects:
               optional: true
         - name: KESSEL_DOMAIN
           value: ${KESSEL_DOMAIN}
-        - name: INVENTORY_API_TARGET_URL
-          value: ${INVENTORY_API_TARGET_URL}
-        - name: RELATIONS_API_TARGET_URL
-          value: ${RELATIONS_API_TARGET_URL}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -322,7 +318,3 @@ parameters:
   value: "false"
 - name: KESSEL_DOMAIN
   value: "redhat"
-- name: INVENTORY_API_TARGET_URL
-  value: "localhost"
-- name: RELATIONS_API_TARGET_URL
-  value: "localhost"
