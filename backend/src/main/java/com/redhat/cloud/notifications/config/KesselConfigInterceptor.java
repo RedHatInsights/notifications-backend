@@ -46,7 +46,7 @@ public class KesselConfigInterceptor implements ConfigSourceInterceptor {
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext configSourceInterceptorContext, final String name) {
         final ConfigValue configValue = SecretKeys.doLocked(() -> configSourceInterceptorContext.proceed(name));
-        Log.infof("Configuration property to load : %s", name);
+
         if ((configValue != null) && (name.equals("inventory-api.target-url") || name.equals("relations-api.target-url"))) {
             final String kesselUrl = configValue.getValue();
             Log.infof("kesselUrl for '%s' is '%s'", name, kesselUrl);
