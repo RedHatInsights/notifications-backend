@@ -5,9 +5,7 @@ import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.db.repositories.StatusRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Status;
 import io.grpc.stub.StreamObserver;
 import io.quarkus.logging.Log;
 import io.quarkus.security.UnauthorizedException;
@@ -16,7 +14,6 @@ import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import org.project_kessel.api.relations.v1beta1.CreateTuplesRequest;
@@ -57,21 +54,11 @@ public class KesselAssetsMigrationService {
     RelationTuplesClient relationTuplesClient;
 
     @Inject
-    StatusRepository statusRepository;
-
-    @Inject
     WorkspaceUtils workspaceUtils;
 
     @Path("/kessel/migrate-assets")
     @POST
     public void migrateAssets() {
-        // We need the application to be in maintenance mode to avoid any
-        // updates to the database, which could cause the Notifications
-        // database and the Kessel inventory to be out of sync.
-        if (Status.MAINTENANCE != this.statusRepository.getCurrentStatus().getStatus()) {
-            throw new BadRequestException("Unable to execute migration because the application is not in maintenance mode");
-        }
-
         int fetchedEndpointsSize = 0;
         int offset = 0;
         do {
