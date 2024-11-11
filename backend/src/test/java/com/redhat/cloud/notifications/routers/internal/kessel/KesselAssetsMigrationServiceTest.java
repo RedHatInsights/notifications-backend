@@ -6,9 +6,6 @@ import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.repositories.StatusRepository;
-import com.redhat.cloud.notifications.models.CurrentStatus;
-import com.redhat.cloud.notifications.models.Status;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -42,10 +39,6 @@ public class KesselAssetsMigrationServiceTest extends DbIsolatedTest {
 
     @InjectMock
     RelationTuplesClient relationTuplesClient;
-
-    @InjectMock
-    StatusRepository statusRepository;
-
     @InjectMock
     WorkspaceUtils workspaceUtils;
 
@@ -53,35 +46,11 @@ public class KesselAssetsMigrationServiceTest extends DbIsolatedTest {
     ResourceHelpers resourceHelpers;
 
     /**
-     * Tests that if the application isn't in maintenance mode the migration is
-     * not run, and a "bad request" response is returned.
-     */
-    @Test
-    void testNonMaintenanceModeBadRequest() {
-        // Simulate that the application is operating normally.
-        final CurrentStatus currentStatus = new CurrentStatus();
-        currentStatus.setStatus(Status.UP);
-        Mockito.when(this.statusRepository.getCurrentStatus()).thenReturn(currentStatus);
-
-        given()
-            .when()
-            .header(TestHelpers.createTurnpikeIdentityHeader(DEFAULT_USER, adminRole))
-            .post(API_INTERNAL + "/kessel/migrate-assets")
-            .then()
-            .statusCode(HttpStatus.SC_BAD_REQUEST);
-    }
-
-    /**
      * Tests that when the integrations to migrate are less than the batch
      * size, only one request is sent to Kessel.
      */
     @Test
     void testMigrateLessThanBatchSizeAssetsKessel() {
-        // Simulate that the application is in maintenance mode.
-        final CurrentStatus currentStatus = new CurrentStatus();
-        currentStatus.setStatus(Status.MAINTENANCE);
-        Mockito.when(this.statusRepository.getCurrentStatus()).thenReturn(currentStatus);
-
         // Simulate that the maximum batch size is 10 endpoints.
         Mockito.when(this.backendConfig.getKesselMigrationBatchSize()).thenReturn(10);
         final int integrationsToCreate = this.backendConfig.getKesselMigrationBatchSize() - 1;
@@ -121,11 +90,6 @@ public class KesselAssetsMigrationServiceTest extends DbIsolatedTest {
      */
     @Test
     void testMigrateMoreThanBatchSizeAssetsKessel() {
-        // Simulate that the application is in maintenance mode.
-        final CurrentStatus currentStatus = new CurrentStatus();
-        currentStatus.setStatus(Status.MAINTENANCE);
-        Mockito.when(this.statusRepository.getCurrentStatus()).thenReturn(currentStatus);
-
         // Simulate that the maximum batch size is 10 endpoints.
         Mockito.when(this.backendConfig.getKesselMigrationBatchSize()).thenReturn(10);
         final int integrationsToCreate = this.backendConfig.getKesselMigrationBatchSize() * 3;
