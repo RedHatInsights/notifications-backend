@@ -1,35 +1,37 @@
-package com.redhat.cloud.notifications.recipients.model;
+package com.redhat.cloud.notifications.processors;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.vertx.core.json.JsonObject;
 import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ExternalAuthorizationCriteria {
-    @NotNull
-    private String assetType;
+public class ExternalAuthorizationCriterion {
 
     @NotNull
-    private String assetId;
+    private JsonObject type;
+
+    @NotNull
+    private String id;
 
     @NotNull
     private String relation;
 
-    public ExternalAuthorizationCriteria(String assetType, String assetId, String relation) {
-        this.assetType = assetType;
-        this.assetId = assetId;
+    public ExternalAuthorizationCriterion(JsonObject type, String id, String relation) {
+        this.type = type;
+        this.id = id;
         this.relation = relation;
     }
 
-    public @NotNull String getAssetType() {
-        return assetType;
+    public @NotNull JsonObject getType() {
+        return type;
     }
 
-    public @NotNull String getAssetId() {
-        return assetId;
+    public @NotNull String getId() {
+        return id;
     }
 
     public @NotNull String getRelation() {
@@ -44,12 +46,12 @@ public class ExternalAuthorizationCriteria {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ExternalAuthorizationCriteria that = (ExternalAuthorizationCriteria) o;
-        return Objects.equals(assetType, that.assetType) && Objects.equals(assetId, that.assetId) && Objects.equals(relation, that.relation);
+        ExternalAuthorizationCriterion that = (ExternalAuthorizationCriterion) o;
+        return Objects.equals(type, that.type) && Objects.equals(id, that.id) && Objects.equals(relation, that.relation);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(assetType, assetId, relation);
+        return Objects.hash(type, id, relation);
     }
 }

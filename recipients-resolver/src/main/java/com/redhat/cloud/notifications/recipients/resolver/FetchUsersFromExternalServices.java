@@ -220,7 +220,6 @@ public class FetchUsersFromExternalServices {
                             true
                         );
                         List<MBOPUser> mbopUserlist = receivedMbopUsers.users();
-                        Log.debug(receivedMbopUsers);
                         Duration duration = Duration.between(startTime, LocalDateTime.now());
                         if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
                             Log.warnf("MBOP service response time was %ds for request OrgId: %s, adminOnly: %s, offset %d ", duration.toSeconds(), orgId, adminsOnly, finalOffset);

@@ -10,8 +10,8 @@ import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteriaExtractor;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterion;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterionExtractor;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.User;
@@ -62,7 +62,7 @@ public class EmailAggregator {
     private static final String RECIPIENTS_KEY = "recipients";
 
     @Inject
-    ExternalAuthorizationCriteriaExtractor externalAuthorizationCriteriaExtractor;
+    ExternalAuthorizationCriterionExtractor externalAuthorizationCriteriaExtractor;
 
     @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
     int maxPageSize;
@@ -111,7 +111,7 @@ public class EmailAggregator {
 
                 Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
                 Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
-                ExternalAuthorizationCriteria externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(aggregation);
+                ExternalAuthorizationCriterion externalAuthorizationCriteria = externalAuthorizationCriteriaExtractor.extract(aggregation);
 
                 Set<User> recipients = externalRecipientsResolver.recipientUsers(
                     aggregationKey.getOrgId(),

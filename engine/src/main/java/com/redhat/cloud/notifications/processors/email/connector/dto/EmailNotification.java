@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.email.connector.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterion;
 import java.util.Collection;
 
 /**
@@ -33,5 +33,5 @@ public record EmailNotification(
     @JsonProperty("subscribers")            Collection<String> subscribers,
     @JsonProperty("unsubscribers")          Collection<String> unsubscribers,
     @JsonProperty("subscribed_by_default")  boolean subscribedByDefault,
-    @JsonProperty("authorization_criteria") ExternalAuthorizationCriteria externalAuthorizationCriteria
+    @JsonProperty("authorization_criteria") ExternalAuthorizationCriterion externalAuthorizationCriteria
 )  { }

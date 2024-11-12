@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.recipientsresolver.pojo;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteria;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterion;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,5 +24,5 @@ public class RecipientsQuery {
 
     public boolean subscribedByDefault;
 
-    public ExternalAuthorizationCriteria externalAuthorizationCriteria;
+    public ExternalAuthorizationCriterion externalAuthorizationCriteria;
 }

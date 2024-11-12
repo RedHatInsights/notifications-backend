@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteriaExtractor;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterionExtractor;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
@@ -53,7 +53,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     SubscriptionRepository subscriptionRepository;
 
     @Inject
-    ExternalAuthorizationCriteriaExtractor externalAuthorizationCriteriaExtractor;
+    ExternalAuthorizationCriterionExtractor externalAuthorizationCriteriaExtractor;
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
