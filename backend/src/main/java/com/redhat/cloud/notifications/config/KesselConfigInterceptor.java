@@ -7,6 +7,8 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Priorities;
 import io.smallrye.config.SecretKeys;
 import jakarta.annotation.Priority;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * <p>A configuration interceptor which helps overriding the resolved
@@ -50,10 +52,11 @@ public class KesselConfigInterceptor implements ConfigSourceInterceptor {
         if ((configValue != null) && (name.equals("inventory-api.target-url") || name.equals("relations-api.target-url"))) {
             final String kesselUrl = configValue.getValue();
             Log.infof("kesselUrl for '%s' is '%s'", name, kesselUrl);
-            if (kesselUrl.startsWith("http://")) {
-                return configValue.withValue(kesselUrl.replace("http://", ""));
-            } else {
-                return configValue.withValue(kesselUrl.replace("https://", ""));
+            try {
+                URL kesselFormatedUrl = new URL(kesselUrl);
+                return configValue.withValue(kesselFormatedUrl.getHost() + ":9000");
+            } catch (MalformedURLException e) {
+                Log.debug(e);
             }
         }
 
