@@ -47,7 +47,7 @@ export EXTRA_DEPLOY_ARGS="""
 """
 # The following components need to be deployed with the proper amount of resources in the Ephemeral environment, as
 # otherwise the deployments fail because of a lack of resources.
-export COMPONENTS_W_RESOURCES="historical-system-profiles system-baseline notifications-backend notifications-engine"
+export COMPONENTS_W_RESOURCES="notifications-backend notifications-engine"
 source $CICD_ROOT/deploy_ephemeral_env.sh
 
 # Run IQE tests
