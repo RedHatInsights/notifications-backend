@@ -8,7 +8,10 @@ import io.smallrye.config.Priorities;
 import io.smallrye.config.SecretKeys;
 import jakarta.annotation.Priority;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * <p>A configuration interceptor which helps overriding the resolved
@@ -26,6 +29,10 @@ import java.net.URL;
  * with the HTTP protocol's schemes, and therefore the connections cannot be
  * established with the gRPC servers.</p>
  *
+ * <p>On top of that, the ports that are specified in the Clowder configuration
+ * file are for the HTTP endpoints of Kessel, and not the gRPC ones. So it is
+ * crucial to replace the ports in the configuration values too.</p>
+ *
  * <p>This class intercepts the resolved values for the specific properties of
  * the clients and strips the scheme part, so that the Kessel clients are built
  * with the proper URLs instead.</p>
@@ -36,27 +43,42 @@ import java.net.URL;
 @Priority(Priorities.APPLICATION)
 public class KesselConfigInterceptor implements ConfigSourceInterceptor {
     /**
+     * Holds the association between the Kessel's property names and the gRPC
+     * ports that need to be used in the URLs.
+     */
+    protected final Map<String, Integer> configPropertyPort = Map.of(
+        "inventory-api.target-url", 9081,
+        "relations-api.target-url", 9000
+    );
+
+    /**
      * Overrides the {@code inventory-api.target-url}'s and
      * {@code relations-api.target-url}'s URL by removing the "http" or "https"
-     * schemes.
+     * schemes, and by replacing the port with the corresponding gRPC port.
      * @param configSourceInterceptorContext the configuration source's
      *                                       interceptor's context.
      * @param name the name of the configuration property we are loading.
      * @return the resolved configuration properties without the "http" or
-     * "https" schemes.
+     * "https" schemes, and with the ports replaced to the corresponding gRPC
+     * ports.
      */
     @Override
     public ConfigValue getValue(final ConfigSourceInterceptorContext configSourceInterceptorContext, final String name) {
         final ConfigValue configValue = SecretKeys.doLocked(() -> configSourceInterceptorContext.proceed(name));
 
-        if ((configValue != null) && (name.equals("inventory-api.target-url") || name.equals("relations-api.target-url"))) {
+        if ((configValue != null) && this.configPropertyPort.containsKey(name)) {
             final String kesselUrl = configValue.getValue();
-            Log.infof("kesselUrl for '%s' is '%s'", name, kesselUrl);
             try {
-                URL kesselFormatedUrl = new URL(kesselUrl);
-                return configValue.withValue(kesselFormatedUrl.getHost() + ":9000");
-            } catch (MalformedURLException e) {
-                Log.debug(e);
+                final URL url = new URI(kesselUrl).toURL();
+                final String newKesselUrl = url.getHost() + ":" + this.configPropertyPort.get(name);
+
+                Log.debugf("Kessel URL for property \"%s\" changed from \"%s\" to \"%s\"", name, kesselUrl, newKesselUrl);
+
+                return configValue.withValue(newKesselUrl);
+            } catch (final MalformedURLException | URISyntaxException e) {
+                Log.debugf(e, "Unable to create a URL from the configuration property \"%s\"'s value \"%s\"", name, kesselUrl);
+
+                return configValue;
             }
         }
 
