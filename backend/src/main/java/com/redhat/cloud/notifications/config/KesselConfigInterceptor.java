@@ -75,7 +75,7 @@ public class KesselConfigInterceptor implements ConfigSourceInterceptor {
                 Log.debugf("Kessel URL for property \"%s\" changed from \"%s\" to \"%s\"", name, kesselUrl, newKesselUrl);
 
                 return configValue.withValue(newKesselUrl);
-            } catch (final MalformedURLException | URISyntaxException e) {
+            } catch (final IllegalArgumentException | MalformedURLException | URISyntaxException e) {
                 Log.debugf(e, "Unable to create a URL from the configuration property \"%s\"'s value \"%s\"", name, kesselUrl);
 
                 return configValue;
