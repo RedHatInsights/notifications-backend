@@ -7,11 +7,11 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Priorities;
 import io.smallrye.config.SecretKeys;
 import jakarta.annotation.Priority;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Map;
 
 /**
  * <p>A configuration interceptor which helps overriding the resolved
@@ -43,15 +43,6 @@ import java.util.Map;
 @Priority(Priorities.APPLICATION)
 public class KesselConfigInterceptor implements ConfigSourceInterceptor {
     /**
-     * Holds the association between the Kessel's property names and the gRPC
-     * ports that need to be used in the URLs.
-     */
-    protected final Map<String, Integer> configPropertyPort = Map.of(
-        "inventory-api.target-url", 9081,
-        "relations-api.target-url", 9000
-    );
-
-    /**
      * Overrides the {@code inventory-api.target-url}'s and
      * {@code relations-api.target-url}'s URL by removing the "http" or "https"
      * schemes, and by replacing the port with the corresponding gRPC port.
@@ -66,16 +57,16 @@ public class KesselConfigInterceptor implements ConfigSourceInterceptor {
     public ConfigValue getValue(final ConfigSourceInterceptorContext configSourceInterceptorContext, final String name) {
         final ConfigValue configValue = SecretKeys.doLocked(() -> configSourceInterceptorContext.proceed(name));
 
-        if ((configValue != null) && this.configPropertyPort.containsKey(name)) {
+        if ((configValue != null) && (name.equals("inventory-api.target-url") || name.equals("relations-api.target-url"))) {
             final String kesselUrl = configValue.getValue();
             try {
                 final URL url = new URI(kesselUrl).toURL();
-                final String newKesselUrl = url.getHost() + ":" + this.configPropertyPort.get(name);
+                final String newKesselUrl = url.getHost() + ":9000";
 
                 Log.debugf("Kessel URL for property \"%s\" changed from \"%s\" to \"%s\"", name, kesselUrl, newKesselUrl);
 
                 return configValue.withValue(newKesselUrl);
-            } catch (final MalformedURLException | URISyntaxException e) {
+            } catch (final IllegalArgumentException | MalformedURLException | URISyntaxException e) {
                 Log.debugf(e, "Unable to create a URL from the configuration property \"%s\"'s value \"%s\"", name, kesselUrl);
 
                 return configValue;
