@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.resolver.kessel;
 
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
-import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriteria;
+import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriterion;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -21,6 +21,8 @@ public class KesselService {
 
     static final String SUBJECT_TYPE_USER = "user";
 
+    static final String RBAC_NAMESPACE = "rbac";
+
     @Inject
     RecipientsResolverConfig recipientsResolverConfig;
 
@@ -37,7 +39,7 @@ public class KesselService {
         lookupClient = clientsManager.getLookupClient();
     }
 
-    public Set<String> lookupSubjects(ExternalAuthorizationCriteria externalAuthorizationCriteria) {
+    public Set<String> lookupSubjects(ExternalAuthorizationCriterion externalAuthorizationCriteria) {
         Set<String> userNames = new HashSet<>();
         LookupSubjectsRequest request = getLookupSubjectsRequest(externalAuthorizationCriteria);
 
@@ -48,14 +50,16 @@ public class KesselService {
         return userNames;
     }
 
-    private static LookupSubjectsRequest getLookupSubjectsRequest(ExternalAuthorizationCriteria externalAuthorizationCriteria) {
+    private static LookupSubjectsRequest getLookupSubjectsRequest(ExternalAuthorizationCriterion externalAuthorizationCriteria) {
         LookupSubjectsRequest request = LookupSubjectsRequest.newBuilder()
             .setResource(ObjectReference.newBuilder()
-                .setType(ObjectType.newBuilder().setName(externalAuthorizationCriteria.getAssetType()).build())
-                .setId(externalAuthorizationCriteria.getAssetId())
+                .setType(ObjectType.newBuilder()
+                    .setNamespace(externalAuthorizationCriteria.getType().namespace)
+                    .setName(externalAuthorizationCriteria.getType().name).build())
+                .setId(externalAuthorizationCriteria.getId())
                 .build())
             .setRelation(externalAuthorizationCriteria.getRelation())
-            .setSubjectType(ObjectType.newBuilder().setName(SUBJECT_TYPE_USER).build())
+            .setSubjectType(ObjectType.newBuilder().setNamespace(RBAC_NAMESPACE).setName(SUBJECT_TYPE_USER).build())
             .build();
         return request;
     }

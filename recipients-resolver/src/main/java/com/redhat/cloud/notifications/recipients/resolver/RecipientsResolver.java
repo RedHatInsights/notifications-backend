@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
-import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriteria;
+import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.kessel.KesselService;
@@ -36,7 +36,7 @@ public class RecipientsResolver {
     }
 
     @CacheResult(cacheName = "find-recipients")
-    public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriteria externalAuthorizationCriteria) {
+    public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriterion externalAuthorizationCriteria) {
         Optional<Set<String>> requestUsersIntersection = extractRequestUsersIntersection(recipientSettings);
         Set<String> lowerCaseSubscribers = toLowerCaseOrEmpty(subscribers);
         Set<String> lowerCaseUnsubscribers = toLowerCaseOrEmpty(unsubscribers);
@@ -46,7 +46,7 @@ public class RecipientsResolver {
             .collect(toSet());
     }
 
-    private Set<User> recipientUsers(String orgId, RecipientSettings request, Optional<Set<String>> requestUsersIntersection, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriteria externalAuthorizationCriteria) {
+    private Set<User> recipientUsers(String orgId, RecipientSettings request, Optional<Set<String>> requestUsersIntersection, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriterion externalAuthorizationCriteria) {
 
         /*
          * When:
@@ -142,7 +142,7 @@ public class RecipientsResolver {
         }
     }
 
-    private Set<String> findAuthorizedUsersWithCriteria(ExternalAuthorizationCriteria externalAuthorizationCriteria) {
+    private Set<String> findAuthorizedUsersWithCriteria(ExternalAuthorizationCriterion externalAuthorizationCriteria) {
         Set<String> authorizedUsers = new HashSet<>();
         if (externalAuthorizationCriteria != null) {
             try {

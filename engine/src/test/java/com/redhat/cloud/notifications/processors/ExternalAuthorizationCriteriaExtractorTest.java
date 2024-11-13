@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -27,13 +26,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class ExternalAuthorizationCriteriaExtractorTest {
 
     @Inject
-    ExternalAuthorizationCriteriaExtractor externalAuthorizationCriteriaExtractor;
+    ExternalAuthorizationCriterionExtractor externalAuthorizationCriteriaExtractor;
 
     @Inject
     BaseTransformer baseTransformer;
-
-    @Inject
-    ObjectMapper objectMapper;
 
     @Test
     void testExtractionFromEvent() {
@@ -46,16 +42,17 @@ public class ExternalAuthorizationCriteriaExtractorTest {
         assertNull(externalAuthorizationCriteriaExtractor.extract(createEvent(context)));
 
         context = new Context.ContextBuilder()
-            .withAdditionalProperty(ExternalAuthorizationCriteriaExtractor.EXTERNAL_AUTHORIZATION_CRITERIA, null)
+            .withAdditionalProperty(ExternalAuthorizationCriterionExtractor.EXTERNAL_AUTHORIZATION_CRITERIA, null)
             .build();
         assertNull(externalAuthorizationCriteriaExtractor.extract(createEvent(context)));
 
-        ExternalAuthorizationCriteria criteria = new ExternalAuthorizationCriteria(RandomStringUtils.randomAlphanumeric(10), RandomStringUtils.randomAlphanumeric(20), RandomStringUtils.randomAlphanumeric(10));
+        ExternalAuthorizationCriterion.Type kesselAssetType = new ExternalAuthorizationCriterion.Type(RandomStringUtils.randomAlphanumeric(10), RandomStringUtils.randomAlphanumeric(10));
+        ExternalAuthorizationCriterion externalAuthorizationCriterion = new ExternalAuthorizationCriterion(kesselAssetType, RandomStringUtils.randomAlphanumeric(20), RandomStringUtils.randomAlphanumeric(10));
 
         context = new Context.ContextBuilder()
-            .withAdditionalProperty(ExternalAuthorizationCriteriaExtractor.EXTERNAL_AUTHORIZATION_CRITERIA, Map.of("assetType", criteria.getAssetType(), "assetId", criteria.getAssetId(), "relation", criteria.getRelation()))
+            .withAdditionalProperty(ExternalAuthorizationCriterionExtractor.EXTERNAL_AUTHORIZATION_CRITERIA, Map.of("type", externalAuthorizationCriterion.getType(), "id", externalAuthorizationCriterion.getId(), "relation", externalAuthorizationCriterion.getRelation()))
             .build();
-        assertEquals(criteria, externalAuthorizationCriteriaExtractor.extract(createEvent(context)));
+        assertEquals(externalAuthorizationCriterion, externalAuthorizationCriteriaExtractor.extract(createEvent(context)));
     }
 
     @Test
@@ -69,16 +66,17 @@ public class ExternalAuthorizationCriteriaExtractorTest {
         assertNull(externalAuthorizationCriteriaExtractor.extract(createEmailAggregation(context)));
 
         context = new Context.ContextBuilder()
-            .withAdditionalProperty(ExternalAuthorizationCriteriaExtractor.EXTERNAL_AUTHORIZATION_CRITERIA, null)
+            .withAdditionalProperty(ExternalAuthorizationCriterionExtractor.EXTERNAL_AUTHORIZATION_CRITERIA, null)
             .build();
         assertNull(externalAuthorizationCriteriaExtractor.extract(createEmailAggregation(context)));
 
-        ExternalAuthorizationCriteria criteria = new ExternalAuthorizationCriteria(RandomStringUtils.randomAlphanumeric(10), RandomStringUtils.randomAlphanumeric(20), RandomStringUtils.randomAlphanumeric(10));
+        ExternalAuthorizationCriterion.Type kesselAssetType = new ExternalAuthorizationCriterion.Type(RandomStringUtils.randomAlphanumeric(10), RandomStringUtils.randomAlphanumeric(10));
+        ExternalAuthorizationCriterion externalAuthorizationCriterion = new ExternalAuthorizationCriterion(kesselAssetType, RandomStringUtils.randomAlphanumeric(20), RandomStringUtils.randomAlphanumeric(10));
 
         context = new Context.ContextBuilder()
-            .withAdditionalProperty(ExternalAuthorizationCriteriaExtractor.EXTERNAL_AUTHORIZATION_CRITERIA, Map.of("assetType", criteria.getAssetType(), "assetId", criteria.getAssetId(), "relation", criteria.getRelation()))
+            .withAdditionalProperty(ExternalAuthorizationCriterionExtractor.EXTERNAL_AUTHORIZATION_CRITERIA, Map.of("type", externalAuthorizationCriterion.getType(), "id", externalAuthorizationCriterion.getId(), "relation", externalAuthorizationCriterion.getRelation()))
             .build();
-        assertEquals(criteria, externalAuthorizationCriteriaExtractor.extract(createEmailAggregation(context)));
+        assertEquals(externalAuthorizationCriterion, externalAuthorizationCriteriaExtractor.extract(createEmailAggregation(context)));
     }
 
     private EmailAggregation createEmailAggregation(Context context) {

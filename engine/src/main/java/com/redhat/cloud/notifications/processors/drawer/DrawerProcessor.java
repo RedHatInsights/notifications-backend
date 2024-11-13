@@ -16,7 +16,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriteriaExtractor;
+import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterionExtractor;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.templates.TemplateService;
@@ -75,7 +75,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     BundleRepository bundleRepository;
 
     @Inject
-    ExternalAuthorizationCriteriaExtractor externalAuthorizationCriteriaExtractor;
+    ExternalAuthorizationCriterionExtractor externalAuthorizationCriteriaExtractor;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {

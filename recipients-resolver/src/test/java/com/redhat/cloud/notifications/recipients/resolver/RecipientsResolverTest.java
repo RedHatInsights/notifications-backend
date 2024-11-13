@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
-import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriteria;
+import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.kessel.KesselService;
@@ -10,6 +10,7 @@ import io.quarkus.cache.CacheName;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -130,13 +131,14 @@ public class RecipientsResolverTest {
     @ParameterizedTest
     @CsvSource({"true,false", "true,true", "false,true", "false,false"})
     void testNotSubscribedByDefaultAndAdminsOnlyWithOrWithoutKessel(boolean useKessel, boolean useJsonObjectAsAuthData) {
-        ExternalAuthorizationCriteria externalAuthorizationCriteria = null;
+        ExternalAuthorizationCriterion externalAuthorizationCriteria = null;
         // update Kessel feature flag only if use Kessel is true, to keep check on default behaviour
         if (useKessel) {
             when(recipientsResolverConfig.isUseKesselEnabled()).thenReturn(useKessel);
         }
         if (useJsonObjectAsAuthData) {
-            externalAuthorizationCriteria = new ExternalAuthorizationCriteria("workspace", "defaultId", "relationship");
+            ExternalAuthorizationCriterion.Type kesselAssetType = new ExternalAuthorizationCriterion.Type("host", "namespace_test");
+            externalAuthorizationCriteria = new ExternalAuthorizationCriterion(kesselAssetType, "defaultId", "relationship");
             when(kesselService.lookupSubjects(any())).thenReturn(Set.of("user1", "admin1"));
         }
         Set<User> recipients = recipientsResolver.findRecipients(
@@ -155,6 +157,13 @@ public class RecipientsResolverTest {
         } else {
             verifyNoInteractions(kesselService);
         }
+    }
+
+    private JsonObject buildKesselAssetType(String assetTypeName, String kesselNamespace) {
+        JsonObject kesselType = new JsonObject();
+        kesselType.put("name", assetTypeName);
+        kesselType.put("namespace", kesselNamespace);
+        return kesselType;
     }
 
     @Test
