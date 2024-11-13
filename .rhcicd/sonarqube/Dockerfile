@@ -29,8 +29,10 @@ RUN mkdir --parents "/var/cache/yum/metadata" \
     && microdnf clean all \
     && readonly rh_it_root_ca_file="$(mktemp)" \
     && readonly rh_it_root_ca_secondary_file="$(mktemp)" \
+    && readonly rhcs_root_ca_file="$(mktemp)" \
     && curl --output "${rh_it_root_ca_file}" --insecure "${rh_it_root_ca_cert_url}" \
     && curl --output "${rh_it_root_ca_secondary_file}" --insecure "${rh_it_root_ca_cert_secondary_url}" \
+    && curl --output "${rhcs_root_ca_file}" --insecure "${rhcs_root_ca_cert_url}" \
     && keytool \
         -cacerts \
         -new "${cacerts_keystore_password}" \
@@ -48,6 +50,14 @@ RUN mkdir --parents "/var/cache/yum/metadata" \
          -alias "RH-IT-Root-CA-SECONDARY" \
          -cacerts \
          -file "${rh_it_root_ca_secondary_file}" \
+         -importcert \
+         -noprompt \
+         -storepass "${cacerts_keystore_password}" \
+         -trustcacerts \
+    && keytool \
+         -alias "RHCS-Root-CA" \
+         -cacerts \
+         -file "${rhcs_root_ca_file}" \
          -importcert \
          -noprompt \
          -storepass "${cacerts_keystore_password}" \
