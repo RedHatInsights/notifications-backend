@@ -16,9 +16,7 @@ objects:
     - notifications-engine
     - sources-api
     optionalDependencies:
-    - drift
     - notifications-backend
-    - policies-engine
     featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.tocamel
