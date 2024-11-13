@@ -97,8 +97,8 @@ public class KesselAuthorization {
         } catch (final Exception e) {
             Log.errorf(
                 e,
-                "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Runtime error when querying Kessel for a permission check with request payload: %s",
-                identity, permission, resourceType, resourceId, permissionCheckRequest
+                "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Unable to query Kessel for a permission on a resource",
+                identity, permission, resourceType, resourceId
             );
 
             throw e;
