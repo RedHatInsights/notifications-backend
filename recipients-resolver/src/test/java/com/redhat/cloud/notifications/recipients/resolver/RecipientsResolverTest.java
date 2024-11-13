@@ -137,7 +137,7 @@ public class RecipientsResolverTest {
             when(recipientsResolverConfig.isUseKesselEnabled()).thenReturn(useKessel);
         }
         if (useJsonObjectAsAuthData) {
-            JsonObject kesselAssetType = buildKesselAssetType("host", "namespace_test");
+            ExternalAuthorizationCriterion.Type kesselAssetType = new ExternalAuthorizationCriterion.Type("host", "namespace_test");
             externalAuthorizationCriteria = new ExternalAuthorizationCriterion(kesselAssetType, "defaultId", "relationship");
             when(kesselService.lookupSubjects(any())).thenReturn(Set.of("user1", "admin1"));
         }

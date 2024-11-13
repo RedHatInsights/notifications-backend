@@ -21,6 +21,8 @@ public class KesselService {
 
     static final String SUBJECT_TYPE_USER = "user";
 
+    static final String RBAC_NAMESPACE = "rbac";
+
     @Inject
     RecipientsResolverConfig recipientsResolverConfig;
 
@@ -52,12 +54,12 @@ public class KesselService {
         LookupSubjectsRequest request = LookupSubjectsRequest.newBuilder()
             .setResource(ObjectReference.newBuilder()
                 .setType(ObjectType.newBuilder()
-                    .setNamespace(externalAuthorizationCriteria.getType().getString("namespace"))
-                    .setName(externalAuthorizationCriteria.getType().getString("name")).build())
+                    .setNamespace(externalAuthorizationCriteria.getType().namespace)
+                    .setName(externalAuthorizationCriteria.getType().name).build())
                 .setId(externalAuthorizationCriteria.getId())
                 .build())
             .setRelation(externalAuthorizationCriteria.getRelation())
-            .setSubjectType(ObjectType.newBuilder().setName(SUBJECT_TYPE_USER).build())
+            .setSubjectType(ObjectType.newBuilder().setNamespace(RBAC_NAMESPACE).setName(SUBJECT_TYPE_USER).build())
             .build();
         return request;
     }

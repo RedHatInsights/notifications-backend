@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.processors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -11,7 +10,6 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.test.junit.QuarkusTest;
-import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
@@ -33,9 +31,6 @@ public class ExternalAuthorizationCriteriaExtractorTest {
     @Inject
     BaseTransformer baseTransformer;
 
-    @Inject
-    ObjectMapper objectMapper;
-
     @Test
     void testExtractionFromEvent() {
         Context context = null;
@@ -51,7 +46,7 @@ public class ExternalAuthorizationCriteriaExtractorTest {
             .build();
         assertNull(externalAuthorizationCriteriaExtractor.extract(createEvent(context)));
 
-        JsonObject kesselAssetType = buildKesselAssetType(RandomStringUtils.randomAlphanumeric(10), RandomStringUtils.randomAlphanumeric(10));
+        ExternalAuthorizationCriterion.Type kesselAssetType = new ExternalAuthorizationCriterion.Type(RandomStringUtils.randomAlphanumeric(10), RandomStringUtils.randomAlphanumeric(10));
         ExternalAuthorizationCriterion externalAuthorizationCriterion = new ExternalAuthorizationCriterion(kesselAssetType, RandomStringUtils.randomAlphanumeric(20), RandomStringUtils.randomAlphanumeric(10));
 
         context = new Context.ContextBuilder()
@@ -75,7 +70,7 @@ public class ExternalAuthorizationCriteriaExtractorTest {
             .build();
         assertNull(externalAuthorizationCriteriaExtractor.extract(createEmailAggregation(context)));
 
-        JsonObject kesselAssetType = buildKesselAssetType(RandomStringUtils.randomAlphanumeric(10), RandomStringUtils.randomAlphanumeric(10));
+        ExternalAuthorizationCriterion.Type kesselAssetType = new ExternalAuthorizationCriterion.Type(RandomStringUtils.randomAlphanumeric(10), RandomStringUtils.randomAlphanumeric(10));
         ExternalAuthorizationCriterion externalAuthorizationCriterion = new ExternalAuthorizationCriterion(kesselAssetType, RandomStringUtils.randomAlphanumeric(20), RandomStringUtils.randomAlphanumeric(10));
 
         context = new Context.ContextBuilder()
@@ -117,12 +112,5 @@ public class ExternalAuthorizationCriteriaExtractorTest {
         event.setEventType(eventType);
         event.setOrgId(orgId);
         return event;
-    }
-
-    private JsonObject buildKesselAssetType(String assetTypeName, String kesselNamespace) {
-        JsonObject kesselType = new JsonObject();
-        kesselType.put("name", assetTypeName);
-        kesselType.put("namespace", kesselNamespace);
-        return kesselType;
     }
 }

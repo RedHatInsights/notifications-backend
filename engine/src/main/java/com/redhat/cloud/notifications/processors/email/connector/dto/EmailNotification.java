@@ -33,5 +33,5 @@ public record EmailNotification(
     @JsonProperty("subscribers")            Collection<String> subscribers,
     @JsonProperty("unsubscribers")          Collection<String> unsubscribers,
     @JsonProperty("subscribed_by_default")  boolean subscribedByDefault,
-    @JsonProperty("authorization_criteria") ExternalAuthorizationCriterion externalAuthorizationCriteria
+    @JsonProperty("external_authorization_criterion") ExternalAuthorizationCriterion externalAuthorizationCriteria
 )  { }
