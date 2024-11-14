@@ -64,7 +64,8 @@ RUN mkdir --parents "/var/cache/yum/metadata" \
          -storepass "${cacerts_keystore_password}" \
          -trustcacerts \
     && rm "${rh_it_root_ca_file}" \
-    && rm "${rh_it_root_ca_secondary_file}"
+    && rm "${rh_it_root_ca_secondary_file}" \
+    && rm "${rhcs_root_ca_file}" \
 
 # Copy the repository contents.
 COPY --chown=default:default . /home/default
