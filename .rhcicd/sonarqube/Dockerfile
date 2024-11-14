@@ -21,7 +21,6 @@ RUN curl --output rh_it_root_ca_secondary_file.crt --insecure "${rh_it_root_ca_c
 RUN cp rh*.crt /etc/pki/ca-trust/source/anchors/
 RUN update-ca-trust
 RUN rm rh*.crt
-RUN echo $(ls -l)
 
 # Copy the repository contents.
 COPY --chown=default:default . /home/default
