@@ -102,7 +102,7 @@ public class KesselAssetsTest {
         // Assert that the request was properly built.
         final Metadata metadata = request.getIntegration().getMetadata();
         Assertions.assertEquals(ResourceType.INTEGRATION.getKesselRepresentation(), metadata.getResourceType(), "the \"resource type\" should have been an integration");
-        Assertions.assertEquals(workspaceId, metadata.getWorkspace(), "the workspace ID was incorrectly set");
+        Assertions.assertEquals(workspaceId, metadata.getWorkspaceId(), "the workspace ID was incorrectly set");
 
         final ReporterData reporterData = request.getIntegration().getReporterData();
         Assertions.assertEquals(integrationId, reporterData.getLocalResourceId(), "the \"local resource id\" was incorrectly set");
