@@ -9,6 +9,7 @@ ARG cacerts_keystore_password
 # The argument that holds Red Hat IT's custom certificate's location.
 ARG rh_it_root_ca_cert_url
 ARG rh_it_root_ca_cert_secondary_url
+ARG rhcs_root_ca_cert_url
 
 # install postgresql 15
 RUN microdnf install -y dnf
