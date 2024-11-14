@@ -16,11 +16,10 @@ RUN dnf install -y postgresql15-server
 RUN dnf install -y postgresql15-contrib
 
 # Add RedHat CAs on OS truststore (check https://certs.corp.redhat.com/ for more details)
-RUN curl --output rh_it_root_ca_file.crt --insecure "${rh_it_root_ca_cert_url}"
-RUN curl --output rh_it_root_ca_secondary_file.crt --insecure "${rh_it_root_ca_cert_secondary_url}"
-RUN cp rh*.crt /etc/pki/ca-trust/source/anchors/
-RUN update-ca-trust
-RUN rm rh*.crt
+RUN curl --output rh_it_root_ca_file.crt --insecure "${rh_it_root_ca_cert_url}" \
+    && curl --output rh_it_root_ca_secondary_file.crt --insecure "${rh_it_root_ca_cert_secondary_url}" \
+    && mv rh*.crt /etc/pki/ca-trust/source/anchors \
+    && update-ca-trust
 
 # Copy the repository contents.
 COPY --chown=default:default . /home/default
