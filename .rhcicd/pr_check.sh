@@ -20,6 +20,7 @@ buildAndPushToQuay "notifications-connector-drawer"
 buildAndPushToQuay "notifications-connector-email"
 buildAndPushToQuay "notifications-connector-google-chat"
 buildAndPushToQuay "notifications-connector-microsoft-teams"
+buildAndPushToQuay "notifications-connector-pagerduty"
 buildAndPushToQuay "notifications-connector-servicenow"
 buildAndPushToQuay "notifications-connector-slack"
 buildAndPushToQuay "notifications-connector-splunk"
@@ -39,6 +40,7 @@ export EXTRA_DEPLOY_ARGS="""
 --set-image-tag notifications-connector-email=${IMAGE_TAG}
 --set-image-tag notifications-connector-google-chat=${IMAGE_TAG}
 --set-image-tag notifications-connector-microsoft-teams=${IMAGE_TAG}
+--set-image-tag notifications-connector-pagerduty=${IMAGE_TAG}
 --set-image-tag notifications-connector-servicenow=${IMAGE_TAG}
 --set-image-tag notifications-connector-slack=${IMAGE_TAG}
 --set-image-tag notifications-connector-splunk=${IMAGE_TAG}
