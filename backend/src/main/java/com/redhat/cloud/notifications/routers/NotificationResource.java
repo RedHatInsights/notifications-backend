@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
-import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -370,7 +369,7 @@ public class NotificationResource {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
             this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.BEHAVIOR_GROUPS_VIEW, workspaceId);
-            this.kesselAuthorization.hasPermissionOnResource(sec, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpointId.toString());
+            this.kesselAuthorization.hasPermissionOnIntegration(sec, IntegrationPermission.VIEW, endpointId);
 
             return this.internalGetBehaviorGroupsAffectedByRemovalOfEndpoint(sec, endpointId);
         } else {
@@ -858,7 +857,7 @@ public class NotificationResource {
 
         if (backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             for (UUID endpointId : endpointsIds) {
-                kesselAuthorization.hasPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());
+                kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpointId);
             }
             return internalUpdateEventTypeEndpoints(securityContext, endpointsIds, eventTypeId);
         } else {

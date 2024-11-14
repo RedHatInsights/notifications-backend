@@ -153,7 +153,7 @@ public class KesselTestHelper {
     }
 
     /**
-     * Mocks the {@link BackendConfig#isKesselRelationsEnabled()} so that it
+     * Mocks the {@link BackendConfig#isKesselRelationsEnabled(String)} so that it
      * returns the given boolean flag when asked, and also makes the {@link CheckClient}
      * return an "allowed" response when the flag is {@code true}.
      * @param isKesselRelationsEnabled is the Kessel relations enabled for the

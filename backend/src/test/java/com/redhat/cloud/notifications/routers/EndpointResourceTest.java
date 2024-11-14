@@ -2707,14 +2707,11 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Call the endpoint under test.
-        final UUID randomId = UUID.randomUUID();
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, randomId.toString());
-
         final String responseBody = given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
-            .pathParam("id", randomId)
+            .pathParam("id", UUID.randomUUID())
             .post("/endpoints/{id}/test")
             .then()
             .statusCode(HttpStatus.SC_NOT_FOUND)
@@ -2722,7 +2719,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body()
             .asString();
 
-        Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
+        if (this.backendConfig.isKesselRelationsEnabled(DEFAULT_ORG_ID)) {
+            final JsonObject expectedBody = new JsonObject();
+            expectedBody.put("error", "Integration not found");
+
+            Assertions.assertEquals(expectedBody.encode(), responseBody, "unexpected not found error message returned");
+        } else {
+            Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
+        }
     }
 
     /**
@@ -3419,8 +3423,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     /**
      * Tests that when using Kessel, if the user is not authorized to send
-     * requests to the endpoints from the "EndpointResource", a {@link HttpStatus#SC_UNAUTHORIZED}
-     * response is returned.
+     * requests to the endpoints from the "EndpointResource", a "forbidden"
+     * response is returned for those endpoints that require a workspace
+     * permission, and a "not found" one for those ones that require an
+     * integration permission.
      */
     @Test
     void testKesselUnauthorized() {
@@ -3444,7 +3450,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .queryParam("includeDetail", false)
             .get("/endpoints/{endpointId}/history")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         try {
             RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
@@ -3458,7 +3464,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("includeDetail", false)
                 .get("/endpoints/{endpointId}/history")
                 .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
+                .statusCode(HttpStatus.SC_NOT_FOUND);
         } finally {
             RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
         }
@@ -3519,7 +3525,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .pathParam("id", createdEndpoint.getId())
                 .get("/endpoints/{id}")
                 .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
+                .statusCode(HttpStatus.SC_NOT_FOUND);
         } finally {
             RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
         }
@@ -3531,7 +3537,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .get("/endpoints/{id}")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Delete an endpoint.
         given()
@@ -3541,7 +3547,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .delete("/endpoints/{id}")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Enable an endpoint.
         given()
@@ -3551,7 +3557,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .put("/endpoints/{id}/enable")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Disable an endpoint.
         given()
@@ -3561,7 +3567,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .delete("/endpoints/{id}/enable")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Update an endpoint.
         given()
@@ -3572,7 +3578,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(this.endpointMapper.toDTO(createdEndpoint)))
             .put("/endpoints/{id}")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Retrieve the history details.
         given()
@@ -3583,7 +3589,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("historyId", UUID.randomUUID())
             .get("/endpoints/{endpointId}/history/{historyId}/details")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Test an endpoint.
         given()
@@ -3593,7 +3599,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .post("/endpoints/{id}/test")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
