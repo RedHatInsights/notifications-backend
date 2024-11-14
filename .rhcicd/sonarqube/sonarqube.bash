@@ -18,7 +18,6 @@ readonly COMMIT_SHORT=$(git rev-parse --short=7 HEAD)
 # Build the Docker image.
 #
 docker build \
-  --build-arg cacerts_keystore_password="${CACERTS_KEYSTORE_PASSWORD}" \
   --build-arg rh_it_root_ca_cert_url="${RH_IT_ROOT_CA_CERT_URL}" \
   --build-arg rh_it_root_ca_cert_secondary_url="${RH_IT_ROOT_CA_CERT_SECONDARY_URL}" \
   --file .rhcicd/sonarqube/Dockerfile \
