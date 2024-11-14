@@ -4227,7 +4227,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     NotificationsIntegration.newBuilder()
                         .setMetadata(Metadata.newBuilder()
                             .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
-                            .setWorkspace(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString())
+                            .setWorkspaceId(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString())
                             .build()
                         ).setReporterData(ReporterData.newBuilder()
                             .setLocalResourceId(integrationId.toString())

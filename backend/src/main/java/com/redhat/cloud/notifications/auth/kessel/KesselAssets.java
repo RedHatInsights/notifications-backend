@@ -127,7 +127,7 @@ public class KesselAssets {
                 NotificationsIntegration.newBuilder()
                     .setMetadata(Metadata.newBuilder()
                         .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
-                        .setWorkspace(workspaceId)
+                        .setWorkspaceId(workspaceId)
                         .build()
                     ).setReporterData(ReporterData.newBuilder()
                         .setLocalResourceId(integrationId)
