@@ -115,6 +115,7 @@ public class EndpointResource {
     public static final String HTTPS_ENDPOINT_SCHEME_REQUIRED = "The endpoint URL must start with \"https\"";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
     public static final String REDACTED_CREDENTIAL = "*****";
+    public static final String AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE = "Integration \"%s\" behavior group";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -916,6 +917,12 @@ public class EndpointResource {
 
         endpointRepository.updateEndpoint(endpoint);
 
+        if (!dbEndpoint.getName().equals(endpoint.getName())) {
+            String behaviorGroupName = String.format(AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE, dbEndpoint.getName());
+            String newBehaviorGroupName = String.format(AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE, endpoint.getName());
+            behaviorGroupRepository.updateBehaviorGroupName(dbEndpoint.getOrgId(), behaviorGroupName, newBehaviorGroupName);
+        }
+
         // Update the secrets in Sources.
         final Endpoint updatedDbEndpoint = endpointRepository.getEndpoint(orgId, id);
         final EndpointProperties endpointProperties = endpoint.getProperties();
@@ -930,6 +937,9 @@ public class EndpointResource {
             this.secretUtils.updateSecretsForEndpoint(updatedDbEndpoint);
         }
 
+        if (null != endpointDTO.eventTypes) {
+            internalUpdateEventTypesLinkedToEndpoint(sec, id, endpointDTO.eventTypes);
+        }
         return Response.ok().build();
     }
 
@@ -1191,7 +1201,7 @@ public class EndpointResource {
     private void internalUpdateEventTypesLinkedToEndpoint(final SecurityContext securityContext, final UUID endpointId, final Set<UUID> eventTypeIds) {
         final String orgId = getOrgId(securityContext);
         final String accountId = getAccountId(securityContext);
-        Endpoint updatedEndpoint =  endpointEventTypeRepository.updateEventTypesLinkedToEndpoint(endpointId, eventTypeIds, orgId);
+        final Endpoint updatedEndpoint = endpointEventTypeRepository.updateEventTypesLinkedToEndpoint(endpointId, eventTypeIds, orgId);
 
         // Sync behavior group model
 
@@ -1210,7 +1220,7 @@ public class EndpointResource {
     }
 
     private void createOrUpdateLinkedBehaviorGroup(Set<UUID> eventTypeIds, UUID endpointId, String endpointName, String orgId, String accountId) {
-        String behaviorGroupName = String.format("Integration \"%s\" behavior group", endpointName);
+        String behaviorGroupName = String.format(AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE, endpointName);
 
         // group event types by bundle
         Map<UUID, Set<UUID>> eventTypesGroupedByBundle = new HashMap<>();

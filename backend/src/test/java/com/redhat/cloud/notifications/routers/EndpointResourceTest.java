@@ -108,6 +108,7 @@ import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
+import static com.redhat.cloud.notifications.routers.EndpointResource.AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE;
 import static com.redhat.cloud.notifications.routers.EndpointResource.DEPRECATED_SLACK_CHANNEL_ERROR;
 import static com.redhat.cloud.notifications.routers.EndpointResource.HTTPS_ENDPOINT_SCHEME_REQUIRED;
 import static io.restassured.RestAssured.given;
@@ -220,19 +221,23 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     // Mock the Sources service calls.
     private Secret mockSources(SourcesSecretable properties) {
+        return mockSources(properties.getSecretToken());
+    }
+
+    private Secret mockSources(final String secretToken) {
 
         final Secret secret = new Secret();
         secret.id = new Random().nextLong(1, Long.MAX_VALUE);
-        secret.password = properties.getSecretToken();
+        secret.password = secretToken;
 
         when(sourcesServiceMock.create(anyString(), anyString(), any(Secret.class)))
-                .thenReturn(secret);
+            .thenReturn(secret);
 
         // Make sure that when the secrets are loaded when we fetch the
         // endpoint again for checking the assertions, we simulate fetching
         // the secrets from Sources too.
         when(sourcesServiceMock.getById(anyString(), anyString(), eq(secret.id)))
-                .thenReturn(secret);
+            .thenReturn(secret);
 
         return secret;
     }
@@ -3610,25 +3615,27 @@ public class EndpointResourceTest extends DbIsolatedTest {
      *                       endpoints.
      * @return the set of IDs of the created endpoints.
      */
-    private Set<UUID> addEndpoints(final int count, final Header identityHeader) {
+    private Set<UUID> addEndpoints(final int count, final Header identityHeader, final Set<UUID>... eventTypes) {
         final Set<UUID> createdEndpoints = new HashSet<>(count);
 
         for (int i = 0; i < count; i++) {
             // Add new endpoints
-            WebhookProperties properties = new WebhookProperties();
+            WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
             properties.setMethod(POST);
             properties.setDisableSslVerification(false);
             properties.setSecretToken("my-super-secret-token");
             properties.setUrl(getMockServerUrl() + "/" + i);
 
-            Endpoint ep = new Endpoint();
-            ep.setType(EndpointType.WEBHOOK);
+            EndpointDTO ep = new EndpointDTO();
+            ep.setType(EndpointTypeDTO.WEBHOOK);
             ep.setName(String.format("Endpoint %d", i));
             ep.setDescription("Try to find me!");
             ep.setEnabled(true);
             ep.setProperties(properties);
-
-            mockSources(properties);
+            if (eventTypes.length > 0) {
+                ep.eventTypes = eventTypes[0];
+            }
+            mockSources(properties.getSecretToken());
 
             Response response = given()
                     .header(identityHeader)
@@ -3649,6 +3656,103 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
 
         return createdEndpoints;
+    }
+
+    @Test
+    void testCreateThenUpdateEndpointWthEventTypeRelationship() {
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        final Bundle bundle1 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 1");
+        final Bundle bundle2 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 2");
+
+        // Create event type and endpoint
+        final Application application1 = resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
+        final EventType eventType1 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description");
+        final EventType eventType2 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 2", "description");
+
+        final Application application2 = resourceHelpers.createApplication(bundle2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
+        final EventType eventType1App2 = resourceHelpers.createEventType(application2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description");
+        final EventType eventType2App2 = resourceHelpers.createEventType(application2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 2", "description");
+
+        // Check that org id don't have any behavior group
+        List<BehaviorGroup> behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(0, behaviorGroups.size());
+
+        UUID endpointUUID = addEndpoints(1, identityHeader, Set.of(eventType1.getId(), eventType1App2.getId(), eventType2.getId())).stream().findFirst().get();
+
+        // Check that created endpoint have event types associated
+        Endpoint endpointFromDb = resourceHelpers.getEndpoint(endpointUUID);
+        assertEquals(3, endpointFromDb.getEventTypes().size());
+        String expectedBgName = String.format(AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE, endpointFromDb.getName());
+
+        // Check that one behavior group by bundle were created
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(2, behaviorGroups.size());
+        assertEquals(2, behaviorGroups.stream().filter(bg -> expectedBgName.equals(bg.getDisplayName())).count());
+
+        EndpointDTO endpointDTO = fetchSingleEndpointV2(endpointUUID, identityHeader);
+        endpointDTO.setName("Endpoint1-updated");
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUUID)
+            .body(Json.encode(endpointDTO))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        // Check that behavior group names were updated
+        String newExpectedBgName = String.format(AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE, endpointDTO.getName());
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(2, behaviorGroups.size());
+        assertEquals(2, behaviorGroups.stream().filter(bg -> newExpectedBgName.equals(bg.getDisplayName())).count());
+
+        // update event types
+        endpointDTO.eventTypes = Set.of(eventType2App2.getId());
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUUID)
+            .body(Json.encode(endpointDTO))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        // Check that event type association has been updated
+        endpointFromDb = resourceHelpers.getEndpoint(endpointUUID);
+        assertEquals(1, endpointFromDb.getEventTypes().size());
+        assertEquals(eventType2App2.getId(), endpointFromDb.getEventTypes().stream().findFirst().get().getId());
+
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(1, behaviorGroups.stream().findFirst().get().getBehaviors().size());
+        assertEquals(eventType2App2.getId(), behaviorGroups.stream().findFirst().get().getBehaviors().stream().findFirst().get().getId().eventTypeId);
+
+       // drop associations
+        endpointDTO.eventTypes = Set.of();
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUUID)
+            .body(Json.encode(endpointDTO))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        // Check that endpoint don't hava any associated event type
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(0, behaviorGroups.size());
+
+        endpointFromDb = resourceHelpers.getEndpoint(endpointUUID);
+        assertEquals(0, endpointFromDb.getEventTypes().size());
     }
 
     @Test
