@@ -14,11 +14,14 @@ import java.util.UUID;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RecipientSettings {
 
-    private final boolean adminsOnly;
-    private final boolean ignoreUserPreferences;
-    private final UUID groupUUID;
-    private final Set<String> users;
-    private final Set<String> emails;
+    private boolean adminsOnly;
+    private boolean ignoreUserPreferences;
+    private UUID groupUUID;
+    private Set<String> users;
+    private Set<String> emails;
+
+    public RecipientSettings() {
+    }
 
     public RecipientSettings(final boolean adminsOnly, final boolean ignoreUserPreferences, final UUID groupUUID, final Set<String> users, final Set<String> emails) {
         this.adminsOnly = adminsOnly;
@@ -54,6 +57,26 @@ public class RecipientSettings {
 
     public Set<String> getEmails() {
         return emails;
+    }
+
+    public void setAdminsOnly(boolean adminsOnly) {
+        this.adminsOnly = adminsOnly;
+    }
+
+    public void setIgnoreUserPreferences(boolean ignoreUserPreferences) {
+        this.ignoreUserPreferences = ignoreUserPreferences;
+    }
+
+    public void setGroupUUID(UUID groupUUID) {
+        this.groupUUID = groupUUID;
+    }
+
+    public void setUsers(Set<String> users) {
+        this.users = users;
+    }
+
+    public void setEmails(Set<String> emails) {
+        this.emails = emails;
     }
 
     @Override
