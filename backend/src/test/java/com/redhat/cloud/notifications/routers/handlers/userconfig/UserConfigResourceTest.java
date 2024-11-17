@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

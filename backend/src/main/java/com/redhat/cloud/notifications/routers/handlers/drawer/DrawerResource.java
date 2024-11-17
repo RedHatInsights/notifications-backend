@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.drawer;
 
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -38,11 +37,6 @@ public class DrawerResource {
 
     @Inject
     DrawerNotificationRepository drawerRepository;
-
-    @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/drawer")
-    public static class V1 extends DrawerResource {
-
-    }
 
     @GET
     @Produces(APPLICATION_JSON)

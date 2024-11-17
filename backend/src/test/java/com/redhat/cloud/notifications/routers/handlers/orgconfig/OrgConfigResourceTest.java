@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.orgconfig;
 
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
