@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.event;
 
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -33,6 +33,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -62,7 +63,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.PAGERDUTY;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
-import static com.redhat.cloud.notifications.routers.EventResource.toNotificationStatus;
+import static com.redhat.cloud.notifications.routers.handlers.event.EventResource.toNotificationStatus;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.lang.Boolean.FALSE;
@@ -731,7 +732,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     public void fromNotificationStatusTest() {
-        assertEquals(
+        Assertions.assertEquals(
                 EventLogEntryActionStatus.SENT,
                 EventResource.fromNotificationStatus(NotificationStatus.SENT)
         );

@@ -1,6 +1,5 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.userpreferencespolicy;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
@@ -15,6 +14,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
@@ -31,11 +31,6 @@ public class UserPreferencesForPolicy {
 
     @Inject
     BackendConfig backendConfig;
-
-    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
-    public static class V1 extends UserPreferencesForPolicy {
-
-    }
 
     @GET
     @Path("/notification-preference/{bundleName}/{applicationName}")

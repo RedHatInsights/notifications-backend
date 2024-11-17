@@ -1,6 +1,5 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.orgconfig;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
@@ -47,17 +46,6 @@ public class OrgConfigResource {
 
     @Inject
     WorkspaceUtils workspaceUtils;
-
-    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
-    static class V1 extends OrgConfigResource {
-
-    }
-
-    @Path(Constants.API_NOTIFICATIONS_V_2_0 + "/org-config")
-    static class V2 extends OrgConfigResource {
-
-    }
-
 
     static final List<Integer> ALLOWED_MINUTES = Arrays.asList(0, 15, 30, 45);
 

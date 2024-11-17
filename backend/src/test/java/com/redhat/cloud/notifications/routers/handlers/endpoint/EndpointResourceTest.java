@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
@@ -110,9 +110,9 @@ import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.models.HttpType.POST;
-import static com.redhat.cloud.notifications.routers.EndpointResource.AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE;
-import static com.redhat.cloud.notifications.routers.EndpointResource.DEPRECATED_SLACK_CHANNEL_ERROR;
-import static com.redhat.cloud.notifications.routers.EndpointResource.HTTPS_ENDPOINT_SCHEME_REQUIRED;
+import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE;
+import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.DEPRECATED_SLACK_CHANNEL_ERROR;
+import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.HTTPS_ENDPOINT_SCHEME_REQUIRED;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;

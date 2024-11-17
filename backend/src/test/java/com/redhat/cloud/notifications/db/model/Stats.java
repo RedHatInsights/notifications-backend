@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.db.model;
 
-import com.redhat.cloud.notifications.routers.EndpointResourceTest;
+import com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResourceTest;
 
 import java.util.HashSet;
 import java.util.Set;
