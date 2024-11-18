@@ -11,6 +11,8 @@ import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
+import io.quarkus.cache.Cache;
+import io.quarkus.cache.CacheName;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -18,6 +20,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -26,6 +29,7 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -43,6 +47,9 @@ public class EmailTemplateMigrationServiceTest {
 
     @Inject
     TemplateService templateService;
+
+    @CacheName("instant-email-templates")
+    Cache cacheInstantEmailTemplates;
 
     @Test
     void testMigration() {
@@ -237,6 +244,62 @@ public class EmailTemplateMigrationServiceTest {
         assertTrue(templateRepository.findAggregationEmailTemplate(console.getName(), rbac.getName(), DAILY).isEmpty());
 
         clearDbTemplates();
+    }
+
+    @Test
+    void testUpgradeMigration() {
+        // Bundle: rhel
+        Bundle rhel = findOrCreateBundle("rhel");
+
+        // App: patch
+        Application patch = findOrCreateApplication("patch", rhel);
+        EventType newAdvisories = findOrCreateEventType("new-advisory", patch);
+        // App: policies
+        Application policies = findOrCreateApplication("policies", rhel);
+        EventType policyTriggered = findOrCreateEventType("policy-triggered", policies);
+
+        clearDbTemplates();
+        cacheInstantEmailTemplates.invalidateAll().await().indefinitely();
+        entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+
+        // loead email templates in db
+        given()
+            .basePath(API_INTERNAL)
+            .when()
+            .put("/template-engine/migrate")
+            .then()
+            .statusCode(200)
+            .contentType(JSON);
+
+        Optional<InstantEmailTemplate> policyTemplate = templateRepository.findInstantEmailTemplate(policyTriggered.getId());
+        Optional<InstantEmailTemplate> patchTemplate = templateRepository.findInstantEmailTemplate(newAdvisories.getId());
+
+        // link patch to policy templates
+        resourceHelpers.updateTemplates(patchTemplate, policyTemplate);
+        cacheInstantEmailTemplates.invalidateAll().await().indefinitely();
+        entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+
+        patchTemplate = templateRepository.findInstantEmailTemplate(newAdvisories.getId());
+        // check than patch and policy share the same template
+        assertEquals(policyTemplate.get().getSubjectTemplateId(), patchTemplate.get().getSubjectTemplateId());
+
+        // request email template migration one more time
+        given()
+            .basePath(API_INTERNAL)
+            .when()
+            .put("/template-engine/migrate")
+            .then()
+            .statusCode(200)
+            .contentType(JSON);
+
+        cacheInstantEmailTemplates.invalidateAll().await().indefinitely();
+        entityManager.clear(); // The Hibernate L1 cache contains outdated data and needs to be cleared.
+
+        policyTemplate = templateRepository.findInstantEmailTemplate(policyTriggered.getId());
+        patchTemplate = templateRepository.findInstantEmailTemplate(newAdvisories.getId());
+
+        // check than patch and policy don't share the same template anymore
+        assertNotEquals(policyTemplate.get().getSubjectTemplateId(), patchTemplate.get().getSubjectTemplateId());
     }
 
     private void clearDbTemplates() {
