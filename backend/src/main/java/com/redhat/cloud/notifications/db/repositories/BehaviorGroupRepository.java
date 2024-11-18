@@ -791,4 +791,15 @@ public class BehaviorGroupRepository {
 
         return count < MAXIMUM_NUMBER_BEHAVIOR_GROUPS;
     }
+
+    @Transactional
+    public void updateBehaviorGroupName(final String orgId, final String oldDisplayName, final String displayName) {
+        String query = "UPDATE BehaviorGroup SET displayName = :displayName WHERE displayName = :oldDisplayName and orgId = :orgId";
+
+        entityManager.createQuery(query)
+            .setParameter("displayName", displayName)
+            .setParameter("oldDisplayName", oldDisplayName)
+            .setParameter("orgId", orgId)
+            .executeUpdate();
+    }
 }
