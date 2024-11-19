@@ -35,6 +35,20 @@ public class AggregationOrgConfigRepository {
     }
 
     @Transactional
+    public void createMissingDefaultConfigurationBasedOnEvent(LocalTime defaultRunningTime) {
+        String query = "INSERT INTO aggregation_org_config (org_id, scheduled_execution_time, last_run) " +
+            "SELECT DISTINCT ev.org_id, CAST(:expectedRunningTime as time without time zone), CAST(:lastRun as timestamp without time zone) FROM event ev " +
+            "WHERE NOT EXISTS (SELECT 1 FROM aggregation_org_config agcjp WHERE ev.org_id = agcjp.org_id)";
+
+        int createdEntries = entityManager.createNativeQuery(query)
+            .setParameter("expectedRunningTime", defaultRunningTime)
+            .setParameter("lastRun", LocalDateTime.now(UTC).minusDays(1))
+            .executeUpdate();
+
+        Log.infof("Default aggregation configuration created for %d organizations", createdEntries);
+    }
+
+    @Transactional
     public void updateLastCronJobRunAccordingOrgPref(List<String> orgIdsToUpdate, LocalDateTime end) {
 
         String hqlQuery = "UPDATE AggregationOrgConfig ac SET ac.lastRun=:end WHERE ac.orgId IN :orgIdsToUpdate";
