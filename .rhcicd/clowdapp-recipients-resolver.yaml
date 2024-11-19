@@ -278,11 +278,6 @@ parameters:
   value: "https"
 - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED
   value: "false"
-- name: KESSEL_DOMAIN
-  value: "redhat"
-- name: NOTIFICATIONS_KESSEL_RELATIONS_ENABLED
-  description: Is the integration with Kessel's relations enabled?
-  value: "false"
 - name: NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS
   description: Should the inventory gRPC client open channels over TLS?
   value: "false"
