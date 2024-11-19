@@ -14,6 +14,7 @@ objects:
     envName: ${ENV_NAME}
     dependencies:
     - rbac
+    optionalDependencies:
     - kessel-relations
     featureFlags: true
     deployments:
