@@ -714,8 +714,8 @@ public class EmailTemplateMigrationService {
                     entityManager.persist(emailTemplate);
                 } else {
                     InstantEmailTemplate emailTemplate = optInstantEmailTemplate.get();
-                    if (bodyTemplate.getId() != emailTemplate.getBodyTemplateId() ||
-                        subjectTemplate.getId() != emailTemplate.getSubjectTemplateId()) {
+                    if (!bodyTemplate.getId().equals(emailTemplate.getBodyTemplateId()) ||
+                        !subjectTemplate.getId().equals(emailTemplate.getSubjectTemplateId())) {
                         emailTemplate.setSubjectTemplate(subjectTemplate);
                         emailTemplate.setSubjectTemplateId(subjectTemplate.getId());
                         emailTemplate.setBodyTemplate(bodyTemplate);
