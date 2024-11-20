@@ -716,6 +716,7 @@ public class EmailTemplateMigrationService {
                     InstantEmailTemplate emailTemplate = optInstantEmailTemplate.get();
                     if (!bodyTemplate.getId().equals(emailTemplate.getBodyTemplateId()) ||
                         !subjectTemplate.getId().equals(emailTemplate.getSubjectTemplateId())) {
+                        Log.infof("Updating instant email template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
                         emailTemplate.setSubjectTemplate(subjectTemplate);
                         emailTemplate.setSubjectTemplateId(subjectTemplate.getId());
                         emailTemplate.setBodyTemplate(bodyTemplate);
