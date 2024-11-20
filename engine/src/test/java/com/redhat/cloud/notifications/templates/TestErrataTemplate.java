@@ -63,6 +63,7 @@ public class TestErrataTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("secalert@redhat.com"));
+        assertTrue(result.contains("Moderate"), "Security advisory severity has a dedicated column");
     }
 
     @Test

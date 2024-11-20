@@ -15,7 +15,8 @@
         <thead>
             <tr>
               <th style="width: 30%">Security update</th>
-              <th style="width: 60%">Synopsis</th>
+              <th style="width: 15%">Severity</th>
+              <th style="width: 45%">Synopsis</th>
             </tr>
         </thead>
         <tbody>
@@ -23,6 +24,7 @@
                 {#each action.events}
                 <tr style="font-size: 14px;">
                     <td><a href="{action.context.base_url}{it.payload.id}" target="_blank">{it.payload.id}</a></td>
+                    <td>{it.payload.severity}</td>
                     <td>{it.payload.synopsis}</td>
                 </tr>
                 {/each}
