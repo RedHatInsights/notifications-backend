@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -323,5 +324,14 @@ public class ResourceHelpers {
         }
 
         return selectQuery.getResultList();
+    }
+
+    @Transactional
+    public void updateTemplates(Optional<InstantEmailTemplate> instantTemplateToUpdate, Optional<InstantEmailTemplate> instantTemplateToCopy) {
+        entityManager.createQuery("UPDATE InstantEmailTemplate SET subjectTemplate = :subjectTemplate, bodyTemplate = :bodyTemplate WHERE id = :id")
+            .setParameter("subjectTemplate", entityManager.find(Template.class, instantTemplateToCopy.get().getSubjectTemplate().getId()))
+            .setParameter("bodyTemplate", entityManager.find(Template.class, instantTemplateToCopy.get().getBodyTemplate().getId()))
+            .setParameter("id", instantTemplateToUpdate.get().getId())
+            .executeUpdate();
     }
 }

@@ -700,7 +700,8 @@ public class EmailTemplateMigrationService {
             Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
             Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
             if (eventType.isPresent()) {
-                if (!instantEmailTemplateExists(eventType.get())) {
+                Optional<InstantEmailTemplate> optInstantEmailTemplate = instantEmailTemplateExists(eventType.get());
+                if (optInstantEmailTemplate.isEmpty()) {
                     Log.infof("Creating instant email template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
 
                     InstantEmailTemplate emailTemplate = new InstantEmailTemplate();
@@ -711,6 +712,17 @@ public class EmailTemplateMigrationService {
                     emailTemplate.setBodyTemplateId(bodyTemplate.getId());
 
                     entityManager.persist(emailTemplate);
+                } else {
+                    InstantEmailTemplate emailTemplate = optInstantEmailTemplate.get();
+                    if (!bodyTemplate.getId().equals(emailTemplate.getBodyTemplateId()) ||
+                        !subjectTemplate.getId().equals(emailTemplate.getSubjectTemplateId())) {
+                        Log.infof("Updating instant email template for event type: %s/%s/%s", bundleName, appName, eventTypeName);
+                        emailTemplate.setSubjectTemplate(subjectTemplate);
+                        emailTemplate.setSubjectTemplateId(subjectTemplate.getId());
+                        emailTemplate.setBodyTemplate(bodyTemplate);
+                        emailTemplate.setBodyTemplateId(bodyTemplate.getId());
+                        entityManager.merge(emailTemplate);
+                    }
                 }
             }
         }
@@ -732,12 +744,15 @@ public class EmailTemplateMigrationService {
         }
     }
 
-    private boolean instantEmailTemplateExists(EventType eventType) {
-        String hql = "SELECT COUNT(*) FROM InstantEmailTemplate WHERE eventType = :eventType";
-        long count = entityManager.createQuery(hql, Long.class)
+    private Optional<InstantEmailTemplate> instantEmailTemplateExists(EventType eventType) {
+        String hql = "FROM InstantEmailTemplate WHERE eventType = :eventType";
+        try {
+            return Optional.of(entityManager.createQuery(hql, InstantEmailTemplate.class)
                 .setParameter("eventType", eventType)
-                .getSingleResult();
-        return count > 0;
+                .getSingleResult());
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
     }
 
     /*
