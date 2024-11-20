@@ -9,7 +9,10 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -32,7 +35,7 @@ public class RecipientsResolverConfig {
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
     private static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED = "notifications.recipients-resolver.use.kessel.enabled";
     private static final String KESSEL_TARGET_URL = "notifications.recipients-resolver.kessel.target-url";
-    private static final String KESSEL_USE_SECURE_CLIENT = "notifications.kessel.secure-client";
+    private static final String KESSEL_USE_SECURE_CLIENT = "relations-api.is-secure-clients";
 
     /*
      * Unleash configuration
@@ -179,13 +182,22 @@ public class RecipientsResolverConfig {
         return mbopEnv;
     }
 
-
     public boolean isKesselUseSecureClient() {
         return kesselUseSecureClient;
     }
 
     public String getKesselTargetUrl() {
-        return kesselTargetUrl;
+        try {
+            final URL url = new URI(kesselTargetUrl).toURL();
+            final String newKesselUrl = url.getHost() + ":9000";
+
+            Log.debugf("Kessel URL changed from \"%s\" to \"%s\"", kesselTargetUrl, newKesselUrl);
+
+            return newKesselUrl;
+        } catch (final IllegalArgumentException | MalformedURLException | URISyntaxException e) {
+            Log.debugf(e, "Unable to create a URL from value \"%s\"", kesselTargetUrl);
+            return kesselTargetUrl;
+        }
     }
 
     public Duration getLogTooLongRequestLimit() {

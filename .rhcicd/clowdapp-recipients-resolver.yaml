@@ -14,6 +14,8 @@ objects:
     envName: ${ENV_NAME}
     dependencies:
     - rbac
+    optionalDependencies:
+    - kessel-relations
     featureFlags: true
     deployments:
     - name: service
@@ -161,6 +163,20 @@ objects:
             secretKeyRef:
               name: rbac-psks
               key: psks.json
+        - name: RELATIONS_API_AUTHN_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.id
+        - name: RELATIONS_API_AUTHN_CLIENT_ISSUER
+          value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
+        - name: RELATIONS_API_AUTHN_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.secret
+        - name: RELATIONS_API_IS_SECURE_CLIENTS
+          value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -263,3 +279,9 @@ parameters:
   value: "https"
 - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED
   value: "false"
+- name: NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS
+  description: Should the inventory gRPC client open channels over TLS?
+  value: "false"
+- name: NOTIFICATIONS_KESSEL_OIDC_ISSUER
+  description: Specifies the issuer of the OIDC authentication tokens.
+  value: "https://redhat.com/realms/redhat-external"
