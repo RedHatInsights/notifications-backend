@@ -9,7 +9,7 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
-import com.redhat.cloud.notifications.models.IAggregationCommand;
+import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
@@ -82,11 +82,11 @@ public class DailyEmailAggregationJob {
             } else {
                 aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
             }
-            List<IAggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
+            List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             Log.infof("found %s commands", aggregationCommands.size());
             Log.debugf("Aggregation commands: %s", aggregationCommands);
 
-            aggregationCommands.stream().collect(Collectors.groupingBy(IAggregationCommand::getOrgId))
+            aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
                 .values().forEach(this::sendIt);
 
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(aggregationCommand -> aggregationCommand.getOrgId()).collect(Collectors.toList());
@@ -139,9 +139,9 @@ public class DailyEmailAggregationJob {
         }
     }
 
-    List<IAggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
+    List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
-        List<IAggregationCommand> pendingAggregationCommands;
+        List<AggregationCommand> pendingAggregationCommands;
         if (aggregatorConfig.isAggregationBasedOnEventEnabled()) {
             pendingAggregationCommands = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(endTime);
         } else {
@@ -157,7 +157,7 @@ public class DailyEmailAggregationJob {
         return pendingAggregationCommands;
     }
 
-    private void sendIt(List<IAggregationCommand> aggregationCommands) {
+    private void sendIt(List<AggregationCommand> aggregationCommands) {
 
         List<Event> eventList = new ArrayList<>();
         aggregationCommands.stream().forEach(aggregationCommand -> {

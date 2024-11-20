@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
-import com.redhat.cloud.notifications.models.IAggregationCommand;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -259,7 +258,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<IAggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(4, emailAggregations.size());
     }
@@ -271,7 +270,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<IAggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
 
@@ -289,7 +288,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("shouldBeIgnoredOrgId", "someRhel", "somePolicies", "policyId1", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<IAggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
     }
@@ -301,7 +300,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("shouldBeIgnoredOrgId", "someRhel", "somePolicies", "somePolicyId", "hostId2");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        List<IAggregationCommand> emailAggregations = null;
+        List<AggregationCommand> emailAggregations = null;
         emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
         assertEquals(1, emailAggregations.size());
     }
@@ -309,7 +308,7 @@ class DailyEmailAggregationJobTest {
     @Test
     void shouldProcessZeroAggregations() {
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
-        final List<IAggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = testee.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(0, emailAggregations.size());
     }

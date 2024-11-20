@@ -7,11 +7,11 @@ import com.redhat.cloud.notifications.helpers.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Parser;
+import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.EventAggregationCommand;
+import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.IAggregationCommand;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
@@ -98,14 +98,17 @@ class DailyEventAggregationJobTest {
         dailyEmailAggregationJob.defaultDailyDigestTime = LocalTime.now(ZoneOffset.UTC);
     }
 
-    List<EventAggregationCommand> getRecordsFromKafka() {
-        List<EventAggregationCommand> aggregationCommands = new ArrayList<>();
+    List<AggregationCommand> getRecordsFromKafka() {
+        List<AggregationCommand> aggregationCommands = new ArrayList<>();
 
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
         for (Message message : results.received()) {
             Action action = Parser.decode(String.valueOf(message.getPayload()));
             for (Event event : action.getEvents()) {
-                aggregationCommands.add(objectMapper.convertValue(event.getPayload().getAdditionalProperties(), EventAggregationCommand.class));
+                AggregationCommand aggCommand = objectMapper.convertValue(event.getPayload().getAdditionalProperties(), AggregationCommand.class);
+                EventAggregationCriteria aggregationCriteria = objectMapper.convertValue(event.getPayload().getAdditionalProperties().get("aggregationKey"), EventAggregationCriteria.class);
+                aggCommand.setAggregationKey(aggregationCriteria);
+                aggregationCommands.add(aggCommand);
             }
         }
 
@@ -123,7 +126,7 @@ class DailyEventAggregationJobTest {
 
         dailyEmailAggregationJob.processDailyEmail();
 
-        List<EventAggregationCommand> listCommand = getRecordsFromKafka();
+        List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(4, listCommand.size());
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "unknown-application");
@@ -145,7 +148,7 @@ class DailyEventAggregationJobTest {
         // Because we added time preferences for orgId someOrgId two hours in the past, those messages must be ignored
         dailyEmailAggregationJob.processDailyEmail();
 
-        List<EventAggregationCommand> listCommand = getRecordsFromKafka();
+        List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(2, listCommand.size());
 
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
@@ -177,13 +180,13 @@ class DailyEventAggregationJobTest {
         checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application");
     }
 
-    private void checkAggCommand(List<EventAggregationCommand> commands, String orgId, String bundleName, String applicationName) {
+    private void checkAggCommand(List<AggregationCommand> commands, String orgId, String bundleName, String applicationName) {
         Application application = resourceHelpers.findApp(bundleName, applicationName);
 
         assertTrue(commands.stream().anyMatch(
             com -> orgId.equals(com.getAggregationKey().getOrgId()) &&
-                application.getBundleId().equals(com.getAggregationKey().getBundleId()) &&
-                application.getId().equals(com.getAggregationKey().getApplicationId()) &&
+                application.getBundleId().equals(((EventAggregationCriteria) com.getAggregationKey()).getBundleId()) &&
+                application.getId().equals(((EventAggregationCriteria) com.getAggregationKey()).getApplicationId()) &&
                 DAILY.equals(com.getSubscriptionType())
             ));
     }
@@ -284,7 +287,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<IAggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(4, emailAggregations.size());
     }
@@ -296,15 +299,15 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<IAggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
 
-        final EventAggregationCommand aggregationCommand = (EventAggregationCommand) emailAggregations.get(0);
+        final AggregationCommand aggregationCommand = (AggregationCommand) emailAggregations.get(0);
         assertEquals("someOrgId", aggregationCommand.getAggregationKey().getOrgId());
         Application application = resourceHelpers.findApp("rhel", "policies");
-        assertEquals(application.getBundleId(), aggregationCommand.getAggregationKey().getBundleId());
-        assertEquals(application.getId(), aggregationCommand.getAggregationKey().getApplicationId());
+        assertEquals(application.getBundleId(), ((EventAggregationCriteria) aggregationCommand.getAggregationKey()).getBundleId());
+        assertEquals(application.getId(), ((EventAggregationCriteria) aggregationCommand.getAggregationKey()).getApplicationId());
         assertEquals(DAILY, aggregationCommand.getSubscriptionType());
     }
 
@@ -315,7 +318,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("shouldBeIgnoredOrgId", "some-rhel", "some-policies", "policyId1", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<IAggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
     }
@@ -327,14 +330,14 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("shouldBeIgnoredOrgId", "some-rhel", "some-policies", "somePolicyId", "hostId2");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        List<IAggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
         assertEquals(1, emailAggregations.size());
     }
 
     @Test
     void shouldProcessZeroAggregations() {
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
-        final List<IAggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
 
         assertEquals(0, emailAggregations.size());
     }

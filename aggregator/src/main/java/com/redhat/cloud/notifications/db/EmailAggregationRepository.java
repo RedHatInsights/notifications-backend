@@ -2,9 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
-import com.redhat.cloud.notifications.models.EventAggregationCommand;
 import com.redhat.cloud.notifications.models.EventAggregationCriteria;
-import com.redhat.cloud.notifications.models.IAggregationCommand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -25,7 +23,7 @@ public class EmailAggregationRepository {
     @Inject
     EntityManager entityManager;
 
-    public List<IAggregationCommand> getApplicationsWithPendingAggregationAccordinfOrgPref(LocalDateTime now) {
+    public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrgPref(LocalDateTime now) {
         // Must takes every EmailAggregation supposed to be processed on last 15 min
         // it covers cases when aggregation job may be run with few minutes late (ie: 05:01, 07,32)
         String query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName, acp.lastRun FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
@@ -47,7 +45,7 @@ public class EmailAggregationRepository {
                 .collect(toList());
     }
 
-    public List<IAggregationCommand> getApplicationsWithPendingAggregationAccordingOrgPref(LocalDateTime now) {
+    public List<AggregationCommand> getApplicationsWithPendingAggregationAccordingOrgPref(LocalDateTime now) {
         String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, acp.lastRun, bu.name, ap.name FROM Event ev " +
             "join Application ap on ev.applicationId = ap.id join Bundle bu on ev.bundleId = bu.id " +
             "left join AggregationOrgConfig acp on ev.orgId = acp.orgId " +
@@ -61,7 +59,7 @@ public class EmailAggregationRepository {
 
         List<Object[]> records = hqlQuery.getResultList();
         return records.stream()
-            .map(emailAggregationRecord -> new EventAggregationCommand(
+            .map(emailAggregationRecord -> new AggregationCommand(
                 new EventAggregationCriteria((String) emailAggregationRecord[0], (UUID) emailAggregationRecord[1], (UUID) emailAggregationRecord[2], (String) emailAggregationRecord[4], (String) emailAggregationRecord[5]),
                 (LocalDateTime) emailAggregationRecord[3],
                 now,

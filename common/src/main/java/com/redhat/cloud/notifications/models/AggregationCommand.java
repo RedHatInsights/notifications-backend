@@ -3,10 +3,10 @@ package com.redhat.cloud.notifications.models;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
-public class AggregationCommand implements IAggregationCommand {
+public class AggregationCommand<T extends EmailAggregationKey> {
 
     @NotNull
-    private final EmailAggregationKey aggregationKey;
+    private T aggregationKey;
 
     @NotNull
     private final LocalDateTime start;
@@ -17,38 +17,37 @@ public class AggregationCommand implements IAggregationCommand {
     @NotNull
     private final SubscriptionType subscriptionType;
 
-    public AggregationCommand(EmailAggregationKey aggregationKey, LocalDateTime start, LocalDateTime end, SubscriptionType subscriptionType) {
+    public AggregationCommand(T aggregationKey, LocalDateTime start, LocalDateTime end, SubscriptionType subscriptionType) {
         this.aggregationKey = aggregationKey;
         this.start = start;
         this.end = end;
         this.subscriptionType = subscriptionType;
     }
 
+    public void setAggregationKey(@NotNull T aggregationKey) {
+        this.aggregationKey = aggregationKey;
+    }
+
     public EmailAggregationKey getAggregationKey() {
         return aggregationKey;
     }
 
-    @Override
     public LocalDateTime getStart() {
         return start;
     }
 
-    @Override
     public LocalDateTime getEnd() {
         return end;
     }
 
-    @Override
     public SubscriptionType getSubscriptionType() {
         return subscriptionType;
     }
 
-    @Override
     public String getOrgId() {
         return aggregationKey.getOrgId();
     }
 
-    @Override
     public String toString() {
         return "AggregationCommand{" +
                 "aggregationKey=" + aggregationKey +
