@@ -9,7 +9,6 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.project_kessel.clients.authn.AuthenticationConfig;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,11 +35,7 @@ public class RecipientsResolverConfig {
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
     private static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED = "notifications.recipients-resolver.use.kessel.enabled";
     private static final String KESSEL_TARGET_URL = "notifications.recipients-resolver.kessel.target-url";
-    private static final String KESSEL_USE_SECURE_CLIENT = "notifications.recipients-resolver.kessel.secure-client";
-    private static final String KESSEL_CLIENT_ID = "notifications.recipients-resolver.kessel.client.id";
-    private static final String KESSEL_CLIENT_SECRET = "notifications.recipients-resolver.kessel.client.secret";
-    private static final String KESSEL_CLIENT_ISSUER = "notifications.recipients-resolver.kessel.client.issuer";
-    private static final String KESSEL_CLIENT_MODE = "notifications.recipients-resolver.kessel.mode";
+    private static final String KESSEL_USE_SECURE_CLIENT = "relations-api.is-secure-clients";
 
     /*
      * Unleash configuration
@@ -90,18 +85,6 @@ public class RecipientsResolverConfig {
 
     @ConfigProperty(name = KESSEL_TARGET_URL, defaultValue = "localhost:9000")
     String kesselTargetUrl;
-
-    @ConfigProperty(name = KESSEL_CLIENT_ID)
-    Optional<String> kesselClientId;
-
-    @ConfigProperty(name = KESSEL_CLIENT_SECRET)
-    Optional<String> kesselClientSecret;
-
-    @ConfigProperty(name = KESSEL_CLIENT_ISSUER)
-    Optional<String> kesselClientIssuer;
-
-    @ConfigProperty(name = KESSEL_CLIENT_MODE)
-    AuthenticationConfig.AuthMode kesselClientMode;
 
     /**
      * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
@@ -227,21 +210,5 @@ public class RecipientsResolverConfig {
 
     public Optional<String> getQuarkusItServicePassword() {
         return quarkusItServicePassword;
-    }
-
-    public Optional<String> getKesselClientId() {
-        return kesselClientId;
-    }
-
-    public Optional<String> getKesselClientSecret() {
-        return kesselClientSecret;
-    }
-
-    public Optional<String> getKesselClientIssuer() {
-        return kesselClientIssuer;
-    }
-
-    public AuthenticationConfig.AuthMode getKesselClientMode() {
-        return kesselClientMode;
     }
 }
