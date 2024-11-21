@@ -69,16 +69,20 @@ class DailyEventAggregationJobTest {
 
     LocalDateTime baseReferenceTime;
 
-    final AggregationOrgConfig someOrgIdToProceed = new AggregationOrgConfig("someOrgId",
-            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), LocalTime.now(ZoneOffset.UTC).getMinute()),
-            LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
+    AggregationOrgConfig someOrgIdToProceed;
 
-    final AggregationOrgConfig anotherOrgIdToProceed = new AggregationOrgConfig("anotherOrgId",
-            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), LocalTime.now(ZoneOffset.UTC).getMinute()),
-            LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
+    AggregationOrgConfig anotherOrgIdToProceed;
 
     @BeforeEach
     void setUp() {
+        someOrgIdToProceed = new AggregationOrgConfig("someOrgId",
+            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime(),
+            dailyEmailAggregationJob.computeScheduleExecutionTime().minusDays(1));
+
+        anotherOrgIdToProceed = new AggregationOrgConfig("anotherOrgId",
+            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime(),
+            dailyEmailAggregationJob.computeScheduleExecutionTime().minusDays(1));
+
         helpers.purgeEventAggregations();
         initAggregationParameters();
         when(aggregatorConfig.isAggregationBasedOnEventEnabled()).thenReturn(true);
@@ -98,8 +102,8 @@ class DailyEventAggregationJobTest {
         dailyEmailAggregationJob.defaultDailyDigestTime = LocalTime.now(ZoneOffset.UTC);
     }
 
-    List<AggregationCommand> getRecordsFromKafka() {
-        List<AggregationCommand> aggregationCommands = new ArrayList<>();
+    List<AggregationCommand<EventAggregationCriteria>> getRecordsFromKafka() {
+        List<AggregationCommand<EventAggregationCriteria>> aggregationCommands = new ArrayList<>();
 
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
         for (Message message : results.received()) {
@@ -126,7 +130,7 @@ class DailyEventAggregationJobTest {
 
         dailyEmailAggregationJob.processDailyEmail();
 
-        List<AggregationCommand> listCommand = getRecordsFromKafka();
+        List<AggregationCommand<EventAggregationCriteria>> listCommand = getRecordsFromKafka();
         assertEquals(4, listCommand.size());
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "unknown-application");
@@ -148,7 +152,7 @@ class DailyEventAggregationJobTest {
         // Because we added time preferences for orgId someOrgId two hours in the past, those messages must be ignored
         dailyEmailAggregationJob.processDailyEmail();
 
-        List<AggregationCommand> listCommand = getRecordsFromKafka();
+        List<AggregationCommand<EventAggregationCriteria>> listCommand = getRecordsFromKafka();
         assertEquals(2, listCommand.size());
 
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
@@ -180,7 +184,7 @@ class DailyEventAggregationJobTest {
         checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application");
     }
 
-    private void checkAggCommand(List<AggregationCommand> commands, String orgId, String bundleName, String applicationName) {
+    private void checkAggCommand(List<AggregationCommand<EventAggregationCriteria>> commands, String orgId, String bundleName, String applicationName) {
         Application application = resourceHelpers.findApp(bundleName, applicationName);
 
         assertTrue(commands.stream().anyMatch(
@@ -196,7 +200,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("tooLateOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         addEventEmailAggregation("onTimeOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         addEventEmailAggregation("tooSoonOrgId", "unknown-bundle", "policies", "somePolicyId", "someHostId");
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).withMinute(32);
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).withMinute(30).withSecond(0).withNano(0);
 
         AggregationOrgConfig tooLateOrgIdToProceed = new AggregationOrgConfig("tooLateOrgId",
             LocalTime.of(now.getHour(), 15),
@@ -220,7 +224,7 @@ class DailyEventAggregationJobTest {
 
     @Test
     void shouldProcessOnePairAtMidnight() {
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).withHour(0).withMinute(0);
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).withHour(0).withMinute(0).withSecond(0).withNano(0);
 
         addEventEmailAggregation("tooLateOrgId", "rhel", "policies", "somePolicyId", "someHostId", now);
         addEventEmailAggregation("onTimeOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId", now);
@@ -255,7 +259,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
         final Gauge pairsProcessed = dailyEmailAggregationJob.getPairsProcessed();
 
         assertEquals(4.0, pairsProcessed.get());
@@ -271,7 +275,7 @@ class DailyEventAggregationJobTest {
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
         helpers.addAggregationOrgConfig(anotherOrgIdToProceed);
 
-        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
 
         final Gauge pairsProcessed = dailyEmailAggregationJob.getPairsProcessed();
 
@@ -287,7 +291,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
 
         assertEquals(4, emailAggregations.size());
     }
@@ -299,7 +303,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
 
@@ -318,7 +322,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("shouldBeIgnoredOrgId", "some-rhel", "some-policies", "policyId1", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
     }
@@ -330,14 +334,14 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("shouldBeIgnoredOrgId", "some-rhel", "some-policies", "somePolicyId", "hostId2");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
         assertEquals(1, emailAggregations.size());
     }
 
     @Test
     void shouldProcessZeroAggregations() {
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(LocalDateTime.now(UTC), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
 
         assertEquals(0, emailAggregations.size());
     }

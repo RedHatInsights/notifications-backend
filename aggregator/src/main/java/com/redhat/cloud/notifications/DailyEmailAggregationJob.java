@@ -124,7 +124,7 @@ public class DailyEmailAggregationJob {
      *
      * @return the local date time
      */
-    protected LocalDateTime computeScheduleExecutionTime() {
+    public LocalDateTime computeScheduleExecutionTime() {
         final LocalDateTime currentTime = LocalDateTime.now(UTC).withSecond(0).withNano(0);
 
         // correct Time

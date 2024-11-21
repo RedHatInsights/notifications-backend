@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.DailyEmailAggregationJob;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
@@ -16,11 +17,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -46,18 +45,16 @@ class EmailAggregationRepositoryTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
-    LocalDateTime end;
+    @Inject
+    DailyEmailAggregationJob dailyEmailAggregationJob;
 
-    @BeforeEach
-    void beforeEach() {
+    void configureTimePref(LocalDateTime localDateTime) {
         final AggregationOrgConfig orgPrefDef = new AggregationOrgConfig(ORG_ID,
-            LocalTime.of(LocalTime.now(ZoneOffset.UTC).getHour(), LocalTime.now(ZoneOffset.UTC).getMinute()),
+            localDateTime.toLocalTime(),
             LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
         resourceHelpers.addAggregationOrgConfig(orgPrefDef);
         orgPrefDef.setOrgId("other-org-id");
         resourceHelpers.addAggregationOrgConfig(orgPrefDef);
-
-        end = LocalDateTime.now(UTC).plusMinutes(10);
     }
 
     @AfterEach
@@ -67,7 +64,9 @@ class EmailAggregationRepositoryTest {
 
     @Test
     void testApplicationsWithPendingAggregationAccordinfOrgPref() {
+        LocalDateTime end = LocalDateTime.now(UTC).plusMinutes(10);
 
+        configureTimePref(LocalDateTime.now(UTC));
         addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
         addEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
         addEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
@@ -101,14 +100,14 @@ class EmailAggregationRepositoryTest {
 
     @Test
     void testApplicationsWithPendingAggregationAccordingOrgPref() {
+        configureTimePref(dailyEmailAggregationJob.computeScheduleExecutionTime());
+        Event event1 = addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
+        Event event2 = addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
+        addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
+        addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
+        addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
 
-        Event event1 = addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
-        Event event2 = addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
-        addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
-
-        List<AggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(end);
+        List<AggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime());
         assertEquals(4, keys.size());
         Application application = resourceHelpers.findApp(BUNDLE_NAME, APP_NAME);
 
@@ -120,13 +119,13 @@ class EmailAggregationRepositoryTest {
         resourceHelpers.deleteEvent(event1);
         resourceHelpers.deleteEvent(event2);
 
-        keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(end);
+        keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime());
         assertEquals(3, keys.size());
         matchedKeys = keys.stream().filter(k -> ORG_ID.equals(k.getOrgId())).filter(k -> (((EventAggregationCriteria) k.getAggregationKey()).getApplicationId().equals(application.getId()))).collect(Collectors.toList());
         assertEquals(0, matchedKeys.size());
     }
 
-    private Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
+    private Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload, LocalDateTime created) {
         Application application = resourceHelpers.findOrCreateApplication(bundleName, applicationName);
         EventType eventType = resourceHelpers.findOrCreateEventType(application.getId(), "event_type_test");
         resourceHelpers.findOrCreateEventTypeEmailSubscription(orgId, "obiwan", eventType, SubscriptionType.DAILY);
@@ -137,6 +136,7 @@ class EmailAggregationRepositoryTest {
         eventType.setApplication(application);
         event.setEventType(eventType);
         event.setPayload(payload.toString());
+        event.setCreated(created);
 
         return resourceHelpers.createEvent(event);
     }
