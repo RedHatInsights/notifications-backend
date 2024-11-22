@@ -51,7 +51,6 @@ public class ConnectorSender {
 
     private static final String NOTIFICATIONS_PAYLOAD_STORED_DATABASE_METRIC_NAME = "notifications.payload.stored.database";
     private static final String TAG_KEY_CONNECTOR = "connector";
-    private static final String TAG_KEY_ORG_ID = "orgid";
     private static final String TAG_KEY_APPLICATION = "application";
     private static final String TAG_KEY_EVENT_TYPE = "event_type";
 
@@ -104,7 +103,7 @@ public class ConnectorSender {
 
             this.registry.counter(
                 NOTIFICATIONS_PAYLOAD_STORED_DATABASE_METRIC_NAME,
-                Tags.of(TAG_KEY_CONNECTOR, connector, TAG_KEY_ORG_ID, event.getOrgId(), TAG_KEY_APPLICATION, event.getApplicationDisplayName(), TAG_KEY_EVENT_TYPE, event.getEventTypeDisplayName())
+                Tags.of(TAG_KEY_CONNECTOR, connector, TAG_KEY_APPLICATION, event.getApplicationDisplayName(), TAG_KEY_EVENT_TYPE, event.getEventTypeDisplayName())
             ).increment();
         }
 
@@ -183,7 +182,6 @@ public class ConnectorSender {
         DistributionSummary ds = DistributionSummary.builder("notifications.tocamel.payload.content.size")
             .baseUnit("bytes")
             .tags(TAG_KEY_CONNECTOR, connector)
-            .tags(TAG_KEY_ORG_ID, event.getOrgId())
             .tags(TAG_KEY_APPLICATION, event.getApplicationDisplayName())
             .tags(TAG_KEY_EVENT_TYPE, event.getEventType().getName())
             .register(registry);
