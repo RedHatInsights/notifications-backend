@@ -182,7 +182,6 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
-        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnabled());
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
         config.put(NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES, isUseOCMRefactoredTemplates());
