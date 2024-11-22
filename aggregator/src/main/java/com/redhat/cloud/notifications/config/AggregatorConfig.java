@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashConfigSource;
 import io.getunleash.Unleash;
+import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -43,6 +45,7 @@ public class AggregatorConfig {
     @PostConstruct
     void postConstruct() {
         fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events", true);
+        fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events-by-orgid", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -59,6 +62,15 @@ public class AggregatorConfig {
     public boolean isAggregationBasedOnEventEnabled() {
         if (unleashEnabled) {
             return unleash.isEnabled(fetchAggregationBasedOnEvents, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isAggregationBasedOnEventEnabledByOrgId(String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = UnleashConfigSource.buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(fetchAggregationBasedOnEvents, unleashContext, false);
         } else {
             return false;
         }

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.unleash;
 
+import io.getunleash.UnleashContext;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import java.util.Map;
@@ -41,5 +42,12 @@ public class UnleashConfigSource implements ConfigSource {
     @Override
     public String getValue(String propertyName) {
         return CONFIG.get(propertyName);
+    }
+
+    public static UnleashContext buildUnleashContextWithOrgId(String orgId) {
+        UnleashContext unleashContext = UnleashContext.builder()
+            .addProperty("orgId", orgId)
+            .build();
+        return unleashContext;
     }
 }

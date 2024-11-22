@@ -141,12 +141,40 @@ public class DailyEmailAggregationJob {
 
     List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
-        List<AggregationCommand> pendingAggregationCommands;
+        List<AggregationCommand> pendingAggregationCommands = new ArrayList<>();
+
+        final List<AggregationCommand> pendingAggregationCommandsFromEmailAggregation = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
         if (aggregatorConfig.isAggregationBasedOnEventEnabled()) {
-            pendingAggregationCommands = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(endTime);
+            final List<AggregationCommand> pendingAggregationCommandsFromEvents = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(endTime);
+
+            List<AggregationCommand> differences = pendingAggregationCommandsFromEmailAggregation.stream()
+                .filter(element -> !pendingAggregationCommandsFromEvents.contains(element))
+                .collect(Collectors.toList());
+
+            if (!differences.isEmpty()) {
+                Log.warnf("Fetching aggregation from legacy way have more record than the events way:");
+                for (AggregationCommand differencesCommand : differences) {
+                    Log.info(differencesCommand.toString() + differencesCommand.getAggregationKey().hashCode());
+                }
+            }
+
+            differences = pendingAggregationCommandsFromEvents.stream()
+                .filter(element -> !pendingAggregationCommandsFromEmailAggregation.contains(element))
+                .collect(Collectors.toList());
+
+            if (!differences.isEmpty()) {
+                Log.warnf("Fetching aggregation from events have more record than the legacy way:");
+                for (AggregationCommand differencesCommand : differences) {
+                    Log.info(differencesCommand.toString() + differencesCommand.getAggregationKey().hashCode());
+                }
+            }
+
+            pendingAggregationCommands = pendingAggregationCommandsFromEvents.stream().filter(e -> aggregatorConfig.isAggregationBasedOnEventEnabledByOrgId(e.getOrgId())).collect(Collectors.toList());
+            pendingAggregationCommands.addAll(pendingAggregationCommandsFromEmailAggregation.stream().filter(e -> !aggregatorConfig.isAggregationBasedOnEventEnabledByOrgId(e.getOrgId())).collect(Collectors.toList()));
         } else {
-            pendingAggregationCommands = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
+            pendingAggregationCommands = pendingAggregationCommandsFromEmailAggregation;
         }
+
         pairsProcessed = Gauge
                 .build()
                 .name("aggregator_job_orgid_application_pairs_processed")

@@ -103,7 +103,7 @@ class EmailAggregatorTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void shouldTestRecipientsFromSubscription(boolean isAggregationBasedOnEvents) {
-        when(engineConfig.isAggregationBasedOnEventEnabled()).thenReturn(isAggregationBasedOnEvents);
+        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(isAggregationBasedOnEvents);
 
         // init test environment
         application = resourceHelpers.findApp("rhel", "policies");

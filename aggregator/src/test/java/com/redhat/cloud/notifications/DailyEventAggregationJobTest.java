@@ -41,6 +41,7 @@ import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -86,6 +87,8 @@ class DailyEventAggregationJobTest {
         helpers.purgeEventAggregations();
         initAggregationParameters();
         when(aggregatorConfig.isAggregationBasedOnEventEnabled()).thenReturn(true);
+        when(aggregatorConfig.isAggregationBasedOnEventEnabledByOrgId(anyString())).thenReturn(true);
+
         baseReferenceTime = dailyEmailAggregationJob.computeScheduleExecutionTime();
 
         when(dailyEmailAggregationJob.computeScheduleExecutionTime()).thenReturn(baseReferenceTime);

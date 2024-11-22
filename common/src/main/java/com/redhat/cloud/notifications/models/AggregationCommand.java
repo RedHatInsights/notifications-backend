@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.models;
 
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class AggregationCommand<T extends EmailAggregationKey> {
 
@@ -46,6 +47,23 @@ public class AggregationCommand<T extends EmailAggregationKey> {
 
     public String getOrgId() {
         return aggregationKey.getOrgId();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AggregationCommand<?> that = (AggregationCommand<?>) o;
+        return Objects.equals(aggregationKey, that.aggregationKey) && Objects.equals(start, that.start) && Objects.equals(end, that.end) && subscriptionType == that.subscriptionType;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(aggregationKey, start, end, subscriptionType);
     }
 
     public String toString() {

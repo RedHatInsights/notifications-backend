@@ -31,16 +31,15 @@ public class EventAggregationCriteria extends EmailAggregationKey {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        EventAggregationCriteria that = (EventAggregationCriteria) o;
-        return Objects.equals(getOrgId(), that.getOrgId()) && Objects.equals(bundleId, that.bundleId) && Objects.equals(applicationId, that.applicationId);
+        EmailAggregationKey that = (EmailAggregationKey) o;
+        return Objects.equals(getOrgId(), that.getOrgId()) &&
+            Objects.equals(getBundle(), that.getBundle()) &&
+            Objects.equals(getApplication(), that.getApplication());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOrgId(), bundleId, applicationId);
+        return Objects.hash(getOrgId(), getBundle(), getApplication());
     }
 
     @Override
