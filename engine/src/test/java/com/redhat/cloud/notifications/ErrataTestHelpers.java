@@ -35,7 +35,8 @@ public class ErrataTestHelpers {
                 .withPayload(
                     new Payload.PayloadBuilder()
                         .withAdditionalProperty("id", "RHSA-2024:2106")
-                        .withAdditionalProperty("synopsis", "Moderate: Red Hat build of Quarkus 3.8.4 release")
+                        .withAdditionalProperty("severity", "Moderate")
+                        .withAdditionalProperty("synopsis", "Red Hat build of Quarkus 3.8.4 release")
                         .build()
                 )
                 .build(),
@@ -44,7 +45,8 @@ public class ErrataTestHelpers {
                 .withPayload(
                     new Payload.PayloadBuilder()
                         .withAdditionalProperty("id", "RHSA-2024:3842")
-                        .withAdditionalProperty("synopsis", "Low: c-ares security update")
+                        .withAdditionalProperty("severity", "Important")
+                        .withAdditionalProperty("synopsis", "c-ares security update")
                         .build()
                 )
                 .build(),
@@ -53,7 +55,8 @@ public class ErrataTestHelpers {
                 .withPayload(
                     new Payload.PayloadBuilder()
                         .withAdditionalProperty("id", "RHSA-2024:3843")
-                        .withAdditionalProperty("synopsis", "Moderate: cockpit security update")
+                        .withAdditionalProperty("severity", "Low")
+                        .withAdditionalProperty("synopsis", "cockpit security update")
                         .build()
                 )
                 .build()
