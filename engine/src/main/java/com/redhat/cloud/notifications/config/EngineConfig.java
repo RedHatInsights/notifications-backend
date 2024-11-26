@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
-import com.redhat.cloud.notifications.unleash.UnleashConfigSource;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
@@ -256,7 +256,7 @@ public class EngineConfig {
 
     public boolean isAggregationBasedOnEventEnabled(final String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(fetchAggregationBasedOnEvents, UnleashConfigSource.buildUnleashContextWithOrgId(orgId), false);
+            return unleash.isEnabled(fetchAggregationBasedOnEvents, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
         } else {
             return false;
         }

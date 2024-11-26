@@ -53,7 +53,7 @@ public class EmailAggregationRepository {
         LocalDateTime currentTimeTwoDaysAgo = now.minusDays(2);
         String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, acp.lastRun, bu.name, ap.name FROM Event ev " +
             "join Application ap on ev.applicationId = ap.id join Bundle bu on ev.bundleId = bu.id " +
-            "left join AggregationOrgConfig acp on ev.orgId = acp.orgId " +
+            "join AggregationOrgConfig acp on ev.orgId = acp.orgId " +
             "WHERE ev.orgId in (SELECT DISTINCT es.id.orgId FROM EventTypeEmailSubscription es where es.id.subscriptionType='DAILY' and es.subscribed = true) " +
             "AND ev.created > acp.lastRun AND ev.created > :twoDaysAgo AND ev.created <= :now " +
             "AND :nowTime = acp.scheduledExecutionTime";
@@ -66,7 +66,7 @@ public class EmailAggregationRepository {
         return records.stream()
             .map(emailAggregationRecord -> new AggregationCommand<>(
                 new EventAggregationCriteria((String) emailAggregationRecord[0], (UUID) emailAggregationRecord[1], (UUID) emailAggregationRecord[2], (String) emailAggregationRecord[4], (String) emailAggregationRecord[5]),
-                ((LocalDateTime) emailAggregationRecord[3]).isBefore(currentTimeTwoDaysAgo) ? ((LocalDateTime) emailAggregationRecord[3]) : currentTimeTwoDaysAgo,
+                ((LocalDateTime) emailAggregationRecord[3]).isBefore(currentTimeTwoDaysAgo) ? currentTimeTwoDaysAgo : ((LocalDateTime) emailAggregationRecord[3]),
                 now,
                 DAILY
             ))

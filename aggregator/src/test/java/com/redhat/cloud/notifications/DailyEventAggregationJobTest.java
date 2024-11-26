@@ -187,15 +187,59 @@ class DailyEventAggregationJobTest {
         checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application");
     }
 
-    private void checkAggCommand(List<AggregationCommand<EventAggregationCriteria>> commands, String orgId, String bundleName, String applicationName) {
-        Application application = resourceHelpers.findApp(bundleName, applicationName);
+    @Test
+    void shouldNotStartBeforeThanTwoDays() {
+        LocalTime now = baseReferenceTime.toLocalTime();
+        addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        addEventEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(now);
+        someOrgIdToProceed.setScheduledExecutionTime(baseReferenceTime.toLocalTime());
+        someOrgIdToProceed.setLastRun(baseReferenceTime.minusDays(5));
+        helpers.addAggregationOrgConfig(someOrgIdToProceed);
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        List<AggregationCommand<EventAggregationCriteria>> listCommand = getRecordsFromKafka();
+        assertEquals(2, listCommand.size());
+
+        final LocalDateTime expectedStartTime = LocalDateTime.now(UTC)
+            .withHour(baseReferenceTime.getHour())
+            .withMinute(baseReferenceTime.getMinute())
+            .withSecond(baseReferenceTime.getSecond())
+            .withNano(baseReferenceTime.getNano())
+            .minusDays(2);
+
+        checkAggCommand(listCommand, "someOrgId", "rhel", "policies", expectedStartTime);
+        checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application", expectedStartTime);
+    }
+
+    private void checkAggCommand(final List<AggregationCommand<EventAggregationCriteria>> commands, final String orgId, final String bundleName, final String applicationName, final LocalDateTime expectedStartDate) {
+        final Application application = resourceHelpers.findApp(bundleName, applicationName);
+
+        final LocalDateTime expectedEndDate = LocalDateTime.now(UTC)
+            .withHour(baseReferenceTime.getHour())
+            .withMinute(baseReferenceTime.getMinute())
+            .withSecond(baseReferenceTime.getSecond())
+            .withNano(baseReferenceTime.getNano());
 
         assertTrue(commands.stream().anyMatch(
             com -> orgId.equals(com.getAggregationKey().getOrgId()) &&
                 application.getBundleId().equals(((EventAggregationCriteria) com.getAggregationKey()).getBundleId()) &&
                 application.getId().equals(((EventAggregationCriteria) com.getAggregationKey()).getApplicationId()) &&
-                DAILY.equals(com.getSubscriptionType())
-            ));
+                DAILY.equals(com.getSubscriptionType()) &&
+                com.getStart().isEqual(expectedStartDate) &&
+                com.getEnd().isEqual(expectedEndDate)
+        ));
+    }
+
+    private void checkAggCommand(final List<AggregationCommand<EventAggregationCriteria>> commands, final String orgId, final String bundleName, final String applicationName) {
+        final LocalDateTime expectedStartTime = LocalDateTime.now(UTC)
+            .withHour(baseReferenceTime.getHour())
+            .withMinute(baseReferenceTime.getMinute())
+            .withSecond(baseReferenceTime.getSecond())
+            .withNano(baseReferenceTime.getNano())
+            .minusDays(1);
+        checkAggCommand(commands, orgId, bundleName, applicationName, expectedStartTime);
     }
 
     @Test

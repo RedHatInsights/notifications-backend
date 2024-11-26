@@ -154,7 +154,7 @@ public class DailyEmailAggregationJob {
             if (!differences.isEmpty()) {
                 Log.warnf("Fetching aggregation from legacy way have more record than the events way:");
                 for (AggregationCommand differencesCommand : differences) {
-                    Log.info(differencesCommand.toString() + differencesCommand.getAggregationKey().hashCode());
+                    Log.info(differencesCommand.toString());
                 }
             }
 
@@ -165,7 +165,7 @@ public class DailyEmailAggregationJob {
             if (!differences.isEmpty()) {
                 Log.warnf("Fetching aggregation from events have more record than the legacy way:");
                 for (AggregationCommand differencesCommand : differences) {
-                    Log.info(differencesCommand.toString() + differencesCommand.getAggregationKey().hashCode());
+                    Log.info(differencesCommand.toString());
                 }
             }
 
