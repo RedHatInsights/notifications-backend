@@ -218,7 +218,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             return;
         }
 
-        final String bundle  = aggregationCommands.get(0).getAggregationKey().getBundle();
+        final String bundle = aggregationCommands.get(0).getAggregationKey().getBundle();
 
         processedAggregationCommandCount.increment(aggregationCommands.size());
         try {

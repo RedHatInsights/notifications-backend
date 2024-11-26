@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
@@ -52,6 +53,7 @@ public class EngineConfig {
     private String asyncEventProcessingToggle;
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
+    private String fetchAggregationBasedOnEvents;
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleDirectEndpointToEventTypeDryRunEnabled;
     private String toggleUseDirectEndpointToEventTypeEnabled;
@@ -154,6 +156,7 @@ public class EngineConfig {
         asyncEventProcessingToggle = toggleRegistry.register("async-event-processing", true);
         drawerToggle = toggleRegistry.register("drawer", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
+        fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events", true);
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
         toggleDirectEndpointToEventTypeDryRunEnabled = toggleRegistry.register("endpoint-to-event-type-dry-run", true);
         toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
@@ -249,6 +252,14 @@ public class EngineConfig {
 
     public boolean isSecuredEmailTemplatesEnabled() {
         return useSecuredEmailTemplates;
+    }
+
+    public boolean isAggregationBasedOnEventEnabled(final String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(fetchAggregationBasedOnEvents, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
     }
 
     @Deprecated(forRemoval = true)

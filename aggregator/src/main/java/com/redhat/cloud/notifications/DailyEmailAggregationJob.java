@@ -74,9 +74,14 @@ public class DailyEmailAggregationJob {
         Gauge.Timer durationTimer = duration.startTimer();
 
         try {
-            LocalDateTime now = LocalDateTime.now(UTC);
+            // get targeted schedule execution time
+            LocalDateTime now = computeScheduleExecutionTime();
 
-            aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
+            if (aggregatorConfig.isAggregationBasedOnEventEnabled()) {
+                aggregationOrgConfigRepository.createMissingDefaultConfigurationBasedOnEvent(defaultDailyDigestTime);
+            } else {
+                aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
+            }
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             Log.infof("found %s commands", aggregationCommands.size());
             Log.debugf("Aggregation commands: %s", aggregationCommands);
@@ -84,7 +89,7 @@ public class DailyEmailAggregationJob {
             aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
                 .values().forEach(this::sendIt);
 
-            List<String> orgIdsToUpdate = aggregationCommands.stream().map(agc -> agc.getAggregationKey().getOrgId()).collect(Collectors.toList());
+            List<String> orgIdsToUpdate = aggregationCommands.stream().map(aggregationCommand -> aggregationCommand.getOrgId()).collect(Collectors.toList());
             Log.debugf("Found following org IDs to update: %s", orgIdsToUpdate);
 
             aggregationOrgConfigRepository.updateLastCronJobRunAccordingOrgPref(orgIdsToUpdate, now);
@@ -111,10 +116,65 @@ public class DailyEmailAggregationJob {
         }
     }
 
+
+    /**
+     * Compute targeted schedule execution time local date time.
+     * User can schedule execution time every 15 min.
+     * Event if this job is executed at 05:02, we are looking for schedule executions of 05:00
+     *
+     * @return the local date time
+     */
+    public LocalDateTime computeScheduleExecutionTime() {
+        final LocalDateTime currentTime = LocalDateTime.now(UTC).withSecond(0).withNano(0);
+
+        // correct Time
+        if (currentTime.getMinute() < 15) {
+            return currentTime.withMinute(0);
+        } else if (currentTime.getMinute() < 30) {
+            return currentTime.withMinute(15);
+        } else if (currentTime.getMinute() < 45) {
+            return currentTime.withMinute(30);
+        } else {
+            return currentTime.withMinute(45);
+        }
+    }
+
     List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
-        final List<AggregationCommand> pendingAggregationCommands =
-                emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
+        List<AggregationCommand> pendingAggregationCommands = new ArrayList<>();
+
+        final List<AggregationCommand> pendingAggregationCommandsFromEmailAggregation = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
+        if (aggregatorConfig.isAggregationBasedOnEventEnabled()) {
+            final List<AggregationCommand> pendingAggregationCommandsFromEvents = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(endTime);
+
+            List<AggregationCommand> differences = pendingAggregationCommandsFromEmailAggregation.stream()
+                .filter(element -> !pendingAggregationCommandsFromEvents.contains(element))
+                .collect(Collectors.toList());
+
+            if (!differences.isEmpty()) {
+                Log.warnf("Fetching aggregation from legacy way have more record than the events way:");
+                for (AggregationCommand differencesCommand : differences) {
+                    Log.info(differencesCommand.toString());
+                }
+            }
+
+            differences = pendingAggregationCommandsFromEvents.stream()
+                .filter(element -> !pendingAggregationCommandsFromEmailAggregation.contains(element))
+                .collect(Collectors.toList());
+
+            if (!differences.isEmpty()) {
+                Log.warnf("Fetching aggregation from events have more record than the legacy way:");
+                for (AggregationCommand differencesCommand : differences) {
+                    Log.info(differencesCommand.toString());
+                }
+            }
+
+            pendingAggregationCommands = pendingAggregationCommandsFromEvents.stream().filter(e -> aggregatorConfig.isAggregationBasedOnEventEnabledByOrgId(e.getOrgId())).collect(Collectors.toList());
+            pendingAggregationCommands.addAll(pendingAggregationCommandsFromEmailAggregation.stream().filter(e -> !aggregatorConfig.isAggregationBasedOnEventEnabledByOrgId(e.getOrgId())).collect(Collectors.toList()));
+        } else {
+            pendingAggregationCommands = pendingAggregationCommandsFromEmailAggregation;
+        }
+
         pairsProcessed = Gauge
                 .build()
                 .name("aggregator_job_orgid_application_pairs_processed")
@@ -143,7 +203,7 @@ public class DailyEmailAggregationJob {
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
             .withEventType(EVENT_TYPE_NAME)
-            .withOrgId(aggregationCommands.get(0).getAggregationKey().getOrgId())
+            .withOrgId(aggregationCommands.get(0).getOrgId())
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(eventList)
             .withContext(new Context.ContextBuilder()

@@ -94,6 +94,13 @@
 
         <!-- Test dependencies -->
         <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-flyway</artifactId>
             <scope>test</scope>

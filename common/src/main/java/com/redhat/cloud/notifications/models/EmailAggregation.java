@@ -49,6 +49,16 @@ public class EmailAggregation extends CreationTimestamped {
     @Convert(converter = JsonObjectConverter.class)
     private JsonObject payload;
 
+    public EmailAggregation() {
+    }
+
+    public EmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
+        this.orgId = orgId;
+        this.bundleName = bundleName;
+        this.applicationName = applicationName;
+        this.payload = payload;
+    }
+
     public Integer getId() {
         return id;
     }

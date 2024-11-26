@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
@@ -32,6 +33,7 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
 public class ResourceHelpers {
@@ -136,7 +138,9 @@ public class ResourceHelpers {
 
     @Transactional
     public Event createEvent(Event event) {
-        event.setOrgId(DEFAULT_ORG_ID);
+        if (null == event.getOrgId()) {
+            event.setOrgId(DEFAULT_ORG_ID);
+        }
         event.setAccountId("account-id");
         event.setEventTypeDisplayName(event.getEventType().getDisplayName());
         event.setApplicationId(event.getEventType().getApplication().getId());
@@ -144,6 +148,7 @@ public class ResourceHelpers {
         event.setBundleId(event.getEventType().getApplication().getBundle().getId());
         event.setBundleDisplayName(event.getEventType().getApplication().getBundle().getDisplayName());
         entityManager.persist(event);
+        entityManager.flush();
         return event;
     }
 
@@ -324,6 +329,53 @@ public class ResourceHelpers {
         }
 
         return selectQuery.getResultList();
+    }
+
+    @Transactional
+    public EventTypeEmailSubscription findOrCreateEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType) {
+
+        EventTypeEmailSubscriptionId subscriptionId = new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType);
+        EventTypeEmailSubscription eventTypeEmailSubscription = entityManager.find(EventTypeEmailSubscription.class, subscriptionId);
+        if (eventTypeEmailSubscription == null) {
+            eventTypeEmailSubscription = new EventTypeEmailSubscription();
+            eventTypeEmailSubscription.setId(
+                new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)
+            );
+            eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
+            eventTypeEmailSubscription.setSubscribed(true);
+            entityManager.persist(eventTypeEmailSubscription);
+        }
+        return eventTypeEmailSubscription;
+    }
+
+    public com.redhat.cloud.notifications.models.Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
+        return addEventEmailAggregation(orgId, bundleName, applicationName, payload, true);
+    }
+
+    public com.redhat.cloud.notifications.models.Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload, boolean addUserSubscription) {
+        Application application = findOrCreateApplication(bundleName, applicationName);
+        EventType eventType = findOrCreateEventType(application.getId(), TestHelpers.eventType);
+        if (addUserSubscription) {
+            findOrCreateEventTypeEmailSubscription(orgId, "obiwan", eventType, SubscriptionType.DAILY);
+        }
+
+        com.redhat.cloud.notifications.models.Event event = new com.redhat.cloud.notifications.models.Event();
+        event.setId(UUID.randomUUID());
+        event.setOrgId(orgId);
+        eventType.setApplication(application);
+        event.setEventType(eventType);
+        event.setPayload(payload.toString());
+        event.setCreated(LocalDateTime.now(UTC));
+
+        Event retevent = createEvent(event);
+
+        return retevent;
+    }
+
+    @Transactional
+    public void clearEvents() {
+        entityManager.createQuery("DELETE FROM Event")
+            .executeUpdate();
     }
 
     @Transactional

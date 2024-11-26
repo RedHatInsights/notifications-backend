@@ -42,4 +42,5 @@ public class UnleashConfigSource implements ConfigSource {
     public String getValue(String propertyName) {
         return CONFIG.get(propertyName);
     }
+
 }

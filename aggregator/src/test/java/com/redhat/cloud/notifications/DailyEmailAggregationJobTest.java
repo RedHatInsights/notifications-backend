@@ -95,7 +95,7 @@ class DailyEmailAggregationJobTest {
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        testee.setDefaultDailyDigestTime(LocalTime.now(ZoneOffset.UTC));
+        testee.setDefaultDailyDigestTime(testee.computeScheduleExecutionTime().toLocalTime());
 
         testee.processDailyEmail();
 
@@ -109,7 +109,7 @@ class DailyEmailAggregationJobTest {
 
     @Test
     void shouldSentTwoAggregationsToKafkaTopic() {
-        LocalTime now = LocalTime.now(ZoneOffset.UTC);
+        LocalTime now = testee.computeScheduleExecutionTime().toLocalTime();
         helpers.addEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
@@ -138,7 +138,7 @@ class DailyEmailAggregationJobTest {
 
         // Finally add preferences for org id someOrgId at the right Time
         helpers.purgeAggregationOrgConfig();
-        someOrgIdToProceed.setScheduledExecutionTime(LocalTime.now(ZoneOffset.UTC));
+        someOrgIdToProceed.setScheduledExecutionTime(testee.computeScheduleExecutionTime().toLocalTime());
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
         LocalDateTime lastRun = someOrgIdToProceed.getLastRun();
         testee.processDailyEmail();
@@ -274,7 +274,7 @@ class DailyEmailAggregationJobTest {
 
         assertEquals(1, emailAggregations.size());
 
-        final AggregationCommand aggregationCommand = emailAggregations.get(0);
+        final AggregationCommand aggregationCommand = (AggregationCommand) emailAggregations.get(0);
         assertEquals("someOrgId", aggregationCommand.getAggregationKey().getOrgId());
         assertEquals("rhel", aggregationCommand.getAggregationKey().getBundle());
         assertEquals("policies", aggregationCommand.getAggregationKey().getApplication());
