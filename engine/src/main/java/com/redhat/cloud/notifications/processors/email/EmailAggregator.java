@@ -96,7 +96,7 @@ public class EmailAggregator {
                 .getUnsubscribersByEventType(aggregationKey.getOrgId(), appId, subscriptionType);
 
         if (engineConfig.isAggregationBasedOnEventEnabled(aggregationKey.getOrgId()) && aggregationKey instanceof EventAggregationCriteria eventAggregationCriteria) {
-            Log.infof("Pocessing aggregation for %s based on event table", aggregationKey.getOrgId());
+            Log.infof("Processing aggregation for %s based on event table", aggregationKey.getOrgId());
             aggregationBasedOnEvent(eventAggregationCriteria, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
         } else {
             aggregationBasedOnEmailAggregation(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
