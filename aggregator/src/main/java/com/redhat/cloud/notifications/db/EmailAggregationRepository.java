@@ -54,7 +54,7 @@ public class EmailAggregationRepository {
         String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, acp.lastRun, bu.name, ap.name FROM Event ev " +
             "join Application ap on ev.applicationId = ap.id join Bundle bu on ev.bundleId = bu.id " +
             "join AggregationOrgConfig acp on ev.orgId = acp.orgId " +
-            "WHERE ev.orgId in (SELECT DISTINCT es.id.orgId FROM EventTypeEmailSubscription es where es.id.subscriptionType='DAILY' and es.subscribed = true) " +
+            "WHERE EXISTS (SELECT 1 FROM EventTypeEmailSubscription es where ev.orgId = es.id.orgId and es.id.subscriptionType='DAILY' and es.subscribed = true) " +
             "AND ev.created > acp.lastRun AND ev.created > :twoDaysAgo AND ev.created <= :now " +
             "AND :nowTime = acp.scheduledExecutionTime";
         Query hqlQuery = entityManager.createQuery(query)
