@@ -27,7 +27,6 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "id": 951332,
       "links": [
         {
           "asDropdown": false,
@@ -4274,7 +4273,7 @@ data:
         {
           "datasource": {
             "type": "cloudwatch",
-            "uid": "PD4288CE6A02EB473"
+            "uid": "$rds_datasource"
           },
           "description": "",
           "fieldConfig": {
@@ -4359,7 +4358,7 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
                 "DBInstanceIdentifier": "notifications-backend-prod"
@@ -4387,7 +4386,7 @@ data:
         {
           "datasource": {
             "type": "cloudwatch",
-            "uid": "PD4288CE6A02EB473"
+            "uid": "$rds_datasource"
           },
           "description": "The freeable memory is the amount of memory available in the RDS instance. A low freeable memory value and a high swap value might signal that the instance needs to be upgraded.",
           "fieldConfig": {
@@ -6874,8 +6873,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -7041,8 +7039,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -7209,8 +7206,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -7376,8 +7372,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -7560,8 +7555,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -7654,8 +7648,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -7748,8 +7741,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -7840,8 +7832,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -7933,8 +7924,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -8026,8 +8016,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -8128,8 +8117,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -8257,8 +8245,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -8368,8 +8355,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -8466,8 +8452,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -8663,8 +8648,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -8764,8 +8748,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -8857,8 +8840,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -9710,7 +9692,7 @@ data:
           "type": "timeseries"
         }
       ],
-      "refresh": "30s",
+      "refresh": "15m",
       "schemaVersion": 39,
       "tags": [
         "notifications"
@@ -9719,7 +9701,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "crcs02ue1-prometheus",
               "value": "crcs02ue1-prometheus"
             },
@@ -9746,6 +9728,34 @@ data:
               }
             ],
             "query": "insights-perf-prometheus, crcs02ue1-prometheus, crcp01ue1-prometheus",
+            "queryValue": "",
+            "skipUrlSync": false,
+            "type": "custom"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": "prod",
+              "value": "PD4288CE6A02EB473"
+            },
+            "hide": 0,
+            "includeAll": false,
+            "label": "RDS",
+            "multi": false,
+            "name": "rds_datasource",
+            "options": [
+              {
+                "selected": false,
+                "text": "stage",
+                "value": "PB2EEA3F591968575"
+              },
+              {
+                "selected": true,
+                "text": "prod",
+                "value": "PD4288CE6A02EB473"
+              }
+            ],
+            "query": "stage, prod",
             "queryValue": "",
             "skipUrlSync": false,
             "type": "custom"
@@ -9784,7 +9794,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 3,
+      "version": 1,
       "weekStart": ""
     }
 kind: ConfigMap
