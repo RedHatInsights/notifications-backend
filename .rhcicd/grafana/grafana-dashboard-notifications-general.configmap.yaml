@@ -4318,8 +4318,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -4431,8 +4430,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -4467,10 +4465,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "id": "",
@@ -4491,10 +4489,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "hide": false,
@@ -4520,7 +4518,7 @@ data:
         {
           "datasource": {
             "type": "cloudwatch",
-            "uid": "PD4288CE6A02EB473"
+            "uid": "$rds_datasource"
           },
           "description": "Shows the databases read operations, the write operations, and the burst balance we currently have available.",
           "fieldConfig": {
@@ -4568,8 +4566,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -4592,12 +4589,12 @@ data:
             {
               "targetBlank": true,
               "title": "Database's IOPS and throughput details",
-              "url": "https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=notifications-backend-prod;is-cluster=false;tab=configuration"
+              "url": "https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=$dbinstanceidentifier;is-cluster=false;tab=configuration"
             },
             {
               "targetBlank": true,
               "title": "View in CloudWatch",
-              "url": "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~(title~'EBS*20IO*20operations~metrics~(~(~'AWS*2fRDS~'ReadIOPS~'DBInstanceIdentifier~'notifications-backend-prod~(region~'us-east-1~label~'ReadIOPS~id~'m1~color~'*231f77b4))~(~'.~'WriteIOPS~'.~'.~(region~'us-east-1~label~'WriteIOPS~id~'m2~color~'*23ff7f0e)))~stacked~true~region~'us-east-1~view~'timeSeries~stat~'Average~period~60~yAxis~(left~(min~0~label~'Per*20second~showUnits~false))~annotations~(horizontal~(~(label~'Current*20Provisioned*20IOPS~value~3000)))~start~'-PT168H~end~'P0D)"
+              "url": "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~(title~'EBS*20IO*20operations~metrics~(~(~'AWS*2fRDS~'ReadIOPS~'DBInstanceIdentifier~'$dbinstanceidentifier~(region~'us-east-1~label~'ReadIOPS~id~'m1~color~'*231f77b4))~(~'.~'WriteIOPS~'.~'.~(region~'us-east-1~label~'WriteIOPS~id~'m2~color~'*23ff7f0e)))~stacked~true~region~'us-east-1~view~'timeSeries~stat~'Average~period~60~yAxis~(left~(min~0~label~'Per*20second~showUnits~false))~annotations~(horizontal~(~(label~'Current*20Provisioned*20IOPS~value~3000)))~start~'-PT168H~end~'P0D)"
             }
           ],
           "options": {
@@ -4621,10 +4618,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "id": "",
@@ -4645,10 +4642,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "hide": false,
@@ -4690,7 +4687,7 @@ data:
         {
           "datasource": {
             "type": "cloudwatch",
-            "uid": "PD4288CE6A02EB473"
+            "uid": "$rds_datasource"
           },
           "description": "Shows the current free available storage space for the database.",
           "fieldConfig": {
@@ -4735,8 +4732,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -4771,10 +4767,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "id": "",
@@ -4799,7 +4795,7 @@ data:
         {
           "datasource": {
             "type": "cloudwatch",
-            "uid": "PD4288CE6A02EB473"
+            "uid": "$rds_datasource"
           },
           "description": "Shows the current throughput of the database.",
           "fieldConfig": {
@@ -4844,8 +4840,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -4868,12 +4863,12 @@ data:
             {
               "targetBlank": true,
               "title": "Database's IOPS and throughput details",
-              "url": "https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=notifications-backend-prod;is-cluster=false;tab=configuration"
+              "url": "https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#database:id=$dbinstanceidentifier;is-cluster=false;tab=configuration"
             },
             {
               "targetBlank": true,
               "title": "View in CloudWatch",
-              "url": "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~(metrics~(~(~'AWS*2fRDS~'WriteThroughput~'DBInstanceIdentifier~'notifications-backend-prod~(color~'*239467bd))~(~'.~'ReadThroughput~'.~'.~(color~'*23ff7f0e)))~title~'EBS*20IO*20operations~stacked~true~region~'us-east-1~view~'timeSeries~stat~'Average~period~60~yAxis~(left~(min~0~label~'Per*20second~showUnits~false))~annotations~(horizontal~(~(label~'Maximum*20throughput~value~125000000)))~start~'-PT168H~end~'P0D)&query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20ReadThroughput"
+              "url": "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#metricsV2?graph=~(metrics~(~(~'AWS*2fRDS~'WriteThroughput~'DBInstanceIdentifier~'$dbinstanceidentifier~(color~'*239467bd))~(~'.~'ReadThroughput~'.~'.~(color~'*23ff7f0e)))~title~'EBS*20IO*20operations~stacked~true~region~'us-east-1~view~'timeSeries~stat~'Average~period~60~yAxis~(left~(min~0~label~'Per*20second~showUnits~false))~annotations~(horizontal~(~(label~'Maximum*20throughput~value~125000000)))~start~'-PT168H~end~'P0D)&query=~'*7bAWS*2fRDS*2cDBInstanceIdentifier*7d*20ReadThroughput"
             }
           ],
           "options": {
@@ -4896,10 +4891,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "id": "",
@@ -4920,10 +4915,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "hide": false,
@@ -4966,7 +4961,7 @@ data:
         {
           "datasource": {
             "type": "cloudwatch",
-            "uid": "PD4288CE6A02EB473"
+            "uid": "$rds_datasource"
           },
           "description": "Shows the number of active database connections.",
           "fieldConfig": {
@@ -5012,8 +5007,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -5048,10 +5042,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "id": "",
@@ -5076,7 +5070,7 @@ data:
         {
           "datasource": {
             "type": "cloudwatch",
-            "uid": "PD4288CE6A02EB473"
+            "uid": "$rds_datasource"
           },
           "description": "Shows the latency of the read and write operations.",
           "fieldConfig": {
@@ -5125,8 +5119,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -5165,10 +5158,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "id": "",
@@ -5189,10 +5182,10 @@ data:
             {
               "datasource": {
                 "type": "cloudwatch",
-                "uid": "PD4288CE6A02EB473"
+                "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "hide": false,
@@ -5276,8 +5269,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -5424,8 +5416,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -5571,8 +5562,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -5665,8 +5655,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               },
@@ -9726,7 +9715,7 @@ data:
           },
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "AWS insights-prod",
               "value": "AWS insights-prod"
             },
@@ -9754,9 +9743,9 @@ data:
           },
           {
             "current": {
-              "selected": true,
-              "text": "notifications-backend-prod",
-              "value": "notifications-backend-prod"
+              "selected": false,
+              "text": "$dbinstanceidentifier",
+              "value": "$dbinstanceidentifier"
             },
             "datasource": {
               "uid": "$rds_datasource"
@@ -9817,7 +9806,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 2,
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap
