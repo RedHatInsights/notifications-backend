@@ -9726,12 +9726,12 @@ data:
             "name": "rds_datasource",
             "options": [
               {
-                "selected": true,
+                "selected": false,
                 "text": "AWS insights-prod",
                 "value": "AWS insights-prod"
               },
               {
-                "selected": false,
+                "selected": true,
                 "text": "AWS insights-stage",
                 "value": "AWS insights-stage"
               }
