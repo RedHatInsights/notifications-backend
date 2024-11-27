@@ -4361,7 +4361,7 @@ data:
                 "uid": "$rds_datasource"
               },
               "dimensions": {
-                "DBInstanceIdentifier": "notifications-backend-prod"
+                "DBInstanceIdentifier": "$dbinstanceidentifier"
               },
               "expression": "",
               "id": "",
@@ -5843,8 +5843,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -5951,8 +5950,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -6044,8 +6042,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -6106,8 +6103,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "text",
-                    "value": null
+                    "color": "text"
                   }
                 ]
               },
@@ -6214,8 +6210,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -6361,8 +6356,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -6529,8 +6523,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -6697,8 +6690,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   }
                 ]
               }
@@ -9701,7 +9693,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "crcs02ue1-prometheus",
               "value": "crcs02ue1-prometheus"
             },
@@ -9735,8 +9727,8 @@ data:
           {
             "current": {
               "selected": true,
-              "text": "prod",
-              "value": "PD4288CE6A02EB473"
+              "text": "AWS insights-prod",
+              "value": "AWS insights-prod"
             },
             "hide": 0,
             "includeAll": false,
@@ -9745,20 +9737,51 @@ data:
             "name": "rds_datasource",
             "options": [
               {
-                "selected": false,
-                "text": "stage",
-                "value": "PB2EEA3F591968575"
+                "selected": true,
+                "text": "AWS insights-prod",
+                "value": "AWS insights-prod"
               },
               {
-                "selected": true,
-                "text": "prod",
-                "value": "PD4288CE6A02EB473"
+                "selected": false,
+                "text": "AWS insights-stage",
+                "value": "AWS insights-stage"
               }
             ],
-            "query": "stage, prod",
+            "query": "AWS insights-prod , AWS insights-stage",
             "queryValue": "",
             "skipUrlSync": false,
             "type": "custom"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": "notifications-backend-prod",
+              "value": "notifications-backend-prod"
+            },
+            "datasource": {
+              "uid": "$rds_datasource"
+            },
+            "definition": "",
+            "hide": 0,
+            "includeAll": false,
+            "label": "DBInstanceIdentifier",
+            "multi": false,
+            "name": "dbinstanceidentifier",
+            "options": [],
+            "query": {
+              "dimensionFilters": {},
+              "dimensionKey": "DBInstanceIdentifier",
+              "metricName": "CPUUtilization",
+              "namespace": "AWS/RDS",
+              "queryType": "dimensionValues",
+              "refId": "CloudWatchVariableQueryEditor-VariableQuery",
+              "region": "default"
+            },
+            "refresh": 1,
+            "regex": "/notifications/",
+            "skipUrlSync": false,
+            "sort": 0,
+            "type": "query"
           }
         ]
       },
@@ -9794,7 +9817,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 1,
+      "version": 2,
       "weekStart": ""
     }
 kind: ConfigMap
