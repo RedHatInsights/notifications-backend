@@ -21,10 +21,10 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
 
     const actionOption = [
         <FormSelectOption key='choose action' isPlaceholder label='Choose an action' />,
-        <FormSelectOption key='email-all' label='Send an email to Users: All' value='email-all' />,
-        <FormSelectOption key='email-admin' label='Send an email to Users: Admins' value='email-admin' />,
         <FormSelectOption key='drawer-all' label='Send a drawer notification to Users: All' value='drawer-all' />,
-        <FormSelectOption key='drawer-admin' label='Send a drawer notification to Users: Admins' value='drawer-admin' />
+        <FormSelectOption key='drawer-admin' label='Send a drawer notification to Users: Admins' value='drawer-admin' />,
+        <FormSelectOption key='email-all' label='Send an email to Users: All' value='email-all' />,
+        <FormSelectOption key='email-admin' label='Send an email to Users: Admins' value='email-admin' />
     ];
 
     const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>
