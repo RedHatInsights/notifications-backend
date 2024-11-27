@@ -34,11 +34,11 @@ objects:
       podSpec:
         resources:
           requests:
-            cpu: 100m
-            memory: 100Mi
+            cpu: ${DB_CLEANER_CPU_REQUEST}
+            memory: ${DB_CLEANER_MEMORY_REQUEST}
           limits:
-            cpu: 200m
-            memory: 200Mi
+            cpu: ${DB_CLEANER_CPU_LIMIT}
+            memory: ${DB_CLEANER_MEMORY_LIMIT}
         image: quay.io/cloudservices/postgresql-rds:12
         volumes:
           - name: notifications-db-cleaner-volume
@@ -242,6 +242,18 @@ parameters:
 - name: DB_CLEANER_SCHEDULE
   description: Execution time specified in cron format
   value: "0 */6 * * *"
+- name: DB_CLEANER_CPU_LIMIT
+  description: CPU limit of the DB cleaner Cronjob
+  value: 200m
+- name: DB_CLEANER_CPU_REQUEST
+  description: CPU requested by the DB cleaner Cronjob
+  value: 100m
+- name: DB_CLEANER_MEMORY_LIMIT
+  description: Memory limit of the DB cleaner Cronjob
+  value: 200Mi
+- name: DB_CLEANER_MEMORY_REQUEST
+  description: Memory requested by the DB cleaner Cronjob
+  value: 100Mi
 - name: DISABLE_DB_CLEANER
   description: Should the DB cleaner CronJob be disabled?
   value: "false"
