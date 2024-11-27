@@ -14,7 +14,6 @@ import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.Status;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -86,9 +85,5 @@ public class DbCleaner {
         eventType.setDisplayName(DEFAULT_EVENT_TYPE_DISPLAY_NAME);
         eventType.setDescription(DEFAULT_EVENT_TYPE_DESCRIPTION);
         applicationRepository.createEventType(eventType);
-
-        entityManager.createQuery("UPDATE CurrentStatus SET status = :status")
-                .setParameter("status", Status.UP)
-                .executeUpdate();
     }
 }
