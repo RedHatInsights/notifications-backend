@@ -30,6 +30,9 @@ public class RecipientsResolverResponseProcessor implements Processor {
         final String body = exchange.getMessage().getBody(String.class);
         final List<DrawerUser> recipientsList = Arrays.asList(this.objectMapper.readValue(body, DrawerUser[].class));
 
-        exchange.setProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, recipientsList.stream().map(DrawerUser::getUsername).collect(Collectors.toSet()));
+        exchange.setProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, recipientsList.stream()
+            .map(DrawerUser::getUsername)
+            .filter(userName -> userName != null && !userName.trim().isEmpty())
+            .collect(Collectors.toSet()));
     }
 }
