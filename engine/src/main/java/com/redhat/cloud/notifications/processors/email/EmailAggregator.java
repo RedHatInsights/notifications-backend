@@ -161,7 +161,7 @@ public class EmailAggregator {
                     unsubscribers,
                     eventType.isSubscribedByDefault(),
                     externalAuthorizationCriteria
-                );
+                ).stream().filter(user -> user.getEmail() != null && !user.getEmail().isBlank()).collect(toSet());
 
                 /*
                  * We now have the final recipients list.
@@ -224,7 +224,7 @@ public class EmailAggregator {
                     unsubscribers,
                     eventType.isSubscribedByDefault(),
                     externalAuthorizationCriterion
-                );
+                ).stream().filter(user -> user.getEmail() != null && !user.getEmail().isBlank()).collect(toSet());
 
                 /*
                  * We now have the final recipients list.

@@ -32,7 +32,7 @@ public class RecipientsResolverResponseProcessor implements Processor {
 
         exchange.setProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, recipientsList.stream()
             .map(DrawerUser::getUsername)
-            .filter(userName -> userName != null && !userName.trim().isEmpty())
+            .filter(userName -> userName != null && !userName.isBlank())
             .collect(Collectors.toSet()));
     }
 }
