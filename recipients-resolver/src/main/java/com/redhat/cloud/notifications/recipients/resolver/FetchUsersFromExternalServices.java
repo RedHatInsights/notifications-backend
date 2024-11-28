@@ -253,12 +253,11 @@ public class FetchUsersFromExternalServices {
 
             if (itUserResponse.accountRelationships.get(0).emails == null) {
                 Log.infof("Skipping user account id: %s with username: %s because it don't have any email addresses", user.getId(), user.getUsername());
-                continue;
-            }
-
-            for (Email email : itUserResponse.accountRelationships.get(0).emails) {
-                if (email != null && email.isPrimary != null && email.isPrimary) {
-                    user.setEmail(email.address);
+            } else {
+                for (Email email : itUserResponse.accountRelationships.get(0).emails) {
+                    if (email != null && email.isPrimary != null && email.isPrimary) {
+                        user.setEmail(email.address);
+                    }
                 }
             }
 
