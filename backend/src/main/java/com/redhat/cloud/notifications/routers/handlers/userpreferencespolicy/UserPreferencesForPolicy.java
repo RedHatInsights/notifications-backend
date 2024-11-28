@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.userpreferencespolicy;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
@@ -31,6 +32,11 @@ public class UserPreferencesForPolicy {
 
     @Inject
     BackendConfig backendConfig;
+
+    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
+    public static class V1 extends UserPreferencesForPolicy {
+
+    }
 
     @GET
     @Path("/notification-preference/{bundleName}/{applicationName}")

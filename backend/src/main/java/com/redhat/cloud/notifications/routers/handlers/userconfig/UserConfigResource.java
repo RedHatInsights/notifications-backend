@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
@@ -66,6 +67,11 @@ public class UserConfigResource {
 
     @Inject
     BackendConfig backendConfig;
+
+    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
+    public static class V1 extends UserConfigResource {
+
+    }
 
     @POST
     @Path("/notification-event-type-preference")
