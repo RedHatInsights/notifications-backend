@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.kessel.KesselAssets;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
@@ -32,6 +33,7 @@ import com.redhat.cloud.notifications.models.dto.v1.ApplicationDTO;
 import com.redhat.cloud.notifications.models.dto.v1.BundleDTO;
 import com.redhat.cloud.notifications.models.dto.v1.CommonMapper;
 import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
+import com.redhat.cloud.notifications.models.dto.v1.NotificationHistoryDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
@@ -90,6 +92,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -154,6 +157,58 @@ public class EndpointResource {
      */
     @Inject
     SecretUtils secretUtils;
+
+    @Path(Constants.API_INTEGRATIONS_V_1_0 + "/endpoints")
+    static class V1 extends EndpointResource {
+
+        @GET
+        @Path("/{id}/history")
+        @Produces(APPLICATION_JSON)
+        @Parameters({
+            @Parameter(
+                name = "limit",
+                in = ParameterIn.QUERY,
+                description = "Number of items per page, if not specified or 0 is used, returns a maximum of " + MAX_NOTIFICATION_HISTORY_RESULTS + " elements.",
+                schema = @Schema(type = SchemaType.INTEGER)
+                ),
+            @Parameter(
+                name = "pageNumber",
+                in = ParameterIn.QUERY,
+                description = "Page number. Starts at first page (0), if not specified starts at first page.",
+                schema = @Schema(type = SchemaType.INTEGER)
+                ),
+            @Parameter(
+                name = "includeDetail",
+                description = "Include the detail in the reply",
+                schema = @Schema(type = SchemaType.BOOLEAN)
+                )
+        })
+        public List<NotificationHistoryDTO> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @BeanParam Query query) {
+            if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
+                this.kesselAuthorization.hasPermissionOnIntegration(sec, IntegrationPermission.VIEW_HISTORY, id);
+
+                return this.internalGetEndpointHistory(sec, id, includeDetail, query);
+            } else {
+                return this.legacyRBACGetEndpointHistory(sec, id, includeDetail, query);
+            }
+        }
+
+        @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
+        protected List<NotificationHistoryDTO> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, final Query query) {
+            return this.internalGetEndpointHistory(securityContext, id, includeDetail, query);
+        }
+
+        protected List<NotificationHistoryDTO> internalGetEndpointHistory(final SecurityContext securityContext, final UUID id, final Boolean includeDetail, @Valid final Query query) {
+            if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(securityContext))) {
+                throw new NotFoundException("Endpoint not found");
+            }
+
+            // TODO We need globally limitations (Paging support and limits etc)
+            String orgId = getOrgId(securityContext);
+            boolean doDetail = includeDetail != null && includeDetail;
+            return commonMapper.notificationHistoryListToNotificationHistoryDTOList(notificationRepository.getNotificationHistory(orgId, id, doDetail, query));
+        }
+    }
 
     @GET
     @Produces(APPLICATION_JSON)

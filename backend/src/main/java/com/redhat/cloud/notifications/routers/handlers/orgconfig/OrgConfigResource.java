@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.orgconfig;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
@@ -54,6 +55,11 @@ public class OrgConfigResource {
 
     @ConfigProperty(name = "notifications.default.daily.digest.time", defaultValue = "00:00")
     LocalTime defaultDailyDigestTime;
+
+    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
+    static class V1 extends OrgConfigResource {
+
+    }
 
     @APIResponse(responseCode = "204")
     @APIResponse(responseCode = "400", description = "Invalid minute value specified")
