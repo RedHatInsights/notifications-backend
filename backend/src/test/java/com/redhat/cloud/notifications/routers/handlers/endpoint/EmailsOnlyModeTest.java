@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.Json;
@@ -37,7 +37,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
-import static com.redhat.cloud.notifications.routers.EndpointResource.UNSUPPORTED_ENDPOINT_TYPE;
+import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.UNSUPPORTED_ENDPOINT_TYPE;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;

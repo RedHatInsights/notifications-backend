@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,11 +70,6 @@ public class UserConfigResource {
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
     public static class V1 extends UserConfigResource {
-
-    }
-
-    @Path(Constants.API_NOTIFICATIONS_V_2_0 + "/user-config")
-    public static class V2 extends UserConfigResource {
 
     }
 

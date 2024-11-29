@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.openapi;
 
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import jakarta.inject.Inject;

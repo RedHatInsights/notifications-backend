@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.userpreferencespolicy;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -15,6 +15,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+
 import java.util.List;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
