@@ -110,8 +110,11 @@ class EmailAggregationProcessorTest {
     @BeforeAll
     static void initTest() {
         user1.setUsername("foo");
+        user1.setEmail("foo@redhat.com");
         user2.setUsername("bar");
+        user2.setEmail("bar@redhat.com");
         user3.setUsername("user3");
+        user3.setEmail("user3@redhat.com");
     }
 
     @BeforeEach

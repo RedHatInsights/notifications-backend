@@ -38,7 +38,7 @@ public class RecipientsResolverResponseProcessor implements Processor {
     public void process(final Exchange exchange) throws JsonProcessingException {
         final String body = exchange.getMessage().getBody(String.class);
         final Set<String> recipientsList = Arrays.asList(this.objectMapper.readValue(body, User[].class))
-            .stream().map(User::getEmail).collect(toSet());
+            .stream().map(User::getEmail).filter(email -> email != null && !email.isBlank()).collect(toSet());
 
         Set<String> emails = exchange.getProperty(ExchangeProperty.EMAIL_RECIPIENTS, Set.class);
         if (emailConnectorConfig.isEmailsInternalOnlyEnabled()) {
