@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
@@ -14,6 +15,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.UpdateNotificationDrawerStatus;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
@@ -39,6 +41,7 @@ import static io.restassured.http.ContentType.JSON;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -53,9 +56,12 @@ public class DrawerResourceTest extends DbIsolatedTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
+    @InjectMock
+    BackendConfig backendConfig;
+
     @Test
     void testMultiplePages() {
-
+        when(backendConfig.isDrawerEnabled()).thenReturn(true);
         final String USERNAME = "user-1";
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME, FULL_ACCESS);
 
@@ -95,7 +101,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
 
     @Test
     void testFilters() {
-
+        when(backendConfig.isDrawerEnabled()).thenReturn(true);
         Bundle createdBundle = resourceHelpers.createBundle("test-drawer-event-resource-bundle");
         Bundle createdBundle2 = resourceHelpers.createBundle("test-drawer-event-resource-bundle2");
         Application createdApplication = resourceHelpers.createApplication(createdBundle.getId(), "test-drawer-event-resource-application");
