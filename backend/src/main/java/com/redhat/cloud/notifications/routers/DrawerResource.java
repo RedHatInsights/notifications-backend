@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers;
 
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
@@ -39,6 +40,9 @@ public class DrawerResource {
     @Inject
     DrawerNotificationRepository drawerRepository;
 
+    @Inject
+    BackendConfig backendConfig;
+
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/drawer")
     public static class V1 extends DrawerResource {
 
@@ -58,10 +62,13 @@ public class DrawerResource {
         String orgId = getOrgId(securityContext);
         String username = getUsername(securityContext);
         LocalDateTime start = LocalDateTime.now();
-        Long count = drawerRepository.count(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
         List<DrawerEntryPayload> drawerEntries = new ArrayList<>();
-        if (count > 0) {
-            drawerEntries = drawerRepository.getNotifications(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus, query);
+        Long count = 0L;
+        if (backendConfig.isDrawerEnabled()) {
+            count = drawerRepository.count(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
+            if (count > 0) {
+                drawerEntries = drawerRepository.getNotifications(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus, query);
+            }
         }
         LocalDateTime now = LocalDateTime.now();
         Log.infof("Drawer request duration %s for orgId: %s, userId: %s",
