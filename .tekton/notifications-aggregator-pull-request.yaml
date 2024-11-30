@@ -31,12 +31,12 @@ spec:
     value: .
   pipelineRef:
     params:
-      - name: url
-        value: https://github.com/RedHatInsights/notifications-backend.git
-      - name: revision
-        value: master
-      - name: pathInRepo
-        value: .tekton/build-pipeline.yaml
+    - name: url
+      value: https://github.com/RedHatInsights/konflux-pipelines.git
+    - name: revision
+      value: main
+    - name: pathInRepo
+      value: pipelines/build-pipeline.yaml
     resolver: git
   taskRunTemplate: {}
   workspaces:
