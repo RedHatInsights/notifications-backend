@@ -305,8 +305,10 @@ parameters:
   value: 'INFO'
 - name: FLOORIST_MEMORY_REQUEST
   description: The amount of minimum memory requested for running the FloorPlan.
+  value: 250Mi
 - name: FLOORIST_MEMORY_LIMIT
   description: The maximum amount of memory that the FloorPlan is allowed to use before getting "out of memory" errors.
+  value: 500Mi
 - name: FLOORIST_SUSPEND
   description: Disable Floorist cronjob execution
   required: true
