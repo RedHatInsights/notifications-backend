@@ -35,7 +35,7 @@ public class SubscriptionRepositoryTest {
     @Test
     void testResubscribeAllUsersWithUnknownEventTypeId() {
 
-        EventType eventType = createEventType(true, true);
+        EventType eventType = createEventType(true, true, false);
         createUnsubscription(eventType.getId());
         createUnsubscription(eventType.getId());
 
@@ -48,7 +48,7 @@ public class SubscriptionRepositoryTest {
     @Test
     void testResubscribeAllUsersWithNotLockedEventType() {
 
-        EventType eventType = createEventType(false, false);
+        EventType eventType = createEventType(false, false, false);
         createUnsubscription(eventType.getId());
         createUnsubscription(eventType.getId());
 
@@ -60,7 +60,7 @@ public class SubscriptionRepositoryTest {
     @Test
     void testResubscribeAllUsersWithLockedEventType() {
 
-        EventType eventType = createEventType(true, true);
+        EventType eventType = createEventType(true, true, false);
         createUnsubscription(eventType.getId());
         createUnsubscription(eventType.getId());
 
@@ -70,12 +70,13 @@ public class SubscriptionRepositoryTest {
     }
 
     @Transactional
-    EventType createEventType(boolean subscribedByDefault, boolean subscriptionLocked) {
+    EventType createEventType(boolean subscribedByDefault, boolean subscriptionLocked, boolean restrictToNamedRecipients) {
         Bundle bundle = resourceHelpers.createBundle("bundle" + randomString(), randomString());
         Application app = resourceHelpers.createApplication(bundle.getId(), "app" + randomString(), randomString());
         EventType eventType = resourceHelpers.createEventType(app.getId(), "event-type" + randomString());
         eventType.setSubscribedByDefault(subscribedByDefault);
         eventType.setSubscriptionLocked(subscriptionLocked);
+        eventType.setRestrictToRecipientsIntegrations(restrictToNamedRecipients);
         return eventType;
     }
 

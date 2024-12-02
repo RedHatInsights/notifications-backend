@@ -83,6 +83,8 @@ public class EventType {
 
     private boolean subscriptionLocked;
 
+    private boolean restrictToRecipientsIntegrations;
+
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
     @JsonIgnore
     private Set<EventTypeBehavior> behaviors;
@@ -189,6 +191,14 @@ public class EventType {
 
     public void setSubscriptionLocked(boolean subscriptionLocked) {
         this.subscriptionLocked = subscriptionLocked;
+    }
+
+    public boolean isRestrictToRecipientsIntegrations() {
+        return restrictToRecipientsIntegrations;
+    }
+
+    public void setRestrictToRecipientsIntegrations(boolean restrictToNamedRecipients) {
+        this.restrictToRecipientsIntegrations = restrictToNamedRecipients;
     }
 
     @AssertTrue(message = "The subscription of an event type can only be locked if the event type is subscribed by default")
