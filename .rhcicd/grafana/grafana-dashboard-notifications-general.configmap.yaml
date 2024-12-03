@@ -3570,7 +3570,7 @@ data:
             "x": 0,
             "y": 38
           },
-          "id": 289,
+          "id": 257,
           "options": {
             "legend": {
               "calcs": [],
@@ -3590,15 +3590,15 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "code",
-              "expr": "process_cpu_usage{service=\"notifications-connector-splunk-service\", mode!=\"idle\"} * 100",
+              "editorMode": "builder",
+              "expr": "jvm_memory_used_bytes{service=\"notifications-connector-splunk-service\", area=\"heap\", id=\"Tenured Gen\"}",
               "hide": false,
               "legendFormat": "{{pod}}",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "Splunk - Cpu",
+          "title": "Splunk - Memory leak detection",
           "type": "timeseries"
         },
         {
@@ -3944,7 +3944,7 @@ data:
             "x": 0,
             "y": 46
           },
-          "id": 257,
+          "id": 289,
           "options": {
             "legend": {
               "calcs": [],
@@ -3964,15 +3964,15 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "builder",
-              "expr": "jvm_memory_used_bytes{service=\"notifications-connector-splunk-service\", area=\"heap\", id=\"Tenured Gen\"}",
+              "editorMode": "code",
+              "expr": "process_cpu_usage{service=\"notifications-connector-splunk-service\", mode!=\"idle\"} * 100",
               "hide": false,
               "legendFormat": "{{pod}}",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "Splunk - Memory leak detection",
+          "title": "Splunk - Cpu",
           "type": "timeseries"
         },
         {
@@ -4318,7 +4318,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -4430,7 +4431,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -4566,7 +4568,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -4732,7 +4735,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -4840,7 +4844,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -5007,7 +5012,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -5119,7 +5125,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -5269,7 +5276,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -5416,7 +5424,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -5562,7 +5571,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -5655,7 +5665,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -5832,7 +5843,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -5867,7 +5879,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "expr": "max by (connector, event_type) (notifications_tocamel_payload_content_size_bytes_max)",
@@ -5939,7 +5951,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -6031,7 +6044,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -6092,7 +6106,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "text"
+                    "color": "text",
+                    "value": null
                   }
                 ]
               },
@@ -6199,7 +6214,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
@@ -6345,7 +6361,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
@@ -6512,7 +6529,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
@@ -6679,7 +6697,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
@@ -6854,7 +6873,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
@@ -7020,7 +7040,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
@@ -7187,7 +7208,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
@@ -7353,7 +7375,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               }
@@ -7536,7 +7559,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -7629,7 +7653,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -7722,7 +7747,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -7813,7 +7839,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -7905,7 +7932,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -7997,7 +8025,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -8054,6 +8083,7 @@ data:
         },
         {
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
           "fieldConfig": {
@@ -8098,7 +8128,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -8132,6 +8163,10 @@ data:
           "pluginVersion": "10.4.1",
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
               "exemplar": true,
               "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/eventTypes.*\"}[5m])) by (uri)",
               "hide": false,
@@ -8141,22 +8176,47 @@ data:
               "refId": "A"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
               "exemplar": true,
               "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/behaviorGroups.*\"}[5m])) by (uri)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{status}}",
+              "range": true,
               "refId": "B"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
               "exemplar": true,
               "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/bundles.*\"}[5m])) by (uri)",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{status}}",
+              "range": true,
               "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(http_server_requests_seconds_sum{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/drawer*\"}[5m])) by (uri) / sum(rate(http_server_requests_seconds_count{service=\"notifications-backend-service\", uri=~\"/api/notifications/.*/drawer*\"}[5m])) by (uri)",
+              "hide": false,
+              "instant": false,
+              "legendFormat": "{{status}}",
+              "range": true,
+              "refId": "D"
             }
           ],
           "title": "average response time in seconds",
@@ -8226,7 +8286,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -8336,7 +8397,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -8433,7 +8495,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -8629,7 +8692,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -8729,7 +8793,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -8821,7 +8886,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -8899,7 +8965,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "PDD8BE47D10408F45"
+                "uid": "$datasource"
               },
               "editorMode": "code",
               "exemplar": true,
@@ -9020,7 +9086,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -9113,7 +9180,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -9213,7 +9281,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
@@ -9325,7 +9394,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -9588,7 +9658,8 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -9682,7 +9753,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "crcs02ue1-prometheus",
               "value": "crcs02ue1-prometheus"
             },
@@ -9715,9 +9786,9 @@ data:
           },
           {
             "current": {
-              "selected": false,
-              "text": "AWS insights-prod",
-              "value": "AWS insights-prod"
+              "selected": true,
+              "text": "AWS insights-stage",
+              "value": "AWS insights-stage"
             },
             "hide": 0,
             "includeAll": false,
@@ -9806,7 +9877,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 3,
+      "version": 1,
       "weekStart": ""
     }
 kind: ConfigMap
