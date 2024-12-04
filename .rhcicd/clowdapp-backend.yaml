@@ -98,7 +98,7 @@ objects:
             path: /health/ready
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 1200
+          initialDelaySeconds: 40
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
@@ -108,7 +108,7 @@ objects:
             path: /health/live
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 1200
+          initialDelaySeconds: 40
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
