@@ -59,46 +59,64 @@ public class KesselAssetsMigrationService {
     @Path("/kessel/migrate-assets")
     @POST
     public void migrateAssets() {
+        Log.info("Kessel assets' migration begins");
+
         int fetchedEndpointsSize = 0;
         int offset = 0;
+        int traceLoops = 0;
         do {
+            Log.tracef("[loops: %s] Loops", traceLoops);
+
             final List<Endpoint> fetchedEndpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(this.backendConfig.getKesselMigrationBatchSize(), offset);
+            Log.debugf("[offset: %s][first_integration: %s][last_integration: %s] Fetched batch of %s integrations", offset, (fetchedEndpoints.isEmpty()) ? "none" : fetchedEndpoints.getFirst().getId(), (fetchedEndpoints.isEmpty()) ? "none" : fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
 
             // If for some reason we have fetched full pages from the database
             // all the time, the last one might be empty, so there is no need
             // to attempt calling Kessel.
             if (fetchedEndpoints.isEmpty()) {
+                Log.trace("Breaking the do-while loop because the size of the fetched integrations is zero");
                 break;
             }
 
             final CreateTuplesRequest request = this.createTuplesRequest(fetchedEndpoints);
+            Log.tracef("Generated a \"CreateTuplesRequest\": %s", request);
+
             final int finalOffset = offset;
             this.relationTuplesClient.createTuples(request, new StreamObserver<>() {
                 @Override
                 public void onNext(final CreateTuplesResponse createTuplesResponse) {
+                    Log.trace("Calling onNext");
+                    Log.infof("[offset: %s][first_integration: %s][last_integration: %s] Sent batch of % integrations to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
                 }
 
                 @Override
                 public void onError(final Throwable throwable) {
-                    Log.errorf(throwable, "[offset: %s][first_integration: %s][last_integration: %s] Unable to send batch of tuples to Kessel with offset %s", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId());
+                    Log.trace("Calling onError");
+                    Log.errorf(throwable, "[offset: %s][first_integration: %s][last_integration: %s] Unable to send batch of tuples to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId());
                 }
 
                 @Override
                 public void onCompleted() {
-                    Log.infof("[offset: %s][first_integration: %s][last_integration: %s] Sent % integrations to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
+                    Log.trace("Calling onCompleted");
+                    Log.infof("[offset: %s][first_integration: %s][last_integration: %s] Sent batch of % integrations to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
                 }
             });
 
             fetchedEndpointsSize = fetchedEndpoints.size();
             offset += fetchedEndpoints.size();
+            traceLoops += 1;
+
+            Log.tracef("[fetchedEndpointsSize: %s][kesselMigrationBatchSize: %s][offset: %s] do-while loop condition", fetchedEndpointsSize, offset, this.backendConfig.getKesselMigrationBatchSize());
         } while (fetchedEndpointsSize == this.backendConfig.getKesselMigrationBatchSize());
 
-        Log.infof("Finished migrating integrations to the Kessel inventory");
+        Log.info("Finished migrating integrations to the Kessel inventory");
     }
 
     @Path("/kessel/migrate-assets/async")
     @POST
     public void migrateAssetsAsync() {
+        Log.info("Kessel assets' migration begins");
+
         final int limit = this.backendConfig.getKesselMigrationBatchSize();
 
         final AtomicInteger offsetContainer = new AtomicInteger(0);
