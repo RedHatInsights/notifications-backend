@@ -197,6 +197,7 @@ public class ResourceHelpers {
     public Stats createTestEndpoints(String accountId, String orgId, int count) {
         final Stats stats = new Stats(count);
 
+        final Random random = new Random();
         for (int i = 0; i < count; i++) {
             // Add new endpoints
             WebhookProperties properties = new WebhookProperties();
@@ -207,7 +208,7 @@ public class ResourceHelpers {
             ep.setType(WEBHOOK);
             ep.setName(String.format("Endpoint %d", count - i));
             ep.setDescription("Automatically generated");
-            boolean enabled = (i % (count / 5)) != 0;
+            boolean enabled = random.nextBoolean();
             if (!enabled) {
                 stats.increaseDisabledCount();
             }

@@ -11,6 +11,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -76,12 +77,69 @@ public class KesselAssetsMigrationServiceTest extends DbIsolatedTest {
         Assertions.assertEquals(
             1,
             createTuplesRequestArgumentCaptor.getAllValues().size(),
-            String.format("[maximum_batch_size: %s][calls_to_kessel: %s] Only one request should have been sent to Kessel, since the ", this.backendConfig.getKesselMigrationBatchSize(), createTuplesRequestArgumentCaptor.getAllValues().size())
+            String.format("[maximum_batch_size: %s][calls_to_kessel: %s] Only one request should have been sent to Kessel, since the number of integrations in the database is lower than the migration's batch size", this.backendConfig.getKesselMigrationBatchSize(), createTuplesRequestArgumentCaptor.getAllValues().size())
         );
 
         // Assert that the "create request" has the expected data.
         final CreateTuplesRequest createTuplesRequest = createTuplesRequestArgumentCaptor.getAllValues().getFirst();
         this.assertCreateRequestIsCorrect(integrationsToCreate, workspaceId, createTuplesRequest);
+    }
+
+    /**
+     * Tests that when the one of the integrations to migrate has an
+     * organization ID that no longer exists in RBAC, and therefore this
+     * service returns an error, we keep looping and attempting to migrate.
+     */
+    @Test
+    void testMigrateRbacErrorKeepsMigrationGoing() {
+        // Simulate that the maximum batch size is 10 endpoints.
+        Mockito.when(this.backendConfig.getKesselMigrationBatchSize()).thenReturn(10);
+        final int integrationsToCreate = this.backendConfig.getKesselMigrationBatchSize() - 1;
+
+        // Create an integration which we are going to simulate that does not
+        // exist in RBAC by making the called function throw an exception.
+        final String nonExistentOrgId = DEFAULT_ORG_ID + "non-existent";
+        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID + "non-existent", nonExistentOrgId, 2);
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(nonExistentOrgId)).thenThrow(new ClientWebApplicationException());
+
+        // Mock the response we would get from RBAC when asking for the default
+        // workspace.
+        final UUID workspaceId = UUID.randomUUID();
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(workspaceId);
+
+        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, integrationsToCreate);
+
+        given()
+            .when()
+            .header(TestHelpers.createTurnpikeIdentityHeader(DEFAULT_USER, adminRole))
+            .post(API_INTERNAL + "/kessel/migrate-assets")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // Assert that the correct number of requests was generated for Kessel.
+        // It should have created two requests: one of them will contain less
+        // than the maximum batch size of the integrations, because two of them
+        // will have thrown an exception when attempting to fetch the default
+        // workspace for them.
+        final ArgumentCaptor<CreateTuplesRequest> createTuplesRequestArgumentCaptor = ArgumentCaptor.forClass(CreateTuplesRequest.class);
+        Mockito.verify(this.relationTuplesClient, Mockito.times(2)).createTuples(createTuplesRequestArgumentCaptor.capture(), Mockito.any());
+
+        Assertions.assertEquals(
+            2,
+            createTuplesRequestArgumentCaptor.getAllValues().size(),
+            String.format("[maximum_batch_size: %s][calls_to_kessel: %s] Two requests should have been sent to Kessel", this.backendConfig.getKesselMigrationBatchSize(), createTuplesRequestArgumentCaptor.getAllValues().size())
+        );
+
+        // Assert that the first request has the "max batch size" minus two
+        // tuples, since two of them belong to organizations that threw an
+        // exception when fetching their default workspace from RBAC.
+        final CreateTuplesRequest firstCreateTuplesRequest = createTuplesRequestArgumentCaptor.getAllValues().getFirst();
+        this.assertCreateRequestIsCorrect(this.backendConfig.getKesselMigrationBatchSize() - 2, workspaceId, firstCreateTuplesRequest);
+
+        // Assert that the second request has the remaining integration that
+        // was left out of the first request.
+        final CreateTuplesRequest lastCreateTuplesRequest = createTuplesRequestArgumentCaptor.getAllValues().getLast();
+        this.assertCreateRequestIsCorrect(1, workspaceId, lastCreateTuplesRequest);
     }
 
     /**
