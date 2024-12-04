@@ -86,7 +86,7 @@ public class KesselAssetsMigrationService {
                 @Override
                 public void onNext(final CreateTuplesResponse createTuplesResponse) {
                     Log.debug("Calling onNext");
-                    Log.infof("[offset: %s][first_integration: %s][last_integration: %s] Sent batch of % integrations to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
+                    Log.infof("[offset: %s][first_integration: %s][last_integration: %s] Sent batch of %s integrations to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
                 }
 
                 @Override
@@ -98,7 +98,7 @@ public class KesselAssetsMigrationService {
                 @Override
                 public void onCompleted() {
                     Log.debug("Calling onCompleted");
-                    Log.infof("[offset: %s][first_integration: %s][last_integration: %s] Sent batch of % integrations to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
+                    Log.infof("[offset: %s][first_integration: %s][last_integration: %s] Sent batch of %s integrations to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
                 }
             });
 
