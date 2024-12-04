@@ -147,7 +147,7 @@ public class KesselAssetsMigrationService {
             try {
                 relations.add(this.mapEndpointToRelationship(endpoint));
             } catch (final UnauthorizedException e) {
-                Log.errorf("[org_id: %s][endpoint_id: %s] Unable to get the default workspace");
+                Log.errorf("[org_id: %s][endpoint_id: %s] Unable to get the default workspace for integration", endpoint.getOrgId(), endpoint.getId());
             }
         }
 
