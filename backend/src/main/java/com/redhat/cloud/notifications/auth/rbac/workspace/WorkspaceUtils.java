@@ -102,6 +102,8 @@ public class WorkspaceUtils {
             throw new UnauthorizedException();
         }
 
+        Log.debugf("[org_id: %s][workspace_id: %s] Fetched default workspace from RBAC", orgId, rbacWorkspace.id());
+
         return rbacWorkspace.id();
     }
 }
