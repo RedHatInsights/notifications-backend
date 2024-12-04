@@ -58,6 +58,10 @@ public class RbacClientResponseFilter implements ClientResponseFilter {
      * {@code {header1=value1, header2=[value2, value3]}}.
      */
     private String headersToString(final MultivaluedMap<String, String> headers) {
+        if (headers == null || headers.isEmpty()) {
+            return "";
+        }
+
         final StringBuilder sb = new StringBuilder();
         for (final Map.Entry<String, List<String>> entry : headers.entrySet()) {
             sb.append(entry.getKey());
