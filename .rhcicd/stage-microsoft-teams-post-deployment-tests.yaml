@@ -7,7 +7,7 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdJobInvocation
   metadata:
-    name: notifications-connector-microsoft-teams-tests-${UID}
+    name: notifications-connector-ms-teams-tests-${UID}
   spec:
     appName: notifications-connector-microsoft-teams
     testing:
