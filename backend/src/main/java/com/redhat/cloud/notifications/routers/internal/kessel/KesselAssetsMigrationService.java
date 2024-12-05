@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.grpc.stub.StreamObserver;
 import io.quarkus.logging.Log;
-import io.quarkus.security.UnauthorizedException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
@@ -164,7 +163,7 @@ public class KesselAssetsMigrationService {
         for (final Endpoint endpoint : endpoints) {
             try {
                 relations.add(this.mapEndpointToRelationship(endpoint));
-            } catch (final UnauthorizedException e) {
+            } catch (final Exception e) {
                 Log.errorf("[org_id: %s][endpoint_id: %s] Unable to get the default workspace for integration", endpoint.getOrgId(), endpoint.getId());
             }
         }
