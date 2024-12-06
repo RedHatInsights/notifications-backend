@@ -37,6 +37,7 @@ import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.NotificationHistoryDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
+import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
@@ -80,6 +81,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
@@ -534,7 +536,7 @@ public class EndpointResource {
 
         endpoint.setStatus(EndpointStatus.READY);
 
-        endpoint.setEventTypes(fetchEventTypes(eventTypes));
+        endpoint.setEventTypes(endpointEventTypeRepository.fetchAndValidateEndpointsEventTypesAssociation(eventTypes, Set.of(endpoint.getType())));
 
         this.secretUtils.createSecretsForEndpoint(endpoint);
 
@@ -555,18 +557,6 @@ public class EndpointResource {
         }
 
         return createdEndpoint;
-    }
-
-    private Set<EventType> fetchEventTypes(Set<UUID> eventTypesIds) {
-        if (null != eventTypesIds && !eventTypesIds.isEmpty()) {
-            List<EventType> eventTypes = eventTypeRepository.findByIds(eventTypesIds);
-            if (eventTypes.size() != eventTypesIds.size()) {
-                eventTypesIds.removeAll(eventTypes.stream().map(EventType::getId).toList());
-                throw new NotFoundException(String.format("Event type '%s' not found", eventTypesIds.stream().findFirst().get()));
-            }
-            return eventTypes.stream().collect(Collectors.toSet());
-        }
-        return null;
     }
 
     private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {
@@ -1068,6 +1058,7 @@ public class EndpointResource {
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
             description = "No event type or endpoint found with the passed id.")
     })
+    @Tag(name = OApiFilter.PRIVATE)
     @Transactional
     public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
@@ -1109,6 +1100,7 @@ public class EndpointResource {
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
             description = "No event type or endpoint found with the passed id.")
     })
+    @Tag(name = OApiFilter.PRIVATE)
     @Transactional
     public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {

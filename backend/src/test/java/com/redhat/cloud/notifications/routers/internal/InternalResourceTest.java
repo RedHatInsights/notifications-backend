@@ -329,12 +329,15 @@ public class InternalResourceTest extends DbIsolatedTest {
         createEventType(identity, appId, "event-type-1-name", "Event type 1", "Description 1", false, false, OK);
         String eventTypeId = createEventType(identity, appId, "event-type-2-name", "Event type 2", "Description 2", false, false, OK).get();
 
+        checkEventTypeRestrictToRecipientsIntegrations(eventTypeId, false);
+
         // The app should contain two event types.
         getEventTypes(identity, appId, OK, 2);
 
         // Let's test the event type update API.
-        updateEventType(identity, appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", true, true, OK);
+        updateEventType(identity, appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", true, true, true, OK);
         verify(subscriptionRepository, times(1)).resubscribeAllUsersIfNeeded(any(UUID.class));
+        checkEventTypeRestrictToRecipientsIntegrations(eventTypeId, true);
 
         checkEventTypeVisibility(eventTypeId, true);
         updateEventTypeVisibility(identity, eventTypeId, false, OK);
@@ -357,6 +360,12 @@ public class InternalResourceTest extends DbIsolatedTest {
         entityManager.clear();
         EventType eventType = entityManager.find(EventType.class, UUID.fromString(eventTypeId));
         assertEquals(isVisible, eventType.isVisible());
+    }
+
+    void checkEventTypeRestrictToRecipientsIntegrations(String eventTypeId, boolean isResticted) {
+        entityManager.clear();
+        EventType eventType = entityManager.find(EventType.class, UUID.fromString(eventTypeId));
+        assertEquals(isResticted, eventType.isRestrictToRecipientsIntegrations());
     }
 
     @Test
@@ -540,9 +549,9 @@ public class InternalResourceTest extends DbIsolatedTest {
         createEventType(otherAppIdentity, app1Id, "new-name-3", NOT_USED, NOT_USED, false, false, FORBIDDEN);
         createEventType(otherAppIdentity, app2Id, "new-name-4", NOT_USED, NOT_USED, false, false, FORBIDDEN);
 
-        updateEventType(otherAppIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, FORBIDDEN);
+        updateEventType(otherAppIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, false, FORBIDDEN);
         verify(subscriptionRepository, times(0)).resubscribeAllUsersIfNeeded(any(UUID.class));
-        updateEventType(appIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, OK);
+        updateEventType(appIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, false, OK);
         verify(subscriptionRepository, times(1)).resubscribeAllUsersIfNeeded(any(UUID.class));
 
         updateEventTypeVisibility(otherAppIdentity, newEventTypeId, true, FORBIDDEN);

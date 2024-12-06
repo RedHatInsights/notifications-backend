@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -9,12 +10,14 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EndpointEventTypeRepository {
@@ -26,6 +29,9 @@ public class EndpointEventTypeRepository {
 
     @Inject
     EndpointRepository endpointRepository;
+
+    @Inject
+    EventTypeRepository eventTypeRepository;
 
     public List<Endpoint> findEndpointsByEventTypeId(String orgId, UUID eventTypeId, Query limiter, Optional<Set<UUID>> authorizedIds) {
         EventType eventType = entityManager.find(EventType.class, eventTypeId);
@@ -95,6 +101,8 @@ public class EndpointEventTypeRepository {
     public Endpoint updateEventTypesLinkedToEndpoint(UUID endpointId, Set<UUID> eventTypeIds, String orgId) {
         Endpoint endpoint = getEndpoint(endpointId, orgId);
 
+        fetchAndValidateEndpointsEventTypesAssociation(eventTypeIds, Set.of(endpoint.getType()));
+
         Set<EventType> eventTypes = new HashSet<>();
         for (UUID evID : eventTypeIds) {
             EventType eventType = entityManager.find(EventType.class, evID);
@@ -108,11 +116,63 @@ public class EndpointEventTypeRepository {
         return entityManager.merge(endpoint);
     }
 
+    private void validateEndpointEventTypeAssociation(final List<EventType> eventTypes, final Set<EndpointType> endpointTypes) {
+        if (eventTypes != null) {
+            for (EventType eventType : eventTypes) {
+                for (EndpointType endpointType : endpointTypes) {
+                    if (eventType.isRestrictToRecipientsIntegrations() &&
+                        !EndpointType.isRecipientsEndpointType(endpointType)) {
+                        throw new BadRequestException(String.format("Event type '%s' can't be associated to endpoint type '%s'", eventType.getName(), endpointType));
+                    }
+                }
+            }
+        }
+    }
+
+    public Set<EventType> fetchAndValidateEndpointsEventTypesAssociation(final Set<UUID> eventTypesIds, final Set<EndpointType> endpointTypes) {
+        if (null != eventTypesIds && !eventTypesIds.isEmpty()) {
+            List<EventType> eventTypes = eventTypeRepository.findByIds(eventTypesIds);
+            if (eventTypes.size() != eventTypesIds.size()) {
+                eventTypesIds.removeAll(eventTypes.stream().map(EventType::getId).toList());
+                throw new NotFoundException(String.format("Event type '%s' not found", eventTypesIds.stream().findFirst().get()));
+            }
+
+            validateEndpointEventTypeAssociation(eventTypes, endpointTypes);
+            return eventTypes.stream().collect(Collectors.toSet());
+        }
+        return null;
+    }
+
     @Transactional
     public void refreshEndpointLinksToEventType(String orgId, List<UUID> endpointsList) {
         if (endpointsList == null || endpointsList.isEmpty()) {
             return;
         }
+
+        // we need to fetch endpoint types and linked event type Ids to check if they are compatible
+        String selectEndpointTypeQueryStr = "SELECT DISTINCT bga.endpoint.compositeType.type " +
+            "from BehaviorGroupAction bga where " +
+            "bga.endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ") +
+            "and bga.endpoint.id in (:endpointList)";
+        jakarta.persistence.Query selectEndpointTypeQuery = entityManager.createQuery(selectEndpointTypeQueryStr, EndpointType.class)
+            .setParameter("endpointList", endpointsList);
+        if (orgId != null) {
+            selectEndpointTypeQuery.setParameter("orgId", orgId);
+        }
+        List<EndpointType> endpointTypes = selectEndpointTypeQuery.getResultList();
+
+        String selectEventTypeQueryStr = "SELECT DISTINCT etb.eventType.id " +
+            "from EventTypeBehavior etb inner join BehaviorGroupAction bga on etb.behaviorGroup.id = bga.behaviorGroup.id where " +
+            "bga.endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ") +
+            "and bga.endpoint.id in (:endpointList)";
+        jakarta.persistence.Query selectEventTypeQuery = entityManager.createQuery(selectEventTypeQueryStr, UUID.class)
+            .setParameter("endpointList", endpointsList);
+        if (orgId != null) {
+            selectEventTypeQuery.setParameter("orgId", orgId);
+        }
+        List<UUID> eventTypeIds = selectEventTypeQuery.getResultList();
+
+        fetchAndValidateEndpointsEventTypesAssociation(new HashSet<>(eventTypeIds), Set.copyOf(endpointTypes));
 
         String deleteQueryStr = "DELETE FROM EndpointEventType eet WHERE " +
             "endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ") +
@@ -170,6 +230,22 @@ public class EndpointEventTypeRepository {
         if (eventType == null) {
             throw new NotFoundException(EVENT_TYPE_NOT_FOUND_MESSAGE);
         }
+
+        // we need to fetch endpoint types to check if they are compatible with the targeted event type
+        String selectEndpointTypeQueryStr = "SELECT DISTINCT ep.compositeType.type " +
+            "from EventType evt, Endpoint ep where " +
+            "ep.orgId " + (orgId == null ? "is null " : "= :orgId ") +
+            "and ep.id in (:endpointList) and evt.id = :eventTypeId";
+        jakarta.persistence.Query selectEndpointTypeQuery = entityManager.createQuery(selectEndpointTypeQueryStr, EndpointType.class)
+            .setParameter("endpointList", endpointsList)
+            .setParameter("eventTypeId", eventTypeId);
+        if (orgId != null) {
+            selectEndpointTypeQuery.setParameter("orgId", orgId);
+        }
+
+        List<EndpointType> endpointTypes = selectEndpointTypeQuery.getResultList();
+
+        fetchAndValidateEndpointsEventTypesAssociation(new HashSet<>(List.of(eventTypeId)), Set.copyOf(endpointTypes));
 
         String deleteQueryStr = "DELETE FROM EndpointEventType eet WHERE " +
             "endpoint.orgId " + (orgId == null ? "is null " : "= :orgId ") +

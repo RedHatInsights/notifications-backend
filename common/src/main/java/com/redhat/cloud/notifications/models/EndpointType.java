@@ -25,4 +25,8 @@ public enum EndpointType {
         this.requiresSubType = requiresSubType;
         this.isSystemEndpointType = isSystemEndpointType;
     }
+
+    public static boolean isRecipientsEndpointType(final EndpointType endpointType) {
+        return DRAWER.equals(endpointType) || EMAIL_SUBSCRIPTION.equals(endpointType);
+    }
 }

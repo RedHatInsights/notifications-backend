@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -109,11 +110,16 @@ public class ResourceHelpers {
     }
 
     public EventType createEventType(UUID applicationId, String name, String displayName, String description) {
+        return createEventType(applicationId, name, displayName, description, false);
+    }
+
+    public EventType createEventType(UUID applicationId, String name, String displayName, String description, boolean isRestrictToRecipientsIntegrations) {
         EventType eventType = new EventType();
         eventType.setName(name);
         eventType.setDisplayName(displayName);
         eventType.setDescription(description);
         eventType.setApplicationId(applicationId);
+        eventType.setRestrictToRecipientsIntegrations(isRestrictToRecipientsIntegrations);
         return applicationRepository.createEventType(eventType);
     }
 
@@ -192,6 +198,10 @@ public class ResourceHelpers {
         endpoint.setEnabled(enabled);
         endpoint.setCreated(created);
         return endpointRepository.createEndpoint(endpoint);
+    }
+
+    public Endpoint createSystemEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
+        return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
     }
 
     public Stats createTestEndpoints(String accountId, String orgId, int count) {
