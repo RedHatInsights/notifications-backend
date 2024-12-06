@@ -26,6 +26,7 @@ public class AggregatorConfig {
      * Unleash configuration
      */
     private String fetchAggregationBasedOnEvents;
+    private String fetchAggregationBasedOnEventsByOrgId;
 
     private static String toggleName(String feature) {
         return String.format("notifications-aggregator.%s.enabled", feature);
@@ -44,7 +45,7 @@ public class AggregatorConfig {
     @PostConstruct
     void postConstruct() {
         fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events", true);
-        fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events-by-orgid", true);
+        fetchAggregationBasedOnEventsByOrgId = toggleRegistry.register("fetch-aggregation-based-on-events-by-orgid", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -68,7 +69,7 @@ public class AggregatorConfig {
 
     public boolean isAggregationBasedOnEventEnabledByOrgId(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(fetchAggregationBasedOnEvents, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+            return unleash.isEnabled(fetchAggregationBasedOnEventsByOrgId, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
         } else {
             return false;
         }
