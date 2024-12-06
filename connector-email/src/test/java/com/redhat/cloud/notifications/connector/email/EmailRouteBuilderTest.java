@@ -35,14 +35,12 @@ import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_DATA;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_ID;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_TYPE;
-import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_FAILURE_RECIPIENTS_KEY;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SEND_EMAIL_BOP;
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SPLIT_AND_SEND;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -68,14 +66,6 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     static MockEndpoint kafkaEngineToConnector;
 
     void initCamelRoutes() throws Exception {
-        adviceWith(SPLIT_AND_SEND, context(), new AdviceWithRouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-                mockEndpoints(
-                    "direct:" + SEND_EMAIL_BOP
-                );
-            }
-        });
 
         adviceWith(emailConnectorConfig.getConnectorName(), context(), new AdviceWithRouteBuilder() {
             @Override
@@ -97,23 +87,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         adviceWith(SPLIT_AND_SEND, context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
-                mockEndpointsAndSkip(
+                mockEndpoints(
                     "direct:" + SEND_EMAIL_BOP
                 );
-            }
-        });
-
-        adviceWith(ENGINE_TO_CONNECTOR, context(), new AdviceWithRouteBuilder() {
-            @Override
-            public void configure() {
-                replaceFromWith(KAFKA_SOURCE_MOCK);
-            }
-        });
-
-        adviceWith(ENGINE_TO_CONNECTOR, context(), new AdviceWithRouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-                mockEndpoints(KAFKA_SOURCE_MOCK);
             }
         });
 
@@ -127,6 +103,13 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             }
         });
 
+        adviceWith(ENGINE_TO_CONNECTOR, context(), new AdviceWithRouteBuilder() {
+            @Override
+            public void configure() {
+                replaceFromWith(KAFKA_SOURCE_MOCK);
+            }
+        });
+
         splitRoute = getMockEndpoint("mock:direct:" + SPLIT_AND_SEND);
         bopRoute = getMockEndpoint("mock:direct:" + SEND_EMAIL_BOP);
         kafkaConnectorToEngine = getMockEndpoint("mock:kafka:" + emailConnectorConfig.getOutgoingKafkaTopic());
@@ -134,13 +117,10 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     }
 
     void initMocks(ExpectationResponseCallback verifyEmptyRequest, ExpectationResponseCallback bopResponse) throws Exception {
-        if (bopResponse == null) {
-            bopResponse = req -> response().withStatusCode(200);
-        }
 
         MockServerLifecycleManager.getClient().reset();
         getMockHttpRequest("/internal/recipients-resolver", "PUT", verifyEmptyRequest);
-        getMockBOPRequest("/v1/sendEmails", "POST", bopResponse);
+        getMockHttpRequest("/v1/sendEmails", "POST", bopResponse);
         if (!camelRoutesInitialised) {
             initCamelRoutes();
             camelRoutesInitialised = true;
@@ -155,9 +135,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     @Test
     void testEmptyRecipients() throws Exception {
 
-        ExpectationResponseCallback verifyEmptyRequest = req -> response().withBody("[]").withStatusCode(200);
-
-        initMocks(verifyEmptyRequest, null);
+        ExpectationResponseCallback recipientsResolverResponse = req -> response().withBody("[]").withStatusCode(200);
+        ExpectationResponseCallback bopResponse = req -> response().withStatusCode(200);
+        initMocks(recipientsResolverResponse, bopResponse);
 
         splitRoute.expectedMessageCount(0);
         kafkaConnectorToEngine.expectedMessageCount(1);
@@ -175,9 +155,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(emailsInternalOnlyEnabled);
             Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
             String strUsers = objectMapper.writeValueAsString(users);
-            ExpectationResponseCallback verifyEmptyRequest = req -> response().withBody(strUsers).withStatusCode(200);
-
-            initMocks(verifyEmptyRequest, null);
+            ExpectationResponseCallback recipientsResolverResponse = req -> response().withBody(strUsers).withStatusCode(200);
+            ExpectationResponseCallback bopResponse = req -> response().withStatusCode(200);
+            initMocks(recipientsResolverResponse, bopResponse);
 
             Set<String> additionalEmails = Set.of("redhat_user@redhat.com", "external_user@noway.com");
             int usersAndRecipientsTotalNumber = users.size() + additionalEmails.size();
@@ -192,13 +172,157 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             bopRoute.assertIsSatisfied();
             kafkaConnectorToEngine.assertIsSatisfied(2000);
 
-            checkRecipientsAndHistory(usersAndRecipientsTotalNumber, usersAndRecipientsTotalNumber, bopRoute, kafkaConnectorToEngine, 0, emailsInternalOnlyEnabled, "external_user@noway.com");
+            checkRecipientsAndHistory(usersAndRecipientsTotalNumber, usersAndRecipientsTotalNumber, bopRoute, kafkaConnectorToEngine, emailsInternalOnlyEnabled, "external_user@noway.com");
         } finally {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(false);
         }
     }
 
-    private static void checkRecipientsAndHistory(int usersAndRecipientsTotalNumber, int recipientsReceivedByBopTotalNumber, MockEndpoint bopRoute, MockEndpoint kafkaEndpoint, int totalRecipientsFailure, boolean emailsInternalOnlyEnabled, String filteredRecipient) {
+    @Test
+    void testFailureFetchingRecipientsInternalError() throws Exception {
+
+        ExpectationResponseCallback recipientsResolverResponse = req -> response().withStatusCode(500);
+        initMocks(recipientsResolverResponse, null);
+
+        splitRoute.expectedMessageCount(0);
+        kafkaConnectorToEngine.expectedMessageCount(1);
+
+        buildCloudEventAndSendIt(null);
+
+        kafkaConnectorToEngine.assertIsSatisfied();
+        splitRoute.assertIsSatisfied();
+        List<JsonObject> responseDetails = checkRecipientsAndHistory(false, bopRoute, kafkaConnectorToEngine, 0);
+        for (JsonObject responseDetail : responseDetails) {
+            assertEquals(500, responseDetail.getJsonObject("error").getInteger("http_status_code"));
+            assertEquals("HTTP_5XX", responseDetail.getJsonObject("error").getString("error_type"));
+        }
+    }
+
+    @Test
+    void testFailureFetchingRecipientsTimeout() throws Exception {
+        initMocks(null, null);
+
+        splitRoute.expectedMessageCount(0);
+        kafkaConnectorToEngine.expectedMessageCount(1);
+
+        buildCloudEventAndSendIt(null);
+
+        kafkaConnectorToEngine.assertIsSatisfied();
+        splitRoute.assertIsSatisfied();
+        List<JsonObject> responseDetails = checkRecipientsAndHistory(false, bopRoute, kafkaConnectorToEngine, 0);
+        for (JsonObject responseDetail : responseDetails) {
+            assertFalse(responseDetail.getJsonObject("error").containsKey("http_status_code"));
+            assertEquals("SOCKET_TIMEOUT", responseDetail.getJsonObject("error").getString("error_type"));
+        }
+    }
+
+    @Test
+    void testFailureBopInternalError() throws Exception {
+
+        Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
+        String strUsers = objectMapper.writeValueAsString(users);
+        ExpectationResponseCallback recipientsResolverResponse = req -> response().withBody(strUsers).withStatusCode(200);
+        ExpectationResponseCallback bopInternalError = req -> response().withStatusCode(500);
+        initMocks(recipientsResolverResponse, bopInternalError);
+
+        // The split route should result of 3 iterations:
+        // 7 recipients / (4 as max recipients per email - 1 for the default recipient no-reply@redhat.com = 3) = 3 iterations
+        // each iteration create its own route, since in case of bop server issue, each single iteration will send its own error message to engine.
+        // when all iterations are completed, the main route continue, triggering a success message
+        splitRoute.expectedMessageCount(1);
+        kafkaConnectorToEngine.expectedMessageCount(4);
+        buildCloudEventAndSendIt(null);
+
+        splitRoute.assertIsSatisfied();
+        kafkaConnectorToEngine.assertIsSatisfied();
+        checkErrorResultsInSplitLoop(1, 3, "HTTP_5XX", 500);
+    }
+
+    @Test
+    void testFailureBopRecipientsTimeout() throws Exception {
+
+        Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
+        String strUsers = objectMapper.writeValueAsString(users);
+        ExpectationResponseCallback recipientsResolverResponse = req -> response().withBody(strUsers).withStatusCode(200);
+
+        initMocks(recipientsResolverResponse, null);
+
+        // The split route should result of 3 iterations:
+        // 7 recipients / (4 as max recipients per email - 1 for the default recipient no-reply@redhat.com = 3) = 3 iterations
+        // each iteration create its own route, since in case of bop server issue, each single iteration will send its own error message to engine.
+        // when all iterations are completed, the main route continue, triggering a success message
+        splitRoute.expectedMessageCount(1);
+        kafkaConnectorToEngine.expectedMessageCount(4);
+        buildCloudEventAndSendIt(null);
+
+        splitRoute.assertIsSatisfied();
+        kafkaConnectorToEngine.assertIsSatisfied();
+
+        checkErrorResultsInSplitLoop(1, 3, "SOCKET_TIMEOUT", null);
+    }
+
+    private static void checkErrorResultsInSplitLoop(int expectedSuccess, int expectedFailure, String errorType, Integer httpStatusCode) {
+        int successfullMessages = 0;
+        int failureMessages = 0;
+        for (Exchange kafkaMessage : kafkaConnectorToEngine.getReceivedExchanges()) {
+            JsonObject payload = new JsonObject(kafkaMessage.getIn().getBody(String.class));
+            JsonObject data = new JsonObject(payload.getString("data"));
+
+            if (data.getBoolean("successful")) {
+                successfullMessages++;
+                assertTrue(data.getBoolean("successful"));
+                assertTrue(data.containsKey("details"));
+                assertEquals(7, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+            } else {
+                failureMessages++;
+                assertEquals(false, data.getBoolean("successful"));
+                assertTrue(data.containsKey("details"));
+                assertEquals(7, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+                assertFalse(data.getJsonObject("details").getString("outcome").isBlank());
+                assertTrue(data.containsKey("error"));
+                assertFalse(data.getJsonObject("error").getString("error_type").isBlank());
+
+                if (null == httpStatusCode) {
+                    assertFalse(data.getJsonObject("error").containsKey("http_status_code"));
+                } else {
+                    assertEquals(500, data.getJsonObject("error").getInteger("http_status_code"));
+                }
+                assertEquals(errorType, data.getJsonObject("error").getString("error_type"));
+            }
+        }
+
+        assertEquals(expectedSuccess, successfullMessages);
+        assertEquals(expectedFailure, failureMessages);
+    }
+
+    private static List<JsonObject> checkRecipientsAndHistory(boolean success, MockEndpoint bopRoute, MockEndpoint kafkaEndpoint, int expectedRecipientNumber) {
+        // check recipients sent to bop
+        List<Exchange> receivedExchanges  = bopRoute.getReceivedExchanges();
+        Set<String> receivedEmails = new HashSet<>();
+        for (Exchange  receivedExchange : receivedExchanges) {
+            Set<String> receivedEmailsOnExchangeMsg = receivedExchange.getIn().getBody(Set.class);
+            assertTrue(receivedEmailsOnExchangeMsg.size() <= 3);
+            receivedEmails.addAll(receivedEmailsOnExchangeMsg);
+        }
+
+        List<JsonObject> dataToReturn = new ArrayList<>();
+        // check metrics sent to engine
+        for (Exchange kafkaMessage : kafkaEndpoint.getReceivedExchanges()) {
+            JsonObject payload = new JsonObject(kafkaMessage.getIn().getBody(String.class));
+            JsonObject data = new JsonObject(payload.getString("data"));
+
+            assertEquals(success, data.getBoolean("successful"));
+            assertTrue(data.containsKey("details"));
+            assertEquals(expectedRecipientNumber, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+            assertFalse(data.getJsonObject("details").getString("outcome").isBlank());
+            assertTrue(data.containsKey("error"));
+            assertFalse(data.getJsonObject("error").getString("error_type").isBlank());
+            dataToReturn.add(data);
+        }
+        return dataToReturn;
+    }
+
+    private static void checkRecipientsAndHistory(int usersAndRecipientsTotalNumber, int recipientsReceivedByBopTotalNumber, MockEndpoint bopRoute, MockEndpoint kafkaEndpoint, boolean emailsInternalOnlyEnabled, String filteredRecipient) {
         // check recipients sent to bop
         List<Exchange> receivedExchanges  = bopRoute.getReceivedExchanges();
         Set<String> receivedEmails = new HashSet<>();
@@ -220,13 +344,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         Exchange kafkaMessage  = kafkaEndpoint.getReceivedExchanges().stream().findFirst().get();
         JsonObject payload = new JsonObject(kafkaMessage.getIn().getBody(String.class));
         JsonObject data = new JsonObject(payload.getString("data"));
-        if (totalRecipientsFailure == 0) {
-            assertTrue(data.getBoolean("successful"));
-            assertNull(data.getJsonObject("details").getInteger(TOTAL_FAILURE_RECIPIENTS_KEY));
-        } else {
-            assertFalse(data.getBoolean("successful"));
-            assertEquals(totalRecipientsFailure, data.getJsonObject("details").getInteger(TOTAL_FAILURE_RECIPIENTS_KEY));
-        }
+
+        assertTrue(data.getBoolean("successful"));
+
         if (emailsInternalOnlyEnabled) {
             assertEquals(usersAndRecipientsTotalNumber - 1, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
         } else {
@@ -235,17 +355,6 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     }
 
     private HttpRequest getMockHttpRequest(String path, String method, ExpectationResponseCallback expectationResponseCallback) {
-        HttpRequest postReq = new HttpRequest()
-            .withPath(path)
-            .withMethod(method);
-        MockServerLifecycleManager.getClient()
-            .withSecure(false)
-            .when(postReq)
-            .respond(expectationResponseCallback);
-        return postReq;
-    }
-
-    private HttpRequest getMockBOPRequest(String path, String method, ExpectationResponseCallback expectationResponseCallback) {
         HttpRequest postReq = new HttpRequest()
             .withPath(path)
             .withMethod(method);
