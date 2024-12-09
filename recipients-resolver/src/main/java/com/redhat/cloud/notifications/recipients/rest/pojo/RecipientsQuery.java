@@ -26,5 +26,5 @@ public class RecipientsQuery {
 
     public boolean subscribedByDefault;
 
-    public ExternalAuthorizationCriterion externalAuthorizationCriteria;
+    public ExternalAuthorizationCriterion externalAuthorizationCriterion;
 }

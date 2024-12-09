@@ -53,7 +53,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     SubscriptionRepository subscriptionRepository;
 
     @Inject
-    ExternalAuthorizationCriterionExtractor externalAuthorizationCriteriaExtractor;
+    ExternalAuthorizationCriterionExtractor externalAuthorizationCriterionExtractor;
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
@@ -123,7 +123,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             subscribers,
             unsubscribers,
             event.getEventType().isSubscribedByDefault(),
-            externalAuthorizationCriteriaExtractor.extract(event)
+            externalAuthorizationCriterionExtractor.extract(event)
         );
 
         Log.debugf("[org_id: %s] Sending email notification to connector", emailNotification);

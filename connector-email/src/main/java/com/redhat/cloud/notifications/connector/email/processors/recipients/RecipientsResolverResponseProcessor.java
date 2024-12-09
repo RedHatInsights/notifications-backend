@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
@@ -49,6 +50,7 @@ public class RecipientsResolverResponseProcessor implements Processor {
             emails.removeAll(forbiddenEmail);
         }
         recipientsList.addAll(emails);
+        exchange.setProperty(TOTAL_RECIPIENTS_KEY, recipientsList.size());
 
         // We have to remove one from the limit, because a default recipient (like noreply@redhat.com) will be automatically added
         exchange.setProperty(ExchangeProperty.FILTERED_USERS, partition(recipientsList, emailConnectorConfig.getMaxRecipientsPerEmail() - 1));
