@@ -409,6 +409,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Application application1 = resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
         final EventType eventType1 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description");
         final EventType eventType2 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 2", "description");
+        final EventType retictedRecipientsIntegrationEventType = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "restricted event type 2", "description", true);
 
         // Add new endpoints
         WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
@@ -424,10 +425,23 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
         ep.setServerErrors(3);
-        ep.eventTypes = Set.of(eventType1.getId(), eventType2.getId());
+        ep.eventTypes = Set.of(eventType1.getId(), eventType2.getId(), retictedRecipientsIntegrationEventType.getId());
 
         mockSources(new WebhookProperties());
 
+        // should fail because we try to create a webhook with an event type allowed for email and drawer integrations only
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .contentType(JSON)
+            .extract().response();
+
+        ep.eventTypes = Set.of(eventType1.getId(), eventType2.getId());
         Response response = given()
             .header(identityHeader)
             .when()
@@ -435,7 +449,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(ep))
             .post("/endpoints")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
             .extract().response();
 
@@ -461,7 +475,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .when()
             .get("/notifications/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
             .extract().body().as(new TypeRef<>() {
             });
@@ -3677,6 +3691,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Application application1 = resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
         final EventType eventType1 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description");
         final EventType eventType2 = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 2", "description");
+        final EventType retictedRecipientsIntegrationEventType = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "restricted event type 2", "description", true);
 
         final Application application2 = resourceHelpers.createApplication(bundle2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "application 1");
         final EventType eventType1App2 = resourceHelpers.createEventType(application2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "event type 1", "description");
@@ -3718,8 +3733,20 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(2, behaviorGroups.stream().filter(bg -> newExpectedBgName.equals(bg.getDisplayName())).count());
 
         // update event types
-        endpointDTO.eventTypes = Set.of(eventType2App2.getId());
+        endpointDTO.eventTypes = Set.of(eventType2App2.getId(), retictedRecipientsIntegrationEventType.getId());
 
+        // should fail because we try to update a webhook with an event type allowed for email and drawer integrations only
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUUID)
+            .body(Json.encode(endpointDTO))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+        endpointDTO.eventTypes = Set.of(eventType2App2.getId());
         given()
             .header(identityHeader)
             .contentType(JSON)
@@ -3896,8 +3923,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         final EventType eventType2 = resourceHelpers.createEventType(application1.getId(), "name1", "event type 2", "description1");
         final EventType eventType3 = resourceHelpers.createEventType(application1.getId(), "name2", "event type 3", "description1");
+        final EventType retictedRecipientsIntegrationEventType = resourceHelpers.createEventType(application1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "restricted event type 2", "description", true);
 
-        Set<UUID> eventsIdsToLink = Set.of(eventType1.getId(), eventType2.getId(), eventType3.getId());
+        // should fail because we try to update a webhook with an event type allowed for email and drawer integrations only
+        Set<UUID> eventsIdsToLink = Set.of(eventType1.getId(), eventType2.getId(), eventType3.getId(), retictedRecipientsIntegrationEventType.getId());
         given()
             .header(identityHeader)
             .when()
@@ -3906,7 +3935,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("endpointUuid", endpoint.getId())
             .put("/endpoints/{endpointUuid}/eventTypes")
             .then()
-            .statusCode(204);
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+        eventsIdsToLink = Set.of(eventType1.getId(), eventType2.getId(), eventType3.getId());
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(eventsIdsToLink))
+            .pathParam("endpointUuid", endpoint.getId())
+            .put("/endpoints/{endpointUuid}/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
 
         endpointFromDb = resourceHelpers.getEndpoint(endpoint.getId());
         assertEquals(3, endpointFromDb.getEventTypes().size());

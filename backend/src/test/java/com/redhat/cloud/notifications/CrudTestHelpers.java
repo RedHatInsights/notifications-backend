@@ -300,6 +300,10 @@ public abstract class CrudTestHelpers {
     }
 
     public static EventType buildEventType(String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked) {
+        return buildEventType(appId, name, displayName, description, subscribedByDefault, subscriptionLocked, false);
+    }
+
+    public static EventType buildEventType(String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, boolean restrictToRecipientsIntegration) {
         EventType eventType = new EventType();
         if (appId != null) {
             eventType.setApplicationId(UUID.fromString(appId));
@@ -309,10 +313,15 @@ public abstract class CrudTestHelpers {
         eventType.setDescription(description);
         eventType.setSubscribedByDefault(subscribedByDefault);
         eventType.setSubscriptionLocked(subscriptionLocked);
+        eventType.setRestrictToRecipientsIntegrations(restrictToRecipientsIntegration);
         return eventType;
     }
 
     public static Optional<String> createEventType(Header identity, String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, int expectedStatusCode) {
+        return createEventType(identity, appId, name, displayName, description, subscribedByDefault, subscriptionLocked, false, expectedStatusCode);
+    }
+
+    public static Optional<String> createEventType(Header identity, String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, boolean restrictToRecipientsIntegration, int expectedStatusCode) {
         EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault, subscriptionLocked);
         return createEventType(identity, eventType, expectedStatusCode);
     }
@@ -368,8 +377,8 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void updateEventType(Header identity, String appId, String eventTypeId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, int expectedStatusCode) {
-        EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault, subscriptionLocked);
+    public static void updateEventType(Header identity, String appId, String eventTypeId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, boolean restrictToRecipientsIntegration, int expectedStatusCode) {
+        EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault, subscriptionLocked, restrictToRecipientsIntegration);
 
         given()
                 .contentType(JSON)
