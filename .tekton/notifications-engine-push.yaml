@@ -30,7 +30,7 @@ spec:
   pipelineRef:
     params:
     - name: url
-      value: https://github.com/RedHatInsights/konflux-pipelines.git
+      value: https://github.com/RedHatInsights/konflux-pipelines
     - name: revision
       value: main
     - name: pathInRepo
