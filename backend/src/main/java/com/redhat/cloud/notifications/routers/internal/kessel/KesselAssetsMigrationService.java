@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.grpc.stub.StreamObserver;
 import io.quarkus.logging.Log;
+import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
@@ -57,6 +58,7 @@ public class KesselAssetsMigrationService {
 
     @Path("/kessel/migrate-assets")
     @POST
+    @RunOnVirtualThread
     public void migrateAssets() {
         Log.info("Kessel assets' migration begins");
 
