@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
-import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
@@ -49,9 +47,6 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     ObjectMapper objectMapper;
-
-    @Inject
-    EndpointRepository endpointRepository;
 
     @Inject
     DrawerNotificationRepository drawerNotificationRepository;
@@ -94,8 +89,6 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         eventRepository.updateDrawerNotification(event);
 
         // get default endpoint
-        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.DRAWER);
-
         DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
 
         final Set<String> unsubscribers =
@@ -111,7 +104,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             externalAuthorizationCriteriaExtractor.extract(event)
         );
 
-        connectorSender.send(event, endpoint, JsonObject.mapFrom(drawerNotificationToConnector));
+        connectorSender.send(event, endpoints.getFirst(), JsonObject.mapFrom(drawerNotificationToConnector));
     }
 
     private DrawerEntryPayload buildJsonPayloadFromEvent(Event event) {
