@@ -98,7 +98,7 @@ objects:
             path: /health/ready
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: ${READINESS_INITIAL_DELAY}
+          initialDelaySeconds: ${{READINESS_INITIAL_DELAY}}
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
