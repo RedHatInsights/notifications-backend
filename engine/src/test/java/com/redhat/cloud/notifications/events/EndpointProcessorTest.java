@@ -12,7 +12,13 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.event.TestEventHelper;
+import com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatProcessor;
 import com.redhat.cloud.notifications.processors.camel.slack.SlackProcessor;
+import com.redhat.cloud.notifications.processors.camel.teams.TeamsProcessor;
+import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
+import com.redhat.cloud.notifications.processors.email.EmailProcessor;
+import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
+import com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -27,7 +33,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.events.EndpointProcessor.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.events.EndpointProcessor.SLACK_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDPOINT_SUBTYPE;
 import static java.time.ZoneOffset.UTC;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -51,6 +62,24 @@ public class EndpointProcessorTest {
 
     @InjectSpy
     EngineConfig engineConfig;
+
+    @InjectMock
+    EventingProcessor camelProcessor;
+
+    @InjectMock
+    EmailProcessor emailConnectorProcessor;
+
+    @InjectMock
+    TeamsProcessor teamsProcessor;
+
+    @InjectMock
+    GoogleChatProcessor googleChatProcessor;
+
+    @InjectMock
+    DrawerProcessor drawerProcessor;
+
+    @InjectMock
+    PagerDutyProcessor pagerDutyProcessor;
 
     /**
      * Tests that when an "integration customer test" event is processed, the
@@ -87,6 +116,7 @@ public class EndpointProcessorTest {
         event.setEventWrapper(new EventWrapperAction(rawAction));
         event.setId(rawAction.getId());
         event.setOrgId(orgId);
+        event.setEventType(new EventType());
 
         this.endpointProcessor.process(event);
 
@@ -188,4 +218,104 @@ public class EndpointProcessorTest {
             Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
         }
     }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testEndpointRestrictionAccordingEventType(final boolean isEventTypeRestrictedToRecipientsIntegrations) {
+        Mockito.when(engineConfig.isEmailsOnlyModeEnabled()).thenReturn(Boolean.FALSE);
+        Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(Boolean.TRUE);
+
+        // Create an Endpoint which will be simulated to be fetched from the database.
+        final String orgId = "test-org-id";
+
+        final Endpoint webhookEndpoint = new Endpoint();
+        webhookEndpoint.setType(EndpointType.WEBHOOK);
+
+        final Endpoint slackEndpoint = new Endpoint();
+        slackEndpoint.setSubType(SLACK_ENDPOINT_SUBTYPE);
+        slackEndpoint.setType(EndpointType.CAMEL);
+
+        final Endpoint teamsEndpoint = new Endpoint();
+        teamsEndpoint.setSubType(TEAMS_ENDPOINT_SUBTYPE);
+        teamsEndpoint.setType(EndpointType.CAMEL);
+
+        final Endpoint googleEndpoint = new Endpoint();
+        googleEndpoint.setSubType(GOOGLE_CHAT_ENDPOINT_SUBTYPE);
+        googleEndpoint.setType(EndpointType.CAMEL);
+
+        final Endpoint otherEndpoint = new Endpoint();
+        otherEndpoint.setSubType("other");
+        otherEndpoint.setType(EndpointType.CAMEL);
+
+        final Endpoint ansibleEndpoint = new Endpoint();
+        ansibleEndpoint.setType(EndpointType.ANSIBLE);
+
+        final Endpoint drawerEndpoint = new Endpoint();
+        drawerEndpoint.setType(EndpointType.DRAWER);
+
+        final Endpoint pagerDutyEndpoint = new Endpoint();
+        pagerDutyEndpoint.setType(EndpointType.PAGERDUTY);
+
+        final Endpoint emailEndpoint = new Endpoint();
+        emailEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+        Mockito.when(endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class)))
+            .thenReturn(List.of(webhookEndpoint, slackEndpoint, ansibleEndpoint, drawerEndpoint, pagerDutyEndpoint, emailEndpoint, teamsEndpoint, googleEndpoint, otherEndpoint));
+
+        Action action = new Action.ActionBuilder()
+            .withBundle("rhel")
+            .withApplication("policies")
+            .withEventType("policy-triggered")
+            .withOrgId(orgId)
+            .withTimestamp(LocalDateTime.now(UTC))
+            .withContext(new Context.ContextBuilder()
+                .withAdditionalProperty("inventory_id", "6ad30f3e-0497-4e74-99f1-b3f9a6120a6f")
+                .withAdditionalProperty("display_name", "my-computer")
+                .build()
+            )
+            .withEvents(List.of(
+                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                    .withMetadata(new Metadata.MetadataBuilder().build())
+                    .withPayload(new Payload.PayloadBuilder()
+                        .withAdditionalProperty("foo", "bar")
+                        .build()
+                    ).build()
+            )).build();
+
+        // Convert the action to JSON and back to simulate the event going
+        // through Kafka. If not, some additional properties of the context are
+        // not serialized as String, and won't match all the types and the way
+        // they get serialized when sent via Kafka and received via Kafka as
+        // well.
+        final String jsonAction = Parser.encode(action);
+        final Action rawAction = Parser.decode(jsonAction);
+
+        final Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(rawAction));
+        event.setId(rawAction.getId());
+        event.setOrgId(orgId);
+        event.setEventType(new EventType());
+        event.getEventType().setRestrictToRecipientsIntegrations(isEventTypeRestrictedToRecipientsIntegrations);
+        endpointProcessor.process(event);
+
+        Mockito.verify(drawerProcessor, Mockito.times(1)).process(any(), any());
+        Mockito.verify(emailConnectorProcessor, Mockito.times(1)).process(any(), any(), anyBoolean());
+
+        if (isEventTypeRestrictedToRecipientsIntegrations) {
+            Mockito.verifyNoInteractions(webhookProcessor);
+            Mockito.verifyNoInteractions(slackProcessor);
+            Mockito.verifyNoInteractions(pagerDutyProcessor);
+            Mockito.verifyNoInteractions(teamsProcessor);
+            Mockito.verifyNoInteractions(googleChatProcessor);
+            Mockito.verifyNoInteractions(camelProcessor);
+        } else {
+            Mockito.verify(webhookProcessor, Mockito.times(2)).process(any(), any());
+            Mockito.verify(slackProcessor, Mockito.times(1)).process(any(), any());
+            Mockito.verify(pagerDutyProcessor, Mockito.times(1)).process(any(), any());
+            Mockito.verify(teamsProcessor, Mockito.times(1)).process(any(), any());
+            Mockito.verify(googleChatProcessor, Mockito.times(1)).process(any(), any());
+            Mockito.verify(camelProcessor, Mockito.times(1)).process(any(), any());
+        }
+    }
+
 }

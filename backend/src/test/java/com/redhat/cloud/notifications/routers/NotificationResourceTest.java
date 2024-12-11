@@ -23,6 +23,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
@@ -2224,13 +2225,16 @@ public class NotificationResourceTest extends DbIsolatedTest {
         Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
         UUID bundleId = helpers.createTestAppAndEventTypes();
         UUID behaviorGroupId1 = helpers.createBehaviorGroup(accountId, orgId, "behavior-group-ep-1", bundleId).getId();
-        UUID behaviorGroupId2 = helpers.createBehaviorGroup(accountId, orgId, "behavior-group-ep-2", bundleId).getId();
+        helpers.createBehaviorGroup(accountId, orgId, "behavior-group-ep-2", bundleId).getId();
         UUID appId = applicationRepository.getApplications(TEST_BUNDLE_NAME).stream()
             .filter(a -> a.getName().equals(TEST_APP_NAME_2))
             .findFirst().get().getId();
         UUID endpointId1 = helpers.createWebhookEndpoint(accountId, orgId, "endpoint1");
         UUID endpointId2 = helpers.createWebhookEndpoint(accountId, orgId, "endpoint2");
+        Endpoint emailEndpoint = helpers.createSystemEndpoint(accountId, orgId, new SystemSubscriptionProperties(), EndpointType.EMAIL_SUBSCRIPTION);
+
         List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
+        final EventType retictedRecipientsIntegrationEventType = helpers.createEventType(appId, RandomStringUtils.randomAlphabetic(10).toLowerCase(), "restricted event type 2", "description", true);
 
         EventType eventType1 = eventTypes.get(1);
         EventType eventType2 = eventTypes.get(2);
@@ -2242,6 +2246,60 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .pathParam("eventTypeId", eventType1.getId())
             .body(Json.encode(Set.of(behaviorGroupId1)))
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        assertEquals(0, helpers.getEndpoint(endpointId1).getEventTypes().size());
+
+        // assign endpoint 1 and email endpoint to behavior group 1
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", behaviorGroupId1)
+            .body(Json.encode(Arrays.asList(endpointId1, emailEndpoint.getId())))
+            .when()
+            .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        assertEquals(1, helpers.getEndpoint(endpointId1).getEventTypes().size());
+
+        // add event type restrictedRecipientsIntegrationEventType to behavior group 1
+        // must be rejected because restrictedRecipientsIntegrationEventType can't be apply to endpoint 1 (webhook)
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", retictedRecipientsIntegrationEventType.getId())
+            .body(Json.encode(Set.of(behaviorGroupId1)))
+            .when()
+            .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+        assertEquals(1, helpers.getEndpoint(endpointId1).getEventTypes().size());
+
+        // remove endpoint1 from behavior group 1
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", behaviorGroupId1)
+            .body(Json.encode(Arrays.asList(emailEndpoint.getId())))
+            .when()
+            .put("/notifications/behaviorGroups/{behaviorGroupId}/actions")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        // add event type restrictedRecipientsIntegrationEventType to behavior group 1
+        given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("eventTypeId", retictedRecipientsIntegrationEventType.getId())
+            .body(Json.encode(new HashSet<>()))
             .when()
             .put("/notifications/eventTypes/{eventTypeId}/behaviorGroups")
             .then()

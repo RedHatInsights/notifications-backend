@@ -140,20 +140,22 @@ public class EndpointProcessor {
                     switch (endpointsByTypeEntry.getKey()) {
                         // TODO Introduce EndpointType.SLACK?
                         case CAMEL:
-                            Map<String, List<Endpoint>> endpointsBySubType = endpointsByTypeEntry.getValue().stream().collect(Collectors.groupingBy(Endpoint::getSubType));
-                            for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
-                                try {
-                                    if (SLACK_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
-                                        slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                    } else if (TEAMS_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
-                                        teamsProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                    } else if (GOOGLE_CHAT_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
-                                        googleChatProcessor.process(event, endpointsBySubTypeEntry.getValue());
-                                    } else {
-                                        camelProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                            if (!event.getEventType().isRestrictToRecipientsIntegrations()) {
+                                Map<String, List<Endpoint>> endpointsBySubType = endpointsByTypeEntry.getValue().stream().collect(Collectors.groupingBy(Endpoint::getSubType));
+                                for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
+                                    try {
+                                        if (SLACK_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
+                                            slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                                        } else if (TEAMS_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
+                                            teamsProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                                        } else if (GOOGLE_CHAT_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
+                                            googleChatProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                                        } else {
+                                            camelProcessor.process(event, endpointsBySubTypeEntry.getValue());
+                                        }
+                                    } catch (Exception e) {
+                                        accumulator.add(e);
                                     }
-                                } catch (Exception e) {
-                                    accumulator.add(e);
                                 }
                             }
                             break;
@@ -168,13 +170,17 @@ public class EndpointProcessor {
                             break;
                         case WEBHOOK:
                         case ANSIBLE:
-                            webhookProcessor.process(event, endpointsByTypeEntry.getValue());
+                            if (!event.getEventType().isRestrictToRecipientsIntegrations()) {
+                                webhookProcessor.process(event, endpointsByTypeEntry.getValue());
+                            }
                             break;
                         case DRAWER:
                             drawerProcessor.process(event, endpointsByTypeEntry.getValue());
                             break;
                         case PAGERDUTY:
-                            pagerDutyProcessor.process(event, endpointsByTypeEntry.getValue());
+                            if (!event.getEventType().isRestrictToRecipientsIntegrations()) {
+                                pagerDutyProcessor.process(event, endpointsByTypeEntry.getValue());
+                            }
                             break;
                         default:
                             throw new IllegalArgumentException("Unexpected endpoint type: " + endpointsByTypeEntry.getKey());

@@ -208,7 +208,7 @@ public class ApplicationRepository {
 
     @Transactional
     public int updateEventType(UUID id, EventType eventType) {
-        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked, visible = :visible WHERE id = :id";
+        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked, visible = :visible, restrictToRecipientsIntegrations = :restrictToRecipientsIntegrations WHERE id = :id";
         int rowCount = entityManager.createQuery(eventTypeQuery)
                 .setParameter("name", eventType.getName())
                 .setParameter("fullyQualifiedName", eventType.getFullyQualifiedName())
@@ -217,6 +217,7 @@ public class ApplicationRepository {
                 .setParameter("subscribedByDefault", eventType.isSubscribedByDefault())
                 .setParameter("subscriptionLocked", eventType.isSubscriptionLocked())
                 .setParameter("visible", eventType.isVisible())
+                .setParameter("restrictToRecipientsIntegrations", eventType.isRestrictToRecipientsIntegrations())
                 .setParameter("id", id)
                 .executeUpdate();
         String eventQuery = "UPDATE Event SET eventTypeDisplayName = :displayName WHERE eventType.id = :eventTypeId";
