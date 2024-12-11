@@ -98,7 +98,7 @@ objects:
             path: /health/ready
             port: 8000
             scheme: HTTP
-          initialDelaySeconds: 2000
+          initialDelaySeconds: ${{READINESS_INITIAL_DELAY}}
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
@@ -335,3 +335,5 @@ parameters:
   value: "false"
 - name: KESSEL_DOMAIN
   value: "redhat"
+- name: READINESS_INITIAL_DELAY
+  value: "40"
