@@ -36,7 +36,7 @@ spec:
     - name: revision
       value: main
     - name: pathInRepo
-      value: pipelines/build-pipeline.yaml
+      value: pipelines/docker-build.yaml
     resolver: git
   taskRunTemplate: {}
   workspaces:
