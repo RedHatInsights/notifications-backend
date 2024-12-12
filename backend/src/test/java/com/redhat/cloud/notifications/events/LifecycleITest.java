@@ -1,11 +1,14 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.CrudTestHelpers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -102,6 +105,12 @@ public class LifecycleITest extends DbIsolatedTest {
 
     @InjectMock
     BackendConfig backendConfig;
+
+    @Inject
+    ResourceHelpers resourceHelpers;
+
+    @Inject
+    ApplicationRepository applicationRepository;
 
     /**
      * We mock the sources service's REST client because there are a few tests
@@ -254,6 +263,8 @@ public class LifecycleITest extends DbIsolatedTest {
         retry(() -> checkEndpointHistory(identityHeader, emailEndpoint, 0, true, 200));
 
         // Lets subscribe the user to the email preferences
+        CrudTestHelpers.createAggregationTemplate(BUNDLE_NAME, APP_NAME, applicationRepository, adminRole);
+        resourceHelpers.createDrawerTemplate(BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
         subscribeUserPreferences(identityHeader, BUNDLE_NAME, APP_NAME);
 
         // Before the notifications split, a Kafka message was sent here.

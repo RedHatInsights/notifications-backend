@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -142,7 +143,29 @@ public class TemplateRepository {
 
             return instantEmailTemplate;
         } catch (NoResultException e) {
-            throw new NotFoundException("Instant email template not found");
+            throw new NotFoundException(String.format("Event type '%s' doesn't support instant email subscription", eventTypeId));
+        }
+    }
+
+    public AggregationEmailTemplate findAggregationEmailTemplatesByEventType(UUID eventTypeId) {
+        String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.application a JOIN FETCH a.eventTypes ev WHERE ev.id = :eventTypeId";
+        try {
+            return entityManager.createQuery(hql, AggregationEmailTemplate.class)
+                .setParameter("eventTypeId", eventTypeId)
+                .getSingleResult();
+        } catch (NoResultException e) {
+            throw new NotFoundException(String.format("Event type '%s' doesn't support daily email subscription", eventTypeId));
+        }
+    }
+
+    public IntegrationTemplate findDrawerTemplateByEventType(UUID eventTypeId) {
+        try {
+            String hql = "FROM IntegrationTemplate t WHERE t.integrationType = 'drawer' and t.eventType.id = :eventTypeId";
+            return entityManager.createQuery(hql, IntegrationTemplate.class)
+                .setParameter("eventTypeId", eventTypeId)
+                .getSingleResult();
+        } catch (NoResultException e) {
+            throw new NotFoundException(String.format("Event type '%s' doesn't support Drawer subscription", eventTypeId));
         }
     }
 

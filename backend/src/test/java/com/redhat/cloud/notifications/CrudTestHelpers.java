@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
@@ -21,6 +22,7 @@ import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -1052,5 +1054,20 @@ public abstract class CrudTestHelpers {
         emailTemplate.setSubjectTemplateId(UUID.fromString(subjectTemplateId));
         emailTemplate.setBodyTemplateId(UUID.fromString(bodyTemplateId));
         return emailTemplate;
+    }
+
+    public static String createAggregationTemplate(String bundle, String application, ApplicationRepository applicationRepository, String adminRole) {
+        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+
+        Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-aggregation-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
+        JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
+        Template bodyTemplate = CrudTestHelpers.buildTemplate("body-aggregation-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
+        JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
+
+        Application app = applicationRepository.getApplication(bundle, application);
+
+        AggregationEmailTemplate emailTemplate = CrudTestHelpers.buildAggregationEmailTemplate(app.getId().toString(), subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
+        JsonObject jsonEmailTemplate = createAggregationEmailTemplate(adminIdentity, emailTemplate, 200).get();
+        return jsonEmailTemplate.getString("id");
     }
 }
