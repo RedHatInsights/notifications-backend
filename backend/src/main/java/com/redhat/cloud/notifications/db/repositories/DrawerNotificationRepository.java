@@ -147,4 +147,12 @@ public class DrawerNotificationRepository {
         }
     }
 
+    @Transactional
+    public void cleanupIntegrations(int limit) {
+        String deleteQuery = "delete from endpoints where id in (select id from endpoints where endpoint_type_v2 = 'DRAWER' " +
+            "and org_id is not null and not exists (select 1 from endpoint_event_type where endpoint_id = id) limit :limit)";
+        entityManager.createNativeQuery(deleteQuery)
+            .setParameter("limit", limit)
+            .executeUpdate();
+    }
 }
