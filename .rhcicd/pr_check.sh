@@ -54,7 +54,7 @@ source $CICD_ROOT/deploy_ephemeral_env.sh
 
 # Run IQE tests
 export IQE_PLUGINS="notifications"
-export IQE_MARKER_EXPRESSION="notification_smoke and api"
+export IQE_MARKER_EXPRESSION="smoke and api"
 export IQE_FILTER_EXPRESSION=""
 export IQE_CJI_TIMEOUT="30m"
 source $CICD_ROOT/cji_smoke_test.sh
