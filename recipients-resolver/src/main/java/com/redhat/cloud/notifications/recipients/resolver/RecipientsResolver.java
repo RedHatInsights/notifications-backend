@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
-import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.kessel.KesselService;
@@ -36,17 +36,17 @@ public class RecipientsResolver {
     }
 
     @CacheResult(cacheName = "find-recipients")
-    public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriterion externalAuthorizationCriteria) {
+    public Set<User> findRecipients(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
         Optional<Set<String>> requestUsersIntersection = extractRequestUsersIntersection(recipientSettings);
         Set<String> lowerCaseSubscribers = toLowerCaseOrEmpty(subscribers);
         Set<String> lowerCaseUnsubscribers = toLowerCaseOrEmpty(unsubscribers);
 
         return recipientSettings.stream()
-            .flatMap(r -> recipientUsers(orgId, r, requestUsersIntersection, lowerCaseSubscribers, lowerCaseUnsubscribers, subscribedByDefault, externalAuthorizationCriteria).stream())
+            .flatMap(r -> recipientUsers(orgId, r, requestUsersIntersection, lowerCaseSubscribers, lowerCaseUnsubscribers, subscribedByDefault, recipientsAuthorizationCriterion).stream())
             .collect(toSet());
     }
 
-    private Set<User> recipientUsers(String orgId, RecipientSettings request, Optional<Set<String>> requestUsersIntersection, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriterion externalAuthorizationCriteria) {
+    private Set<User> recipientUsers(String orgId, RecipientSettings request, Optional<Set<String>> requestUsersIntersection, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
 
         /*
          * When:
@@ -67,8 +67,8 @@ public class RecipientsResolver {
         }
 
         final Set<String> authorizedUsers = new HashSet<>();
-        if (recipientsResolverConfig.isUseKesselEnabled() && !fetchedUsers.isEmpty() && null != externalAuthorizationCriteria) {
-            authorizedUsers.addAll(findAuthorizedUsersWithCriteria(externalAuthorizationCriteria));
+        if (recipientsResolverConfig.isUseKesselEnabled() && !fetchedUsers.isEmpty() && null != recipientsAuthorizationCriterion) {
+            authorizedUsers.addAll(findAuthorizedUsersWithCriterion(recipientsAuthorizationCriterion));
         }
 
         // The fetched users are cached, so we need to create a new Set to avoid altering the cached data.
@@ -86,7 +86,7 @@ public class RecipientsResolver {
                 return true;
             }
 
-            if (recipientsResolverConfig.isUseKesselEnabled() && null != externalAuthorizationCriteria && !authorizedUsers.contains(lowerCaseUsername)) {
+            if (recipientsResolverConfig.isUseKesselEnabled() && null != recipientsAuthorizationCriterion && !authorizedUsers.contains(lowerCaseUsername)) {
                 return true;
             }
 
@@ -142,7 +142,7 @@ public class RecipientsResolver {
         }
     }
 
-    private Set<String> findAuthorizedUsersWithCriteria(ExternalAuthorizationCriterion externalAuthorizationCriteria) {
+    private Set<String> findAuthorizedUsersWithCriterion(RecipientsAuthorizationCriterion externalAuthorizationCriteria) {
         Set<String> authorizedUsers = new HashSet<>();
         if (externalAuthorizationCriteria != null) {
             try {

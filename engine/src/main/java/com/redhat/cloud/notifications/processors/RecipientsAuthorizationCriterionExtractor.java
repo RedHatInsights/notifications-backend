@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
@@ -9,10 +10,10 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-@ApplicationScoped
-public class ExternalAuthorizationCriterionExtractor {
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.RECIPIENTS_AUTHORIZATION_CRITERION;
 
-    public static final String EXTERNAL_AUTHORIZATION_CRITERIA = "recipients_authorization_criterion";
+@ApplicationScoped
+public class RecipientsAuthorizationCriterionExtractor {
 
     @Inject
     BaseTransformer baseTransformer;
@@ -20,18 +21,18 @@ public class ExternalAuthorizationCriterionExtractor {
     @Inject
     ObjectMapper objectMapper;
 
-    public ExternalAuthorizationCriterion extract(Event event) {
+    public RecipientsAuthorizationCriterion extract(Event event) {
         return extract(baseTransformer.toJsonObject(event));
     }
 
-    public ExternalAuthorizationCriterion extract(EmailAggregation emailAggregation) {
+    public RecipientsAuthorizationCriterion extract(EmailAggregation emailAggregation) {
         return extract(emailAggregation.getPayload());
     }
 
-    private ExternalAuthorizationCriterion extract(JsonObject data) {
-        if (null != data.getJsonObject(BaseTransformer.CONTEXT) && null != data.getJsonObject(BaseTransformer.CONTEXT).getJsonObject(EXTERNAL_AUTHORIZATION_CRITERIA)) {
+    private RecipientsAuthorizationCriterion extract(JsonObject data) {
+        if (null != data.getJsonObject(RECIPIENTS_AUTHORIZATION_CRITERION)) {
             try {
-                return objectMapper.convertValue(data.getJsonObject(BaseTransformer.CONTEXT).getJsonObject(EXTERNAL_AUTHORIZATION_CRITERIA), ExternalAuthorizationCriterion.class);
+                return objectMapper.convertValue(data.getJsonObject(RECIPIENTS_AUTHORIZATION_CRITERION), RecipientsAuthorizationCriterion.class);
             } catch (IllegalArgumentException e) {
                 Log.error("Error parsing authorization criteria", e);
             }

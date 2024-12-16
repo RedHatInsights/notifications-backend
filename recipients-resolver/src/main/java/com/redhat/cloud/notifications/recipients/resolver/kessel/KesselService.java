@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.recipients.resolver.kessel;
 
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
-import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriterion;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -39,9 +39,9 @@ public class KesselService {
         lookupClient = clientsManager.getLookupClient();
     }
 
-    public Set<String> lookupSubjects(ExternalAuthorizationCriterion externalAuthorizationCriteria) {
+    public Set<String> lookupSubjects(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
         Set<String> userNames = new HashSet<>();
-        LookupSubjectsRequest request = getLookupSubjectsRequest(externalAuthorizationCriteria);
+        LookupSubjectsRequest request = getLookupSubjectsRequest(recipientsAuthorizationCriterion);
 
         for (Iterator<LookupSubjectsResponse> it = lookupClient.lookupSubjects(request); it.hasNext();) {
             LookupSubjectsResponse response = it.next();
@@ -50,15 +50,15 @@ public class KesselService {
         return userNames;
     }
 
-    private static LookupSubjectsRequest getLookupSubjectsRequest(ExternalAuthorizationCriterion externalAuthorizationCriteria) {
+    private static LookupSubjectsRequest getLookupSubjectsRequest(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
         LookupSubjectsRequest request = LookupSubjectsRequest.newBuilder()
             .setResource(ObjectReference.newBuilder()
                 .setType(ObjectType.newBuilder()
-                    .setNamespace(externalAuthorizationCriteria.getType().namespace)
-                    .setName(externalAuthorizationCriteria.getType().name).build())
-                .setId(externalAuthorizationCriteria.getId())
+                    .setNamespace(recipientsAuthorizationCriterion.getType().getNamespace())
+                    .setName(recipientsAuthorizationCriterion.getType().getName()).build())
+                .setId(recipientsAuthorizationCriterion.getId())
                 .build())
-            .setRelation(externalAuthorizationCriteria.getRelation())
+            .setRelation(recipientsAuthorizationCriterion.getRelation())
             .setSubjectType(ObjectType.newBuilder().setNamespace(RBAC_NAMESPACE).setName(SUBJECT_TYPE_USER).build())
             .build();
         return request;

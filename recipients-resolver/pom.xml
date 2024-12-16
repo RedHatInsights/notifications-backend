@@ -24,6 +24,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Insights -->
+        <dependency>
+            <groupId>com.redhat.cloud.common</groupId>
+            <artifactId>insights-notification-schemas-java</artifactId>
+            <version>${insights-notification-schemas-java.version}</version>
+        </dependency>
+
         <!-- gRPC clients for the interactions with Kessel -->
         <dependency>
             <groupId>org.project-kessel</groupId>

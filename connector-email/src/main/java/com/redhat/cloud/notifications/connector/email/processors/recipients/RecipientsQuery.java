@@ -24,5 +24,5 @@ public class RecipientsQuery {
 
     public boolean subscribedByDefault;
 
-    public JsonObject authorizationCriteria;
+    public JsonObject recipientsAuthorizationCriterion;
 }

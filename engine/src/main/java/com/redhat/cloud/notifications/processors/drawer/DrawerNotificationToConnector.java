@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.processors.drawer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterion;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import java.util.Collection;
 
@@ -20,6 +20,6 @@ public record DrawerNotificationToConnector(
     @JsonProperty("unsubscribers")
     Collection<String> unsubscribers,
 
-    @JsonProperty("authorization_criteria")
-    ExternalAuthorizationCriterion externalAuthorizationCriteria
+    @JsonProperty("recipients_authorization_criterion")
+    RecipientsAuthorizationCriterion recipientsAuthorizationCriterion
 )  { }
