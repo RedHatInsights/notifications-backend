@@ -29,6 +29,7 @@ public class BaseTransformer {
     public static final String PAYLOAD = "payload";
     public static final String SOURCE = "source";
     public static final String TIMESTAMP = "timestamp";
+    public static final String RECIPIENTS_AUTHORIZATION_CRITERION = "recipients_authorization_criterion";
 
     /**
      * Transforms the given event into a {@link JsonObject}.
@@ -45,6 +46,9 @@ public class BaseTransformer {
             message.put(BUNDLE, action.getBundle());
             message.put(CONTEXT, JsonObject.mapFrom(action.getContext()));
             message.put(EVENT_TYPE, action.getEventType());
+            if (action.getRecipientsAuthorizationCriterion() != null) {
+                message.put(RECIPIENTS_AUTHORIZATION_CRITERION, JsonObject.mapFrom(action.getRecipientsAuthorizationCriterion()));
+            }
             message.put(
                     EVENTS,
                     new JsonArray(

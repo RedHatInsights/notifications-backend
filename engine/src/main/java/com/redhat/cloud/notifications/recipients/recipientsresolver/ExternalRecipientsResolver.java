@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.recipients.recipientsresolver;
 
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterion;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.pojo.RecipientsQuery;
@@ -59,7 +59,7 @@ public class ExternalRecipientsResolver {
     }
 
     @CacheResult(cacheName = "recipients-resolver-results")
-    public Set<User> recipientUsers(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, ExternalAuthorizationCriterion externalAuthorizationCriteria) {
+    public Set<User> recipientUsers(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
         RecipientsQuery recipientsQuery = new RecipientsQuery();
         recipientsQuery.subscribers = Set.copyOf(subscribers);
         recipientsQuery.unsubscribers = Set.copyOf(unsubscribers);
@@ -71,7 +71,7 @@ public class ExternalRecipientsResolver {
 
         recipientsQuery.recipientSettings = recipientSettingsSet;
         recipientsQuery.subscribedByDefault = subscribedByDefault;
-        recipientsQuery.externalAuthorizationCriteria = externalAuthorizationCriteria;
+        recipientsQuery.recipientsAuthorizationCriterion = recipientsAuthorizationCriterion;
         Set<User> recipientsList = retryOnError(() -> recipientsResolverService.getRecipients(recipientsQuery));
         return recipientsList;
     }

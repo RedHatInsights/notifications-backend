@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.processors.email.connector.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.redhat.cloud.notifications.processors.ExternalAuthorizationCriterion;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import java.util.Collection;
 
 /**
@@ -21,7 +21,7 @@ import java.util.Collection;
  *                              event type.
  * @param subscribedByDefault   true if the event type is subscribed by
  *                              default.
- * @param externalAuthorizationCriteria   forward received authorization criteria.
+ * @param recipientsAuthorizationCriterion   forward received authorization criterion.
  *
  */
 public record EmailNotification(
@@ -33,5 +33,5 @@ public record EmailNotification(
     @JsonProperty("subscribers")            Collection<String> subscribers,
     @JsonProperty("unsubscribers")          Collection<String> unsubscribers,
     @JsonProperty("subscribed_by_default")  boolean subscribedByDefault,
-    @JsonProperty("external_authorization_criterion") ExternalAuthorizationCriterion externalAuthorizationCriteria
+    @JsonProperty("recipients_authorization_criterion") RecipientsAuthorizationCriterion recipientsAuthorizationCriterion
 )  { }

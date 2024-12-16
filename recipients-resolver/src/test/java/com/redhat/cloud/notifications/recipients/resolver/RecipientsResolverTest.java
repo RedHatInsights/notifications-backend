@@ -1,7 +1,8 @@
 package com.redhat.cloud.notifications.recipients.resolver;
 
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
+import com.redhat.cloud.notifications.ingress.Type;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
-import com.redhat.cloud.notifications.recipients.model.ExternalAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.model.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.model.User;
 import com.redhat.cloud.notifications.recipients.resolver.kessel.KesselService;
@@ -131,14 +132,19 @@ public class RecipientsResolverTest {
     @ParameterizedTest
     @CsvSource({"true,false", "true,true", "false,true", "false,false"})
     void testNotSubscribedByDefaultAndAdminsOnlyWithOrWithoutKessel(boolean useKessel, boolean useJsonObjectAsAuthData) {
-        ExternalAuthorizationCriterion externalAuthorizationCriteria = null;
+        RecipientsAuthorizationCriterion externalAuthorizationCriteria = null;
         // update Kessel feature flag only if use Kessel is true, to keep check on default behaviour
         if (useKessel) {
             when(recipientsResolverConfig.isUseKesselEnabled()).thenReturn(useKessel);
         }
         if (useJsonObjectAsAuthData) {
-            ExternalAuthorizationCriterion.Type kesselAssetType = new ExternalAuthorizationCriterion.Type("host", "namespace_test");
-            externalAuthorizationCriteria = new ExternalAuthorizationCriterion(kesselAssetType, "defaultId", "relationship");
+            Type kesselAssetType = new Type();
+            kesselAssetType.setNamespace("namespace_test");
+            kesselAssetType.setName("host");
+            externalAuthorizationCriteria = new RecipientsAuthorizationCriterion();
+            externalAuthorizationCriteria.setId("defaultId");
+            externalAuthorizationCriteria.setRelation("relationship");
+            externalAuthorizationCriteria.setType(kesselAssetType);
             when(kesselService.lookupSubjects(any())).thenReturn(Set.of("user1", "admin1"));
         }
         Set<User> recipients = recipientsResolver.findRecipients(
