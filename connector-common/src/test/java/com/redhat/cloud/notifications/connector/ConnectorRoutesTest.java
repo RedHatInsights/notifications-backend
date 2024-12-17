@@ -42,7 +42,7 @@ import static org.mockserver.verify.VerificationTimes.atLeast;
 
 public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
-    private static final String KAFKA_SOURCE_MOCK = "direct:kafka-source-mock";
+    public static final String KAFKA_SOURCE_MOCK = "direct:kafka-source-mock";
 
     @Inject
     protected ConnectorConfig connectorConfig;
