@@ -3,14 +3,12 @@ package com.redhat.cloud.notifications.connector.email;
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
-import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
-import io.vertx.core.json.JsonArray;
+import com.redhat.cloud.notifications.connector.email.model.EmailNotification;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 
-import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
@@ -30,38 +28,21 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
     @Override
     public void extract(final Exchange exchange, final JsonObject cloudEventData) {
 
-        final List<RecipientSettings> recipientSettings = cloudEventData.getJsonArray("recipient_settings")
-            .stream()
-            .map(JsonObject.class::cast)
-            .map(jsonSetting -> jsonSetting.mapTo(RecipientSettings.class))
-            .toList();
-
-        final Set<String> subscribers = cloudEventData.getJsonArray("subscribers", JsonArray.of())
-            .stream()
-            .map(String.class::cast)
-            .collect(toSet());
-
-        final Set<String> unsubscribers = cloudEventData.getJsonArray("unsubscribers", JsonArray.of())
-                .stream()
-                .map(String.class::cast)
-                .collect(toSet());
-
-        final JsonObject recipientsAuthorizationCriterion = cloudEventData.getJsonObject("recipients_authorization_criterion");
-
-        final Set<String> emails = recipientSettings.stream()
+        EmailNotification emailNotification =  cloudEventData.mapTo(EmailNotification.class);
+        final Set<String> emails = emailNotification.recipientSettings().stream()
                 .filter(settings -> settings.getEmails() != null)
                 .flatMap(settings -> settings.getEmails().stream())
                 .collect(toSet());
 
-        exchange.setProperty(ExchangeProperty.RENDERED_BODY, cloudEventData.getString("email_body"));
-        exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, cloudEventData.getString("email_subject"));
-        exchange.setProperty(ExchangeProperty.RECIPIENT_SETTINGS, recipientSettings);
-        exchange.setProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, cloudEventData.getBoolean("subscribed_by_default"));
-        exchange.setProperty(ExchangeProperty.SUBSCRIBERS, subscribers);
-        exchange.setProperty(ExchangeProperty.UNSUBSCRIBERS, unsubscribers);
-        exchange.setProperty(ExchangeProperty.RECIPIENTS_AUTHORIZATION_CRITERION, recipientsAuthorizationCriterion);
+        exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailNotification.emailBody());
+        exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailNotification.emailSubject());
+        exchange.setProperty(ExchangeProperty.RECIPIENT_SETTINGS, emailNotification.recipientSettings());
+        exchange.setProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, emailNotification.subscribedByDefault());
+        exchange.setProperty(ExchangeProperty.SUBSCRIBERS, emailNotification.subscribers());
+        exchange.setProperty(ExchangeProperty.UNSUBSCRIBERS, emailNotification.unsubscribers());
+        exchange.setProperty(ExchangeProperty.RECIPIENTS_AUTHORIZATION_CRITERION, emailNotification.recipientsAuthorizationCriterion());
         exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
-        exchange.setProperty(ExchangeProperty.EMAIL_SENDER, cloudEventData.getString("email_sender"));
+        exchange.setProperty(ExchangeProperty.EMAIL_SENDER, emailNotification.emailSender());
 
         exchange.setProperty(ExchangeProperty.USE_EMAIL_BOP_V1_SSL, emailConnectorConfig.isEnableBopServiceWithSslChecks());
     }
