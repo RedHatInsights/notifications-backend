@@ -67,7 +67,7 @@ public class RecipientsResolver {
         }
 
         final Set<String> authorizedUsers = new HashSet<>();
-        if (recipientsResolverConfig.isUseKesselEnabled() && !fetchedUsers.isEmpty() && null != recipientsAuthorizationCriterion) {
+        if (recipientsResolverConfig.isUseKesselEnabled(orgId) && !fetchedUsers.isEmpty() && null != recipientsAuthorizationCriterion) {
             authorizedUsers.addAll(findAuthorizedUsersWithCriterion(recipientsAuthorizationCriterion));
         }
 
@@ -86,7 +86,7 @@ public class RecipientsResolver {
                 return true;
             }
 
-            if (recipientsResolverConfig.isUseKesselEnabled() && null != recipientsAuthorizationCriterion && !authorizedUsers.contains(lowerCaseUsername)) {
+            if (recipientsResolverConfig.isUseKesselEnabled(orgId) && null != recipientsAuthorizationCriterion && !authorizedUsers.contains(lowerCaseUsername)) {
                 return true;
             }
 
