@@ -12,8 +12,8 @@ ARG rh_it_root_ca_cert_secondary_url
 RUN microdnf install -y dnf
 RUN dnf install -y 'dnf-command(config-manager)'
 RUN dnf --disablerepo=* -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-RUN dnf install -y postgresql15-server
-RUN dnf install -y postgresql15-contrib
+RUN dnf install -y postgresql16-server
+RUN dnf install -y postgresql16-contrib
 
 # Add RedHat CAs on OS truststore (check https://certs.corp.redhat.com/ for more details)
 RUN curl --output rh_it_root_ca_file.crt --insecure "${rh_it_root_ca_cert_url}" \
