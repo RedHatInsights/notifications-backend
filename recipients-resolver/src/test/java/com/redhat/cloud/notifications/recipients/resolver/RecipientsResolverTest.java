@@ -26,6 +26,7 @@ import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -135,7 +136,7 @@ public class RecipientsResolverTest {
         RecipientsAuthorizationCriterion externalAuthorizationCriteria = null;
         // update Kessel feature flag only if use Kessel is true, to keep check on default behaviour
         if (useKessel) {
-            when(recipientsResolverConfig.isUseKesselEnabled()).thenReturn(useKessel);
+            when(recipientsResolverConfig.isUseKesselEnabled(anyString())).thenReturn(useKessel);
         }
         if (useJsonObjectAsAuthData) {
             Type kesselAssetType = new Type();

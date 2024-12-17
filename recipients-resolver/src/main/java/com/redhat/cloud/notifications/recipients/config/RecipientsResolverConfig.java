@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.recipients.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
@@ -33,7 +34,6 @@ public class RecipientsResolverConfig {
     public static final String MBOP_APITOKEN = "notifications.recipients-resolver.mbop.api_token";
     public static final String MBOP_CLIENT_ID = "notifications.recipients-resolver.mbop.client_id";
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
-    private static final String NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED = "notifications.recipients-resolver.use.kessel.enabled";
     private static final String KESSEL_TARGET_URL = "notifications.recipients-resolver.kessel.target-url";
     private static final String KESSEL_USE_SECURE_CLIENT = "relations-api.is-secure-clients";
 
@@ -80,9 +80,6 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = MBOP_ENV, defaultValue = "na")
     String mbopEnv;
 
-    @ConfigProperty(name = NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED, defaultValue = "false")
-    boolean useKesselEnabled;
-
     @ConfigProperty(name = KESSEL_TARGET_URL, defaultValue = "localhost:9000")
     String kesselTargetUrl;
 
@@ -123,7 +120,7 @@ public class RecipientsResolverConfig {
         config.put(RETRY_MAX_BACKOFF, getMaxRetryBackoff());
         config.put(WARN_IF_DURATION_EXCEEDS, getLogTooLongRequestLimit());
         config.put(UNLEASH, unleashEnabled);
-        config.put(NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED, isUseKesselEnabled());
+        config.put(useKesselToggle, isUseKesselEnabled(null));
         config.put(KESSEL_TARGET_URL, getKesselTargetUrl());
         config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClient());
 
@@ -149,9 +146,12 @@ public class RecipientsResolverConfig {
         }
     }
 
-    public boolean isUseKesselEnabled() {
-        // TODO read this toggle from unleash when Kessel will be available on stage
-        return useKesselEnabled;
+    public boolean isUseKesselEnabled(String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(useKesselToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
     }
 
     public int getMaxResultsPerPage() {
