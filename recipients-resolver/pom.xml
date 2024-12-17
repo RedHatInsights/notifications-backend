@@ -38,6 +38,13 @@
             <version>${kessel.relationships-client.version}</version>
         </dependency>
 
+        <!-- oAuth library for the gRPC clients -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>oauth2-oidc-sdk</artifactId>
+            <version>${kessel.oauth-client.version}</version>
+        </dependency>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
