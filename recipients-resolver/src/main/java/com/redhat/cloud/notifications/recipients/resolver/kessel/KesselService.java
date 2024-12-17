@@ -10,10 +10,12 @@ import org.project_kessel.api.relations.v1beta1.LookupSubjectsResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
 import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.relations.client.LookupClient;
+import org.project_kessel.relations.client.RelationsConfig;
 import org.project_kessel.relations.client.RelationsGrpcClientsManager;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 
 @ApplicationScoped
@@ -30,13 +32,70 @@ public class KesselService {
 
     @PostConstruct
     void postConstruct() {
-        RelationsGrpcClientsManager clientsManager;
-        if (recipientsResolverConfig.isKesselUseSecureClient()) {
-            clientsManager = RelationsGrpcClientsManager.forSecureClients(recipientsResolverConfig.getKesselTargetUrl());
-        } else {
-            clientsManager = RelationsGrpcClientsManager.forInsecureClients(recipientsResolverConfig.getKesselTargetUrl());
-        }
+        RelationsConfig kesselRelationsConfig = getKesselRelationsConfig();
+
+        RelationsGrpcClientsManager clientsManager = RelationsGrpcClientsManager.forClientsWithConfig(kesselRelationsConfig);
+
         lookupClient = clientsManager.getLookupClient();
+    }
+
+    private RelationsConfig getKesselRelationsConfig() {
+        RelationsConfig kesselRelationsConfig = new RelationsConfig() {
+            @Override
+            public boolean isSecureClients() {
+                return recipientsResolverConfig.isKesselUseSecureClient();
+            }
+
+            @Override
+            public String targetUrl() {
+                return recipientsResolverConfig.getKesselTargetUrl();
+            }
+
+            @Override
+            public Optional<AuthenticationConfig> authenticationConfig() {
+                AuthenticationConfig authenticationConfig = new AuthenticationConfig() {
+                    @Override
+                    public org.project_kessel.clients.authn.AuthenticationConfig.AuthMode mode() {
+                        return recipientsResolverConfig.getKesselClientMode();
+                    }
+
+                    @Override
+                    public Optional<OIDCClientCredentialsConfig> clientCredentialsConfig() {
+                        OIDCClientCredentialsConfig clientCredentialsConfig = new OIDCClientCredentialsConfig() {
+                            @Override
+                            public String issuer() {
+                                return recipientsResolverConfig.getKesselClientIssuer().get();
+                            }
+
+                            @Override
+                            public String clientId() {
+                                return recipientsResolverConfig.getKesselClientId().get();
+                            }
+
+                            @Override
+                            public String clientSecret() {
+                                return recipientsResolverConfig.getKesselClientSecret().get();
+                            }
+
+                            @Override
+                            public Optional<String[]> scope() {
+                                return Optional.empty();
+                            }
+
+                            @Override
+                            public Optional<String> oidcClientCredentialsMinterImplementation() {
+                                return Optional.empty();
+                            }
+                        };
+
+                        return Optional.of(clientCredentialsConfig);
+                    }
+                };
+
+                return Optional.of(authenticationConfig);
+            }
+        };
+        return kesselRelationsConfig;
     }
 
     public Set<String> lookupSubjects(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
