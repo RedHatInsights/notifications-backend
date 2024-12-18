@@ -21,7 +21,7 @@ import java.util.Set;
 @ApplicationScoped
 public class KesselService {
 
-    static final String SUBJECT_TYPE_USER = "user";
+    static final String SUBJECT_TYPE_USER = "principal";
 
     static final String RBAC_NAMESPACE = "rbac";
 
