@@ -728,7 +728,6 @@ public class EndpointResource {
 
         // Clean up the secrets in Sources.
         final Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
-        this.secretUtils.deleteSecretsForEndpoint(endpoint);
 
         endpointRepository.deleteEndpoint(orgId, id);
 
@@ -739,6 +738,26 @@ public class EndpointResource {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(orgId);
 
             this.kesselAssets.deleteIntegration(securityContext, workspaceId.toString(), id.toString());
+        }
+
+        // Attempt deleting the secrets for the given endpoint. In the case
+        // that the secrets deletion goes wrong:
+        //
+        // - The transaction will be rolled back and the integration will not
+        // be deleted.
+        // - The secrets will not have been deleted from Sources.
+        // - We need to recreate the integration in Kessel Inventory, so that
+        // everything stays in sync.
+        try {
+            this.secretUtils.deleteSecretsForEndpoint(endpoint);
+        } catch (final Exception e) {
+            if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
+                final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(orgId);
+
+                this.kesselAssets.createIntegration(securityContext, workspaceId.toString(), id.toString());
+            }
+
+            throw e;
         }
 
         return Response.noContent().build();
