@@ -22,8 +22,9 @@ public class InsightsUrlsBuilder {
      * <p>An inventory URL will only be generated if fields from one of these two formats are present:</p>
      *
      * <ul>
-     *     <li>{@code { "context": { "display_name": "non_empty_string" } }}</li>
+     *     <li>{@code { "context": { "host_url": "non_empty_string" } }}</li>
      *     <li>{@code { "context": { "inventory_id": "non_empty_string" }}}</li>
+     *     <li>{@code { "context": { "display_name": "non_empty_string" } }}</li>
      * </ul>
      *
      * <p>If neither field is present, an {@link Optional#empty()} will be returned. If expected fields of
@@ -36,10 +37,20 @@ public class InsightsUrlsBuilder {
     public Optional<String> buildInventoryUrl(JsonObject data) {
         String path;
         ArrayList<String> queryParamParts = new ArrayList<>();
+        JsonObject context = data.getJsonObject("context");
+        if (context == null) {
+            return Optional.empty();
+        }
+
+        // A provided host url does not need to be modified
+        String host_url = context.getString("host_url", "");
+        if (!host_url.isEmpty()) {
+            return Optional.of(host_url);
+        }
 
         String environmentUrl = environment.url();
-        String displayName = data.getString("display_name", "");
-        String inventoryId = data.getString("inventory_id", "");
+        String inventoryId = context.getString("inventory_id", "");
+        String displayName = context.getString("display_name", "");
 
         if (!displayName.isEmpty()
                 && data.getString("bundle", "").equals("openshift")
