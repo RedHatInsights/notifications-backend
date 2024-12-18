@@ -177,6 +177,8 @@ objects:
               key: relations-api.client.secret
         - name: RELATIONS_API_IS_SECURE_CLIENTS
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
+        - name: KESSEL_DOMAIN
+          value: ${KESSEL_DOMAIN}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -285,3 +287,5 @@ parameters:
 - name: NOTIFICATIONS_KESSEL_OIDC_ISSUER
   description: Specifies the issuer of the OIDC authentication tokens.
   value: "https://redhat.com/realms/redhat-external"
+- name: KESSEL_DOMAIN
+  value: "redhat"

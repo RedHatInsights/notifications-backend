@@ -41,6 +41,7 @@ public class RecipientsResolverConfig {
     private static final String KESSEL_CLIENT_SECRET = "relations-api.authn.client.secret";
     private static final String KESSEL_CLIENT_ISSUER = "relations-api.authn.client.issuer";
     private static final String KESSEL_CLIENT_MODE = "relations-api.authn.mode";
+    private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
 
     /*
      * Unleash configuration
@@ -118,6 +119,9 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store-password")
     Optional<String> quarkusItServicePassword;
 
+    @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
+    String kesselDomain;
+
     @PostConstruct
     void postConstruct() {
         fetchUsersWithMbopToggle = toggleRegistry.register("fetch-users-with-mbop", true);
@@ -140,6 +144,7 @@ public class RecipientsResolverConfig {
         config.put(useKesselToggle, isUseKesselEnabled(null));
         config.put(KESSEL_TARGET_URL, getKesselTargetUrl());
         config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClient());
+        config.put(KESSEL_DOMAIN, getKesselDomain());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -243,5 +248,9 @@ public class RecipientsResolverConfig {
 
     public AuthenticationConfig.AuthMode getKesselClientMode() {
         return kesselClientMode;
+    }
+
+    public String getKesselDomain() {
+        return kesselDomain;
     }
 }
