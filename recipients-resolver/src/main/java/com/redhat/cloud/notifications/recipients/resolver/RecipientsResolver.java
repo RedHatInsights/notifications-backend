@@ -146,11 +146,7 @@ public class RecipientsResolver {
     private Set<String> findAuthorizedUsersWithCriterion(RecipientsAuthorizationCriterion externalAuthorizationCriteria) {
         Set<String> authorizedUsers = new HashSet<>();
         if (externalAuthorizationCriteria != null) {
-            try {
-                authorizedUsers = kesselLookupService.lookupSubjects(externalAuthorizationCriteria);
-            } catch (Exception ex) {
-                Log.error("Error calling Kessel relationship Api", ex);
-            }
+            authorizedUsers = kesselLookupService.lookupSubjects(externalAuthorizationCriteria);
         }
         return authorizedUsers;
     }
