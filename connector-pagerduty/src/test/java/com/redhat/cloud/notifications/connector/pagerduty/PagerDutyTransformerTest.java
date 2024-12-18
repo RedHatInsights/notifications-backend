@@ -176,6 +176,17 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
+    void testWithHostUrl() {
+        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
+        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
+        JsonObject context = cloudPayload.getJsonObject(CONTEXT);
+        context.put("host_url", "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f");
+
+        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
+        validatePayloadTransform(cloudEventData, expectedPayload);
+    }
+
+    @Test
     void testWithMissingClientDisplayName() {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
