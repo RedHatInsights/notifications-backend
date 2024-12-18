@@ -18,6 +18,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
+import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
@@ -580,5 +581,31 @@ public class ResourceHelpers {
         }
 
         return createdEndpoints;
+    }
+
+    @Transactional
+    public String createDrawerTemplate(String bundle, String application, String eventTypeName) {
+        Template drawerTemplate = new Template();
+        drawerTemplate.setName("Drawer template");
+        drawerTemplate.setDescription("Drawer description");
+        drawerTemplate.setData("test");
+        entityManager.persist(drawerTemplate);
+
+        IntegrationTemplate integrationTemplate = new IntegrationTemplate();
+        integrationTemplate.setEventType(getEventType(bundle, application, eventTypeName));
+        integrationTemplate.setIntegrationType("drawer");
+        integrationTemplate.setTheTemplate(drawerTemplate);
+        entityManager.persist(integrationTemplate);
+        return null;
+    }
+
+    public EventType getEventType(String bundleName, String applicationName, String eventTypeName) {
+        String query = "FROM EventType e JOIN FETCH e.application a JOIN FETCH a.bundle b " +
+            "WHERE e.name = :eventTypeName AND a.name = :applicationName AND b.name = :bundleName";
+        return entityManager.createQuery(query, EventType.class)
+            .setParameter("bundleName", bundleName)
+            .setParameter("applicationName", applicationName)
+            .setParameter("eventTypeName", eventTypeName)
+            .getSingleResult();
     }
 }

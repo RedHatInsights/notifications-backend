@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.SubscriptionType;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -25,6 +26,9 @@ public class SubscriptionRepository {
     @Inject
     BackendConfig backendConfig;
 
+    @Inject
+    TemplateRepository templateRepository;
+
     public void subscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
         updateSubscription(orgId, username, eventTypeId, subscriptionType, true);
     }
@@ -35,6 +39,11 @@ public class SubscriptionRepository {
 
     @Transactional
     void updateSubscription(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType, boolean subscribed) {
+
+        if (subscribed) {
+            checkIfSubscriptionTypeIsSupportedForCurrentEventType(eventTypeId, subscriptionType);
+        }
+
         // We're performing an upsert to update the user subscription.
         String sql = "INSERT INTO email_subscriptions(org_id, user_id, event_type_id, subscription_type, subscribed) " +
             "VALUES (:orgId, :userId, :eventTypeId, :subscriptionType, :subscribed) " +
@@ -48,6 +57,25 @@ public class SubscriptionRepository {
             .setParameter("subscriptionType", subscriptionType.name())
             .setParameter("subscribed", subscribed)
             .executeUpdate();
+    }
+
+    private void checkIfSubscriptionTypeIsSupportedForCurrentEventType(UUID eventTypeId, SubscriptionType subscriptionType) {
+        switch (subscriptionType) {
+            case DAILY:
+                templateRepository.checkIfExistAggregationEmailTemplatesByEventType(eventTypeId);
+                break;
+            case INSTANT:
+                if (!backendConfig.isDefaultTemplateEnabled()) {
+                    templateRepository.checkIfExistInstantEmailTemplateByEventType(eventTypeId);
+                }
+                break;
+            case DRAWER:
+                templateRepository.checkIfExistDrawerTemplateByEventType(eventTypeId);
+                break;
+            default:
+                Log.infof("Subscription type %s not checked", subscriptionType);
+                break;
+        }
     }
 
     /**

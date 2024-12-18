@@ -10,10 +10,10 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
-import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
@@ -32,6 +32,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
@@ -44,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.CrudTestHelpers.createAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createEventType;
@@ -97,6 +97,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @Inject
     EventTypeRepository eventTypeRepository;
+
+    @Inject
+    ResourceHelpers resourceHelpers;
 
     record TestRecordNameAndDisplayName(String name, String displayName) { }
 
@@ -236,7 +239,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String eventType = "policy-triggered";
 
         String instantTemplateId = createInstantTemplate(bundle, application, eventType);
-        String aggregationTemplateId = createAggregationTemplate(bundle, application);
+        String aggregationTemplateId = CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
+        resourceHelpers.createDrawerTemplate(bundle, application, eventType);
 
         updatePoliciesEventTypeVisibility(false);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
@@ -343,7 +347,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         }
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database
-        assertThrows(PersistenceException.class, () -> {
+        assertThrows(NotFoundException.class, () -> {
             subscriptionRepository.subscribe(orgId, username, UUID.randomUUID(), DAILY);
         });
 
@@ -511,21 +515,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         deleteInstantEmailTemplate(adminIdentity, templateId);
     }
 
-    private String createAggregationTemplate(String bundle, String application) {
-        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-
-        Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-aggregation-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
-        JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
-        Template bodyTemplate = CrudTestHelpers.buildTemplate("body-aggregation-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
-        JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
-
-        Application app = applicationRepository.getApplication(bundle, application);
-
-        AggregationEmailTemplate emailTemplate = CrudTestHelpers.buildAggregationEmailTemplate(app.getId().toString(), subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplate = createAggregationEmailTemplate(adminIdentity, emailTemplate, 200).get();
-        return jsonEmailTemplate.getString("id");
-    }
-
     private void deleteAggregationTemplate(String templateId) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         deleteAggregationEmailTemplate(adminIdentity, templateId);
@@ -545,7 +534,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String eventType = "policy-triggered";
 
         createInstantTemplate(bundle, application, eventType);
-        createAggregationTemplate(bundle, application);
+        CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
 
         // Daily and Instant to false
         updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, false, false, true);
