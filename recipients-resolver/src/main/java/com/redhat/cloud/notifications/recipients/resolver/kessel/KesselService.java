@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.recipients.resolver.kessel;
 
 import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
+import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -104,6 +105,7 @@ public class KesselService {
 
         for (Iterator<LookupSubjectsResponse> it = lookupClient.lookupSubjects(request); it.hasNext();) {
             LookupSubjectsResponse response = it.next();
+            Log.infof("Kessel response: %s", response);
             userNames.add(response.getSubject().getSubject().getId());
         }
         return userNames;
