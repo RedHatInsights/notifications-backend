@@ -147,7 +147,7 @@ public class TemplateRepository {
     }
 
     public void checkIfExistInstantEmailTemplateByEventType(UUID eventTypeId) throws NotFoundException {
-        String hql = "select count(t) FROM InstantEmailTemplate t JOIN t.eventType et WHERE et.id = :eventTypeId";
+        String hql = "select count(t) FROM InstantEmailTemplate t WHERE t.eventType.id = :eventTypeId";
         Long count = entityManager.createQuery(hql, Long.class)
             .setParameter("eventTypeId", eventTypeId)
             .getSingleResult();
