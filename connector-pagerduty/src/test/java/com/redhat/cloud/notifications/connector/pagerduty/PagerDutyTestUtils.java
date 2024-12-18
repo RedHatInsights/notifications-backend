@@ -1,10 +1,13 @@
 package com.redhat.cloud.notifications.connector.pagerduty;
 
+import com.redhat.cloud.notifications.ingress.Action;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Optional;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -12,6 +15,7 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.BUNDLE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CLIENT;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CLIENT_URL;
@@ -23,6 +27,7 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_ACTION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_TYPE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.GROUP;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.INVENTORY_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ORG_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PD_DATE_TIME_FORMATTER;
@@ -31,8 +36,12 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE_NAMES;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SUMMARY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.TIMESTAMP;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.getClientLinks;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.getSourceNames;
 
 public class PagerDutyTestUtils {
+
+    static final String DEFAULT_ENVIRONMENT_URL = "https://console.redhat.com";
 
     static JsonObject createCloudEventData(String url) {
         JsonObject authentication = new JsonObject();
@@ -56,6 +65,10 @@ public class PagerDutyTestUtils {
         payload.put(ACCOUNT_ID, DEFAULT_ACCOUNT_ID);
         payload.put(APPLICATION, "default-application");
         payload.put(BUNDLE, "default-bundle");
+        payload.put(CONTEXT, JsonObject.of(
+                DISPLAY_NAME, "console",
+                "inventory_id", "8a4a4f75-5319-4255-9eb5-1ee5a92efd7f"
+        ));
         payload.put(EVENT_TYPE, "default-event-type");
         payload.put(EVENTS, JsonArray.of(
                 JsonObject.of("event-1-key", "event-1-value"),
@@ -77,6 +90,10 @@ public class PagerDutyTestUtils {
 
         payload.put(SOURCE, source);
         payload.put(ENVIRONMENT_URL, "https://console.redhat.com");
+        InsightsUrlsBuilder.buildInventoryUrl(payload)
+                .ifPresent(url -> payload.put(INVENTORY_URL, url));
+        InsightsUrlsBuilder.buildApplicationUrl(payload)
+                .ifPresent(url -> payload.put(APPLICATION_URL, url));
         payload.put(SEVERITY, PagerDutySeverity.WARNING);
         cloudEventData.put(PAYLOAD, payload);
 
@@ -91,6 +108,7 @@ public class PagerDutyTestUtils {
         JsonObject oldInnerPayload = expected.getJsonObject(PAYLOAD);
         expected.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
         expected.mergeIn(getClientLink(oldInnerPayload, oldInnerPayload.getString(ENVIRONMENT_URL)));
+        expected.mergeIn(getClientLinks(oldInnerPayload));
 
         JsonObject newInnerPayload = new JsonObject();
         newInnerPayload.put(SUMMARY, oldInnerPayload.getString(EVENT_TYPE));
@@ -159,29 +177,89 @@ public class PagerDutyTestUtils {
 
         return clientLink;
     }
+}
 
-    private static JsonObject getSourceNames(final JsonObject oldInnerSourceNames) {
-        if (oldInnerSourceNames != null) {
-            JsonObject newInnerSourceNames = new JsonObject();
+/**
+ * This class emulates the functionality of the same class within notifications-engine.
+ */
+class InsightsUrlsBuilder {
+    /**
+     * <p>Constructs an Insights URL corresponding to the specific inventory item which generated the notification.</p>
+     *
+     * <p>An inventory URL will only be generated if fields from one of these two formats are present:</p>
+     *
+     * <ul>
+     *     <li>{@code { "context": { "display_name": "non_empty_string" } }}</li>
+     *     <li>{@code { "context": { "inventory_id": "non_empty_string" }}}</li>
+     * </ul>
+     *
+     * <p>If neither field is present, an {@link Optional#empty()} will be returned. If expected fields of
+     * {@link Action#getBundle()} or {@link Action#getApplication()} are missing, an inaccurate URL may be returned.</p>
+     *
+     * @param data a payload converted by {@code BaseTransformer#toJsonObject(Event)}
+     * @return URL to the generating inventory item, if required fields are present
+     */
+    static Optional<String> buildInventoryUrl(JsonObject data) {
+        String path;
+        ArrayList<String> queryParamParts = new ArrayList<>();
 
-            JsonObject application = oldInnerSourceNames.getJsonObject(APPLICATION);
-            if (application != null) {
-                newInnerSourceNames.put(APPLICATION, application.getString(DISPLAY_NAME));
-            }
-            JsonObject bundle = oldInnerSourceNames.getJsonObject(BUNDLE);
-            if (bundle != null) {
-                newInnerSourceNames.put(BUNDLE, bundle.getString(DISPLAY_NAME));
-            }
-            JsonObject eventType = oldInnerSourceNames.getJsonObject(EVENT_TYPE);
-            if (eventType != null) {
-                newInnerSourceNames.put(EVENT_TYPE, eventType.getString(DISPLAY_NAME));
-            }
+        String displayName = data.getString("display_name", "");
+        String inventoryId = data.getString("inventory_id", "");
 
-            if (!newInnerSourceNames.isEmpty()) {
-                return newInnerSourceNames;
+        if (!displayName.isEmpty()
+                && data.getString("bundle", "").equals("openshift")
+                && data.getString("application", "").equals("advisor")) {
+            path = String.format("/openshift/insights/advisor/clusters/%s", displayName);
+        } else {
+            path = "/insights/inventory/";
+            if (!inventoryId.isEmpty()) {
+                path += inventoryId;
+            } else if (!displayName.isEmpty()) {
+                queryParamParts.add(String.format("hostname_or_id=%s", displayName));
+            } else {
+                return Optional.empty();
             }
         }
 
-        return null;
+        if (!queryParamParts.isEmpty()) {
+            String queryParams = "?" + String.join("&", queryParamParts);
+            path += queryParams;
+        }
+
+        return Optional.of(PagerDutyTestUtils.DEFAULT_ENVIRONMENT_URL + path);
+    }
+
+    /**
+     * <p>Constructs an Insights URL corresponding to the specific inventory item which generated the notification.</p>
+     *
+     * <p>If the required field {@link Action#getApplication()} is not present, an
+     * {@link Optional#empty()} will be returned. If the expected field {@link Action#getBundle()} is not present, an
+     * inaccurate URL may be returned.</p>
+     *
+     * @param data a payload converted by {@code BaseTransformer#toJsonObject(Event)}
+     * @return URL to the generating application, if required fields are present
+     */
+    static Optional<String> buildApplicationUrl(JsonObject data) {
+        String path = "";
+
+        String bundle = data.getString("bundle", "");
+        String application;
+
+        if (data.containsKey("application") && !data.getString("application", "").isEmpty()) {
+            application = data.getString("application");
+        } else {
+            return Optional.empty();
+        }
+
+        if (bundle.equals("application-services") && application.equals("rhosak")) {
+            path = "application-services/streams";
+        } else {
+            if (bundle.equals("openshift")) {
+                path = "openshift/";
+            }
+            path += "insights/" + application;
+        }
+
+        return Optional.of(String.format("%s/%s", PagerDutyTestUtils.DEFAULT_ENVIRONMENT_URL, path));
     }
 }

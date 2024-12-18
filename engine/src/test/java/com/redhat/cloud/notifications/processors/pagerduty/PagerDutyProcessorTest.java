@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.PagerDutySeverity;
+import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -73,6 +74,9 @@ public class PagerDutyProcessorTest {
     @Inject
     Environment environment;
 
+    @Inject
+    InsightsUrlsBuilder insightsUrlsBuilder;
+
     @PostConstruct
     void postConstruct() {
         inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
@@ -122,10 +126,14 @@ public class PagerDutyProcessorTest {
         Message<JsonObject> message = inMemorySink.received().getFirst();
         JsonObject payload = message.getPayload();
 
-        final JsonObject payloadToSent = transformer.toJsonObject(event);
-        payloadToSent.put("environment_url", environment.url());
-        payloadToSent.put("severity", PagerDutySeverity.ERROR);
-        assertEquals(payloadToSent, payload.getJsonObject("payload"));
+        final JsonObject payloadToSend = transformer.toJsonObject(event);
+        payloadToSend.put("environment_url", environment.url());
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
+                .ifPresent(url -> payloadToSend.put("inventory_url", url));
+        insightsUrlsBuilder.buildApplicationUrl(payloadToSend)
+                .ifPresent(url -> payloadToSend.put("application_url", url));
+        payloadToSend.put("severity", PagerDutySeverity.ERROR);
+        assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
     }
