@@ -115,8 +115,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
         cloudEventPayload.put("environment_url", "https://console.redhat.com");
         InsightsUrlsBuilder.buildInventoryUrl(cloudEventPayload)
                 .ifPresent(url -> cloudEventPayload.put("inventory_url", url));
-        InsightsUrlsBuilder.buildApplicationUrl(cloudEventPayload)
-                .ifPresent(url -> cloudEventPayload.put("application_url", url));
+        cloudEventPayload.put("application_url", InsightsUrlsBuilder.buildApplicationUrl(cloudEventPayload));
         cloudEventPayload.put("severity", "warning");
         cloudEventData.put(PAYLOAD, cloudEventPayload);
 
@@ -186,6 +185,17 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
                 "inventory_id", "8a4a4f75-5319-4255-9eb5-1ee5a92efd7f"
         ));
         cloudEventData.put(PAYLOAD, cloudPayload);
+
+        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
+        validatePayloadTransform(cloudEventData, expectedPayload);
+    }
+
+    @Test
+    void testWithHostUrl() {
+        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
+        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
+        JsonObject context = cloudPayload.getJsonObject(CONTEXT);
+        context.put("host_url", "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f");
 
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
         validatePayloadTransform(cloudEventData, expectedPayload);

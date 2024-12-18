@@ -22,8 +22,9 @@ public class InsightsUrlsBuilder {
      * <p>An inventory URL will only be generated if fields from one of these two formats are present:</p>
      *
      * <ul>
-     *     <li>{@code { "context": { "display_name": "non_empty_string" } }}</li>
+     *     <li>{@code { "context": { "host_url": "non_empty_string" } }}</li>
      *     <li>{@code { "context": { "inventory_id": "non_empty_string" }}}</li>
+     *     <li>{@code { "context": { "display_name": "non_empty_string" } }}</li>
      * </ul>
      *
      * <p>If neither field is present, an {@link Optional#empty()} will be returned. If expected fields of
@@ -36,24 +37,35 @@ public class InsightsUrlsBuilder {
     public Optional<String> buildInventoryUrl(JsonObject data) {
         String path;
         ArrayList<String> queryParamParts = new ArrayList<>();
+        JsonObject context = data.getJsonObject("context");
+        if (context == null) {
+            return Optional.empty();
+        }
+
+        // A provided host url does not need to be modified
+        String host_url = context.getString("host_url", "");
+        if (!host_url.isEmpty()) {
+            return Optional.of(host_url);
+        }
 
         String environmentUrl = environment.url();
-        String displayName = data.getString("display_name", "");
-        String inventoryId = data.getString("inventory_id", "");
+        String inventoryId = context.getString("inventory_id", "");
+        String displayName = context.getString("display_name", "");
 
-        if (!displayName.isEmpty()
-                && data.getString("bundle", "").equals("openshift")
-                && data.getString("application", "").equals("advisor")) {
-            path = String.format("/openshift/insights/advisor/clusters/%s", displayName);
-        } else {
-            path = "/insights/inventory/";
-            if (!inventoryId.isEmpty()) {
-                path += inventoryId;
-            } else if (!displayName.isEmpty()) {
-                queryParamParts.add(String.format("hostname_or_id=%s", displayName));
+        if (!displayName.isEmpty()) {
+            if (data.getString("bundle", "").equals("openshift")
+                    && data.getString("application", "").equals("advisor")) {
+                path = String.format("/openshift/insights/advisor/clusters/%s", displayName);
             } else {
-                return Optional.empty();
+                path = "/insights/inventory/";
+                if (!inventoryId.isEmpty()) {
+                    path += inventoryId;
+                } else {
+                    queryParamParts.add(String.format("hostname_or_id=%s", displayName));
+                }
             }
+        } else {
+            return Optional.empty();
         }
 
         if (!queryParamParts.isEmpty()) {
@@ -67,36 +79,32 @@ public class InsightsUrlsBuilder {
     /**
      * <p>Constructs an Insights URL corresponding to the specific inventory item which generated the notification.</p>
      *
-     * <p>If the required field {@link Action#getApplication()} is not present, an
-     * {@link Optional#empty()} will be returned. If the expected field {@link Action#getBundle()} is not present, an
+     * <p>If the expected fields {@link Action#getApplication()} and {@link Action#getBundle()} are not present, an
      * inaccurate URL may be returned.</p>
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
-     * @return URL to the generating application, if required fields are present
+     * @return URL to the generating application
      */
-    public Optional<String> buildApplicationUrl(JsonObject data) {
+    public String buildApplicationUrl(JsonObject data) {
         String path = "";
 
         String environmentUrl = environment.url();
         String bundle = data.getString("bundle", "");
-        String application;
+        String application = data.getString("application", "");
 
-        if (data.containsKey("application") && !data.getString("application", "").isEmpty()) {
-            application = data.getString("application");
-        } else {
-            return Optional.empty();
+        if (bundle.equals("openshift")) {
+            path = "openshift/";
         }
 
-        if (bundle.equals("application-services") && application.equals("rhosak")) {
-            path = "application-services/streams";
+        if (application.equals("integrations")) {
+            path += "settings/";
         } else {
-            if (bundle.equals("openshift")) {
-                path = "openshift/";
-            }
-            path += "insights/" + application;
+            path += "insights/";
         }
 
-        return Optional.of(String.format("%s/%s", environmentUrl, path));
+        path += application;
+
+        return String.format("%s/%s", environmentUrl, path);
     }
 }
