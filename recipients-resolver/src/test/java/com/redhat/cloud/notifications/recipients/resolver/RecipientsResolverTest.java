@@ -54,11 +54,11 @@ public class RecipientsResolverTest {
     @CacheName("find-recipients")
     Cache recipientsCache;
 
-    User user1 = createUser("user1", false);
-    User user2 = createUser("user2", false);
-    User user3 = createUser("user3", false);
-    User admin1 = createUser("admin1", true);
-    User admin2 = createUser("admin2", true);
+    User user1 = createUser("userId1", "user1", false);
+    User user2 = createUser("userId2", "user2", false);
+    User user3 = createUser("userId3", "user3", false);
+    User admin1 = createUser("adminId1", "admin1", true);
+    User admin2 = createUser("adminId2", "admin2", true);
 
     UUID group1 = UUID.randomUUID();
     UUID group2 = UUID.randomUUID();
@@ -146,7 +146,7 @@ public class RecipientsResolverTest {
             externalAuthorizationCriteria.setId("defaultId");
             externalAuthorizationCriteria.setRelation("relationship");
             externalAuthorizationCriteria.setType(kesselAssetType);
-            when(kesselService.lookupSubjects(any())).thenReturn(Set.of("user1", "admin1"));
+            when(kesselService.lookupSubjects(any())).thenReturn(Set.of("userId1", "adminId1"));
         }
         Set<User> recipients = recipientsResolver.findRecipients(
                 ORG_ID,
@@ -620,10 +620,11 @@ public class RecipientsResolverTest {
         verifyNoMoreInteractions(fetchUsersFromExternalServices);
     }
 
-    public User createUser(String username, boolean isAdmin) {
+    public User createUser(String userId, String username, boolean isAdmin) {
         User user = new User();
         user.setUsername(username);
         user.setAdmin(isAdmin);
+        user.setId(userId);
         return user;
     }
 }

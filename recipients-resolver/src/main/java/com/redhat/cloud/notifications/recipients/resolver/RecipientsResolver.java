@@ -66,9 +66,10 @@ public class RecipientsResolver {
             fetchedUsers = fetchingUsers.getGroupUsers(orgId, request.isAdminsOnly(), request.getGroupUUID());
         }
 
-        final Set<String> authorizedUsers = new HashSet<>();
+        final Set<String> authorizedUserIds = new HashSet<>();
         if (recipientsResolverConfig.isUseKesselEnabled(orgId) && !fetchedUsers.isEmpty() && null != recipientsAuthorizationCriterion) {
-            authorizedUsers.addAll(findAuthorizedUsersWithCriterion(recipientsAuthorizationCriterion));
+            authorizedUserIds.addAll(findAuthorizedUsersWithCriterion(recipientsAuthorizationCriterion));
+            Log.infof("Found %d authorized users in Kessel for orgId %s and criterion %s", authorizedUserIds.size(), orgId, recipientsAuthorizationCriterion);
         }
 
         // The fetched users are cached, so we need to create a new Set to avoid altering the cached data.
@@ -86,7 +87,7 @@ public class RecipientsResolver {
                 return true;
             }
 
-            if (recipientsResolverConfig.isUseKesselEnabled(orgId) && null != recipientsAuthorizationCriterion && !authorizedUsers.contains(lowerCaseUsername)) {
+            if (recipientsResolverConfig.isUseKesselEnabled(orgId) && null != recipientsAuthorizationCriterion && !authorizedUserIds.contains(user.getId())) {
                 return true;
             }
 
@@ -145,11 +146,7 @@ public class RecipientsResolver {
     private Set<String> findAuthorizedUsersWithCriterion(RecipientsAuthorizationCriterion externalAuthorizationCriteria) {
         Set<String> authorizedUsers = new HashSet<>();
         if (externalAuthorizationCriteria != null) {
-            try {
-                authorizedUsers = kesselLookupService.lookupSubjects(externalAuthorizationCriteria);
-            } catch (Exception ex) {
-                Log.error("Error calling Kessel relationship Api", ex);
-            }
+            authorizedUsers = kesselLookupService.lookupSubjects(externalAuthorizationCriteria);
         }
         return authorizedUsers;
     }

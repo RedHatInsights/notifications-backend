@@ -100,15 +100,16 @@ public class KesselService {
     }
 
     public Set<String> lookupSubjects(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
-        Set<String> userNames = new HashSet<>();
+        Set<String> userIds = new HashSet<>();
         LookupSubjectsRequest request = getLookupSubjectsRequest(recipientsAuthorizationCriterion);
 
         for (Iterator<LookupSubjectsResponse> it = lookupClient.lookupSubjects(request); it.hasNext();) {
             LookupSubjectsResponse response = it.next();
             Log.infof("Kessel response: %s", response);
-            userNames.add(response.getSubject().getSubject().getId());
+
+            userIds.add(response.getSubject().getSubject().getId().replaceAll(recipientsResolverConfig.getKesselDomain(), ""));
         }
-        return userNames;
+        return userIds;
     }
 
     private static LookupSubjectsRequest getLookupSubjectsRequest(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
