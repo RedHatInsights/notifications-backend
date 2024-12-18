@@ -62,15 +62,15 @@ public class SubscriptionRepository {
     private void checkIfSubscriptionTypeIsSupportedForCurrentEventType(UUID eventTypeId, SubscriptionType subscriptionType) {
         switch (subscriptionType) {
             case DAILY:
-                templateRepository.findAggregationEmailTemplatesByEventType(eventTypeId);
+                templateRepository.checkIfExistAggregationEmailTemplatesByEventType(eventTypeId);
                 break;
             case INSTANT:
                 if (!backendConfig.isDefaultTemplateEnabled()) {
-                    templateRepository.findInstantEmailTemplateByEventType(eventTypeId);
+                    templateRepository.checkIfExistInstantEmailTemplateByEventType(eventTypeId);
                 }
                 break;
             case DRAWER:
-                templateRepository.findDrawerTemplateByEventType(eventTypeId);
+                templateRepository.checkIfExistDrawerTemplateByEventType(eventTypeId);
                 break;
             default:
                 Log.infof("Subscription type %s not checked", subscriptionType);

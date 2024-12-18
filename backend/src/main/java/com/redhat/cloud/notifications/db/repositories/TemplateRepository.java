@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -143,28 +142,36 @@ public class TemplateRepository {
 
             return instantEmailTemplate;
         } catch (NoResultException e) {
+            throw new NotFoundException("Instant email template not found");
+        }
+    }
+
+    public void checkIfExistInstantEmailTemplateByEventType(UUID eventTypeId) throws NotFoundException {
+        String hql = "select count(t) FROM InstantEmailTemplate t JOIN t.eventType et WHERE et.id = :eventTypeId";
+        Long count = entityManager.createQuery(hql, Long.class)
+            .setParameter("eventTypeId", eventTypeId)
+            .getSingleResult();
+        if (count == 0) {
             throw new NotFoundException(String.format("Event type '%s' doesn't support instant email subscription", eventTypeId));
         }
     }
 
-    public AggregationEmailTemplate findAggregationEmailTemplatesByEventType(UUID eventTypeId) {
-        String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.application a JOIN FETCH a.eventTypes ev WHERE ev.id = :eventTypeId";
-        try {
-            return entityManager.createQuery(hql, AggregationEmailTemplate.class)
-                .setParameter("eventTypeId", eventTypeId)
-                .getSingleResult();
-        } catch (NoResultException e) {
+    public void checkIfExistAggregationEmailTemplatesByEventType(UUID eventTypeId) throws NotFoundException {
+        String hql = "select count(t) FROM AggregationEmailTemplate t JOIN t.application a JOIN a.eventTypes ev WHERE ev.id = :eventTypeId";
+        Long count = entityManager.createQuery(hql, Long.class)
+            .setParameter("eventTypeId", eventTypeId)
+            .getSingleResult();
+        if (count == 0) {
             throw new NotFoundException(String.format("Event type '%s' doesn't support daily email subscription", eventTypeId));
         }
     }
 
-    public IntegrationTemplate findDrawerTemplateByEventType(UUID eventTypeId) {
-        try {
-            String hql = "FROM IntegrationTemplate t WHERE t.integrationType = 'drawer' and t.eventType.id = :eventTypeId";
-            return entityManager.createQuery(hql, IntegrationTemplate.class)
-                .setParameter("eventTypeId", eventTypeId)
-                .getSingleResult();
-        } catch (NoResultException e) {
+    public void checkIfExistDrawerTemplateByEventType(UUID eventTypeId) throws NotFoundException {
+        String hql = "select count(t) FROM IntegrationTemplate t WHERE t.integrationType = 'drawer' and t.eventType.id = :eventTypeId";
+        Long count = entityManager.createQuery(hql, Long.class)
+            .setParameter("eventTypeId", eventTypeId)
+            .getSingleResult();
+        if (count == 0) {
             throw new NotFoundException(String.format("Event type '%s' doesn't support Drawer subscription", eventTypeId));
         }
     }
