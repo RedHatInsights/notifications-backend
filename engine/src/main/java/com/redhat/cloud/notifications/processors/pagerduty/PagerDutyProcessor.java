@@ -79,7 +79,7 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         JsonObject transformedEvent = transformer.toJsonObject(event);
         transformedEvent.put("environment_url", environment.url());
         insightsUrlsBuilder.buildInventoryUrl(transformedEvent).ifPresent(url -> transformedEvent.put("inventory_url", url));
-        insightsUrlsBuilder.buildApplicationUrl(transformedEvent).ifPresent(url -> transformedEvent.put("application_url", url));
+        transformedEvent.put("application_url", insightsUrlsBuilder.buildApplicationUrl(transformedEvent));
         transformedEvent.put("severity", properties.getSeverity());
 
         connectorData.put(PAYLOAD, transformedEvent);

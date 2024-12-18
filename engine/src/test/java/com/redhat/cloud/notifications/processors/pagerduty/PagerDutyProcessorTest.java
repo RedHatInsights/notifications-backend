@@ -130,8 +130,7 @@ public class PagerDutyProcessorTest {
         payloadToSend.put("environment_url", environment.url());
         insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
                 .ifPresent(url -> payloadToSend.put("inventory_url", url));
-        insightsUrlsBuilder.buildApplicationUrl(payloadToSend)
-                .ifPresent(url -> payloadToSend.put("application_url", url));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend));
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 

@@ -24,6 +24,9 @@ public class TeamsProcessorTest extends CamelProcessorTest {
     private static final String TEAMS_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
             "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>";
 
+    private static final String TEAMS_EXPECTED_MSG_WITH_HOST_URL = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
+            "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>";
+
     @Inject
     TeamsProcessor teamsProcessor;
 
@@ -33,8 +36,8 @@ public class TeamsProcessorTest extends CamelProcessorTest {
     }
 
     @Override
-    protected String getExpectedMessage() {
-        return TEAMS_EXPECTED_MSG;
+    protected String getExpectedMessage(boolean withHostUrl) {
+        return withHostUrl ? TEAMS_EXPECTED_MSG_WITH_HOST_URL : TEAMS_EXPECTED_MSG;
     }
 
     @Override

@@ -24,6 +24,9 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
     private static final String GOOGLE_CHAT_EXPECTED_MSG = "{\"text\":\"<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
             "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>\"}";
 
+    private static final String GOOGLE_CHAT_EXPECTED_MSG_WITH_HOST_URL = "{\"text\":\"<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
+            "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>\"}";
+
     @Inject
     GoogleChatProcessor googleSpacesProcessor;
 
@@ -33,8 +36,8 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
     }
 
     @Override
-    protected String getExpectedMessage() {
-        return GOOGLE_CHAT_EXPECTED_MSG;
+    protected String getExpectedMessage(boolean withHostUrl) {
+        return withHostUrl ? GOOGLE_CHAT_EXPECTED_MSG_WITH_HOST_URL : GOOGLE_CHAT_EXPECTED_MSG;
     }
 
     @Override

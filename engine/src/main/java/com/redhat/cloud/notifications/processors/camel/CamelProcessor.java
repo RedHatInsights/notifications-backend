@@ -81,7 +81,7 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         JsonObject data = baseTransformer.toJsonObject(event);
         data.put("environment_url", environment.url());
         insightsUrlsBuilder.buildInventoryUrl(data).ifPresent(url -> data.put("inventory_url", url));
-        insightsUrlsBuilder.buildApplicationUrl(data).ifPresent(url -> data.put("application_url", url));
+        data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data));
 
         Map<Object, Object> dataAsMap;
         try {
