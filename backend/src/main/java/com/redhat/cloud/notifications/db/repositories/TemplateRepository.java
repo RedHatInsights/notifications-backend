@@ -157,7 +157,7 @@ public class TemplateRepository {
     }
 
     public void checkIfExistAggregationEmailTemplatesByEventType(UUID eventTypeId) throws NotFoundException {
-        String hql = "select count(t) FROM AggregationEmailTemplate t JOIN t.application a JOIN a.eventTypes ev WHERE ev.id = :eventTypeId";
+        String hql = "select count(t) FROM AggregationEmailTemplate t WHERE t.eventType.id = :eventTypeId";
         Long count = entityManager.createQuery(hql, Long.class)
             .setParameter("eventTypeId", eventTypeId)
             .getSingleResult();
