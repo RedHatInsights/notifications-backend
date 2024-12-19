@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonObject;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -165,7 +166,7 @@ class InsightsUrlsBuilder {
      */
     static Optional<String> buildInventoryUrl(JsonObject data) {
         String path;
-        ArrayList<String> queryParamParts = new ArrayList<>();
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notifications"));
         JsonObject context = data.getJsonObject("context");
         if (context == null) {
             return Optional.empty();
@@ -174,7 +175,7 @@ class InsightsUrlsBuilder {
         // A provided host url does not need to be modified
         String host_url = context.getString("host_url", "");
         if (!host_url.isEmpty()) {
-            return Optional.of(host_url);
+            return Optional.of(host_url + "?" + String.join("&", queryParamParts));
         }
 
         String inventoryId = context.getString("inventory_id", "");
@@ -195,12 +196,7 @@ class InsightsUrlsBuilder {
             }
         }
 
-        if (!queryParamParts.isEmpty()) {
-            String queryParams = "?" + String.join("&", queryParamParts);
-            path += queryParams;
-        }
-
-        return Optional.of(PagerDutyTestUtils.DEFAULT_ENVIRONMENT_URL + path);
+        return Optional.of(PagerDutyTestUtils.DEFAULT_ENVIRONMENT_URL + path + "?" + String.join("&", queryParamParts));
     }
 
     /**
@@ -215,6 +211,7 @@ class InsightsUrlsBuilder {
      */
     static Optional<String> buildApplicationUrl(JsonObject data) {
         String path = "";
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notifications"));
 
         String bundle = data.getString("bundle", "");
         String application;
@@ -234,6 +231,7 @@ class InsightsUrlsBuilder {
             path += "insights/" + application;
         }
 
-        return Optional.of(String.format("%s/%s", PagerDutyTestUtils.DEFAULT_ENVIRONMENT_URL, path));
+        return Optional.of(PagerDutyTestUtils.DEFAULT_ENVIRONMENT_URL + "/" + path
+                + "?" + String.join("&", queryParamParts));
     }
 }

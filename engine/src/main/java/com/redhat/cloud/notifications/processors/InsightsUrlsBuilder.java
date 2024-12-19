@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -36,7 +37,7 @@ public class InsightsUrlsBuilder {
      */
     public Optional<String> buildInventoryUrl(JsonObject data) {
         String path;
-        ArrayList<String> queryParamParts = new ArrayList<>();
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notifications"));
         JsonObject context = data.getJsonObject("context");
         if (context == null) {
             return Optional.empty();
@@ -45,7 +46,7 @@ public class InsightsUrlsBuilder {
         // A provided host url does not need to be modified
         String host_url = context.getString("host_url", "");
         if (!host_url.isEmpty()) {
-            return Optional.of(host_url);
+            return Optional.of(host_url + "?" + String.join("&", queryParamParts));
         }
 
         String environmentUrl = environment.url();
@@ -67,12 +68,7 @@ public class InsightsUrlsBuilder {
             }
         }
 
-        if (!queryParamParts.isEmpty()) {
-            String queryParams = "?" + String.join("&", queryParamParts);
-            path += queryParams;
-        }
-
-        return Optional.of(environmentUrl + path);
+        return Optional.of(environmentUrl + path + "?" + String.join("&", queryParamParts));
     }
 
     /**
@@ -88,6 +84,7 @@ public class InsightsUrlsBuilder {
      */
     public Optional<String> buildApplicationUrl(JsonObject data) {
         String path = "";
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notifications"));
 
         String environmentUrl = environment.url();
         String bundle = data.getString("bundle", "");
@@ -106,6 +103,11 @@ public class InsightsUrlsBuilder {
                 path = "openshift/";
             }
             path += "insights/" + application;
+        }
+
+        if (!queryParamParts.isEmpty()) {
+            String queryParams = "?" + String.join("&", queryParamParts);
+            path += queryParams;
         }
 
         return Optional.of(String.format("%s/%s", environmentUrl, path));
