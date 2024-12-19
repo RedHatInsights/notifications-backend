@@ -12,7 +12,11 @@ objects:
     dependencies:
     - notifications-engine
     - notifications-recipients-resolver
+    optionalDependencies:
+    - notifications-backend
     envName: ${ENV_NAME}
+    testing:
+      iqePlugin: notifications
     featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.tocamel
