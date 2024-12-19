@@ -25,23 +25,27 @@ public class PagerDutyTransformer implements Processor {
 
     public static final String ACCOUNT_ID = "account_id";
     public static final String APPLICATION = "application";
+    public static final String APPLICATION_URL = "application_url";
     public static final String BUNDLE = "bundle";
     public static final String CLIENT = "client";
     public static final String CLIENT_URL = "client_url";
     public static final String CONTEXT = "context";
     public static final String CUSTOM_DETAILS = "custom_details";
     public static final String DISPLAY_NAME = "display_name";
-    public static final String ENVIRONMENT_URL = "environment_url";
     public static final String EVENT_ACTION = "event_action";
     public static final String EVENT_TYPE = "event_type";
     public static final String EVENTS = "events";
     public static final String GROUP = "group";
+    public static final String HREF = "href";
+    public static final String INVENTORY_URL = "inventory_url";
+    public static final String LINKS = "links";
     public static final String ORG_ID = "org_id";
     public static final String SEVERITY = "severity";
     public static final String SOURCE = "source";
     public static final String SOURCE_NAMES = "source_names";
     public static final String SUMMARY = "summary";
     public static final String TIMESTAMP = "timestamp";
+    public static final String TEXT = "text";
 
     public static final DateTimeFormatter PD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS+0000");
 
@@ -52,7 +56,7 @@ public class PagerDutyTransformer implements Processor {
 
         JsonObject message = new JsonObject();
         message.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
-        message.mergeIn(getClientLink(cloudEventPayload, cloudEventPayload.getString(ENVIRONMENT_URL)));
+        message.mergeIn(getClientLinks(cloudEventPayload));
 
         JsonObject messagePayload = new JsonObject();
         messagePayload.put(SUMMARY, cloudEventPayload.getString(EVENT_TYPE));
@@ -92,7 +96,9 @@ public class PagerDutyTransformer implements Processor {
         exchange.getIn().setBody(message.encode());
     }
 
-    /** Validates that the inputs for the required Alert Event fields are present */
+    /**
+     * Validates that the inputs for the required Alert Event fields are present
+     */
     private void validatePayload(final JsonObject cloudEventPayload) {
         String summary = cloudEventPayload.getString(EVENT_TYPE);
         if (summary == null || summary.isEmpty()) {
@@ -117,45 +123,33 @@ public class PagerDutyTransformer implements Processor {
     }
 
     /**
-     * Adapted from CamelProcessor template for Teams, with some changes to more gracefully handle missing fields
-     * <br>
-     * TODO update to work more consistently and with other platforms
-     *
-     * @return {@link #CLIENT} and {@link #CLIENT_URL}
+     * Performs the following link conversions:
+     * <ul>
+     *     <li>{@link #APPLICATION} integrated into {@link #CLIENT}</li>
+     *     <li>{@link #APPLICATION_URL} becomes {@link #CLIENT_URL}</li>
+     *     <li>{@link #INVENTORY_URL}, if present, creates an entry in the {@link #LINKS} object</li>
+     * </ul>
+     * <p>
+     * The result is similar to the links provided in Microsoft Teams notifications.
      */
-    private JsonObject getClientLink(final JsonObject cloudEventPayload, String environmentUrl) {
-        JsonObject clientLink = new JsonObject();
+    static JsonObject getClientLinks(final JsonObject cloudEventPayload) {
+        JsonObject clientLinks = new JsonObject();
 
-        String contextName = cloudEventPayload.containsKey(CONTEXT)
-                ? cloudEventPayload.getJsonObject(CONTEXT).getString(DISPLAY_NAME)
-                : null;
+        clientLinks.put(CLIENT, String.format("Open %s", cloudEventPayload.getString(APPLICATION)));
+        clientLinks.put(CLIENT_URL, cloudEventPayload.getString(APPLICATION_URL));
 
-        if (contextName != null) {
-            clientLink.put(CLIENT, contextName);
-
-            String inventoryId = cloudEventPayload.getJsonObject(CONTEXT).getString("inventory_id");
-            if (environmentUrl != null && !environmentUrl.isEmpty() && inventoryId != null && !inventoryId.isEmpty()) {
-                clientLink.put(CLIENT_URL, String.format("%s/insights/inventory/%s",
-                        environmentUrl,
-                        cloudEventPayload.getJsonObject(CONTEXT).getString("inventory_id")
-                ));
-            }
-        } else {
-            if (environmentUrl != null && !environmentUrl.isEmpty()) {
-                clientLink.put(CLIENT, String.format("Open %s", cloudEventPayload.getString(APPLICATION)));
-                clientLink.put(CLIENT_URL, String.format("%s/insights/%s",
-                        environmentUrl,
-                        cloudEventPayload.getString(APPLICATION)
-                ));
-            } else {
-                clientLink.put(CLIENT, cloudEventPayload.getString(APPLICATION));
-            }
+        String inventoryUrl = cloudEventPayload.getString(INVENTORY_URL, "");
+        if (!inventoryUrl.isEmpty()) {
+            clientLinks.put(LINKS, JsonObject.of(
+                    HREF, inventoryUrl,
+                    TEXT, "Host"
+            ));
         }
 
-        return clientLink;
+        return clientLinks;
     }
 
-    private JsonObject getSourceNames(final JsonObject cloudSource) {
+    static JsonObject getSourceNames(final JsonObject cloudSource) {
         if (cloudSource != null) {
             JsonObject sourceNames = new JsonObject();
 
