@@ -83,8 +83,8 @@ public class PagerDutyTestUtils {
         );
 
         payload.put(SOURCE, source);
-        payload.put(INVENTORY_URL, "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f");
-        payload.put(APPLICATION_URL, "https://console.redhat.com/insights/default-application");
+        payload.put(INVENTORY_URL, "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f?from=notifications");
+        payload.put(APPLICATION_URL, "https://console.redhat.com/insights/default-application?from=notifications");
         payload.put(SEVERITY, PagerDutySeverity.WARNING);
         cloudEventData.put(PAYLOAD, payload);
 
