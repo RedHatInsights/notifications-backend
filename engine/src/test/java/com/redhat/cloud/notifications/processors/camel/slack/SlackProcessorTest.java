@@ -29,13 +29,15 @@ public class SlackProcessorTest extends CamelProcessorTest {
     private static final String WEBHOOK_URL = "https://foo.bar";
     private static final String CHANNEL = "#notifications";
     private static final String SLACK_TEMPLATE = "{#if data.context.display_name??}" +
-            "<{data.environment_url}/insights/inventory/{data.context.inventory_id}|{data.context.display_name}> " +
+            "<{data.inventory_url}|{data.context.display_name}> " +
             "triggered {data.events.size()} event{#if data.events.size() > 1}s{/if}" +
             "{#else}{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered{/if} " +
-            "from {data.bundle}/{data.application}. " +
-            "<{data.environment_url}/insights/{data.application}|Open {data.application}>";
+            "from {data.source.application.display_name} - {data.source.bundle.display_name}. " +
+            "<{data.application_url}|Open {data.source.application.display_name}>";
     private static final String SLACK_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
-            "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>";
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open Policies>";
+    private static final String SLACK_EXPECTED_MSG_WITH_HOST_URL = "<" + CONTEXT_HOST_URL + "|my-computer> " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open Policies>";
 
     @Inject
     SlackProcessor slackProcessor;
@@ -46,8 +48,8 @@ public class SlackProcessorTest extends CamelProcessorTest {
     }
 
     @Override
-    protected String getExpectedMessage() {
-        return SLACK_EXPECTED_MSG;
+    protected String getExpectedMessage(boolean withHostUrl) {
+        return withHostUrl ? SLACK_EXPECTED_MSG_WITH_HOST_URL : SLACK_EXPECTED_MSG;
     }
 
     @Override
@@ -61,7 +63,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
     }
 
     @Override
-    protected void verifyKafkaMessage() {
+    protected void verifyKafkaMessage(boolean withHostUrl) {
 
         await().until(() -> inMemorySink.received().size() == 1);
         Message<JsonObject> message = inMemorySink.received().get(0);
@@ -77,7 +79,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
         assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
         assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
         assertEquals(CHANNEL, notification.getString("channel"));
-        assertEquals(SLACK_EXPECTED_MSG, notification.getString("message"));
+        assertEquals(getExpectedMessage(withHostUrl), notification.getString("message"));
     }
 
     @Override
@@ -102,7 +104,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
         this.mockTemplate();
 
         // Build the required data.
-        final Event event = buildEvent();
+        final Event event = buildEvent(false);
         final Endpoint endpoint = this.buildEndpoint();
         // Remove the "extras" object from the endpoint.
         final CamelProperties camelProperties = endpoint.getProperties(CamelProperties.class);

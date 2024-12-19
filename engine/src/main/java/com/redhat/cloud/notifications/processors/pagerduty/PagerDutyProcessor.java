@@ -3,11 +3,11 @@ package com.redhat.cloud.notifications.processors.pagerduty;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,7 +35,7 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
     EngineConfig engineConfig;
 
     @Inject
-    Environment environment;
+    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @Inject
     MeterRegistry registry;
@@ -73,7 +73,8 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
 
         JsonObject connectorData = new JsonObject();
         JsonObject transformedEvent = transformer.toJsonObject(event);
-        transformedEvent.put("environment_url", environment.url());
+        insightsUrlsBuilder.buildInventoryUrl(transformedEvent).ifPresent(url -> transformedEvent.put("inventory_url", url));
+        insightsUrlsBuilder.buildApplicationUrl(transformedEvent).ifPresent(url -> transformedEvent.put("application_url", url));
         transformedEvent.put("severity", properties.getSeverity());
 
         connectorData.put(PAYLOAD, transformedEvent);
