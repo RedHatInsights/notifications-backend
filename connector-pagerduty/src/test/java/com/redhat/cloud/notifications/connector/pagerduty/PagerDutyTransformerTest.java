@@ -112,7 +112,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
         );
         cloudEventPayload.put("recipients", JsonArray.of());
         // No inventory_url generated
-        cloudEventPayload.put("application_url", "https://console.redhat.com/settings/integrations");
+        cloudEventPayload.put("application_url", "https://console.redhat.com/settings/integrations?from=notifications");
         cloudEventPayload.put("severity", "warning");
         cloudEventData.put(PAYLOAD, cloudEventPayload);
 
