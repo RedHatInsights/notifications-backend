@@ -67,6 +67,7 @@ import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hamcrest.Matchers;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,6 +87,7 @@ import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -4626,6 +4628,89 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Assert that the transaction was rolled back and that the integration
         // was not deleted.
         this.assertIntegrationExists(identityHeader, integration);
+    }
+
+    /**
+     * Tests that when we attempt to remove an integration from our database,
+     * if the Sources integration throws an exception when deleting the
+     * secrets, the whole transaction is rolled back, the integration does not
+     * get deleted from our database, and that the integration gets recreated
+     * in Kessel's Inventory.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testInventoryDeleteIntegrationSourcesFail(final boolean isKesselRelationsApiEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
+
+        // Mock the reporter instance id.
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
+
+        // Create the integration we are going to attempt to delete.
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setDisableSslVerification(false);
+        webhookProperties.setMethod(POST);
+        webhookProperties.setSecretToken("my-super-secret-token");
+        webhookProperties.setSecretTokenSourcesId(new Random().nextLong());
+        webhookProperties.setUrl(getMockServerUrl());
+
+        final Endpoint integration = this.resourceHelpers.createEndpoint(
+            DEFAULT_ACCOUNT_ID,
+            DEFAULT_ORG_ID,
+            WEBHOOK,
+            null,
+            "integration-name",
+            "integration-description",
+            webhookProperties,
+            false,
+            LocalDateTime.now()
+        );
+
+        // Return a default workspace for the organization.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+
+        // Simulate that Sources throws an exception when attempting to delete
+        // the secrets.
+        Mockito.doThrow(new ClientWebApplicationException()).when(this.sourcesServiceMock).delete(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
+
+        // Attempt deleting the integration.
+        given()
+            .header(identityHeader)
+            .pathParam("id", integration.getId())
+            .when()
+            .delete("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        // The integration assertion triggers a call to Sources to fetch the
+        // secret token, so we need to make sure a secret is returned so that
+        // the code doesn't break.
+        final Secret secret = new Secret();
+        secret.password = webhookProperties.getSecretToken();
+
+        Mockito
+            .when(sourcesServiceMock.getById(Mockito.anyString(), Mockito.anyString(), Mockito.eq(webhookProperties.getSecretTokenSourcesId())))
+            .thenReturn(secret);
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not deleted.
+        this.assertIntegrationExists(identityHeader, integration);
+
+        // Since the Sources' secrets' deletion failed, we should have
+        // recreated the integration in Kessel's Inventory.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
     }
 
     /**
