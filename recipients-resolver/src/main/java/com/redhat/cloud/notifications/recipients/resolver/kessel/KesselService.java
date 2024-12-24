@@ -103,12 +103,12 @@ public class KesselService {
         Set<String> userIds = new HashSet<>();
         LookupSubjectsRequest request = getLookupSubjectsRequest(recipientsAuthorizationCriterion);
 
+        final String kesselAdditionalDomainName = String.format("%s/", recipientsResolverConfig.getKesselDomain());
         for (Iterator<LookupSubjectsResponse> it = lookupClient.lookupSubjects(request); it.hasNext();) {
             LookupSubjectsResponse response = it.next();
-            Log.infof("Kessel response: %s", response);
-
-            userIds.add(response.getSubject().getSubject().getId().replaceAll(recipientsResolverConfig.getKesselDomain(), ""));
+            userIds.add(response.getSubject().getSubject().getId().replaceAll(kesselAdditionalDomainName, ""));
         }
+        Log.infof("Kessel returned %d user(s) for request %s", userIds.size(), request);
         return userIds;
     }
 

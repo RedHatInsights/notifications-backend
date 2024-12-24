@@ -50,4 +50,6 @@ public class ExchangeProperty {
     public static final String USE_EMAIL_BOP_V1_SSL = "use_email_bop_V1_ssl";
 
     public static final String RECIPIENTS_AUTHORIZATION_CRITERION = "recipients_authorization_criterion";
+
+    public static final String ADDITIONAL_ERROR_DETAILS = "additionalErrorDetails";
 }
