@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.quarkus.runtime.LaunchMode;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -74,13 +75,13 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = RECIPIENTS_RESOLVER_TRUST_STORE_TYPE)
     Optional<String> recipientsResolverTrustStoreType;
 
-    private String enableBopEmailServiceWithSslChecks;
     private String toggleKafkaIncomingHighVolumeTopic;
+    private String toggleUseSimplifiedEmailRoute;
 
     @PostConstruct
     void emailConnectorPostConstruct() {
-        enableBopEmailServiceWithSslChecks = toggleRegistry.register("enable-bop-service-ssl-checks", true);
         toggleKafkaIncomingHighVolumeTopic = toggleRegistry.register("kafka-incoming-high-volume-topic", true);
+        toggleUseSimplifiedEmailRoute = toggleRegistry.register("use-simplified-email-route", true);
     }
 
     @Override
@@ -102,7 +103,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
-        config.put(enableBopEmailServiceWithSslChecks, isEnableBopServiceWithSslChecks());
+        config.put(toggleUseSimplifiedEmailRoute, useSimplifiedEmailRoute(null));
         config.put(toggleKafkaIncomingHighVolumeTopic, isIncomingKafkaHighVolumeTopicEnabled());
 
         /*
@@ -182,8 +183,12 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         return recipientsResolverTrustStoreType;
     }
 
-    public boolean isEnableBopServiceWithSslChecks() {
-        return true;
+    public boolean useSimplifiedEmailRoute(String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleUseSimplifiedEmailRoute, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
     }
 
     /**

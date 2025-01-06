@@ -15,7 +15,9 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         MockServerLifecycleManager.start();
         Map<String, String> properties = new HashMap<>();
         properties.put("notifications.connector.recipients-resolver.url", getMockServerUrl());
+        properties.put("quarkus.rest-client.recipients-resolver.url", getMockServerUrl());
         properties.put("notifications.connector.user-provider.bop.url", getMockServerUrl());
+        properties.put("quarkus.rest-client.bop.url", getMockServerUrl());
         return properties;
     }
 
