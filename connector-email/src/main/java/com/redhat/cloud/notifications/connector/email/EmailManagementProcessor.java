@@ -56,7 +56,7 @@ public class EmailManagementProcessor implements Processor {
     }
 
     private void sendToBop(Exchange exchange, Set<String> recipientsList) {
-        // split recipient list and send it ot BOP
+        // split recipient list and send it to BOP
         List<List<String>> packedRecipients = partition(recipientsList, emailConnectorConfig.getMaxRecipientsPerEmail() - 1);
         final String subject = exchange.getProperty(ExchangeProperty.RENDERED_SUBJECT, String.class);
         final String body = exchange.getProperty(ExchangeProperty.RENDERED_BODY, String.class);
