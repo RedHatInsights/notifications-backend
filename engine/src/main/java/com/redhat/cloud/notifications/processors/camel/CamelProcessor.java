@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
@@ -33,9 +32,6 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     @Inject
     BaseTransformer baseTransformer;
-
-    @Inject
-    Environment environment;
 
     @Inject
     InsightsUrlsBuilder insightsUrlsBuilder;
@@ -79,7 +75,6 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     protected String buildNotificationMessage(Event event) {
         JsonObject data = baseTransformer.toJsonObject(event);
-        data.put("environment_url", environment.url());
         insightsUrlsBuilder.buildInventoryUrl(data).ifPresent(url -> data.put("inventory_url", url));
         data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data));
 
