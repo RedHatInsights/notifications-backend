@@ -14,18 +14,18 @@ import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDP
 @QuarkusTestResource(TestLifecycleManager.class)
 public class TeamsProcessorTest extends CamelProcessorTest {
 
-    private static final String TEAMS_TEMPLATE = "{#if data.context.display_name??}" +
-            "<{data.environment_url}/insights/inventory/{data.context.inventory_id}|{data.context.display_name}> " +
+    private static final String TEAMS_TEMPLATE = "{\"text\":\"{#if data.context.display_name??}" +
+            "[{data.context.display_name}]({data.inventory_url}) " +
             "triggered {data.events.size()} event{#if data.events.size() > 1}s{/if}" +
             "{#else}{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered{/if} " +
-            "from {data.bundle}/{data.application}. " +
-            "<{data.environment_url}/insights/{data.application}|Open {data.application}>";
+            "from {data.source.application.display_name} - {data.source.bundle.display_name}. " +
+            "[Open {data.source.application.display_name}]({data.application_url})\"}";
 
-    private static final String TEAMS_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
-            "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>";
+    private static final String TEAMS_EXPECTED_MSG = "{\"text\":\"[my-computer](" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f) " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. [Open Policies](" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies)\"}";
 
-    private static final String TEAMS_EXPECTED_MSG_WITH_HOST_URL = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
-            "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>";
+    private static final String TEAMS_EXPECTED_MSG_WITH_HOST_URL = "{\"text\":\"[my-computer](" + CONTEXT_HOST_URL + ") " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. [Open Policies](" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies)\"}";
 
     @Inject
     TeamsProcessor teamsProcessor;

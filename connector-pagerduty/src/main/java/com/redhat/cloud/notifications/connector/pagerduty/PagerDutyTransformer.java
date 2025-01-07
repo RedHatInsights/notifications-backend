@@ -33,7 +33,6 @@ public class PagerDutyTransformer implements Processor {
     public static final String CONTEXT = "context";
     public static final String CUSTOM_DETAILS = "custom_details";
     public static final String DISPLAY_NAME = "display_name";
-    public static final String ENVIRONMENT_URL = "environment_url";
     public static final String EVENT_ACTION = "event_action";
     public static final String EVENT_TYPE = "event_type";
     public static final String EVENTS = "events";
@@ -58,7 +57,6 @@ public class PagerDutyTransformer implements Processor {
 
         JsonObject message = new JsonObject();
         message.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
-        message.mergeIn(getClientLink(cloudEventPayload, cloudEventPayload.getString(ENVIRONMENT_URL)));
         message.mergeIn(getClientLinks(cloudEventPayload));
 
         JsonObject messagePayload = new JsonObject();
@@ -123,45 +121,6 @@ public class PagerDutyTransformer implements Processor {
                 throw new IllegalArgumentException("Invalid severity value provided for PagerDuty payload: " + severity);
             }
         }
-    }
-
-    /**
-     * Adapted from CamelProcessor template for Teams, with some changes to more gracefully handle missing fields
-     * <br>
-     * TODO update to work more consistently and with other platforms
-     *
-     * @return {@link #CLIENT} and {@link #CLIENT_URL}
-     */
-    private JsonObject getClientLink(final JsonObject cloudEventPayload, String environmentUrl) {
-        JsonObject clientLink = new JsonObject();
-
-        String contextName = cloudEventPayload.containsKey(CONTEXT)
-                ? cloudEventPayload.getJsonObject(CONTEXT).getString(DISPLAY_NAME)
-                : null;
-
-        if (contextName != null) {
-            clientLink.put(CLIENT, contextName);
-
-            String inventoryId = cloudEventPayload.getJsonObject(CONTEXT).getString("inventory_id");
-            if (environmentUrl != null && !environmentUrl.isEmpty() && inventoryId != null && !inventoryId.isEmpty()) {
-                clientLink.put(CLIENT_URL, String.format("%s/insights/inventory/%s",
-                        environmentUrl,
-                        cloudEventPayload.getJsonObject(CONTEXT).getString("inventory_id")
-                ));
-            }
-        } else {
-            if (environmentUrl != null && !environmentUrl.isEmpty()) {
-                clientLink.put(CLIENT, String.format("Open %s", cloudEventPayload.getString(APPLICATION)));
-                clientLink.put(CLIENT_URL, String.format("%s/insights/%s",
-                        environmentUrl,
-                        cloudEventPayload.getString(APPLICATION)
-                ));
-            } else {
-                clientLink.put(CLIENT, cloudEventPayload.getString(APPLICATION));
-            }
-        }
-
-        return clientLink;
     }
 
     /**

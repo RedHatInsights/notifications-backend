@@ -14,12 +14,9 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.BUNDLE;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CLIENT;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CLIENT_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CONTEXT;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CUSTOM_DETAILS;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.DISPLAY_NAME;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ENVIRONMENT_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENTS;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_ACTION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_TYPE;
@@ -86,7 +83,6 @@ public class PagerDutyTestUtils {
         );
 
         payload.put(SOURCE, source);
-        payload.put(ENVIRONMENT_URL, "https://console.redhat.com");
         payload.put(INVENTORY_URL, "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f");
         payload.put(APPLICATION_URL, "https://console.redhat.com/insights/default-application");
         payload.put(SEVERITY, PagerDutySeverity.WARNING);
@@ -102,7 +98,6 @@ public class PagerDutyTestUtils {
 
         JsonObject oldInnerPayload = expected.getJsonObject(PAYLOAD);
         expected.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
-        expected.mergeIn(getClientLink(oldInnerPayload, oldInnerPayload.getString(ENVIRONMENT_URL)));
         expected.mergeIn(getClientLinks(oldInnerPayload));
 
         JsonObject newInnerPayload = new JsonObject();
@@ -139,37 +134,5 @@ public class PagerDutyTestUtils {
         expected.remove(PAYLOAD);
         expected.put(PAYLOAD, newInnerPayload);
         return expected;
-    }
-
-    private static JsonObject getClientLink(final JsonObject oldInnerPayload, String environmentUrl) {
-        JsonObject clientLink = new JsonObject();
-
-        String contextName = oldInnerPayload.containsKey(CONTEXT)
-                ? oldInnerPayload.getJsonObject(CONTEXT).getString(DISPLAY_NAME)
-                : null;
-
-        if (contextName != null) {
-            clientLink.put(CLIENT, contextName);
-
-            String inventoryId = oldInnerPayload.getJsonObject(CONTEXT).getString("inventory_id");
-            if (environmentUrl != null && !environmentUrl.isEmpty() && inventoryId != null && !inventoryId.isEmpty()) {
-                clientLink.put(CLIENT_URL, String.format("%s/insights/inventory/%s",
-                        environmentUrl,
-                        oldInnerPayload.getJsonObject(CONTEXT).getString("inventory_id")
-                ));
-            }
-        } else {
-            if (environmentUrl != null && !environmentUrl.isEmpty()) {
-                clientLink.put(CLIENT, String.format("Open %s", oldInnerPayload.getString(APPLICATION)));
-                clientLink.put(CLIENT_URL, String.format("%s/insights/%s",
-                        environmentUrl,
-                        oldInnerPayload.getString(APPLICATION)
-                ));
-            } else {
-                clientLink.put(CLIENT, oldInnerPayload.getString(APPLICATION));
-            }
-        }
-
-        return clientLink;
     }
 }
