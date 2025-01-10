@@ -11,8 +11,6 @@ import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventAggregationCriteria;
-import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.SubscriptionType;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -33,7 +31,6 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
@@ -432,20 +429,7 @@ class DailyEventAggregationJobTest {
     }
 
     private com.redhat.cloud.notifications.models.Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, String policyId, String inventoryId, LocalDateTime created) {
-        Application application = resourceHelpers.findOrCreateApplication(bundleName, applicationName);
-        EventType eventType = resourceHelpers.findOrCreateEventType(application.getId(), "event_type_test");
-        resourceHelpers.findOrCreateEventTypeEmailSubscription(orgId, "obiwan", eventType, SubscriptionType.DAILY);
-
-        com.redhat.cloud.notifications.models.Event event = new com.redhat.cloud.notifications.models.Event();
-        event.setId(UUID.randomUUID());
-        event.setOrgId(orgId);
-        eventType.setApplication(application);
-        event.setEventType(eventType);
-        event.setPayload(
-            TestHelpers.generatePayloadContent(orgId, bundleName, applicationName, policyId, inventoryId).toString()
-        );
-        event.setCreated(created);
-
-        return resourceHelpers.createEvent(event);
+        final String payload = TestHelpers.generatePayloadContent(orgId, bundleName, applicationName, policyId, inventoryId).toString();
+        return resourceHelpers.addEventEmailAggregation(orgId, bundleName, applicationName, created, payload);
     }
 }
