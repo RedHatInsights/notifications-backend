@@ -12,13 +12,13 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.PagerDutySeverity;
+import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -71,7 +71,7 @@ public class PagerDutyProcessorTest {
     BaseTransformer transformer;
 
     @Inject
-    Environment environment;
+    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @PostConstruct
     void postConstruct() {
@@ -122,10 +122,12 @@ public class PagerDutyProcessorTest {
         Message<JsonObject> message = inMemorySink.received().getFirst();
         JsonObject payload = message.getPayload();
 
-        final JsonObject payloadToSent = transformer.toJsonObject(event);
-        payloadToSent.put("environment_url", environment.url());
-        payloadToSent.put("severity", PagerDutySeverity.ERROR);
-        assertEquals(payloadToSent, payload.getJsonObject("payload"));
+        final JsonObject payloadToSend = transformer.toJsonObject(event);
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
+                .ifPresent(url -> payloadToSend.put("inventory_url", url));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend));
+        payloadToSend.put("severity", PagerDutySeverity.ERROR);
+        assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
     }

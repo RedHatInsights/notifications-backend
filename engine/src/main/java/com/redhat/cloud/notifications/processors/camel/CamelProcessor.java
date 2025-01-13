@@ -7,11 +7,11 @@ import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.logging.Log;
@@ -34,7 +34,7 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
     BaseTransformer baseTransformer;
 
     @Inject
-    Environment environment;
+    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @Inject
     TemplateRepository templateRepository;
@@ -75,7 +75,8 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     protected String buildNotificationMessage(Event event) {
         JsonObject data = baseTransformer.toJsonObject(event);
-        data.put("environment_url", environment.url());
+        insightsUrlsBuilder.buildInventoryUrl(data).ifPresent(url -> data.put("inventory_url", url));
+        data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data));
 
         Map<Object, Object> dataAsMap;
         try {
