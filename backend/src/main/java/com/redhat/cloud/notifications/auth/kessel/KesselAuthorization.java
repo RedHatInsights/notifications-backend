@@ -57,6 +57,18 @@ public class KesselAuthorization {
      * particular permission for a subject.
      */
     private static final String KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME = "notifications.kessel.relationships.permission.check.requests";
+    /**
+     * Represents the counter name to count permission check requests.
+     */
+    public static final String KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME = "notifications.kessel.relationships.permission.check.count";
+    /**
+     * Represents the counter name to count lookup resources requests.
+     */
+    public static final String KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME = "notifications.kessel.relationships.lookup.check.count";
+
+    protected static final String COUNTER_TAG_FAILURES = "failures";
+    protected static final String COUNTER_TAG_REQUEST_RESULT = "result";
+    protected static final String COUNTER_TAG_SUCCESSES = "successes";
 
     @Inject
     CheckClient checkClient;
@@ -102,12 +114,14 @@ public class KesselAuthorization {
                 "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Unable to query Kessel for a permission on a resource",
                 identity, permission, resourceType, resourceId
             );
-
+            meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
             throw e;
+        } finally {
+            // Stop the timer.
+            permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.name())));
         }
 
-        // Stop the timer.
-        permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.name())));
+        meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
 
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
 
@@ -152,12 +166,15 @@ public class KesselAuthorization {
                 "[identity: %s][permission: %s][resource_type: %s] Runtime error when querying Kessel for integration resources with request payload: %s",
                 identity, integrationPermission, ResourceType.INTEGRATION, request
             );
+            meterRegistry.counter(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
 
             throw e;
+        } finally {
+            // Stop the timer.
+            lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
         }
 
-        // Stop the timer.
-        lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
+        meterRegistry.counter(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
 
         // Process the incoming responses.
         final Set<UUID> uuids = new HashSet<>();
