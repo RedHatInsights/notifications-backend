@@ -36,6 +36,8 @@ public class SlackProcessorTest extends CamelProcessorTest {
             "<{data.environment_url}/insights/{data.application}|Open {data.application}>";
     private static final String SLACK_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
             "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>";
+    private static final String SLACK_EXPECTED_MSG_WITH_HOST_URL = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f|my-computer> " +
+            "triggered 1 event from rhel/policies. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies|Open policies>";
 
     @Inject
     SlackProcessor slackProcessor;
@@ -46,8 +48,8 @@ public class SlackProcessorTest extends CamelProcessorTest {
     }
 
     @Override
-    protected String getExpectedMessage() {
-        return SLACK_EXPECTED_MSG;
+    protected String getExpectedMessage(boolean withHostUrl) {
+        return withHostUrl ? SLACK_EXPECTED_MSG_WITH_HOST_URL : SLACK_EXPECTED_MSG;
     }
 
     @Override
@@ -61,7 +63,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
     }
 
     @Override
-    protected void verifyKafkaMessage() {
+    protected void verifyKafkaMessage(boolean withHostUrl) {
 
         await().until(() -> inMemorySink.received().size() == 1);
         Message<JsonObject> message = inMemorySink.received().get(0);
@@ -77,7 +79,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
         assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
         assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
         assertEquals(CHANNEL, notification.getString("channel"));
-        assertEquals(SLACK_EXPECTED_MSG, notification.getString("message"));
+        assertEquals(getExpectedMessage(withHostUrl), notification.getString("message"));
     }
 
     @Override
@@ -102,7 +104,7 @@ public class SlackProcessorTest extends CamelProcessorTest {
         this.mockTemplate();
 
         // Build the required data.
-        final Event event = buildEvent();
+        final Event event = buildEvent(false);
         final Endpoint endpoint = this.buildEndpoint();
         // Remove the "extras" object from the endpoint.
         final CamelProperties camelProperties = endpoint.getProperties(CamelProperties.class);
