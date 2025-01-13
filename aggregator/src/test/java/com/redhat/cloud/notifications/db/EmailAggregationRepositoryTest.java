@@ -10,8 +10,6 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriteria;
-import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.SubscriptionType;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
@@ -23,7 +21,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -101,11 +98,11 @@ class EmailAggregationRepositoryTest {
     @Test
     void testApplicationsWithPendingAggregationAccordingOrgPref() {
         configureTimePref(dailyEmailAggregationJob.computeScheduleExecutionTime());
-        Event event1 = addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
-        Event event2 = addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
-        addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
-        addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
-        addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5));
+        Event event1 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD1.toString());
+        Event event2 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString());
+        resourceHelpers.addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString());
+        resourceHelpers.addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString());
+        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString());
 
         List<AggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime());
         assertEquals(4, keys.size());
@@ -123,21 +120,5 @@ class EmailAggregationRepositoryTest {
         assertEquals(3, keys.size());
         matchedKeys = keys.stream().filter(k -> ORG_ID.equals(k.getOrgId())).filter(k -> (((EventAggregationCriteria) k.getAggregationKey()).getApplicationId().equals(application.getId()))).collect(Collectors.toList());
         assertEquals(0, matchedKeys.size());
-    }
-
-    private Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload, LocalDateTime created) {
-        Application application = resourceHelpers.findOrCreateApplication(bundleName, applicationName);
-        EventType eventType = resourceHelpers.findOrCreateEventType(application.getId(), "event_type_test");
-        resourceHelpers.findOrCreateEventTypeEmailSubscription(orgId, "obiwan", eventType, SubscriptionType.DAILY);
-
-        Event event = new Event();
-        event.setId(UUID.randomUUID());
-        event.setOrgId(orgId);
-        eventType.setApplication(application);
-        event.setEventType(eventType);
-        event.setPayload(payload.toString());
-        event.setCreated(created);
-
-        return resourceHelpers.createEvent(event);
     }
 }
