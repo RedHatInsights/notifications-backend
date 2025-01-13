@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
+import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
@@ -16,7 +17,9 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
@@ -32,6 +35,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.COUNTER_TAG_FAILURES;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.COUNTER_TAG_REQUEST_RESULT;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.COUNTER_TAG_SUCCESSES;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME;
 import static org.mockito.ArgumentMatchers.anyString;
 
 @QuarkusTest
@@ -48,6 +56,15 @@ public class KesselAuthorizationTest {
     @Inject
     KesselAuthorization kesselAuthorization;
 
+    @Inject
+    MicrometerAssertionHelper micrometerAssertionHelper;
+
+    @BeforeEach
+    void beforeEach() {
+        // save counter values
+        saveCounterValues();
+    }
+
     /**
      * Tests that when the principal is authorized, the function under test
      * does not raise an exception.
@@ -55,15 +72,7 @@ public class KesselAuthorizationTest {
     @Test
     void testAuthorized() {
         // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Create a RhIdentity principal and assign it to the mocked security
-        // context.
-        final RhIdentity identity = Mockito.mock(RhIdentity.class);
-        Mockito.when(identity.getName()).thenReturn("Red Hat user");
-
-        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
@@ -82,6 +91,50 @@ public class KesselAuthorizationTest {
 
         // Verify that we called Kessel.
         Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
+
+        // Assert counter values
+        assertCounterIncrements(1, 0, 0, 0);
+    }
+
+    /**
+     * Tests failure counter increments in case of exception.
+     */
+    @Test
+    void testFailureCounterIncrements() {
+        // Mock the security context.
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
+
+        // Simulate that Kessel returns an exception
+        Mockito.when(this.checkClient.check(Mockito.any())).thenThrow(RuntimeException.class);
+
+        // Call the function under test.
+        Assertions.assertThrows(
+            RuntimeException.class,
+            () -> this.kesselAuthorization.hasPermissionOnResource(
+                    mockedSecurityContext,
+                    WorkspacePermission.EVENT_LOG_VIEW,
+                    ResourceType.WORKSPACE,
+                    "workspace-uuid"
+            )
+        );
+
+        // Assert counter values
+        assertCounterIncrements(0, 1, 0, 0);
+
+        // Return the exception to simulate a Kessel error.
+        Mockito.when(this.lookupClient.lookupResources(Mockito.any())).thenThrow(RuntimeException.class);
+
+        // save counter values
+        saveCounterValues();
+
+        // Call the function under test.
+        Assertions.assertThrows(
+            RuntimeException.class,
+            () -> this.kesselAuthorization.lookupAuthorizedIntegrations(mockedSecurityContext, IntegrationPermission.VIEW)
+        );
+
+        // Assert counter values
+        assertCounterIncrements(0, 0, 0, 1);
     }
 
     /**
@@ -92,15 +145,7 @@ public class KesselAuthorizationTest {
     @Test
     void testHasPermissionOnIntegration() {
         // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Create a RhIdentity principal and assign it to the mocked security
-        // context.
-        final RhIdentity identity = Mockito.mock(RhIdentity.class);
-        Mockito.when(identity.getName()).thenReturn("Red Hat user");
-
-        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
 
         // Simulate an "authorized" response from Kessel.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
@@ -118,15 +163,7 @@ public class KesselAuthorizationTest {
     @Test
     void testHasPermissionOnIntegrationThrowsNotFoundException() {
         // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Create a RhIdentity principal and assign it to the mocked security
-        // context.
-        final RhIdentity identity = Mockito.mock(RhIdentity.class);
-        Mockito.when(identity.getName()).thenReturn("Red Hat user");
-
-        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
 
         // Simulate an "unauthorized" response coming from Kessel.
         final CheckResponse negativeCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
@@ -137,6 +174,9 @@ public class KesselAuthorizationTest {
             NotFoundException.class,
             () -> this.kesselAuthorization.hasPermissionOnIntegration(mockedSecurityContext, IntegrationPermission.VIEW, UUID.randomUUID())
         );
+
+        // Assert counter values
+        assertCounterIncrements(1, 0, 0, 0);
     }
 
     /**
@@ -146,15 +186,7 @@ public class KesselAuthorizationTest {
     @Test
     void testUnauthorized() {
         // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Create a RhIdentity principal and assign it to the mocked security
-        // context.
-        final RhIdentity identity = Mockito.mock(RhIdentity.class);
-        Mockito.when(identity.getName()).thenReturn("Red Hat user");
-
-        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
@@ -178,6 +210,9 @@ public class KesselAuthorizationTest {
 
         // Verify that we called Kessel.
         Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
+
+        // Assert counter values
+        assertCounterIncrements(1, 0, 0, 0);
     }
 
     /**
@@ -187,15 +222,7 @@ public class KesselAuthorizationTest {
     @Test
     void testLookupAuthorizedIntegrations() {
         // Mock the security context.
-        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
-
-        // Create a RhIdentity principal and assign it to the mocked security
-        // context.
-        final RhIdentity identity = Mockito.mock(RhIdentity.class);
-        Mockito.when(identity.getName()).thenReturn("Red Hat user");
-
-        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
-        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
@@ -218,13 +245,36 @@ public class KesselAuthorizationTest {
         final List<LookupResourcesResponse> lookupResourcesResponses = List.of(lookupResourcesResponseOne, lookupResourcesResponseTwo, lookupResourcesResponseThree);
         Mockito.when(this.lookupClient.lookupResources(Mockito.any())).thenReturn(lookupResourcesResponses.iterator());
 
+        // save counter values
+        saveCounterValues();
+
         // Call the function under test.
         final Set<UUID> result = this.kesselAuthorization.lookupAuthorizedIntegrations(mockedSecurityContext, IntegrationPermission.VIEW);
+
+        // Assert counter values
+        assertCounterIncrements(0, 0, 1, 0);
 
         // Assert that the result is the expected one.
         final Set<UUID> expectedUuids = Set.of(firstUuid, secondUuid, thirdUuid);
 
         result.forEach(r -> Assertions.assertTrue(expectedUuids.contains(r), String.format("UUID \"%s\" not present in the expected UUIDs", r)));
+    }
+
+    /**
+     * Mock the security context.
+     */
+    private static @NotNull SecurityContext initMockedSecurityContextWithRhIdentity() {
+        // Mock the security context.
+        final SecurityContext mockedSecurityContext = Mockito.mock(SecurityContext.class);
+
+        // Create a RhIdentity principal and assign it to the mocked security
+        // context.
+        final RhIdentity identity = Mockito.mock(RhIdentity.class);
+        Mockito.when(identity.getName()).thenReturn("Red Hat user");
+
+        final ConsolePrincipal<?> principal = new RhIdPrincipal(identity);
+        Mockito.when(mockedSecurityContext.getUserPrincipal()).thenReturn(principal);
+        return mockedSecurityContext;
     }
 
     /**
@@ -325,5 +375,19 @@ public class KesselAuthorizationTest {
 
             Assertions.assertEquals(ResourceType.INTEGRATION.getKesselObjectType(), lookupResourcesRequest.getResourceType(), String.format("unexpected resource type obtained on test case: %s", tc));
         }
+    }
+
+    private void saveCounterValues() {
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES);
+    }
+
+    private void assertCounterIncrements(final int expectedPermissionCheckSuccesses, final int expectedPermissionCheckFailures, final int expectedLookupResourcesSuccesses, int expectedLookupResourcesFailures) {
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, expectedPermissionCheckSuccesses);
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, expectedPermissionCheckFailures);
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, expectedLookupResourcesSuccesses);
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, expectedLookupResourcesFailures);
     }
 }
