@@ -9,8 +9,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.hibernate.StatelessSession;
+import org.hibernate.Transaction;
+import org.hibernate.exception.ConstraintViolationException;
+import org.postgresql.util.PSQLState;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
@@ -25,6 +31,9 @@ public class SubscriptionRepository {
 
     @Inject
     BackendConfig backendConfig;
+
+    @Inject
+    StatelessSession statelessSession;
 
     @Inject
     TemplateRepository templateRepository;
@@ -125,6 +134,95 @@ public class SubscriptionRepository {
             return List.of(INSTANT, DAILY, DRAWER);
         } else {
             return List.of(INSTANT, DAILY);
+        }
+    }
+
+
+    /**
+     * Fetches user IDs from email subscriptions whose case is mixed.
+     * @return a set of email subscription user IDs in mixed case.
+     */
+    public Set<String> findMixedCaseUserIds() {
+        final String fetchDistinctMixedCaseUserIds =
+            "SELECT " +
+                "DISTINCT(user_id) " +
+                "FROM " +
+                "email_subscriptions " +
+                "WHERE " +
+                "LOWER(user_id) <> user_id ";
+
+        return new HashSet<>(
+            this.statelessSession
+                .createNativeQuery(fetchDistinctMixedCaseUserIds, String.class)
+                .getResultList()
+        );
+    }
+
+    /**
+     * Fetches the email subscriptions of the given user.
+     * @param userId the user ID to fetch the subscriptions for.
+     * @return the email subscriptions related to the given user ID.
+     */
+    public List<EventTypeEmailSubscription> findEmailSubscriptionsByUserId(final String userId) {
+        final String fetchSql =
+            "FROM " +
+                "EventTypeEmailSubscription " +
+                "WHERE " +
+                "id.userId = :userId";
+
+        return this.statelessSession
+            .createQuery(fetchSql, EventTypeEmailSubscription.class)
+            .setParameter("userId", userId)
+            .getResultList();
+    }
+
+    /**
+     * Sets the email subscription's user ID in lowercase. In the case that
+     * there is a "primary key constraint violation", which signals that the
+     * email subscription already exists, the given email subscription is
+     * deleted instead.
+     * @param eventTypeEmailSubscription the email subscription to which the
+     *                                   user ID must be set in lowercase.
+     */
+    public void setEmailSubscriptionUserIdLowercase(final EventTypeEmailSubscription eventTypeEmailSubscription) {
+        final String updateSql =
+            "UPDATE " +
+                "email_subscriptions " +
+                "SET " +
+                "user_id = LOWER(user_id) " +
+                "WHERE " +
+                "user_id = :userId AND " +
+                "org_id = :orgId AND " +
+                "event_type_id = :eventTypeId AND " +
+                "subscription_type = :subscriptionType AND " +
+                "subscribed = :isSubscribed";
+
+        final Transaction updateTransaction = this.statelessSession.beginTransaction();
+        try {
+            this.statelessSession
+                .createNativeQuery(updateSql)
+                .setParameter("userId", eventTypeEmailSubscription.getUserId())
+                .setParameter("orgId", eventTypeEmailSubscription.getOrgId())
+                .setParameter("eventTypeId", eventTypeEmailSubscription.getEventType().getId())
+                .setParameter("subscriptionType", eventTypeEmailSubscription.getSubscriptionType().name())
+                .setParameter("isSubscribed", eventTypeEmailSubscription.isSubscribed())
+                .executeUpdate();
+
+            updateTransaction.commit();
+            Log.debugf("[user_id: %s][org_id: %s][event_type_id: %s] Email subscription's user ID set to lowercase", eventTypeEmailSubscription.getUserId(), eventTypeEmailSubscription.getOrgId(), eventTypeEmailSubscription.getEventType().getId());
+        } catch (final ConstraintViolationException e) {
+            updateTransaction.rollback();
+
+            if (PSQLState.UNIQUE_VIOLATION.getState().equals(e.getSQLState()) && "pk_email_subscriptions".equals(e.getConstraintName())) {
+                final Transaction deleteTransaction = this.statelessSession.beginTransaction();
+
+                this.statelessSession.delete(eventTypeEmailSubscription);
+
+                deleteTransaction.commit();
+                Log.debugf("[user_id: %s][org_id: %s][event_type_id: %s] Email subscription deleted", eventTypeEmailSubscription.getUserId(), eventTypeEmailSubscription.getOrgId(), eventTypeEmailSubscription.getEventType().getId());
+            } else {
+                throw e;
+            }
         }
     }
 }
