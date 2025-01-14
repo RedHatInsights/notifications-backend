@@ -26,6 +26,12 @@ public class KesselAssets {
      */
     private static final String KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME = "notifications.kessel.inventory.resources";
 
+    protected static final String KESSEL_METRICS_INVENTORY_INTEGRATION_COUNTER_NAME = "notifications.kessel.inventory.integration.count";
+
+    protected static final String COUNTER_TAG_FAILURES = "failures";
+    protected static final String COUNTER_TAG_REQUEST_RESULT = "result";
+    protected static final String COUNTER_TAG_SUCCESSES = "successes";
+
     @Inject
     BackendConfig backendConfig;
 
@@ -63,12 +69,13 @@ public class KesselAssets {
                 "[identity: %s][workspace_id: %s][integration_id: %s] Unable to create integration in Kessel's inventory",
                 SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, request
             );
-
+            meterRegistry.counter(KESSEL_METRICS_INVENTORY_INTEGRATION_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
             throw e;
+        } finally {
+            // Stop the timer.
+            createIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
         }
-
-        // Stop the timer.
-        createIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
+        meterRegistry.counter(KESSEL_METRICS_INVENTORY_INTEGRATION_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
 
         Log.tracef("[identity: %s][workspace_id: %s][integration_id: %s] Received payload for the integration creation in Kessel's inventory: %s", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, response);
         Log.debugf("[identity: %s][workspace_id: %s][integration_id: %s] Integration created in Kessel's inventory", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId);
@@ -102,12 +109,14 @@ public class KesselAssets {
                 "[identity: %s][workspace_id: %s][integration_id: %s] Unable to delete integration in Kessel's inventory",
                 SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, request
             );
+            meterRegistry.counter(KESSEL_METRICS_INVENTORY_INTEGRATION_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
 
             throw e;
+        } finally {
+            // Stop the timer.
+            deleteIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
         }
-
-        // Stop the timer.
-        deleteIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
+        meterRegistry.counter(KESSEL_METRICS_INVENTORY_INTEGRATION_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
 
         Log.tracef("[identity: %s][workspace_id: %s][integration_id: %s] Received payload for the integration removal in Kessel's inventory: %s", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, response);
         Log.debugf("[identity: %s][workspace_id: %s][integration_id: %s] Integration deleted in Kessel's inventory", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId);

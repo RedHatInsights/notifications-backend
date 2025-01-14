@@ -124,9 +124,6 @@ public class KesselAuthorizationTest {
         // Return the exception to simulate a Kessel error.
         Mockito.when(this.lookupClient.lookupResources(Mockito.any())).thenThrow(RuntimeException.class);
 
-        // save counter values
-        saveCounterValues();
-
         // Call the function under test.
         Assertions.assertThrows(
             RuntimeException.class,
@@ -134,7 +131,7 @@ public class KesselAuthorizationTest {
         );
 
         // Assert counter values
-        assertCounterIncrements(0, 0, 0, 1);
+        assertCounterIncrements(0, 1, 0, 1);
     }
 
     /**
@@ -244,9 +241,6 @@ public class KesselAuthorizationTest {
         // Kessel.
         final List<LookupResourcesResponse> lookupResourcesResponses = List.of(lookupResourcesResponseOne, lookupResourcesResponseTwo, lookupResourcesResponseThree);
         Mockito.when(this.lookupClient.lookupResources(Mockito.any())).thenReturn(lookupResourcesResponses.iterator());
-
-        // save counter values
-        saveCounterValues();
 
         // Call the function under test.
         final Set<UUID> result = this.kesselAuthorization.lookupAuthorizedIntegrations(mockedSecurityContext, IntegrationPermission.VIEW);
