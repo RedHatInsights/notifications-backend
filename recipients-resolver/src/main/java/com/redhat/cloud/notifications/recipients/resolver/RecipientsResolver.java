@@ -41,12 +41,20 @@ public class RecipientsResolver {
         Set<String> lowerCaseSubscribers = toLowerCaseOrEmpty(subscribers);
         Set<String> lowerCaseUnsubscribers = toLowerCaseOrEmpty(unsubscribers);
 
+        Set<String> authorizedUserIds = new HashSet<>();
+        if (recipientsResolverConfig.isUseKesselEnabled(orgId) && null != recipientsAuthorizationCriterion) {
+            authorizedUserIds.addAll(findAuthorizedUsersWithCriterion(recipientsAuthorizationCriterion));
+            Log.infof("Found %d authorized users in Kessel for orgId %s and criterion %s", authorizedUserIds.size(), orgId, recipientsAuthorizationCriterion);
+        }
+
+        final boolean applyKesselRestriction = recipientsAuthorizationCriterion != null && recipientsResolverConfig.isUseKesselEnabled(orgId);
+
         return recipientSettings.stream()
-            .flatMap(r -> recipientUsers(orgId, r, requestUsersIntersection, lowerCaseSubscribers, lowerCaseUnsubscribers, subscribedByDefault, recipientsAuthorizationCriterion).stream())
+            .flatMap(r -> recipientUsers(orgId, r, requestUsersIntersection, lowerCaseSubscribers, lowerCaseUnsubscribers, subscribedByDefault, authorizedUserIds, applyKesselRestriction).stream())
             .collect(toSet());
     }
 
-    private Set<User> recipientUsers(String orgId, RecipientSettings request, Optional<Set<String>> requestUsersIntersection, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
+    private Set<User> recipientUsers(String orgId, RecipientSettings request, Optional<Set<String>> requestUsersIntersection, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, final Set<String> authorizedUserIds, boolean applyKesselRestriction) {
 
         /*
          * When:
@@ -66,12 +74,6 @@ public class RecipientsResolver {
             fetchedUsers = fetchingUsers.getGroupUsers(orgId, request.isAdminsOnly(), request.getGroupUUID());
         }
 
-        final Set<String> authorizedUserIds = new HashSet<>();
-        if (recipientsResolverConfig.isUseKesselEnabled(orgId) && !fetchedUsers.isEmpty() && null != recipientsAuthorizationCriterion) {
-            authorizedUserIds.addAll(findAuthorizedUsersWithCriterion(recipientsAuthorizationCriterion));
-            Log.infof("Found %d authorized users in Kessel for orgId %s and criterion %s", authorizedUserIds.size(), orgId, recipientsAuthorizationCriterion);
-        }
-
         // The fetched users are cached, so we need to create a new Set to avoid altering the cached data.
         Set<User> recipients = new HashSet<>(fetchedUsers);
 
@@ -87,7 +89,7 @@ public class RecipientsResolver {
                 return true;
             }
 
-            if (recipientsResolverConfig.isUseKesselEnabled(orgId) && null != recipientsAuthorizationCriterion && !authorizedUserIds.contains(user.getId())) {
+            if (applyKesselRestriction && !authorizedUserIds.contains(user.getId())) {
                 return true;
             }
 
