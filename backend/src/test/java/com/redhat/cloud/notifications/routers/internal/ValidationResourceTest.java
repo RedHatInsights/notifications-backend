@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class ValidationResourceTest extends DbIsolatedTest {
+class ValidationResourceTest extends DbIsolatedTest {
 
 
     @ConfigProperty(name = "internal.admin-role")

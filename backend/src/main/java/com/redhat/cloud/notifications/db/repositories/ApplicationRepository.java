@@ -194,16 +194,12 @@ public class ApplicationRepository {
 
     public Map<String, Map<String, List<String>>> getBaetList() {
         final String query = "SELECT application.bundle.name, application.name, name FROM EventType";
-        try {
-            List<String[]> flatBaet = entityManager.createQuery(query, String[].class)
-                .getResultList();
+        final List<String[]> flatBaet = entityManager.createQuery(query, String[].class)
+            .getResultList();
 
-            final Map<String, Map<String, List<String>>> mapBaet = new HashMap<>();
-            flatBaet.stream().forEach(baet -> mapBaet.computeIfAbsent(baet[0], k -> new HashMap<>()).computeIfAbsent(baet[1], k -> new ArrayList<>()).add(baet[2]));
-            return mapBaet;
-        } catch (NoResultException noResultException) {
-            return null;
-        }
+        final Map<String, Map<String, List<String>>> mapBaet = new HashMap<>();
+        flatBaet.stream().forEach(baet -> mapBaet.computeIfAbsent(baet[0], k -> new HashMap<>()).computeIfAbsent(baet[1], k -> new ArrayList<>()).add(baet[2]));
+        return mapBaet;
     }
 
     public List<EventType> getEventTypes(UUID appId) {
