@@ -23,6 +23,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.RestQuery;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -59,6 +61,13 @@ public class ValidationResource {
         } else {
             return Response.ok().build();
         }
+    }
+
+    @GET
+    @Path("/baet_list")
+    @Produces(APPLICATION_JSON)
+    public Map<String, Map<String, List<String>>> listBaet() {
+        return applicationRepository.getBaetList();
     }
 
     @POST
@@ -136,5 +145,12 @@ public class ValidationResource {
         } else {
             return gatewayCertificate.get();
         }
+    }
+
+    @GET
+    @Path("/certificates")
+    @Produces(APPLICATION_JSON)
+    public List<X509Certificate> getCertificates() {
+        return x509CertificateRepository.findCertificates();
     }
 }

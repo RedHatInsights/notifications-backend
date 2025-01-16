@@ -7,11 +7,13 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.models.X509Certificate;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
+import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
@@ -44,6 +46,9 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
 
         checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", FORBIDDEN);
 
+        List<X509Certificate> certificates = getCertificates(adminIdentity);
+        assertEquals(0, certificates.size());
+
         X509Certificate x509Certificate = new X509Certificate();
         x509Certificate.setSubjectDn("certificate data");
         x509Certificate.setBundle(bundleName);
@@ -61,6 +66,9 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
 
         String certificateId = createdCertificateId.getString("id");
         assertNotNull(certificateId);
+
+        certificates = getCertificates(adminIdentity);
+        assertEquals(1, certificates.size());
 
         x509Certificate = checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", OK);
         assertEquals("stage", x509Certificate.getSourceEnvironment());
@@ -95,6 +103,18 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
             .statusCode(OK.getStatusCode());
 
         checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data updated", FORBIDDEN);
+
+        given()
+            .header(adminIdentity)
+            .contentType(JSON)
+            .pathParam("certificateId", x509Certificate.getId())
+            .when()
+            .delete("/internal/x509Certificates/{certificateId}")
+            .then()
+            .statusCode(OK.getStatusCode());
+
+        certificates = getCertificates(adminIdentity);
+        assertEquals(0, certificates.size());
     }
 
     @Test
@@ -146,9 +166,21 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
 
         if (Response.Status.OK == status) {
             JsonObject jsonApp = new JsonObject(responseBody);
-            return jsonApp.mapTo(X509Certificate.class);
+            X509Certificate certificate = jsonApp.mapTo(X509Certificate.class);
+            certificate.setId(UUID.fromString(jsonApp.getString("id")));
+            return certificate;
         }
         return null;
+    }
+
+    private static List<X509Certificate> getCertificates(Header adminIdentity) {
+        return given()
+            .header(adminIdentity)
+            .contentType(JSON)
+            .when()
+            .get("/internal/validation/certificates")
+            .then()
+            .statusCode(OK.getStatusCode()).extract().as(new TypeRef<>() { });
     }
 
 }

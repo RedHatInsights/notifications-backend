@@ -17,8 +17,11 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.NotFoundException;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -187,7 +190,20 @@ public class ApplicationRepository {
         } catch (NoResultException noResultException) {
             return null;
         }
+    }
 
+    public Map<String, Map<String, List<String>>> getBaetList() {
+        final String query = "SELECT application.bundle.name, application.name, name FROM EventType";
+        try {
+            List<String[]> flatBaet = entityManager.createQuery(query, String[].class)
+                .getResultList();
+
+            final Map<String, Map<String, List<String>>> mapBaet = new HashMap<>();
+            flatBaet.stream().forEach(baet -> mapBaet.computeIfAbsent(baet[0], k -> new HashMap<>()).computeIfAbsent(baet[1], k -> new ArrayList<>()).add(baet[2]));
+            return mapBaet;
+        } catch (NoResultException noResultException) {
+            return null;
+        }
     }
 
     public List<EventType> getEventTypes(UUID appId) {
