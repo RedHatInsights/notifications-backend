@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,6 +43,13 @@ public class X509CertificateRepository {
         } catch (NoResultException e) {
             return Optional.empty();
         }
+    }
+
+    public List<X509Certificate> findCertificates() {
+        final String query = "FROM X509Certificate";
+        return this.entityManager
+            .createQuery(query, X509Certificate.class)
+            .getResultList();
     }
 
     @Transactional
