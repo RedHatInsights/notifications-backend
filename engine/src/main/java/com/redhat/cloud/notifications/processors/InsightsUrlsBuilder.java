@@ -44,7 +44,7 @@ public class InsightsUrlsBuilder {
 
         // A provided host url does not need to be modified
         String host_url = context.getString("host_url", "");
-        if (!host_url.isEmpty()) {
+        if (!host_url.isBlank()) {
             return Optional.of(host_url);
         }
 
@@ -52,13 +52,13 @@ public class InsightsUrlsBuilder {
         String inventoryId = context.getString("inventory_id", "");
         String displayName = context.getString("display_name", "");
 
-        if (!displayName.isEmpty()) {
+        if (!displayName.isBlank()) {
             if (data.getString("bundle", "").equals("openshift")
                     && data.getString("application", "").equals("advisor")) {
                 path = String.format("/openshift/insights/advisor/clusters/%s", displayName);
             } else {
                 path = "/insights/inventory/";
-                if (!inventoryId.isEmpty()) {
+                if (!inventoryId.isBlank()) {
                     path += inventoryId;
                 } else {
                     queryParamParts.add(String.format("hostname_or_id=%s", displayName));
