@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.templates.secured;
 
-import com.redhat.cloud.notifications.DriftTestHelpers;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.PatchTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
-import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
+import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPayloadAggregator;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
@@ -21,7 +21,7 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
 
     @Override
     protected String getApp() {
-        return "drift";
+        return "patch";
     }
 
     @Override
@@ -31,29 +31,29 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
 
     @Test
     void testSecureTemplate() {
-        DriftEmailPayloadAggregator aggregator = new DriftEmailPayloadAggregator();
+        PatchEmailPayloadAggregator aggregator = new PatchEmailPayloadAggregator();
 
         LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
         LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
 
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("rhel", "drift", "baseline_01", "baseline_1", "host-01", "Machine 1"));
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("rhel", "drift", "baseline_02", "baseline_2", "host-01", "Machine 1"));
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("rhel", "drift", "baseline_03", "baseline_3", "host-01", "Machine 1"));
-        Map<String, Object> drift = aggregator.getContext();
-        drift.put("start_time", startTime.toString());
-        drift.put("end_time", endTime.toString());
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
+        aggregator.aggregate(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
+        Map<String, Object> patch = aggregator.getContext();
+        patch.put("start_time", startTime.toString());
+        patch.put("end_time", endTime.toString());
 
-        String resultSubject = generateAggregatedEmailSubject(drift);
-        assertEquals("Daily digest - Drift - Red Hat Enterprise Linux", resultSubject);
+        String resultSubject = generateAggregatedEmailSubject(patch);
+        assertEquals("Daily digest - Patch - Red Hat Enterprise Linux", resultSubject);
 
         EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
 
-        String resultBody = generateAggregatedEmailBody(drift, null);
+        String resultBody = generateAggregatedEmailBody(patch, null);
         commonValidations(resultBody);
         assertFalse(resultBody.contains(emailPendo.getPendoTitle()));
         assertFalse(resultBody.contains(emailPendo.getPendoMessage()));
 
-        resultBody = generateAggregatedEmailBody(drift, emailPendo);
+        resultBody = generateAggregatedEmailBody(patch, emailPendo);
         commonValidations(resultBody);
         assertTrue(resultBody.contains(emailPendo.getPendoTitle()));
         assertTrue(resultBody.contains(emailPendo.getPendoMessage()));
@@ -62,9 +62,9 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
     private static void commonValidations(String resultBody) {
         assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
         assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(resultBody.contains("baseline_01"));
-        assertTrue(resultBody.contains("baseline_02"));
-        assertTrue(resultBody.contains("baseline_03"));
+        assertTrue(resultBody.contains("advisory_1"));
+        assertTrue(resultBody.contains("advisory_2"));
+        assertTrue(resultBody.contains("advisory_3"));
         assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

@@ -66,9 +66,6 @@ public class EmailTemplateMigrationServiceTest {
         Application compliance = resourceHelpers.createApp(rhel.getId(), "compliance");
         EventType complianceBelowThreshold = resourceHelpers.createEventType(compliance.getId(), "compliance-below-threshold");
         EventType reportUploadFailed = resourceHelpers.createEventType(compliance.getId(), "report-upload-failed");
-        // App: drift
-        Application drift = resourceHelpers.createApp(rhel.getId(), "drift");
-        EventType driftBaselineDetected = resourceHelpers.createEventType(drift.getId(), "drift-baseline-detected");
         // App: edge-management
         Application edgeManagement = resourceHelpers.createApp(rhel.getId(), "edge-management");
         EventType imageCreation = resourceHelpers.createEventType(edgeManagement.getId(), "image-creation");
@@ -168,9 +165,6 @@ public class EmailTemplateMigrationServiceTest {
         findAndCompileInstantEmailTemplate(complianceBelowThreshold.getId());
         findAndCompileInstantEmailTemplate(reportUploadFailed.getId());
         findAndCompileAggregationEmailTemplate(rhel.getName(), compliance.getName(), DAILY);
-        // App: drift
-        findAndCompileInstantEmailTemplate(driftBaselineDetected.getId());
-        findAndCompileAggregationEmailTemplate(rhel.getName(), drift.getName(), DAILY);
         // App: edge-management
         findAndCompileInstantEmailTemplate(imageCreation.getId());
         findAndCompileInstantEmailTemplate(updateDevices.getId());

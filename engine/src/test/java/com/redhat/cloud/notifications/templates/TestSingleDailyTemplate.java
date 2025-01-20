@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.templates;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.DriftTestHelpers;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
 import com.redhat.cloud.notifications.InventoryTestHelpers;
 import com.redhat.cloud.notifications.PatchTestHelpers;
@@ -14,7 +13,6 @@ import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
-import com.redhat.cloud.notifications.processors.email.aggregators.DriftEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.ImageBuilderAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.InventoryEmailAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPayloadAggregator;
@@ -53,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
 
-    static final List<String> applications = List.of("advisor", "compliance", "drift", "inventory",
+    static final List<String> applications = List.of("advisor", "compliance", "inventory",
         "policies", "patch", "resource-optimization", "vulnerability", "image-builder");
 
     String myCurrentApp;
@@ -97,8 +95,6 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         generateAggregatedEmailBody(buildAdvisorAggregatedPayload(), "advisor", dataMap);
 
         generateAggregatedEmailBody(buildMapFromAction(TestHelpers.createComplianceAction()), "compliance", dataMap);
-
-        generateAggregatedEmailBody(buildDriftAggregatedPayload(), "drift", dataMap);
 
         InventoryEmailAggregator aggregator = new InventoryEmailAggregator();
         aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
@@ -151,7 +147,6 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
     private static void templateResultChecks(String templateResult) {
         assertTrue(templateResult.contains("\"#advisor-section1\""));
         assertTrue(templateResult.contains("\"#compliance-section1\""));
-        assertTrue(templateResult.contains("\"#drift-section1\""));
         assertTrue(templateResult.contains("\"#image-builder-section1\""));
         assertTrue(templateResult.contains("\"#image-builder-section2\""));
         assertTrue(templateResult.contains("\"#inventory-section1\""));
@@ -162,7 +157,6 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
 
         assertTrue(templateResult.contains("\"advisor-section1\""));
         assertTrue(templateResult.contains("\"compliance-section1\""));
-        assertTrue(templateResult.contains("\"drift-section1\""));
         assertTrue(templateResult.contains("\"image-builder-section1\""));
         assertTrue(templateResult.contains("\"image-builder-section2\""));
         assertTrue(templateResult.contains("\"inventory-section1\""));
@@ -218,21 +212,6 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         aggregator.aggregate(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_5", "synopsis", bugfix, "host-04"));
 
         return aggregator.getContext();
-    }
-
-    private static Map<String, Object> buildDriftAggregatedPayload() {
-        DriftEmailPayloadAggregator aggregator = new DriftEmailPayloadAggregator();
-
-        LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
-        LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
-
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("rhel", "drift", "baseline_01", "baseline_1", "host-01", "Machine 1"));
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("rhel", "drift", "baseline_02", "baseline_2", "host-01", "Machine 1"));
-        aggregator.aggregate(DriftTestHelpers.createEmailAggregation("rhel", "drift", "baseline_03", "baseline_3", "host-01", "Machine 1"));
-        Map<String, Object> drift = aggregator.getContext();
-        drift.put("start_time", startTime.toString());
-        drift.put("end_time", endTime.toString());
-        return drift;
     }
 
     private static Map<String, Object> buildAdvisorAggregatedPayload() {

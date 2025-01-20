@@ -11,7 +11,6 @@ public class EmailPayloadAggregatorFactory {
     private static final String ADVISOR = "advisor";
     private static final String POLICIES = "policies";
     private static final String COMPLIANCE = "compliance";
-    private static final String DRIFT = "drift";
     private static final String ANSIBLE = "ansible";
     private static final String PATCH = "patch";
     private static final String VULNERABILITY = "vulnerability";
@@ -52,8 +51,6 @@ public class EmailPayloadAggregatorFactory {
                         return new AdvisorEmailAggregator();
                     case COMPLIANCE:
                         return new ComplianceEmailAggregator();
-                    case DRIFT:
-                        return new DriftEmailPayloadAggregator();
                     case IMAGE_BUILDER:
                         return new ImageBuilderAggregator();
                     case INVENTORY:

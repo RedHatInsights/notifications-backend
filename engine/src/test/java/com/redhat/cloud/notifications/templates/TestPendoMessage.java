@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.templates;
 
-import com.redhat.cloud.notifications.DriftTestHelpers;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.PatchTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
@@ -19,14 +19,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestPendoMessage extends EmailTemplatesInDbHelper  {
 
-    private static final String EVENT_TYPE_NAME = "drift-baseline-detected";
+    private static final String EVENT_TYPE_NAME = "new-advisory";
 
     @Inject
     Environment environment;
 
     @Override
     protected String getApp() {
-        return "drift";
+        return "patch";
     }
 
     @Override
@@ -38,7 +38,7 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
     public void testInstantEmailBody() {
         EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
 
-        Action action = DriftTestHelpers.createDriftAction("rhel", "drift", "host-01", "Machine 1");
+        Action action = PatchTestHelpers.createPatchAction();
         String result = generateEmailBody(EVENT_TYPE_NAME, action);
         commonValidations(result);
         assertFalse(result.contains(emailPendo.getPendoTitle()));
@@ -51,8 +51,8 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
     }
 
     private static void commonValidations(String result) {
-        assertTrue(result.contains("baseline_01"));
-        assertTrue(result.contains("Machine 1"));
+        assertTrue(result.contains("name 1"));
+        assertTrue(result.contains("synopsis 2"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

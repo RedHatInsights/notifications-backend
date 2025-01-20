@@ -111,16 +111,6 @@
           ]
         },
         {
-          "name": "drift",
-          "display_name": "Drift",
-          "event_types": [
-            {
-              "name": "drift-baseline-detected",
-              "display_name": "Drift from baseline detected"
-            }
-          ]
-        },
-        {
           "name": "inventory",
           "display_name": "Inventory",
           "event_types": [
