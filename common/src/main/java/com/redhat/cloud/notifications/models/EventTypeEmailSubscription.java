@@ -61,6 +61,10 @@ public class EventTypeEmailSubscription {
         this.eventType = eventType;
     }
 
+    public SubscriptionType getSubscriptionType() {
+        return id.subscriptionType;
+    }
+
     public boolean isSubscribed() {
         return subscribed;
     }
