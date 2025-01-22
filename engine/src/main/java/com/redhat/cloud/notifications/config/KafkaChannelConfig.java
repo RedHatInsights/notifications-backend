@@ -11,5 +11,5 @@ public class KafkaChannelConfig {
 
     public String hostName;
     public String channel;
-    public boolean paused;
+    public Boolean paused;
 }

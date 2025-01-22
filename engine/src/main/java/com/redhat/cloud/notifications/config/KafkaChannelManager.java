@@ -16,6 +16,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Optional;
 
+import static java.lang.Boolean.TRUE;
+
 @ApplicationScoped
 public class KafkaChannelManager {
 
@@ -38,7 +40,7 @@ public class KafkaChannelManager {
         for (KafkaChannelConfig kafkaChannelConfig : kafkaChannelConfigs) {
             try {
                 if (shouldThisHostBeUpdated(kafkaChannelConfig)) {
-                    if (kafkaChannelConfig.paused) {
+                    if (TRUE.equals(kafkaChannelConfig.paused)) {
                         pause(kafkaChannelConfig.channel);
                     } else {
                         resume(kafkaChannelConfig.channel);
