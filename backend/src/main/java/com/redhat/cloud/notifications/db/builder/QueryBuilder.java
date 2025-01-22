@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.builder;
 
 import com.redhat.cloud.notifications.db.Query;
+import io.quarkus.logging.Log;
 import jakarta.persistence.TypedQuery;
 
 import java.util.Map;
@@ -108,6 +109,9 @@ public class QueryBuilder<T> {
         }
 
         appendRemaining(rawQuery);
+
+        Log.debugf("Built query: %s", rawQuery.toString());
+
         return rawQuery.toString();
     }
 

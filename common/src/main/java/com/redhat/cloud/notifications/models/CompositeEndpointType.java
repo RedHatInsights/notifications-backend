@@ -78,4 +78,12 @@ public class CompositeEndpointType {
     public int hashCode() {
         return Objects.hash(type, subType);
     }
+
+    @Override
+    public String toString() {
+        return "CompositeEndpointType{" +
+            "type=" + type +
+            ", subType='" + subType + '\'' +
+            '}';
+    }
 }

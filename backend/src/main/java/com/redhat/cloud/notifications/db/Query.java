@@ -218,4 +218,16 @@ public class Query {
     private static String modifyWithSort(String theQuery, Query.Sort sorter) {
         return theQuery + " " + sorter.getSortQuery();
     }
+
+    @Override
+    public String toString() {
+        return "Query{" +
+            "pageSize=" + pageSize +
+            ", pageNumber=" + pageNumber +
+            ", offset=" + offset +
+            ", sortBy='" + sortBy + '\'' +
+            ", defaultSortBy='" + defaultSortBy + '\'' +
+            ", sortFields=" + sortFields +
+            '}';
+    }
 }

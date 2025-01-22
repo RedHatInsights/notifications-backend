@@ -103,12 +103,17 @@ public class EndpointRepository {
 
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Optional<Query.Sort> sort = limiter == null ? Optional.empty() : limiter.getSort();
+
+        Log.debugf("[org_id: %s][name: %s][composite_type: %s][active_only: %s][query: %s][authorized_ids: %s] Looking up endpoints in our database", orgId, name, type, activeOnly, limiter, authorizedIds);
         List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly, authorizedIds)
                 .limit(limit)
                 .sort(sort)
                 .build(entityManager::createQuery)
                 .getResultList();
         loadProperties(endpoints);
+
+        Log.debugf("[org_id: %s] Returning list of endpoints: %s", orgId, endpoints);
+
         return endpoints;
     }
 
