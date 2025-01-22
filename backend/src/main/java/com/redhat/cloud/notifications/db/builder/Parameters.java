@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.db.builder;
 
+import io.quarkus.logging.Log;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -15,6 +17,8 @@ class Parameters {
     }
 
     void forEach(BiConsumer<String, Object> action) {
+        Log.tracef("calling forEach with the following parameters: %s", this.parameters.toString());
+
         this.parameters.forEach(action);
     }
 
