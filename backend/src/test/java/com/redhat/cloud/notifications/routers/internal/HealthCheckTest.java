@@ -5,9 +5,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
-
-import java.util.regex.Pattern;
 import org.mockito.Mockito;
+import java.util.regex.Pattern;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.in;
