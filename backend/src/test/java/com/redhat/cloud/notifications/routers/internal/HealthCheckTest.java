@@ -1,15 +1,15 @@
 package com.redhat.cloud.notifications.routers.internal;
 
+import com.redhat.cloud.notifications.unleash.utils.PodRestartRequestedChecker;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import java.util.regex.Pattern;
+import org.mockito.Mockito;
 
-import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static io.restassured.RestAssured.when;
-import static io.restassured.RestAssured.with;
-import static io.restassured.http.ContentType.TEXT;
 import static org.hamcrest.Matchers.in;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,6 +25,9 @@ public class HealthCheckTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
+    @InjectSpy
+    PodRestartRequestedChecker podRestartRequestedChecker;
+
     @Test
     void testNormalHealth() {
         normalHealthCheck();
@@ -37,40 +40,21 @@ public class HealthCheckTest {
                         .then()
                         .statusCode(in(new Integer[]{200, 503})) // may be 503 as there is no Kafka we can talk to
                         .extract().asString();
-        assertFalse(body.contains("admin-down"));
+        assertFalse(body.contains("restart-requested-from-unleash"));
         return body;
     }
 
     @Test
     void testAdminDown() {
+        Mockito.when(podRestartRequestedChecker.isRestartRequestedFromUnleash()).thenReturn(true);
 
-        with()
-                .queryParam("status", "admin-down")
-                .header(createTurnpikeIdentityHeader("admin", adminRole))
-                .when()
-                .post("/internal/admin/status")
-                .then()
-                .statusCode(200)
-                .contentType(TEXT);
-
-        try {
-            String body =
-                    when()
-                            .get("/health")
-                            .then()
-                            .statusCode(503)
-                            .extract().asString();
-            assertTrue(body.contains("admin-down"));
-        } finally {
-            with()
-                    .queryParam("status", "ok")
-                    .header(createTurnpikeIdentityHeader("admin", adminRole))
-                    .when()
-                    .post("/internal/admin/status")
-                    .then()
-                    .statusCode(200)
-                    .contentType(TEXT);
-        }
+        String body =
+                when()
+                        .get("/health")
+                        .then()
+                        .statusCode(503)
+                        .extract().asString();
+        assertTrue(body.contains("restart-requested-from-unleash"));
     }
 
     // Make sure we don't leak connections here
