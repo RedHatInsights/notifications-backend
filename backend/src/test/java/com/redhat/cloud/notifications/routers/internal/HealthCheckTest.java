@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.unleash.utils.PodRestartRequestedChecker;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import io.quarkus.test.junit.mockito.MockitoConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import java.util.regex.Pattern;
@@ -21,10 +21,8 @@ public class HealthCheckTest {
 
     private static final Pattern PATTERN = Pattern.compile("\"name\": \"Database connections health check\",\\R[ ]+\"status\": \"UP\"");
 
-    @ConfigProperty(name = "internal.admin-role")
-    String adminRole;
-
-    @InjectSpy
+    @InjectMock
+    @MockitoConfig(convertScopes = true)
     PodRestartRequestedChecker podRestartRequestedChecker;
 
     @Test

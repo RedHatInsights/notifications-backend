@@ -5,14 +5,14 @@ import io.getunleash.Variant;
 import io.getunleash.repository.ToggleCollection;
 import io.getunleash.variant.Payload;
 import io.quarkus.logging.Log;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Optional;
 
-@ApplicationScoped
+@Singleton
 public class PodRestartRequestedChecker {
 
     private static final String UNLEASH_TOGGLE_NAME = "notifications.pod-restart-requested";
