@@ -123,6 +123,39 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
+    void testSuccessfulIqeTestMessage() {
+        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
+        JsonObject cloudEventPayload = JsonObject.of(
+                "account_id", "default-account-id",
+                "application", "inventory",
+                "bundle", "rhel",
+                "context", JsonObject.of(
+                    "inventory_id", "85094ed1-1c52-4bc5-8e3e-4ea3869a17ce",
+                    "hostname", "rhiqe.2349fj.notif-test",
+                    "display_name", "rhiqe.2349fj.notif-test",
+                    "rhel_version", "8.0"
+                ),
+                "event_type", "new-system-registered",
+                "events", JsonArray.of(),
+                "org_id", "default-org-id",
+                "timestamp", "2020-10-03T15:22:13.000000025",
+                "source", JsonObject.of(
+                        "application", JsonObject.of("display_name", "Inventory"),
+                        "bundle", JsonObject.of("display_name", "Red Hat Enterprise Linux"),
+                        "event_type", JsonObject.of("display_name", "New system registered")
+                ),
+                "environment_url", "https://localhost"
+        );
+        cloudEventPayload.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce");
+        cloudEventPayload.put("application_url", "https://localhost/insights/inventory");
+        cloudEventPayload.put("severity", "error");
+        cloudEventData.put("payload", cloudEventPayload);
+
+        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
+        validatePayloadTransform(cloudEventData, expectedPayload);
+    }
+
+    @Test
     void testInvalidTimestampDropped() {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);

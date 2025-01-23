@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.pagerduty;
 
 import io.quarkus.logging.Log;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
@@ -181,9 +182,11 @@ public class PagerDutyTransformer implements Processor {
 
         String inventoryUrl = cloudEventPayload.getString(INVENTORY_URL, "");
         if (!inventoryUrl.isEmpty()) {
-            clientLinks.put(LINKS, JsonObject.of(
-                    HREF, inventoryUrl,
-                    TEXT, "Host"
+            clientLinks.put(LINKS, JsonArray.of(
+                    JsonObject.of(
+                            HREF, inventoryUrl,
+                            TEXT, "Host"
+                    )
             ));
         }
 
