@@ -5231,7 +5231,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "$datasource"
+            "uid": "${aws_resources_exporter}"
           },
           "description": "",
           "fieldConfig": {
@@ -5313,214 +5313,67 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "$datasource"
+                "uid": "${aws_resources_exporter}"
               },
               "editorMode": "builder",
-              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.ingress\"}",
+              "expr": "sum by(consumer_group, topic) (aws_kafka_sum_offset_lag_sum{cluster_name=\"$msk_cluster\", topic=~\".*platform.notifications.ingress\"})",
               "format": "time_series",
               "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "legendFormat": "{topic=\"{{topic}}\", consumer_group=\"{{consumer_group}}\"}",
               "range": true,
               "refId": "platform.notifications.ingress"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "$datasource"
+                "uid": "${aws_resources_exporter}"
               },
               "editorMode": "builder",
-              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.tocamel\", group=~\"notifications-connector-.+\"}",
+              "expr": "sum by(consumer_group, topic) (aws_kafka_sum_offset_lag_sum{cluster_name=\"$msk_cluster\", topic=~\".*platform.notifications.tocamel\", consumer_group=~\"notifications-connector-.+\"})",
               "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "legendFormat": "{topic=\"{{topic}}\", consumer_group=\"{{consumer_group}}\"}",
               "range": true,
               "refId": "platform.notifications.tocamel"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "$datasource"
+                "uid": "${aws_resources_exporter}"
               },
               "editorMode": "builder",
-              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.fromcamel\"}",
+              "expr": "sum by(consumer_group, topic) (aws_kafka_sum_offset_lag_sum{cluster_name=\"$msk_cluster\", topic=~\".*platform.notifications.fromcamel\"})",
               "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "legendFormat": "{topic=\"{{topic}}\", consumer_group=\"{{consumer_group}}\"}",
               "range": true,
               "refId": "platform.notifications.fromcamel"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "$datasource"
+                "uid": "${aws_resources_exporter}"
               },
               "editorMode": "builder",
-              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.aggregation\"}",
+              "expr": "sum by(consumer_group, topic) (aws_kafka_sum_offset_lag_sum{cluster_name=\"$msk_cluster\", topic=~\".*platform.notifications.aggregation\"})",
               "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "legendFormat": "{topic=\"{{topic}}\", consumer_group=\"{{consumer_group}}\"}",
               "range": true,
               "refId": "platform.notifications.aggregation"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "$datasource"
+                "uid": "${aws_resources_exporter}"
               },
               "editorMode": "builder",
-              "expr": "kafka_consumergroup_group_topic_sum_lag{topic=~\".*platform.notifications.connector.email.high.volume\"}",
+              "expr": "sum by(consumer_group, topic) (aws_kafka_sum_offset_lag_sum{cluster_name=\"$msk_cluster\", topic=~\".*platform.notifications.connector.email.high.volume\"})",
               "hide": false,
               "instant": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
+              "legendFormat": "{topic=\"{{topic}}\", consumer_group=\"{{consumer_group}}\"}",
               "range": true,
               "refId": "platform.notifications.connector.email.high.volume"
             }
           ],
           "title": "Kafka Lag (messages)",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "$datasource"
-          },
-          "description": "",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 6,
-            "x": 6,
-            "y": 88
-          },
-          "id": 263,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "9.3.8",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(topic, group) (kafka_consumergroup_group_lag_seconds{topic=~\".*platform.notifications.ingress\"})",
-              "format": "time_series",
-              "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
-              "range": true,
-              "refId": "platform.notifications.ingress"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(topic, group) (kafka_consumergroup_group_lag_seconds{topic=~\".*platform.notifications.tocamel\", group=~\"notifications-connector-.+\"})",
-              "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
-              "range": true,
-              "refId": "platform.notifications.tocamel"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(topic, group) (kafka_consumergroup_group_lag_seconds{topic=~\".*platform.notifications.fromcamel\"})",
-              "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
-              "range": true,
-              "refId": "platform.notifications.fromcamel"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(topic, group) (kafka_consumergroup_group_lag_seconds{topic=~\".*platform.notifications.aggregation\"})",
-              "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
-              "range": true,
-              "refId": "platform.notifications.aggregation"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "$datasource"
-              },
-              "editorMode": "builder",
-              "expr": "sum by(topic, group) (kafka_consumergroup_group_lag_seconds{topic=~\".*platform.notifications.connector.email.high.volume\"})",
-              "hide": false,
-              "legendFormat": "{topic=\"{{topic}}\", group=\"{{group}}\"}",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Kafka Lag (seconds)",
           "type": "timeseries"
         },
         {
@@ -10009,9 +9862,28 @@ data:
           },
           {
             "current": {
-              "selected": false,
-              "text": "$dbinstanceidentifier",
-              "value": "$dbinstanceidentifier"
+              "selected": true,
+              "text": "aws-resources-exporter-stage",
+              "value": "P80B3240D3DAB93EB"
+            },
+            "hide": 0,
+            "includeAll": false,
+            "label": "Resources Exporter",
+            "multi": false,
+            "name": "aws_resources_exporter",
+            "options": [],
+            "query": "prometheus",
+            "queryValue": "",
+            "refresh": 1,
+            "regex": "/aws-resources-exporter-(production|stage)/",
+            "skipUrlSync": false,
+            "type": "datasource"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": "notifications-backend-stage",
+              "value": "notifications-backend-stage"
             },
             "datasource": {
               "uid": "$rds_datasource"
@@ -10034,6 +9906,34 @@ data:
             },
             "refresh": 1,
             "regex": "/notifications/",
+            "skipUrlSync": false,
+            "sort": 0,
+            "type": "query"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": "consoledot-stage",
+              "value": "consoledot-stage"
+            },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${aws_resources_exporter}"
+            },
+            "definition": "label_values(aws_kafka_sum_offset_lag_sum,cluster_name)",
+            "hide": 0,
+            "includeAll": false,
+            "label": "MSK Cluster",
+            "multi": false,
+            "name": "msk_cluster",
+            "options": [],
+            "query": {
+              "qryType": 1,
+              "query": "label_values(aws_kafka_sum_offset_lag_sum,cluster_name)",
+              "refId": "PrometheusVariableQueryEditor-VariableQuery"
+            },
+            "refresh": 1,
+            "regex": "/consoledot-(?:prod|stage)/",
             "skipUrlSync": false,
             "sort": 0,
             "type": "query"
@@ -10072,7 +9972,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 1,
+      "version": 18,
       "weekStart": ""
     }
 kind: ConfigMap
