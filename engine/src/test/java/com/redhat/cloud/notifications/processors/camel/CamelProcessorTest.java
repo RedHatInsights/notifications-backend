@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.Template;
+import com.redhat.cloud.notifications.templates.models.EnvironmentTest;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.InjectMock;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
@@ -53,6 +54,7 @@ import static org.mockito.Mockito.when;
 public abstract class CamelProcessorTest {
 
     private static final String WEBHOOK_URL = "https://foo.bar";
+    protected static final String CONTEXT_HOST_URL = EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/my-custom-host-url";
 
     @InjectMock
     TemplateRepository templateRepository;
@@ -82,7 +84,7 @@ public abstract class CamelProcessorTest {
 
     protected abstract String getQuteTemplate();
 
-    protected abstract String getExpectedMessage();
+    protected abstract String getExpectedMessage(boolean withHostUrl);
 
     protected abstract String getSubType();
 
@@ -90,17 +92,30 @@ public abstract class CamelProcessorTest {
 
     @Test
     void testProcess() {
+        testProcessInternal(false);
+    }
+
+    /**
+     * An additional test where the field {@code host_url} is added to {@link Context}, overriding the typically
+     * generated value.
+     */
+    @Test
+    void testProcessWithHostUrl() {
+        testProcessInternal(true);
+    }
+
+    private void testProcessInternal(boolean withHostUrl) {
         mockTemplate();
-        Event event = buildEvent();
+        Event event = buildEvent(withHostUrl);
         Endpoint endpoint = buildEndpoint();
         getCamelProcessor().process(event, List.of(endpoint));
 
         verify(templateRepository, times(1)).findIntegrationTemplate(any(), any(), any(), any(), any());
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
-        verifyKafkaMessage();
+        verifyKafkaMessage(withHostUrl);
     }
 
-    protected void verifyKafkaMessage() {
+    protected void verifyKafkaMessage(boolean withHostUrl) {
 
         await().until(() -> inMemorySink.received().size() == 1);
         Message<JsonObject> message = inMemorySink.received().get(0);
@@ -115,7 +130,7 @@ public abstract class CamelProcessorTest {
 
         assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
         assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
-        assertEquals(getExpectedMessage(), notification.getString("message"));
+        assertEquals(getExpectedMessage(withHostUrl), notification.getString("message"));
     }
 
     protected void assertNotificationsConnectorHeader(Message<JsonObject> message) {
@@ -137,18 +152,22 @@ public abstract class CamelProcessorTest {
         when(templateRepository.findIntegrationTemplate(any(), any(), any(), any(), any())).thenReturn(Optional.of(integrationTemplate));
     }
 
-    protected static Event buildEvent() {
+    protected static Event buildEvent(boolean withHostUrl) {
+        Context.ContextBuilderBase contextBuilder = new Context.ContextBuilder()
+                .withAdditionalProperty("inventory_id", "6ad30f3e-0497-4e74-99f1-b3f9a6120a6f")
+                .withAdditionalProperty("display_name", "my-computer");
+
+        if (withHostUrl) {
+            contextBuilder.withAdditionalProperty("host_url", CONTEXT_HOST_URL);
+        }
+
         Action action = new Action.ActionBuilder()
                 .withBundle("rhel")
                 .withApplication("policies")
                 .withEventType("policy-triggered")
                 .withOrgId(DEFAULT_ORG_ID)
                 .withTimestamp(LocalDateTime.now(UTC))
-                .withContext(new Context.ContextBuilder()
-                        .withAdditionalProperty("inventory_id", "6ad30f3e-0497-4e74-99f1-b3f9a6120a6f")
-                        .withAdditionalProperty("display_name", "my-computer")
-                        .build()
-                )
+                .withContext(contextBuilder.build())
                 .withEvents(List.of(
                         new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
                                 .withMetadata(new Metadata.MetadataBuilder().build())

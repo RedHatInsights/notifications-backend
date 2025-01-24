@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.PagerDutySeverity;
+import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -38,6 +39,7 @@ import org.mockito.ArgumentCaptor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.PROCESSED_PAGERDUTY_COUNTER;
@@ -72,6 +74,9 @@ public class PagerDutyProcessorTest {
 
     @Inject
     Environment environment;
+
+    @Inject
+    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @PostConstruct
     void postConstruct() {
@@ -122,10 +127,76 @@ public class PagerDutyProcessorTest {
         Message<JsonObject> message = inMemorySink.received().getFirst();
         JsonObject payload = message.getPayload();
 
-        final JsonObject payloadToSent = transformer.toJsonObject(event);
-        payloadToSent.put("environment_url", environment.url());
-        payloadToSent.put("severity", PagerDutySeverity.ERROR);
-        assertEquals(payloadToSent, payload.getJsonObject("payload"));
+        final JsonObject payloadToSend = transformer.toJsonObject(event);
+        payloadToSend.put("environment_url", environment.url());
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
+                .ifPresent(url -> payloadToSend.put("inventory_url", url));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend));
+        payloadToSend.put("severity", PagerDutySeverity.ERROR);
+        assertEquals(payloadToSend, payload.getJsonObject("payload"));
+
+        micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
+    }
+
+    @Test
+    void testPagerdutyUsingIqeMessage() {
+        // Make sure that the payload does not get stored in the database.
+        when(engineConfig.getKafkaToCamelMaximumRequestSize()).thenReturn(Integer.MAX_VALUE);
+
+        Action pagerDutyActionMessage = new Action();
+        pagerDutyActionMessage.setBundle("rhel");
+        pagerDutyActionMessage.setApplication("inventory");
+        pagerDutyActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        pagerDutyActionMessage.setEventType("new-system-registered");
+        pagerDutyActionMessage.setAccountId(DEFAULT_ACCOUNT_ID);
+        pagerDutyActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        Context context = new Context.ContextBuilder()
+                .withAdditionalProperty("inventory_id", "85094ed1-1c52-4bc5-8e3e-4ea3869a17ce")
+                .withAdditionalProperty("hostname", "rhiqe.2349fj.notif-test")
+                .withAdditionalProperty("display_name", "rhiqe.2349fj.notif-test")
+                .withAdditionalProperty("rhel_version", "8.0")
+                .build();
+        pagerDutyActionMessage.setContext(context);
+
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(pagerDutyActionMessage));
+        event.setBundleDisplayName("Red Hat Enterprise Linux");
+        event.setApplicationDisplayName("Inventory");
+        event.setEventTypeDisplayName("New system registered");
+
+        Application application = new Application();
+        application.setName("inventory");
+        application.setDisplayName("Inventory");
+        EventType eventType = new EventType();
+        eventType.setApplication(application);
+        eventType.setName("new-system-registered");
+        eventType.setDisplayName("New system registered");
+        event.setEventType(eventType);
+
+        Endpoint ep = buildPagerDutyEndpoint();
+
+        pagerDutyProcessor.process(event, List.of(ep));
+        ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+        verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+        NotificationHistory history = historyArgumentCaptor.getAllValues().getFirst();
+        assertFalse(history.isInvocationResult());
+        assertEquals(NotificationStatus.PROCESSING, history.getStatus());
+        // Now let's check the Kafka messages sent to the outgoing channel.
+        // The channel should have received two messages.
+        assertEquals(1, inMemorySink.received().size());
+
+        // We'll only check the payload and metadata of the first Kafka message.
+        Message<JsonObject> message = inMemorySink.received().getFirst();
+        JsonObject payload = message.getPayload();
+
+        final JsonObject payloadToSend = transformer.toJsonObject(event);
+        payloadToSend.put("environment_url", environment.url());
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
+                .ifPresent(url -> payloadToSend.put("inventory_url", url));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend));
+        payloadToSend.put("severity", PagerDutySeverity.ERROR);
+        assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
     }
