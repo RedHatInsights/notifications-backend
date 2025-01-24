@@ -79,11 +79,6 @@ public class EmailTemplateMigrationService {
                 "Secure/Compliance/dailyEmailBody", "html", "Compliance daily email body"
             );
             createDailyEmailTemplate(
-                warnings, "rhel", "drift",
-                "Secure/Drift/dailyEmailTitle", "txt", "Drift daily email title",
-                "Secure/Drift/dailyEmailBody", "html", "Drift daily email body"
-            );
-            createDailyEmailTemplate(
                 warnings, "rhel", "inventory",
                 "Secure/Inventory/dailyEmailTitle", "txt", "Inventory daily email title",
                 "Secure/Inventory/dailyEmailBody", "html", "Inventory daily email body"
@@ -209,20 +204,6 @@ public class EmailTemplateMigrationService {
                 warnings, "openshift", "cost-management", List.of("cm-operator-data-received"),
                 "CostManagement/CmOperatorDataReceivedEmailTitle", "txt", "Cost Management operator data received email title",
                 "CostManagement/CmOperatorDataReceivedEmailBody", "html", "Cost Management operator data received email body"
-            );
-
-            /*
-             * Former src/main/resources/templates/Drift folder.
-             */
-            createInstantEmailTemplate(
-                warnings, "rhel", "drift", List.of("drift-baseline-detected"),
-                "Drift/newBaselineDriftInstantEmailTitle", "txt", "Drift new baseline drift email title",
-                "Drift/newBaselineDriftInstantEmailBody", "html", "Drift new baseline drift email body"
-            );
-            createDailyEmailTemplate(
-                warnings, "rhel", "drift",
-                "Drift/dailyEmailTitle", "txt", "Drift daily email title",
-                "Drift/dailyEmailBody", "html", "Drift daily email body"
             );
 
             /*

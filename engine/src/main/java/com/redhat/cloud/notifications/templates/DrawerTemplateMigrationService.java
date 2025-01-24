@@ -100,12 +100,6 @@ public class DrawerTemplateMigrationService {
             "CostManagement/CmOperatorDataProcessedBody", "html", "Cost Management operator data processed drawer body"
         );
 
-        // Drift
-        createDrawerIntegrationTemplate(
-            warnings, "rhel", "drift", List.of("drift-baseline-detected"),
-            "Drift/newBaselineDriftBody", "html", "Drift new baseline drift drawer body"
-        );
-
         // EdgeManagement
         createDrawerIntegrationTemplate(
             warnings, "rhel", "edge-management", List.of("image-creation"),
