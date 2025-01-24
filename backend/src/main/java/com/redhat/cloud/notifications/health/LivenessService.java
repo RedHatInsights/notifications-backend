@@ -1,7 +1,8 @@
 package com.redhat.cloud.notifications.health;
 
-import com.redhat.cloud.notifications.StuffHolder;
+import com.redhat.cloud.notifications.unleash.utils.PodRestartRequestedChecker;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
@@ -11,13 +12,16 @@ import org.eclipse.microprofile.health.Liveness;
 @ApplicationScoped
 public class LivenessService implements HealthCheck {
 
+    @Inject
+    PodRestartRequestedChecker podRestartRequestedChecker;
+
     @Override
     public HealthCheckResponse call() {
-        boolean adminDown = StuffHolder.getInstance().isAdminDown();
 
         HealthCheckResponseBuilder response = HealthCheckResponse.named("Notifications liveness check");
-        if (adminDown) {
-            return response.down().withData("status", "admin-down").build();
+
+        if (podRestartRequestedChecker.isRestartRequestedFromUnleash()) {
+            return response.down().withData("restart-requested-from-unleash", "DOWN").build();
         } else {
             return response.up().build();
         }
