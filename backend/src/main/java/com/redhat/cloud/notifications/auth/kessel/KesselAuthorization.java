@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -26,8 +27,10 @@ import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -143,6 +146,12 @@ public class KesselAuthorization {
      * @param integrationPermission the integration's permission we want to use
      *                              to filter the target integrations with.
      * @return a set of integration IDs the user has permission to access.
+     * @deprecated In favor of "post-filtering". Looking up integrations makes
+     * Kessel have to send the entire set of identifiers beforehand, and since
+     * they also have a limit on the number of elements they return, this
+     * caused issues when requesting a specific integration in a big
+     * collection. More information on <a href="https://issues.redhat.com/browse/RHCLOUD-37430">
+     * RHCLOUD-37430</a>.
      */
     public Set<UUID> lookupAuthorizedIntegrations(final SecurityContext securityContext, final IntegrationPermission integrationPermission) {
         // Identify the subject.
@@ -187,6 +196,30 @@ public class KesselAuthorization {
         }
 
         return uuids;
+    }
+
+    /**
+     * Filters the given list of integrations and leaves only the ones for
+     * which the principal has authorization to view.
+     * @param securityContext the security context from which the principal is
+     *                        extracted.
+     * @param endpoints the list of integrations to check.
+     * @return a filtered list of integrations that the principal has
+     * permission to view. The original list is kept untouched to avoid any
+     * issues to avoid "immutable lists cannot be modified" issues.
+     */
+    public List<EndpointDTO> filterUnauthorizedIntegrations(final SecurityContext securityContext, final List<EndpointDTO> endpoints) {
+        final List<EndpointDTO> resultingList = new ArrayList<>();
+
+        for (final EndpointDTO endpoint : endpoints) {
+            try {
+                this.hasPermissionOnResource(securityContext, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpoint.getId().toString());
+                resultingList.add(endpoint);
+            } catch (final ForbiddenException ignored) {
+            }
+        }
+
+        return resultingList;
     }
 
     /**
@@ -275,7 +308,12 @@ public class KesselAuthorization {
             .build();
     }
 
-    private String getUserId(RhIdentity identity) {
+    /**
+     * Gets the user identifier from the {@link RhIdentity} object.
+     * @param identity the object to extract the identifier from.
+     * @return the user ID in the format that Kessel expects.
+     */
+    private String getUserId(final RhIdentity identity) {
         return backendConfig.getKesselDomain() + "/" + identity.getUserId();
     }
 }

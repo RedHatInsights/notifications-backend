@@ -117,9 +117,24 @@ public class KesselTestHelper {
      * @param permission the permission that will be checked in the handler.
      * @param resourceType the resource type against which the permission will
      *                     be checked.
-     * @param resourceId the reource's identifier.
+     * @param resourceId the resource's identifier.
      */
     public void mockKesselPermission(final String subjectUsername, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+        this.mockKesselPermission(subjectUsername, permission, resourceType, resourceId, CheckResponse.Allowed.ALLOWED_TRUE);
+    }
+
+    /**
+     * Mocks the {@link CheckClient} so that it returns an authorized response
+     * for the given permission.
+     * @param subjectUsername the subject's name as sent in the "x-rh-identity"
+     *                        header.
+     * @param permission the permission that will be checked in the handler.
+     * @param resourceType the resource type against which the permission will
+     *                     be checked.
+     * @param resourceId the resource's identifier.
+     * @param allowedResponse the returned response from Kessel.
+     */
+    public void mockKesselPermission(final String subjectUsername, final KesselPermission permission, final ResourceType resourceType, final String resourceId, final CheckResponse.Allowed allowedResponse) {
         if (!this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
         }
@@ -147,7 +162,7 @@ public class KesselTestHelper {
         ).thenReturn(
             CheckResponse
                 .newBuilder()
-                .setAllowed(CheckResponse.Allowed.ALLOWED_TRUE)
+                .setAllowed(allowedResponse)
                 .build()
         );
     }

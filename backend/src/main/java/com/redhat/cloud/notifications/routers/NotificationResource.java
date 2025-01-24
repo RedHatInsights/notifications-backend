@@ -30,7 +30,6 @@ import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
-import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -75,7 +74,6 @@ import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
-import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -806,14 +804,14 @@ public class NotificationResource {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
             this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
 
-            // Fetch the set of integration IDs the user is authorized to view.
-            final Set<UUID> authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
-            if (authorizedIds.isEmpty()) {
-                Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
-                return Page.EMPTY_PAGE;
-            }
+            // Fetch the integrations from our database.
+            final Page<EndpointDTO> results = internalGetLinkedEndpoints(sec, eventTypeId, query, uriInfo);
 
-            return internalGetLinkedEndpoints(sec, eventTypeId, query, uriInfo, Optional.of(authorizedIds));
+            // Remove those integrations for which the principal does not have
+            // authorization to view.
+            results.setData(this.kesselAuthorization.filterUnauthorizedIntegrations(sec, results.getData()));
+
+            return results;
         } else {
             return legacyRBACGetLinkedEndpoints(sec, eventTypeId, query, uriInfo);
         }
@@ -821,13 +819,13 @@ public class NotificationResource {
 
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
     protected Page<EndpointDTO> legacyRBACGetLinkedEndpoints(final SecurityContext sec, final UUID eventTypeId, final Query query, UriInfo uriInfo) {
-        return internalGetLinkedEndpoints(sec, eventTypeId, query, uriInfo, Optional.empty());
+        return internalGetLinkedEndpoints(sec, eventTypeId, query, uriInfo);
     }
 
-    private Page<EndpointDTO> internalGetLinkedEndpoints(final SecurityContext sec, final UUID eventTypeId, Query query, final UriInfo uriInfo, final Optional<Set<UUID>> authorizedIds) {
+    private Page<EndpointDTO> internalGetLinkedEndpoints(final SecurityContext sec, final UUID eventTypeId, Query query, final UriInfo uriInfo) {
         String orgId = getOrgId(sec);
 
-        final List<Endpoint> endpoints = endpointEventTypeRepository.findEndpointsByEventTypeId(orgId, eventTypeId, query, authorizedIds);
+        final List<Endpoint> endpoints = endpointEventTypeRepository.findEndpointsByEventTypeId(orgId, eventTypeId, query);
 
         List<EndpointDTO> endpointDTOS = endpoints.stream().map(endpoint -> endpointMapper.toDTO(endpoint)).toList();
         return new Page<>(

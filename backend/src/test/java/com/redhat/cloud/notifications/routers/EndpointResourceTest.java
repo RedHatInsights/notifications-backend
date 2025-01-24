@@ -82,6 +82,7 @@ import org.project_kessel.api.inventory.v1beta1.resources.DeleteNotificationsInt
 import org.project_kessel.api.inventory.v1beta1.resources.Metadata;
 import org.project_kessel.api.inventory.v1beta1.resources.NotificationsIntegration;
 import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
+import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
@@ -4711,6 +4712,99 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Since the Sources' secrets' deletion failed, we should have
         // recreated the integration in Kessel's Inventory.
         Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
+    }
+
+    /**
+     * Tests that when listing the integrations, only the ones that the
+     * principal has authorization for are fetched.
+     */
+    @Test
+    void testFetchAuthorizedIntegrationsOnly() {
+        // We need Kessel relations enabled for the test.
+        this.kesselTestHelper.mockKesselRelations(true);
+
+        // Create ten endpoints in the organization.
+        final Stats stats = this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, 10);
+
+        // Mark half of the created endpoints as "authorized".
+        final Set<UUID> authorizedIntegrations = new HashSet<>();
+        int i = 0;
+        for (final UUID id : stats.getEndpointIds()) {
+            if (i % 2 == 0) {
+                authorizedIntegrations.add(id);
+                this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString(), CheckResponse.Allowed.ALLOWED_TRUE);
+            } else {
+                this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString(), CheckResponse.Allowed.ALLOWED_FALSE);
+            }
+
+            i++;
+        }
+
+        // Add RBAC access.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        final String v1ResponseBody;
+        final String v2ResponseBody;
+        try {
+            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
+
+            // Call the V2 "list endpoints" endpoint.
+            v2ResponseBody = given()
+                .header(identityHeader)
+                .when()
+                .get("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .extract()
+                .asString();
+        } finally {
+            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
+
+            v1ResponseBody = given()
+                .header(identityHeader)
+                .when()
+                .get("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .extract()
+                .asString();
+        }
+
+        // Assert that the V1 response only contains the integrations that the
+        // principal is allowed to see.
+        final JsonObject v1ResponseJson = new JsonObject(v1ResponseBody);
+        final JsonArray v1Data = v1ResponseJson.getJsonArray("data");
+        for (final Object jo : v1Data) {
+            final EndpointDTO endpoint = ((JsonObject) jo).mapTo(EndpointDTO.class);
+
+            Assertions.assertTrue(
+                authorizedIntegrations.contains(endpoint.getId()),
+                String.format(
+                    "fetched integration \"%s\" is not part of the authorized integrations the principal is allowed to see: %s",
+                    endpoint.getId(),
+                    authorizedIntegrations
+                )
+            );
+        }
+
+        // Assert that the V2 response only contains the integrations that the
+        // principal is allowed to see.
+        final JsonObject v2ResponseJson = new JsonObject(v2ResponseBody);
+        final JsonArray v2Data = v2ResponseJson.getJsonArray("data");
+        for (final Object jo : v2Data) {
+            final EndpointDTO endpoint = ((JsonObject) jo).mapTo(EndpointDTO.class);
+
+            Assertions.assertTrue(
+                authorizedIntegrations.contains(endpoint.getId()),
+                String.format(
+                    "fetched integration \"%s\" is not part of the authorized integrations the principal is allowed to see: %s",
+                    endpoint.getId(),
+                    authorizedIntegrations
+                )
+            );
+        }
     }
 
     /**

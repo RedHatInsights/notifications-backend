@@ -12,9 +12,9 @@ import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,17 +33,13 @@ public class EndpointEventTypeRepository {
     @Inject
     EventTypeRepository eventTypeRepository;
 
-    public List<Endpoint> findEndpointsByEventTypeId(String orgId, UUID eventTypeId, Query limiter, Optional<Set<UUID>> authorizedIds) {
+    public List<Endpoint> findEndpointsByEventTypeId(String orgId, UUID eventTypeId, Query limiter) {
         EventType eventType = entityManager.find(EventType.class, eventTypeId);
         if (eventType == null) {
             throw new NotFoundException(EVENT_TYPE_NOT_FOUND_MESSAGE);
         }
 
         String query = "SELECT e FROM Endpoint e JOIN e.eventTypes ev WHERE (e.orgId = :orgId OR e.orgId IS NULL) AND ev.id = :eventTypeId";
-
-        if (authorizedIds.isPresent()) {
-            query += " AND e.id in (:authorizedIds)";
-        }
 
         if (limiter != null) {
             limiter.setSortFields(Endpoint.SORT_FIELDS);
@@ -54,10 +50,6 @@ public class EndpointEventTypeRepository {
         TypedQuery<Endpoint> typedQuery = entityManager.createQuery(query, Endpoint.class)
             .setParameter("orgId", orgId)
             .setParameter("eventTypeId", eventTypeId);
-
-        if (authorizedIds.isPresent()) {
-            typedQuery.setParameter("authorizedIds", authorizedIds.get());
-        }
 
         if (limiter != null && limiter.getLimit() != null && limiter.getLimit().getLimit() > 0) {
             typedQuery = typedQuery.setMaxResults(limiter.getLimit().getLimit())

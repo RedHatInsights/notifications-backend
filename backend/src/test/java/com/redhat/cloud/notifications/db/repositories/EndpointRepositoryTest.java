@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -75,7 +74,7 @@ public class EndpointRepositoryTest {
                 CompositeEndpointType.fromString("pagerduty")
         );
 
-        Function<Query, List<Endpoint>> provider = query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query, null);
+        Function<Query, List<Endpoint>> provider = query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query);
         TestHelpers.testSorting(
                 "id",
                 provider,
@@ -129,7 +128,6 @@ public class EndpointRepositoryTest {
                         new CompositeEndpointType(EndpointType.WEBHOOK),
                         new CompositeEndpointType(EndpointType.CAMEL, "splunk")
                 ),
-                null,
                 null
         ).build((hql, endpointClass) -> {
             assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType.type IN (:endpointType) OR e.compositeType IN (:compositeTypes))", hql);
@@ -147,7 +145,6 @@ public class EndpointRepositoryTest {
                 Set.of(
                         new CompositeEndpointType(EndpointType.WEBHOOK)
                 ),
-                null,
                 null
         ).build((hql, endpointClass) -> {
             assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType.type IN (:endpointType))", hql);
@@ -165,7 +162,6 @@ public class EndpointRepositoryTest {
                 Set.of(
                         new CompositeEndpointType(EndpointType.CAMEL, "splunk")
                 ),
-                null,
                 null
         ).build((hql, endpointClass) -> {
             assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType IN (:compositeTypes))", hql);
@@ -208,94 +204,6 @@ public class EndpointRepositoryTest {
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint("account-id", orgId, EndpointType.CAMEL);
 
         Assertions.assertFalse(this.endpointRepository.existsByUuidAndOrgId(createdEndpoint.getId(), "incorrect-org-id"));
-    }
-
-    /**
-     * Tests that when the user does not have authorization to fetch any
-     * endpoints, then none are fetched.
-     */
-    @Test
-    void testShouldNotFetchEndpointWhenUnauthorized() {
-        // Create a few endpoints.
-        final List<Endpoint> createdEndpoints = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            createdEndpoints.add(
-                this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK)
-            );
-        }
-
-        // Call the function under test.
-        final List<Endpoint> fetchedEndpoints = this.endpointRepository.getEndpointsPerCompositeType(
-            DEFAULT_ORG_ID,
-            null,
-            Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
-            null,
-            null,
-            new HashSet<>()
-        );
-
-        // Call the count function under test.
-        final Long countedEndpoints = this.endpointRepository.getEndpointsCountPerCompositeType(
-            DEFAULT_ORG_ID,
-            null,
-            Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
-            null,
-            new HashSet<>()
-        );
-
-        // Assert that no endpoints were fetched.
-        Assertions.assertTrue(fetchedEndpoints.isEmpty(), "even though no authorized IDs were specified, at least one endpoint was fetched from the database");
-        Assertions.assertEquals(0, countedEndpoints, "even though no authorized IDs were specified, at least one endpoint was counted in the database");
-    }
-
-    /**
-     * Tests that when the function under test is given a set of identifiers
-     * for the endpoints that the user is allowed to fetch, it respects it and
-     * just fetches those endpoints.
-     */
-    @Test
-    void testShouldOnlyFetchAuthorizedIntegrations() {
-        // Create a few endpoints.
-        final List<Endpoint> createdEndpoints = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            createdEndpoints.add(
-                this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK)
-            );
-        }
-
-        // Simulate that we only have authorization to fetch the first and the
-        // last created endpoints.
-        final Set<UUID> authorizedIds = new HashSet<>();
-        authorizedIds.add(createdEndpoints.getFirst().getId());
-        authorizedIds.add(createdEndpoints.getLast().getId());
-
-        // Call the function under test.
-        final List<Endpoint> fetchedEndpoints = this.endpointRepository.getEndpointsPerCompositeType(
-            DEFAULT_ORG_ID,
-            null,
-            Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
-            null,
-            null,
-            authorizedIds
-        );
-
-        // Call the "count" function to test it too, since we are at it.
-        final Long countedEndpoints = this.endpointRepository.getEndpointsCountPerCompositeType(
-            DEFAULT_ORG_ID,
-            null,
-            Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
-            null,
-            authorizedIds
-        );
-
-        // Assert that the count is correct both for the returned result from
-        // the second function under test and the number of endpoints returned
-        // from the first one.
-        Assertions.assertEquals(authorizedIds.size(), countedEndpoints, "the \"getEndpointsCountPerCompositeType\" function did not filter the result by the authorized IDs");
-        Assertions.assertEquals(authorizedIds.size(), fetchedEndpoints.size(), "the \"getEndpointsPerCompositeType\" function did not filter the result by the authorized IDs");
-
-        // Assert that the fetched endpoints are just the authorized ones.
-        fetchedEndpoints.forEach(endpoint -> Assertions.assertTrue(authorizedIds.contains(endpoint.getId()), "the \"getEndpointsPerCompositeType\" function fetched an endpoint which we were not authorized to fetch"));
     }
 
     /**

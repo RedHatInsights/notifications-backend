@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.model.Stats;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
@@ -24,6 +25,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.routers.models.Facet;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
@@ -48,6 +50,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -2426,5 +2429,80 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(1, behaviorGroupList.size());
         assertEquals("behavior-group-ep-2", behaviorGroupList.get(0).getDisplayName());
         assertEquals(0, behaviorGroupList.get(0).getActions().size());
+    }
+
+    /**
+     * Tests that when fetching the integrations linked to an event type, only
+     * the ones the principal is authorized to view are fetched.
+     */
+    @Test
+    void testFetchAuthorizedEndpointsLinkedEventType() {
+        // Kessel Relations must be enabled for this test.
+        this.kesselTestHelper.mockKesselRelations(true);
+
+        // Create the required structure of entities.
+        final Bundle bundle = this.helpers.createBundle();
+        final Application application = this.helpers.createApplication(bundle.getId());
+        final EventType eventType = this.helpers.createEventType(application.getId(), "name", "display-name", "description");
+
+        // Create ten endpoints in the organization.
+        final Stats stats = this.helpers.createTestEndpoints(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, 10);
+
+        // Mark half of the created endpoints as "authorized", and link them
+        // all to the event type. The goal is to see that only half are
+        // returned in the response, despite the integrations being in the
+        // same organization and linked to the same event type.
+        final Set<UUID> authorizedIntegrations = new HashSet<>();
+        int i = 0;
+        for (final UUID id : stats.getEndpointIds()) {
+            if (i % 2 == 0) {
+                authorizedIntegrations.add(id);
+                this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString(), CheckResponse.Allowed.ALLOWED_TRUE);
+            } else {
+                this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, id.toString(), CheckResponse.Allowed.ALLOWED_FALSE);
+            }
+
+            this.endpointEventTypeRepository.addEventTypeToEndpoint(eventType.getId(), id, DEFAULT_ORG_ID);
+
+            i++;
+        }
+
+        // Mock the workspace call and the required permission for the
+        // principal.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
+        // Add RBAC access.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Check that created endpoint don't ave any event type associated
+        final String response = given()
+            .header(identityHeader)
+            .pathParam("eventTypeUuid", eventType.getId())
+            .when()
+            .get("/notifications/eventTypes/{eventTypeUuid}/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract()
+            .asString();
+
+        // Assert that the response only contains the integrations that the
+        // principal is allowed to see.
+        final JsonObject responseJson = new JsonObject(response);
+        final JsonArray data = responseJson.getJsonArray("data");
+        for (final Object jo : data) {
+            final EndpointDTO endpoint = ((JsonObject) jo).mapTo(EndpointDTO.class);
+
+            Assertions.assertTrue(
+                authorizedIntegrations.contains(endpoint.getId()),
+                String.format(
+                    "fetched integration \"%s\" is not part of the authorized integrations the principal is allowed to see: %s",
+                    endpoint.getId(),
+                    authorizedIntegrations
+                )
+            );
+        }
     }
 }

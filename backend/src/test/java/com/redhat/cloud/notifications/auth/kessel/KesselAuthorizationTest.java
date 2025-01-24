@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhServiceAccountIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhUserIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -31,6 +32,7 @@ import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -320,7 +322,7 @@ public class KesselAuthorizationTest {
 
             final SubjectReference subjectReference = checkRequest.getSubject();
             Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
-            Assertions.assertEquals(backendConfig.getKesselDomain() + "/" + tc.identity().getUserId(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(backendConfig.getKesselDomain() + "/" + tc.identity().getUserId(), subjectReference.getSubject().getId(), String.format("unexpected user ID obtained for the subject's reference on test case: %s", tc));
         }
     }
 
@@ -369,6 +371,48 @@ public class KesselAuthorizationTest {
 
             Assertions.assertEquals(ResourceType.INTEGRATION.getKesselObjectType(), lookupResourcesRequest.getResourceType(), String.format("unexpected resource type obtained on test case: %s", tc));
         }
+    }
+
+    /**
+     * Tests that the function under test removes the integrations for which
+     * the user does not have authorization to view.
+     */
+    @Test
+    void testFilterUnauthorizedIntegrations() {
+        // Create a user identity object.
+        final SecurityContext securityContext = initMockedSecurityContextWithRhIdentity();
+
+        // Define a set of authorized integrations for the principal.
+        final Set<UUID> authorizedIntegrations = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+
+        // Create a mixed list of authorized and unauthorized endpoints.
+        final List<EndpointDTO> endpoints = new ArrayList<>();
+        for (final UUID id : authorizedIntegrations) {
+            // Create the endpoint the principal will have the authorization
+            // for, and mock the Kessel response.
+            final EndpointDTO authorizedEndpoint = new EndpointDTO();
+            authorizedEndpoint.setId(id);
+            endpoints.add(authorizedEndpoint);
+
+            final CheckRequest authorizedCheckRequest = this.kesselAuthorization.buildCheckRequest(((RhIdPrincipal) securityContext.getUserPrincipal()).getIdentity(), IntegrationPermission.VIEW, ResourceType.INTEGRATION, authorizedEndpoint.getId().toString());
+            Mockito.when(this.checkClient.check(authorizedCheckRequest)).thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build());
+
+            // Create the endpoint the principal will not have the
+            // authorization for, and mock the Kessel response.
+            final EndpointDTO unauthorizedEndpoint = new EndpointDTO();
+            unauthorizedEndpoint.setId(UUID.randomUUID());
+            endpoints.add(unauthorizedEndpoint);
+
+            final CheckRequest unauthorizedCheckRequest = this.kesselAuthorization.buildCheckRequest(((RhIdPrincipal) securityContext.getUserPrincipal()).getIdentity(), IntegrationPermission.VIEW, ResourceType.INTEGRATION, unauthorizedEndpoint.getId().toString());
+            Mockito.when(this.checkClient.check(unauthorizedCheckRequest)).thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build());
+        }
+
+        // Call the function under test.
+        final List<EndpointDTO> resultingEndpoints = this.kesselAuthorization.filterUnauthorizedIntegrations(securityContext, endpoints);
+
+        // Assert that the only integrations left in the list are the ones the
+        // principal has authorization for.
+        resultingEndpoints.forEach(endpoint -> Assertions.assertTrue(authorizedIntegrations.contains(endpoint.getId()), String.format("Unauthorized endpoint \"%s\"found when it should have been removed from the set \"%s\"", endpoint.getId(), authorizedIntegrations)));
     }
 
     private void saveCounterValues() {

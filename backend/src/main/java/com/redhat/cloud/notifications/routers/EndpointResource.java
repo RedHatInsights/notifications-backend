@@ -104,7 +104,6 @@ import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
-import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -322,17 +321,13 @@ public class EndpointResource {
             Log.debugf("[org_id: %s][query: %s][target_type: %s][active_only: %s][name: %s] Received request parameters", getOrgId(sec), query, targetType, activeOnly, name);
 
             if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-                Log.tracef("[org_id: %s] Kessel relations enabled. Looking up authorized integrations", getOrgId(sec));
+                final EndpointPage results = this.internalGetEndpoints(sec, query, targetType, activeOnly, name, true);
 
-                // Fetch the set of integration IDs the user is authorized to view.
-                final Set<UUID> authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
-                if (authorizedIds.isEmpty()) {
-                    Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
+                // Remove those integrations for which the principal does not have
+                // authorization to view.
+                results.setData(this.kesselAuthorization.filterUnauthorizedIntegrations(sec, results.getData()));
 
-                    return new EndpointPage(new ArrayList<>(), new HashMap<>(), new Meta(0L));
-                }
-
-                return internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, true);
+                return results;
             } else {
                 Log.tracef("[org_id :%s] Legacy RBAC enabled", getOrgId(sec));
 
@@ -369,17 +364,13 @@ public class EndpointResource {
         Log.debugf("[org_id: %s][query: %s][target_type: %s][active_only: %s][name: %s] Received request parameters", getOrgId(sec), query, targetType, activeOnly, name);
 
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-            Log.tracef("[org_id: %s] Kessel relations enabled. Looking up authorized integrations", getOrgId(sec));
+            final EndpointPage results = this.internalGetEndpoints(sec, query, targetType, activeOnly, name, false);
 
-            // Fetch the set of integration IDs the user is authorized to view.
-            final Set<UUID> authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
-            if (authorizedIds.isEmpty()) {
-                Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
+            // Remove those integrations for which the principal does not have
+            // authorization to view.
+            results.setData(this.kesselAuthorization.filterUnauthorizedIntegrations(sec, results.getData()));
 
-                return new EndpointPage(new ArrayList<>(), new HashMap<>(), new Meta(0L));
-            }
-
-            return this.internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, false);
+            return results;
         } else {
             Log.tracef("[org_id :%s] Legacy RBAC enabled", getOrgId(sec));
 
@@ -399,7 +390,7 @@ public class EndpointResource {
      */
     @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
     protected EndpointPage getEndpointsLegacyRBACRoles(final SecurityContext securityContext, final Query query, final List<String> targetType, final Boolean activeOnly, final String name, final boolean includeLinkedEventTypes) {
-        return this.internalGetEndpoints(securityContext, query, targetType, activeOnly, name, null, includeLinkedEventTypes);
+        return this.internalGetEndpoints(securityContext, query, targetType, activeOnly, name, includeLinkedEventTypes);
     }
 
     /**
@@ -409,8 +400,6 @@ public class EndpointResource {
      * @param targetType the types of the endpoints to fetch.
      * @param activeOnly should only the active endpoints be fetched?
      * @param name filter endpoints by name.
-     * @param authorizedIds set of authorized integrations that we are allowed
-     *                      to fetch.
      * @return a page containing the requested endpoints.
      */
     protected EndpointPage internalGetEndpoints(
@@ -419,7 +408,6 @@ public class EndpointResource {
         final List<String> targetType,
         final Boolean activeOnly,
         final String name,
-        final Set<UUID> authorizedIds,
         final boolean includeLinkedEventTypes
     ) {
         String orgId = getOrgId(sec);
@@ -441,8 +429,8 @@ public class EndpointResource {
             compositeType = Set.of();
         }
 
-        endpoints = endpointRepository.getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query, authorizedIds);
-        count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly, authorizedIds);
+        endpoints = endpointRepository.getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query);
+        count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly);
 
         final List<EndpointDTO> endpointDTOS = new ArrayList<>(endpoints.size());
         for (Endpoint endpoint: endpoints) {
