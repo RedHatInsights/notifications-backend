@@ -5436,7 +5436,7 @@ data:
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 12,
+            "x": 6,
             "y": 88
           },
           "id": 172,
@@ -5591,7 +5591,7 @@ data:
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 18,
+            "x": 12,
             "y": 88
           },
           "id": 218,
@@ -5712,8 +5712,8 @@ data:
           "gridPos": {
             "h": 8,
             "w": 6,
-            "x": 0,
-            "y": 96
+            "x": 18,
+            "y": 88
           },
           "id": 309,
           "options": {
@@ -5751,7 +5751,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 104
+            "y": 96
           },
           "id": 228,
           "panels": [],
@@ -5821,7 +5821,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 105
+            "y": 97
           },
           "id": 201,
           "options": {
@@ -5913,7 +5913,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 105
+            "y": 97
           },
           "id": 254,
           "options": {
@@ -5972,7 +5972,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 105
+            "y": 97
           },
           "id": 205,
           "options": {
@@ -6012,7 +6012,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 113
+            "y": 105
           },
           "id": 226,
           "panels": [],
@@ -6110,7 +6110,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 114
+            "y": 106
           },
           "id": 269,
           "options": {
@@ -6272,7 +6272,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 114
+            "y": 106
           },
           "id": 267,
           "options": {
@@ -6440,7 +6440,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 114
+            "y": 106
           },
           "id": 249,
           "options": {
@@ -6608,7 +6608,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 114
+            "y": 106
           },
           "id": 327,
           "options": {
@@ -6784,7 +6784,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 122
+            "y": 114
           },
           "id": 248,
           "options": {
@@ -6951,7 +6951,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 122
+            "y": 114
           },
           "id": 258,
           "options": {
@@ -7119,7 +7119,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 122
+            "y": 114
           },
           "id": 250,
           "options": {
@@ -7286,7 +7286,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 122
+            "y": 114
           },
           "id": 262,
           "options": {
@@ -7357,7 +7357,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 130
+            "y": 122
           },
           "id": 179,
           "panels": [],
@@ -7425,7 +7425,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 131
+            "y": 123
           },
           "id": 174,
           "options": {
@@ -7519,7 +7519,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 131
+            "y": 123
           },
           "id": 208,
           "options": {
@@ -7613,7 +7613,7 @@ data:
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 131
+            "y": 123
           },
           "id": 189,
           "options": {
@@ -7709,7 +7709,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 139
+            "y": 131
           },
           "id": 113,
           "options": {
@@ -7802,7 +7802,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 139
+            "y": 131
           },
           "id": 175,
           "options": {
@@ -7895,7 +7895,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 139
+            "y": 131
           },
           "id": 176,
           "options": {
@@ -7998,7 +7998,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 139
+            "y": 131
           },
           "id": 177,
           "options": {
@@ -8085,7 +8085,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 147
+            "y": 139
           },
           "id": 188,
           "panels": [],
@@ -8156,7 +8156,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 148
+            "y": 140
           },
           "id": 153,
           "options": {
@@ -8267,7 +8267,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 148
+            "y": 140
           },
           "id": 161,
           "options": {
@@ -8364,7 +8364,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 148
+            "y": 140
           },
           "id": 252,
           "links": [
@@ -8562,7 +8562,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 156
+            "y": 148
           },
           "id": 280,
           "options": {
@@ -8659,7 +8659,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 156
+            "y": 148
           },
           "id": 281,
           "options": {
@@ -8756,7 +8756,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 156
+            "y": 148
           },
           "id": 276,
           "options": {
@@ -8952,7 +8952,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 164
+            "y": 156
           },
           "id": 322,
           "options": {
@@ -9050,7 +9050,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 172
+            "y": 164
           },
           "id": 293,
           "options": {
@@ -9147,7 +9147,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 172
+            "y": 164
           },
           "id": 294,
           "options": {
@@ -9304,7 +9304,7 @@ data:
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 180
+            "y": 172
           },
           "id": 328,
           "options": {
@@ -9385,7 +9385,7 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 188
+            "y": 180
           },
           "id": 24,
           "panels": [],
@@ -9459,7 +9459,7 @@ data:
             "h": 9,
             "w": 8,
             "x": 0,
-            "y": 189
+            "y": 181
           },
           "id": 22,
           "options": {
@@ -9551,7 +9551,7 @@ data:
             "h": 9,
             "w": 16,
             "x": 8,
-            "y": 189
+            "y": 181
           },
           "heatmap": {},
           "hideZeroBuckets": false,
@@ -9723,7 +9723,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 198
+            "y": 190
           },
           "id": 85,
           "options": {
@@ -9801,7 +9801,7 @@ data:
         "list": [
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "crcs02ue1-prometheus",
               "value": "crcs02ue1-prometheus"
             },
@@ -9834,7 +9834,7 @@ data:
           },
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "AWS insights-stage",
               "value": "AWS insights-stage"
             },
@@ -9862,7 +9862,7 @@ data:
           },
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "aws-resources-exporter-stage",
               "value": "P80B3240D3DAB93EB"
             },
@@ -9881,7 +9881,7 @@ data:
           },
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "notifications-backend-stage",
               "value": "notifications-backend-stage"
             },
@@ -9912,7 +9912,7 @@ data:
           },
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "consoledot-stage",
               "value": "consoledot-stage"
             },
@@ -9972,7 +9972,7 @@ data:
       "timezone": "",
       "title": "Notifications Dashboard",
       "uid": "KQIVyFuMk",
-      "version": 18,
+      "version": 1,
       "weekStart": ""
     }
 kind: ConfigMap
