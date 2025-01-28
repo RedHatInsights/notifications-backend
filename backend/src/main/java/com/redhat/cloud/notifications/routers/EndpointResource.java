@@ -318,12 +318,7 @@ public class EndpointResource {
             @QueryParam("active")   Boolean activeOnly,
             @QueryParam("name")     String name
         ) {
-            Log.tracef("[org_id: %s] Called V2 \"list endpoints\" endpoint", getOrgId(sec));
-            Log.debugf("[org_id: %s][query: %s][target_type: %s][active_only: %s][name: %s] Received request parameters", getOrgId(sec), query, targetType, activeOnly, name);
-
             if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-                Log.tracef("[org_id: %s] Kessel relations enabled. Looking up authorized integrations", getOrgId(sec));
-
                 // Fetch the set of integration IDs the user is authorized to view.
                 final Set<UUID> authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
                 if (authorizedIds.isEmpty()) {
@@ -334,8 +329,6 @@ public class EndpointResource {
 
                 return internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, true);
             } else {
-                Log.tracef("[org_id :%s] Legacy RBAC enabled", getOrgId(sec));
-
                 return getEndpointsLegacyRBACRoles(sec, query, targetType, activeOnly, name, true);
             }
         }
@@ -365,12 +358,7 @@ public class EndpointResource {
         @QueryParam("active")   Boolean activeOnly,
         @QueryParam("name")     String name
     ) {
-        Log.tracef("[org_id: %s] Called V1 \"list endpoints\" endpoint", getOrgId(sec));
-        Log.debugf("[org_id: %s][query: %s][target_type: %s][active_only: %s][name: %s] Received request parameters", getOrgId(sec), query, targetType, activeOnly, name);
-
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-            Log.tracef("[org_id: %s] Kessel relations enabled. Looking up authorized integrations", getOrgId(sec));
-
             // Fetch the set of integration IDs the user is authorized to view.
             final Set<UUID> authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
             if (authorizedIds.isEmpty()) {
@@ -381,8 +369,6 @@ public class EndpointResource {
 
             return this.internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, false);
         } else {
-            Log.tracef("[org_id :%s] Legacy RBAC enabled", getOrgId(sec));
-
             return this.getEndpointsLegacyRBACRoles(sec, query, targetType, activeOnly, name, false);
         }
     }
