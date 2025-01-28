@@ -27,6 +27,7 @@ import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesRequest;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
+import org.project_kessel.api.relations.v1beta1.ResponsePagination;
 import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
@@ -224,32 +225,69 @@ public class KesselAuthorizationTest {
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
 
-        // Simulate that Kessel returns a few resource IDs in the response.
+        // Simulate that Kessel returns a few resources. We set a continuation
+        // token on each element to simulate Kessel's behavior.
         final UUID firstUuid = UUID.randomUUID();
         final ObjectReference objectReferenceOne = ObjectReference.newBuilder().setId(firstUuid.toString()).build();
-        final LookupResourcesResponse lookupResourcesResponseOne = LookupResourcesResponse.newBuilder().setResource(objectReferenceOne).build();
+        final LookupResourcesResponse lookupResourcesResponseOne = LookupResourcesResponse
+            .newBuilder()
+            .setResource(objectReferenceOne)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
 
         final UUID secondUuid = UUID.randomUUID();
         final ObjectReference objectReferenceTwo = ObjectReference.newBuilder().setId(secondUuid.toString()).build();
-        final LookupResourcesResponse lookupResourcesResponseTwo = LookupResourcesResponse.newBuilder().setResource(objectReferenceTwo).build();
+        final LookupResourcesResponse lookupResourcesResponseTwo = LookupResourcesResponse
+            .newBuilder()
+            .setResource(objectReferenceTwo)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
 
+        // Set a continuation token in the third resource so that we can
+        // trigger another loop in the "do-while" loop.
         final UUID thirdUuid = UUID.randomUUID();
         final ObjectReference objectReferenceThree = ObjectReference.newBuilder().setId(thirdUuid.toString()).build();
-        final LookupResourcesResponse lookupResourcesResponseThree = LookupResourcesResponse.newBuilder().setResource(objectReferenceThree).build();
+        final LookupResourcesResponse lookupResourcesResponseThree = LookupResourcesResponse
+            .newBuilder()
+            .setResource(objectReferenceThree)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
+
+        final UUID fourthUuid = UUID.randomUUID();
+        final ObjectReference objectReferenceFour = ObjectReference.newBuilder().setId(fourthUuid.toString()).build();
+        final LookupResourcesResponse lookupResourcesResponseFour = LookupResourcesResponse.newBuilder()
+            .setResource(objectReferenceFour)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
+
+        final UUID fifthUuid = UUID.randomUUID();
+        final ObjectReference objectReferenceFive = ObjectReference.newBuilder().setId(fifthUuid.toString()).build();
+        final LookupResourcesResponse lookupResourcesResponseFive = LookupResourcesResponse
+            .newBuilder()
+            .setResource(objectReferenceFive)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
 
         // Return the iterator to simulate a stream of incoming results from
         // Kessel.
-        final List<LookupResourcesResponse> lookupResourcesResponses = List.of(lookupResourcesResponseOne, lookupResourcesResponseTwo, lookupResourcesResponseThree);
-        Mockito.when(this.lookupClient.lookupResources(Mockito.any())).thenReturn(lookupResourcesResponses.iterator());
+        final List<LookupResourcesResponse> lookupResourcesResponsesFirstLoop = List.of(lookupResourcesResponseOne, lookupResourcesResponseTwo, lookupResourcesResponseThree);
+        final List<LookupResourcesResponse> lookupResourcesResponsesSecondLoop = List.of(lookupResourcesResponseFour, lookupResourcesResponseFive);
+        Mockito.when(this.lookupClient.lookupResources(Mockito.any())).thenReturn(lookupResourcesResponsesFirstLoop.iterator(), lookupResourcesResponsesSecondLoop.iterator());
 
         // Call the function under test.
         final Set<UUID> result = this.kesselAuthorization.lookupAuthorizedIntegrations(mockedSecurityContext, IntegrationPermission.VIEW);
 
-        // Assert counter values
-        assertCounterIncrements(0, 0, 1, 0);
+        // Asser that three calls were made to Kessel. Since the last element
+        // returned from Kessel also brings a continuation token, we are always
+        // forced to make yet another call to make sure that we didn't leave
+        // any elements unfetched.
+        Mockito.verify(this.lookupClient, Mockito.times(2 + 1)).lookupResources(Mockito.any());
 
-        // Assert that the result is the expected one.
-        final Set<UUID> expectedUuids = Set.of(firstUuid, secondUuid, thirdUuid);
+        // Assert counter values
+        assertCounterIncrements(0, 0, 2 + 1, 0);
+
+        // Assert that the results contain all the UUIDs from the two calls.
+        final Set<UUID> expectedUuids = Set.of(firstUuid, secondUuid, thirdUuid, fourthUuid, fifthUuid);
 
         result.forEach(r -> Assertions.assertTrue(expectedUuids.contains(r), String.format("UUID \"%s\" not present in the expected UUIDs", r)));
     }
@@ -330,12 +368,13 @@ public class KesselAuthorizationTest {
      */
     @Test
     void testBuildLookupResourcesRequest() {
-        record TestCase(RhIdentity identity, KesselPermission permission) {
+        record TestCase(RhIdentity identity, KesselPermission permission, String continuationToken) {
             @Override
             public String toString() {
                 return "TestCase{" +
                     "identity='" + this.identity + '\'' +
                     ", kesselPermission='" + this.permission + '\'' +
+                    ", continuationToken='" + this.continuationToken + '\'' +
                     '}';
             }
         }
@@ -352,13 +391,13 @@ public class KesselAuthorizationTest {
 
         // Loop through the supported identities.
         final List<TestCase> testCases = List.of(
-            new TestCase(userIdentity, IntegrationPermission.VIEW),
-            new TestCase(serviceAccountIdentity, IntegrationPermission.VIEW)
+            new TestCase(userIdentity, IntegrationPermission.VIEW, null),
+            new TestCase(serviceAccountIdentity, IntegrationPermission.VIEW, "cont-token-123")
         );
 
         for (final TestCase tc : testCases) {
             // Call the function under test.
-            final LookupResourcesRequest lookupResourcesRequest = this.kesselAuthorization.buildLookupResourcesRequest(tc.identity(), tc.permission());
+            final LookupResourcesRequest lookupResourcesRequest = this.kesselAuthorization.buildLookupResourcesRequest(tc.identity(), tc.permission(), tc.continuationToken);
 
             // Make sure the request was built appropriately.
             final SubjectReference subjectReference = lookupResourcesRequest.getSubject();
@@ -368,6 +407,12 @@ public class KesselAuthorizationTest {
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), lookupResourcesRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
             Assertions.assertEquals(ResourceType.INTEGRATION.getKesselObjectType(), lookupResourcesRequest.getResourceType(), String.format("unexpected resource type obtained on test case: %s", tc));
+
+            if (tc.continuationToken() == null) {
+                Assertions.assertEquals("", lookupResourcesRequest.getPagination().getContinuationToken(), String.format("the continuation token should have been an empty string when none is given when building the request: %s", tc));
+            } else {
+                Assertions.assertEquals(tc.continuationToken, lookupResourcesRequest.getPagination().getContinuationToken(), String.format("unexpected continuation token obtained on test case: %s", tc));
+            }
         }
     }
 
