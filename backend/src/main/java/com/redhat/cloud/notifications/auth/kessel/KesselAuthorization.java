@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -27,8 +28,10 @@ import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -82,6 +85,33 @@ public class KesselAuthorization {
 
     @Inject
     BackendConfig backendConfig;
+
+    /**
+     * Filters the given list of integrations and leaves only the ones for
+     * which the principal has authorization to view. Useful for
+     * "post-filtering" the integrations once we have fetched them from the
+     * database, and we want to remove the ones that the principal does not
+     * have authorization for.
+     * @param securityContext the security context from which the principal is
+     *                        extracted.
+     * @param endpoints the list of integrations to check.
+     * @return a filtered list of integrations that the principal has
+     * permission to view. The original list is kept untouched to avoid any
+     * issues to avoid "immutable lists cannot be modified" issues.
+     */
+    public List<Endpoint> filterUnauthorizedIntegrations(final SecurityContext securityContext, final List<Endpoint> endpoints) {
+        final List<Endpoint> resultingList = new ArrayList<>();
+
+        for (final Endpoint endpoint : endpoints) {
+            try {
+                this.hasPermissionOnResource(securityContext, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpoint.getId().toString());
+                resultingList.add(endpoint);
+            } catch (final ForbiddenException ignored) {
+            }
+        }
+
+        return resultingList;
+    }
 
     /**
      * Checks if the subject on the security context has permission on the
@@ -315,6 +345,11 @@ public class KesselAuthorization {
         return requestBuilder.build();
     }
 
+    /**
+     * Gets the user identifier from the {@link RhIdentity} object.
+     * @param identity the object to extract the identifier from.
+     * @return the user ID in the format that Kessel expects.
+     */
     private String getUserId(RhIdentity identity) {
         return backendConfig.getKesselDomain() + "/" + identity.getUserId();
     }

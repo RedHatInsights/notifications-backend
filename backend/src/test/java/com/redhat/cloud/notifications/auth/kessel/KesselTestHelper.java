@@ -1,10 +1,12 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
@@ -20,6 +22,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_RBAC_NAMESPACE;
 import static org.mockito.ArgumentMatchers.anyString;
 
 /**
@@ -49,6 +53,12 @@ public class KesselTestHelper {
     /**
      * Mocks the {@link LookupClient} so that it simulates that no authorized
      * integrations were fetched from Kessel.
+     * @deprecated In favor of "post-filtering". Looking up integrations makes
+     * Kessel have to send the entire set of identifiers beforehand, and since
+     * they also have a limit on the number of elements they return, this
+     * caused issues when requesting a specific integration in a big
+     * collection. More information on <a href="https://issues.redhat.com/browse/RHCLOUD-37430">
+     * RHCLOUD-37430</a>.
      */
     public void mockAuthorizedIntegrationsLookup() {
         this.mockAuthorizedIntegrationsLookup(Collections.emptySet());
@@ -59,6 +69,12 @@ public class KesselTestHelper {
      * from Kessel which contains the specified integrations.
      * @param authorizedIntegrationsIds the set of IDs that the lookup client
      *                                  will return in an iterator.
+     * @deprecated In favor of "post-filtering". Looking up integrations makes
+     * Kessel have to send the entire set of identifiers beforehand, and since
+     * they also have a limit on the number of elements they return, this
+     * caused issues when requesting a specific integration in a big
+     * collection. More information on <a href="https://issues.redhat.com/browse/RHCLOUD-37430">
+     * RHCLOUD-37430</a>.
      */
     public void mockAuthorizedIntegrationsLookup(final Set<UUID> authorizedIntegrationsIds) {
         // It does not make sense to mock anything if we are not testing with
@@ -117,9 +133,24 @@ public class KesselTestHelper {
      * @param permission the permission that will be checked in the handler.
      * @param resourceType the resource type against which the permission will
      *                     be checked.
-     * @param resourceId the reource's identifier.
+     * @param resourceId the resource's identifier.
      */
     public void mockKesselPermission(final String subjectUsername, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+        this.mockKesselPermission(subjectUsername, permission, resourceType, resourceId, CheckResponse.Allowed.ALLOWED_TRUE);
+    }
+
+    /**
+     * Mocks the {@link CheckClient} so that it returns an authorized response
+     * for the given permission.
+     * @param subjectUsername the subject's name as sent in the "x-rh-identity"
+     *                        header.
+     * @param permission the permission that will be checked in the handler.
+     * @param resourceType the resource type against which the permission will
+     *                     be checked.
+     * @param resourceId the resource's identifier.
+     * @param allowedResponse the returned response from Kessel.
+     */
+    public void mockKesselPermission(final String subjectUsername, final KesselPermission permission, final ResourceType resourceType, final String resourceId, final CheckResponse.Allowed allowedResponse) {
         if (!this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
         }
@@ -147,7 +178,7 @@ public class KesselTestHelper {
         ).thenReturn(
             CheckResponse
                 .newBuilder()
-                .setAllowed(CheckResponse.Allowed.ALLOWED_TRUE)
+                .setAllowed(allowedResponse)
                 .build()
         );
     }
@@ -176,5 +207,76 @@ public class KesselTestHelper {
                 .setAllowed(CheckResponse.Allowed.ALLOWED_FALSE)
                 .build()
             );
+    }
+
+    /**
+     * Mocks the {@link IntegrationPermission#VIEW} permission for the given
+     * subject and all the integrations. Useful for requests that want to
+     * apply a "post-filtering" strategy on the returned integrations.
+     * @param subjectUsername the username associated with the integrations.
+     */
+    public void mockIntegrationViewPermissionOnAllIntegrations(final String subjectUsername) {
+        Mockito
+            .when(this.checkClient.check(Mockito.argThat(this.isCheckRequestForIntegrationViewPermission(subjectUsername, Set.of()))))
+            .thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build());
+    }
+
+    /**
+     * Mocks the {@link IntegrationPermission#VIEW} permission for the given
+     * subject and the given integrations. Useful for requests that want to
+     *      * apply a "post-filtering" strategy on the returned integrations.
+     * @param subjectUsername the username associated with the integrations.
+     * @param endpointIds the integration IDs to mock.
+     */
+    public void mockIntegrationViewPermissionOnIntegrations(final String subjectUsername, final Set<UUID> endpointIds) {
+        Mockito
+            .when(this.checkClient.check(Mockito.argThat(this.isCheckRequestForIntegrationViewPermission(subjectUsername, endpointIds))))
+            .thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build());
+    }
+
+    /**
+     * Returns a custom argument matcher to easily match arguments in mocked
+     * {@link CheckClient}s which
+     * @param userId the given user ID to look for in the {@link CheckRequest}.
+     * @param expectedIntegrationIds the expected integration IDs to find in
+     *                               the {@link CheckRequest}.
+     * @return {@code true} when the following conditions are met: <ul>
+     *     <li>The given "userId" appears as part of the subject in the request.</li>
+     *     <li>If a non-empty set of expected integration IDs are passed, the
+     *     {@link CheckRequest}'s "localResourceId" has to be in the given
+     *     set.</li>
+     *     <li>The {@link CheckRequest}'s resource type is {@link ResourceType#INTEGRATION}.</li>
+     *     <li>The {@link CheckRequest}'s checked permission is {@link IntegrationPermission#VIEW}.</li>
+     *     <li>The {@link CheckRequest}'s subject's name is {@link KesselAuthorization#KESSEL_IDENTITY_SUBJECT_TYPE}.</li>
+     *     <li>The {@link CheckRequest}'s subject's namespace is {@link KesselAuthorization#KESSEL_RBAC_NAMESPACE}.</li>
+     * </ul>
+     */
+    private ArgumentMatcher<CheckRequest> isCheckRequestForIntegrationViewPermission(final String userId, final Set<UUID> expectedIntegrationIds) {
+        return checkRequest -> {
+            if (checkRequest == null) {
+                return false;
+            }
+
+            final UUID requestIntegrationId;
+            try {
+                requestIntegrationId = UUID.fromString(checkRequest.getResource().getId());
+            } catch (final IllegalArgumentException ignored) {
+                return false;
+            }
+
+            // When no expected integration IDs are specified, it is assumed
+            // that all the integrations are to be marked as "authorized".
+            boolean integrationIdMatch = true;
+            if (!expectedIntegrationIds.isEmpty()) {
+                integrationIdMatch = expectedIntegrationIds.contains(requestIntegrationId);
+            }
+
+            return checkRequest.getResource().getType().equals(ResourceType.INTEGRATION.getKesselObjectType())
+                && integrationIdMatch
+                && checkRequest.getRelation().equals(IntegrationPermission.VIEW.getKesselPermissionName())
+                && checkRequest.getSubject().getSubject().getType().getName().equals(KESSEL_IDENTITY_SUBJECT_TYPE)
+                && checkRequest.getSubject().getSubject().getType().getNamespace().equals(KESSEL_RBAC_NAMESPACE)
+                && checkRequest.getSubject().getSubject().getId().equals(backendConfig.getKesselDomain() + "/" + userId);
+        };
     }
 }
