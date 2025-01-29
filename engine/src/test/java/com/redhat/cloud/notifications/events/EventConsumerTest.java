@@ -8,6 +8,8 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
+import com.redhat.cloud.notifications.ingress.Type;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
@@ -22,9 +24,11 @@ import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Message;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,6 +95,9 @@ public class EventConsumerTest {
     @Inject
     MeterRegistry registry;
 
+    @Inject
+    EntityManager entityManager;
+
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(
@@ -116,8 +123,10 @@ public class EventConsumerTest {
 
     @Test
     void testValidPayloadWithMessageId() {
-        EventType eventType = mockGetEventTypeAndCreateEvent();
+        EventType eventType = mockGetEventTypeAndCreateEvent(true);
         Action action = buildValidAction(true);
+        RecipientsAuthorizationCriterion authorizationCriterion = buildRecipientsAuthorizationCriterion();
+        action.setRecipientsAuthorizationCriterion(authorizationCriterion);
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
         Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
@@ -140,6 +149,17 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, true);
         verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
+    }
+
+    private static @NotNull RecipientsAuthorizationCriterion buildRecipientsAuthorizationCriterion() {
+        RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
+        authorizationCriterion.setRelation("rel1");
+        authorizationCriterion.setId("id1");
+        Type kesselAssetType = new Type();
+        kesselAssetType.setNamespace("namespace_test");
+        kesselAssetType.setName("host");
+        authorizationCriterion.setType(kesselAssetType);
+        return authorizationCriterion;
     }
 
     @Test
@@ -328,6 +348,10 @@ public class EventConsumerTest {
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
+        return mockGetEventTypeAndCreateEvent(false);
+    }
+
+    private EventType mockGetEventTypeAndCreateEvent(final boolean shouldHaveAuthorizationCriterion) {
         Bundle bundle = new Bundle();
         bundle.setDisplayName("Bundle");
 
@@ -339,7 +363,10 @@ public class EventConsumerTest {
         eventType.setDisplayName("Event type");
         eventType.setApplication(app);
         when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(eventType);
-        when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
+            assertEquals(shouldHaveAuthorizationCriterion, ((Event) invocation.getArgument(0)).hasAuthorizationCriterion());
+            return invocation.getArgument(0);
+        });
         return eventType;
     }
 
