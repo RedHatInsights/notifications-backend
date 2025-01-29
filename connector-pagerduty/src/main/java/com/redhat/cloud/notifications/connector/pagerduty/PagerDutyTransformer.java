@@ -177,7 +177,7 @@ public class PagerDutyTransformer implements Processor {
     static JsonObject getClientLinks(final JsonObject cloudEventPayload) {
         JsonObject clientLinks = new JsonObject();
 
-        clientLinks.put(CLIENT, String.format("Open %s", cloudEventPayload.getString(APPLICATION)));
+        clientLinks.put(CLIENT, String.format("%s", cloudEventPayload.getString(APPLICATION)));
         clientLinks.put(CLIENT_URL, cloudEventPayload.getString(APPLICATION_URL));
 
         String inventoryUrl = cloudEventPayload.getString(INVENTORY_URL, "");
