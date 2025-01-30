@@ -69,6 +69,10 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
 
         certificates = getCertificates(adminIdentity);
         assertEquals(1, certificates.size());
+        assertEquals(x509Certificate.getSubjectDn(), certificates.get(0).getSubjectDn());
+        assertEquals(x509Certificate.getSourceEnvironment(), certificates.get(0).getSourceEnvironment());
+        assertEquals(x509Certificate.getApplication(), certificates.get(0).getApplication());
+        assertEquals(x509Certificate.getBundle(), certificates.get(0).getBundle());
 
         x509Certificate = checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", OK);
         assertEquals("stage", x509Certificate.getSourceEnvironment());

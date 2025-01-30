@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
+import org.hibernate.query.Query;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +29,6 @@ public class X509CertificateRepository {
         return gatewayCertificate;
     }
 
-
     public Optional<X509Certificate> findCertificate(String bundle, String application, String subjectDn) {
         final String query = "SELECT gc FROM X509Certificate gc where gc.certificateApplication.bundle.name = :bundle " +
             "AND gc.certificateApplication.name = :application " +
@@ -46,9 +46,21 @@ public class X509CertificateRepository {
     }
 
     public List<X509Certificate> findCertificates() {
-        final String query = "FROM X509Certificate";
+        final String query = "select id, subjectDn, sourceEnvironment, certificateApplication.bundle.name, certificateApplication.name FROM X509Certificate";
         return this.entityManager
-            .createQuery(query, X509Certificate.class)
+            .createQuery(query)
+            .unwrap(Query.class)
+            .setTupleTransformer(
+                (tuple, aliases) -> {
+                    X509Certificate certificateData = new X509Certificate();
+                    certificateData.setId((UUID) tuple[0]);
+                    certificateData.setSubjectDn((String) tuple[1]);
+                    certificateData.setSourceEnvironment((String) tuple[2]);
+                    certificateData.setBundle((String) tuple[3]);
+                    certificateData.setApplication((String) tuple[4]);
+                    return certificateData;
+                }
+            )
             .getResultList();
     }
 
