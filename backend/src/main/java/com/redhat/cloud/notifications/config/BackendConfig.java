@@ -30,6 +30,7 @@ public class BackendConfig {
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
     private static final String KESSEL_MIGRATION_BATCH_SIZE = "notifications.kessel.migration.batch.size";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
+    private static final String KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT = "notifications.kessel-relations.lookup-resources.limit";
     private static final String KESSEL_RELATIONS_URL = "relations-api.target-url";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
@@ -41,7 +42,6 @@ public class BackendConfig {
      */
     private String drawerToggle;
     private String kesselInventoryToggle;
-    private String kesselInventoryIntegrationsRemovalToggle;
     private String kesselRelationsToggle;
     private String maintenanceModeToggle;
 
@@ -81,6 +81,9 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "false")
     boolean kesselRelationsEnabled;
 
+    @ConfigProperty(name = KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT, defaultValue = "1000")
+    int kesselRelationsLookupResourceLimit;
+
     @ConfigProperty(name = ERRATA_MIGRATION_BATCH_SIZE, defaultValue = "1000")
     int errataMigrationBatchSize;
 
@@ -109,7 +112,6 @@ public class BackendConfig {
     void postConstruct() {
         drawerToggle = toggleRegistry.register("drawer", true);
         kesselInventoryToggle = toggleRegistry.register("kessel-inventory", true);
-        kesselInventoryIntegrationsRemovalToggle = toggleRegistry.register("kessel-inventory-integrations-removal", true);
         kesselRelationsToggle = toggleRegistry.register("kessel-relations", true);
         maintenanceModeToggle = toggleRegistry.register("notifications-maintenance-mode", true);
     }
@@ -124,6 +126,7 @@ public class BackendConfig {
         config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled(null));
         config.put(KESSEL_INVENTORY_URL, kesselInventoryUrl);
         config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled(null));
+        config.put(KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT, getKesselRelationsLookupResourceLimit());
         config.put(KESSEL_RELATIONS_URL, kesselRelationsUrl);
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
@@ -166,6 +169,15 @@ public class BackendConfig {
         } else {
             return kesselInventoryEnabled;
         }
+    }
+
+    /**
+     * Specifies the maximum number of resources that we will ask Kessel to
+     * stream back at us when we are looking up resources.
+     * @return the maximum number of resources to query for in Kessel.
+     */
+    public int getKesselRelationsLookupResourceLimit() {
+        return this.kesselRelationsLookupResourceLimit;
     }
 
     /**

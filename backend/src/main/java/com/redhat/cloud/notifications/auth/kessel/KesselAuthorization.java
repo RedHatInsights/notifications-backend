@@ -337,7 +337,7 @@ public class KesselAuthorization {
             requestBuilder.setPagination(
                 RequestPagination.newBuilder()
                     .setContinuationToken(continuationToken)
-                    .setLimit(Integer.MAX_VALUE)
+                    .setLimit(this.backendConfig.getKesselRelationsLookupResourceLimit())
                     .build()
             );
         }
