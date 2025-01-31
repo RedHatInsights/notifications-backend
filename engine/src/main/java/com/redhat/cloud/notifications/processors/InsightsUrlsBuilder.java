@@ -33,11 +33,12 @@ public class InsightsUrlsBuilder {
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
+     * @param integration_type a string used to construct the source query param (ex. {@code from=notification_instant_email})
      * @return URL to the generating inventory item, if required fields are present
      */
-    public Optional<String> buildInventoryUrl(JsonObject data) {
+    public Optional<String> buildInventoryUrl(JsonObject data, String integration_type) {
         String path;
-        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notifications"));
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notification_" + integration_type));
         JsonObject context = data.getJsonObject("context");
         if (context == null) {
             return Optional.empty();
@@ -80,11 +81,12 @@ public class InsightsUrlsBuilder {
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
+     * @param integration_type a string used to construct the source query param (ex. {@code from=notification_instant_email})
      * @return URL to the generating application
      */
-    public String buildApplicationUrl(JsonObject data) {
+    public String buildApplicationUrl(JsonObject data, String integration_type) {
         String path = "";
-        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notifications"));
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notification_" + integration_type));
 
         String environmentUrl = environment.url();
         String bundle = data.getString("bundle", "");

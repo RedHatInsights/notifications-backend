@@ -21,11 +21,11 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
             "triggered{/if} from {data.source.application.display_name} - {data.source.bundle.display_name}. " +
             "<{data.application_url}|Open {data.source.application.display_name}>\"}";
 
-    private static final String GOOGLE_CHAT_EXPECTED_MSG = "{\"text\":\"<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notifications|my-computer> " +
-            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications|Open Policies>\"}";
+    private static final String GOOGLE_CHAT_EXPECTED_MSG = "{\"text\":\"<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notification_google_chat|my-computer> " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notification_google_chat|Open Policies>\"}";
 
-    private static final String GOOGLE_CHAT_EXPECTED_MSG_WITH_HOST_URL = "{\"text\":\"<" + CONTEXT_HOST_URL + "?from=notifications|my-computer> " +
-            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications|Open Policies>\"}";
+    private static final String GOOGLE_CHAT_EXPECTED_MSG_WITH_HOST_URL = "{\"text\":\"<" + CONTEXT_HOST_URL + "?from=notification_google_chat|my-computer> " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notification_google_chat|Open Policies>\"}";
 
     @Inject
     GoogleChatProcessor googleSpacesProcessor;
