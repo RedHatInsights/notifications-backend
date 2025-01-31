@@ -24,7 +24,7 @@ public class ToggleRegistry {
             throw new IllegalStateException("This method must be called after CDI is done initializing");
         }
 
-        String appName = applicationConfig.name.orElseGet(() -> {
+        String appName = applicationConfig.name().orElseGet(() -> {
             // This should only happen when tests are executed.
             Log.warnf("Application name not found in the Quarkus config, defaulting to %s", DEFAULT_APP_NAME);
             return DEFAULT_APP_NAME;
