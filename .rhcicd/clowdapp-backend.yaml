@@ -134,6 +134,8 @@ objects:
           value: ${NOTIFICATIONS_KESSEL_MIGRATION_BATCH_SIZE}
         - name: NOTIFICATIONS_KESSEL_RELATIONS_ENABLED
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_ENABLED}
+        - name: NOTIFICATIONS_KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT
+          value: ${NOTIFICATIONS_KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT}
         - name: NOTIFICATIONS_KESSEL_BACKEND_ENABLED
           value: ${NOTIFICATIONS_KESSEL_BACKEND_ENABLED}
         - name: NOTIFICATIONS_RBAC_PSKS
@@ -296,6 +298,9 @@ parameters:
 - name: NOTIFICATIONS_KESSEL_RELATIONS_ENABLED
   description: Is the integration with Kessel's relations enabled?
   value: "false"
+- name: NOTIFICATIONS_KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT
+  description: The maximum number of resources that we want Kessel to stream back at us when looking them up.
+  value: "1000"
 - name: NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS
   description: Should the inventory gRPC client open channels over TLS?
   value: "false"

@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -22,12 +23,15 @@ import org.project_kessel.api.relations.v1beta1.LookupResourcesRequest;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
 import org.project_kessel.api.relations.v1beta1.ObjectType;
+import org.project_kessel.api.relations.v1beta1.RequestPagination;
 import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -81,6 +85,33 @@ public class KesselAuthorization {
 
     @Inject
     BackendConfig backendConfig;
+
+    /**
+     * Filters the given list of integrations and leaves only the ones for
+     * which the principal has authorization to view. Useful for
+     * "post-filtering" the integrations once we have fetched them from the
+     * database, and we want to remove the ones that the principal does not
+     * have authorization for.
+     * @param securityContext the security context from which the principal is
+     *                        extracted.
+     * @param endpoints the list of integrations to check.
+     * @return a filtered list of integrations that the principal has
+     * permission to view. The original list is kept untouched to avoid any
+     * issues to avoid "immutable lists cannot be modified" issues.
+     */
+    public List<Endpoint> filterUnauthorizedIntegrations(final SecurityContext securityContext, final List<Endpoint> endpoints) {
+        final List<Endpoint> resultingList = new ArrayList<>();
+
+        for (final Endpoint endpoint : endpoints) {
+            try {
+                this.hasPermissionOnResource(securityContext, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpoint.getId().toString());
+                resultingList.add(endpoint);
+            } catch (final ForbiddenException ignored) {
+            }
+        }
+
+        return resultingList;
+    }
 
     /**
      * Checks if the subject on the security context has permission on the
@@ -137,7 +168,8 @@ public class KesselAuthorization {
 
     /**
      * Looks up the integrations the security context's subject has the given
-     * permission for.
+     * permission for. Useful for when we want to "pre-filter" the integrations
+     * the principal has authorization for.
      * @param securityContext the security context holding the subject's
      *                        identity.
      * @param integrationPermission the integration's permission we want to use
@@ -148,43 +180,66 @@ public class KesselAuthorization {
         // Identify the subject.
         final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
 
-        // Build the lookup request for Kessel.
-        final LookupResourcesRequest request = this.buildLookupResourcesRequest(identity, integrationPermission);
-
-        Log.tracef("[identity: %s][permission: %s][resource_type: %s] Payload for the resource lookup: %s", identity, integrationPermission, ResourceType.INTEGRATION, request);
-
         // Measure the time it takes to perform the lookup operation.
         final Timer.Sample lookupTimer = Timer.start(this.meterRegistry);
 
-        // Call Kessel.
-        final Iterator<LookupResourcesResponse> responses;
-        try {
-            responses = this.lookupClient.lookupResources(request);
-        } catch (final Exception e) {
-            Log.errorf(
-                e,
-                "[identity: %s][permission: %s][resource_type: %s] Runtime error when querying Kessel for integration resources with request payload: %s",
-                identity, integrationPermission, ResourceType.INTEGRATION, request
-            );
-            meterRegistry.counter(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
-
-            throw e;
-        } finally {
-            // Stop the timer.
-            lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
-        }
-
-        meterRegistry.counter(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
-
-        // Process the incoming responses.
+        // Prepare the set of UUIDs we are going to receive from Kessel.
         final Set<UUID> uuids = new HashSet<>();
-        while (responses.hasNext()) {
-            final LookupResourcesResponse response = responses.next();
 
-            Log.tracef("[identity: %s][permission: %s][resource_type: %s] Received payload for the resource lookup: %s", identity, integrationPermission, ResourceType.INTEGRATION, response);
+        // Every response coming from Kessel has a continuation token. In order
+        // to know when to stop querying for resources, we need to keep track
+        // of the old continuation token and the one from the latest received
+        // element. Once the old one and the new one are the same, we don't
+        // have to keep querying for more resources.
+        String continuationToken;
+        String newContinuationToken = "";
+        do {
+            // Replace the old continuation token with the new one. This way
+            // the token gets used
+            continuationToken = newContinuationToken;
 
-            uuids.add(UUID.fromString(response.getResource().getId()));
-        }
+            // Build the lookup request for Kessel.
+            final LookupResourcesRequest request = this.buildLookupResourcesRequest(identity, integrationPermission, continuationToken);
+
+            Log.tracef("[identity: %s][permission: %s][resource_type: %s] Payload for the resource lookup: %s", identity, integrationPermission, ResourceType.INTEGRATION, request);
+
+            // Make the request to Kessel.
+            final Iterator<LookupResourcesResponse> responses;
+            try {
+                responses = this.lookupClient.lookupResources(request);
+            } catch (final Exception e) {
+                Log.errorf(
+                    e,
+                    "[identity: %s][permission: %s][resource_type: %s] Runtime error when querying Kessel for integration resources with request payload: %s",
+                    identity, integrationPermission, ResourceType.INTEGRATION, request
+                );
+
+                // Increment the errors counter and stop the timer in case of
+                // an error.
+                this.meterRegistry.counter(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
+                lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
+
+                throw e;
+            }
+
+            // Iterate over the incoming results.
+            while (responses.hasNext()) {
+                final LookupResourcesResponse response = responses.next();
+
+                Log.tracef("[identity: %s][permission: %s][resource_type: %s] Received payload for the resource lookup: %s", identity, integrationPermission, ResourceType.INTEGRATION, response);
+
+                uuids.add(UUID.fromString(response.getResource().getId()));
+
+                // Update the continuation token every time, to make sure we
+                // grab the last streamed element's continuation token.
+                newContinuationToken = response.getPagination().getContinuationToken();
+            }
+
+            meterRegistry.counter(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
+        } while (!continuationToken.equals(newContinuationToken));
+
+        // Stop the timer.
+        lookupTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LOOKUP_RESOURCES_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, integrationPermission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
 
         return uuids;
     }
@@ -258,11 +313,14 @@ public class KesselAuthorization {
      * @param identity the subject's identity.
      * @param kesselPermission the permission we want to check against the
      *                         subject's integrations.
+     * @param continuationToken the token that will resume fetching resources
+     *                          from Kessel from the last point we left off.
      * @return a built lookup request that aims at finding integrations for the
      * given subject.
      */
-    protected LookupResourcesRequest buildLookupResourcesRequest(final RhIdentity identity, final KesselPermission kesselPermission) {
-        return LookupResourcesRequest.newBuilder()
+    protected LookupResourcesRequest buildLookupResourcesRequest(final RhIdentity identity, final KesselPermission kesselPermission, final String continuationToken) {
+        // Build the regular query.
+        final LookupResourcesRequest.Builder requestBuilder = LookupResourcesRequest.newBuilder()
             .setSubject(
                 SubjectReference.newBuilder()
                     .setSubject(
@@ -271,10 +329,27 @@ public class KesselAuthorization {
                             .setId(getUserId(identity))
                     ).build()
             ).setRelation(kesselPermission.getKesselPermissionName())
-            .setResourceType(ResourceType.INTEGRATION.getKesselObjectType())
-            .build();
+            .setResourceType(ResourceType.INTEGRATION.getKesselObjectType());
+
+        // Include the continuation token in the request to resume fetching
+        // resources right where we last left off.
+        if (continuationToken != null && !continuationToken.isBlank()) {
+            requestBuilder.setPagination(
+                RequestPagination.newBuilder()
+                    .setContinuationToken(continuationToken)
+                    .setLimit(this.backendConfig.getKesselRelationsLookupResourceLimit())
+                    .build()
+            );
+        }
+
+        return requestBuilder.build();
     }
 
+    /**
+     * Gets the user identifier from the {@link RhIdentity} object.
+     * @param identity the object to extract the identifier from.
+     * @return the user ID in the format that Kessel expects.
+     */
     private String getUserId(RhIdentity identity) {
         return backendConfig.getKesselDomain() + "/" + identity.getUserId();
     }
