@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -56,6 +57,7 @@ public class EmailAggregationRepositoryTest {
 
         List<EmailAggregation> aggregations = emailAggregationRepository.getEmailAggregation(key, start, end, 0, 10);
         assertEquals(2, aggregations.size());
+        assertEquals(ORG_ID, aggregations.get(0).getOrgId());
         assertTrue(aggregations.stream().map(EmailAggregation::getOrgId).allMatch(ORG_ID::equals));
         assertTrue(aggregations.stream().map(EmailAggregation::getBundleName).allMatch(BUNDLE_NAME::equals));
         assertTrue(aggregations.stream().map(EmailAggregation::getApplicationName).allMatch(APP_NAME::equals));
@@ -64,10 +66,10 @@ public class EmailAggregationRepositoryTest {
 
         List<EmailAggregationKey> keys = getApplicationsWithPendingAggregation(start, end);
         assertEquals(4, keys.size());
-        assertEquals(ORG_ID, aggregations.get(0).getOrgId());
-        assertEquals("other-org-id", keys.get(0).getOrgId());
-        assertEquals(BUNDLE_NAME, keys.get(0).getBundle());
-        assertEquals(APP_NAME, keys.get(0).getApplication());
+        Optional<EmailAggregationKey> keyOtherOrgId = keys.stream().filter(k -> "other-org-id".equals(k.getOrgId())).findFirst();
+        assertTrue(keyOtherOrgId.isPresent());
+        assertEquals(BUNDLE_NAME, keyOtherOrgId.get().getBundle());
+        assertEquals(APP_NAME, keyOtherOrgId.get().getApplication());
 
         assertEquals(2, emailAggregationRepository.purgeOldAggregation(key, end));
         assertEquals(0, emailAggregationRepository.getEmailAggregation(key, start, end, 0, 10).size());

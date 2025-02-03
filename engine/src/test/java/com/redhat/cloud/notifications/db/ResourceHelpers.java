@@ -50,6 +50,16 @@ public class ResourceHelpers {
             .getSingleResult();
     }
 
+    /**
+     * Delete created bundles and applications except for rhel-policies
+     * because too many tests expect it to be present as part of initial data set
+     */
+    @Transactional
+    public void cleanBundleAndApps() {
+        entityManager.createQuery("DELETE FROM Bundle WHERE name != \"rhel\"").executeUpdate();
+        entityManager.createQuery("DELETE FROM Application WHERE name != \"policies\"").executeUpdate();
+    }
+
     public Application findApp(String bundleName, String appName) {
         return entityManager.createQuery("FROM Application WHERE name = :appName AND bundle.name = :bundleName", Application.class)
             .setParameter("appName", appName)
