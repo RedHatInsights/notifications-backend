@@ -305,6 +305,7 @@ public class EndpointRepositoryTest {
      */
     @Test
     void testGetNonSystemEndpointsWithLimitAndOffset() {
+        resourceHelpers.deleteEndpoints();
         // Create a few regular and migratable endpoints.
         final int regularEndpointsToCreate = 10;
         final ArrayList<Endpoint> createdEndpoints = new ArrayList<>(regularEndpointsToCreate);

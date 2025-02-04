@@ -608,4 +608,9 @@ public class ResourceHelpers {
             .setParameter("eventTypeName", eventTypeName)
             .getSingleResult();
     }
+
+    @Transactional
+    public void deleteEndpoints() {
+        entityManager.createQuery("DELETE FROM Endpoint").executeUpdate();
+    }
 }
