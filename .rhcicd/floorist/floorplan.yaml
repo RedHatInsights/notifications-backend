@@ -22,94 +22,75 @@ objects:
         memory: ${FLOORIST_MEMORY_REQUEST}
     suspend: ${{FLOORIST_SUSPEND}}
     queries:
-      # List the behavior groups and the event type they are associated with
-      # of an organization. Includes the associated bundle and the application,
-      # the organization the behavior groups belong to, the associated event
-      # type the behavior groups are linked to, and whether they are being
-      # actively used or not.
-      - prefix: insights/notifications/behavior_groups_event_types
-        query: >-
-          SELECT
-            bun.display_name::TEXT AS bundle,
-            apps.display_name::TEXT AS application,
-            et.display_name::TEXT AS event_type,
-            bg.org_id::TEXT,
-            EXISTS (
-              SELECT
-                1
-              FROM
-                behavior_group_action AS bga
-              WHERE
-                bga.behavior_group_id = etb.behavior_group_id
-            )::BOOLEAN AS actively_used
-          FROM
-            event_type_behavior AS etb
-          INNER JOIN
-            event_type AS et
-              ON et.id = etb.event_type_id
-          INNER JOIN
-            applications AS apps
-              ON apps.id = et.application_id
-          INNER JOIN
-            behavior_group AS bg
-              ON bg.id = etb.behavior_group_id
-          INNER JOIN
-            bundles AS bun
-              ON bun.id = bg.bundle_id
         # Lists the email subscriptions. The associated bundle, application,
         # organization they belong to, the associated event type's name, the
         # type of the subscription, and whether the subscription is enabled or
         # not are returned.
+        #
+        # The main information is in the email subscriptions table, and the
+        # other joins just provide extra information.
+        #
+        # The "exists" subquery checks whether the email subscription's event
+        # type is associated with an email integration, because in order for an
+        # email subscription to be honored two conditions need to be met:
+        #
+        # 1. The user is subscribed to the event type.
+        # 2. There is an email integration set by the organization
+        #    administrator associated to one or multiple event types, that
+        #    enables sending those emails.
+        #
+        # For the purpose of checking that, the subquery checks that the email
+        # subscription's event type is in the "endpoint_event_type" join table,
+        # but making sure that the event type is associated to an email
+        # integration, and that the email integration either belongs to the
+        # email subscription's organization, or it's a default system endpoint
+        # set up by us internally — thus the "org_id" checks —.
       - prefix: insights/notifications/email_subscriptions
         query: >-
           SELECT
-            bun.display_name::TEXT AS bundle,
-            apps.display_name::TEXT AS application,
-            es.org_id::TEXT,
-            et.display_name::TEXT AS event_type,
-            es.subscription_type::TEXT,
-            es.subscribed::BOOLEAN
+            bundles.display_name::TEXT AS bundle,
+            applications.display_name::TEXT AS application,
+            email_subscriptions.org_id::TEXT,
+            event_type.display_name::TEXT AS event_type,
+            email_subscriptions.subscription_type::TEXT,
+            email_subscriptions.subscribed::BOOLEAN,
+            EXISTS (
+              SELECT
+                1
+              FROM
+                endpoint_event_type
+              INNER JOIN
+                endpoints ON endpoints.id = endpoint_event_type.endpoint_id
+              WHERE
+                endpoint_event_type.event_type_id = email_subscriptions.event_type_id
+              AND
+                endpoints.endpoint_type_v2 = 'EMAIL_SUBSCRIPTION'
+              AND
+                (endpoints.org_id = email_subscriptions.org_id OR endpoints.org_id IS NULL)
+            )::BOOLEAN AS active
           FROM
-            email_subscriptions AS es
+            email_subscriptions
           INNER JOIN
-            event_type AS et
-              ON et.id = es.event_type_id
+            event_type ON event_type.id = email_subscriptions.event_type_id
           INNER JOIN
-            applications AS apps
-              ON apps.id = et.application_id
+            applications ON applications.id = event_type.application_id
           INNER JOIN
-            bundles AS bun
-              ON bun.id = apps.bundle_id
-      # List the endpoint types and whether they are being actively used or
-      # not. We assume that an endpoint without any associated behavior groups
-      # is not being used.
+            bundles ON bundles.id = applications.bundle_id
+      # List the integration types, whether they are being actively used or
+      # not, and to which event types are associated to.
+
+      # In order to know whether an integration is being used or not, we need
+      # to check the "endpoint_event_type" table. As long as there is a record,
+      # we know that the integration is being used to deliver notifications.
       #
-      # We STRING_AGG all the potential event types in a single row, as
-      # otherwise we would have stuff like:
-      #
-      # endpoint_id | event_type
-      # a           | a
-      # a           | b
-      # a           | c
-      #
-      # And what we want is actually the following:
-      #
-      # endpoint_id | event_type
-      # a           | a, b, c
-      #
-      # Also, the subqueries must go inside the parentheses so that the
-      # "endpoints" table is the one that is left joined. This way, if there
-      # are no behavior groups, behavior groups actions and consequently, event
-      # types associated to the endpoint, the "event_type" column in the
-      # selected results will simply be "null".
-      #
-      # Finally, we need to group the results by the endpoints' identifier so
-      # that we can aggregate the multiple "event types" rows, as in this
-      # particular query the main question to answer is "the number of
-      # endpoints an organization has".
-      - prefix: insights/notifications/endpoint_types
+      # The left joins help in the case that the integration has no event type
+      # associated, so that we still can count those integrations.
+      - prefix: insights/notifications/integration_types
         query: >-
           SELECT
+            endpoints.id::TEXT AS integration_id,
+            bundles.display_name::TEXT AS bundle,
+            applications.display_name::TEXT AS application,
             CASE
               WHEN
                 endpoint_type_v2 = 'CAMEL'
@@ -117,112 +98,115 @@ objects:
                 LOWER(endpoint_sub_type)::TEXT
               ELSE
                 LOWER(endpoint_type_v2)::TEXT
-            END AS endpoint_type,
-            STRING_AGG(event_type.display_name, ', ') AS event_type,
+            END AS integration_type,
+            event_type.display_name AS event_type,
             endpoints.org_id::TEXT,
             endpoints.enabled::TEXT AS enabled,
             EXISTS (
               SELECT
                 1
               FROM
-                behavior_group_action
-              INNER JOIN
-                event_type_behavior
-                  ON event_type_behavior.behavior_group_id = behavior_group_action.behavior_group_id
+                endpoint_event_type
               WHERE
-                behavior_group_action.endpoint_id = endpoints.id
-            )::BOOLEAN AS actively_used
+                endpoint_event_type.endpoint_id = endpoints.id
+            )::BOOLEAN AS active
           FROM
             endpoints
-          LEFT JOIN (
-            behavior_group_action
-              INNER JOIN
-                event_type_behavior
-                  ON event_type_behavior.behavior_group_id = behavior_group_action.behavior_group_id
-              INNER JOIN
-                event_type
-                  ON event_type_behavior.event_type_id  = event_type.id
-          ) ON behavior_group_action.endpoint_id = endpoints.id
-          GROUP BY
-            endpoints.id
+          LEFT JOIN
+            endpoint_event_type
+              ON endpoint_event_type.endpoint_id = endpoints.id
+          LEFT JOIN
+            event_type
+              ON event_type.id = endpoint_event_type.event_type_id
+          LEFT JOIN
+            applications
+              ON applications.id = event_type.application_id
+          LEFT JOIN
+            bundles
+              ON bundles.id = applications.bundle_id
+
       # List the attempted notification deliveries. It shows the associated
       # bundle, the application, the endpoint type, the event type and the
       # delivery status.
-      - prefix: insights/notifications/notifications_deliveries
+      #
+      # The "notification_history" table gathers all the delivery attempts made
+      # by Notifications. Since it might be useful for tenants to know which
+      # customers are sending the events, we need to join the "event" table for
+      # that, which is the one that has that data.
+      #
+      # Then, the rest of the joins are just necessary to be able to provide
+      # the extra information about the source bundle and application.
+      - prefix: insights/notifications/notification_deliveries
         query: >-
           SELECT
-            bun.display_name::TEXT AS bundle,
-            apps.display_name::TEXT AS application,
-            e.org_id::TEXT,
-            CASE
-              WHEN
-                nh.endpoint_type_v2 = 'CAMEL'
-              THEN
-                LOWER(nh.endpoint_sub_type)
-              ELSE
-                LOWER(nh.endpoint_type_v2)
-            END AS endpoint_type,
-            et.display_name::TEXT AS event_type,
-            nh.status::TEXT
+            bundles.display_name::TEXT AS bundle,
+            applications.display_name::TEXT AS application,
+            ev.org_id::TEXT,
+          CASE
+            WHEN
+              notification_history.endpoint_type_v2 = 'CAMEL'
+            THEN
+              LOWER(notification_history.endpoint_sub_type)
+            ELSE
+              LOWER(notification_history.endpoint_type_v2)
+          END AS integration_type,
+          event_type.display_name::TEXT AS event_type,
+          notification_history.status::TEXT
           FROM
-            notification_history AS nh
+            notification_history
           INNER JOIN
-            "event" AS e
-              ON e.id = nh.event_id
+            "event" AS ev ON ev.id = notification_history.event_id
           INNER JOIN
-            event_type AS et
-              ON et.id = e.event_type_id
+            event_type ON event_type.id = ev.event_type_id
           INNER JOIN
-            applications AS apps
-              ON apps.id = e.application_id
+            applications ON applications.id = ev.application_id
           INNER JOIN
-            bundles AS bun
-              ON bun.id = apps.bundle_id
+            bundles ON bundles.id = applications.bundle_id
       # List the events received from the integrated applications, as well as
       # the bundle and application the event is associated to, plus the event
       # type's name.
+      #
+      # Since we keep all the received events in the "event" table, we only
+      # have to look that up to know which events we have been receiving and
+      # from which source.
       - prefix: insights/notifications/received_events_from_applications
         query: >-
           SELECT
             bundles.display_name AS bundle,
             applications.display_name AS application,
-            e.event_type_display_name AS event_type,
-            e.org_id
+            ev.event_type_display_name AS event_type,
+            ev.org_id
           FROM
-            "event" AS e
+            "event" AS ev
           INNER JOIN
-            applications
-              ON applications.id = e.application_id
+            applications ON applications.id = ev.application_id
           INNER JOIN
-            bundles AS bundles
-              ON bundles.id = e.bundle_id
+            bundles ON bundles.id = ev.bundle_id
       # Lists the event types that are currently being used. It also returns
       # the associated bundle, the application and the organization in which
       # those event types are being used.
+      #
+      # The way to know that an event type is being used is by checking if it
+      # is associated to an integration. The "endpoint_event_type" table
+      # gathers the integrations that are associated with an event type, so
+      # that is why it is key to check it for the query.
       - prefix: insights/notifications/event_types_per_organization
         query: >-
           SELECT
             bundles.display_name::TEXT AS bundle,
             applications.display_name::TEXT AS application,
             event_type.display_name::TEXT AS event_type,
-            behavior_group.org_id::TEXT
+            endpoints.org_id::TEXT
           FROM
             event_type
           INNER JOIN
-            event_type_behavior AS etb
-              ON etb.event_type_id = event_type.id
+            endpoint_event_type ON endpoint_event_type.event_type_id = event_type.id
           INNER JOIN
-            behavior_group_action AS bga
-              ON bga.behavior_group_id = etb.behavior_group_id
+            endpoints ON endpoints.id = endpoint_event_type.endpoint_id
           INNER JOIN
-            behavior_group
-              ON behavior_group.id = bga.behavior_group_id
+            applications ON applications.id = event_type.application_id
           INNER JOIN
-            applications
-              ON applications.id = event_type.application_id
-          INNER JOIN
-            bundles
-              ON bundles.id = applications.bundle_id
+            bundles ON bundles.id = applications.bundle_id
 - apiVersion: metrics.console.redhat.com/v1alpha1
   kind: FloorPlan
   metadata:
