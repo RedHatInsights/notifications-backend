@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -12,6 +13,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -22,6 +24,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.List;
@@ -56,6 +59,9 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
+
+    @InjectMock
+    BackendConfig backendConfig;
 
     @Test
     void shouldThrowExceptionWhenCreatingWithExistingDisplayNameAndSameOrgId() {
@@ -411,6 +417,9 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
      */
     @Test
     void testNotAllowedCreateMoreBehaviorGroups() {
+        // Enable the behavior group creation limit for the organization.
+        Mockito.when(this.backendConfig.isBehaviorGroupCreationLimitDisabledForOrgId(DEFAULT_ORG_ID)).thenReturn(false);
+
         final Bundle bundle = this.resourceHelpers.createBundle();
 
         for (long i = 0; i < BehaviorGroupRepository.MAXIMUM_NUMBER_BEHAVIOR_GROUPS; i++) {
@@ -438,6 +447,27 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         );
 
         Assertions.assertEquals("behavior group creation limit reached. Please consider deleting unused behavior groups before creating more.", ex.getMessage());
+    }
+
+    /**
+     * Tests that for those specific cases where the limit is disabled, we are
+     * able to create more than the established limits.
+     */
+    @Test
+    void testAllowedCreateMoreBehaviorGroupsSpecificCases() {
+        // Enable the back end configuration that will let us bypass the limit.
+        Mockito.when(this.backendConfig.isBehaviorGroupCreationLimitDisabledForOrgId(DEFAULT_ORG_ID)).thenReturn(true);
+
+        final Bundle bundle = this.resourceHelpers.createBundle();
+
+        for (long i = 0; i < BehaviorGroupRepository.MAXIMUM_NUMBER_BEHAVIOR_GROUPS + 15; i++) {
+            this.resourceHelpers.createBehaviorGroup(
+                DEFAULT_ACCOUNT_ID,
+                DEFAULT_ORG_ID,
+                String.format("display-name-%s", i),
+                bundle.getId()
+            );
+        }
     }
 
     /**

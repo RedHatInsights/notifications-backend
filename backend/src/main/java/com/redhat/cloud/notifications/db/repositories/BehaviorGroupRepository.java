@@ -777,6 +777,13 @@ public class BehaviorGroupRepository {
      * {@link BehaviorGroupRepository#MAXIMUM_NUMBER_BEHAVIOR_GROUPS}.
      */
     private boolean isAllowedToCreateMoreBehaviorGroups(final String orgId) {
+        // Check with Unleash if we have any overrides for this limit. There
+        // might be some special cases where an organization might require more
+        // than the established limit of behavior groups.
+        if (this.backendConfig.isBehaviorGroupCreationLimitDisabledForOrgId(orgId)) {
+            return true;
+        }
+
         final String countQuery =
             "SELECT " +
                 "COUNT(bg) " +

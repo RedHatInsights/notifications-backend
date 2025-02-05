@@ -44,6 +44,7 @@ public class BackendConfig {
     private String kesselInventoryToggle;
     private String kesselRelationsToggle;
     private String maintenanceModeToggle;
+    private String bypassBehaviorGroupMaxCreationLimitToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -114,6 +115,7 @@ public class BackendConfig {
         kesselInventoryToggle = toggleRegistry.register("kessel-inventory", true);
         kesselRelationsToggle = toggleRegistry.register("kessel-relations", true);
         maintenanceModeToggle = toggleRegistry.register("notifications-maintenance-mode", true);
+        bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -230,5 +232,26 @@ public class BackendConfig {
             return unleash.isEnabled(maintenanceModeToggle, unleashContext, false);
         }
         return maintenanceModeEnabled;
+    }
+
+    /**
+     * Checks whether the behavior group creation limit is disabled for the
+     * given organization.
+     * @param orgId the organization we want to check the limit for.
+     * @return {@code true} for almost all the organizations. We might disable
+     * this limit on a very specific organization from time to time if we want
+     * to perform some kind of tests, but it is going to be an exception.
+     * @deprecated for removal because once behavior groups go away this
+     * configuration check will not make any sense anymore.
+     */
+    @Deprecated(forRemoval = true)
+    public boolean isBehaviorGroupCreationLimitDisabledForOrgId(final String orgId) {
+        if (unleashEnabled) {
+            final UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+
+            return unleash.isEnabled(bypassBehaviorGroupMaxCreationLimitToggle, unleashContext, false);
+        } else {
+            return false;
+        }
     }
 }
