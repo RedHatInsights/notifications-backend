@@ -71,6 +71,9 @@ public class Event {
     @OneToMany(mappedBy = "event", cascade = REMOVE)
     Set<NotificationHistory> historyEntries;
 
+    @NotNull
+    private boolean hasAuthorizationCriterion = false;
+
     private String payload;
 
     private String renderedDrawerNotification;
@@ -248,6 +251,15 @@ public class Event {
 
     public void setSourceEnvironment(String sourceEnvironment) {
         this.sourceEnvironment = sourceEnvironment;
+    }
+
+    @NotNull
+    public boolean hasAuthorizationCriterion() {
+        return hasAuthorizationCriterion;
+    }
+
+    public void setHasAuthorizationCriterion(@NotNull boolean hasAuthorizationCriterion) {
+        this.hasAuthorizationCriterion = hasAuthorizationCriterion;
     }
 
     @Override
