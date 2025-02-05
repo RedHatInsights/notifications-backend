@@ -182,7 +182,8 @@ public abstract class CamelProcessorTest {
         event.setId(UUID.randomUUID());
         event.setOrgId(DEFAULT_ORG_ID);
         event.setEventWrapper(new EventWrapperAction(action));
-        event.setApplicationDisplayName("policies");
+        event.setBundleDisplayName("Red Hat Enterprise Linux");
+        event.setApplicationDisplayName("Policies");
         Application application = new Application();
         application.setName("policies");
         EventType eventType = new EventType();

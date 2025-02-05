@@ -17,7 +17,6 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUt
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CONTEXT;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.DISPLAY_NAME;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ENVIRONMENT_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENTS;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_TYPE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.INVENTORY_URL;
@@ -112,7 +111,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
                 )
         );
         cloudEventPayload.put("recipients", JsonArray.of());
-        cloudEventPayload.put("environment_url", "https://console.redhat.com");
         // No inventory_url generated
         cloudEventPayload.put("application_url", "https://console.redhat.com/settings/integrations");
         cloudEventPayload.put("severity", "warning");
@@ -209,20 +207,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testWithClientDisplayName() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.put(CONTEXT, JsonObject.of(
-                DISPLAY_NAME, "console",
-                "inventory_id", "8a4a4f75-5319-4255-9eb5-1ee5a92efd7f"
-        ));
-        cloudEventData.put(PAYLOAD, cloudPayload);
-
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
-    }
-
-    @Test
     void testWithHostUrl() {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
@@ -245,32 +229,11 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testWithClientDisplayNameAndInventoryId() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.put(CONTEXT, JsonObject.of(
-                DISPLAY_NAME, "console",
-                "inventory_id", "8a4a4f75-5319-4255-9eb5-1ee5a92efd7f"
-        ));
-        cloudEventData.put(PAYLOAD, cloudPayload);
-    }
-
-    @Test
     void testWithMissingInventoryId() {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject context = cloudPayload.getJsonObject(CONTEXT);
         context.remove("inventory_id");
-
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
-    }
-
-    @Test
-    void testMissingEnvironmentUrl() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.remove(ENVIRONMENT_URL);
 
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
         validatePayloadTransform(cloudEventData, expectedPayload);
