@@ -11,6 +11,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.ProcessingException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class ExternalRecipientsResolver {
     @PostConstruct
     public void postConstruct() {
         retryPolicy = RetryPolicy.builder()
-            .handle(IOException.class)
+            .handle(IOException.class, ProcessingException.class)
             .withBackoff(initialRetryBackoff, maxRetryBackoff)
             .withMaxAttempts(maxRetryAttempts)
             .onRetriesExceeded(event ->
