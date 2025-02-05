@@ -27,7 +27,6 @@ import static com.redhat.cloud.notifications.transformers.BaseTransformer.PAYLOA
 public class PagerDutyProcessor extends EndpointTypeProcessor {
 
     public static final String PROCESSED_PAGERDUTY_COUNTER = "processor.pagerduty.processed";
-    public static final String INSIGHTS_URL_FROM_PAGERDUTY = "pagerduty";
 
     @Inject
     BaseTransformer transformer;
@@ -74,8 +73,8 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
 
         JsonObject connectorData = new JsonObject();
         JsonObject transformedEvent = transformer.toJsonObject(event);
-        insightsUrlsBuilder.buildInventoryUrl(transformedEvent, INSIGHTS_URL_FROM_PAGERDUTY).ifPresent(url -> transformedEvent.put("inventory_url", url));
-        transformedEvent.put("application_url", insightsUrlsBuilder.buildApplicationUrl(transformedEvent, INSIGHTS_URL_FROM_PAGERDUTY));
+        insightsUrlsBuilder.buildInventoryUrl(transformedEvent, endpoint.getType().name().toLowerCase()).ifPresent(url -> transformedEvent.put("inventory_url", url));
+        transformedEvent.put("application_url", insightsUrlsBuilder.buildApplicationUrl(transformedEvent, endpoint.getType().name().toLowerCase()));
         transformedEvent.put("severity", properties.getSeverity());
 
         connectorData.put(PAYLOAD, transformedEvent);
