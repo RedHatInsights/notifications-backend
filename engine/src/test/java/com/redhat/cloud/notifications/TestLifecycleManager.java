@@ -6,8 +6,6 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -27,7 +25,6 @@ import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGA
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     Boolean quarkusDevServiceEnabled = true;
-    Boolean redisTlsEnabled = true;
 
     PostgreSQLContainer<?> postgreSQLContainer;
 
@@ -61,22 +58,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(EXPORT_CHANNEL));
-
-        // Redis cannot be run with TLS in test mode - revert the host scheme to `redis`
-        Optional<Boolean> redisTlsEnabledFlag = ConfigProvider.getConfig().getOptionalValue("quarkus.redis.tls.enabled", Boolean.class);
-        redisTlsEnabledFlag.ifPresent(flag -> redisTlsEnabled = flag);
-        if (!redisTlsEnabled) {
-            Optional<String> redisHostProperty = ConfigProvider.getConfig().getOptionalValue("quarkus.redis.hosts", String.class);
-            if (redisHostProperty.isPresent()) {
-                try {
-                    URI redisHost = new URI(redisHostProperty.get());
-                    URI newRedisHost = new URI("redis", redisHost.getSchemeSpecificPart(), "");
-                    properties.put("quarkus.redis.hosts", newRedisHost.toString());
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException("Unable to update URI scheme of configuration property \"quarkus.redis.hosts\"", e);
-                }
-            }
-        }
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;
