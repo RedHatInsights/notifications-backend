@@ -41,7 +41,6 @@ import java.util.List;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
-import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.INSIGHTS_URL_FROM_PAGERDUTY;
 import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.PROCESSED_PAGERDUTY_COUNTER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -125,9 +124,9 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        insightsUrlsBuilder.buildInventoryUrl(payloadToSend, INSIGHTS_URL_FROM_PAGERDUTY)
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend, ep.getType().name().toLowerCase())
                 .ifPresent(url -> payloadToSend.put("inventory_url", url));
-        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend, INSIGHTS_URL_FROM_PAGERDUTY));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend, ep.getType().name().toLowerCase()));
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
@@ -187,9 +186,9 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        insightsUrlsBuilder.buildInventoryUrl(payloadToSend, INSIGHTS_URL_FROM_PAGERDUTY)
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend, ep.getType().name().toLowerCase())
                 .ifPresent(url -> payloadToSend.put("inventory_url", url));
-        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend, INSIGHTS_URL_FROM_PAGERDUTY));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend, ep.getType().name().toLowerCase()));
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
