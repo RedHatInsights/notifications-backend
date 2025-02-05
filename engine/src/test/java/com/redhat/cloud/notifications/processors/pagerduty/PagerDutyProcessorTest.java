@@ -12,7 +12,6 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -42,6 +41,7 @@ import java.util.List;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.INSIGHTS_URL_FROM_PAGERDUTY;
 import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.PROCESSED_PAGERDUTY_COUNTER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -71,9 +71,6 @@ public class PagerDutyProcessorTest {
 
     @Inject
     BaseTransformer transformer;
-
-    @Inject
-    Environment environment;
 
     @Inject
     InsightsUrlsBuilder insightsUrlsBuilder;
@@ -128,10 +125,9 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        payloadToSend.put("environment_url", environment.url());
-        insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend, INSIGHTS_URL_FROM_PAGERDUTY)
                 .ifPresent(url -> payloadToSend.put("inventory_url", url));
-        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend, INSIGHTS_URL_FROM_PAGERDUTY));
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
@@ -191,10 +187,9 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        payloadToSend.put("environment_url", environment.url());
-        insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend, INSIGHTS_URL_FROM_PAGERDUTY)
                 .ifPresent(url -> payloadToSend.put("inventory_url", url));
-        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend, INSIGHTS_URL_FROM_PAGERDUTY));
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 

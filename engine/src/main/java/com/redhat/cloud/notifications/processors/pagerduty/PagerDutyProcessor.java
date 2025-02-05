@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.processors.pagerduty;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
@@ -28,15 +27,13 @@ import static com.redhat.cloud.notifications.transformers.BaseTransformer.PAYLOA
 public class PagerDutyProcessor extends EndpointTypeProcessor {
 
     public static final String PROCESSED_PAGERDUTY_COUNTER = "processor.pagerduty.processed";
+    public static final String INSIGHTS_URL_FROM_PAGERDUTY = "pagerduty";
 
     @Inject
     BaseTransformer transformer;
 
     @Inject
     EngineConfig engineConfig;
-
-    @Inject
-    Environment environment;
 
     @Inject
     InsightsUrlsBuilder insightsUrlsBuilder;
@@ -77,9 +74,8 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
 
         JsonObject connectorData = new JsonObject();
         JsonObject transformedEvent = transformer.toJsonObject(event);
-        transformedEvent.put("environment_url", environment.url());
-        insightsUrlsBuilder.buildInventoryUrl(transformedEvent).ifPresent(url -> transformedEvent.put("inventory_url", url));
-        transformedEvent.put("application_url", insightsUrlsBuilder.buildApplicationUrl(transformedEvent));
+        insightsUrlsBuilder.buildInventoryUrl(transformedEvent, INSIGHTS_URL_FROM_PAGERDUTY).ifPresent(url -> transformedEvent.put("inventory_url", url));
+        transformedEvent.put("application_url", insightsUrlsBuilder.buildApplicationUrl(transformedEvent, INSIGHTS_URL_FROM_PAGERDUTY));
         transformedEvent.put("severity", properties.getSeverity());
 
         connectorData.put(PAYLOAD, transformedEvent);

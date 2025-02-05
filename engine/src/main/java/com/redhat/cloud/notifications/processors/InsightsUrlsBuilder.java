@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -32,11 +33,12 @@ public class InsightsUrlsBuilder {
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
+     * @param integration_type a string used to construct the source query param (ex. {@code from=notification_instant_email})
      * @return URL to the generating inventory item, if required fields are present
      */
-    public Optional<String> buildInventoryUrl(JsonObject data) {
+    public Optional<String> buildInventoryUrl(JsonObject data, String integration_type) {
         String path;
-        ArrayList<String> queryParamParts = new ArrayList<>();
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notification_" + integration_type));
         JsonObject context = data.getJsonObject("context");
         if (context == null) {
             return Optional.empty();
@@ -45,7 +47,7 @@ public class InsightsUrlsBuilder {
         // A provided host url does not need to be modified
         String host_url = context.getString("host_url", "");
         if (!host_url.isBlank()) {
-            return Optional.of(host_url);
+            return Optional.of(host_url + "?" + String.join("&", queryParamParts));
         }
 
         String environmentUrl = environment.url();
@@ -68,12 +70,7 @@ public class InsightsUrlsBuilder {
             return Optional.empty();
         }
 
-        if (!queryParamParts.isEmpty()) {
-            String queryParams = "?" + String.join("&", queryParamParts);
-            path += queryParams;
-        }
-
-        return Optional.of(environmentUrl + path);
+        return Optional.of(environmentUrl + path + "?" + String.join("&", queryParamParts));
     }
 
     /**
@@ -84,10 +81,12 @@ public class InsightsUrlsBuilder {
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
+     * @param integration_type a string used to construct the source query param (ex. {@code from=notification_instant_email})
      * @return URL to the generating application
      */
-    public String buildApplicationUrl(JsonObject data) {
+    public String buildApplicationUrl(JsonObject data, String integration_type) {
         String path = "";
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notification_" + integration_type));
 
         String environmentUrl = environment.url();
         String bundle = data.getString("bundle", "");
@@ -104,6 +103,10 @@ public class InsightsUrlsBuilder {
         }
 
         path += application;
+        if (!queryParamParts.isEmpty()) {
+            String queryParams = "?" + String.join("&", queryParamParts);
+            path += queryParams;
+        }
 
         return String.format("%s/%s", environmentUrl, path);
     }
