@@ -33,12 +33,13 @@ public class InsightsUrlsBuilder {
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
-     * @param integration_type a string used to construct the source query param (ex. {@code from=notification_instant_email})
+     * @param integration_type a string used to construct the source query param. Inputs will be converted to lowercase,
+     *                         and spaces replaced with underscores. For example, {@code "Google Chat"} becomes {@code from=notification_google_chat}.
      * @return URL to the generating inventory item, if required fields are present
      */
     public Optional<String> buildInventoryUrl(JsonObject data, String integration_type) {
         String path;
-        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notification_" + integration_type));
+        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notification_" + integration_type.replace(' ', '_').toLowerCase()));
         JsonObject context = data.getJsonObject("context");
         if (context == null) {
             return Optional.empty();

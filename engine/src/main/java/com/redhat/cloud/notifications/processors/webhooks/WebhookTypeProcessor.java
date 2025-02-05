@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,6 +32,9 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     @Inject
     BaseTransformer transformer;
+
+    @Inject
+    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @Inject
     EngineConfig engineConfig;
@@ -71,6 +75,8 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
         final JsonObject payload = transformer.toJsonObject(event);
+        insightsUrlsBuilder.buildInventoryUrl(payload, endpoint.getType().name()).ifPresent(url -> payload.put("inventory_url", url));
+        payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getType().name()));
 
         final JsonObject connectorData = new JsonObject();
 
