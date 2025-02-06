@@ -9,6 +9,7 @@ import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.hc.client5.http.ConnectTimeoutException;
 import org.apache.hc.client5.http.HttpHostConnectException;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -39,20 +40,10 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
 
     @Override
     protected void process(Throwable t, Exchange exchange) {
-        if (t instanceof HttpOperationFailedException e) {
-            exchange.setProperty(HTTP_STATUS_CODE, e.getStatusCode());
-            if (e.getStatusCode() >= 300 && e.getStatusCode() < 400) {
-                exchange.setProperty(HTTP_ERROR_TYPE, HTTP_3XX);
-                logHttpError(connectorConfig.getServerErrorLogLevel(), e, exchange);
-            } else if (e.getStatusCode() >= 400 && e.getStatusCode() < 500 && e.getStatusCode() != SC_TOO_MANY_REQUESTS) {
-                exchange.setProperty(HTTP_ERROR_TYPE, HTTP_4XX);
-                logHttpError(connectorConfig.getClientErrorLogLevel(), e, exchange);
-            } else if (e.getStatusCode() == SC_TOO_MANY_REQUESTS || e.getStatusCode() >= 500) {
-                exchange.setProperty(HTTP_ERROR_TYPE, HTTP_5XX);
-                logHttpError(connectorConfig.getServerErrorLogLevel(), e, exchange);
-            } else {
-                logHttpError(ERROR, e, exchange);
-            }
+        if (t instanceof ClientWebApplicationException e) {
+            manageReturnedStatusCode(exchange, e.getResponse().getStatus(), e.getResponse().readEntity(String.class));
+        } else if (t instanceof HttpOperationFailedException e) {
+            manageReturnedStatusCode(exchange, e.getStatusCode(), e.getResponseBody());
         } else if (t instanceof ConnectTimeoutException) {
             exchange.setProperty(HTTP_ERROR_TYPE, CONNECT_TIMEOUT);
         } else if (t instanceof SocketTimeoutException) {
@@ -70,7 +61,23 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
         }
     }
 
-    private void logHttpError(Logger.Level level, HttpOperationFailedException e, Exchange exchange) {
+    private void manageReturnedStatusCode(Exchange exchange, int statusCode, String responseBody) {
+        exchange.setProperty(HTTP_STATUS_CODE, statusCode);
+        if (statusCode >= 300 && statusCode < 400) {
+            exchange.setProperty(HTTP_ERROR_TYPE, HTTP_3XX);
+            logHttpError(connectorConfig.getServerErrorLogLevel(), statusCode, responseBody, exchange);
+        } else if (statusCode >= 400 && statusCode < 500 && statusCode != SC_TOO_MANY_REQUESTS) {
+            exchange.setProperty(HTTP_ERROR_TYPE, HTTP_4XX);
+            logHttpError(connectorConfig.getClientErrorLogLevel(), statusCode, responseBody, exchange);
+        } else if (statusCode == SC_TOO_MANY_REQUESTS || statusCode >= 500) {
+            exchange.setProperty(HTTP_ERROR_TYPE, HTTP_5XX);
+            logHttpError(connectorConfig.getServerErrorLogLevel(), statusCode, responseBody, exchange);
+        } else {
+            logHttpError(ERROR, statusCode, responseBody, exchange);
+        }
+    }
+
+    private void logHttpError(Logger.Level level, int statusCode, String responseBody, Exchange exchange) {
         Log.logf(
                 level,
                 HTTP_ERROR_LOG_MSG,
@@ -78,8 +85,8 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
                 getOrgId(exchange),
                 getExchangeId(exchange),
                 getTargetUrl(exchange),
-                e.getStatusCode(),
-                e.getResponseBody()
+                statusCode,
+                responseBody
         );
     }
 }
