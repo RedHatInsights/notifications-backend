@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers;
+package com.redhat.cloud.notifications.routers.handlers.event;
 
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
@@ -43,11 +43,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
-import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+@Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
 public class EventResource {
     @Inject
     BackendConfig backendConfig;
@@ -60,16 +60,6 @@ public class EventResource {
 
     @Inject
     WorkspaceUtils workspaceUtils;
-
-    @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
-    public static class V1 extends EventResource {
-
-    }
-
-    @Path(API_NOTIFICATIONS_V_2_0 + "/notifications/events")
-    public static class V2 extends EventResource {
-
-    }
 
     @GET
     @Produces(APPLICATION_JSON)
