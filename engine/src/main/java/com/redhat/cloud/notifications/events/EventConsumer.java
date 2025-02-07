@@ -11,7 +11,6 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
-import com.redhat.cloud.notifications.processors.RecipientsAuthorizationCriterionExtractor;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import com.redhat.cloud.notifications.utils.ActionParsingException;
 import io.micrometer.core.instrument.Counter;
@@ -84,9 +83,6 @@ public class EventConsumer {
 
     @Inject
     EngineConfig config;
-
-    @Inject
-    RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
@@ -247,7 +243,6 @@ public class EventConsumer {
                  */
                 Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
                 Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader);
-                event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
                 if (event.getId() == null) {
                     // NOTIF-499 If there is no ID provided whatsoever we create one.
                     event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
