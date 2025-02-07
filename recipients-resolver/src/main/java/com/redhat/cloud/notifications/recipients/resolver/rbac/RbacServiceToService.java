@@ -40,6 +40,7 @@ public interface RbacServiceToService {
     Page<RbacUser> getGroupUsers(
             @HeaderParam("x-rh-rbac-org-id") String orgId,
             @PathParam("groupId") UUID groupId,
+            @QueryParam("admin_only") Boolean adminOnly,
             @QueryParam("offset") Integer offset,
             @QueryParam("limit") Integer limit
     );
