@@ -25,6 +25,7 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUser
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServiceAccountAuthentication;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
 public class UserPreferencesForPolicy {
 
     @Inject
@@ -32,11 +33,6 @@ public class UserPreferencesForPolicy {
 
     @Inject
     BackendConfig backendConfig;
-
-    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
-    public static class V1 extends UserPreferencesForPolicy {
-
-    }
 
     @GET
     @Path("/notification-preference/{bundleName}/{applicationName}")

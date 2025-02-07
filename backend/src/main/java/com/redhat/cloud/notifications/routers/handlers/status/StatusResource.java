@@ -10,13 +10,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+@Path(API_NOTIFICATIONS_V_1_0 + "/status")
 public class StatusResource {
 
     static final JsonObject STATUS = new JsonObject("{\"status\":\"UP\"}");
-
-    @Path(API_NOTIFICATIONS_V_1_0 + "/status")
-    public static class V1 extends StatusResource {
-    }
 
     @GET
     @Produces(APPLICATION_JSON)

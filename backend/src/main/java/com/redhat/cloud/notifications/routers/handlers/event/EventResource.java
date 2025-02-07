@@ -47,6 +47,7 @@ import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_R
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+@Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
 public class EventResource {
     @Inject
     BackendConfig backendConfig;
@@ -59,11 +60,6 @@ public class EventResource {
 
     @Inject
     WorkspaceUtils workspaceUtils;
-
-    @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
-    public static class V1 extends EventResource {
-
-    }
 
     @GET
     @Produces(APPLICATION_JSON)

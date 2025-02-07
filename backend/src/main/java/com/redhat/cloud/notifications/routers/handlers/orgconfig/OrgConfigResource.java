@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
 public class OrgConfigResource {
     @Inject
     BackendConfig backendConfig;
@@ -55,11 +56,6 @@ public class OrgConfigResource {
 
     @ConfigProperty(name = "notifications.default.daily.digest.time", defaultValue = "00:00")
     LocalTime defaultDailyDigestTime;
-
-    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
-    static class V1 extends OrgConfigResource {
-
-    }
 
     @APIResponse(responseCode = "204")
     @APIResponse(responseCode = "400", description = "Invalid minute value specified")
