@@ -18,6 +18,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -50,6 +51,11 @@ public class EmailTemplateMigrationServiceTest {
 
     @CacheName("instant-email-templates")
     Cache cacheInstantEmailTemplates;
+
+    @AfterEach
+    public void clean() {
+        resourceHelpers.cleanBundleAndApps();
+    }
 
     @Test
     void testMigration() {

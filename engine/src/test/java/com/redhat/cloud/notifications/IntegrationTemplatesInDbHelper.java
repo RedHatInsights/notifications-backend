@@ -14,6 +14,7 @@ import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.HashMap;
@@ -69,6 +70,11 @@ public abstract class IntegrationTemplatesInDbHelper {
             eventTypes.put(eventTypeToCreate, eventType.getId());
         }
         drawerTemplateMigrationService.migrate();
+    }
+
+    @AfterEach
+    protected void cleanUp() {
+        resourceHelpers.cleanBundleAndApps();
     }
 
     protected String generateDrawerTemplate(String eventTypeStr, Action action) {

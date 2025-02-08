@@ -21,6 +21,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.time.LocalDateTime;
@@ -93,6 +94,11 @@ public abstract class EmailTemplatesInDbHelper {
             emailTemplateMigrationService.deleteAllTemplates();
         }
         migrate();
+    }
+
+    @AfterEach
+    protected void cleanUp() {
+        resourceHelpers.cleanBundleAndApps();
     }
 
     protected void migrate() {
