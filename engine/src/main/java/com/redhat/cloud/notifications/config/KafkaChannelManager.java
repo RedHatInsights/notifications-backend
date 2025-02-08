@@ -4,22 +4,23 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.getunleash.Unleash;
 import io.getunleash.Variant;
-import io.getunleash.repository.ToggleCollection;
+import io.getunleash.event.UnleashSubscriber;
+import io.getunleash.repository.FeatureToggleResponse;
 import io.getunleash.variant.Payload;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ChannelRegistry;
 import io.smallrye.reactive.messaging.PausableChannel;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Optional;
 
+import static io.getunleash.repository.FeatureToggleResponse.Status.CHANGED;
 import static java.lang.Boolean.TRUE;
 
 @ApplicationScoped
-public class KafkaChannelManager {
+public class KafkaChannelManager implements UnleashSubscriber {
 
     private static final String UNLEASH_TOGGLE_NAME = "notifications.kafka-channels";
 
@@ -33,21 +34,24 @@ public class KafkaChannelManager {
     ObjectMapper objectMapper;
 
     @Inject
-    ChannelRegistry registry;
+    ChannelRegistry channelRegistry;
 
-    public void process(@Observes ToggleCollection toggleCollection) {
-        KafkaChannelConfig[] kafkaChannelConfigs = getKafkaChannelConfigs();
-        for (KafkaChannelConfig kafkaChannelConfig : kafkaChannelConfigs) {
-            try {
-                if (shouldThisHostBeUpdated(kafkaChannelConfig)) {
-                    if (TRUE.equals(kafkaChannelConfig.paused)) {
-                        pause(kafkaChannelConfig.channel);
-                    } else {
-                        resume(kafkaChannelConfig.channel);
+    @Override
+    public void togglesFetched(FeatureToggleResponse toggleResponse) {
+        if (toggleResponse.getStatus() == CHANGED) {
+            KafkaChannelConfig[] kafkaChannelConfigs = getKafkaChannelConfigs();
+            for (KafkaChannelConfig kafkaChannelConfig : kafkaChannelConfigs) {
+                try {
+                    if (shouldThisHostBeUpdated(kafkaChannelConfig)) {
+                        if (TRUE.equals(kafkaChannelConfig.paused)) {
+                            pause(kafkaChannelConfig.channel);
+                        } else {
+                            resume(kafkaChannelConfig.channel);
+                        }
                     }
+                } catch (Exception e) {
+                    Log.error("Could not pause or resume a channel", e);
                 }
-            } catch (Exception e) {
-                Log.error("Could not pause or resume a channel", e);
             }
         }
     }
@@ -101,7 +105,7 @@ public class KafkaChannelManager {
     }
 
     private PausableChannel getPausableChannel(String channel) {
-        PausableChannel pausableChannel = registry.getPausable(channel);
+        PausableChannel pausableChannel = channelRegistry.getPausable(channel);
         if (pausableChannel == null) {
             throw new RuntimeException("Channel not found or not marked as pausable in application.properties: " +  channel);
         } else {
