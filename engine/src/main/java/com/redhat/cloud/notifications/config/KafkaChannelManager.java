@@ -10,6 +10,7 @@ import io.getunleash.variant.Payload;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ChannelRegistry;
 import io.smallrye.reactive.messaging.PausableChannel;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -36,13 +37,21 @@ public class KafkaChannelManager implements UnleashSubscriber {
     @Inject
     ChannelRegistry channelRegistry;
 
+    @PostConstruct
+    void postConstruct() {
+        Log.debug("KafkaChannelManager initialized");
+    }
+
     @Override
     public void togglesFetched(FeatureToggleResponse toggleResponse) {
+        Log.debug("Received FeatureToggleResponse event");
         if (toggleResponse.getStatus() == CHANGED) {
+            Log.debug("Toggles changed");
             KafkaChannelConfig[] kafkaChannelConfigs = getKafkaChannelConfigs();
             for (KafkaChannelConfig kafkaChannelConfig : kafkaChannelConfigs) {
                 try {
                     if (shouldThisHostBeUpdated(kafkaChannelConfig)) {
+                        Log.debug("Host will be updated");
                         if (TRUE.equals(kafkaChannelConfig.paused)) {
                             pause(kafkaChannelConfig.channel);
                         } else {
