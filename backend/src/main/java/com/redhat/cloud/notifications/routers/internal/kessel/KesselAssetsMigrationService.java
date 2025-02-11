@@ -121,10 +121,14 @@ public class KesselAssetsMigrationService {
         Log.info("Finished migrating integrations to the Kessel inventory");
     }
 
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/kessel/migrate-assets/async")
     @POST
-    public void migrateAssetsAsync(final Optional<String> orgId) {
+    public void migrateAssetsAsync(@Nullable final KesselAssetsMigrationRequest kamRequest) {
         Log.info("Kessel assets' migration begins");
+
+        // Grab the organization ID specified in the request.
+        final Optional<String> orgId = (kamRequest == null) ? Optional.empty() : Optional.of(kamRequest.orgId());
 
         final int limit = this.backendConfig.getKesselMigrationBatchSize();
 
