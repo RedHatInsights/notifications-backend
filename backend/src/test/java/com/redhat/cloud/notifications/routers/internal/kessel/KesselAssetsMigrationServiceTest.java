@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal.kessel;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -8,6 +9,7 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -66,6 +68,58 @@ public class KesselAssetsMigrationServiceTest extends DbIsolatedTest {
         given()
             .when()
             .header(TestHelpers.createTurnpikeIdentityHeader(DEFAULT_USER, adminRole))
+            .contentType(ContentType.JSON)
+            .post(API_INTERNAL + "/kessel/migrate-assets")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // Assert that the correct number of requests was generated for Kessel.
+        final ArgumentCaptor<CreateTuplesRequest> createTuplesRequestArgumentCaptor = ArgumentCaptor.forClass(CreateTuplesRequest.class);
+        Mockito.verify(this.relationTuplesClient, Mockito.times(1)).createTuples(createTuplesRequestArgumentCaptor.capture(), Mockito.any());
+
+        Assertions.assertEquals(
+            1,
+            createTuplesRequestArgumentCaptor.getAllValues().size(),
+            String.format("[maximum_batch_size: %s][calls_to_kessel: %s] Only one request should have been sent to Kessel, since the number of integrations in the database is lower than the migration's batch size", this.backendConfig.getKesselMigrationBatchSize(), createTuplesRequestArgumentCaptor.getAllValues().size())
+        );
+
+        // Assert that the "create request" has the expected data.
+        final CreateTuplesRequest createTuplesRequest = createTuplesRequestArgumentCaptor.getAllValues().getFirst();
+        this.assertCreateRequestIsCorrect(integrationsToCreate, workspaceId, createTuplesRequest);
+    }
+
+    /**
+     * Tests that when an organization is specified in the request, only the
+     * integrations of that organization are migrated.
+     */
+    @Test
+    void testMigrateAssetsFromSpecificOrganization() {
+        // Simulate that the maximum batch size is 10 endpoints.
+        Mockito.when(this.backendConfig.getKesselMigrationBatchSize()).thenReturn(10);
+        final int integrationsToCreate = this.backendConfig.getKesselMigrationBatchSize() - 1;
+
+        // Mock the response we would get from RBAC when asking for the default
+        // workspace. In theory, it should return different workspaces for the
+        // different organizations, but we don't really care about that in our
+        // test.
+        final UUID workspaceId = UUID.randomUUID();
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(workspaceId);
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID + "two")).thenReturn(UUID.randomUUID());
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID + "three")).thenReturn(UUID.randomUUID());
+
+        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, integrationsToCreate);
+        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID + "two", DEFAULT_ORG_ID + "two", integrationsToCreate);
+        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID + "three", DEFAULT_ORG_ID + "three", integrationsToCreate);
+
+        // Create the request's body so that only one organization's
+        // integrations are migrated.
+        final KesselAssetsMigrationRequest requestBody = new KesselAssetsMigrationRequest(DEFAULT_ORG_ID);
+
+        given()
+            .when()
+            .header(TestHelpers.createTurnpikeIdentityHeader(DEFAULT_USER, adminRole))
+            .contentType(ContentType.JSON)
+            .body(Json.encode(requestBody))
             .post(API_INTERNAL + "/kessel/migrate-assets")
             .then()
             .statusCode(HttpStatus.SC_NO_CONTENT);
@@ -112,6 +166,7 @@ public class KesselAssetsMigrationServiceTest extends DbIsolatedTest {
         given()
             .when()
             .header(TestHelpers.createTurnpikeIdentityHeader(DEFAULT_USER, adminRole))
+            .contentType(ContentType.JSON)
             .post(API_INTERNAL + "/kessel/migrate-assets")
             .then()
             .statusCode(HttpStatus.SC_NO_CONTENT);
@@ -153,15 +208,22 @@ public class KesselAssetsMigrationServiceTest extends DbIsolatedTest {
         final int integrationsToCreate = this.backendConfig.getKesselMigrationBatchSize() * 3;
 
         // Mock the response we would get from RBAC when asking for the default
-        // workspace.
+        // workspace. In theory, it should return different workspaces for the
+        // different organizations, but we don't really care about that in our
+        // test.
         final UUID workspaceId = UUID.randomUUID();
         Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(workspaceId);
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID + "two")).thenReturn(workspaceId);
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID + "three")).thenReturn(workspaceId);
 
-        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, integrationsToCreate);
+        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, integrationsToCreate / 3);
+        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID + "two", DEFAULT_ORG_ID + "two", integrationsToCreate / 3);
+        this.resourceHelpers.createTestEndpoints(DEFAULT_ACCOUNT_ID + "three", DEFAULT_ORG_ID + "three", integrationsToCreate / 3);
 
         given()
             .when()
             .header(TestHelpers.createTurnpikeIdentityHeader(DEFAULT_USER, adminRole))
+            .contentType(ContentType.JSON)
             .post(API_INTERNAL + "/kessel/migrate-assets")
             .then()
             .statusCode(HttpStatus.SC_NO_CONTENT);

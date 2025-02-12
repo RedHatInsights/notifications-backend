@@ -398,14 +398,27 @@ public class EndpointRepository {
     /**
      * Retrieves a list of endpoints ordered by their creadtion date in
      * ascending order —oldest first—.
+     * @param orgId the organization to filter the integrations by.
      * @param limit the size of the list to retrieve.
      * @param offset the offset we should apply to skip the already read
      *               endpoints.
      * @return a list of endpoints.
      */
-    public List<Endpoint> getNonSystemEndpointsWithLimitAndOffset(final int limit, final int offset) {
-        return this.entityManager
-            .createQuery("FROM Endpoint WHERE orgId IS NOT NULL ORDER BY created ASC", Endpoint.class)
+    public List<Endpoint> getNonSystemEndpointsByOrgIdWithLimitAndOffset(final Optional<String> orgId, final int limit, final int offset) {
+        final StringBuilder queryDefinition = new StringBuilder();
+        queryDefinition.append("FROM Endpoint ");
+
+        orgId.ifPresentOrElse(
+            s -> queryDefinition.append("WHERE orgId = :orgId "),
+            () -> queryDefinition.append("WHERE orgId IS NOT NULL ")
+        );
+
+        queryDefinition.append("ORDER BY created ASC");
+
+        final TypedQuery<Endpoint> query = this.entityManager.createQuery(queryDefinition.toString(), Endpoint.class);
+        orgId.ifPresent(s -> query.setParameter("orgId", s));
+
+        return query
             .setFirstResult(offset)
             .setMaxResults(limit)
             .getResultList();
