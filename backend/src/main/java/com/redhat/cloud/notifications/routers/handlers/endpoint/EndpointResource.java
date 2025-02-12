@@ -205,7 +205,7 @@ public class EndpointResource {
                 throw new NotFoundException("Endpoint not found");
             }
 
-            // TODO We need globally limitations (Paging support and limits etc)
+            // TODO We need globally limitations (Paging support and limits etc).
             String orgId = getOrgId(securityContext);
             boolean doDetail = includeDetail != null && includeDetail;
             return commonMapper.notificationHistoryListToNotificationHistoryDTOList(notificationRepository.getNotificationHistory(orgId, id, doDetail, query));
