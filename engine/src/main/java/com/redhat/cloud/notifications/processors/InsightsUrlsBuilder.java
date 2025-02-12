@@ -39,7 +39,7 @@ public class InsightsUrlsBuilder {
      */
     public Optional<String> buildInventoryUrl(JsonObject data, String integration_type) {
         String path;
-        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notification_" + integration_type.replace(' ', '_').toLowerCase()));
+        ArrayList<String> queryParamParts = new ArrayList<>();
         JsonObject context = data.getJsonObject("context");
         if (context == null) {
             return Optional.empty();
@@ -71,14 +71,14 @@ public class InsightsUrlsBuilder {
             return Optional.empty();
         }
 
-        return Optional.of(environmentUrl + path + "?" + String.join("&", queryParamParts));
+        return Optional.of(environmentUrl + path + buildQueryParams(queryParamParts, integration_type));
     }
 
     /**
      * <p>Constructs an Insights URL corresponding to the specific inventory item which generated the notification.</p>
      *
-     * <p>If the expected fields {@link Action#getApplication()} and {@link Action#getBundle()} are not present, an
-     * inaccurate URL may be returned.</p>
+     * <p>If the expected fields {@link Action#getApplication()}, {@link Action#getBundle()}, and {@link Action#getEventType()}
+     *  are not present, an inaccurate URL may be returned.</p>
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
@@ -87,7 +87,6 @@ public class InsightsUrlsBuilder {
      */
     public String buildApplicationUrl(JsonObject data, String integration_type) {
         String path = "";
-        ArrayList<String> queryParamParts = new ArrayList<>(List.of("from=notification_" + integration_type));
 
         String environmentUrl = environment.url();
         String bundle = data.getString("bundle", "");
@@ -95,20 +94,42 @@ public class InsightsUrlsBuilder {
 
         if (bundle.equals("openshift")) {
             path = "openshift/";
+        } else if (bundle.equals("ansible-automation-platform")) {
+            path = "ansible/";
         }
 
-        if (application.equals("integrations")) {
-            path += "settings/";
-        } else {
-            path += "insights/";
-        }
+        path = switch (application) {
+            // Hard override
+            case "rbac" -> "iam/user-access/users";
+            case "edge-management" -> "edge";
+            // Settings paths
+            case "integrations", "notifications" -> path + "settings/" + application;
+            // OpenShift path override
+            case "cluster-manager" -> path;
+            case "cost-management" -> path + application;
+            // Ansible Automation Platform path override
+            case "ansible-service-on-aws" -> path + "/service/instances";
+            // RHEL path override
+            case "malware-detection" -> path + "insights/malware";
+            case "resource-optimization" -> path + "insights/" + "ros";
+            default -> path + "insights/" +  application;
+        };
 
-        path += application;
-        if (!queryParamParts.isEmpty()) {
-            String queryParams = "?" + String.join("&", queryParamParts);
-            path += queryParams;
-        }
+        return environmentUrl + "/" + path + buildQueryParams(List.of(), integration_type);
+    }
 
-        return String.format("%s/%s", environmentUrl, path);
+    /**
+     * Build query parameters from provided arguments, including default parameters. This method should only be called
+     * directly if the URL will be assembled by the endpoint application.
+     *
+     * @param params Any non default parameters to be used
+     * @param integration_type a string used to construct the source query param (ex. {@code from=notification_instant_email})
+     * @return formatted query parameters
+     */
+    public String buildQueryParams(List<String> params, String integration_type) {
+        List<String> all_params = new ArrayList<>(List.copyOf(params));
+        all_params.add("from=notification_" + integration_type);
+
+        return "?" + String.join("&", all_params);
     }
 }
