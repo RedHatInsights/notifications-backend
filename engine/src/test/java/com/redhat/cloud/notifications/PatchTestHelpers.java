@@ -26,10 +26,14 @@ public class PatchTestHelpers {
     private static final String ADVISORIES_KEY = "advisories";
 
     public static EmailAggregation createEmailAggregation(String bundle, String application, String advisoryName, String synopsis, String advisoryType, String inventory_id) {
+        return createEmailAggregation(DEFAULT_ORG_ID, bundle, application, advisoryName, synopsis, advisoryType, inventory_id);
+    }
+
+    public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String advisoryName, String synopsis, String advisoryType, String inventory_id) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
-        aggregation.setOrgId(DEFAULT_ORG_ID);
+        aggregation.setOrgId(orgId);
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
@@ -53,7 +57,7 @@ public class PatchTestHelpers {
                         )
                         .build()
         ));
-        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+        emailActionMessage.setOrgId(orgId);
 
         aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
 

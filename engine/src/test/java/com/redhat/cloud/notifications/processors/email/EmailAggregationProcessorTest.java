@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
@@ -214,9 +215,9 @@ class EmailAggregationProcessorTest {
             List<EmailAggregation> eventToAggregate = List.of(
                 TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)),
                 TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"),
-                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"),
-                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"),
-                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
+                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"),
+                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"),
+                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
             );
 
             createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
@@ -274,9 +275,9 @@ class EmailAggregationProcessorTest {
             List<EmailAggregation> eventToAggregate = new ArrayList<>();
             eventToAggregate.add(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
             eventToAggregate.add(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
-            eventToAggregate.add(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"));
-            eventToAggregate.add(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
-            eventToAggregate.add(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
+            eventToAggregate.add(PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"));
+            eventToAggregate.add(PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
+            eventToAggregate.add(PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
 
             EmailAggregation errorOnPoliciesPayload = TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10));
             errorOnPoliciesPayload.getPayload().getMap().put("events", "Wrong format");
@@ -343,9 +344,9 @@ class EmailAggregationProcessorTest {
             List<EmailAggregation> eventToAggregate = List.of(
                 TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)),
                 TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"),
-                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"),
-                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"),
-                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
+                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"),
+                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"),
+                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
             );
 
             createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
@@ -416,8 +417,8 @@ class EmailAggregationProcessorTest {
             EmailAggregationKey aggregationKey1 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
 
             List<EmailAggregation> eventToAggregate = List.of(
-                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "unknown", "host-01"),
-                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "unknown", "host-01")
+                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_1", "test synopsis", "unknown", "host-01"),
+                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_2", "test synopsis", "unknown", "host-01")
             );
 
             createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1);
