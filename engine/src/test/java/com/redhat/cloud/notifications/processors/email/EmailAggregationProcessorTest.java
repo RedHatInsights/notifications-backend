@@ -54,7 +54,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
@@ -115,6 +114,8 @@ class EmailAggregationProcessorTest {
     static User user2 = new User();
     static User user3 = new User();
 
+    String DEFAULT_ORG_ID;
+
     @BeforeAll
     static void initTest() {
         user1.setUsername("foo");
@@ -128,7 +129,7 @@ class EmailAggregationProcessorTest {
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.removeDynamicTimer(AGGREGATION_CONSUMED_TIMER_NAME);
-
+        DEFAULT_ORG_ID = RandomStringUtils.secure().nextAlphanumeric(6);
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
         createAggregatorEventTypeIfNeeded();
         mockUsers(user1, user2, user3);
