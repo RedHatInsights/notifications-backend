@@ -7,13 +7,13 @@ import java.util.UUID;
 public class EventAggregationCriteria extends EmailAggregationKey {
 
     @NotNull
-    private UUID bundleId;
+    private final UUID bundleId;
 
     @NotNull
-    private UUID applicationId;
+    private final UUID applicationId;
 
-    public EventAggregationCriteria(String orgId, UUID bundleId, UUID applicationId, String bundleName, String applicationName) {
-        super(orgId, bundleName, applicationName);
+    public EventAggregationCriteria(String orgId, UUID bundleId, UUID applicationId, String bundle, String application) {
+        super(orgId, bundle, application);
         this.bundleId = bundleId;
         this.applicationId = applicationId;
     }

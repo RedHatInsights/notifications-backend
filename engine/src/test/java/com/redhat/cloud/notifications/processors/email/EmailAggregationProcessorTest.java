@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.PatchTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
@@ -17,12 +18,14 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -35,7 +38,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -43,6 +47,7 @@ import org.mockito.stubbing.Answer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +108,9 @@ class EmailAggregationProcessorTest {
     @InjectSpy
     TemplateRepository templateRepository;
 
+    @InjectSpy
+    EngineConfig engineConfig;
+
     static User user1 = new User();
     static User user2 = new User();
     static User user3 = new User();
@@ -125,126 +133,92 @@ class EmailAggregationProcessorTest {
         createAggregatorEventTypeIfNeeded();
         mockUsers(user1, user2, user3);
         when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
-
+        resourceHelpers.clearEvents();
     }
 
     @AfterEach
     void afterEach() {
         resourceHelpers.deleteApp("rhel", "patch");
+        resourceHelpers.clearEvents();
     }
 
-    @Test
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients() {
+    private EmailAggregationKey buildEmailAggregationKey(String orgId, String bundleName, String appName) {
+        if (engineConfig.isAggregationBasedOnEventEnabled(orgId)) {
+            Application app = resourceHelpers.findApp(bundleName, appName);
+            return new EventAggregationCriteria(orgId, app.getBundleId(), app.getId(), bundleName, appName);
+        }
+        return new EmailAggregationKey(orgId, bundleName, appName);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients(final boolean useAggregationBasedOnEventTable) {
+
+        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+        resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
+
+        final String ORG_ID_1 = RandomStringUtils.secure().nextAlphanumeric(6);
+        final String ORG_ID_2 = RandomStringUtils.secure().nextAlphanumeric(6);
 
         // Because this test will use a real Payload Aggregator
-        AggregationCommand aggregationCommand1 = new AggregationCommand(
-            new EmailAggregationKey("org-1", "rhel", "policies"),
-            LocalDateTime.now(ZoneOffset.UTC).minusDays(1),
-            LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
-            DAILY
+        EmailAggregationKey aggregationKey1 = buildEmailAggregationKey(ORG_ID_1, "rhel", "policies");
+        EmailAggregationKey aggregationKey2 = buildEmailAggregationKey(ORG_ID_2, "bundle-2", "app-2");
+
+        List<EmailAggregation> eventToAggregate = List.of(
+            TestHelpers.createEmailAggregation(ORG_ID_1, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)),
+            TestHelpers.createEmailAggregation(ORG_ID_1, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3")
         );
 
-        AggregationCommand aggregationCommand2 = new AggregationCommand(
-            new EmailAggregationKey("org-2", "bundle-2", "app-2"),
-            LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
-            LocalDateTime.now(ZoneOffset.UTC).plusDays(2),
-            DAILY
-        );
+        createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
 
-        AggregationEmailTemplate blankAgg2 = resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
-        try {
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
-
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand1));
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(aggregationCommand2));
-
-            micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
-            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
-            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
-
-            checkAggregationCommandUsages(aggregationCommand1, aggregationCommand2);
-
-            ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
-            verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
-            List<JsonObject> capturedPayloads = argumentCaptor.getAllValues();
-            assertTrue(
-                capturedPayloads.stream().anyMatch(capturedPayload -> {
-                    EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                    Collection<String> subscribers = capturedEmailRequest.subscribers();
-                    return subscribers.size() == 2 && subscribers.contains(user1.getUsername()) && subscribers.contains(user2.getUsername());
-                })
-            );
-            assertTrue(
-                capturedPayloads.stream().anyMatch(capturedPayload -> {
-                    EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                    Collection<String> subscribers = capturedEmailRequest.subscribers();
-                    return subscribers.size() == 1 && subscribers.contains(user3.getUsername());
-                })
-            );
-
-            capturedPayloads.stream().forEach(capturedPayload -> {
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+        List<JsonObject> capturedPayloads = argumentCaptor.getAllValues();
+        assertTrue(
+            capturedPayloads.stream().anyMatch(capturedPayload -> {
                 EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
-                assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
-                assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
-            });
+                Collection<String> subscribers = capturedEmailRequest.subscribers();
+                return subscribers.size() == 2 && subscribers.contains(user1.getUsername()) && subscribers.contains(user2.getUsername());
+            })
+        );
+        assertTrue(
+            capturedPayloads.stream().anyMatch(capturedPayload -> {
+                EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
+                Collection<String> subscribers = capturedEmailRequest.subscribers();
+                return subscribers.size() == 1 && subscribers.contains(user3.getUsername());
+            })
+        );
 
-        } finally {
-            if (null != blankAgg2) {
-                resourceHelpers.deleteEmailTemplatesById(blankAgg2.getId());
-            }
-        }
+        capturedPayloads.stream().forEach(capturedPayload -> {
+            EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
+            assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
+            assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
+            assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
+        });
+
+        resourceHelpers.deleteBundle("bundle-2");
     }
 
-    private void checkAggregationCommandUsages(AggregationCommand aggregationCommand1, AggregationCommand aggregationCommand2) {
-        // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-        verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
-            eq(aggregationCommand1.getAggregationKey()),
-            eq(aggregationCommand1.getStart()),
-            eq(aggregationCommand1.getEnd()),
-            eq(0),
-            anyInt()
-        );
-
-        verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
-            eq(aggregationCommand1.getAggregationKey()),
-            eq(aggregationCommand1.getEnd())
-        );
-
-        verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
-            eq(aggregationCommand2.getAggregationKey()),
-            eq(aggregationCommand2.getStart()),
-            eq(aggregationCommand2.getEnd()),
-            eq(0),
-            anyInt()
-        );
-        verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
-            eq(aggregationCommand2.getAggregationKey()),
-            eq(aggregationCommand2.getEnd())
-        );
-    }
-
-    @Test
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipientsWithTwoApps() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipientsWithTwoApps(final boolean useAggregationBasedOnEventTable) {
         try {
+            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+            initData("patch", "new-advisory");
 
             // Because this test will use a real Payload Aggregator
-            EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
-            EmailAggregationKey aggregationKey2 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
+            EmailAggregationKey aggregationKey1 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
+            EmailAggregationKey aggregationKey2 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
 
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
+            List<EmailAggregation> eventToAggregate = List.of(
+                TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)),
+                TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"),
+                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"),
+                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"),
+                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
+            );
 
-            initData("patch", "new-advisory");
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"));
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
-
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2)));
-
-            validateCommonAssertions(aggregationKey1, aggregationKey2);
+            createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
 
             ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
             verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -285,28 +259,29 @@ class EmailAggregationProcessorTest {
         }
     }
 
-    @Test
-    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingAggregationError() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingAggregationError(final boolean useAggregationBasedOnEventTable) {
         try {
-            // Because this test will use a real Payload Aggregator
-            EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
-            EmailAggregationKey aggregationKey2 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
+            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+            initData("patch", "new-advisory");
 
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
+            // Because this test will use a real Payload Aggregator
+            EmailAggregationKey aggregationKey1 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
+            EmailAggregationKey aggregationKey2 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
+
+            List<EmailAggregation> eventToAggregate = new ArrayList<>();
+            eventToAggregate.add(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+            eventToAggregate.add(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
+            eventToAggregate.add(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"));
+            eventToAggregate.add(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
+            eventToAggregate.add(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
 
             EmailAggregation errorOnPoliciesPayload = TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10));
             errorOnPoliciesPayload.getPayload().getMap().put("events", "Wrong format");
-            emailAggregationRepository.addEmailAggregation(errorOnPoliciesPayload);
+            eventToAggregate.add(errorOnPoliciesPayload);
 
-            initData("patch", "new-advisory");
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"));
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
-
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2)));
-
-            validateCommonAssertions(aggregationKey1, aggregationKey1);
+            createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
 
             ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
             verify(connectorSender, timeout(5000L).times(1)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -332,10 +307,11 @@ class EmailAggregationProcessorTest {
         }
     }
 
-
-    @Test
-    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingTemplateError() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingTemplateError(final boolean useAggregationBasedOnEventTable) {
         try {
+            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
             when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
 
             when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY)))
@@ -357,38 +333,21 @@ class EmailAggregationProcessorTest {
                     }
                 });
 
-            // Because this test will use a real Payload Aggregator
-            EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
-            EmailAggregationKey aggregationKey2 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
-
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-            emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"));
-
             initData("patch", "new-advisory");
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"));
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"));
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02"));
 
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1, aggregationKey2)));
+            // Because this test will use a real Payload Aggregator
+            EmailAggregationKey aggregationKey1 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
+            EmailAggregationKey aggregationKey2 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
 
-            micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
-            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
-            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
-
-            // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-            verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
-                eq(aggregationKey1),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class),
-                eq(0),
-                anyInt()
+            List<EmailAggregation> eventToAggregate = List.of(
+                TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)),
+                TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"),
+                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"),
+                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"),
+                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
             );
 
-            verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
-                eq(aggregationKey1),
-                any(LocalDateTime.class)
-            );
+            createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
 
             ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
             verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -423,73 +382,44 @@ class EmailAggregationProcessorTest {
         }
     }
 
-    @Test
-    void shouldNotSendAggEmailBecauseNoAppSucceedToRender() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldNotSendAggEmailBecauseNoAppSucceedToRender(final boolean useAggregationBasedOnEventTable) {
+        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
         when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
 
         // Because this test will use a real Payload Aggregator
-        EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
+        EmailAggregationKey aggregationKey1 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
 
-        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
+        List<EmailAggregation> eventToAggregate = new ArrayList<>();
+        eventToAggregate.add(TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
 
         EmailAggregation errorOnPoliciesPayload = TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10));
         errorOnPoliciesPayload.getPayload().getMap().put("events", "Wrong format");
-        emailAggregationRepository.addEmailAggregation(errorOnPoliciesPayload);
-        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1)));
+        eventToAggregate.add(errorOnPoliciesPayload);
 
-        micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
-        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
-        micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
-
-        // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-        verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
-            eq(aggregationKey1),
-            any(LocalDateTime.class),
-            any(LocalDateTime.class),
-            eq(0),
-            anyInt()
-        );
-
-        verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
-            eq(aggregationKey1),
-            any(LocalDateTime.class)
-        );
+        createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1);
 
         verifyNoInteractions(connectorSender);
     }
 
-    @Test
-    void shouldNotSendAggregatedEmailBecausePatchAggIsEmpty() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldNotSendAggregatedEmailBecausePatchAggIsEmpty(final boolean useAggregationBasedOnEventTable) {
+        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+
         try {
+            initData("patch", "new-advisory");
 
             // Because this test will use a real Payload Aggregator
-            EmailAggregationKey aggregationKey1 = new EmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
+            EmailAggregationKey aggregationKey1 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
 
-            initData("patch", "new-advisory");
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "unknown", "host-01"));
-            emailAggregationRepository.addEmailAggregation(PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "unknown", "host-01"));
-
-            inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey1)));
-
-            micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-            micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
-            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
-            micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
-
-            // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-            verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
-                eq(aggregationKey1),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class),
-                eq(0),
-                anyInt()
+            List<EmailAggregation> eventToAggregate = List.of(
+                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_1", "test synopsis", "unknown", "host-01"),
+                PatchTestHelpers.createEmailAggregation("rhel", "patch", "advisory_2", "test synopsis", "unknown", "host-01")
             );
 
-            verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
-                eq(aggregationKey1),
-                any(LocalDateTime.class)
-            );
+            createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1);
 
             verifyNoInteractions(connectorSender);
 
@@ -518,10 +448,6 @@ class EmailAggregationProcessorTest {
         } catch (NoResultException nre) {
             resourceHelpers.createEventType(aggregatorApp.getId(), eventTypeName);
         }
-    }
-
-    private String buildAggregatorAction(AggregationCommand aggregationCommand) {
-        return buildAggregatorAction(List.of(aggregationCommand));
     }
 
     private String buildAggregatorActionFromKey(List<EmailAggregationKey> aggregationKeys) {
@@ -576,36 +502,46 @@ class EmailAggregationProcessorTest {
         emailTemplateMigrationService.migrate();
     }
 
-
-    private void validateCommonAssertions(EmailAggregationKey aggregationKey1, EmailAggregationKey aggregationKey2) {
+    private void validateCommonAssertions(final boolean useAggregationBasedOnEventTable, EmailAggregationKey... aggregationKeys) {
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 2);
+        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, aggregationKeys.length);
         micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, 0);
         micrometerAssertionHelper.assertCounterIncrement(AGGREGATION_COMMAND_ERROR_COUNTER_NAME, 0);
 
-        // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
-        verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
-            eq(aggregationKey1),
-            any(LocalDateTime.class),
-            any(LocalDateTime.class),
-            eq(0),
-            anyInt()
-        );
-        verify(emailAggregationRepository, timeout(5000L).times(1)).getEmailAggregation(
-            eq(aggregationKey2),
-            any(LocalDateTime.class),
-            any(LocalDateTime.class),
-            eq(0),
-            anyInt()
-        );
+        for (EmailAggregationKey aggregationKey : aggregationKeys) {
+            // Let's check that EndpointEmailSubscriptionResources#sendEmail was called for each aggregation.
+            verify(emailAggregationRepository, timeout(5000L).times(useAggregationBasedOnEventTable ? 0 : 1)).getEmailAggregation(
+                eq(aggregationKey),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class),
+                eq(0),
+                anyInt()
+            );
+            verify(emailAggregationRepository, timeout(5000L).times(useAggregationBasedOnEventTable ? 1 : 0)).getEmailAggregationBasedOnEvent(
+                useAggregationBasedOnEventTable ? eq((EventAggregationCriteria) aggregationKey) : any(EventAggregationCriteria.class),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class),
+                eq(0),
+                anyInt()
+            );
 
-        verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
-            eq(aggregationKey1),
-            any(LocalDateTime.class)
-        );
-        verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
-            eq(aggregationKey2),
-            any(LocalDateTime.class)
-        );
+            verify(emailAggregationRepository, timeout(5000L).times(1)).purgeOldAggregation(
+                eq(aggregationKey),
+                any(LocalDateTime.class)
+            );
+        }
+    }
+
+    private void createAggregationsAndSendAggregationKeysToIngress(boolean useAggregationBasedOnEventTable, List<EmailAggregation> eventToAggregate, EmailAggregationKey... aggregationKeys) {
+        for (EmailAggregation aggregation : eventToAggregate) {
+            emailAggregationRepository.addEmailAggregation(aggregation);
+            // the base transformer adds a "source" element which should not be present in an original event payload
+            aggregation.getPayload().remove(BaseTransformer.SOURCE);
+            resourceHelpers.addEventEmailAggregation(aggregation.getOrgId(), aggregation.getBundleName(), aggregation.getApplicationName(),  aggregation.getPayload());
+        }
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(Arrays.asList(aggregationKeys)));
+
+        validateCommonAssertions(useAggregationBasedOnEventTable, aggregationKeys);
     }
 }

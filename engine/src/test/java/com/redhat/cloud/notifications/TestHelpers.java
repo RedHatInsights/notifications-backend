@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.processors.email.aggregators.ResourceOptimizationPayloadAggregator;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -666,8 +667,7 @@ public class TestHelpers {
             Files.createDirectories(Paths.get(actualPath));
             Files.write(Paths.get(TARGET_DIR + "/" + fileName), result.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            System.out.println("An error occurred");
-            e.printStackTrace();
+            Log.error("An error occurred", e);
         }
     }
 
