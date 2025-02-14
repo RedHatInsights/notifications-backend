@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.event;
 
+import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -11,6 +12,9 @@ import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.ingress.Parser;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -37,6 +41,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.project_kessel.api.relations.v1beta1.CheckRequest;
+import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -74,6 +80,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -136,10 +145,10 @@ public class EventResourceTest extends DbIsolatedTest {
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "non-default-user", NOTIFICATIONS_ACCESS_ONLY);
         given()
-                .header(defaultIdentityHeader)
-                .when().get(PATH)
-                .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
+            .header(defaultIdentityHeader)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
     @ParameterizedTest
@@ -157,7 +166,7 @@ public class EventResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, OTHER_ORG_ID, OTHER_USERNAME, FULL_ACCESS);
-        Header emptyIdentityHeader = mockRbac(OTHER_ACCOUNT_ID,  "none", OTHER_USERNAME, FULL_ACCESS);
+        Header emptyIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, "none", OTHER_USERNAME, FULL_ACCESS);
 
         final UUID noneId = UUID.randomUUID();
         this.kesselTestHelper.mockDefaultWorkspaceId("none", noneId);
@@ -175,6 +184,10 @@ public class EventResourceTest extends DbIsolatedTest {
         EventType eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2", "Event type 2", "Event type 2");
         Event event1 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle1, app1, eventType1, NOW.minusDays(5L));
         Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW);
+
+        // the following event will be ignored because isKesselChecksOnEventLogEnabled is set to false by default
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW, PAYLOAD, true);
+
         Event event3 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(2L));
         Event event4 = createEvent(OTHER_ACCOUNT_ID, OTHER_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(10L));
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
@@ -664,10 +677,10 @@ public class EventResourceTest extends DbIsolatedTest {
 
         Header noAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
         given()
-                .header(noAccessIdentityHeader)
-                .when().get(PATH)
-                .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
+            .header(noAccessIdentityHeader)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
     @ParameterizedTest
@@ -680,12 +693,12 @@ public class EventResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
-                .header(identityHeader)
-                .param("sortBy", "I am not valid!")
-                .when().get(PATH)
-                .then()
-                .statusCode(HttpStatus.SC_BAD_REQUEST)
-                .contentType(JSON);
+            .header(identityHeader)
+            .param("sortBy", "I am not valid!")
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .contentType(JSON);
     }
 
     @ParameterizedTest
@@ -698,19 +711,19 @@ public class EventResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
-                .header(identityHeader)
-                .param("limit", 0)
-                .when().get(PATH)
-                .then()
-                .statusCode(HttpStatus.SC_BAD_REQUEST)
-                .contentType(JSON);
+            .header(identityHeader)
+            .param("limit", 0)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .contentType(JSON);
         given()
-                .header(identityHeader)
-                .param("limit", 999999)
-                .when().get(PATH)
-                .then()
-                .statusCode(HttpStatus.SC_BAD_REQUEST)
-                .contentType(JSON);
+            .header(identityHeader)
+            .param("limit", 999999)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .contentType(JSON);
     }
 
     @ParameterizedTest
@@ -723,38 +736,38 @@ public class EventResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
-                .header(readAccessIdentityHeader)
-                .when().get(PATH)
-                .then()
-                .statusCode(HttpStatus.SC_OK)
-                .contentType(JSON);
+            .header(readAccessIdentityHeader)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON);
     }
 
     @Test
     public void fromNotificationStatusTest() {
         Assertions.assertEquals(
-                EventLogEntryActionStatus.SENT,
-                EventResource.fromNotificationStatus(NotificationStatus.SENT)
+            EventLogEntryActionStatus.SENT,
+            EventResource.fromNotificationStatus(NotificationStatus.SENT)
         );
 
         assertEquals(
-                EventLogEntryActionStatus.SUCCESS,
-                EventResource.fromNotificationStatus(NotificationStatus.SUCCESS)
+            EventLogEntryActionStatus.SUCCESS,
+            EventResource.fromNotificationStatus(NotificationStatus.SUCCESS)
         );
 
         assertEquals(
-                EventLogEntryActionStatus.PROCESSING,
-                EventResource.fromNotificationStatus(NotificationStatus.PROCESSING)
+            EventLogEntryActionStatus.PROCESSING,
+            EventResource.fromNotificationStatus(NotificationStatus.PROCESSING)
         );
 
         assertEquals(
-                EventLogEntryActionStatus.FAILED,
-                EventResource.fromNotificationStatus(NotificationStatus.FAILED_INTERNAL)
+            EventLogEntryActionStatus.FAILED,
+            EventResource.fromNotificationStatus(NotificationStatus.FAILED_INTERNAL)
         );
 
         assertEquals(
-                EventLogEntryActionStatus.FAILED,
-                EventResource.fromNotificationStatus(NotificationStatus.FAILED_EXTERNAL)
+            EventLogEntryActionStatus.FAILED,
+            EventResource.fromNotificationStatus(NotificationStatus.FAILED_EXTERNAL)
         );
     }
 
@@ -762,34 +775,34 @@ public class EventResourceTest extends DbIsolatedTest {
     public void toNotificationStatusTest() {
         // Single status
         assertEquals(
-                Set.of(NotificationStatus.SENT),
-                toNotificationStatus(Set.of(EventLogEntryActionStatus.SENT))
+            Set.of(NotificationStatus.SENT),
+            toNotificationStatus(Set.of(EventLogEntryActionStatus.SENT))
         );
 
         assertEquals(
-                Set.of(NotificationStatus.SUCCESS),
-                toNotificationStatus(Set.of(EventLogEntryActionStatus.SUCCESS))
+            Set.of(NotificationStatus.SUCCESS),
+            toNotificationStatus(Set.of(EventLogEntryActionStatus.SUCCESS))
         );
 
         assertEquals(
-                Set.of(NotificationStatus.PROCESSING),
-                toNotificationStatus(Set.of(EventLogEntryActionStatus.PROCESSING))
+            Set.of(NotificationStatus.PROCESSING),
+            toNotificationStatus(Set.of(EventLogEntryActionStatus.PROCESSING))
         );
 
         assertEquals(
-                Set.of(NotificationStatus.FAILED_INTERNAL, NotificationStatus.FAILED_EXTERNAL),
-                toNotificationStatus(Set.of(EventLogEntryActionStatus.FAILED))
+            Set.of(NotificationStatus.FAILED_INTERNAL, NotificationStatus.FAILED_EXTERNAL),
+            toNotificationStatus(Set.of(EventLogEntryActionStatus.FAILED))
         );
 
         // Multiple status
         assertEquals(
-                Set.of(NotificationStatus.SENT, NotificationStatus.SUCCESS, NotificationStatus.PROCESSING, NotificationStatus.FAILED_EXTERNAL, NotificationStatus.FAILED_INTERNAL),
-                toNotificationStatus(Set.of(EventLogEntryActionStatus.SENT, EventLogEntryActionStatus.SUCCESS, EventLogEntryActionStatus.PROCESSING, EventLogEntryActionStatus.FAILED))
+            Set.of(NotificationStatus.SENT, NotificationStatus.SUCCESS, NotificationStatus.PROCESSING, NotificationStatus.FAILED_EXTERNAL, NotificationStatus.FAILED_INTERNAL),
+            toNotificationStatus(Set.of(EventLogEntryActionStatus.SENT, EventLogEntryActionStatus.SUCCESS, EventLogEntryActionStatus.PROCESSING, EventLogEntryActionStatus.FAILED))
         );
 
         assertEquals(
-                Set.of(NotificationStatus.FAILED_EXTERNAL, NotificationStatus.FAILED_INTERNAL),
-                toNotificationStatus(Set.of(EventLogEntryActionStatus.FAILED))
+            Set.of(NotificationStatus.FAILED_EXTERNAL, NotificationStatus.FAILED_INTERNAL),
+            toNotificationStatus(Set.of(EventLogEntryActionStatus.FAILED))
         );
 
         // Faulty status
@@ -806,8 +819,12 @@ public class EventResourceTest extends DbIsolatedTest {
 
     }
 
-    @Transactional
     Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created) {
+        return createEvent(accountId, orgId, bundle, app, eventType, created, PAYLOAD, false);
+    }
+
+    @Transactional
+    Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created, String payload, boolean hasAuthorizationCriterion) {
         Event event = new Event();
         event.setId(UUID.randomUUID());
         event.setAccountId(accountId);
@@ -819,9 +836,18 @@ public class EventResourceTest extends DbIsolatedTest {
         event.setEventType(eventType);
         event.setEventTypeDisplayName(eventType.getDisplayName());
         event.setCreated(created);
-        event.setPayload(PAYLOAD);
+        event.setHasAuthorizationCriterion(hasAuthorizationCriterion);
+        event.setPayload(payload);
         entityManager.persist(event);
-        return event;
+        return entityManager.merge(event);
+    }
+
+    private String buildPayloadWithAuthorizationCriterion(String orgId, String bundleName, String appName, String eventTypeName) {
+        Action action = EventPayloadTestHelper.buildValidAction(orgId, bundleName, appName, eventTypeName);
+
+        RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
+        action.setRecipientsAuthorizationCriterion(authorizationCriterion);
+        return Parser.encode(action);
     }
 
     private Header mockRbac(String accountId, String orgId, String username, RbacAccess access) {
@@ -919,5 +945,104 @@ public class EventResourceTest extends DbIsolatedTest {
         for (String key : expectedKeys) {
             assertTrue(links.containsKey(key));
         }
+    }
+
+    @Test
+    void testEventsWithKesselCriterion() {
+        when(backendConfig.isKesselChecksOnEventLogEnabled(anyString())).thenReturn(true);
+
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
+        final UUID noneId = UUID.randomUUID();
+        this.kesselTestHelper.mockDefaultWorkspaceId("none", noneId);
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, noneId.toString());
+
+        final UUID otherWorkspaceId = UUID.randomUUID();
+        this.kesselTestHelper.mockDefaultWorkspaceId(OTHER_ORG_ID, otherWorkspaceId);
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, otherWorkspaceId.toString());
+
+        Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
+        Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
+        Application app1 = resourceHelpers.createApplication(bundle1.getId(), "app-1", "Application 1");
+        Application app2 = resourceHelpers.createApplication(bundle2.getId(), "app-2", "Application 2");
+        EventType eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1", "Event type 1", "Event type 1");
+        EventType eventType2 = resourceHelpers.createEventType(app2.getId(), "event-type-2", "Event type 2", "Event type 2");
+
+        String kesselPayload = buildPayloadWithAuthorizationCriterion(OTHER_ORG_ID, bundle2.getName(), app2.getName(), eventType2.getName());
+        Event event1 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle1, app1, eventType1, NOW.minusDays(5L));
+        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW);
+        Event event2K = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusMinutes(5L), kesselPayload, true);
+        Event event3 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(2L));
+
+        Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+        Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EMAIL_SUBSCRIPTION);
+        Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, CAMEL, "SlAcK");
+        Endpoint endpoint4 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DRAWER);
+        Endpoint endpoint5 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, PAGERDUTY);
+        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS);
+        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_INTERNAL);
+        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, NotificationStatus.SUCCESS);
+        NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, NotificationStatus.SUCCESS);
+        NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, NotificationStatus.SUCCESS);
+        NotificationHistory history6 = resourceHelpers.createNotificationHistory(event1, endpoint4, NotificationStatus.FAILED_INTERNAL);
+        NotificationHistory history7 = resourceHelpers.createNotificationHistory(event3, endpoint4, NotificationStatus.SUCCESS);
+        NotificationHistory history8 = resourceHelpers.createNotificationHistory(event2, endpoint5, NotificationStatus.SUCCESS);
+        NotificationHistory history9 = resourceHelpers.createNotificationHistory(event3, endpoint5, NotificationStatus.FAILED_INTERNAL);
+        NotificationHistory history10 = resourceHelpers.createNotificationHistory(event2K, endpoint1, NotificationStatus.SUCCESS);
+        NotificationHistory history11 = resourceHelpers.createNotificationHistory(event2K, endpoint5, NotificationStatus.SUCCESS);
+
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint1.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint2.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint3.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint4.getId());
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint5.getId());
+
+        // Kessel client mock not initialized, event2K must be ignored
+        Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3, history8);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7, history9);
+        assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
+        assertNull(page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
+
+        // Kessel client mock will return allowed status, event2K must be part of results
+        CheckResponse kesselCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
+        when(checkClient.check(any(CheckRequest.class))).thenReturn(kesselCheckResponse);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
+        assertEquals(4, page.getMeta().getCount());
+        assertEquals(4, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3, history8);
+        assertSameEvent(page.getData().get(1), event2K, history10, history11);
+        assertSameEvent(page.getData().get(2), event3, history4, history5, history7, history9);
+        assertSameEvent(page.getData().get(3), event1, history1, history2, history6);
+        assertNull(page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
+
+        // Kessel client mock will return not allowed status, event2K must be ignored
+        kesselCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
+        when(checkClient.check(any(CheckRequest.class))).thenReturn(kesselCheckResponse);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3, history8);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7, history9);
+        assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
+        assertNull(page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
+
+        // Kessel client mock will throw an exception, event2K must be ignored
+        when(checkClient.check(any(CheckRequest.class))).thenThrow(RuntimeException.class);
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3, history8);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history7, history9);
+        assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
+        assertNull(page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
     }
 }

@@ -21,7 +21,6 @@ import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.models.SubscriptionType;
-import com.redhat.cloud.notifications.processors.RecipientsAuthorizationCriterionExtractor;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
 import com.redhat.cloud.notifications.recipients.User;
@@ -30,6 +29,7 @@ import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import com.redhat.cloud.notifications.utils.ActionParsingException;
+import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

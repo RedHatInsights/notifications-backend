@@ -5,6 +5,8 @@ import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationStatus;
+import com.redhat.cloud.notifications.routers.handlers.event.EventAuthorizationCriterion;
+import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -25,13 +27,38 @@ public class EventRepository {
     @Inject
     EntityManager entityManager;
 
+    @Inject
+    RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
+
+    public List<EventAuthorizationCriterion> getEventsWithCriterion(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+                                                                    LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
+                                                                    Set<Boolean> invocationResults, Set<NotificationStatus> status) {
+
+        String hql = "FROM Event e WHERE e.orgId = :orgId";
+
+        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, Optional.empty(), true);
+        // we are looking for events with auth criterion only
+        hql += " AND e.hasAuthorizationCriterion is true";
+
+        TypedQuery<Event> typedQuery = entityManager.createQuery(hql, Event.class);
+        setQueryParams(typedQuery, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, Optional.empty());
+
+        List<Event> eventsWithAuthorizationCriterion = typedQuery.getResultList();
+        List<EventAuthorizationCriterion> eventAuthorizationCriterion = new ArrayList<>();
+        for (Event event : eventsWithAuthorizationCriterion) {
+            eventAuthorizationCriterion.add(new EventAuthorizationCriterion(event.getId(), recipientsAuthorizationCriterionExtractor.extract(event)));
+        }
+        return eventAuthorizationCriterion;
+    }
+
     public List<Event> getEvents(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
-                                      Set<Boolean> invocationResults, boolean fetchNotificationHistory, Set<NotificationStatus> status, Query query) {
+                                      Set<Boolean> invocationResults, boolean fetchNotificationHistory, Set<NotificationStatus> status, Query query,
+                                      Optional<List<UUID>> uuidToExclude, boolean includeEventsWithAuthCriterion) {
         query.setSortFields(Event.SORT_FIELDS);
         query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
-        List<UUID> eventIds = getEventIds(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, query);
+        List<UUID> eventIds = getEventIds(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, query, uuidToExclude, includeEventsWithAuthCriterion);
         if (eventIds.isEmpty()) {
             return new ArrayList<>();
         }
@@ -55,13 +82,13 @@ public class EventRepository {
     public Long count(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
                       Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults,
-                      Set<NotificationStatus> status) {
+                      Set<NotificationStatus> status, Optional<List<UUID>> uuidToExclude, Boolean includeEventsWithAuthCriterion) {
         String hql = "SELECT COUNT(*) FROM Event e WHERE e.orgId = :orgId";
 
-        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status);
+        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, uuidToExclude, includeEventsWithAuthCriterion);
 
         TypedQuery<Long> query = entityManager.createQuery(hql, Long.class);
-        setQueryParams(query, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status);
+        setQueryParams(query, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, uuidToExclude);
 
         return query.getSingleResult();
     }
@@ -76,10 +103,10 @@ public class EventRepository {
 
     private List<UUID> getEventIds(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                         LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
-                                        Set<Boolean> invocationResults, Set<NotificationStatus> status, Query query) {
+                                        Set<Boolean> invocationResults, Set<NotificationStatus> status, Query query, Optional<List<UUID>> uuidToExclude, boolean includeEventsWithAuthCriterion) {
         String hql = "SELECT e.id FROM Event e WHERE e.orgId = :orgId";
 
-        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status);
+        hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, uuidToExclude, includeEventsWithAuthCriterion);
         Optional<Query.Sort> sort = query.getSort();
 
         if (sort.isPresent()) {
@@ -87,7 +114,7 @@ public class EventRepository {
         }
 
         TypedQuery<UUID> typedQuery = entityManager.createQuery(hql, UUID.class);
-        setQueryParams(typedQuery, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status);
+        setQueryParams(typedQuery, orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, uuidToExclude);
 
         Query.Limit limit = query.getLimit();
 
@@ -100,10 +127,13 @@ public class EventRepository {
     private static String addHqlConditions(String hql, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                            LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
                                            Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults,
-                                           Set<NotificationStatus> status) {
+                                           Set<NotificationStatus> status, Optional<List<UUID>> uuidToExclude, boolean includeEventsWithAuthCriterion) {
 
         List<String> bundleOrAppsConditions = new ArrayList<>();
 
+        if (uuidToExclude.isPresent()) {
+            bundleOrAppsConditions.add("e.id NOT IN (:uuidToExclude)");
+        }
         if (bundleIds != null && !bundleIds.isEmpty()) {
             bundleOrAppsConditions.add("e.bundleId IN (:bundleIds)");
         }
@@ -124,6 +154,10 @@ public class EventRepository {
             hql += " AND e.created >= :startDate";
         } else if (endDate != null) {
             hql += " AND e.created <= :endDate";
+        }
+
+        if (!includeEventsWithAuthCriterion) {
+            hql += " AND e.hasAuthorizationCriterion is false";
         }
 
         boolean checkEndpointType = (endpointTypes != null && !endpointTypes.isEmpty()) || (compositeEndpointTypes != null && !compositeEndpointTypes.isEmpty());
@@ -161,8 +195,11 @@ public class EventRepository {
 
     private void setQueryParams(TypedQuery<?> query, String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
                                        LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
-                                       Set<Boolean> invocationResults, Set<NotificationStatus> status) {
+                                       Set<Boolean> invocationResults, Set<NotificationStatus> status, Optional<List<UUID>> uuidToExclude) {
         query.setParameter("orgId", orgId);
+        if (uuidToExclude.isPresent()) {
+            query.setParameter("uuidToExclude", uuidToExclude.get());
+        }
         if (bundleIds != null && !bundleIds.isEmpty()) {
             query.setParameter("bundleIds", bundleIds);
         }

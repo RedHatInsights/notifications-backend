@@ -1,13 +1,12 @@
 package com.redhat.cloud.notifications.events;
 
+import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
-import com.redhat.cloud.notifications.ingress.Metadata;
-import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
@@ -22,6 +21,7 @@ import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -30,8 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -91,6 +89,9 @@ public class EventConsumerTest {
     @Inject
     MeterRegistry registry;
 
+    @Inject
+    EntityManager entityManager;
+
     @BeforeEach
     void beforeEach() {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(
@@ -116,8 +117,10 @@ public class EventConsumerTest {
 
     @Test
     void testValidPayloadWithMessageId() {
-        EventType eventType = mockGetEventTypeAndCreateEvent();
+        EventType eventType = mockGetEventTypeAndCreateEvent(true);
         Action action = buildValidAction(true);
+        RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
+        action.setRecipientsAuthorizationCriterion(authorizationCriterion);
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
         Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
@@ -328,6 +331,10 @@ public class EventConsumerTest {
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
+        return mockGetEventTypeAndCreateEvent(false);
+    }
+
+    private EventType mockGetEventTypeAndCreateEvent(final boolean shouldHaveAuthorizationCriterion) {
         Bundle bundle = new Bundle();
         bundle.setDisplayName("Bundle");
 
@@ -339,7 +346,10 @@ public class EventConsumerTest {
         eventType.setDisplayName("Event type");
         eventType.setApplication(app);
         when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(eventType);
-        when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
+            assertEquals(shouldHaveAuthorizationCriterion, ((Event) invocation.getArgument(0)).hasAuthorizationCriterion());
+            return invocation.getArgument(0);
+        });
         return eventType;
     }
 
@@ -375,32 +385,12 @@ public class EventConsumerTest {
     }
 
     private static Action buildValidAction(boolean withAccountId) {
-        Action action = new Action();
-        action.setVersion("v1.0.0");
-        action.setBundle(BUNDLE);
-        action.setApplication(APP);
-        action.setEventType(EVENT_TYPE);
-        action.setTimestamp(LocalDateTime.now());
+
+        Action action = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, BUNDLE, APP, EVENT_TYPE);
+
         if (withAccountId) {
             action.setAccountId(DEFAULT_ACCOUNT_ID);
         }
-        action.setOrgId(DEFAULT_ORG_ID);
-        action.setRecipients(List.of());
-        action.setEvents(
-                List.of(
-                        new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
-                                .withMetadata(new Metadata.MetadataBuilder().build())
-                                .withPayload(new Payload.PayloadBuilder()
-                                        .withAdditionalProperty("k", "v")
-                                        .withAdditionalProperty("k2", "v2")
-                                        .withAdditionalProperty("k3", "v")
-                                        .build()
-                                )
-                                .build()
-                )
-        );
-
-        action.setContext(new Context.ContextBuilder().build());
         return action;
     }
 
