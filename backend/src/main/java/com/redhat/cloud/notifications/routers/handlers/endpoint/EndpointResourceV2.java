@@ -115,7 +115,7 @@ public class EndpointResourceV2 extends EndpointResource {
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             this.kesselAuthorization.hasPermissionOnIntegration(sec, IntegrationPermission.VIEW, id);
 
-            return this.internalGetEndpoint(sec, id, false);
+            return this.internalGetEndpoint(sec, id, true);
         } else {
             return legacyGetEndpoint(sec, id, true);
         }

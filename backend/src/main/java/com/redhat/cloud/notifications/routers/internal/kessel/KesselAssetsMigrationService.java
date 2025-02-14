@@ -11,11 +11,14 @@ import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.MediaType;
 import org.project_kessel.api.relations.v1beta1.CreateTuplesRequest;
 import org.project_kessel.api.relations.v1beta1.CreateTuplesResponse;
 import org.project_kessel.api.relations.v1beta1.ImportBulkTuplesRequest;
@@ -28,6 +31,7 @@ import org.project_kessel.relations.client.RelationTuplesClient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -56,11 +60,15 @@ public class KesselAssetsMigrationService {
     @Inject
     WorkspaceUtils workspaceUtils;
 
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/kessel/migrate-assets")
     @POST
     @RunOnVirtualThread
-    public void migrateAssets() {
+    public void migrateAssets(@Nullable final KesselAssetsMigrationRequest kamRequest) {
         Log.info("Kessel assets' migration begins");
+
+        // Grab the organization ID specified in the request.
+        final Optional<String> orgId = (kamRequest == null) ? Optional.empty() : Optional.of(kamRequest.orgId());
 
         int fetchedEndpointsSize = 0;
         int offset = 0;
@@ -68,7 +76,7 @@ public class KesselAssetsMigrationService {
         do {
             Log.debugf("[loops: %s] Loops", traceLoops);
 
-            final List<Endpoint> fetchedEndpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(this.backendConfig.getKesselMigrationBatchSize(), offset);
+            final List<Endpoint> fetchedEndpoints = this.endpointRepository.getNonSystemEndpointsByOrgIdWithLimitAndOffset(orgId, this.backendConfig.getKesselMigrationBatchSize(), offset);
             Log.debugf("[offset: %s][first_integration: %s][last_integration: %s] Fetched batch of %s integrations", offset, (fetchedEndpoints.isEmpty()) ? "none" : fetchedEndpoints.getFirst().getId(), (fetchedEndpoints.isEmpty()) ? "none" : fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
 
             // If for some reason we have fetched full pages from the database
@@ -113,10 +121,14 @@ public class KesselAssetsMigrationService {
         Log.info("Finished migrating integrations to the Kessel inventory");
     }
 
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/kessel/migrate-assets/async")
     @POST
-    public void migrateAssetsAsync() {
+    public void migrateAssetsAsync(@Nullable final KesselAssetsMigrationRequest kamRequest) {
         Log.info("Kessel assets' migration begins");
+
+        // Grab the organization ID specified in the request.
+        final Optional<String> orgId = (kamRequest == null) ? Optional.empty() : Optional.of(kamRequest.orgId());
 
         final int limit = this.backendConfig.getKesselMigrationBatchSize();
 
@@ -127,7 +139,7 @@ public class KesselAssetsMigrationService {
             .supplier(
                 () -> offsetContainer.addAndGet(limit),
                 offset -> {
-                    final List<Endpoint> endpoints = this.endpointRepository.getNonSystemEndpointsWithLimitAndOffset(limit, offset);
+                    final List<Endpoint> endpoints = this.endpointRepository.getNonSystemEndpointsByOrgIdWithLimitAndOffset(orgId, limit, offset);
                     Log.infof("[limit: %s][offset: %s] Fetched endpoint batch from the database", limit, offset);
 
                     return endpoints;
