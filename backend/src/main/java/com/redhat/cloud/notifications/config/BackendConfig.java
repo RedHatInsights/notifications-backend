@@ -43,6 +43,7 @@ public class BackendConfig {
     private String drawerToggle;
     private String kesselInventoryToggle;
     private String kesselRelationsToggle;
+    private String kesselChecksOnEventLogToggle;
     private String maintenanceModeToggle;
     private String bypassBehaviorGroupMaxCreationLimitToggle;
 
@@ -114,6 +115,7 @@ public class BackendConfig {
         drawerToggle = toggleRegistry.register("drawer", true);
         kesselInventoryToggle = toggleRegistry.register("kessel-inventory", true);
         kesselRelationsToggle = toggleRegistry.register("kessel-relations", true);
+        kesselChecksOnEventLogToggle = toggleRegistry.register("kessel-checks-on-event-log", true);
         maintenanceModeToggle = toggleRegistry.register("notifications-maintenance-mode", true);
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
     }
@@ -205,6 +207,15 @@ public class BackendConfig {
             return unleash.isEnabled(kesselRelationsToggle, unleashContext, false);
         } else {
             return kesselRelationsEnabled;
+        }
+    }
+
+    public boolean isKesselChecksOnEventLogEnabled(String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(kesselChecksOnEventLogToggle, unleashContext, false);
+        } else {
+            return false;
         }
     }
 
