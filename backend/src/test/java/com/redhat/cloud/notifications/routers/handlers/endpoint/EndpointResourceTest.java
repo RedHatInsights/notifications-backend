@@ -1237,6 +1237,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         attrSingle.mapTo(WebhookProperties.class);
         attrSingle.put("secret_token", "not-so-secret-anymore");
 
+        // Give the Kessel permissions to see the endpoint.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, responsePointSingle.getString("id"));
+
         // Update without payload
         given()
                 .header(identityHeader)
@@ -2832,7 +2835,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         final JsonObject constraintViolation = constraintViolations.getJsonObject(0);
 
-        Assertions.assertEquals("internalTestEndpoint.requestBody.message", constraintViolation.getString("field"), "unexpected field validated when sending a blank test message");
+        Assertions.assertEquals("testEndpoint.requestBody.message", constraintViolation.getString("field"), "unexpected field validated when sending a blank test message");
         Assertions.assertEquals("must not be blank", constraintViolation.getString("message"), "unexpected error message received when sending a blank custom message for testing the endpoint");
     }
 
