@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -96,8 +97,27 @@ public class EventResource {
         }
 
         String orgId = getOrgId(securityContext);
-        List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, query);
-
+        List<Event> events;
+        Long count;
+        if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
+            Log.info("Check for events with authorization criterion");
+            List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getEventsWithCriterion(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
+            List<UUID> uuidToExclude = new ArrayList<>();
+            for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
+                if (!kesselAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion())) {
+                    Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
+                    uuidToExclude.add(eventAuthorizationCriterion.id());
+                }
+            }
+            if (uuidToExclude.isEmpty()) {
+                uuidToExclude = null;
+            }
+            events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, query, Optional.ofNullable(uuidToExclude), true);
+            count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, Optional.ofNullable(uuidToExclude), true);
+        } else {
+            events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, query, Optional.empty(), false);
+            count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, Optional.empty(), false);
+        }
         if (events.isEmpty()) {
             Meta meta = new Meta();
             meta.setCount(0L);
@@ -143,7 +163,6 @@ public class EventResource {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
 
         Meta meta = new Meta();
         meta.setCount(count);
