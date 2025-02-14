@@ -51,6 +51,12 @@ public class KesselTestHelper {
     public static final UUID RBAC_DEFAULT_WORKSPACE_ID = UUID.randomUUID();
 
     /**
+     * Defines a default Kessel domain that will get returned every time
+     * that the {@link BackendConfig#getKesselDomain()} method is called.
+     */
+    public static final String DEFAULT_KESSEL_DOMAIN = "redhat";
+
+    /**
      * Mocks the {@link LookupClient} so that it simulates that no authorized
      * integrations were fetched from Kessel.
      * @deprecated In favor of "post-filtering". Looking up integrations makes
@@ -198,6 +204,11 @@ public class KesselTestHelper {
         if (!this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
         }
+
+        // Return a default domain for Kessel.
+        Mockito
+            .when(this.backendConfig.getKesselDomain())
+            .thenReturn(DEFAULT_KESSEL_DOMAIN);
 
         // Default to an unauthorized response.
         Mockito
