@@ -20,6 +20,7 @@ objects:
     - export-service
     database:
       sharedDbAppName: notifications-backend
+    inMemoryDb: ${{IN_MEMORY_DB_ENABLED}}
     featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.connector.email.high.volume
@@ -130,6 +131,8 @@ objects:
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
         - name: NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED
           value: ${NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED}
+        - name: QUARKUS_CACHE_TYPE
+          value: ${QUARKUS_CACHE_TYPE}
         - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
           value: ${QUARKUS_HIBERNATE_ORM_LOG_SQL}
         - name: QUARKUS_HTTP_PORT
@@ -213,6 +216,9 @@ parameters:
 - name: IMAGE
   description: Image URL
   value: quay.io/cloudservices/notifications-engine
+- name: IN_MEMORY_DB_ENABLED
+  description: If inMemoryDb is set to true, Clowder will pass configuration of an In Memory Database to the pods in the ClowdApp. This single instance will be shared between all apps.
+  value: "false"
 - name: IMAGE_TAG
   value: latest
 - name: KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
@@ -326,6 +332,9 @@ parameters:
 - name: EXPORT_EVENT_LISTENER_LOG_LEVEL
   description: The log level for the export service's event listener.
   value: "INFO"
+- name: QUARKUS_CACHE_TYPE
+  description: Quarkus cache backend. Defaults to 'caffeine'.
+  value: "caffeine"
 - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
   description: When set to 'request-response', rest-client will log the request and response contents
   value: ""
