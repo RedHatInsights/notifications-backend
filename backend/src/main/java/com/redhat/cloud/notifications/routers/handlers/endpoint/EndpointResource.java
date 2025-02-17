@@ -521,7 +521,21 @@ public class EndpointResource {
         properties.setOnlyAdmins(requestProps.isOnlyAdmins());
         properties.setGroupId(requestProps.getGroupId());
 
-        return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
+        Optional<Endpoint> getEndpoint = endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, endpointType);
+        if (getEndpoint.isPresent()) {
+            return getEndpoint.get();
+        } else {
+            Endpoint createdEndpoint =  endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
+            if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
+                // Attempt creating the integration in Kessel's inventory. Any
+                // exception here would roll back the operation and our integration
+                // would not be created in our database either.
+                final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
+
+                this.kesselAssets.createIntegration(sec, workspaceId.toString(), createdEndpoint.getId().toString());
+            }
+            return createdEndpoint;
+        }
     }
 
     private void getOrCreateInternalEndpointCommonChecks(RequestSystemSubscriptionProperties requestProps, RhIdPrincipal principal) {
