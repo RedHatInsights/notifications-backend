@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.templates;
 
 import com.cronutils.utils.StringUtils;
 import com.redhat.cloud.notifications.config.EngineConfig;
+import com.redhat.cloud.notifications.events.GeneralCommunicationsHelper;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
@@ -275,6 +276,12 @@ public class EmailTemplateMigrationService {
                 warnings, "console", "integrations", List.of(INTEGRATION_DISABLED_EVENT_TYPE),
                 "Integrations/integrationDisabledTitle", "txt", "Integrations disabled integration email title",
                 "Integrations/integrationDisabledBody", "html", "Integrations disabled integration email body"
+            );
+
+            createInstantEmailTemplate(
+                warnings, "console", "integrations", List.of(GeneralCommunicationsHelper.GENERAL_COMMUNICATIONS_EVENT_TYPE),
+                "Integrations/generalCommunicationTitle", "txt", "Email title for the general communications sent by Red Hat",
+                "Integrations/generalCommunicationBody", "html", "Email body for the general communications sent by Red Hat"
             );
 
             /*

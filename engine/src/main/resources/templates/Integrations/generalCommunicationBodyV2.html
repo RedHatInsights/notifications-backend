@@ -1,0 +1,42 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Common/insightsEmailBody}
+{#content-title}
+    Integrations - Console
+{/content-title}
+{#content-title-section1}
+    Your Microsoft Teams integrations need attention
+{/content-title-section1}
+{#content-body-section1}
+    <p>Dear Red Hat customer,</p>
+    <p>We are contacting you because you have the following Microsoft Teams integrations set up for your organization in the <a href="https://console.redhat.com">Red Hat Hybrid Cloud Console</a>:</p>
+    <ul>
+        {#for integrationName in action.events[0].payload.integration_names}
+        <li>{integrationName}</li>
+        {/for}
+    </ul>
+    <p>Microsoft is <a href="https://devblogs.microsoft.com/microsoft365dev/retirement-of-office-365-connectors-within-microsoft-teams/">updating the Teams connectors for security reasons</a>, and they are recommending that their customers <a href="https://learn.microsoft.com/en-us/microsoftteams/m365-custom-connectors#update-connectors-url">update any URLs for connectors</a> they have set up. We identified the above Integrations in your account and are asking you to review, and update if needed, to avoid service interruption when Microsoft sunsets the old URLs. <strong>If you have already updated your Integrations URLs, you can safely ignore this email</strong>.</p>
+    <p>To update your Microsoft Teams integrations, complete the following steps:</p>
+    <ol>
+        <li>Generate a new webhook URL from your Microsoft Teams client by following the steps in <a href="https://learn.microsoft.com/en-us/microsoftteams/m365-custom-connectors#update-connectors-url">Update connectors URL</a> in the Microsoft documentation.</li>
+        <li>Copy the URL to your clipboard to use in the Hybrid Cloud Console.</li>
+        <li>To update your integration, log in to the <a href="https://console.redhat.com">Hybrid Cloud Console.</a></li>
+        <li>Navigate to <strong>Settings</strong> (gear icon) > <strong><a href="https://console.redhat.com/settings/integrations">Integrations</a></strong>.</li>
+        <li>Click the <strong>Communications</strong> tab.</li>
+        <li>Locate your Microsoft Teams integration.</li>
+        <li>Next to your integration, click the options icon (⋮) and click <strong>Edit</strong>.</li>
+        <li>Click <strong>Next</strong> to continue past the Integration type step.</li>
+        <li>Paste the incoming webhook URL that you copied from Microsoft Teams into the <strong>Endpoint URL</strong> field.</li>
+        <li>Click <strong>Next</strong>.</li>
+        <li>Review the integration details and click <strong>Submit</strong> to update the integration.</li>
+    </ol>
+    <p>Following the above steps will ensure that you will continue receiving the alerts and notifications in the Microsoft Teams channel that you have configured.</p>
+    <p>For more information about configuring Microsoft Teams integrations, see the <a href="https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/integrating_the_red_hat_hybrid_cloud_console_with_third-party_applications/index#assembly-configuring-integration-with-teams_integrating-communications">Red Hat documentation</a>.</p>
+    <p>Thank you for your attention.</p>
+    <p>Kind regards,</p>
+    <p>Red Hat</p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/settings/integrations?category={action.context.integration_category}">Open Integrations</a>
+{/content-button-section1}
+{/include}

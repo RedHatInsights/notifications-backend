@@ -13,7 +13,10 @@ import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
+import com.redhat.cloud.notifications.routers.engine.GeneralCommunicationsService;
+import com.redhat.cloud.notifications.routers.general.communication.SendGeneralCommunicationResponse;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
+import com.redhat.cloud.notifications.routers.internal.models.dto.SendGeneralCommunicationRequest;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -24,6 +27,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
@@ -36,6 +40,7 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -110,6 +115,10 @@ public class InternalResourceTest extends DbIsolatedTest {
 
     @Inject
     EntityManager entityManager;
+
+    @InjectMock
+    @RestClient
+    GeneralCommunicationsService generalCommunicationsService;
 
     @InjectMock
     SubscriptionRepository subscriptionRepository;
@@ -869,5 +878,112 @@ public class InternalResourceTest extends DbIsolatedTest {
             Assertions.assertNotNull(errorMessage, "the error message is null");
             Assertions.assertEquals("must not be blank", errorMessage, "unexpected error message received");
         }
+    }
+
+    /**
+     * Tests that when attempting to send a general communication, if the
+     * required header or body are not present, or contain an unexpected value,
+     * a bad request response is returned.
+     */
+    @Test
+    void testSendGeneralCommunicationInvalidPrerequisites() {
+        final String responseMissingEverything = given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .when()
+            .contentType(JSON)
+            .post("/general-communications")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract()
+            .asString();
+
+        // Assert that we received the expected errors.
+        final JsonObject responseMissingEverythingJson = new JsonObject(responseMissingEverything);
+        final JsonArray constraintViolations = responseMissingEverythingJson.getJsonArray("violations");
+        Assertions.assertEquals(2, constraintViolations.size(), "two constraint violations expected: one for the missing header, and another one for the missing body");
+
+        final Map<String, String> expectedErrors = Map.of(
+            "sendGeneralCommunication.request", "must not be null",
+            "sendGeneralCommunication.safetyHeader", "must not be blank"
+        );
+        for (final Object jsonObject : constraintViolations) {
+            final JsonObject json = (JsonObject) jsonObject;
+
+            Assertions.assertEquals(expectedErrors.get(json.getString("field")), json.getString("message"), "unexpected error message received");
+        }
+
+        // Send a request with a header that contains an unexpected value.
+        final SendGeneralCommunicationRequest request = new SendGeneralCommunicationRequest(true);
+
+        final String responseIncorrectHeader = given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .header("x-rh-send-general-communication", "unexpected-value")
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(request))
+            .post("/general-communications")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract()
+            .asString();
+
+        final JsonObject responseIncorrectHeaderJson = new JsonObject(responseIncorrectHeader);
+        Assertions.assertEquals("The safety header does not have the expected value", responseIncorrectHeaderJson.getString("error"));
+
+        // Send a request with a body that contains an unexpected value.
+        final SendGeneralCommunicationRequest invalidBody = new SendGeneralCommunicationRequest(false);
+
+        final String invalidBodyResponse = given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .header("x-rh-send-general-communication", "send-communication")
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(invalidBody))
+            .post("/general-communications")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract()
+            .asString();
+
+        final JsonObject invalidBodyResponseJson = new JsonObject(invalidBodyResponse);
+        Assertions.assertEquals("The request body does not contain the expected safety payload", invalidBodyResponseJson.getString("error"));
+    }
+
+    /**
+     * Tests that when the correct header and bodies are specified for the
+     * "general communication" endpoint, a request is sent to the engine. It
+     * also verifies that the incoming response body that the back end receives
+     * is simply forwareded to the client.
+     */
+    @Test
+    void testInternalSendGeneralCommunication() {
+        final SendGeneralCommunicationRequest request = new SendGeneralCommunicationRequest(true);
+
+        // Mock an incoming response from the engine.
+        final SendGeneralCommunicationResponse response = new SendGeneralCommunicationResponse("Everything went great!");
+        Mockito.when(this.generalCommunicationsService.sendGeneralCommunication()).thenReturn(response);
+
+        final SendGeneralCommunicationResponse receivedResponse = given()
+            .basePath(API_INTERNAL)
+            .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .header("x-rh-send-general-communication", "send-communication")
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(request))
+            .post("/general-communications")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract()
+            .as(SendGeneralCommunicationResponse.class);
+
+        // Assert that the REST service was called.
+        Mockito.verify(this.generalCommunicationsService, Mockito.times(1)).sendGeneralCommunication();
+
+        // Assert that the received response from the back end is the same as
+        // the one received from the engine.
+        Assertions.assertEquals(response, receivedResponse, "the received response from the back end is not the same as the one received from the engine");
     }
 }
