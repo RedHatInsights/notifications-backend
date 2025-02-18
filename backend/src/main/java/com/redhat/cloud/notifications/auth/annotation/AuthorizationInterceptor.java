@@ -101,7 +101,7 @@ public class AuthorizationInterceptor {
             throw new IllegalStateException(String.format("No integration or workspace permissions were set for method \"%s\", and at least one of them is required for the \"KesselRequiredPermission\" annotation to work", ctx.getMethod().getName()));
         }
 
-        // Check the workspace permissions firs since they are more generic.
+        // Check the workspace permissions first since they are more generic.
         for (final WorkspacePermission workspacePermission : workspacePermissions) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
 
