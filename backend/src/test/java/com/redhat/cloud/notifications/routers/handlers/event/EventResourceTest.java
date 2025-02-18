@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
@@ -29,6 +30,7 @@ import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
 import io.restassured.specification.RequestSpecification;
@@ -36,6 +38,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.SecurityContext;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -82,6 +85,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -136,6 +141,9 @@ public class EventResourceTest extends DbIsolatedTest {
      */
     @InjectMock
     WorkspaceUtils workspaceUtils;
+
+    @InjectSpy
+    KesselAuthorization kesselAuthorization;
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
@@ -975,6 +983,7 @@ public class EventResourceTest extends DbIsolatedTest {
         Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW);
         Event event2K = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusMinutes(5L), kesselPayload, true);
         Event event3 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(2L));
+        Event event3K = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(1L), kesselPayload, true);
 
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EMAIL_SUBSCRIPTION);
@@ -1008,17 +1017,20 @@ public class EventResourceTest extends DbIsolatedTest {
         assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
+        // check that kessel authorization has been called only once because RecipientsAuthorizationCriterion are identical for 'event2K' and 'event3K'
+        verify(kesselAuthorization, times(1)).hasPermissionOnResource(any(SecurityContext.class), any(RecipientsAuthorizationCriterion.class));
 
         // Kessel client mock will return allowed status, event2K must be part of results
         CheckResponse kesselCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
         when(checkClient.check(any(CheckRequest.class))).thenReturn(kesselCheckResponse);
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
-        assertEquals(4, page.getMeta().getCount());
-        assertEquals(4, page.getData().size());
+        assertEquals(5, page.getMeta().getCount());
+        assertEquals(5, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3, history8);
         assertSameEvent(page.getData().get(1), event2K, history10, history11);
-        assertSameEvent(page.getData().get(2), event3, history4, history5, history7, history9);
-        assertSameEvent(page.getData().get(3), event1, history1, history2, history6);
+        assertSameEvent(page.getData().get(2), event3K);
+        assertSameEvent(page.getData().get(3), event3, history4, history5, history7, history9);
+        assertSameEvent(page.getData().get(4), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 

@@ -35,6 +35,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -103,8 +104,13 @@ public class EventResource {
             Log.info("Check for events with authorization criterion");
             List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getEventsWithCriterion(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
             List<UUID> uuidToExclude = new ArrayList<>();
+            Map<Integer, Boolean> criterionResultCache = new HashMap<>();
             for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
-                if (!kesselAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion())) {
+                int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
+                if (!criterionResultCache.containsKey(criterionHashCode)) {
+                    criterionResultCache.put(criterionHashCode, kesselAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
+                }
+                if (!criterionResultCache.get(criterionHashCode)) {
                     Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
                     uuidToExclude.add(eventAuthorizationCriterion.id());
                 }
