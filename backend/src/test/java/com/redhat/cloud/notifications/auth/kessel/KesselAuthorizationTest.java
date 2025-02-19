@@ -10,6 +10,8 @@ import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhServiceAccountIdentity;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhUserIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
+import com.redhat.cloud.notifications.ingress.Type;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -43,6 +45,8 @@ import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.COU
 import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.COUNTER_TAG_SUCCESSES;
 import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME;
 import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME;
+import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 
 @QuarkusTest
@@ -92,6 +96,43 @@ public class KesselAuthorizationTest {
             "workspace-uuid"
         );
 
+        // Verify that we called Kessel.
+        Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
+
+        // Assert counter values
+        assertCounterIncrements(1, 0, 0, 0);
+    }
+
+    /**
+     * Tests that when the principal is authorized, the function under test
+     * returns true.
+     */
+    @Test
+    void testAuthorizedCriterion() {
+        // Mock the security context.
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
+
+        // Enable the Kessel back end integration for this test.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
+
+        // Simulate that Kessel returns a positive response.
+        final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
+        RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
+        authorizationCriterion.setId("workspace-uuid");
+        authorizationCriterion.setRelation(WorkspacePermission.EVENT_LOG_VIEW.getKesselPermissionName());
+        Type t = new Type();
+        t.setNamespace("rbac");
+        t.setName("workspace");
+        authorizationCriterion.setType(t);
+
+        // Call the function under test.
+        boolean isAuthorized = this.kesselAuthorization.hasPermissionOnResource(
+            mockedSecurityContext,
+            authorizationCriterion
+        );
+
+        assertTrue(isAuthorized);
         // Verify that we called Kessel.
         Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
 
@@ -213,6 +254,81 @@ public class KesselAuthorizationTest {
 
         // Assert counter values
         assertCounterIncrements(1, 0, 0, 0);
+    }
+
+    /**
+     * Tests that when the principal is authorized, the function under test
+     * returns false.
+     */
+    @Test
+    void testUnauthorizedCriterion() {
+        // Mock the security context.
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
+
+        // Enable the Kessel back end integration for this test.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
+
+        // Simulate that Kessel returns a negative response.
+        final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
+
+        RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
+        authorizationCriterion.setId("workspace-uuid");
+        authorizationCriterion.setRelation(WorkspacePermission.EVENT_LOG_VIEW.getKesselPermissionName());
+        Type t = new Type();
+        t.setNamespace("rbac");
+        t.setName("workspace");
+        authorizationCriterion.setType(t);
+
+        // Call the function under test.
+        boolean isAuthorized = this.kesselAuthorization.hasPermissionOnResource(
+            mockedSecurityContext,
+            authorizationCriterion
+        );
+
+        assertFalse(isAuthorized);
+        // Verify that we called Kessel.
+        Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
+
+        // Assert counter values
+        assertCounterIncrements(1, 0, 0, 0);
+    }
+
+    /**
+     * Tests that when Kessel check fails, the function under test
+     * returns false.
+     */
+    @Test
+    void testUnauthorizedCriterionBecauseOfException() {
+        // Mock the security context.
+        final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
+
+        // Enable the Kessel back end integration for this test.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
+
+        // Simulate that Kessel returns an exception
+        Mockito.when(this.checkClient.check(Mockito.any())).thenThrow(RuntimeException.class);
+
+        RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
+        authorizationCriterion.setId("workspace-uuid");
+        authorizationCriterion.setRelation(WorkspacePermission.EVENT_LOG_VIEW.getKesselPermissionName());
+        Type t = new Type();
+        t.setNamespace("rbac");
+        t.setName("workspace");
+        authorizationCriterion.setType(t);
+
+        // Call the function under test.
+        boolean isAuthorized = this.kesselAuthorization.hasPermissionOnResource(
+            mockedSecurityContext,
+            authorizationCriterion
+        );
+
+        assertFalse(isAuthorized);
+        // Verify that we called Kessel.
+        Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
+
+        // Assert counter values
+        assertCounterIncrements(0, 1, 0, 0);
     }
 
     /**

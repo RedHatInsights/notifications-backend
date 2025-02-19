@@ -35,10 +35,12 @@ import org.jboss.resteasy.reactive.RestQuery;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -96,8 +98,32 @@ public class EventResource {
         }
 
         String orgId = getOrgId(securityContext);
-        List<Event> events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, query);
-
+        List<Event> events;
+        Long count;
+        if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
+            Log.info("Check for events with authorization criterion");
+            List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getEventsWithCriterion(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
+            List<UUID> uuidToExclude = new ArrayList<>();
+            Map<Integer, Boolean> criterionResultCache = new HashMap<>();
+            for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
+                int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
+                if (!criterionResultCache.containsKey(criterionHashCode)) {
+                    criterionResultCache.put(criterionHashCode, kesselAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
+                }
+                if (!criterionResultCache.get(criterionHashCode)) {
+                    Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
+                    uuidToExclude.add(eventAuthorizationCriterion.id());
+                }
+            }
+            if (uuidToExclude.isEmpty()) {
+                uuidToExclude = null;
+            }
+            events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, query, Optional.ofNullable(uuidToExclude), true);
+            count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, Optional.ofNullable(uuidToExclude), true);
+        } else {
+            events = eventRepository.getEvents(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, query, Optional.empty(), false);
+            count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, Optional.empty(), false);
+        }
         if (events.isEmpty()) {
             Meta meta = new Meta();
             meta.setCount(0L);
@@ -143,7 +169,6 @@ public class EventResource {
             }
             return entry;
         }).collect(Collectors.toList());
-        Long count = eventRepository.count(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
 
         Meta meta = new Meta();
         meta.setCount(count);

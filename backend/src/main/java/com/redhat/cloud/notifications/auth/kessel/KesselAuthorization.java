@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -167,6 +168,61 @@ public class KesselAuthorization {
     }
 
     /**
+     * Checks if the subject on the security context has permission on the
+     * given resource. Throws
+     * @param securityContext the security context to extract the subject from.
+     * @param authorizationCriterion the authorization criterion.
+     *
+     * @return true or false regarding if the user have access to requested resource.
+     */
+    public boolean hasPermissionOnResource(final SecurityContext securityContext, final RecipientsAuthorizationCriterion authorizationCriterion) {
+        // Identify the subject.
+        final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
+        final String permission = authorizationCriterion.getRelation();
+        final String resourceType = authorizationCriterion.getType().toString();
+        final String resourceId = authorizationCriterion.getId();
+
+        // Build the request for Kessel.
+        final CheckRequest permissionCheckRequest = this.buildCheckRequest(identity, authorizationCriterion);
+
+        Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Payload for the permission check: %s", identity, permission, resourceType, resourceId, permissionCheckRequest);
+
+        // Measure the time it takes to perform the operation with Kessel.
+        final Timer.Sample permissionCheckTimer = Timer.start(this.meterRegistry);
+
+        // Call Kessel.
+        final CheckResponse response;
+        try {
+            response = this.checkClient.check(permissionCheckRequest);
+        } catch (final Exception e) {
+            Log.errorf(
+                e,
+                "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Unable to query Kessel for a permission on a resource",
+                identity, permission, resourceType, resourceId
+            );
+            meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
+            return false;
+        } finally {
+            // Stop the timer.
+            permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission, Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, authorizationCriterion.getType().getName())));
+        }
+
+        meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
+
+        Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
+
+        // Verify whether the subject has permission on the resource or not.
+        if (response == null || CheckResponse.Allowed.ALLOWED_TRUE != response.getAllowed()) {
+            Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
+
+            return false;
+        }
+
+        Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission granted", identity, resourceType, permission, resourceId);
+        return true;
+    }
+
+    /**
      * Looks up the integrations the security context's subject has the given
      * permission for. Useful for when we want to "pre-filter" the integrations
      * the principal has authorization for.
@@ -297,6 +353,28 @@ public class KesselAuthorization {
                     .build()
             )
             .setRelation(permission.getKesselPermissionName())
+            .setSubject(
+                SubjectReference.newBuilder()
+                    .setSubject(
+                        ObjectReference.newBuilder()
+                            .setType(ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
+                            .setId(getUserId(identity))
+                            .build()
+                    ).build()
+            ).build();
+    }
+
+    protected CheckRequest buildCheckRequest(final RhIdentity identity, final RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
+        return CheckRequest.newBuilder()
+            .setResource(
+                ObjectReference.newBuilder()
+                    .setType(ObjectType.newBuilder()
+                        .setNamespace(recipientsAuthorizationCriterion.getType().getNamespace())
+                        .setName(recipientsAuthorizationCriterion.getType().getName()).build())
+                    .setId(recipientsAuthorizationCriterion.getId())
+                    .build()
+            )
+            .setRelation(recipientsAuthorizationCriterion.getRelation())
             .setSubject(
                 SubjectReference.newBuilder()
                     .setSubject(
