@@ -2,6 +2,8 @@ package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.annotation.Authorization;
+import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -12,9 +14,9 @@ import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import io.quarkus.logging.Log;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -68,33 +70,19 @@ public class EndpointResourceV2 extends EndpointResource {
             )
         }
     )
+    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.VIEW_HISTORY})
     public Page<NotificationHistoryDTO> getEndpointHistory(
         @Context SecurityContext sec,
         @Context UriInfo uriInfo,
-        @PathParam("id") UUID id,
+        @IntegrationId @PathParam("id") UUID id,
         @QueryParam("includeDetail") Boolean includeDetail,
-        @BeanParam Query query
+        @Valid @BeanParam Query query
     ) {
-        if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-            this.kesselAuthorization.hasPermissionOnIntegration(sec, IntegrationPermission.VIEW_HISTORY, id);
-
-            return this.internalGetEndpointHistory(sec, uriInfo, id, includeDetail, query);
-        } else {
-            return this.legacyRBACGetEndpointHistory(sec, uriInfo, id, includeDetail, query);
-        }
-    }
-
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)
-    protected Page<NotificationHistoryDTO> legacyRBACGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, final Query query) {
-        return this.internalGetEndpointHistory(securityContext, uriInfo, id, includeDetail, query);
-    }
-
-    protected Page<NotificationHistoryDTO> internalGetEndpointHistory(final SecurityContext securityContext, final UriInfo uriInfo, final UUID id, final Boolean includeDetail, @Valid final Query query) {
-        if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(securityContext))) {
+        if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
             throw new NotFoundException("Endpoint not found");
         }
 
-        String orgId = getOrgId(securityContext);
+        String orgId = getOrgId(sec);
         boolean doDetail = includeDetail != null && includeDetail;
 
         final List<NotificationHistory> notificationHistory = this.notificationRepository.getNotificationHistory(orgId, id, doDetail, query);
@@ -111,14 +99,9 @@ public class EndpointResourceV2 extends EndpointResource {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
-    public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-            this.kesselAuthorization.hasPermissionOnIntegration(sec, IntegrationPermission.VIEW, id);
-
-            return this.internalGetEndpoint(sec, id, true);
-        } else {
-            return legacyGetEndpoint(sec, id, true);
-        }
+    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.VIEW})
+    public EndpointDTO getEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
+        return internalGetEndpoint(sec, id, true);
     }
 
     @GET
@@ -147,18 +130,23 @@ public class EndpointResourceV2 extends EndpointResource {
         @QueryParam("active")   Boolean activeOnly,
         @QueryParam("name")     String name
     ) {
+        Set<UUID> authorizedIds = null;
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             // Fetch the set of integration IDs the user is authorized to view.
-            final Set<UUID> authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
             if (authorizedIds.isEmpty()) {
                 Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
 
                 return new EndpointPage(new ArrayList<>(), new HashMap<>(), new Meta(0L));
             }
-
-            return internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, true);
+        } else {
+            // Legacy RBAC permission checking. The permission will have been
+            // prefetched and processed by the "ConsoleIdentityProvider".
+            if (!sec.isUserInRole(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)) {
+                throw new ForbiddenException();
+            }
         }
 
-        return getEndpointsLegacyRBACRoles(sec, query, targetType, activeOnly, name, true);
+        return internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, true);
     }
 }
