@@ -314,8 +314,8 @@ public class EndpointResource {
     })
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = {WorkspacePermission.INTEGRATIONS_CREATE})
     public EndpointDTO createEndpoint(
-        @Context                                        final SecurityContext sec,
-        @NotNull @Valid @RequestBody(required = true)   final EndpointDTO endpointDTO
+        @Context                        final SecurityContext sec,
+        @NotNull @Valid @RequestBody    final EndpointDTO endpointDTO
     ) {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
 
@@ -346,9 +346,10 @@ public class EndpointResource {
      */
     @Transactional
     protected Endpoint internalCreateEndpoint(
-            @Context                                        SecurityContext sec,
-            @RequestBody(required = true) @NotNull @Valid   Endpoint endpoint,
-            Set<UUID> eventTypes)  {
+        final SecurityContext sec,
+        final  Endpoint endpoint,
+        final Set<UUID> eventTypes
+    ) {
         if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
