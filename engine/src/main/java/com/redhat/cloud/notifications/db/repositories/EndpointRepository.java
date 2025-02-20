@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.CamelProperties;
+import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -20,6 +21,8 @@ import jakarta.transaction.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -331,6 +334,36 @@ public class EndpointRepository {
                 .setParameter("id", endpoint.getId())
                 .executeUpdate();
         return updated > 0;
+    }
+
+    /**
+     * Finds all the integration names of the given type and groups them by
+     * the organization identifier.
+     * @param integrationType the type of the integration we want to find.
+     * @return a map with the organization ID as the key, and a list of
+     * integration names as the value.
+     */
+    public Map<String, List<String>> findIntegrationNamesByTypeGroupedByOrganizationId(final CompositeEndpointType integrationType) {
+        final String findByTypeQuery =
+            "SELECT " +
+                "e " +
+            "FROM " +
+                "Endpoint AS e " +
+            "WHERE " +
+                "e.compositeType = :type";
+
+        // Fetch the endpoints from the database.
+        final List<Endpoint> endpoints = this.entityManager.createQuery(findByTypeQuery, Endpoint.class)
+            .setParameter("type", integrationType)
+            .getResultList();
+
+        // Group the endpoints by org ID.
+        final Map<String, List<String>> result = new HashMap<>();
+        for (final Endpoint endpoint : endpoints) {
+            result.computeIfAbsent(endpoint.getOrgId(), unused -> new ArrayList<>()).add(endpoint.getName());
+        }
+
+        return result;
     }
 
     private void loadProperties(List<Endpoint> endpoints) {

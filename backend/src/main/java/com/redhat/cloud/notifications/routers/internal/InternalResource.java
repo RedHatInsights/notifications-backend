@@ -25,21 +25,26 @@ import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
+import com.redhat.cloud.notifications.routers.engine.GeneralCommunicationsService;
 import com.redhat.cloud.notifications.routers.engine.ReplayService;
+import com.redhat.cloud.notifications.routers.general.communication.SendGeneralCommunicationResponse;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
 import com.redhat.cloud.notifications.routers.internal.models.UpdateApplicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.dto.ApplicationDTO;
+import com.redhat.cloud.notifications.routers.internal.models.dto.SendGeneralCommunicationRequest;
 import com.redhat.cloud.notifications.routers.internal.models.transformer.ApplicationDTOTransformer;
 import com.redhat.cloud.notifications.routers.replay.EventsReplayRequest;
 import io.quarkus.logging.Log;
 import io.quarkus.narayana.jta.runtime.TransactionConfiguration;
+import io.vertx.core.json.JsonObject;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -63,6 +68,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestPath;
 
 import java.net.URI;
@@ -111,6 +117,10 @@ public class InternalResource {
 
     @Inject
     Environment environment;
+
+    @Inject
+    @RestClient
+    GeneralCommunicationsService generalCommunicationsService;
 
     @Inject
     InternalRoleAccessRepository internalRoleAccessRepository;
@@ -632,5 +642,37 @@ public class InternalResource {
         }
 
         this.dailyDigestService.triggerDailyDigest(triggerDailyDigestRequest);
+    }
+
+    /**
+     * Sends a "general communication" request to the engine, so that we can
+     * trigger a general communication event.
+     * @param safetyHeader the safety header that is expected to avoid any
+     *                     miscalls to the endpoint.
+     * @param request the safety request body that is expected to avoid any
+     *                miscalls to the endpoint.
+     * @return the received response body from the engine.
+     */
+    @Consumes(APPLICATION_JSON)
+    @Path("/general-communications")
+    @POST
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public SendGeneralCommunicationResponse sendGeneralCommunication(@NotBlank @RestHeader("x-rh-send-general-communication") String safetyHeader, @NotNull @Valid final SendGeneralCommunicationRequest request) {
+        if (!"send-communication".equals(safetyHeader)) {
+            final JsonObject responseBody = new JsonObject();
+            responseBody.put("error", "The safety header does not have the expected value");
+
+            throw new BadRequestException(responseBody.encode());
+        }
+
+        if (!request.sendGeneralCommunication()) {
+            final JsonObject responseBody = new JsonObject();
+            responseBody.put("error", "The request body does not contain the expected safety payload");
+
+            throw new BadRequestException(responseBody.encode());
+        }
+
+        return this.generalCommunicationsService.sendGeneralCommunication();
     }
 }

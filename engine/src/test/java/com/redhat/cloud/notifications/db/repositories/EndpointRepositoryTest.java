@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.CamelProperties;
+import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -28,11 +29,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
@@ -442,6 +447,58 @@ public class EndpointRepositoryTest {
 
             final Endpoint databaseEndpoint = this.entityManager.createQuery("FROM Endpoint WHERE id=:endpoint_id", Endpoint.class).setParameter("endpoint_id", systemEndpoint.getId()).getSingleResult();
             Assertions.assertEquals(originalServerErrors, databaseEndpoint.getServerErrors(), "the server errors field was updated for a system endpoint, when it shouldn't have");
+        }
+    }
+
+    /**
+     * Tests that the function under test finds integration names for a
+     * particular type and groups them by organization ID.
+     */
+    @Test
+    @Transactional
+    void testFindIntegrationNamesByTypeGroupedByOrganizationId() {
+        final List<String> orgIds = List.of(
+            DEFAULT_ORG_ID,
+            DEFAULT_ORG_ID + "-two",
+            DEFAULT_ORG_ID + "-three"
+        );
+
+        // Create five "Teams" integrations per organization.
+        final Map<String, List<String>> expectedResult = new HashMap<>();
+
+        for (final String orgId: orgIds) {
+            for (int i = 0; i < 5; i++) {
+                // The "createEndpoint" method does not set an org id, so we
+                // need to set it ourselves.
+                final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(CAMEL, "teams", true, 0);
+                createdEndpoint.setOrgId(orgId);
+                this.entityManager.persist(createdEndpoint);
+
+                // Store the expected result to compare it later.
+                final List<String> endpointNames = expectedResult.getOrDefault(orgId, new ArrayList<>());
+                endpointNames.add(createdEndpoint.getName());
+
+                expectedResult.putIfAbsent(orgId, endpointNames);
+            }
+        }
+
+        // Call the function under test.
+        final Map<String, List<String>> result = this.endpointRepository.findIntegrationNamesByTypeGroupedByOrganizationId(new CompositeEndpointType(CAMEL, "teams"));
+
+        // Assert that the maps are the same.
+        for (final Map.Entry<String, List<String>> entry : result.entrySet()) {
+            if (!expectedResult.containsKey(entry.getKey())) {
+                Assertions.fail(String.format("organization ID \"%s\" not present in the expected set", entry.getKey()));
+            }
+
+            final List<String> expectedResultList = expectedResult.get(entry.getKey());
+            final List<String> resultList = entry.getValue();
+
+            for (final String resultingIntegrationName : resultList) {
+                if (!expectedResultList.contains(resultingIntegrationName)) {
+                    Assertions.fail(String.format("unexpected integration \"%s\" fetched for organization ID \"%s\"", resultingIntegrationName, entry.getKey()));
+                }
+            }
         }
     }
 }

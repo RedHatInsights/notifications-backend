@@ -84,7 +84,7 @@ public class IntegrationDisabledNotifier {
      * - the endpoints subtype no longer makes sense, we should only have the type
      * TODO Let's improve that and fix problems ASAP!
      */
-    private static String getFrontendCategory(Endpoint endpoint) {
+    public static String getFrontendCategory(Endpoint endpoint) {
         return switch (endpoint.getType()) {
             case ANSIBLE -> "Reporting";
             case CAMEL -> {

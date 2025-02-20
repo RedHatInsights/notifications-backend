@@ -162,9 +162,16 @@ public class ResourceHelpers {
         return event;
     }
 
+    public Endpoint createEndpoint(final EndpointType type, final String subType, final boolean enabled, final int serverErrors) {
+        return this.createEndpoint(null, type, subType, enabled, serverErrors);
+    }
+
     @Transactional
-    public Endpoint createEndpoint(EndpointType type, String subType, boolean enabled, int serverErrors) {
+    public Endpoint createEndpoint(final String orgId, final EndpointType type, final String subType, final boolean enabled, final int serverErrors) {
         Endpoint endpoint = new Endpoint();
+        if (orgId != null) {
+            endpoint.setOrgId(orgId);
+        }
         endpoint.setType(type);
         endpoint.setSubType(subType);
         endpoint.setName("endpoint-" + new SecureRandom().nextInt());
