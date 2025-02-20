@@ -652,7 +652,7 @@ public class InternalResource {
     @Path("/general-communications")
     @POST
     @Produces(APPLICATION_JSON)
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public SendGeneralCommunicationResponse sendGeneralCommunication(@NotBlank @RestHeader("x-rh-send-general-communication") String safetyHeader, @NotNull @Valid final SendGeneralCommunicationRequest request) {
         if (!"send-communication".equals(safetyHeader)) {
             final JsonObject responseBody = new JsonObject();
