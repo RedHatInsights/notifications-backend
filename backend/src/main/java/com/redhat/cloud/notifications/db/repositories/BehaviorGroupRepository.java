@@ -575,7 +575,7 @@ public class BehaviorGroupRepository {
         final var deleteFromEventTypeQuery =
             "DELETE FROM BehaviorGroupAction AS bga " +
                 "WHERE bga.behaviorGroup.id = :behaviorGroupUuid " +
-                "AND bga.endpoint.id in (:endpointUuid) " +
+                "AND bga.endpoint.id in (:endpointUuids) " +
                 "AND EXISTS (SELECT 1 FROM BehaviorGroup AS bg WHERE bg.id = :behaviorGroupUuid AND bg.orgId = :orgId) " +
                 "AND EXISTS (SELECT 1 FROM Endpoint ep WHERE ep.id in (:endpointUuids) AND ep.orgId = :orgId)";
 

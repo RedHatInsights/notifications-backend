@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.model.Stats;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BasicAuthentication;
@@ -220,6 +221,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
+
+    @Inject
+    BehaviorGroupRepository behaviorGroupRepository;
 
     // Mock the Sources service calls.
     private Secret mockSources(SourcesSecretable properties) {
@@ -3902,6 +3906,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, behaviorGroups.getFirst().getActions().size());
         assertEquals(1, behaviorGroups.getFirst().getBehaviors().size());
 
+        // create an new endpoint and link it to existing BG
+        final Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
+        behaviorGroupRepository.updateBehaviorGroupActions(DEFAULT_ORG_ID, behaviorGroups.getFirst().getId(), List.of(endpoint.getId(), endpoint2.getId()));
+
         // Delete endpoint to event type relationship
         given()
             .header(identityHeader)
@@ -3920,9 +3928,26 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertNull(endpointDTO.getEventTypesGroupByBundlesAndApplications());
 
         endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_2);
-        assertEquals(1L, endpointPage.getMeta().getCount());
-        assertEquals(1, endpointPage.getData().size());
+        assertEquals(2L, endpointPage.getMeta().getCount());
+        assertEquals(2, endpointPage.getData().size());
         assertNull(endpointPage.getData().getFirst().getEventTypesGroupByBundlesAndApplications());
+
+        // we still have 1 BG, because endpoint 2 is still linked to it
+        behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
+        assertEquals(1, behaviorGroups.size());
+        assertEquals(1, behaviorGroups.getFirst().getActions().size());
+        assertEquals(1, behaviorGroups.getFirst().getBehaviors().size());
+
+        // Delete endpoint 2 to event type relationship
+        given()
+            .header(identityHeader)
+            .pathParam("endpointUuid", endpoint2.getId())
+            .pathParam("eventTypeUuid", eventType1.getId())
+            .when()
+            .delete("/endpoints/{endpointUuid}/eventType/{eventTypeUuid}")
+            .then()
+            .statusCode(204);
+
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(0, behaviorGroups.size());
 
