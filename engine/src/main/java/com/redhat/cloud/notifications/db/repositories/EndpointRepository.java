@@ -350,9 +350,7 @@ public class EndpointRepository {
             "FROM " +
                 "Endpoint AS e " +
             "WHERE " +
-                "e.compositeType = :type " +
-            "ORDER BY " +
-                "orgId";
+                "e.compositeType = :type";
 
         // Fetch the endpoints from the database.
         final List<Endpoint> endpoints = this.entityManager.createQuery(findByTypeQuery, Endpoint.class)
