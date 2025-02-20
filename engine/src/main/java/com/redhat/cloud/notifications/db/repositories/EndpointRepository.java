@@ -360,11 +360,7 @@ public class EndpointRepository {
         // Group the endpoints by org ID.
         final Map<String, List<String>> result = new HashMap<>();
         for (final Endpoint endpoint : endpoints) {
-            final List<String> orgEndpointNames = result.getOrDefault(endpoint.getOrgId(), new ArrayList<>());
-
-            orgEndpointNames.add(endpoint.getName());
-
-            result.putIfAbsent(endpoint.getOrgId(), orgEndpointNames);
+            result.computeIfAbsent(endpoint.getOrgId(), unused -> new ArrayList<>()).add(endpoint.getName());
         }
 
         return result;
