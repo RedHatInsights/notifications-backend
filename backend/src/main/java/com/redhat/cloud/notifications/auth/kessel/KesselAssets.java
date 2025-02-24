@@ -1,18 +1,26 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
+import io.smallrye.mutiny.Multi;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.SecurityContext;
+import org.project_kessel.api.inventory.v1beta1.authz.ObjectReference;
+import org.project_kessel.api.inventory.v1beta1.authz.ObjectType;
+import org.project_kessel.api.inventory.v1beta1.authz.SubjectReference;
 import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationRequest;
 import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationResponse;
 import org.project_kessel.api.inventory.v1beta1.resources.DeleteNotificationsIntegrationRequest;
 import org.project_kessel.api.inventory.v1beta1.resources.DeleteNotificationsIntegrationResponse;
+import org.project_kessel.api.inventory.v1beta1.resources.ListNotificationsIntegrationsRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.ListNotificationsIntegrationsResponse;
 import org.project_kessel.api.inventory.v1beta1.resources.Metadata;
 import org.project_kessel.api.inventory.v1beta1.resources.NotificationsIntegration;
 import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
@@ -54,7 +62,7 @@ public class KesselAssets {
         // Build the request for Kessel's inventory.
         final CreateNotificationsIntegrationRequest request = this.buildCreateIntegrationRequest(workspaceId, integrationId);
 
-        Log.tracef("[identity: %s][workspace_id: %s][integration_id: %s] Payload for the integration creation in Kessel's inventory: %s", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, request);
+        Log.errorf("[identity: %s][workspace_id: %s][integration_id: %s] Payload for the integration creation in Kessel's inventory: %s", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId, request);
 
         // Measure the time it takes to perform the operation with Kessel.
         final Timer.Sample createIntegrationTimer = Timer.start(this.meterRegistry);
@@ -122,6 +130,57 @@ public class KesselAssets {
         Log.debugf("[identity: %s][workspace_id: %s][integration_id: %s] Integration deleted in Kessel's inventory", SecurityContextUtil.extractRhIdentity(securityContext), workspaceId, integrationId);
     }
 
+    public Multi<ListNotificationsIntegrationsResponse> listIntegrations(final SecurityContext securityContext, final String workspaceId) {
+        // Build the request for Kessel's inventory.
+        final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
+        final ListNotificationsIntegrationsRequest request = this.buildListIntegrationRequest(getUserId(identity), workspaceId);
+
+        // Measure the time it takes to perform the operation with Kessel.
+        final Timer.Sample listIntegrationTimer = Timer.start(this.meterRegistry);
+
+        // Send the request to the inventory.
+        final Multi<ListNotificationsIntegrationsResponse> responses;
+        try {
+            responses = this.notificationsIntegrationClient.listNotificationsIntegrations(request);
+        } catch (final Exception e) {
+            meterRegistry.counter(KESSEL_METRICS_INVENTORY_INTEGRATION_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
+
+            throw e;
+        } finally {
+            // Stop the timer.
+            listIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_INVENTORY_INTEGRATION_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
+        }
+
+        return responses;
+    }
+
+    protected ListNotificationsIntegrationsRequest buildListIntegrationRequest(final String principalId, final String workspaceId) {
+        return ListNotificationsIntegrationsRequest.newBuilder()
+                .setResourceType(ObjectType.newBuilder()
+                        // we can very nearly just set ResourceType.INTEGRATION, etc. directly, but inventory and relation types are different
+                        .setName(ResourceType.INTEGRATION.getKesselObjectType().getName())
+                        .setNamespace(ResourceType.INTEGRATION.getKesselObjectType().getNamespace())
+                        .build())
+                .setParent(ObjectReference.newBuilder()
+                        .setType(ObjectType.newBuilder()
+                                .setName(ResourceType.WORKSPACE.getKesselObjectType().getName())
+                                .setNamespace(ResourceType.WORKSPACE.getKesselObjectType().getNamespace())
+                                .build())
+                        .setId(workspaceId)
+                        .build())
+                .setSubject(SubjectReference.newBuilder()
+                        .setSubject(ObjectReference.newBuilder()
+                                .setId(principalId)
+                                .setType(ObjectType.newBuilder()
+                                        .setName("principal")
+                                        .setNamespace("rbac")
+                                        .build())
+                                .build())
+                        .build())
+                .setRelation("view")
+                .build();
+    }
+
     /**
      * Builds a request to create an integration in the inventory.
      * @param workspaceId the identifier of the workspace the integration will
@@ -161,5 +220,14 @@ public class KesselAssets {
                     .setReporterInstanceId(this.backendConfig.getKesselInventoryReporterInstanceId())
                     .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
             ).build();
+    }
+
+    /**
+     * Gets the user identifier from the {@link RhIdentity} object.
+     * @param identity the object to extract the identifier from.
+     * @return the user ID in the format that Kessel expects.
+     */
+    private String getUserId(RhIdentity identity) {
+        return backendConfig.getKesselDomain() + "/" + identity.getUserId();
     }
 }

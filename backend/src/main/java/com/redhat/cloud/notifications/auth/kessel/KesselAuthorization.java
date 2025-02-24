@@ -18,6 +18,12 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
+import org.project_kessel.api.inventory.v1beta1.authz.CheckForCreateRequest;
+import org.project_kessel.api.inventory.v1beta1.authz.CheckForCreateResponse;
+import org.project_kessel.api.inventory.v1beta1.authz.CheckForViewRequest;
+import org.project_kessel.api.inventory.v1beta1.authz.CheckForViewResponse;
+import org.project_kessel.api.relations.v1beta1.CheckForUpdateRequest;
+import org.project_kessel.api.relations.v1beta1.CheckForUpdateResponse;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesRequest;
@@ -26,7 +32,7 @@ import org.project_kessel.api.relations.v1beta1.ObjectReference;
 import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.api.relations.v1beta1.RequestPagination;
 import org.project_kessel.api.relations.v1beta1.SubjectReference;
-import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.inventory.client.KesselCheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
 import java.util.ArrayList;
@@ -76,7 +82,7 @@ public class KesselAuthorization {
     protected static final String COUNTER_TAG_SUCCESSES = "successes";
 
     @Inject
-    CheckClient checkClient;
+    KesselCheckClient checkClient;
 
     @Inject
     LookupClient lookupClient;
@@ -105,7 +111,7 @@ public class KesselAuthorization {
 
         for (final Endpoint endpoint : endpoints) {
             try {
-                this.hasPermissionOnResource(securityContext, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpoint.getId().toString());
+                this.hasViewPermissionOnResource(securityContext, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpoint.getId().toString());
                 resultingList.add(endpoint);
             } catch (final ForbiddenException ignored) {
             }
@@ -114,22 +120,65 @@ public class KesselAuthorization {
         return resultingList;
     }
 
-    /**
-     * Checks if the subject on the security context has permission on the
-     * given resource. Throws
-     * @param securityContext the security context to extract the subject from.
-     * @param permission the permission we want to check.
-     * @param resourceType the resource type we should check the permission
-     *                     against.
-     * @param resourceId the identifier of the resource.
-     * @throws ForbiddenException in case of not being authorized.
-     */
-    public void hasPermissionOnResource(final SecurityContext securityContext, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+//    /**
+//     * Checks if the subject on the security context has permission on the
+//     * given resource. Throws
+//     * @param securityContext the security context to extract the subject from.
+//     * @param permission the permission we want to check.
+//     * @param resourceType the resource type we should check the permission
+//     *                     against.
+//     * @param resourceId the identifier of the resource.
+//     * @throws ForbiddenException in case of not being authorized.
+//     */
+//    public void hasPermissionOnResource(final SecurityContext securityContext, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+//        // Identify the subject.
+//        final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
+//
+//        // Build the request for Kessel.
+//        final CheckRequest permissionCheckRequest = this.buildCheckRequest(identity, permission, resourceType, resourceId);
+//
+//        Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Payload for the permission check: %s", identity, permission, resourceType, resourceId, permissionCheckRequest);
+//
+//        // Measure the time it takes to perform the operation with Kessel.
+//        final Timer.Sample permissionCheckTimer = Timer.start(this.meterRegistry);
+//
+//        // Call Kessel.
+//        final CheckResponse response;
+//        try {
+//            response = this.check(permissionCheckRequest);
+//        } catch (final Exception e) {
+//            Log.errorf(
+//                e,
+//                "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Unable to query Kessel for a permission on a resource",
+//                identity, permission, resourceType, resourceId
+//            );
+//            meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
+//            throw e;
+//        } finally {
+//            // Stop the timer.
+//            permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.name())));
+//        }
+//
+//        meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
+//
+//        Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
+//
+//        // Verify whether the subject has permission on the resource or not.
+//        if (CheckResponse.Allowed.ALLOWED_TRUE != response.getAllowed()) {
+//            Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
+//
+//            throw new ForbiddenException();
+//        }
+//
+//        Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission granted", identity, resourceType, permission, resourceId);
+//    }
+
+    public void hasViewPermissionOnResource(final SecurityContext securityContext, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
         // Identify the subject.
         final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
 
         // Build the request for Kessel.
-        final CheckRequest permissionCheckRequest = this.buildCheckRequest(identity, permission, resourceType, resourceId);
+        final CheckForViewRequest permissionCheckRequest = this.buildCheckForViewRequest(identity, permission, resourceType, resourceId);
 
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Payload for the permission check: %s", identity, permission, resourceType, resourceId, permissionCheckRequest);
 
@@ -137,14 +186,14 @@ public class KesselAuthorization {
         final Timer.Sample permissionCheckTimer = Timer.start(this.meterRegistry);
 
         // Call Kessel.
-        final CheckResponse response;
+        final CheckForViewResponse response;
         try {
-            response = this.checkClient.check(permissionCheckRequest);
+            response = checkClient.CheckForView(permissionCheckRequest);
         } catch (final Exception e) {
             Log.errorf(
-                e,
-                "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Unable to query Kessel for a permission on a resource",
-                identity, permission, resourceType, resourceId
+                    e,
+                    "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Unable to query Kessel for a permission on a resource",
+                    identity, permission, resourceType, resourceId
             );
             meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
             throw e;
@@ -158,7 +207,93 @@ public class KesselAuthorization {
         Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
 
         // Verify whether the subject has permission on the resource or not.
-        if (CheckResponse.Allowed.ALLOWED_TRUE != response.getAllowed()) {
+        if (CheckForViewResponse.Allowed.ALLOWED_TRUE != response.getAllowed()) {
+            Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
+
+            throw new ForbiddenException();
+        }
+
+        Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission granted", identity, resourceType, permission, resourceId);
+    }
+
+    public void hasCreatePermissionOnResource(final SecurityContext securityContext, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+        // Identify the subject.
+        final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
+
+        // Build the request for Kessel.
+        final CheckForCreateRequest permissionCheckRequest = this.buildCheckForCreateRequest(identity, permission, resourceType, resourceId);
+
+        Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Payload for the permission check: %s", identity, permission, resourceType, resourceId, permissionCheckRequest);
+
+        // Measure the time it takes to perform the operation with Kessel.
+        final Timer.Sample permissionCheckTimer = Timer.start(this.meterRegistry);
+
+        // Call Kessel.
+        final CheckForCreateResponse response;
+        try {
+            response = checkClient.CheckForCreate(permissionCheckRequest);
+        } catch (final Exception e) {
+            Log.errorf(
+                    e,
+                    "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Unable to query Kessel for a permission on a resource",
+                    identity, permission, resourceType, resourceId
+            );
+            meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
+            throw e;
+        } finally {
+            // Stop the timer.
+            permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.name())));
+        }
+
+        meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
+
+        Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
+
+        // Verify whether the subject has permission on the resource or not.
+        if (CheckForCreateResponse.Allowed.ALLOWED_TRUE != response.getAllowed()) {
+            Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
+
+            throw new ForbiddenException();
+        }
+
+        Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission granted", identity, resourceType, permission, resourceId);
+    }
+
+    public void hasUpdatePermissionOnResource(final SecurityContext securityContext, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+        // Identify the subject.
+        final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
+
+        // Build the request for Kessel.
+        final org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateRequest permissionCheckRequest = this.buildCheckForUpdateRequest(identity, permission, resourceType, resourceId);
+
+        Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Payload for the permission check: %s", identity, permission, resourceType, resourceId, permissionCheckRequest);
+
+        // Measure the time it takes to perform the operation with Kessel.
+        final Timer.Sample permissionCheckTimer = Timer.start(this.meterRegistry);
+
+        // Call Kessel.
+        final org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateResponse response;
+        try {
+            response = checkClient.CheckForUpdate(permissionCheckRequest);
+        } catch (final Exception e) {
+            Log.errorf(
+                    e,
+                    "[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Unable to query Kessel for a permission on a resource",
+                    identity, permission, resourceType, resourceId
+            );
+            meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
+            throw e;
+        } finally {
+            // Stop the timer.
+            permissionCheckTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_PERMISSION_CHECK_TIMER_NAME, Tags.of(KESSEL_METRICS_TAG_PERMISSION_KEY, permission.getKesselPermissionName(), Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, resourceType.name())));
+        }
+
+        meterRegistry.counter(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES)).increment();
+
+        Log.tracef("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Received payload for the permission check: %s", identity, permission, resourceType, resourceId, response);
+
+        // Verify whether the subject has permission on the resource or not.
+        if (org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateResponse.Allowed.ALLOWED_TRUE != response.getAllowed()) {
             Log.debugf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
 
             throw new ForbiddenException();
@@ -300,39 +435,39 @@ public class KesselAuthorization {
         return uuids;
     }
 
-    /**
-     * Checks whether the provided principal has the specified permission on
-     * the given integration, and throws a {@link NotFoundException} if they
-     * do not.
-     * @param securityContext the security context to extract the principal
-     *                        from.
-     * @param integrationPermission the integration permission we want to
-     *                              check.
-     * @param integrationId the integration's identifier.
-        */
-    public void hasPermissionOnIntegration(final SecurityContext securityContext, final IntegrationPermission integrationPermission, final UUID integrationId) {
-        try {
-            this.hasPermissionOnResource(securityContext, integrationPermission, ResourceType.INTEGRATION, integrationId.toString());
-        } catch (final ForbiddenException ignored) {
-            final JsonObject responseBody = new JsonObject();
-            responseBody.put("error", "Integration not found");
+//    /**
+//     * Checks whether the provided principal has the specified permission on
+//     * the given integration, and throws a {@link NotFoundException} if they
+//     * do not.
+//     * @param securityContext the security context to extract the principal
+//     *                        from.
+//     * @param integrationPermission the integration permission we want to
+//     *                              check.
+//     * @param integrationId the integration's identifier.
+//        */
+//    public void hasPermissionOnIntegration(final SecurityContext securityContext, final IntegrationPermission integrationPermission, final UUID integrationId) {
+//        try {
+//            this.hasPermissionOnResource(securityContext, integrationPermission, ResourceType.INTEGRATION, integrationId.toString());
+//        } catch (final ForbiddenException ignored) {
+//            final JsonObject responseBody = new JsonObject();
+//            responseBody.put("error", "Integration not found");
+//
+//            throw new NotFoundException(responseBody.encode());
+//        }
+//    }
 
-            throw new NotFoundException(responseBody.encode());
-        }
-    }
-
-    /**
-     * Checks whether the provided principal has the specified permission on
-     * the given workspace.
-     * @param securityContext the security context to extract the principal
-     *                        from.
-     * @param workspacePermission the workspace permission we want to
-     *                            check.
-     * @param workspaceId the workspace's identifier.
-     */
-    public void hasPermissionOnWorkspace(final SecurityContext securityContext, final WorkspacePermission workspacePermission, final UUID workspaceId) {
-        this.hasPermissionOnResource(securityContext, workspacePermission, ResourceType.WORKSPACE, workspaceId.toString());
-    }
+//    /**
+//     * Checks whether the provided principal has the specified permission on
+//     * the given workspace.
+//     * @param securityContext the security context to extract the principal
+//     *                        from.
+//     * @param workspacePermission the workspace permission we want to
+//     *                            check.
+//     * @param workspaceId the workspace's identifier.
+//     */
+//    public void hasPermissionOnWorkspace(final SecurityContext securityContext, final WorkspacePermission workspacePermission, final UUID workspaceId) {
+//        this.hasPermissionOnResource(securityContext, workspacePermission, ResourceType.WORKSPACE, workspaceId.toString());
+//    }
 
     /**
      * Build a check request for a particular resource, to see if the subject
