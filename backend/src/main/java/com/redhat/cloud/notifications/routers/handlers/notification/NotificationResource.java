@@ -531,7 +531,7 @@ public class NotificationResource {
     public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
         if (backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+            this.kesselAuthorization.hasViewPermissionOnResource(sec, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
 
             // add permission as argument -- rather than assuming it underneath
             final Multi<ListNotificationsIntegrationsResponse> responseMulti = this.kesselAssets.listIntegrations(sec, workspaceId.toString());
@@ -596,7 +596,7 @@ public class NotificationResource {
         // edit access to all the integrations.
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             for (final UUID endpointId : endpointsIds) {
-                kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpointId);
+		kesselAuthorization.hasUpdatePermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());	
             }
         }
 
