@@ -22,10 +22,7 @@ import org.project_kessel.api.inventory.v1beta1.authz.CheckForCreateRequest;
 import org.project_kessel.api.inventory.v1beta1.authz.CheckForCreateResponse;
 import org.project_kessel.api.inventory.v1beta1.authz.CheckForViewRequest;
 import org.project_kessel.api.inventory.v1beta1.authz.CheckForViewResponse;
-import org.project_kessel.api.relations.v1beta1.CheckForUpdateRequest;
-import org.project_kessel.api.relations.v1beta1.CheckForUpdateResponse;
-import org.project_kessel.api.relations.v1beta1.CheckRequest;
-import org.project_kessel.api.relations.v1beta1.CheckResponse;
+import org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateRequest;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesRequest;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
@@ -33,6 +30,7 @@ import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.api.relations.v1beta1.RequestPagination;
 import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.inventory.client.KesselCheckClient;
+
 import org.project_kessel.relations.client.LookupClient;
 
 import java.util.ArrayList;
@@ -479,24 +477,70 @@ public class KesselAuthorization {
      * @param resourceId the resource's identifier.
      * @return the built check request for Kessel ready to be sent.
      */
-    protected CheckRequest buildCheckRequest(final RhIdentity identity, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
-        return CheckRequest.newBuilder()
-            .setResource(
-                ObjectReference.newBuilder()
-                    .setType(resourceType.getKesselObjectType())
+    protected CheckForViewRequest buildCheckForViewRequest(final RhIdentity identity, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+        return CheckForViewRequest.newBuilder()
+                .setParent(
+                        org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                                .setType(org.project_kessel.api.inventory.v1beta1.authz.ObjectType.newBuilder()
+                                        .setName(resourceType.getKesselObjectType().getName())
+                                        .setNamespace(resourceType.getKesselObjectType().getNamespace()).build())
+                                .setId(resourceId)
+                                .build()
+                )
+                .setRelation(permission.getKesselPermissionName())
+                .setSubject(
+                        org.project_kessel.api.inventory.v1beta1.authz.SubjectReference.newBuilder()
+                                .setSubject(
+                                        org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                                                .setType(org.project_kessel.api.inventory.v1beta1.authz.ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
+                                                .setId(getUserId(identity))
+                                                .build()
+                                ).build()
+                ).build();
+    }
+
+    protected CheckForCreateRequest buildCheckForCreateRequest(final RhIdentity identity, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+        return CheckForCreateRequest.newBuilder()
+                .setParent(
+            org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                    .setType(org.project_kessel.api.inventory.v1beta1.authz.ObjectType.newBuilder()
+                            .setName(resourceType.getKesselObjectType().getName())
+                            .setNamespace(resourceType.getKesselObjectType().getNamespace()).build())
                     .setId(resourceId)
                     .build()
-            )
-            .setRelation(permission.getKesselPermissionName())
-            .setSubject(
-                SubjectReference.newBuilder()
-                    .setSubject(
-                        ObjectReference.newBuilder()
-                            .setType(ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
-                            .setId(getUserId(identity))
-                            .build()
-                    ).build()
-            ).build();
+                )
+                .setCreatePermission(permission.getKesselPermissionName())
+                .setSubject(
+                        org.project_kessel.api.inventory.v1beta1.authz.SubjectReference.newBuilder()
+                                .setSubject(
+                                        org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                                                .setType(org.project_kessel.api.inventory.v1beta1.authz.ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
+                                                .setId(getUserId(identity))
+                                                .build()
+                                ).build()
+                ).build();
+    }
+
+    protected CheckForUpdateRequest buildCheckForUpdateRequest(final RhIdentity identity, final KesselPermission permission, final ResourceType resourceType, final String resourceId) {
+        return CheckForUpdateRequest.newBuilder()
+                .setParent(
+            org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                .setType(org.project_kessel.api.inventory.v1beta1.authz.ObjectType.newBuilder()
+                        .setName(resourceType.getKesselObjectType().getName())
+                        .setNamespace(resourceType.getKesselObjectType().getNamespace()).build())
+                .setId(resourceId)
+                .build()
+        )
+        .setRelation(permission.getKesselPermissionName())
+        .setSubject(
+            org.project_kessel.api.inventory.v1beta1.authz.SubjectReference.newBuilder()
+                .setSubject(
+                    org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                        .setType(org.project_kessel.api.inventory.v1beta1.authz.ObjectType.newBuilder().setNamespace(KESSEL_RBAC_NAMESPACE).setName(KESSEL_IDENTITY_SUBJECT_TYPE).build())
+                        .setId(getUserId(identity))
+                        .build()
+                ).build()
+        ).build();
     }
 
     protected CheckRequest buildCheckRequest(final RhIdentity identity, final RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {

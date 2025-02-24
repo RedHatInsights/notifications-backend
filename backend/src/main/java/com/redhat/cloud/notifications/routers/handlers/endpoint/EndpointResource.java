@@ -775,7 +775,7 @@ public class EndpointResource {
         boolean shouldRedactSecrets;
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             try {
-                this.kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpoint.getId());
+                this.kesselAuthorization.hasViewPermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpoint.getId().toString());
                 shouldRedactSecrets = false;
             } catch (final ForbiddenException | NotFoundException e) {
                 shouldRedactSecrets = true;
