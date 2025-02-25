@@ -319,7 +319,6 @@ public class FetchUsersFromExternalServices {
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "orgId", orgIdTag));
                 return rbacUsers;
             });
-
         }
         // Micrometer doesn't like when tags are null and throws a NPE.
         String orgIdTag = orgId == null ? "" : orgId;
