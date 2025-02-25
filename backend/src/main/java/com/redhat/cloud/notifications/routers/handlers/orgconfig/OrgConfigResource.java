@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers.handlers.orgconfig;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
