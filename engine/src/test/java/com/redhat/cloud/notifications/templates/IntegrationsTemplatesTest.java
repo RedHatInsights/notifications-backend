@@ -123,7 +123,7 @@ public class IntegrationsTemplatesTest extends EmailTemplatesInDbHelper {
         assertTrue(rendered.contains("Red Hat documentation"));
         assertTrue(rendered.contains("Thank you for your attention."));
         assertTrue(rendered.contains("Kind regards,"));
-        assertTrue(rendered.contains("Red Hat"));
+        assertTrue(rendered.contains("Red Hat Hybrid Cloud Console."));
     }
 
     private static Endpoint buildEndpoint() {
