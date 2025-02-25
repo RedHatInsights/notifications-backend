@@ -312,20 +312,14 @@ public class FetchUsersFromExternalServices {
         } else {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
-                // or do i have to add it here 
                 Page<RbacUser> rbacUsers = retryOnError(() ->
-                    rbacServiceToService.getGroupUsers(orgId, groupId, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage()));
+                    rbacServiceToService.getGroupUsers(orgId, groupId, adminOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage()));
                 // Micrometer doesn't like when tags are null and throws a NPE.
                 String orgIdTag = orgId == null ? "" : orgId;
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "orgId", orgIdTag));
                 return rbacUsers;
             });
 
-            // getGroupUsers doesn't have an adminOnly param.
-            if (adminOnly) {
-                //users = getGroupUsers(adminOnly)
-                users = users.stream().filter(User::isAdmin).collect(Collectors.toList());
-            }
         }
         // Micrometer doesn't like when tags are null and throws a NPE.
         String orgIdTag = orgId == null ? "" : orgId;
