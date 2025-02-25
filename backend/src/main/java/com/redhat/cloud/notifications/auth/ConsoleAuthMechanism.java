@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.auth;
 
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
+import io.quarkus.logging.Log;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -42,6 +43,9 @@ public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext routingContext, IdentityProviderManager identityProviderManager) {
         String xRhIdentityHeaderValue = routingContext.request().getHeader(X_RH_IDENTITY_HEADER);
+
+        Log.debugf("Received \"x-rh-identity\" header: %s", xRhIdentityHeaderValue);
+
         String path = routingContext.normalizedPath();
 
         if (path.startsWith(API_INTERNAL) && !isInternalRbacEnabled) {
