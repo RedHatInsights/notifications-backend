@@ -588,6 +588,7 @@ public class FetchUsersFromExternalServicesTest {
         Mockito.when(rbacServiceToService.getUsers(
                 Mockito.eq(DEFAULT_ORG_ID),
                 Mockito.eq(adminsOnly),
+                Mockito.anyBoolean(),
                 Mockito.anyInt(),
                 Mockito.anyInt()
         )).then(invocationOnMock -> answer.mockedUserAnswerRBAC(
@@ -600,14 +601,16 @@ public class FetchUsersFromExternalServicesTest {
     private void mockGetGroup(RbacGroup group) {
         when(rbacServiceToService.getGroup(
                 Mockito.eq(DEFAULT_ORG_ID),
-                Mockito.eq(group.getUuid())
+                Mockito.eq(group.getUuid()),
+                Mockito.anyBoolean()
         )).thenReturn(group);
     }
 
     private void mockNotFoundGroup(UUID groupId) {
         when(rbacServiceToService.getGroup(
                 Mockito.eq(DEFAULT_ORG_ID),
-                Mockito.eq(groupId)
+                Mockito.eq(groupId),
+                Mockito.anyBoolean()
         )).thenThrow(new ClientWebApplicationException(404));
     }
 
