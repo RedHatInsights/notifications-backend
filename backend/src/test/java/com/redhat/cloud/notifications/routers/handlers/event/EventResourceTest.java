@@ -41,14 +41,17 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.SecurityContext;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -144,6 +147,17 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @InjectSpy
     KesselAuthorization kesselAuthorization;
+
+    @BeforeEach
+    void setUp() {
+        // Since we are mocking the back end configuration, we need to set the
+        // following default values for the RBAC calls not to fail. Otherwise
+        // the tests complain because "the initial backoff and the max back off
+        // value must be greater than zero".
+        Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.getRbacRetriesInitialBackOff()).thenReturn(Duration.ofSeconds(1));
+        Mockito.when(this.backendConfig.getRbacRetriesBackOffMaxValue()).thenReturn(Duration.ofSeconds(1));
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})

@@ -12,6 +12,7 @@ import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -33,7 +34,11 @@ public class BackendConfig {
     private static final String KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT = "notifications.kessel-relations.lookup-resources.limit";
     private static final String KESSEL_RELATIONS_URL = "relations-api.target-url";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
+    private static final String RBAC_ENABLED = "rbac.enabled";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
+    private static final String RBAC_RETRIES_INITIAL_BACK_OFF = "rbac.retry.back-off.initial-value";
+    private static final String RBAC_RETRIES_BACK_OFF_MAX_VALUE = "rbac.retry.back-off.max-value";
+    private static final String RBAC_RETRIES_MAX_ATTEMPTS = "rbac.retry.max-attempts";
     private static final String UNLEASH = "notifications.unleash.enabled";
     private static final String MAINTENANCE_MODE = "notifications.maintenance.mode";
 
@@ -92,6 +97,18 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
     String kesselDomain;
 
+    @ConfigProperty(name = RBAC_ENABLED, defaultValue = "true")
+    protected boolean rbacEnabled;
+
+    @ConfigProperty(name = RBAC_RETRIES_MAX_ATTEMPTS, defaultValue = "3")
+    long rbacRetriesMaxAttempts;
+
+    @ConfigProperty(name = RBAC_RETRIES_INITIAL_BACK_OFF, defaultValue = "0.1S")
+    Duration rbacRetriesInitialBackOff;
+
+    @ConfigProperty(name = RBAC_RETRIES_BACK_OFF_MAX_VALUE, defaultValue = "1S")
+    Duration rbacRetriesBackOffMaxValue;
+
     @ConfigProperty(name = RBAC_PSKS, defaultValue = "{\"notifications\": {\"secret\": \"development-psk-value\"}}")
     protected String rbacPskSecrets;
 
@@ -134,6 +151,10 @@ public class BackendConfig {
         config.put(KESSEL_RELATIONS_URL, kesselRelationsUrl);
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
+        config.put(RBAC_ENABLED, isRBACEnabled());
+        config.put(RBAC_RETRIES_BACK_OFF_MAX_VALUE, getRbacRetriesBackOffMaxValue());
+        config.put(RBAC_RETRIES_INITIAL_BACK_OFF, getRbacRetriesInitialBackOff());
+        config.put(RBAC_RETRIES_MAX_ATTEMPTS, getRbacRetriesMaxAttempts());
         config.put(UNLEASH, unleashEnabled);
 
         Log.info("=== Startup configuration ===");
@@ -221,6 +242,22 @@ public class BackendConfig {
 
     public String getKesselDomain() {
         return kesselDomain;
+    }
+
+    public boolean isRBACEnabled() {
+        return this.rbacEnabled;
+    }
+
+    public Duration getRbacRetriesBackOffMaxValue() {
+        return this.rbacRetriesBackOffMaxValue;
+    }
+
+    public Duration getRbacRetriesInitialBackOff() {
+        return this.rbacRetriesInitialBackOff;
+    }
+
+    public long getRbacRetriesMaxAttempts() {
+        return this.rbacRetriesMaxAttempts;
     }
 
     public JsonObject getRbacPskSecrets() {

@@ -48,10 +48,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -145,6 +147,14 @@ public class NotificationResourceTest extends DbIsolatedTest {
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.clearRbac();
+
+        // Since we are mocking the back end configuration, we need to set the
+        // following default values for the RBAC calls not to fail. Otherwise
+        // the tests complain because "the initial backoff and the max back off
+        // value must be greater than zero".
+        Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.getRbacRetriesInitialBackOff()).thenReturn(Duration.ofSeconds(1));
+        Mockito.when(this.backendConfig.getRbacRetriesBackOffMaxValue()).thenReturn(Duration.ofSeconds(1));
     }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
