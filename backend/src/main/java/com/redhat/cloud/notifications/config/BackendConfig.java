@@ -33,6 +33,7 @@ public class BackendConfig {
     private static final String KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT = "notifications.kessel-relations.lookup-resources.limit";
     private static final String KESSEL_RELATIONS_URL = "relations-api.target-url";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
+    private static final String RBAC_ENABLED = "rbac.enabled";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
     private static final String UNLEASH = "notifications.unleash.enabled";
     private static final String MAINTENANCE_MODE = "notifications.maintenance.mode";
@@ -92,6 +93,9 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
     String kesselDomain;
 
+    @ConfigProperty(name = RBAC_ENABLED, defaultValue = "true")
+    protected boolean rbacEnabled;
+
     @ConfigProperty(name = RBAC_PSKS, defaultValue = "{\"notifications\": {\"secret\": \"development-psk-value\"}}")
     protected String rbacPskSecrets;
 
@@ -134,6 +138,7 @@ public class BackendConfig {
         config.put(KESSEL_RELATIONS_URL, kesselRelationsUrl);
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
+        config.put(RBAC_ENABLED, isRBACEnabled());
         config.put(UNLEASH, unleashEnabled);
 
         Log.info("=== Startup configuration ===");
@@ -221,6 +226,10 @@ public class BackendConfig {
 
     public String getKesselDomain() {
         return kesselDomain;
+    }
+
+    public boolean isRBACEnabled() {
+        return this.rbacEnabled;
     }
 
     public JsonObject getRbacPskSecrets() {
