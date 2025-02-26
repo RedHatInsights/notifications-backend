@@ -28,7 +28,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.io.IOException;
-import java.time.Duration;
 
 /**
  * Authorizes the data from the insight's RBAC-server and adds the appropriate roles
@@ -60,15 +59,6 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
     @Inject
     @RestClient
     RbacServer rbacServer;
-
-    @ConfigProperty(name = "rbac.retry.max-attempts", defaultValue = "3")
-    long maxRetryAttempts;
-
-    @ConfigProperty(name = "rbac.retry.back-off.initial-value", defaultValue = "0.1S")
-    Duration initialBackOff;
-
-    @ConfigProperty(name = "rbac.retry.back-off.max-value", defaultValue = "1S")
-    Duration maxBackOff;
 
     @Override
     public Class<ConsoleAuthenticationRequest> getRequestType() {
@@ -224,8 +214,8 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
              */
             .onFailure(failure -> failure.getClass() == IOException.class || failure.getClass() == ConnectTimeoutException.class)
             .retry()
-            .withBackOff(this.initialBackOff, this.maxBackOff)
-            .atMost(this.maxRetryAttempts)
+            .withBackOff(this.backendConfig.getRbacRetriesInitialBackOff(), this.backendConfig.getRbacRetriesBackOffMaxValue())
+            .atMost(this.backendConfig.getRbacRetriesMaxAttempts())
             // After we're done retrying, an RBAC server call failure will cause an authentication failure
             .onFailure().transform(Unchecked.function(failure -> {
                 throw new AuthenticationFailedException("RBAC authentication call failed", failure);
