@@ -13,6 +13,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.http.Header;
 import jakarta.inject.Inject;
 import org.apache.http.HttpStatus;
@@ -40,10 +41,10 @@ public class ConsoleIdentityProviderTest {
     ConsoleIdentityProvider consoleIdentityProvider;
 
     @InjectMock
-    BackendConfig backendConfig;
-
-    @InjectMock
     Environment environment;
+
+    @InjectSpy
+    BackendConfig backendConfig;
 
     @Test
     void testNullOrgId() {
