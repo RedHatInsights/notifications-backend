@@ -10,7 +10,6 @@ import io.quarkus.security.identity.request.AuthenticationRequest;
 import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.quarkus.vertx.http.runtime.security.ChallengeData;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
-import io.quarkus.vertx.http.runtime.security.HttpCredentialTransport;
 import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -105,10 +104,5 @@ public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
     @Override
     public Set<Class<? extends AuthenticationRequest>> getCredentialTypes() {
         return Collections.singleton(ConsoleAuthenticationRequest.class);
-    }
-
-    @Override
-    public HttpCredentialTransport getCredentialTransport() {
-        return null;
     }
 }
