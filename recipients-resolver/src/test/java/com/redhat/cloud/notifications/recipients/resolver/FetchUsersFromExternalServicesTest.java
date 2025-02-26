@@ -615,6 +615,7 @@ public class FetchUsersFromExternalServicesTest {
         when(rbacServiceToService.getGroupUsers(
                 Mockito.eq(DEFAULT_ORG_ID),
                 Mockito.eq(groupId),
+                Mockito.anyBoolean(),
                 Mockito.anyInt(),
                 Mockito.anyInt()
         )).then(invocationOnMock -> {
