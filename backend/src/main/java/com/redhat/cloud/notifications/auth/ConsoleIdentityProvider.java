@@ -144,15 +144,23 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         }
 
         // Retrieve the identity header from the authentication request
-        return Uni.createFrom().item(() -> (String) rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER))
-                .onItem().transformToUni(this::buildQuarkusUni);
+        return Uni
+            .createFrom()
+            .item(
+                () -> (String) rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER)
+            )
+            .onItem()
+            .transformToUni(this::buildQuarkusUni);
     }
 
     @CacheResult(cacheName = "rbac-cache")
     protected Uni<QuarkusSecurityIdentity> buildQuarkusUni(String xRhIdHeader) {
         // Start building a QuarkusSecurityIdentity
-        return Uni.createFrom().item(QuarkusSecurityIdentity.builder())
-            .onItem().transformToUni(builder -> {
+        return Uni
+            .createFrom()
+            .item(QuarkusSecurityIdentity.builder())
+            .onItem()
+            .transformToUni(builder -> {
                 // Decode the header and deserialize the resulting JSON
                 ConsoleIdentity identity = getRhIdentityFromString(xRhIdHeader);
                 try {
@@ -212,8 +220,8 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                     return Uni.createFrom().failure(new AuthenticationFailedException());
                 }
             })
-            // A failure will cause an authentication failure
-            .onFailure().transform(throwable -> {
+            .onFailure()
+            .transform(throwable -> {
                 Log.error("Error while processing identity", throwable);
                 return new AuthenticationFailedException(throwable);
             });

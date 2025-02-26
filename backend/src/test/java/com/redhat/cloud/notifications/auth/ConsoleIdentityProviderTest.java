@@ -152,9 +152,10 @@ public class ConsoleIdentityProviderTest {
     /**
      * Test that when Kessel Relations is enabled, and an incoming request
      * has a {@link com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeIdentity},
-     * the built principal has
-     * Regression test for <a href="https://issues.redhat.com/browse/RHCLOUD-38438">RHCLOUD-38438</a>.
-     * Essentially the
+     * the generated {@link SecurityIdentity} has a {@link TurnpikePrincipal},
+     * the incoming roles are correctly mapped, and that the "internal user
+     * role" that we always add is present. This is a regression test for
+     * <a href="https://issues.redhat.com/browse/RHCLOUD-38438">RHCLOUD-38438</a>.
      */
     @Test
     void testTurnpikePrincipalGetsRolesWhenKesselEnabled() {
