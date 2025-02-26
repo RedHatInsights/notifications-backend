@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.utils.ActionParser;
+import io.quarkus.qute.TemplateException;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -46,7 +47,17 @@ public class TemplateEngineResource {
 
             return Response.ok(new RenderEmailTemplateResponse.Success(renderedTemplate)).build();
         } catch (Exception e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(e.getMessage())).build();
+            final String errorMessage;
+
+            // For some reason the error message is in the nested exception of
+            // the thrown exception.
+            if (e.getCause() instanceof TemplateException templateException) {
+                errorMessage = templateException.getMessage();
+            } else {
+                errorMessage = e.getMessage();
+            }
+
+            return Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(errorMessage)).build();
         }
     }
 }
