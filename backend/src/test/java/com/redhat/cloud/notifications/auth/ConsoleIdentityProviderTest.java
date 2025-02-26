@@ -6,6 +6,12 @@ import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.auth.principal.IllegalIdentityHeaderException;
+import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikePrincipal;
+import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.models.InternalRoleAccess;
+import io.quarkus.security.identity.AuthenticationRequestContext;
+import io.quarkus.security.identity.SecurityIdentity;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.Header;
@@ -15,9 +21,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.security.Principal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_USER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.emptyString;
 
@@ -27,6 +38,9 @@ public class ConsoleIdentityProviderTest {
 
     @Inject
     ConsoleIdentityProvider consoleIdentityProvider;
+
+    @InjectMock
+    BackendConfig backendConfig;
 
     @Test
     void testNullOrgId() {
@@ -133,6 +147,65 @@ public class ConsoleIdentityProviderTest {
 
         // Assert that no principal was generated.
         Assertions.assertFalse(principal.isPresent(), "expecting a principal to not be generated when no \"x-rh-identity\" header's value is present, but a principal was generated");
+    }
+
+    /**
+     * Test that when Kessel Relations is enabled, and an incoming request
+     * has a {@link com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikeIdentity},
+     * the built principal has
+     * Regression test for <a href="https://issues.redhat.com/browse/RHCLOUD-38438">RHCLOUD-38438</a>.
+     * Essentially the
+     */
+    @Test
+    void testTurnpikePrincipalGetsRolesWhenKesselEnabled() {
+        // Enable Kessel for this test.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(Mockito.anyString())).thenReturn(true);
+
+        record TestCase(String[] turnpikeRoles) {
+            @Override
+            public String toString() {
+                return "TestCase{" +
+                    "turnpikeRoles=" + Arrays.toString(turnpikeRoles) +
+                    '}';
+            }
+        }
+
+        final List<TestCase> testCases = List.of(
+            new TestCase(new String[]{}),
+            new TestCase(new String[]{"custom-role"}),
+            new TestCase(new String[]{RBAC_INTERNAL_ADMIN}),
+            new TestCase(new String[]{RBAC_INTERNAL_ADMIN, "custom-role", "custom-role-two"})
+        );
+
+        for (final TestCase tc : testCases) {
+            // Build a request with a Turnpike identity inside the "x-rh-identity"
+            // header.
+            final ConsoleAuthenticationRequest request = new ConsoleAuthenticationRequest(
+                TestHelpers.encodeTurnpikeIdentityInfo(DEFAULT_USER, tc.turnpikeRoles())
+            );
+
+            // Call the function under test.
+            final SecurityIdentity securityIdentity = this.consoleIdentityProvider
+                .authenticate(request, Mockito.mock(AuthenticationRequestContext.class))
+                .await()
+                .indefinitely();
+
+            // Assert that a Turnpike principal was built.
+            Assertions.assertInstanceOf(TurnpikePrincipal.class, securityIdentity.getPrincipal(), "the function under test did not generate a Turnpike principal from an \"x-rh-identity\" header which contained a Turnpike identity");
+
+            // Assert that the "internal user" role is set, as it should for
+            // every Turnpike authenticated request.
+            Assertions.assertTrue(securityIdentity.hasRole(RBAC_INTERNAL_USER), String.format("every Turnpike authenticated request must have the \"read:internal\" role assigned, but the built security identity did not have it for test case: %s. Security identity roles: %s", tc, securityIdentity.getRoles()));
+
+            // Asser that the rest of the roles are present.
+            for (final String tcTurnpikeRole : tc.turnpikeRoles()) {
+                // The security identity transforms the Turnpike roles using a
+                // particular format, so we need to adjust the expectations.
+                final String expectedRole = InternalRoleAccess.getInternalRole(tcTurnpikeRole);
+
+                Assertions.assertTrue(securityIdentity.getRoles().contains(expectedRole), String.format("role \"%s\" not found in the built security identity, although the test case demanded it to be there. Test case: %s. Security identity roles: %s", expectedRole, tc, securityIdentity.getRoles()));
+            }
+        }
     }
 
     private static Header buildIdentityHeader(String orgId) {
