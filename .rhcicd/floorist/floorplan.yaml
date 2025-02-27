@@ -29,22 +29,6 @@ objects:
         #
         # The main information is in the email subscriptions table, and the
         # other joins just provide extra information.
-        #
-        # The "exists" subquery checks whether the email subscription's event
-        # type is associated with an email integration, because in order for an
-        # email subscription to be honored two conditions need to be met:
-        #
-        # 1. The user is subscribed to the event type.
-        # 2. There is an email integration set by the organization
-        #    administrator associated to one or multiple event types, that
-        #    enables sending those emails.
-        #
-        # For the purpose of checking that, the subquery checks that the email
-        # subscription's event type is in the "endpoint_event_type" join table,
-        # but making sure that the event type is associated to an email
-        # integration, and that the email integration either belongs to the
-        # email subscription's organization, or it's a default system endpoint
-        # set up by us internally — thus the "org_id" checks —.
       - prefix: insights/notifications/email_subscriptions
         query: >-
           SELECT
@@ -53,21 +37,7 @@ objects:
             email_subscriptions.org_id::TEXT,
             event_type.display_name::TEXT AS event_type,
             email_subscriptions.subscription_type::TEXT,
-            email_subscriptions.subscribed::BOOLEAN,
-            EXISTS (
-              SELECT
-                1
-              FROM
-                endpoint_event_type
-              INNER JOIN
-                endpoints ON endpoints.id = endpoint_event_type.endpoint_id
-              WHERE
-                endpoint_event_type.event_type_id = email_subscriptions.event_type_id
-              AND
-                endpoints.endpoint_type_v2 = 'EMAIL_SUBSCRIPTION'
-              AND
-                (endpoints.org_id = email_subscriptions.org_id OR endpoints.org_id IS NULL)
-            )::BOOLEAN AS active
+            email_subscriptions.subscribed::BOOLEAN
           FROM
             email_subscriptions
           INNER JOIN
