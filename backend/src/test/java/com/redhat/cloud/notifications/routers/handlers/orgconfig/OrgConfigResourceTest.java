@@ -24,9 +24,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
+import java.time.Duration;
 import java.time.LocalTime;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
@@ -96,6 +98,14 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         this.entityManager
             .createQuery("DELETE FROM AggregationOrgConfig")
             .executeUpdate();
+
+        // Since we are mocking the back end configuration, we need to set the
+        // following default values for the RBAC calls not to fail. Otherwise
+        // the tests complain because "the initial backoff and the max back off
+        // value must be greater than zero".
+        Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
+        Mockito.when(this.backendConfig.getRbacRetriesInitialBackOff()).thenReturn(Duration.ofSeconds(1));
+        Mockito.when(this.backendConfig.getRbacRetriesBackOffMaxValue()).thenReturn(Duration.ofSeconds(1));
     }
 
     @ParameterizedTest
