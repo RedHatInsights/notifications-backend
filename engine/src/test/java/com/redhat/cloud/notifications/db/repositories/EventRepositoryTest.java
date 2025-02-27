@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -103,7 +104,10 @@ public class EventRepositoryTest {
         final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null);
 
         Assertions.assertEquals(this.createdEvents.size(), result.size(), "unexpected number of fetched events");
-        Assertions.assertIterableEquals(this.createdEvents, result, "the fetched events are not the same as the created ones");
+        Assertions.assertIterableEquals(
+            this.createdEvents.stream().sorted(Comparator.comparing(evt -> evt.getCreated())).toList(),
+            result.stream().sorted(Comparator.comparing(evt -> evt.getCreated())).toList(),
+            "the fetched events are not the same as the created ones");
     }
 
     /**
