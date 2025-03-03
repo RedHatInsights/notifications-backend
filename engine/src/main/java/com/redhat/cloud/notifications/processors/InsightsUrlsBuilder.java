@@ -128,7 +128,7 @@ public class InsightsUrlsBuilder {
      */
     public String buildQueryParams(List<String> params, String integration_type) {
         List<String> all_params = new ArrayList<>(List.copyOf(params));
-        all_params.add("from=notification_" + integration_type);
+        all_params.add("from=notification_" + integration_type.toLowerCase());
 
         return "?" + String.join("&", all_params);
     }
