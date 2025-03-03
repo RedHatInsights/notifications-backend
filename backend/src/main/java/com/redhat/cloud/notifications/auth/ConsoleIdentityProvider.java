@@ -87,28 +87,36 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         // if we see that something is not working properly, we can instantly
         // switch back to RBAC by disabling Kessel.
         try {
-            String orgId = "-none-";
             // Build the principal from the incoming "x-rh-identity" header.
-            Optional<Principal> principal = this.buildPrincipalFromIdentityHeader(rhAuthReq);
-            if (principal.get() instanceof RhIdPrincipal rhIdPrincipal) {
-                orgId = rhIdPrincipal.getOrgId();
-            }
-            if (this.backendConfig.isKesselRelationsEnabled(orgId)) {
+            final Optional<Principal> principal = this.buildPrincipalFromIdentityHeader(rhAuthReq);
 
-                final QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder();
-
-                // Set the principal to the one we decoded from the header,
-                // unless no header was present. In that case we build an empty
-                // principal.
-                builder.setPrincipal(principal.orElse(ConsolePrincipal.noIdentity()));
-
-                // Build the security identity for Quarkus.
-                return Uni.createFrom().item(builder.build());
+            // The incoming "x-rh-identity" header must contain a "user" or
+            // "service account" principal, because those are the ones that
+            // contain the required "user_id" field that is used for Kessel
+            // related queries.
+            if (principal.isPresent() && principal.get() instanceof RhIdPrincipal rhIdPrincipal) {
+                if (this.backendConfig.isKesselRelationsEnabled(rhIdPrincipal.getOrgId())) {
+                    // Build the security identity for Quarkus and return it.
+                    // At this point the principal is authenticated, and the
+                    // pertinent authorization checks will be performed with
+                    // Kessel when appropriate.
+                    return Uni
+                        .createFrom()
+                        .item(
+                            QuarkusSecurityIdentity
+                            .builder()
+                            .setPrincipal(rhIdPrincipal)
+                            .build()
+                        );
+                }
             }
         } catch (final IllegalIdentityHeaderException | IllegalArgumentException e) {
             return Uni.createFrom().failure(() -> new AuthenticationFailedException(e));
         }
 
+        // When both Kessel and RBAC are not enabled that means that we are in
+        // a development context, and therefore we build a security identity
+        // with all the roles available to ease development.
         if (!isRbacEnabled) {
             final Principal principal;
             try {
@@ -134,16 +142,25 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                     .addRole(adminRole)
                     .build());
         }
+
         // Retrieve the identity header from the authentication request
-        return Uni.createFrom().item(() -> (String) rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER))
-                .onItem().transformToUni(xRhIdHeader -> buildQuarkusUni(xRhIdHeader));
+        return Uni
+            .createFrom()
+            .item(
+                () -> (String) rhAuthReq.getAttribute(X_RH_IDENTITY_HEADER)
+            )
+            .onItem()
+            .transformToUni(this::buildQuarkusUni);
     }
 
     @CacheResult(cacheName = "rbac-cache")
     protected Uni<QuarkusSecurityIdentity> buildQuarkusUni(String xRhIdHeader) {
         // Start building a QuarkusSecurityIdentity
-        return Uni.createFrom().item(QuarkusSecurityIdentity.builder())
-            .onItem().transformToUni(builder -> {
+        return Uni
+            .createFrom()
+            .item(QuarkusSecurityIdentity.builder())
+            .onItem()
+            .transformToUni(builder -> {
                 // Decode the header and deserialize the resulting JSON
                 ConsoleIdentity identity = getRhIdentityFromString(xRhIdHeader);
                 try {
@@ -203,8 +220,8 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                     return Uni.createFrom().failure(new AuthenticationFailedException());
                 }
             })
-            // A failure will cause an authentication failure
-            .onFailure().transform(throwable -> {
+            .onFailure()
+            .transform(throwable -> {
                 Log.error("Error while processing identity", throwable);
                 return new AuthenticationFailedException(throwable);
             });
