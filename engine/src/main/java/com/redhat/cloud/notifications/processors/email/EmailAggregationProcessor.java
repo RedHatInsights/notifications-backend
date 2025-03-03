@@ -17,6 +17,7 @@ import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
@@ -40,6 +41,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
 import java.util.ArrayList;
@@ -203,10 +207,22 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
         try {
             Action action = actionParser.fromJsonString(event.getPayload());
+            Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
             for (com.redhat.cloud.notifications.ingress.Event actionEvent : action.getEvents()) {
                 try {
-                    aggregationCommands.add(objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class));
+                    AggregationCommand command = objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class);
+                    try {
+                        JsonObject aggregationKey = new JsonObject(actionEvent.getPayload().getAdditionalProperties()).getJsonObject("aggregationKey");
+                        EventAggregationCriteria key = objectMapper.convertValue(aggregationKey, EventAggregationCriteria.class);
+                        Set<ConstraintViolation<EventAggregationCriteria>> constraintViolations = validator.validate(key);
+                        if (constraintViolations.isEmpty()) {
+                            command.setAggregationKey(key);
+                        }
+                    } catch (Exception e) {
+                        Log.error("Kafka aggregation payload parsing key failed to be cast as 'EventAggregationCriteria' for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
+                    }
+                    aggregationCommands.add(command);
                 } catch (Exception e) {
                     Log.error("Kafka aggregation payload parsing failed for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
                     rejectedAggregationCommandCount.increment();

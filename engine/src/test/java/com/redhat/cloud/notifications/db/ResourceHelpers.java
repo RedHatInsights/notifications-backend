@@ -75,6 +75,13 @@ public class ResourceHelpers {
             .executeUpdate();
     }
 
+    @Transactional
+    public void deleteBundle(String bundleName) {
+        entityManager.createQuery("DELETE FROM Bundle WHERE name = :bundleName")
+            .setParameter("bundleName", bundleName)
+            .executeUpdate();
+    }
+
     public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setOrgId(orgId);
