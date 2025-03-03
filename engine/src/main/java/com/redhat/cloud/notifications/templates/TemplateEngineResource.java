@@ -42,7 +42,7 @@ public class TemplateEngineResource {
 
             for (int i = 0; i < templateContent.length; i++) {
                 TemplateInstance template = templateService.compileTemplate(templateContent[i], String.format("rendered-template-%d", i));
-                renderedTemplate[i] = templateService.renderTemplate(action, template);
+                renderedTemplate[i] = templateService.renderTemplate(action, template, null);
             }
 
             return Response.ok(new RenderEmailTemplateResponse.Success(renderedTemplate)).build();

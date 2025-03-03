@@ -186,9 +186,9 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        insightsUrlsBuilder.buildInventoryUrl(payloadToSend, ep.getType().name().toLowerCase())
+        insightsUrlsBuilder.buildInventoryUrl(payloadToSend, ep.getType().name())
                 .ifPresent(url -> payloadToSend.put("inventory_url", url));
-        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend, ep.getType().name().toLowerCase()));
+        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend, ep.getType().name()));
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
