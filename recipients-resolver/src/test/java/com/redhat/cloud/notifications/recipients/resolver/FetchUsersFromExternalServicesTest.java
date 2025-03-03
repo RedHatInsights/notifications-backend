@@ -123,7 +123,6 @@ public class FetchUsersFromExternalServicesTest {
         page.setMeta(meta);
 
         when(rbacServiceToService.getGroupUsers(any(), any(), any(), any(), any())).thenReturn(page);
-        
         List<User> resolvedUsers = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, defaultGroup.getUuid());
 
         assertEquals(5, resolvedUsers.size());
