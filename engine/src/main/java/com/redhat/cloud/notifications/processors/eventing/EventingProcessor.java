@@ -88,11 +88,11 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
         final JsonObject payload = baseTransformer.toJsonObject(event);
         insightsUrlsBuilder.buildInventoryUrl(payload, endpoint.getType().name()).ifPresent(url -> payload.put("inventory_url", url));
-        payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getType().name()));
+        payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getSubType()));
         if (endpoint.getSubType().equals("splunk")) {
             // Splunk assembles its own URLs
             payload.put("environment_url", environment.url());
-            payload.put("query_params", insightsUrlsBuilder.buildQueryParams(List.of(), endpoint.getType().name()));
+            payload.put("query_params", insightsUrlsBuilder.buildQueryParams(List.of(), endpoint.getSubType()));
         }
         payload.put(NOTIF_METADATA_KEY, metaData);
 
