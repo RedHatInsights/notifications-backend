@@ -75,6 +75,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         return ConsoleAuthenticationRequest.class;
     }
 
+    @Override
     public Uni<SecurityIdentity> authenticate(final ConsoleAuthenticationRequest request, final AuthenticationRequestContext ignored) {
         // Protect ourselves from malformed "x-rh-identity" headers before
         // proceeding.
