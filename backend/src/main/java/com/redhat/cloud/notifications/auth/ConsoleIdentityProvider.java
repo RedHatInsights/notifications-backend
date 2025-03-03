@@ -131,7 +131,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
             }
 
             // For Turnpike we just want to add the "internal user" role to the
-            // list of roles that the identity might come from.
+            // list of roles that the identity might come with.
             case TurnpikeSamlIdentity turnpikeSamlIdentity -> {
                 return this.buildTurnpikeSecurityIdentity(turnpikeSamlIdentity);
             }
