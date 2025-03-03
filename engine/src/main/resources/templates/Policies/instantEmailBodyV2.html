@@ -11,10 +11,10 @@
     {#if action.events.size() == 1}policy{#else}policies{/if} triggered on your system
 {/content-subtitle-section1}
 {#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/policies">{action.events.size()}</a>
+    <a target="_blank" href="{environment.url}/insights/policies{query_params}">{action.events.size()}</a>
 {/content-title-right-part-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/policies">Open Policies in Insights</a>
+    <a target="_blank" href="{environment.url}/insights/policies{query_params}">Open Policies in Insights</a>
 {/content-button-section1}
 {#content-body-section1}
     <p><b>{action.context.display_name}</b> triggered {action.events.size()} {#if action.events.size() is 1}policy{#else}policies{/if}.</p>
@@ -29,7 +29,7 @@
                 {#each action.events}
                 <tr style="font-size: 14px;">
                     <td>
-                    <a href="{environment.url}/insights/policies/policy/{it.payload.policy_id}" target="_blank">{it.payload.policy_name}</a>
+                    <a href="{environment.url}/insights/policies/policy/{it.payload.policy_id}{query_params}" target="_blank">{it.payload.policy_name}</a>
                     </td>
                 </tr>
                 {/each}
