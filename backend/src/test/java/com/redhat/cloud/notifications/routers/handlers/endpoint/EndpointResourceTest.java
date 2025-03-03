@@ -4444,6 +4444,92 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testSystemEndpointsCreationKesselInventory(final boolean isKesselInventoryEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(isKesselInventoryEnabled);
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn(RandomStringUtils.secure().nextAlphanumeric(10));
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
+
+        Response response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(requestProps))
+            .post("/endpoints/system/email_subscription")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
+
+        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(EndpointDTO.class);
+        String emailEndpointId = responsePoint.getString("id");
+        assertNotNull(emailEndpointId);
+
+        response = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(requestProps))
+            .post("/endpoints/system/drawer_subscription")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(EndpointDTO.class);
+        String drawerEndpointId = responsePoint.getString("id");
+        assertNotNull(drawerEndpointId);
+
+        if (isKesselInventoryEnabled) {
+            Mockito.verify(notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(
+                CreateNotificationsIntegrationRequest.newBuilder()
+                    .setIntegration(
+                        NotificationsIntegration.newBuilder()
+                            .setMetadata(Metadata.newBuilder()
+                                .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
+                                .setWorkspaceId(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString())
+                                .build()
+                            ).setReporterData(ReporterData.newBuilder()
+                                .setLocalResourceId(emailEndpointId.toString())
+                                .setReporterInstanceId(backendConfig.getKesselInventoryReporterInstanceId())
+                                .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                                .build()
+                            ).build()
+                    ).build()
+            );
+
+            Mockito.verify(notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(
+                CreateNotificationsIntegrationRequest.newBuilder()
+                    .setIntegration(
+                        NotificationsIntegration.newBuilder()
+                            .setMetadata(Metadata.newBuilder()
+                                .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
+                                .setWorkspaceId(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString())
+                                .build()
+                            ).setReporterData(ReporterData.newBuilder()
+                                .setLocalResourceId(drawerEndpointId.toString())
+                                .setReporterInstanceId(backendConfig.getKesselInventoryReporterInstanceId())
+                                .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                                .build()
+                            ).build()
+                    ).build()
+            );
+        } else {
+            Mockito.verify(notificationsIntegrationClient, Mockito.never()).CreateNotificationsIntegration(any(CreateNotificationsIntegrationRequest.class));
+        }
+    }
+
     /**
      * Tests that when we fail to save an integration in our database for some
      * reason, the Inventory API does not get called to create an integration
