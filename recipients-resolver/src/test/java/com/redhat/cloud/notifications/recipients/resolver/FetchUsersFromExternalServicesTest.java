@@ -122,8 +122,7 @@ public class FetchUsersFromExternalServicesTest {
         page.setData(users);
         page.setMeta(meta);
 
-        when(rbacServiceToService.getGroupUsers(any(), any(), any(), any())).thenReturn(page);
-
+        when(rbacServiceToService.getGroupUsers(any(), any(), any(), any(), any())).thenReturn(page);
         List<User> resolvedUsers = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, defaultGroup.getUuid());
 
         assertEquals(5, resolvedUsers.size());
@@ -615,6 +614,7 @@ public class FetchUsersFromExternalServicesTest {
         when(rbacServiceToService.getGroupUsers(
                 Mockito.eq(DEFAULT_ORG_ID),
                 Mockito.eq(groupId),
+                Mockito.anyBoolean(),
                 Mockito.anyInt(),
                 Mockito.anyInt()
         )).then(invocationOnMock -> {
