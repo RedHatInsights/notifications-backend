@@ -2,30 +2,31 @@ package com.redhat.cloud.notifications.auth;
 
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.MockServerConfig;
-import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.auth.principal.IllegalIdentityHeaderException;
 import com.redhat.cloud.notifications.auth.principal.turnpike.TurnpikePrincipal;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.http.Header;
 import jakarta.inject.Inject;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_USER;
@@ -40,6 +41,9 @@ public class ConsoleIdentityProviderTest {
     ConsoleIdentityProvider consoleIdentityProvider;
 
     @InjectMock
+    Environment environment;
+
+    @InjectSpy
     BackendConfig backendConfig;
 
     @Test
@@ -49,7 +53,7 @@ public class ConsoleIdentityProviderTest {
                 .header(identityHeader)
                 .when().get("/notifications/eventTypes")
                 .then()
-                .statusCode(401)
+                .statusCode(HttpStatus.SC_UNAUTHORIZED)
                 .body(emptyString()); // We must NOT leak security impl details such as a missing field in the x-rh-identity header.
     }
 
@@ -60,7 +64,7 @@ public class ConsoleIdentityProviderTest {
                 .header(identityHeader)
                 .when().get("/notifications/eventTypes")
                 .then()
-                .statusCode(401)
+                .statusCode(HttpStatus.SC_UNAUTHORIZED)
                 .body(emptyString()); // We must NOT leak security impl details such as a missing field in the x-rh-identity header.
     }
 
@@ -71,7 +75,7 @@ public class ConsoleIdentityProviderTest {
                 .header(identityHeader)
                 .when().get("/notifications/eventTypes")
                 .then()
-                .statusCode(401)
+                .statusCode(HttpStatus.SC_UNAUTHORIZED)
                 .body(emptyString()); // We must NOT leak security impl details such as a missing field in the x-rh-identity header.
     }
 
@@ -85,17 +89,17 @@ public class ConsoleIdentityProviderTest {
             .header(identityHeader)
             .when().get(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications/eventTypes")
             .then()
-            .statusCode(200);
+            .statusCode(HttpStatus.SC_OK);
     }
 
     @Test
     void testServiceAccountFullAccess() {
-        testServiceAccount(MockServerConfig.RbacAccess.FULL_ACCESS, 200);
+        testServiceAccount(MockServerConfig.RbacAccess.FULL_ACCESS, HttpStatus.SC_OK);
     }
 
     @Test
     void testServiceAccountNoAccess() {
-        testServiceAccount(MockServerConfig.RbacAccess.NO_ACCESS, 403);
+        testServiceAccount(MockServerConfig.RbacAccess.NO_ACCESS, HttpStatus.SC_FORBIDDEN);
     }
 
     void testServiceAccount(MockServerConfig.RbacAccess mockServerConfig, int expectedHttpReturnCode) {
@@ -109,44 +113,6 @@ public class ConsoleIdentityProviderTest {
             .when().get(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications/eventTypes")
             .then()
             .statusCode(expectedHttpReturnCode);
-    }
-
-    /**
-     * Tests that when a proper "x-rh-identity" header's value is given, a
-     * Console principal is built.
-     * @throws IllegalArgumentException in the case that the generated
-     * "x-rh-identity" header's value is not valid.
-     */
-    @Test
-    void testBuildPrincipalFromIdentityHeader() throws IllegalIdentityHeaderException {
-        // Build a request with a proper "x-rh-identity" header's value.
-        final String xRhIdentityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, TestConstants.DEFAULT_ORG_ID, "johndoe");
-        final ConsoleAuthenticationRequest request = new ConsoleAuthenticationRequest(xRhIdentityHeaderValue);
-
-        // Call the function under test.
-        final Optional<Principal> principal = this.consoleIdentityProvider.buildPrincipalFromIdentityHeader(request);
-
-        // Assert that the principal has been properly generated.
-        Assertions.assertTrue(principal.isPresent(), "expecting a principal to be generated from a proper \"x-rh-identity\" header's value. It was not generated.");
-    }
-
-    /**
-     * Tests that when a proper "x-rh-identity" header's value is not given,
-     * then no principal is generated.
-     * @throws IllegalArgumentException in the case that the generated
-     * "x-rh-identity" header's value is not valid.
-     */
-    @Test
-    void testBuildEmptyPrincipalFromIdentityHeader() throws IllegalIdentityHeaderException {
-        // Build a request with no "x-rh-identity" header's value.
-        final ConsoleAuthenticationRequest request = Mockito.mock(ConsoleAuthenticationRequest.class);
-        Mockito.when(request.getAttribute(Constants.X_RH_IDENTITY_HEADER)).thenReturn(null);
-
-        // Call the function under test.
-        final Optional<Principal> principal = this.consoleIdentityProvider.buildPrincipalFromIdentityHeader(request);
-
-        // Assert that no principal was generated.
-        Assertions.assertFalse(principal.isPresent(), "expecting a principal to not be generated when no \"x-rh-identity\" header's value is present, but a principal was generated");
     }
 
     /**
@@ -207,6 +173,40 @@ public class ConsoleIdentityProviderTest {
                 Assertions.assertTrue(securityIdentity.getRoles().contains(expectedRole), String.format("role \"%s\" not found in the built security identity, although the test case demanded it to be there. Test case: %s. Security identity roles: %s", expectedRole, tc, securityIdentity.getRoles()));
             }
         }
+    }
+
+    /**
+     * Tests that when all the authentication and authorization back ends are
+     * disabled, and the environment isn't a local one, an unauthorized
+     * response is returned.
+     */
+    @Test
+    void testRbacKesselDisabledUnauthorizedResponse() {
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(Mockito.anyString())).thenReturn(false);
+        Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(false);
+        Mockito.when(this.environment.isLocal()).thenReturn(false);
+
+        final Header identityHeader = buildIdentityHeader(DEFAULT_ORG_ID);
+        given()
+            .header(identityHeader)
+            .when().get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_UNAUTHORIZED)
+            .body(emptyString()); // We must NOT leak security impl details such as a missing field in the x-rh-identity header.
+    }
+
+    /**
+     * Tests that when a malformed "x-rh-identity" header is sent, the back end
+     * just returns an "unauthorized" response.
+     */
+    @Test
+    void testMalformedXRHIdentityHeaderReturnsUnauthorizedResponse() {
+        given()
+            .header(new Header(X_RH_IDENTITY_HEADER, "malformed-content"))
+            .when().get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_UNAUTHORIZED)
+            .body(emptyString()); // We must NOT leak security impl details such as a missing field in the x-rh-identity header.
     }
 
     private static Header buildIdentityHeader(String orgId) {

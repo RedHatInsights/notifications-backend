@@ -48,6 +48,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -145,6 +146,13 @@ public class NotificationResourceTest extends DbIsolatedTest {
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_NOTIFICATIONS_V_1_0;
         MockServerConfig.clearRbac();
+
+        // Since the backend configuration is mocked, the "isRBACEnabled()"
+        // method returns "false" by default. We need to have it enabled so
+        // that the "ConsoleIdentityProvider" doesn't build a principal with
+        // all the privileges because it thinks that both Kessel and RBAC are
+        // disabled.
+        Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
     }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {

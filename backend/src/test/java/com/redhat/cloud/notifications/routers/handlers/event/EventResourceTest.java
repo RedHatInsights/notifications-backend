@@ -41,9 +41,11 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.SecurityContext;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.relations.client.CheckClient;
@@ -144,6 +146,16 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @InjectSpy
     KesselAuthorization kesselAuthorization;
+
+    @BeforeEach
+    void setUp() {
+        // Since the backend configuration is mocked, the "isRBACEnabled()"
+        // method returns "false" by default. We need to have it enabled so
+        // that the "ConsoleIdentityProvider" doesn't build a principal with
+        // all the privileges because it thinks that both Kessel and RBAC are
+        // disabled.
+        Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})

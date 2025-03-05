@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -96,6 +97,13 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         this.entityManager
             .createQuery("DELETE FROM AggregationOrgConfig")
             .executeUpdate();
+
+        // Since the backend configuration is mocked, the "isRBACEnabled()"
+        // method returns "false" by default. We need to have it enabled so
+        // that the "ConsoleIdentityProvider" doesn't build a principal with
+        // all the privileges because it thinks that both Kessel and RBAC are
+        // disabled.
+        Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
     }
 
     @ParameterizedTest
