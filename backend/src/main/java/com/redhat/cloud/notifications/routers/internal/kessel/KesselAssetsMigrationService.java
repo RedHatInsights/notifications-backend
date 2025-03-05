@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers.internal.kessel;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -16,6 +17,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
@@ -30,8 +32,11 @@ import org.project_kessel.api.relations.v1beta1.SubjectReference;
 import org.project_kessel.relations.client.RelationTuplesClient;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,6 +64,9 @@ public class KesselAssetsMigrationService {
 
     @Inject
     WorkspaceUtils workspaceUtils;
+
+    @Inject
+    KesselAuthorization kesselAuthorizationService;
 
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/kessel/migrate-assets")
@@ -121,10 +129,41 @@ public class KesselAssetsMigrationService {
         Log.info("Finished migrating integrations to the Kessel inventory");
     }
 
+    @Path("/kessel/check-migrated-assets")
+    @GET
+    @RunOnVirtualThread
+    public void checkMigratedAssets() {
+        Log.info("Kessel assets' migration check");
+
+        List<String> orgs = endpointRepository.getOrgIdWithEndpoints();
+
+        for (String org : orgs) {
+            try {
+                UUID workspaceId = workspaceUtils.getDefaultWorkspaceId(org);
+                Set<UUID> endpointsUuidsFromKessel = kesselAuthorizationService.listWorkspaceIntegrations(workspaceId);
+                Set<UUID> endpointsUuidsFromDb = new HashSet<>(endpointRepository.getEndpointsUUIDsByOrgId(org));
+                if (endpointsUuidsFromDb.containsAll(endpointsUuidsFromKessel) && endpointsUuidsFromKessel.containsAll(endpointsUuidsFromDb)) {
+                    Log.tracef("Kessel assets' are sync for org %s", org);
+                } else {
+                    Log.errorf("Kessel assets' are not sync for org %s, kessel assets are: %s ; Notifications endpoints are: %s",
+                        org,
+                        endpointsUuidsFromKessel.stream().map(UUID::toString).reduce(", ", String::concat),
+                        endpointsUuidsFromDb.stream().map(UUID::toString).reduce(", ", String::concat)
+                    );
+                }
+            } catch (Exception e) {
+                Log.errorf(e, "Error checking endpoints for org %s", org);
+            }
+        }
+        Log.info("Finished migrating integrations check");
+    }
+
+
+    @Deprecated
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/kessel/migrate-assets/async")
     @POST
-    public void migrateAssetsAsync(@Nullable final KesselAssetsMigrationRequest kamRequest) {
+    public void migrateAssetsAsyncUsingBulkImport(@Nullable final KesselAssetsMigrationRequest kamRequest) {
         Log.info("Kessel assets' migration begins");
 
         // Grab the organization ID specified in the request.

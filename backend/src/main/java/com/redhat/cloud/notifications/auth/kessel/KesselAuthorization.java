@@ -22,6 +22,8 @@ import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesRequest;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesResponse;
+import org.project_kessel.api.relations.v1beta1.LookupSubjectsRequest;
+import org.project_kessel.api.relations.v1beta1.LookupSubjectsResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
 import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.api.relations.v1beta1.RequestPagination;
@@ -35,6 +37,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 
 @ApplicationScoped
 public class KesselAuthorization {
@@ -430,5 +434,85 @@ public class KesselAuthorization {
      */
     private String getUserId(RhIdentity identity) {
         return backendConfig.getKesselDomain() + "/" + identity.getUserId();
+    }
+
+    /**
+     * List integrations of a specific workspace
+     * @param workspaceId specific workspace ID
+     * @return endpoints uuid list
+     */
+    public Set<UUID> listWorkspaceIntegrations(final UUID workspaceId) {
+
+        // Prepare the set of UUIDs we are going to receive from Kessel.
+        final Set<UUID> uuids = new HashSet<>();
+
+        // Every response coming from Kessel has a continuation token. In order
+        // to know when to stop querying for resources, we need to keep track
+        // of the old continuation token and the one from the latest received
+        // element. Once the old one and the new one are the same, we don't
+        // have to keep querying for more resources.
+        String continuationToken;
+        String newContinuationToken = "";
+        do {
+            // Replace the old continuation token with the new one. This way
+            // the token gets used
+            continuationToken = newContinuationToken;
+
+            // Build the lookup request for Kessel.
+            final LookupSubjectsRequest request = this.buildWorkspaceIntegrationsLookupSubjectsRequest(workspaceId, continuationToken);
+
+            Log.tracef("Payload for the resource lookup: %s", request);
+
+            // Make the request to Kessel.
+            final Iterator<LookupSubjectsResponse> responses;
+            try {
+                responses = lookupClient.lookupSubjects(request);
+            } catch (final Exception e) {
+                Log.errorf(
+                    e,
+                    "Runtime error when querying Kessel for integration resources with request payload: %s", request
+                );
+
+                throw e;
+            }
+
+            // Iterate over the incoming results.
+            while (responses.hasNext()) {
+                final LookupSubjectsResponse response = responses.next();
+
+                Log.tracef("Received payload for the resource lookup: %s", response);
+
+                uuids.add(UUID.fromString(response.getSubject().getSubject().getId()));
+
+                // Update the continuation token every time, to make sure we
+                // grab the last streamed element's continuation token.
+                newContinuationToken = response.getPagination().getContinuationToken();
+            }
+        } while (!continuationToken.equals(newContinuationToken));
+
+        return uuids;
+    }
+
+    private LookupSubjectsRequest buildWorkspaceIntegrationsLookupSubjectsRequest(final UUID workspaceId, final String continuationToken) {
+        final LookupSubjectsRequest.Builder requestBuilder = LookupSubjectsRequest.newBuilder()
+            .setResource(ObjectReference.newBuilder()
+                .setType(ResourceType.WORKSPACE.getKesselObjectType())
+                .setId(workspaceId.toString())
+                .build())
+            .setRelation(INTEGRATIONS_VIEW.getKesselPermissionName())
+            .setSubjectType(ResourceType.INTEGRATION.getKesselObjectType());
+
+        // Include the continuation token in the request to resume fetching
+        // resources right where we last left off.
+        if (continuationToken != null && !continuationToken.isBlank()) {
+            requestBuilder.setPagination(
+                RequestPagination.newBuilder()
+                    .setContinuationToken(continuationToken)
+                    .setLimit(backendConfig.getKesselRelationsLookupResourceLimit())
+                    .build()
+            );
+        }
+
+        return requestBuilder.build();
     }
 }

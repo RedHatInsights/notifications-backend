@@ -433,4 +433,18 @@ public class EndpointRepository {
             .setMaxResults(limit)
             .getResultList();
     }
+
+    public List<String> getOrgIdWithEndpoints() {
+        String query = "SELECT distinct(orgId) FROM Endpoint";
+        return entityManager.createQuery(query, String.class)
+                .getResultList();
+    }
+
+    public List<UUID> getEndpointsUUIDsByOrgId(final String orgId) {
+        String query = "SELECT id FROM Endpoint where orgId = :orgId ";
+        return entityManager.createQuery(query, UUID.class)
+            .setParameter("orgId", orgId)
+            .getResultList();
+    }
+
 }
