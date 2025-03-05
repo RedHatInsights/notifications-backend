@@ -501,7 +501,7 @@ public class KesselAuthorization {
                             .setType(ResourceType.WORKSPACE.getKesselObjectType())
                             .setId(workspaceId.toString())
                     ).build()
-            ).setRelation(VIEW.getKesselPermissionName())
+            ).setRelation("workspace")
             .setResourceType(ResourceType.INTEGRATION.getKesselObjectType());
 
         // Include the continuation token in the request to resume fetching
