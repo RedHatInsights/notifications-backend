@@ -36,8 +36,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission.VIEW;
-
 @ApplicationScoped
 public class KesselAuthorization {
     /**
