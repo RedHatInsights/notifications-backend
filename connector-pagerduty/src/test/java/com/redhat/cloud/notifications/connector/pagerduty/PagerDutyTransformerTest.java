@@ -144,8 +144,8 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
                 ),
                 "environment_url", "https://localhost"
         );
-        cloudEventPayload.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce");
-        cloudEventPayload.put("application_url", "https://localhost/insights/inventory");
+        cloudEventPayload.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce?from=notification_pagerduty");
+        cloudEventPayload.put("application_url", "https://localhost/insights/inventory?from=notification_pagerduty");
         cloudEventPayload.put("severity", "error");
         cloudEventData.put("payload", cloudEventPayload);
 

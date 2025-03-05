@@ -48,7 +48,7 @@ public class InsightsUrlsBuilder {
         // A provided host url does not need to be modified
         String host_url = context.getString("host_url", "");
         if (!host_url.isBlank()) {
-            return Optional.of(host_url + "?" + String.join("&", queryParamParts));
+            return Optional.of(host_url + buildQueryParams(queryParamParts, integration_type));
         }
 
         String environmentUrl = environment.url();
