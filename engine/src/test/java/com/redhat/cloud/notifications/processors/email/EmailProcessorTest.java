@@ -19,7 +19,6 @@ import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
-import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import io.quarkus.qute.TemplateInstance;
@@ -50,9 +49,6 @@ public class EmailProcessorTest {
 
     @Inject
     EmailProcessor emailProcessor;
-
-    @Inject
-    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @InjectMock
     SubscriptionRepository subscriptionRepository;
@@ -316,7 +312,7 @@ public class EmailProcessorTest {
         final Template bodyTemplate = new Template();
         bodyTemplate.setData(bodyData);
 
-        final String insightsQueryParams = insightsUrlsBuilder.buildQueryParams(List.of(), EmailProcessor.INSTANT_EMAIL_QUERY_PARAM_TYPE);
+        final String insightsQueryParams = "?from=notification_instant_email";
 
         final InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
         instantEmailTemplate.setSubjectTemplate(subjectTemplate);
