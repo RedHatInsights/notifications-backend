@@ -435,7 +435,7 @@ public class EndpointRepository {
     }
 
     public List<String> getOrgIdWithEndpoints() {
-        String query = "SELECT distinct(orgId) FROM Endpoint";
+        String query = "SELECT distinct(orgId) FROM Endpoint where orgId IS NOT null";
         return entityManager.createQuery(query, String.class)
                 .getResultList();
     }
