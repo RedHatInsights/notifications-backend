@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
+import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.templates.TemplateService;
@@ -49,6 +50,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     ObjectMapper objectMapper;
 
     @Inject
+    InsightsUrlsBuilder insightsUrlsBuilder;
+
+    @Inject
     DrawerNotificationRepository drawerNotificationRepository;
 
     @Inject
@@ -82,14 +86,15 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         }
 
         // build event thought qute template
-        String renderedData = buildNotificationMessage(event);
+        JsonObject transformedData = baseTransformer.toJsonObject(event);
+        String renderedData = buildNotificationMessage(event, transformedData);
 
         // store it on event table
         event.setRenderedDrawerNotification(renderedData);
         eventRepository.updateDrawerNotification(event);
 
         // get default endpoint
-        DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
+        DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event, transformedData, endpoints.getFirst());
 
         final Set<String> unsubscribers =
                 Set.copyOf(subscriptionRepository.getUnsubscribers(event.getOrgId(), event.getEventType().getId(), DRAWER));
@@ -107,7 +112,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         connectorSender.send(event, endpoints.getFirst(), JsonObject.mapFrom(drawerNotificationToConnector));
     }
 
-    private DrawerEntryPayload buildJsonPayloadFromEvent(Event event) {
+    private DrawerEntryPayload buildJsonPayloadFromEvent(Event event, JsonObject data, Endpoint ep) {
         DrawerEntryPayload drawerEntryPayload = new DrawerEntryPayload();
         drawerEntryPayload.setDescription(event.getRenderedDrawerNotification());
         drawerEntryPayload.setTitle(event.getEventTypeDisplayName());
@@ -115,12 +120,17 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
         drawerEntryPayload.setBundle(bundleRepository.getBundle(event.getBundleId()).getName());
         drawerEntryPayload.setEventId(event.getId());
+
+        /* Note: typically inventory_url is not provided if blank. However, drawer payloads must be assembled from raw
+         * objects, as called in DrawerNotificationRepository.getNotifications. So in this case, a blank string is
+         * provided. */
+        drawerEntryPayload.setInventoryUrl(insightsUrlsBuilder.buildInventoryUrl(data, ep.getType().name()).orElse(""));
+        drawerEntryPayload.setApplicationUrl(insightsUrlsBuilder.buildApplicationUrl(data, ep.getType().name()));
+
         return drawerEntryPayload;
     }
 
-    public String buildNotificationMessage(Event event) {
-        JsonObject data = baseTransformer.toJsonObject(event);
-
+    public String buildNotificationMessage(Event event, JsonObject data) {
         Map<Object, Object> dataAsMap;
         try {
             dataAsMap = objectMapper.readValue(data.encode(), Map.class);

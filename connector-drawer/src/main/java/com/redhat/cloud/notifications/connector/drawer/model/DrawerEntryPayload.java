@@ -31,6 +31,10 @@ public class DrawerEntryPayload {
 
     private String bundle;
 
+    private String inventoryUrl;
+
+    private String applicationUrl;
+
     public DrawerEntryPayload() {
     }
 
@@ -88,5 +92,21 @@ public class DrawerEntryPayload {
 
     public void setBundle(String bundle) {
         this.bundle = bundle;
+    }
+
+    public String getInventoryUrl() {
+        return inventoryUrl;
+    }
+
+    public void setInventoryUrl(String inventoryUrl) {
+        this.inventoryUrl = inventoryUrl;
+    }
+
+    public String getApplicationUrl() {
+        return applicationUrl;
+    }
+
+    public void setApplicationUrl(String applicationUrl) {
+        this.applicationUrl = applicationUrl;
     }
 }

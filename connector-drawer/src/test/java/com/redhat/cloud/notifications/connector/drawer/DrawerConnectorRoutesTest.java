@@ -101,6 +101,8 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
         drawerEntryPayload.setSource("My app");
         drawerEntryPayload.setTitle("the title");
         drawerEntryPayload.setBundle("My Bundle");
+        drawerEntryPayload.setInventoryUrl("");
+        drawerEntryPayload.setApplicationUrl("https://localhost/insights/my-app?from=notification_drawer");
 
         RecipientSettings recipientSettings = new RecipientSettings();
         return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings), List.of("user-1", "user-2"), new JsonObject());
@@ -245,6 +247,8 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
             assertEquals(notification.drawerEntryPayload().getDescription(), secondPayloadLevel.getString("description"));
             assertEquals(notification.drawerEntryPayload().getSource(), secondPayloadLevel.getString("source"));
             assertEquals(notification.drawerEntryPayload().getTitle(), secondPayloadLevel.getString("title"));
+            assertEquals(notification.drawerEntryPayload().getInventoryUrl(), secondPayloadLevel.getString("inventory_url"));
+            assertEquals(notification.drawerEntryPayload().getApplicationUrl(), secondPayloadLevel.getString("application_url"));
         }
     }
 }
