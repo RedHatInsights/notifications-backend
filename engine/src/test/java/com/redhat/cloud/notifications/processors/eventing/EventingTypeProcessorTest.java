@@ -181,6 +181,10 @@ class EventingTypeProcessorTest {
         assertEquals(SECRET_TOKEN.name(), notifMetadata.getJsonObject("authentication").getString("type"));
         assertEquals(properties1.getSecretTokenSourcesId(), notifMetadata.getJsonObject("authentication").getLong("secretId"));
 
+        // The processor also added an Insights application URL, and potentially an inventory URL.
+        assertEquals("https://localhost/insights/app?from=notification_sub-type", payload.getString("application_url"));
+        assertFalse(payload.containsKey("inventory_url"));
+
         // Finally, we need to check the Kafka message metadata.
         UUID historyId = result.get(0).getId();
         checkCloudEventMetadata(message, historyId, endpoint1.getAccountId(), endpoint1.getOrgId(), endpoint1.getSubType());
