@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission.VIEW;
 
 @ApplicationScoped
 public class KesselAuthorization {
@@ -501,7 +501,7 @@ public class KesselAuthorization {
                             .setType(ResourceType.WORKSPACE.getKesselObjectType())
                             .setId(workspaceId.toString())
                     ).build()
-            ).setRelation(INTEGRATIONS_VIEW.getKesselPermissionName())
+            ).setRelation(VIEW.getKesselPermissionName())
             .setResourceType(ResourceType.INTEGRATION.getKesselObjectType());
 
         // Include the continuation token in the request to resume fetching
