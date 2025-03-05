@@ -22,8 +22,6 @@ import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesRequest;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesResponse;
-import org.project_kessel.api.relations.v1beta1.LookupSubjectsRequest;
-import org.project_kessel.api.relations.v1beta1.LookupSubjectsResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
 import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.api.relations.v1beta1.RequestPagination;
@@ -459,14 +457,14 @@ public class KesselAuthorization {
             continuationToken = newContinuationToken;
 
             // Build the lookup request for Kessel.
-            final LookupSubjectsRequest request = this.buildWorkspaceIntegrationsLookupSubjectsRequest(workspaceId, continuationToken);
+            final LookupResourcesRequest request = this.buildWorkspaceIntegrationsLookupResourcesRequest(workspaceId, continuationToken);
 
             Log.tracef("Payload for the resource lookup: %s", request);
 
             // Make the request to Kessel.
-            final Iterator<LookupSubjectsResponse> responses;
+            final Iterator<LookupResourcesResponse> responses;
             try {
-                responses = lookupClient.lookupSubjects(request);
+                responses = lookupClient.lookupResources(request);
             } catch (final Exception e) {
                 Log.errorf(
                     e,
@@ -478,11 +476,11 @@ public class KesselAuthorization {
 
             // Iterate over the incoming results.
             while (responses.hasNext()) {
-                final LookupSubjectsResponse response = responses.next();
+                final LookupResourcesResponse response = responses.next();
 
                 Log.tracef("Received payload for the resource lookup: %s", response);
 
-                uuids.add(UUID.fromString(response.getSubject().getSubject().getId()));
+                uuids.add(UUID.fromString(response.getResource().getId()));
 
                 // Update the continuation token every time, to make sure we
                 // grab the last streamed element's continuation token.
@@ -493,14 +491,18 @@ public class KesselAuthorization {
         return uuids;
     }
 
-    private LookupSubjectsRequest buildWorkspaceIntegrationsLookupSubjectsRequest(final UUID workspaceId, final String continuationToken) {
-        final LookupSubjectsRequest.Builder requestBuilder = LookupSubjectsRequest.newBuilder()
-            .setResource(ObjectReference.newBuilder()
-                .setType(ResourceType.WORKSPACE.getKesselObjectType())
-                .setId(workspaceId.toString())
-                .build())
-            .setRelation(INTEGRATIONS_VIEW.getKesselPermissionName())
-            .setSubjectType(ResourceType.INTEGRATION.getKesselObjectType());
+    protected LookupResourcesRequest buildWorkspaceIntegrationsLookupResourcesRequest(final UUID workspaceId, final String continuationToken) {
+        // Build the regular query.
+        final LookupResourcesRequest.Builder requestBuilder = LookupResourcesRequest.newBuilder()
+            .setSubject(
+                SubjectReference.newBuilder()
+                    .setSubject(
+                        ObjectReference.newBuilder()
+                            .setType(ResourceType.WORKSPACE.getKesselObjectType())
+                            .setId(workspaceId.toString())
+                    ).build()
+            ).setRelation(INTEGRATIONS_VIEW.getKesselPermissionName())
+            .setResourceType(ResourceType.INTEGRATION.getKesselObjectType());
 
         // Include the continuation token in the request to resume fetching
         // resources right where we last left off.
@@ -508,7 +510,7 @@ public class KesselAuthorization {
             requestBuilder.setPagination(
                 RequestPagination.newBuilder()
                     .setContinuationToken(continuationToken)
-                    .setLimit(backendConfig.getKesselRelationsLookupResourceLimit())
+                    .setLimit(this.backendConfig.getKesselRelationsLookupResourceLimit())
                     .build()
             );
         }

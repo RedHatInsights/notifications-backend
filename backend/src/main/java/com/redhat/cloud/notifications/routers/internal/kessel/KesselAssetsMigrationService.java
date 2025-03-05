@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
@@ -147,8 +148,8 @@ public class KesselAssetsMigrationService {
                 } else {
                     Log.errorf("Kessel assets' are not sync for org %s, kessel assets are: %s ; Notifications endpoints are: %s",
                         org,
-                        endpointsUuidsFromKessel.stream().map(UUID::toString).reduce(", ", String::concat),
-                        endpointsUuidsFromDb.stream().map(UUID::toString).reduce(", ", String::concat)
+                        endpointsUuidsFromKessel.stream().map(UUID::toString).collect(Collectors.joining(", ")),
+                        endpointsUuidsFromDb.stream().map(UUID::toString).collect(Collectors.joining(", "))
                     );
                 }
             } catch (Exception e) {
