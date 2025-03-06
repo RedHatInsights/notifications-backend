@@ -137,25 +137,43 @@ public class KesselAssetsMigrationService {
         Log.info("Kessel assets' migration check");
 
         List<String> orgs = endpointRepository.getOrgIdWithEndpoints();
+        int syncEndpoints = 0;
+        int errorOrgs = 0;
+        int notCheckedEndpoints = 0;
+        int endpointsWithDelta = 0;
+        int totalEndpoints = 0;
 
         for (String org : orgs) {
+            Set<UUID> endpointsUuidsFromDb = new HashSet<>(endpointRepository.getEndpointsUUIDsByOrgId(org));
+            totalEndpoints += endpointsUuidsFromDb.size();
             try {
                 UUID workspaceId = workspaceUtils.getDefaultWorkspaceId(org);
                 Set<UUID> endpointsUuidsFromKessel = kesselAuthorizationService.listWorkspaceIntegrations(workspaceId);
-                Set<UUID> endpointsUuidsFromDb = new HashSet<>(endpointRepository.getEndpointsUUIDsByOrgId(org));
                 if (endpointsUuidsFromDb.containsAll(endpointsUuidsFromKessel) && endpointsUuidsFromKessel.containsAll(endpointsUuidsFromDb)) {
                     Log.tracef("Kessel assets' are sync for org %s", org);
+                    syncEndpoints += endpointsUuidsFromDb.size();
                 } else {
                     Log.errorf("Kessel assets' are not sync for org %s, kessel assets are: %s ; Notifications endpoints are: %s",
                         org,
                         endpointsUuidsFromKessel.stream().map(UUID::toString).collect(Collectors.joining(", ")),
                         endpointsUuidsFromDb.stream().map(UUID::toString).collect(Collectors.joining(", "))
                     );
+                    endpointsWithDelta += endpointsUuidsFromDb.size();
                 }
             } catch (Exception e) {
-                Log.errorf(e, "Error checking endpoints for org %s", org);
+                Log.errorf(e, "Error checking endpoints for org %s containing %d endpoints", org, endpointsUuidsFromDb.size());
+                errorOrgs++;
+                notCheckedEndpoints += endpointsUuidsFromDb.size();
             }
         }
+        Log.infof("%d orgs Scanned, %d OK / %d KO (covering %d endpoints); %d endpoints are sync, %d are not, over %d endpoints",
+            orgs.size(),
+                    orgs.size() - errorOrgs,
+                    errorOrgs,
+                    notCheckedEndpoints,
+                    syncEndpoints,
+                    endpointsWithDelta,
+                    totalEndpoints);
         Log.info("Finished migrating integrations check");
     }
 
