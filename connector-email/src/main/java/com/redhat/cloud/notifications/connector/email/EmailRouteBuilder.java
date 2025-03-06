@@ -80,7 +80,6 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
             .choice()
                 .when(shouldUseSimplifiedEmailManagement())
                     .process(emailManagementProcessor)
-                .endChoice()
                 .otherwise()
                     .process(recipientsResolverRequestPreparer)
                     .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
@@ -90,12 +89,9 @@ public class EmailRouteBuilder extends EngineToConnectorRouteBuilder {
                     .choice()
                         .when(shouldSkipEmail())
                             .log(INFO, getClass().getName(), "Skipped Email notification because the recipients list was empty [orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
-                        .endChoice()
                         .otherwise()
                             .to(direct(Routes.SPLIT_AND_SEND))
-                        .endChoice()
                     .end()
-                .endChoice()
             .end()
             .to(direct(SUCCESS));
 
