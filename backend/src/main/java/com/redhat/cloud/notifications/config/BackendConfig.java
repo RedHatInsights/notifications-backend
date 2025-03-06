@@ -47,6 +47,7 @@ public class BackendConfig {
     private String kesselChecksOnEventLogToggle;
     private String maintenanceModeToggle;
     private String bypassBehaviorGroupMaxCreationLimitToggle;
+    private String ignoreSourcesErrorOnEndpointDeleteToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -122,6 +123,7 @@ public class BackendConfig {
         kesselChecksOnEventLogToggle = toggleRegistry.register("kessel-checks-on-event-log", true);
         maintenanceModeToggle = toggleRegistry.register("notifications-maintenance-mode", true);
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
+        ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -177,6 +179,15 @@ public class BackendConfig {
             return unleash.isEnabled(kesselInventoryToggle, unleashContext, false);
         } else {
             return kesselInventoryEnabled;
+        }
+    }
+
+    public boolean isIgnoreSourcesErrorOnEndpointDelete(String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(ignoreSourcesErrorOnEndpointDeleteToggle, unleashContext, false);
+        } else {
+            return false;
         }
     }
 
