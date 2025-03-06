@@ -554,13 +554,17 @@ public class EndpointResource {
         try {
             this.secretUtils.deleteSecretsForEndpoint(endpoint);
         } catch (final Exception e) {
-            if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
-                final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(orgId);
+            if (this.backendConfig.isIgnoreSourcesErrorOnEndpointDelete(orgId)) {
+                Log.errorf(e, "Sources error deleting endpoint %s", endpoint);
+            } else {
+                if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
+                    final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(orgId);
 
-                this.kesselAssets.createIntegration(sec, workspaceId.toString(), id.toString());
+                    this.kesselAssets.createIntegration(sec, workspaceId.toString(), id.toString());
+                }
+
+                throw e;
             }
-
-            throw e;
         }
 
         return Response.noContent().build();
