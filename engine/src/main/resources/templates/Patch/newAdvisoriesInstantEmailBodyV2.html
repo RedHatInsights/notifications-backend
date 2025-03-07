@@ -29,7 +29,7 @@
                     <tr>
                         <td style="width: 30%">
                             <a class="rh-url"
-                              href="{environment.url}/insights/patch/advisories/{it.payload.advisory_name}">{it.payload.advisory_name}</a>
+                              href="{environment.url}/insights/patch/advisories/{it.payload.advisory_name}{query_params}">{it.payload.advisory_name}</a>
                         </td>
                         <td style="width: 70%">
                             {it.payload.synopsis}

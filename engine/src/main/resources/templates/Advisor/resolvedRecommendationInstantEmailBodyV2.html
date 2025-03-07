@@ -8,10 +8,10 @@
     Resolved recommendations
 {/content-title-section1}
 {#content-title-right-part-section1}
-    <a href="{environment.url}/insights/advisor/systems/{action.context.inventory_id}" target="_blank">{action.events.size()}</a>
+    <a href="{environment.url}/insights/advisor/systems/{action.context.inventory_id}{query_params}" target="_blank">{action.events.size()}</a>
 {/content-title-right-part-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/advisor/systems/{action.context.inventory_id}">Go to system page</a>
+    <a target="_blank" href="{environment.url}/insights/advisor/systems/{action.context.inventory_id}{query_params}">Go to system page</a>
 {/content-button-section1}
 {#content-body-section1}
 <p><b>{action.context.display_name}</b> has {action.events.size()} resolved {#if action.events.size() is 1}recommendation{#else}recommendations{/if}.</p>

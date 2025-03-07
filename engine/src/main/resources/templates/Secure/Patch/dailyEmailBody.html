@@ -8,7 +8,7 @@
     Advisories
 {/content-title-section1}
 {#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/patch/advisories">{action.context.total_advisories}</a>
+    <a target="_blank" href="{environment.url}/insights/patch/advisories{query_params}">{action.context.total_advisories}</a>
 {/content-title-right-part-section1}
 {#content-subtitle-section1}
     There are {action.context.total_advisories} new advisories affecting your systems.
@@ -30,7 +30,7 @@
                     {#for advisory in action.context.patch.get(key)}
                         <tr>
                             <td style="width: 40%">
-                                <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory["name"]}">{advisory["name"]}</a>
+                                <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory["name"]}{query_params}">{advisory["name"]}</a>
                             </td>
                             <td style="width: 60%">
                                 {advisory["synopsis"]}
@@ -43,6 +43,6 @@
     {/for}
 {/content-body-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/patch/advisories">Open Advisories in Insights</a>
+    <a target="_blank" href="{environment.url}/insights/patch/advisories{query_params}">Open Advisories in Insights</a>
 {/content-button-section1}
 {/include}
