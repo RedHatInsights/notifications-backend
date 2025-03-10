@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.redhat.cloud.notifications.TestConstants.POSTGRES_MAJOR_VERSION;
+
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     Boolean quarkusDevServiceEnabled = true;
@@ -54,7 +56,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     }
 
     void setupPostgres(Map<String, String> props) throws SQLException {
-        postgreSQLContainer = new PostgreSQLContainer<>("postgres:15");
+        postgreSQLContainer = new PostgreSQLContainer<>("postgres:" + POSTGRES_MAJOR_VERSION);
         postgreSQLContainer.start();
 
         String jdbcUrl = postgreSQLContainer.getJdbcUrl();
